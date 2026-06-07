@@ -35,6 +35,12 @@ export function Footer() {
           >
             Join as a Farmer
           </Link>
+          <Link
+            href="/join/buyer"
+            className="focus-ring ml-0 mt-3 inline-flex rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-700 hover:bg-leaf-50 sm:ml-3"
+          >
+            Join as a Buyer
+          </Link>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-3">

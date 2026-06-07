@@ -46,14 +46,20 @@ export function ServicePage({
               ))}
             </div>
           </div>
-          {formAudience === "farmer" ? (
+          {formAudience === "farmer" || formAudience === "buyer" ? (
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-6 shadow-soft">
-              <h3 className="text-2xl font-black text-ink">Ready to register your farm?</h3>
+              <h3 className="text-2xl font-black text-ink">
+                {formAudience === "farmer" ? "Ready to register your farm?" : "Ready to register as a buyer?"}
+              </h3>
               <p className="mt-3 text-sm leading-6 text-ink/70">
-                Use the complete farmer registration form to share your farm details, products, harvest period, and contact information.
+                {formAudience === "farmer"
+                  ? "Use the complete farmer registration form to share your farm details, products, harvest period, and contact information."
+                  : "Use the complete buyer registration form to share what you buy, how much you need, and how often you purchase."}
               </p>
               <div className="mt-5">
-                <ButtonLink href="/join/farmer">Join as a Farmer</ButtonLink>
+                <ButtonLink href={formAudience === "farmer" ? "/join/farmer" : "/join/buyer"}>
+                  {formAudience === "farmer" ? "Join as a Farmer" : "Join as a Buyer"}
+                </ButtonLink>
               </div>
             </div>
           ) : (

@@ -32,6 +32,7 @@ public/images/           Placeholder visual assets
 - Smart Solutions market prices: edit `src/data/marketPrices.json`.
 - Smart Solutions locations: edit `src/data/weatherLocations.ts`.
 - Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
+- Buyer registration notification recipients: edit `src/data/notificationConfig.ts`.
 
 ## Smart Solutions Integrations
 
@@ -58,6 +59,25 @@ FARMER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 ```
 
 Google Sheets columns are appended in this order: submitted date, full name, farm name, phone number, WhatsApp number, email, region, district, farm size, farm type, products, harvest period, and notes.
+
+## Buyer Registration Integrations
+
+The complete buyer registration form lives at `/join/buyer`.
+
+Server route: `src/app/api/buyer-registration/route.ts`
+
+Set these environment variables in production:
+
+```bash
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+GOOGLE_SHEETS_SPREADSHEET_ID=
+GOOGLE_SHEETS_BUYER_SHEET_NAME="Buyer Registrations"
+RESEND_API_KEY=
+BUYER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
+```
+
+Buyer registration supports market women, restaurants, hotels, caterers, retail shops, exporters, and food processors.
 
 ## What Is Included
 

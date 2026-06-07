@@ -20,6 +20,7 @@ export const navigation: NavigationItem[] = [
     href: "/services",
     children: [
       { title: "Join as a Farmer", href: "/join/farmer" },
+      { title: "Join as a Buyer", href: "/join/buyer" },
       { title: "For Farmers", href: "/services/farmers" },
       { title: "For Buyers", href: "/services/buyers" },
       { title: "For Suppliers", href: "/services/suppliers" }

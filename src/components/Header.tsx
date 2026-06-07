@@ -53,6 +53,12 @@ export function Header() {
             Join Farmer
           </Link>
           <Link
+            href="/join/buyer"
+            className="focus-ring rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+          >
+            Join Buyer
+          </Link>
+          <Link
             href="/marketplace"
             className="focus-ring rounded-md bg-earth-500 px-4 py-2 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
           >

@@ -13,6 +13,8 @@ export default function BuyersServicePage() {
       description="Ghana Growers supports buyers who need reliable produce supply, bulk sourcing help, and quick WhatsApp inquiries."
       formAudience="buyer"
       whatsappMessage="Hello Ghana Growers, I want to join as a buyer."
+      ctaHref="/join/buyer"
+      ctaLabel="Join as a Buyer"
       points={[
         "Find trusted farmers and farmer groups by produce category and location.",
         "Buy fresh produce for markets, restaurants, shops, hotels, caterers, and households.",

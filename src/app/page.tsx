@@ -25,7 +25,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/join/farmer">Join as Farmer</ButtonLink>
-              <ButtonLink href="/services/buyers" variant="secondary">
+              <ButtonLink href="/join/buyer" variant="secondary">
                 Join as Buyer
               </ButtonLink>
               <ButtonLink href="/services/suppliers" variant="light">
