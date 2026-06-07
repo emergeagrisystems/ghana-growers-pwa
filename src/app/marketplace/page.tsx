@@ -21,6 +21,7 @@ export default function MarketplacePage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/farmer-directory">Browse Farmer Directory</ButtonLink>
+          <ButtonLink href="/supplier-directory" variant="secondary">Browse Supplier Directory</ButtonLink>
           <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>
           <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
           <ButtonLink href="/whatsapp-communities" variant="light">Join WhatsApp Communities</ButtonLink>

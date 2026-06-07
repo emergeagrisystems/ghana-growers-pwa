@@ -34,6 +34,9 @@ export default function HomePage() {
               <ButtonLink href="/farmer-directory" variant="secondary">
                 Browse Farmer Directory
               </ButtonLink>
+              <ButtonLink href="/supplier-directory" variant="light">
+                Browse Supplier Directory
+              </ButtonLink>
               <ButtonLink href="/whatsapp-communities" variant="secondary">
                 Join WhatsApp Community
               </ButtonLink>
@@ -151,6 +154,9 @@ export default function HomePage() {
               </Link>
               <Link href="/whatsapp-communities" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
                 Join a WhatsApp community <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+              <Link href="/supplier-directory" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
+                Browse trusted suppliers <ArrowRight size={18} aria-hidden="true" />
               </Link>
             </div>
           </div>

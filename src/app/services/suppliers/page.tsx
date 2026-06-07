@@ -15,6 +15,9 @@ export default function SuppliersServicePage() {
       whatsappMessage="Hello Ghana Growers, I want to become a supplier."
       ctaHref="/join/supplier"
       ctaLabel="Become a Supplier"
+      extraCtas={[
+        { href: "/supplier-directory", label: "View Supplier Directory", variant: "secondary" }
+      ]}
       points={[
         "List agricultural products and services in a supplier-friendly marketplace.",
         "Reach farmers who need inputs, tools, equipment, and advisory support.",

@@ -48,3 +48,32 @@ export type FarmerProfile = {
   verificationStatus: string;
   whatsappMessage: string;
 };
+
+export type SupplierProfile = {
+  slug: string;
+  companyName: string;
+  contactPerson: string;
+  supplierCategory:
+    | "Seeds"
+    | "Fertilizers"
+    | "Agrochemicals"
+    | "Farm Equipment"
+    | "Irrigation Systems"
+    | "Packaging"
+    | "Logistics"
+    | "Storage"
+    | "Financial Services"
+    | "Agricultural Consulting";
+  region: string;
+  district: string;
+  productsServices: string[];
+  shortDescription: string;
+  companyOverview: string;
+  serviceCoverageArea: string;
+  photos: string[];
+  website?: string;
+  socialLink?: string;
+  phone: string;
+  verificationStatus: string;
+  whatsappMessage: string;
+};

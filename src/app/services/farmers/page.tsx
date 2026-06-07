@@ -15,6 +15,9 @@ export default function FarmersServicePage() {
       whatsappMessage="Hello Ghana Growers, I want to join as a farmer."
       ctaHref="/join/farmer"
       ctaLabel="Join as a Farmer"
+      extraCtas={[
+        { href: "/supplier-directory", label: "Browse Supplier Directory", variant: "secondary" }
+      ]}
       points={[
         "Sell produce through a trusted marketplace structure.",
         "Join a farmer network by crop, region, and supply capacity.",
