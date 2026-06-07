@@ -60,9 +60,9 @@ const platformPillars = [
 
 const ghanaVisuals = [
   { title: "Farmers and farmer groups", image: "/images/farmers/farmer-1.jpg" },
-  { title: "Fresh crops and livestock", image: "/images/crops/tomatoes.jpg" },
-  { title: "Market supply chains", image: "/images/crops/logistics.jpg" },
-  { title: "Packaging and input services", image: "/images/crops/packaging.jpg" }
+  { title: "Farm activities", image: "/images/marketplace/farm-activity-1.jpg" },
+  { title: "Ghana market scenes", image: "/images/marketplace/ghana-market-1.jpg" },
+  { title: "Agricultural supply chains", image: "/images/marketplace/logistics-truck.jpg" }
 ];
 
 const trustBadges = ["Verified Farmer", "Verified Buyer", "Verified Supplier", "Premium Member"];

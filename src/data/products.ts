@@ -61,7 +61,7 @@ export const products: Product[] = [
     location: "Akumadan, Ashanti Region",
     seller: "Akumadan Growers Group",
     unit: "Crate",
-    image: "/images/crops/tomatoes.jpg",
+    image: "/images/marketplace/fresh-tomatoes.jpg",
     available: "Weekly supply"
   },
   {
@@ -71,7 +71,7 @@ export const products: Product[] = [
     location: "Nsawam, Eastern Region",
     seller: "Nsawam Fruit Farmers",
     unit: "Bag or truckload",
-    image: "/images/crops/pineapple.jpg",
+    image: "/images/marketplace/pineapple-field.jpg",
     available: "Bulk orders"
   },
   {
@@ -81,7 +81,7 @@ export const products: Product[] = [
     location: "Tamale, Northern Region",
     seller: "Northern Root Crops Network",
     unit: "100 tubers",
-    image: "/images/crops/yam.jpg",
+    image: "/images/marketplace/yam-cassava.jpg",
     available: "Seasonal"
   },
   {
@@ -91,7 +91,7 @@ export const products: Product[] = [
     location: "Accra and Kumasi",
     seller: "Green Input Supply",
     unit: "25kg bag",
-    image: "/images/crops/inputs.jpg",
+    image: "/images/marketplace/farm-inputs.jpg",
     available: "In stock"
   },
   {
@@ -101,7 +101,7 @@ export const products: Product[] = [
     location: "Kumasi, Ashanti Region",
     seller: "MarketPack Ghana",
     unit: "Bundle",
-    image: "/images/crops/packaging.jpg",
+    image: "/images/marketplace/produce-packaging.jpg",
     available: "Supplier listing"
   },
   {
@@ -111,7 +111,7 @@ export const products: Product[] = [
     location: "Tema, Greater Accra",
     seller: "FreshChain Logistics",
     unit: "Daily or weekly plan",
-    image: "/images/crops/logistics.jpg",
+    image: "/images/marketplace/logistics-truck.jpg",
     available: "Inquiry required"
   }
 ];
