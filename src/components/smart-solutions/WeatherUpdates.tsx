@@ -21,11 +21,19 @@ function farmingAdvice(weather?: WeatherState) {
     return "Rain expected, delay spraying and keep harvested produce covered.";
   }
 
+  if (weather.wind >= 25) {
+    return "Strong wind, avoid spraying today and secure young plants, shade nets, and loose packaging.";
+  }
+
   if (weather.temperature >= 34) {
     return "High heat, irrigate early morning and provide shade for sensitive crops.";
   }
 
-  if (weather.rainfallChance <= 20 && weather.humidity <= 65) {
+  if (weather.humidity >= 85 && weather.rainfallChance >= 35) {
+    return "High humidity may increase fungal disease risk, improve spacing and monitor leaves closely.";
+  }
+
+  if (weather.rainfallChance <= 20 && weather.humidity <= 65 && weather.wind <= 18) {
     return "Good day for drying maize, cassava chips, and other produce.";
   }
 
@@ -108,6 +116,7 @@ export function WeatherUpdates() {
           <h2 className="mt-2 text-2xl font-black text-ink">Check Weather</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
             Choose the nearest farming area before spraying, drying maize, irrigating, or moving produce to market.
+            Weather data is loaded live from Open-Meteo.
           </p>
           <p className="mt-2 text-xs font-bold text-ink/55">{status}</p>
         </div>

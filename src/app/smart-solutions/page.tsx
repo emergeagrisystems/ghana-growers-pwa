@@ -36,8 +36,9 @@ export default function SmartSolutionsPage() {
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
-            title="Digital support for decisions farmers make every week"
-            description="Each tool is designed around practical farm work: whether to spray, when to dry produce, what a leaf symptom might mean, how to ask for help, and where prices are moving."
+            eyebrow="Dashboard"
+            title="Smart Solutions dashboard"
+            description="Open the tool you need now, or scroll through the full dashboard. Each card is built around a practical farm decision."
           />
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {smartTools.map((tool) => {

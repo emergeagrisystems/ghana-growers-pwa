@@ -29,6 +29,15 @@ public/images/           Placeholder visual assets
 - Blog posts and learning content: edit `src/data/blog.ts`.
 - Service page content: edit `src/data/services.ts`.
 - Farmer directory placeholders: edit `src/data/farmers.ts`.
+- Smart Solutions market prices: edit `src/data/marketPrices.json`.
+- Smart Solutions locations: edit `src/data/weatherLocations.ts`.
+
+## Smart Solutions Integrations
+
+- Weather uses the free Open-Meteo API directly from the frontend.
+- AI Farmer Assistant uses `src/app/api/farmer-assistant/route.ts`, ready for server-side OpenAI integration.
+- Crop Health Check uses `src/app/api/crop-health/route.ts`, ready for Plant.id, Crop.health, Plantix, or a similar provider.
+- Keep API keys in environment variables on the server. Do not expose provider keys in frontend components.
 
 ## What Is Included
 

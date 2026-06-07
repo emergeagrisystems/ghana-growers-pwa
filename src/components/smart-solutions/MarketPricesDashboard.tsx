@@ -2,7 +2,7 @@
 
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { marketPrices } from "@/data/marketPrices";
+import { marketPriceMeta, marketPrices } from "@/data/marketPrices";
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
@@ -48,7 +48,10 @@ export function MarketPricesDashboard() {
       <p className="text-sm font-black uppercase text-earth-700">Ghana Market Prices</p>
       <h2 className="mt-2 text-2xl font-black text-ink">View Market Prices</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Compare indicative wholesale and retail prices before calling buyers, suppliers, or transporters. Prices should be verified before trading.
+        Compare indicative wholesale and retail prices before calling buyers, suppliers, or transporters. {marketPriceMeta.note}
+      </p>
+      <p className="mt-2 text-xs font-black uppercase text-earth-700">
+        Last updated: {marketPriceMeta.lastUpdated}
       </p>
 
       <div className="mt-5 grid gap-3 md:grid-cols-3">

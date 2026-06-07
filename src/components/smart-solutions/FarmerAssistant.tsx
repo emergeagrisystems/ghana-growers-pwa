@@ -17,20 +17,40 @@ export function FarmerAssistant() {
       text: "Akwaaba. Ask about crop care, pests, fertilizer, storage, prices, or how to find buyers."
     }
   ]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function ask(nextQuestion: string) {
+  async function ask(nextQuestion: string) {
     const trimmed = nextQuestion.trim();
 
     if (!trimmed) {
       return;
     }
 
-    setMessages((current) => [
-      ...current,
-      { role: "farmer", text: trimmed },
-      { role: "assistant", text: getSampleAssistantResponse(trimmed) }
-    ]);
+    setMessages((current) => [...current, { role: "farmer", text: trimmed }]);
     setQuestion("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/farmer-assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed })
+      });
+
+      if (!response.ok) {
+        throw new Error("Assistant request failed");
+      }
+
+      const data = (await response.json()) as { answer: string };
+      setMessages((current) => [...current, { role: "assistant", text: data.answer }]);
+    } catch {
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", text: getSampleAssistantResponse(trimmed) }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -67,7 +87,7 @@ export function FarmerAssistant() {
             key={suggestion}
             type="button"
             onClick={() => ask(suggestion)}
-          className="focus-ring rounded-md bg-earth-50 px-3 py-2 text-xs font-bold text-ink hover:bg-earth-500"
+            className="focus-ring rounded-md bg-earth-50 px-3 py-2 text-xs font-bold text-ink hover:bg-earth-500"
           >
             {suggestion}
           </button>
@@ -87,9 +107,12 @@ export function FarmerAssistant() {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />
-        <button className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white hover:bg-leaf-700">
+        <button
+          disabled={isLoading}
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25"
+        >
           <Send size={17} aria-hidden="true" />
-          Ask AI Assistant
+          {isLoading ? "Thinking..." : "Ask AI Assistant"}
         </button>
       </form>
     </section>
