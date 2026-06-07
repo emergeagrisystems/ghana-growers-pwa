@@ -58,10 +58,10 @@ The current website is an MVP foundation for a broader AgriTech platform that ca
 - Live Weather Updates using Open-Meteo from the frontend.
 - Weather-based farming advice for spraying, drying, irrigation, heat, wind, and rainfall decisions.
 - Crop Health Check prototype with image upload preview and mock advisory output.
-- AI Farmer Assistant prototype with sample farming guidance through a server API route.
+- OpenAI-powered AI Farmer Assistant with server-side chat API route, suggested questions, loading states, error handling, and agricultural disclaimer.
 - Market Prices Dashboard using local market price data with crop, region, and market filters.
 
-The Smart Solutions area is integration-ready. Weather is currently live through Open-Meteo, while the AI Farmer Assistant and Crop Health Check are mock/prototype services that should later connect to secure server-side providers.
+The Smart Solutions area is integration-ready. Weather is currently live through Open-Meteo, the AI Farmer Assistant uses OpenAI from a secure server route when `OPENAI_API_KEY` is configured, and the Crop Health Check is a mock/prototype service that should later connect to a secure crop disease provider.
 
 ## Technology Stack
 
@@ -128,11 +128,12 @@ RESEND_API_KEY=
 FARMER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 BUYER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 SUPPLIER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
+OPENAI_API_KEY=
+OPENAI_MODEL="gpt-5.4-mini"
 ```
 
 Future provider credentials should also be server-only, for example:
 
-- OpenAI API key for the Farmer Assistant.
 - Crop disease detection API key.
 - Market data provider credentials.
 - SMS or WhatsApp automation credentials.

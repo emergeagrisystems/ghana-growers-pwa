@@ -40,9 +40,65 @@ public/images/           Placeholder visual assets
 ## Smart Solutions Integrations
 
 - Weather uses the free Open-Meteo API directly from the frontend.
-- AI Farmer Assistant uses `src/app/api/farmer-assistant/route.ts`, ready for server-side OpenAI integration.
+- AI Farmer Assistant uses `src/app/api/farmer-assistant/route.ts` and calls OpenAI from the server using `OPENAI_API_KEY`.
 - Crop Health Check uses `src/app/api/crop-health/route.ts`, ready for Plant.id, Crop.health, Plantix, or a similar provider.
 - Keep API keys in environment variables on the server. Do not expose provider keys in frontend components.
+
+### AI Farmer Assistant Setup
+
+The chat UI lives in `src/components/smart-solutions/FarmerAssistant.tsx` and is displayed on `/smart-solutions`.
+
+The chat API route is located at:
+
+```text
+src/app/api/farmer-assistant/route.ts
+```
+
+The server-side OpenAI integration lives at:
+
+```text
+src/lib/farmerAssistant.ts
+```
+
+Set these environment variables locally and in production:
+
+```bash
+OPENAI_API_KEY=
+OPENAI_MODEL="gpt-5.4-mini"
+```
+
+`OPENAI_MODEL` is optional. If it is not set, the app uses `gpt-5.4-mini`.
+
+To add `OPENAI_API_KEY` in Vercel:
+
+1. Open the Ghana Growers project in Vercel.
+2. Go to Settings, then Environment Variables.
+3. Add `OPENAI_API_KEY` with the OpenAI API key value.
+4. Optionally add `OPENAI_MODEL` if you want to override the default model.
+5. Select the Production, Preview, and Development environments needed.
+6. Save the variables and redeploy the site.
+
+To test locally:
+
+1. Create a local `.env.local` file.
+2. Add `OPENAI_API_KEY=your_api_key_here`.
+3. Optionally add `OPENAI_MODEL="gpt-5.4-mini"`.
+4. Run the app.
+5. Open `/smart-solutions` and ask a question in the AI Farmer Assistant section.
+
+Example local test:
+
+```bash
+pnpm run dev
+```
+
+Then visit:
+
+```text
+http://localhost:3000/smart-solutions
+```
+
+The frontend must never contain or expose the OpenAI API key. Browser code should only call the internal `/api/farmer-assistant` route.
 
 ## Farmer Registration Integrations
 

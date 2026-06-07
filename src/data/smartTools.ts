@@ -32,10 +32,12 @@ export const smartTools = [
 ];
 
 export const assistantSuggestions = [
-  "How can I reduce post-harvest losses for tomatoes?",
-  "What should I do if maize leaves are yellowing?",
-  "How do I find buyers for bulk cassava?",
-  "When should I apply fertilizer to pepper?"
+  "How do I improve tomato yield?",
+  "My maize leaves are turning yellow. What could be wrong?",
+  "When should I plant cassava in Ashanti Region?",
+  "How can I find buyers for plantain?",
+  "What should I check before buying fertilizer?",
+  "How can I store onions after harvest?"
 ];
 
 export function getSampleAssistantResponse(question: string) {
