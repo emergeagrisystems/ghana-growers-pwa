@@ -25,6 +25,10 @@ const farmerAssistantInstructions = [
   "Include this exact disclaimer at the end of every answer: This assistant provides general agricultural guidance only. Confirm important decisions with a qualified agricultural extension officer."
 ].join("\n");
 
+function getOpenAIApiKey() {
+  return process.env.OPENAI_API_KEY?.trim();
+}
+
 function toOpenAIInput(messages: FarmerAssistantMessage[], question: string) {
   const recentMessages = messages.slice(-8).map((message) => ({
     role: message.role === "assistant" ? "assistant" : "user",
@@ -56,7 +60,7 @@ function extractResponseText(data: OpenAIResponse) {
 }
 
 export async function createFarmerAssistantReply(question: string, messages: FarmerAssistantMessage[] = []) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = getOpenAIApiKey();
 
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured.");

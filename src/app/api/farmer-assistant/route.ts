@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createFarmerAssistantReply, type FarmerAssistantMessage } from "@/lib/farmerAssistant";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: isMissingKey
-          ? "The AI Farmer Assistant is not configured yet. Add OPENAI_API_KEY on the server."
+          ? "The AI Farmer Assistant is not configured in this deployment. Confirm OPENAI_API_KEY is set in Vercel and redeploy."
           : "The AI Farmer Assistant is temporarily unavailable. Please try again shortly.",
         provider: "openai",
         integrationReady: false
