@@ -2,7 +2,7 @@ import type { NavigationItem } from "@/types";
 
 export const siteConfig = {
   name: "Ghana Growers",
-  url: "https://ghana-growers.example.com",
+  url: "https://ghana-growers-pwa.vercel.app",
   description:
     "Ghana Growers connects farmers, buyers, and agricultural suppliers in Ghana through a trusted digital platform.",
   email: "hello@ghanagrowers.com",
