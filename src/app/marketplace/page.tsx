@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { PackageCheck } from "lucide-react";
+import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -17,7 +18,12 @@ export default function MarketplacePage() {
         eyebrow="Marketplace / Shop"
         title="Browse produce, inputs, packaging, and logistics support"
         description="No checkout yet. Every listing uses direct WhatsApp contact so buyers, farmers, and suppliers can confirm price, availability, volume, and location."
-      />
+      >
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>
+          <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
+        </div>
+      </PageHero>
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader title="Categories" description="Use this structure to organize products and services before a full marketplace backend is added." />

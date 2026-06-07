@@ -31,6 +31,7 @@ public/images/           Placeholder visual assets
 - Farmer directory placeholders: edit `src/data/farmers.ts`.
 - Smart Solutions market prices: edit `src/data/marketPrices.json`.
 - Smart Solutions locations: edit `src/data/weatherLocations.ts`.
+- Buyer requests board: edit `src/data/buyerRequests.json`.
 - Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Buyer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Supplier registration notification recipients: edit `src/data/notificationConfig.ts`.
@@ -98,6 +99,14 @@ SUPPLIER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 ```
 
 Supplier registration supports seeds, fertilizers, agrochemicals, farm equipment, irrigation systems, packaging, logistics, storage, financial services, and agricultural consulting.
+
+## Buyer Requests Board
+
+The buyer requests board lives at `/buyer-requests`.
+
+Admin-editable data file: `src/data/buyerRequests.json`
+
+Each request includes product name, quantity needed, region, district, deadline, buyer type, contact method, and date posted. Farmers use WhatsApp buttons to contact Ghana Growers about requests they can supply.
 
 ## What Is Included
 

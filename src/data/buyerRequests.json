@@ -1,0 +1,83 @@
+{
+  "lastUpdated": "2026-06-07",
+  "note": "Buyer requests are indicative and should be confirmed directly before harvesting, transporting, or trading.",
+  "requests": [
+    {
+      "id": "maize-tamale-feed-processor",
+      "productName": "Maize",
+      "quantityNeeded": "20 metric tonnes",
+      "region": "Northern",
+      "district": "Tamale Metro",
+      "deadline": "2026-07-15",
+      "buyerType": "Food Processor",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-07"
+    },
+    {
+      "id": "tomatoes-accra-market-women",
+      "productName": "Tomatoes",
+      "quantityNeeded": "120 crates weekly",
+      "region": "Greater Accra",
+      "district": "Accra Metro",
+      "deadline": "2026-06-28",
+      "buyerType": "Market Woman",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-06"
+    },
+    {
+      "id": "cassava-central-processor",
+      "productName": "Cassava",
+      "quantityNeeded": "15 tonnes",
+      "region": "Central",
+      "district": "Mfantsiman",
+      "deadline": "2026-07-05",
+      "buyerType": "Food Processor",
+      "contactMethod": "Phone / WhatsApp",
+      "datePosted": "2026-06-06"
+    },
+    {
+      "id": "plantain-kumasi-restaurant",
+      "productName": "Plantain",
+      "quantityNeeded": "80 bunches weekly",
+      "region": "Ashanti",
+      "district": "Kumasi Metro",
+      "deadline": "2026-06-25",
+      "buyerType": "Restaurant",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-05"
+    },
+    {
+      "id": "yam-techiman-exporter",
+      "productName": "Yam",
+      "quantityNeeded": "5,000 tubers",
+      "region": "Bono East",
+      "district": "Techiman",
+      "deadline": "2026-07-20",
+      "buyerType": "Exporter",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-05"
+    },
+    {
+      "id": "eggs-takoradi-hotel",
+      "productName": "Eggs",
+      "quantityNeeded": "250 crates monthly",
+      "region": "Western",
+      "district": "Sekondi-Takoradi",
+      "deadline": "2026-06-30",
+      "buyerType": "Hotel",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-04"
+    },
+    {
+      "id": "poultry-accra-caterer",
+      "productName": "Poultry",
+      "quantityNeeded": "300 birds",
+      "region": "Greater Accra",
+      "district": "Ga East",
+      "deadline": "2026-07-02",
+      "buyerType": "Caterer",
+      "contactMethod": "Phone / WhatsApp",
+      "datePosted": "2026-06-04"
+    }
+  ]
+}
