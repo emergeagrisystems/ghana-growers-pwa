@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
 import { siteConfig } from "@/data/site";
+
+const PREVIEW_COOKIE = "ghana_growers_dev_preview";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -39,14 +42,18 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const prelaunchEnabled = process.env.SITE_PRELAUNCH !== "false";
+  const previewEnabled = cookies().get(PREVIEW_COOKIE)?.value === "enabled";
+  const showPublicShell = !prelaunchEnabled || previewEnabled;
+
   return (
     <html lang="en-GH">
       <body className="min-h-screen antialiased">
         <PwaRegister />
-        <Header />
+        {showPublicShell ? <Header /> : null}
         <main>{children}</main>
-        <Footer />
-        <FloatingWhatsAppButton />
+        {showPublicShell ? <Footer /> : null}
+        {showPublicShell ? <FloatingWhatsAppButton /> : null}
       </body>
     </html>
   );
