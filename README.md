@@ -31,6 +31,7 @@ public/images/           Placeholder visual assets
 - Farmer directory placeholders: edit `src/data/farmers.ts`.
 - Smart Solutions market prices: edit `src/data/marketPrices.json`.
 - Smart Solutions locations: edit `src/data/weatherLocations.ts`.
+- Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
 
 ## Smart Solutions Integrations
 
@@ -38,6 +39,25 @@ public/images/           Placeholder visual assets
 - AI Farmer Assistant uses `src/app/api/farmer-assistant/route.ts`, ready for server-side OpenAI integration.
 - Crop Health Check uses `src/app/api/crop-health/route.ts`, ready for Plant.id, Crop.health, Plantix, or a similar provider.
 - Keep API keys in environment variables on the server. Do not expose provider keys in frontend components.
+
+## Farmer Registration Integrations
+
+The complete farmer registration form lives at `/join/farmer`.
+
+Server route: `src/app/api/farmer-registration/route.ts`
+
+Set these environment variables in production:
+
+```bash
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+GOOGLE_SHEETS_SPREADSHEET_ID=
+GOOGLE_SHEETS_FARMER_SHEET_NAME="Farmer Registrations"
+RESEND_API_KEY=
+FARMER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
+```
+
+Google Sheets columns are appended in this order: submitted date, full name, farm name, phone number, WhatsApp number, email, region, district, farm size, farm type, products, harvest period, and notes.
 
 ## What Is Included
 

@@ -24,7 +24,7 @@ export default function HomePage() {
               people who need their products and services.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/services/farmers">Join as Farmer</ButtonLink>
+              <ButtonLink href="/join/farmer">Join as Farmer</ButtonLink>
               <ButtonLink href="/services/buyers" variant="secondary">
                 Join as Buyer
               </ButtonLink>
@@ -97,7 +97,10 @@ export default function HomePage() {
               title="Built for local supply discovery"
               description="This directory structure gives Ghana Growers a clean starting point for verified farmer profiles later."
             />
-            <WhatsAppButton message="Hello Ghana Growers, I want help finding farmers or produce suppliers." className="mt-6" />
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/join/farmer">Register Your Farm</ButtonLink>
+              <WhatsAppButton message="Hello Ghana Growers, I want help finding farmers or produce suppliers." />
+            </div>
           </div>
           <div className="grid gap-4">
             {farmerDirectory.map((farmer) => (

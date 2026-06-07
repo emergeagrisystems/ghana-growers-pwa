@@ -13,6 +13,8 @@ export default function FarmersServicePage() {
       description="Ghana Growers helps farmers and farmer groups present their supply, connect with buyers, learn best practices, and discover suppliers and support services."
       formAudience="farmer"
       whatsappMessage="Hello Ghana Growers, I want to join as a farmer."
+      ctaHref="/join/farmer"
+      ctaLabel="Join as a Farmer"
       points={[
         "Sell produce through a trusted marketplace structure.",
         "Join a farmer network by crop, region, and supply capacity.",

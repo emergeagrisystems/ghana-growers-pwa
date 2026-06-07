@@ -45,12 +45,20 @@ export function Header() {
           ))}
         </div>
 
-        <Link
-          href="/marketplace"
-          className="focus-ring hidden rounded-md bg-earth-500 px-4 py-2 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white lg:inline-flex"
-        >
-          Browse Shop
-        </Link>
+        <div className="hidden items-center gap-2 lg:flex">
+          <Link
+            href="/join/farmer"
+            className="focus-ring rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-700"
+          >
+            Join Farmer
+          </Link>
+          <Link
+            href="/marketplace"
+            className="focus-ring rounded-md bg-earth-500 px-4 py-2 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
+          >
+            Browse Shop
+          </Link>
+        </div>
 
         <button
           type="button"

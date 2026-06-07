@@ -29,6 +29,12 @@ export function Footer() {
             message="Hello Ghana Growers, I would like to make an inquiry."
             className="mt-6 bg-earth-500 text-ink hover:bg-white hover:text-ink"
           />
+          <Link
+            href="/join/farmer"
+            className="focus-ring mt-3 inline-flex rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white hover:bg-leaf-700"
+          >
+            Join as a Farmer
+          </Link>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-3">
