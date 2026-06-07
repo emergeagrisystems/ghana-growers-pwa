@@ -15,8 +15,8 @@
     "companyOverview": "Green Input Supply supports farmers with organic fertilizer, compost, and soil conditioners for healthier crop production. The company serves urban and peri-urban farms as well as larger growers needing regular input supply.",
     "serviceCoverageArea": "Greater Accra, Eastern Region, and Central Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-vegetables.svg"
+      "/images/suppliers/supplier-1.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/green-input-supply",
     "socialLink": "https://example.com/green-input-social",
@@ -54,8 +54,8 @@
     "companyOverview": "MarketPack Ghana provides reusable crates, cartons, sacks, and produce labels for farmers, aggregators, processors, and buyers who need cleaner handling and better presentation.",
     "serviceCoverageArea": "Ashanti Region, Bono East Region, and Ahafo Region",
     "photos": [
-      "/images/category-packaging.svg",
-      "/images/category-logistics.svg"
+      "/images/suppliers/supplier-2.jpg",
+      "/images/crops/packaging.jpg"
     ],
     "website": "https://example.com/marketpack-ghana",
     "socialLink": "https://example.com/marketpack-social",
@@ -93,8 +93,8 @@
     "companyOverview": "FreshChain Logistics helps move fresh produce from farm gates and aggregation points to buyers, markets, restaurants, processors, and storage locations.",
     "serviceCoverageArea": "Greater Accra, Eastern Region, Volta Region, and Central Region",
     "photos": [
-      "/images/category-logistics.svg",
-      "/images/category-fruits.svg"
+      "/images/suppliers/supplier-3.jpg",
+      "/images/crops/logistics.jpg"
     ],
     "website": "https://example.com/freshchain-logistics",
     "socialLink": "https://example.com/freshchain-social",
@@ -132,8 +132,8 @@
     "companyOverview": "Savanna Seed Services supplies maize, rice, cowpea, and other seed varieties to smallholder farmers, farmer groups, and aggregation programs.",
     "serviceCoverageArea": "Northern Region, Savannah Region, North East Region, and Upper East Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-tubers.svg"
+      "/images/suppliers/supplier-4.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/savanna-seed",
     "socialLink": "https://example.com/savanna-seed-social",
@@ -171,8 +171,8 @@
     "companyOverview": "Volta Irrigation Systems helps farmers plan, install, and maintain drip, sprinkler, and pump-based irrigation systems for dry-season production.",
     "serviceCoverageArea": "Volta Region, Oti Region, and Eastern Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-vegetables.svg"
+      "/images/suppliers/supplier-5.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/volta-irrigation",
     "socialLink": "https://example.com/volta-irrigation-social",
@@ -210,8 +210,8 @@
     "companyOverview": "Central AgroCare supplies crop protection products, sprayers, and practical pest management support. The company emphasizes responsible use and farmer education.",
     "serviceCoverageArea": "Central Region and Western Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-vegetables.svg"
+      "/images/suppliers/supplier-6.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/central-agrocare",
     "socialLink": "https://example.com/central-agrocare-social",
@@ -249,8 +249,8 @@
     "companyOverview": "Techiman Farm Machinery supplies small and medium farm equipment including power tillers, shellers, pumps, and hand tools for farmer groups and commercial growers.",
     "serviceCoverageArea": "Bono East Region, Bono Region, Ashanti Region, and Ahafo Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-logistics.svg"
+      "/images/suppliers/supplier-7.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/techiman-machinery",
     "socialLink": "https://example.com/techiman-machinery-social",
@@ -288,8 +288,8 @@
     "companyOverview": "Western Cold Storage offers short-term and scheduled storage options for fresh produce, fish, processed foods, and aggregated farm goods.",
     "serviceCoverageArea": "Western Region and Western North Region",
     "photos": [
-      "/images/category-logistics.svg",
-      "/images/category-packaging.svg"
+      "/images/suppliers/supplier-8.jpg",
+      "/images/crops/logistics.jpg"
     ],
     "website": "https://example.com/western-cold-storage",
     "socialLink": "https://example.com/western-storage-social",
@@ -327,8 +327,8 @@
     "companyOverview": "Upper East Farm Finance supports farmer groups with input credit guidance, savings group structures, and farm loan advisory services.",
     "serviceCoverageArea": "Upper East Region and North East Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-packaging.svg"
+      "/images/suppliers/supplier-9.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/upper-east-farm-finance",
     "socialLink": "https://example.com/ue-farm-finance-social",
@@ -366,8 +366,8 @@
     "companyOverview": "Wa Agric Consulting provides advisory support, farmer training, production planning, and aggregation guidance for agriculture projects and farmer networks.",
     "serviceCoverageArea": "Upper West Region, Savannah Region, and Northern Region",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-fruits.svg"
+      "/images/suppliers/supplier-10.jpg",
+      "/images/crops/inputs.jpg"
     ],
     "website": "https://example.com/wa-agric-consulting",
     "socialLink": "https://example.com/wa-agric-social",

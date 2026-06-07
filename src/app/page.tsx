@@ -17,6 +17,7 @@ import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { RegistrationForm } from "@/components/RegistrationForm";
+import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import platformContent from "@/data/platformContent.json";
@@ -58,10 +59,10 @@ const platformPillars = [
 ];
 
 const ghanaVisuals = [
-  { title: "Farmers and farmer groups", image: "/images/category-vegetables.svg" },
-  { title: "Fresh crops and livestock", image: "/images/category-fruits.svg" },
-  { title: "Market supply chains", image: "/images/category-logistics.svg" },
-  { title: "Packaging and input services", image: "/images/category-packaging.svg" }
+  { title: "Farmers and farmer groups", image: "/images/farmers/farmer-1.jpg" },
+  { title: "Fresh crops and livestock", image: "/images/crops/tomatoes.jpg" },
+  { title: "Market supply chains", image: "/images/crops/logistics.jpg" },
+  { title: "Packaging and input services", image: "/images/crops/packaging.jpg" }
 ];
 
 const trustBadges = ["Verified Farmer", "Verified Buyer", "Verified Supplier", "Premium Member"];
@@ -239,7 +240,7 @@ export default function HomePage() {
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ghanaVisuals.map((visual) => (
               <article key={visual.title} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft">
-                <Image src={visual.image} alt="" width={360} height={220} className="h-36 w-full rounded-md bg-earth-50 object-cover" />
+                <SafeImage src={visual.image} alt={visual.title} width={360} height={220} className="h-36 w-full rounded-md bg-earth-50 object-cover" />
                 <h3 className="mt-4 font-black text-ink">{visual.title}</h3>
               </article>
             ))}
@@ -261,7 +262,7 @@ export default function HomePage() {
                 key={category.slug}
                 className="focus-ring rounded-md border border-leaf-900/10 bg-earth-50 p-4 transition hover:-translate-y-1 hover:shadow-soft"
               >
-                <Image src={category.image} alt="" width={220} height={140} className="h-28 w-full rounded-md object-cover" />
+                <SafeImage src={category.image} alt={`${category.name} category placeholder`} width={220} height={140} className="h-28 w-full rounded-md object-cover" />
                 <h3 className="mt-4 font-black text-ink">{category.name}</h3>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{category.description}</p>
               </Link>

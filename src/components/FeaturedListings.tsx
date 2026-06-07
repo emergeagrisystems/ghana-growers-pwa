@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout } from "lucide-react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
+import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { normalizeTrust, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -55,12 +55,13 @@ export function FeaturedListings({
                       <Sprout size={20} aria-hidden="true" />
                     </div>
                   </div>
-                  <Image
-                    src={farmer.photos[0] ?? "/images/category-vegetables.svg"}
+                  <SafeImage
+                    src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
                     alt={`${farmer.farmName} farm placeholder`}
                     width={420}
                     height={240}
                     className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                    fallbackSrc="/images/farmers/farmer-1.jpg"
                   />
                   <h3 className="mt-4 text-xl font-black text-ink">{farmer.farmName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>

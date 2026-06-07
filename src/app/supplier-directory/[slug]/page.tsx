@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Building2, ExternalLink, MapPin, PackageCheck, Phone, ShieldCheck } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { getSupplierBySlug, supplierDirectory } from "@/data/suppliers";
@@ -125,13 +125,14 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
           <div className="grid gap-6">
             <div className="grid gap-4 sm:grid-cols-2">
               {supplier.photos.map((photo, index) => (
-                <Image
+                <SafeImage
                   key={photo}
                   src={photo}
                   alt={`${supplier.companyName} placeholder ${index + 1}`}
                   width={520}
                   height={320}
                   className="h-56 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover shadow-soft"
+                  fallbackSrc="/images/suppliers/supplier-1.jpg"
                 />
               ))}
             </div>

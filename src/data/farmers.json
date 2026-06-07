@@ -17,8 +17,10 @@
     "harvestSeason": "Major supply from June to October, with smaller dry-season harvests when irrigation is available.",
     "capacityVolume": "Up to 180 tomato crates weekly during peak harvest.",
     "photos": [
-      "/images/category-vegetables.svg",
-      "/images/category-packaging.svg"
+      "/images/farmers/farmer-1.jpg",
+      "/images/crops/",
+      "tomatoes",
+      ".jpg"
     ],
     "verificationStatus": "Verified",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Akumadan Growers Group about tomatoes, pepper, and onion supply.",
@@ -55,8 +57,10 @@
     "harvestSeason": "Pineapple supply is strongest from March to August; mango and pawpaw availability varies by farm block.",
     "capacityVolume": "Truckload aggregation available with advance notice.",
     "photos": [
-      "/images/category-fruits.svg",
-      "/images/category-logistics.svg"
+      "/images/farmers/farmer-2.jpg",
+      "/images/crops/",
+      "pineapple",
+      ".jpg"
     ],
     "verificationStatus": "Premium Member",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Nsawam Fruit Farmers about fruit supply.",
@@ -93,8 +97,10 @@
     "harvestSeason": "Main yam harvest from August to December; cassava and sweet potato supply available across wider windows.",
     "capacityVolume": "Bulk orders from 500 tubers upward during harvest periods.",
     "photos": [
-      "/images/category-tubers.svg",
-      "/images/category-logistics.svg"
+      "/images/farmers/farmer-3.jpg",
+      "/images/crops/",
+      "yam",
+      ".jpg"
     ],
     "verificationStatus": "Pending Verification",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Northern Root Crops Network about yam and tuber supply.",
@@ -131,8 +137,10 @@
     "harvestSeason": "Multiple harvest cycles throughout the year, strongest from January to May.",
     "capacityVolume": "60 to 100 sacks or crates weekly depending on crop cycle.",
     "photos": [
-      "/images/category-vegetables.svg",
-      "/images/category-inputs.svg"
+      "/images/farmers/farmer-4.jpg",
+      "/images/crops/",
+      "inputs",
+      ".jpg"
     ],
     "verificationStatus": "Verified",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Ada Vegetable Cooperative about okra, garden eggs, and pepper.",
@@ -168,8 +176,10 @@
     "harvestSeason": "Rice harvest from September to December; tilapia supply is scheduled by pond cycle.",
     "capacityVolume": "Rice available in 50kg bags; tilapia orders require advance scheduling.",
     "photos": [
-      "/images/category-dairy.svg",
-      "/images/category-logistics.svg"
+      "/images/farmers/farmer-5.jpg",
+      "/images/crops/",
+      "eggs",
+      ".jpg"
     ],
     "verificationStatus": "Pending Verification",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Rice and Fish Farm about rice or tilapia supply.",
@@ -206,8 +216,10 @@
     "harvestSeason": "Main harvest from August to November, with stored supply available after drying.",
     "capacityVolume": "Up to 350 bags across crop types after harvest.",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-packaging.svg"
+      "/images/farmers/farmer-6.jpg",
+      "/images/crops/",
+      "inputs",
+      ".jpg"
     ],
     "verificationStatus": "Premium Member",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Maize and Beans Farm about grain and legume supply.",
@@ -244,8 +256,10 @@
     "harvestSeason": "Eggs available weekly; broiler cycles are scheduled every 6 to 8 weeks.",
     "capacityVolume": "Up to 120 crates of eggs weekly when flock production is stable.",
     "photos": [
-      "/images/category-livestock.svg",
-      "/images/category-packaging.svg"
+      "/images/farmers/farmer-7.jpg",
+      "/images/crops/",
+      "poultry",
+      ".jpg"
     ],
     "verificationStatus": "Verified",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Cape Coast Poultry Unit about eggs or poultry supply.",
@@ -282,8 +296,10 @@
     "harvestSeason": "Onion harvest from February to May; tomatoes and pepper vary by irrigation access.",
     "capacityVolume": "Bulk onion sacks available during harvest peak.",
     "photos": [
-      "/images/category-vegetables.svg",
-      "/images/category-logistics.svg"
+      "/images/farmers/farmer-8.jpg",
+      "/images/crops/",
+      "tomatoes",
+      ".jpg"
     ],
     "verificationStatus": "Pending Verification",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Onion Growers about onion supply.",
@@ -320,8 +336,10 @@
     "harvestSeason": "Plantain available throughout much of the year; cocoa follows main and light crop seasons.",
     "capacityVolume": "Monthly plantain bunch supply with advance aggregation.",
     "photos": [
-      "/images/category-fruits.svg",
-      "/images/category-tubers.svg"
+      "/images/farmers/farmer-9.jpg",
+      "/images/crops/",
+      "pineapple",
+      ".jpg"
     ],
     "verificationStatus": "Verified",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cocoa and Plantain Farm about plantain or cocoyam supply.",
@@ -358,8 +376,10 @@
     "harvestSeason": "Groundnut and millet harvest from September to November; shea nut aggregation follows local collection periods.",
     "capacityVolume": "Aggregated sack volumes available after harvest and drying.",
     "photos": [
-      "/images/category-inputs.svg",
-      "/images/category-packaging.svg"
+      "/images/farmers/farmer-10.jpg",
+      "/images/crops/",
+      "yam",
+      ".jpg"
     ],
     "verificationStatus": "Pending Verification",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Upper West Shea and Groundnut Farmers about groundnut, shea nuts, or millet.",

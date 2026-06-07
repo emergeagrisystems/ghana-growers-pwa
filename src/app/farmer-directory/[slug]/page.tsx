@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { farmerDirectory, getFarmerBySlug } from "@/data/farmers";
@@ -68,7 +68,7 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
 
   const trust = normalizeTrust(farmer.trust);
   const harvestCalendar = buildHarvestCalendar(farmer);
-  const galleryPhotos = farmer.photos.length > 0 ? farmer.photos : ["/images/category-vegetables.svg"];
+  const galleryPhotos = farmer.photos.length > 0 ? farmer.photos : ["/images/farmers/farmer-1.jpg"];
 
   return (
     <>
@@ -137,23 +137,25 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                   </span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-[1.5fr_0.85fr]">
-                  <Image
+                  <SafeImage
                     src={galleryPhotos[0]}
                     alt={`${farmer.farmName} farm view`}
                     width={760}
                     height={520}
                     className="h-72 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover sm:h-96"
+                    fallbackSrc="/images/farmers/farmer-1.jpg"
                     priority
                   />
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
                     {galleryPhotos.slice(1, 3).map((photo, index) => (
-                      <Image
+                      <SafeImage
                         key={photo}
                         src={photo}
                         alt={`${farmer.farmName} farm photo ${index + 2}`}
                         width={360}
                         height={240}
                         className="h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover sm:h-44"
+                        fallbackSrc="/images/farmers/farmer-1.jpg"
                       />
                     ))}
                     {galleryPhotos.length < 3 ? (

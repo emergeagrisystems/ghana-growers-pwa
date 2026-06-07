@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { PackageCheck } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
+import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { productCategories, products } from "@/data/products";
@@ -40,7 +40,7 @@ export default function MarketplacePage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {productCategories.map((category) => (
               <div key={category.slug} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                <Image src={category.image} alt="" width={240} height={150} className="h-28 w-full rounded-md object-cover" />
+                <SafeImage src={category.image} alt={`${category.name} category placeholder`} width={240} height={150} className="h-28 w-full rounded-md object-cover" />
                 <h2 className="mt-4 font-black text-ink">{category.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{category.description}</p>
               </div>
@@ -54,7 +54,7 @@ export default function MarketplacePage() {
           <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
               <article key={product.id} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft">
-                <Image src={product.image} alt="" width={320} height={210} className="h-40 w-full rounded-md object-cover" />
+                <SafeImage src={product.image} alt={`${product.name} marketplace placeholder`} width={320} height={210} className="h-40 w-full rounded-md object-cover" />
                 <div className="mt-4 flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
