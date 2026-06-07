@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Search, SlidersHorizontal, Sprout } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
+import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { featuredListingLabels, isFeaturedFarmer } from "@/data/featuredListings";
@@ -130,14 +131,19 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                         <FeaturedRibbon label={featuredListingLabels.farmers} />
                       </div>
                     ) : null}
+                    <SafeImage
+                      src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
+                      alt={`${farmer.farmName} farm photo`}
+                      width={520}
+                      height={320}
+                      className="mb-5 h-44 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                      fallbackSrc="/images/farmers/farmer-1.jpg"
+                    />
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase text-earth-700">{farmer.region}</p>
                         <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
                         <p className="mt-2 text-sm font-bold text-leaf-700">{farmer.district}</p>
-                      </div>
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
-                        <Sprout size={22} aria-hidden="true" />
                       </div>
                     </div>
                     <div className="mt-4">

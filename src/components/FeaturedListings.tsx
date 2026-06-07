@@ -99,10 +99,14 @@ export function FeaturedListings({
                       <Building2 size={20} aria-hidden="true" />
                     </div>
                   </div>
-                  <div className="mt-4 grid h-24 place-items-center rounded-md border border-leaf-900/10 bg-leaf-50">
-                    <Building2 size={34} className="text-leaf-600" aria-hidden="true" />
-                    <span className="sr-only">{supplier.companyName} logo placeholder</span>
-                  </div>
+                  <SafeImage
+                    src={supplier.photos[0] ?? "/images/suppliers/supplier-1.jpg"}
+                    alt={`${supplier.companyName} supplier photo`}
+                    width={420}
+                    height={240}
+                    className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                    fallbackSrc="/images/suppliers/supplier-1.jpg"
+                  />
                   <h3 className="mt-4 text-xl font-black text-ink">{supplier.companyName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{supplier.supplierCategory}</p>
                   <p className="mt-1 flex items-center gap-1 text-xs font-bold text-ink/55">

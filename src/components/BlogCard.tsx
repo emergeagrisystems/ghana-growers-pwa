@@ -1,10 +1,28 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
+import { SafeImage } from "@/components/SafeImage";
 import type { BlogPost } from "@/types";
+
+const categoryImages: Record<BlogPost["category"], string> = {
+  "Crop Production": "/images/marketplace/farm-activity-1.jpg",
+  Livestock: "/images/crops/poultry.jpg",
+  Agribusiness: "/images/marketplace/ghana-market-1.jpg",
+  "Market Prices": "/images/marketplace/ghana-market-2.jpg",
+  "Success Stories": "/images/farmers/farmer-1.jpg"
+};
 
 export function BlogCard({ post }: { post: BlogPost }) {
   return (
-    <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+    <article className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-soft">
+      <SafeImage
+        src={categoryImages[post.category]}
+        alt={`${post.category} article image`}
+        width={520}
+        height={300}
+        className="h-40 w-full bg-leaf-50 object-cover"
+        fallbackSrc="/images/marketplace/farm-activity-1.jpg"
+      />
+      <div className="p-5">
       <p className="text-xs font-black uppercase text-earth-700">{post.category}</p>
       <h2 className="mt-3 text-xl font-black leading-snug text-ink">{post.title}</h2>
       <p className="mt-3 text-sm leading-6 text-ink/65">{post.excerpt}</p>
@@ -15,6 +33,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
       <Link href="/about/blog" className="mt-5 inline-flex font-black text-leaf-700 hover:text-earth-700">
         Read preview
       </Link>
+      </div>
     </article>
   );
 }

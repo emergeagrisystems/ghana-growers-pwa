@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
+import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { featuredListingLabels, isFeaturedSupplier } from "@/data/featuredListings";
@@ -131,14 +132,19 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                   <FeaturedRibbon label={featuredListingLabels.suppliers} />
                 </div>
               ) : null}
+              <SafeImage
+                src={supplier.photos[0] ?? "/images/suppliers/supplier-1.jpg"}
+                alt={`${supplier.companyName} supplier photo`}
+                width={520}
+                height={320}
+                className="mb-5 h-44 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                fallbackSrc="/images/suppliers/supplier-1.jpg"
+              />
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase text-earth-700">{supplier.supplierCategory}</p>
                   <h3 className="mt-1 text-2xl font-black text-ink">{supplier.companyName}</h3>
                   <p className="mt-2 text-sm font-bold text-leaf-700">{supplier.district}, {supplier.region}</p>
-                </div>
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
-                  <Building2 size={22} aria-hidden="true" />
                 </div>
               </div>
               <div className="mt-4">
