@@ -32,6 +32,7 @@ export const navigation: NavigationItem[] = [
     href: "/marketplace",
     children: [
       { title: "Shop Listings", href: "/marketplace" },
+      { title: "Farmer Directory", href: "/farmer-directory" },
       { title: "Buyer Requests", href: "/buyer-requests" }
     ]
   },

@@ -31,6 +31,9 @@ export default function HomePage() {
               <ButtonLink href="/join/supplier" variant="light">
                 Become a Supplier
               </ButtonLink>
+              <ButtonLink href="/farmer-directory" variant="secondary">
+                Browse Farmer Directory
+              </ButtonLink>
               <ButtonLink href="/whatsapp-communities" variant="secondary">
                 Join WhatsApp Community
               </ButtonLink>
@@ -102,22 +105,23 @@ export default function HomePage() {
             />
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/join/farmer">Register Your Farm</ButtonLink>
+              <ButtonLink href="/farmer-directory" variant="secondary">Browse Farmer Directory</ButtonLink>
               <WhatsAppButton message="Hello Ghana Growers, I want help finding farmers or produce suppliers." />
             </div>
           </div>
           <div className="grid gap-4">
             {farmerDirectory.map((farmer) => (
-              <div key={farmer.name} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+              <div key={farmer.slug} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="font-black text-ink">{farmer.name}</h3>
-                    <p className="mt-1 text-sm text-ink/65">{farmer.region}</p>
+                    <h3 className="font-black text-ink">{farmer.farmName}</h3>
+                    <p className="mt-1 text-sm text-ink/65">{farmer.district}, {farmer.region}</p>
                   </div>
                   <BadgeCheck className="shrink-0 text-leaf-600" size={22} aria-hidden="true" />
                 </div>
-                <p className="mt-3 text-sm font-semibold text-ink/75">{farmer.supplyType}</p>
+                <p className="mt-3 text-sm font-semibold text-ink/75">{farmer.availabilityStatus}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {farmer.crops.map((crop) => (
+                  {farmer.products.map((crop) => (
                     <span key={crop} className="rounded-md bg-white px-3 py-1 text-xs font-bold text-leaf-700">
                       {crop}
                     </span>

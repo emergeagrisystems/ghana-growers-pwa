@@ -4,6 +4,12 @@ import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
+type ServicePageCta = {
+  href: string;
+  label: string;
+  variant?: "primary" | "secondary" | "light";
+};
+
 type ServicePageProps = {
   eyebrow: string;
   title: string;
@@ -13,6 +19,7 @@ type ServicePageProps = {
   whatsappMessage: string;
   ctaHref?: string;
   ctaLabel?: string;
+  extraCtas?: ServicePageCta[];
 };
 
 export function ServicePage({
@@ -23,13 +30,19 @@ export function ServicePage({
   formAudience,
   whatsappMessage,
   ctaHref,
-  ctaLabel
+  ctaLabel,
+  extraCtas = []
 }: ServicePageProps) {
   return (
     <>
       <PageHero eyebrow={eyebrow} title={title} description={description}>
         <div className="flex flex-col gap-3 sm:flex-row">
           {ctaHref && ctaLabel ? <ButtonLink href={ctaHref}>{ctaLabel}</ButtonLink> : null}
+          {extraCtas.map((cta) => (
+            <ButtonLink key={cta.href} href={cta.href} variant={cta.variant}>
+              {cta.label}
+            </ButtonLink>
+          ))}
           <WhatsAppButton message={whatsappMessage} />
         </div>
       </PageHero>

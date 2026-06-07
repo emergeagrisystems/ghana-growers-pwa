@@ -1,21 +1,8 @@
-// Placeholder farmer directory data. Replace with verified farmer records when the platform is ready.
-export const farmerDirectory = [
-  {
-    name: "Akumadan Growers Group",
-    region: "Ashanti Region",
-    crops: ["Tomatoes", "Pepper", "Onion"],
-    supplyType: "Crates and bulk supply"
-  },
-  {
-    name: "Nsawam Fruit Farmers",
-    region: "Eastern Region",
-    crops: ["Pineapple", "Mango", "Pawpaw"],
-    supplyType: "Seasonal and wholesale"
-  },
-  {
-    name: "Northern Root Crops Network",
-    region: "Northern Region",
-    crops: ["Yam", "Cassava", "Sweet Potato"],
-    supplyType: "Bulk tuber supply"
-  }
-];
+import farmersData from "@/data/farmers.json";
+import type { FarmerProfile } from "@/types";
+
+export const farmerDirectory = farmersData as FarmerProfile[];
+
+export function getFarmerBySlug(slug: string) {
+  return farmerDirectory.find((farmer) => farmer.slug === slug);
+}

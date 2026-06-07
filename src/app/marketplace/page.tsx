@@ -20,6 +20,7 @@ export default function MarketplacePage() {
         description="No checkout yet. Every listing uses direct WhatsApp contact so buyers, farmers, and suppliers can confirm price, availability, volume, and location."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <ButtonLink href="/farmer-directory">Browse Farmer Directory</ButtonLink>
           <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>
           <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
           <ButtonLink href="/whatsapp-communities" variant="light">Join WhatsApp Communities</ButtonLink>

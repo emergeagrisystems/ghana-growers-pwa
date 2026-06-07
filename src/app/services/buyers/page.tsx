@@ -15,6 +15,9 @@ export default function BuyersServicePage() {
       whatsappMessage="Hello Ghana Growers, I want to join as a buyer."
       ctaHref="/join/buyer"
       ctaLabel="Join as a Buyer"
+      extraCtas={[
+        { href: "/farmer-directory", label: "Browse Farmer Directory", variant: "secondary" }
+      ]}
       points={[
         "Find trusted farmers and farmer groups by produce category and location.",
         "Buy fresh produce for markets, restaurants, shops, hotels, caterers, and households.",

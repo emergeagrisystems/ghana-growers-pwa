@@ -30,3 +30,21 @@ export type BlogPost = {
   readTime: string;
   date: string;
 };
+
+export type FarmerProfile = {
+  slug: string;
+  farmName: string;
+  contactName: string;
+  region: string;
+  district: string;
+  products: string[];
+  farmType: "Crop" | "Livestock" | "Mixed";
+  farmSize: string;
+  availabilityStatus: string;
+  description: string;
+  harvestSeason: string;
+  capacityVolume: string;
+  photos: string[];
+  verificationStatus: string;
+  whatsappMessage: string;
+};
