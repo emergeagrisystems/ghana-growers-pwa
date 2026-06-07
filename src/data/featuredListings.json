@@ -1,16 +1,25 @@
 {
   "farmerSlugs": [
+    "akumadan-growers-group",
     "nsawam-fruit-farmers",
+    "northern-root-crops-network",
+    "ada-vegetable-cooperative",
     "techiman-maize-and-beans-farm",
     "western-cocoa-and-plantain-farm"
   ],
   "supplierSlugs": [
+    "green-input-supply-accra",
     "marketpack-ghana-kumasi",
     "freshchain-logistics-tema",
-    "techiman-farm-machinery"
+    "savanna-seed-services-tamale",
+    "techiman-farm-machinery",
+    "volta-irrigation-systems-ho"
   ],
   "buyerRequestIds": [
+    "maize-tamale-feed-processor",
     "tomatoes-accra-market-women",
+    "cassava-central-processor",
+    "plantain-kumasi-restaurant",
     "yam-techiman-exporter",
     "eggs-takoradi-hotel"
   ],

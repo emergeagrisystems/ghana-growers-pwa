@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { Building2, ShoppingBasket, Sprout } from "lucide-react";
+import Image from "next/image";
+import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout } from "lucide-react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SectionHeader } from "@/components/SectionHeader";
+import { normalizeTrust, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import {
   featuredBuyerRequests,
@@ -42,7 +44,10 @@ export function FeaturedListings({
         <SectionHeader eyebrow="Featured" title={title} description={description} />
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {showFarmers
-            ? featuredFarmers.map((farmer) => (
+            ? featuredFarmers.map((farmer) => {
+                const trust = normalizeTrust(farmer.trust);
+
+                return (
                 <article key={farmer.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.farmers} />
@@ -50,8 +55,18 @@ export function FeaturedListings({
                       <Sprout size={20} aria-hidden="true" />
                     </div>
                   </div>
+                  <Image
+                    src={farmer.photos[0] ?? "/images/category-vegetables.svg"}
+                    alt={`${farmer.farmName} farm placeholder`}
+                    width={420}
+                    height={240}
+                    className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                  />
                   <h3 className="mt-4 text-xl font-black text-ink">{farmer.farmName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>
+                  <div className="mt-3">
+                    <TrustSummary kind="farmer" trust={trust} />
+                  </div>
                   <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {farmer.products.slice(0, 3).map((product) => (
@@ -67,11 +82,15 @@ export function FeaturedListings({
                     View Farmer
                   </Link>
                 </article>
-              ))
+                );
+              })
             : null}
 
           {showSuppliers
-            ? featuredSuppliers.map((supplier) => (
+            ? featuredSuppliers.map((supplier) => {
+                const trust = normalizeTrust(supplier.trust);
+
+                return (
                 <article key={supplier.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.suppliers} />
@@ -79,8 +98,19 @@ export function FeaturedListings({
                       <Building2 size={20} aria-hidden="true" />
                     </div>
                   </div>
+                  <div className="mt-4 grid h-24 place-items-center rounded-md border border-leaf-900/10 bg-leaf-50">
+                    <Building2 size={34} className="text-leaf-600" aria-hidden="true" />
+                    <span className="sr-only">{supplier.companyName} logo placeholder</span>
+                  </div>
                   <h3 className="mt-4 text-xl font-black text-ink">{supplier.companyName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{supplier.supplierCategory}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs font-bold text-ink/55">
+                    <MapPin size={14} aria-hidden="true" />
+                    {supplier.region}
+                  </p>
+                  <div className="mt-3">
+                    <TrustSummary kind="supplier" trust={trust} />
+                  </div>
                   <p className="mt-3 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {supplier.productsServices.slice(0, 3).map((service) => (
@@ -96,7 +126,8 @@ export function FeaturedListings({
                     View Supplier
                   </Link>
                 </article>
-              ))
+                );
+              })
             : null}
 
           {showBuyerRequests
@@ -110,6 +141,14 @@ export function FeaturedListings({
                   </div>
                   <h3 className="mt-4 text-xl font-black text-ink">{request.productName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{request.quantityNeeded}</p>
+                  <p className="mt-2 flex items-center gap-1 text-xs font-bold text-ink/55">
+                    <MapPin size={14} aria-hidden="true" />
+                    {request.district}, {request.region}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1 text-xs font-bold text-ink/55">
+                    <CalendarDays size={14} aria-hidden="true" />
+                    Posted {request.datePosted}
+                  </p>
                   <p className="mt-3 text-sm leading-6 text-ink/65">
                     {request.buyerType} in {request.district}, {request.region}. Deadline: {request.deadline}.
                   </p>

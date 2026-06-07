@@ -25,7 +25,7 @@ export type Product = {
 export type BlogPost = {
   slug: string;
   title: string;
-  category: "Farming Tips" | "Buyer Guides" | "Supplier Resources";
+  category: "Crop Production" | "Livestock" | "Agribusiness" | "Market Prices" | "Success Stories";
   excerpt: string;
   readTime: string;
   date: string;

@@ -41,6 +41,7 @@ export const navigation: NavigationItem[] = [
   { title: "Smart Solutions", href: "/smart-solutions" },
   { title: "WhatsApp Communities", href: "/whatsapp-communities" },
   { title: "Learn", href: "/learn" },
+  { title: "Verification", href: "/verification-requirements" },
   {
     title: "About",
     href: "/about",

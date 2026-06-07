@@ -1,0 +1,72 @@
+{
+  "statistics": [
+    {
+      "label": "Farmers Registered",
+      "value": 500,
+      "suffix": "+"
+    },
+    {
+      "label": "Buyers Connected",
+      "value": 150,
+      "suffix": "+"
+    },
+    {
+      "label": "Suppliers Listed",
+      "value": 75,
+      "suffix": "+"
+    },
+    {
+      "label": "Regions Represented",
+      "value": 10,
+      "suffix": ""
+    }
+  ],
+  "howGhanaGrowersWorks": [
+    {
+      "step": "Step 1",
+      "title": "Farmers join the network",
+      "description": "Farmers and farmer groups register their farms, locations, products, seasons, and preferred contact channels."
+    },
+    {
+      "step": "Step 2",
+      "title": "Buyers post requests or search directories",
+      "description": "Market women, restaurants, processors, hotels, and aggregators can search farmers or post active demand."
+    },
+    {
+      "step": "Step 3",
+      "title": "Suppliers connect with farmers and buyers",
+      "description": "Input dealers, packaging firms, logistics providers, and consultants list services that support agricultural trade."
+    },
+    {
+      "step": "Step 4",
+      "title": "Ghana Growers helps create trusted connections",
+      "description": "Verification signals, WhatsApp follow-up, and practical market information help reduce uncertainty before trade."
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Kojo Appiah",
+      "role": "Maize farmer",
+      "location": "Techiman, Bono East Region",
+      "quote": "Ghana Growers makes it easier for buyers to understand what we have available before they come to the farm. It saves time and helps us plan harvest better."
+    },
+    {
+      "name": "Esi Nortey",
+      "role": "Tomato farmer",
+      "location": "Ada East, Greater Accra Region",
+      "quote": "The platform gives vegetable farmers like us a more professional way to show our supply, location, and harvest season to serious buyers."
+    },
+    {
+      "name": "Akosua Mensah",
+      "role": "Market woman",
+      "location": "Makola Market, Accra",
+      "quote": "When I need tomatoes, onions, or plantain, I want to know who can supply and when. Ghana Growers brings that information closer."
+    },
+    {
+      "name": "Mabel Ofori",
+      "role": "Agricultural supplier",
+      "location": "Accra, Greater Accra Region",
+      "quote": "Suppliers need trusted access to farmers and aggregators. Ghana Growers gives us a channel to explain our products and support farmers better."
+    }
+  ]
+}
