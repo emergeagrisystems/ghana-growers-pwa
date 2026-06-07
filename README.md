@@ -174,6 +174,46 @@ Admin-editable data file: `src/data/buyerRequests.json`
 
 Each request includes product name, quantity needed, region, district, deadline, buyer type, contact method, and date posted. Farmers use WhatsApp buttons to contact Ghana Growers about requests they can supply.
 
+## Verification and Trust System
+
+Reusable badge and trust-score components live in:
+
+```text
+src/components/TrustIndicators.tsx
+```
+
+Admin-editable verification fields are stored in the local JSON records for farmers, suppliers, and buyer requests:
+
+```text
+src/data/farmers.json
+src/data/suppliers.json
+src/data/buyerRequests.json
+```
+
+Each profile/request can include:
+
+```json
+{
+  "verificationStatus": "Verified",
+  "trust": {
+    "status": "Verified",
+    "requirements": {
+      "phoneVerified": true,
+      "whatsappVerified": true,
+      "identitySubmitted": true,
+      "businessRegistration": false
+    },
+    "score": {
+      "profileCompleteness": 86,
+      "verificationLevel": 78,
+      "activityLevel": 72
+    }
+  }
+}
+```
+
+Supported profile statuses are `Pending Verification`, `Verified`, and `Premium Member`. Verified profiles display a `Verified Farmer`, `Verified Buyer`, or `Verified Supplier` badge depending on profile type.
+
 ## What Is Included
 
 - Responsive navigation with dropdown menus and mobile menu

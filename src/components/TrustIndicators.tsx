@@ -49,7 +49,7 @@ export function VerificationBadge({ kind, status }: TrustBadgeProps) {
   );
 }
 
-export function TrustStatusPill({ status }: { status: TrustStatus }) {
+export function ProfileStatusBadge({ status }: { status: TrustStatus }) {
   const Icon = status === "Premium Member" ? Crown : status === "Verified" ? ShieldCheck : CircleDashed;
   const className = status === "Premium Member"
     ? "bg-earth-500 text-ink"
@@ -123,8 +123,8 @@ export function TrustScoreCard({ score }: { score: TrustScore }) {
       </div>
       <div className="mt-4 grid gap-3">
         <ScoreRow label="Profile completeness" value={score.profileCompleteness} />
-        <ScoreRow label="Verification level" value={score.verificationLevel} />
-        <ScoreRow label="Activity level" value={score.activityLevel} />
+        <ScoreRow label="Verification status" value={score.verificationLevel} />
+        <ScoreRow label="Activity" value={score.activityLevel} />
       </div>
     </div>
   );
@@ -133,7 +133,7 @@ export function TrustScoreCard({ score }: { score: TrustScore }) {
 export function TrustSummary({ kind, trust }: { kind: ProfileKind; trust: TrustProfile }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <TrustStatusPill status={trust.status} />
+      <ProfileStatusBadge status={trust.status} />
       <VerificationBadge kind={kind} status={trust.status} />
     </div>
   );
