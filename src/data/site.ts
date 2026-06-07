@@ -25,6 +25,7 @@ export const navigation: NavigationItem[] = [
     ]
   },
   { title: "Marketplace / Shop", href: "/marketplace" },
+  { title: "Smart Solutions", href: "/smart-solutions" },
   { title: "Learn", href: "/learn" },
   {
     title: "About",
