@@ -13,6 +13,8 @@ export default function SuppliersServicePage() {
       description="Ghana Growers gives suppliers a practical channel to promote inputs, tools, equipment, packaging, transport, cold storage, and related services."
       formAudience="supplier"
       whatsappMessage="Hello Ghana Growers, I want to become a supplier."
+      ctaHref="/join/supplier"
+      ctaLabel="Become a Supplier"
       points={[
         "List agricultural products and services in a supplier-friendly marketplace.",
         "Reach farmers who need inputs, tools, equipment, and advisory support.",

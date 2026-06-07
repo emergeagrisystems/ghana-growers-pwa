@@ -13,3 +13,11 @@ export const buyerRegistrationNotifications = {
   subjectPrefix: "New buyer registration",
   googleSheetName: "Buyer Registrations"
 };
+
+export const supplierRegistrationNotifications = {
+  // Admin-editable notification recipients. Add or remove addresses here.
+  adminEmails: ["hello@ghanagrowers.com"],
+  fromEmail: "Ghana Growers <onboarding@ghanagrowers.com>",
+  subjectPrefix: "New supplier registration",
+  googleSheetName: "Supplier Registrations"
+};

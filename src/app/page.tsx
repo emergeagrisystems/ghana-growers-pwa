@@ -28,7 +28,7 @@ export default function HomePage() {
               <ButtonLink href="/join/buyer" variant="secondary">
                 Join as Buyer
               </ButtonLink>
-              <ButtonLink href="/services/suppliers" variant="light">
+              <ButtonLink href="/join/supplier" variant="light">
                 Become a Supplier
               </ButtonLink>
             </div>

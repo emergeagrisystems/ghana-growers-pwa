@@ -46,19 +46,37 @@ export function ServicePage({
               ))}
             </div>
           </div>
-          {formAudience === "farmer" || formAudience === "buyer" ? (
+          {formAudience === "farmer" || formAudience === "buyer" || formAudience === "supplier" ? (
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-6 shadow-soft">
               <h3 className="text-2xl font-black text-ink">
-                {formAudience === "farmer" ? "Ready to register your farm?" : "Ready to register as a buyer?"}
+                {formAudience === "farmer"
+                  ? "Ready to register your farm?"
+                  : formAudience === "buyer"
+                    ? "Ready to register as a buyer?"
+                    : "Ready to become a supplier?"}
               </h3>
               <p className="mt-3 text-sm leading-6 text-ink/70">
                 {formAudience === "farmer"
                   ? "Use the complete farmer registration form to share your farm details, products, harvest period, and contact information."
-                  : "Use the complete buyer registration form to share what you buy, how much you need, and how often you purchase."}
+                  : formAudience === "buyer"
+                    ? "Use the complete buyer registration form to share what you buy, how much you need, and how often you purchase."
+                    : "Use the complete supplier registration form to list your products, services, coverage area, and company details."}
               </p>
               <div className="mt-5">
-                <ButtonLink href={formAudience === "farmer" ? "/join/farmer" : "/join/buyer"}>
-                  {formAudience === "farmer" ? "Join as a Farmer" : "Join as a Buyer"}
+                <ButtonLink
+                  href={
+                    formAudience === "farmer"
+                      ? "/join/farmer"
+                      : formAudience === "buyer"
+                        ? "/join/buyer"
+                        : "/join/supplier"
+                  }
+                >
+                  {formAudience === "farmer"
+                    ? "Join as a Farmer"
+                    : formAudience === "buyer"
+                      ? "Join as a Buyer"
+                      : "Become a Supplier"}
                 </ButtonLink>
               </div>
             </div>

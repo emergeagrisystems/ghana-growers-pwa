@@ -41,6 +41,12 @@ export function Footer() {
           >
             Join as a Buyer
           </Link>
+          <Link
+            href="/join/supplier"
+            className="focus-ring mt-3 inline-flex rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink hover:bg-white sm:ml-3"
+          >
+            Become a Supplier
+          </Link>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-3">

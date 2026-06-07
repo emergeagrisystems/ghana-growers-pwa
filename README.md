@@ -33,6 +33,7 @@ public/images/           Placeholder visual assets
 - Smart Solutions locations: edit `src/data/weatherLocations.ts`.
 - Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Buyer registration notification recipients: edit `src/data/notificationConfig.ts`.
+- Supplier registration notification recipients: edit `src/data/notificationConfig.ts`.
 
 ## Smart Solutions Integrations
 
@@ -78,6 +79,25 @@ BUYER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 ```
 
 Buyer registration supports market women, restaurants, hotels, caterers, retail shops, exporters, and food processors.
+
+## Supplier Registration Integrations
+
+The complete supplier registration form lives at `/join/supplier`.
+
+Server route: `src/app/api/supplier-registration/route.ts`
+
+Set these environment variables in production:
+
+```bash
+GOOGLE_SERVICE_ACCOUNT_EMAIL=
+GOOGLE_PRIVATE_KEY=
+GOOGLE_SHEETS_SPREADSHEET_ID=
+GOOGLE_SHEETS_SUPPLIER_SHEET_NAME="Supplier Registrations"
+RESEND_API_KEY=
+SUPPLIER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
+```
+
+Supplier registration supports seeds, fertilizers, agrochemicals, farm equipment, irrigation systems, packaging, logistics, storage, financial services, and agricultural consulting.
 
 ## What Is Included
 
