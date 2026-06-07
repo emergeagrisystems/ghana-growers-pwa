@@ -4,12 +4,31 @@ import { AlertTriangle, Bot, Send, UserRound } from "lucide-react";
 import { useState } from "react";
 import { assistantSuggestions } from "@/data/smartTools";
 
+const messageLimit = 800;
+
 type Message = {
   role: "assistant" | "farmer";
   text: string;
 };
 
 const disclaimer = "This assistant provides general agricultural guidance only. Confirm important decisions with a qualified agricultural extension officer.";
+
+function getAssistantSessionId() {
+  if (typeof window === "undefined") {
+    return "server-rendered";
+  }
+
+  const storageKey = "ghana-growers-assistant-session";
+  const existing = window.localStorage.getItem(storageKey);
+
+  if (existing) {
+    return existing;
+  }
+
+  const nextId = crypto.randomUUID();
+  window.localStorage.setItem(storageKey, nextId);
+  return nextId;
+}
 
 export function FarmerAssistant() {
   const [question, setQuestion] = useState("");
@@ -29,6 +48,11 @@ export function FarmerAssistant() {
       return;
     }
 
+    if (trimmed.length > messageLimit) {
+      setErrorMessage(`Please keep your question under ${messageLimit} characters so the assistant can respond clearly.`);
+      return;
+    }
+
     const conversation = messages;
     setMessages((current) => [...current, { role: "farmer", text: trimmed }]);
     setQuestion("");
@@ -39,7 +63,7 @@ export function FarmerAssistant() {
       const response = await fetch("/api/farmer-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, messages: conversation })
+        body: JSON.stringify({ question: trimmed, messages: conversation, sessionId: getAssistantSessionId() })
       });
       const data = (await response.json().catch(() => ({}))) as { answer?: string; error?: string };
       const answer = data.answer;
@@ -131,7 +155,7 @@ export function FarmerAssistant() {
           className="focus-ring min-h-12 flex-1 rounded-md border border-leaf-900/15 px-3 py-3"
           placeholder="Ask a farming question..."
           value={question}
-          maxLength={1200}
+          maxLength={messageLimit}
           onChange={(event) => setQuestion(event.target.value)}
         />
         <button

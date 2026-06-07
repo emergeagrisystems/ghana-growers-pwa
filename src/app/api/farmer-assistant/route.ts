@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  checkAssistantUsageLimit,
+  getAssistantClientId,
+  validateAssistantQuestion
+} from "@/lib/assistantUsageProtection";
 import { createFarmerAssistantReply, type FarmerAssistantMessage } from "@/lib/farmerAssistant";
 
 export const runtime = "nodejs";
@@ -8,15 +13,32 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     question?: string;
     messages?: FarmerAssistantMessage[];
+    sessionId?: string;
   };
   const question = body.question?.trim();
+  const validationError = validateAssistantQuestion(question ?? "");
 
-  if (!question) {
-    return NextResponse.json({ error: "Question is required." }, { status: 400 });
+  if (validationError || !question) {
+    return NextResponse.json({ error: validationError || "Please enter a farming question first." }, { status: 400 });
   }
 
-  if (question.length > 1200) {
-    return NextResponse.json({ error: "Question is too long. Please keep it under 1,200 characters." }, { status: 400 });
+  const usageResult = checkAssistantUsageLimit(getAssistantClientId(request, body.sessionId));
+
+  if (!usageResult.ok) {
+    return NextResponse.json(
+      {
+        error: usageResult.error,
+        retryAfterSeconds: usageResult.retryAfterSeconds,
+        provider: "openai",
+        integrationReady: true
+      },
+      {
+        status: usageResult.status,
+        headers: {
+          "Retry-After": String(usageResult.retryAfterSeconds)
+        }
+      }
+    );
   }
 
   const messages = Array.isArray(body.messages)
@@ -35,7 +57,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       answer,
       provider: "openai",
-      integrationReady: true
+      integrationReady: true,
+      remainingToday: usageResult.remainingToday
     });
   } catch (error) {
     const isMissingKey = error instanceof Error && error.message.includes("OPENAI_API_KEY");

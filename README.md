@@ -100,6 +100,15 @@ http://localhost:3000/smart-solutions
 
 The frontend must never contain or expose the OpenAI API key. Browser code should only call the internal `/api/farmer-assistant` route.
 
+The assistant includes basic usage protection in `src/lib/assistantUsageProtection.ts`:
+
+- 800-character message limit.
+- 6 requests per minute per IP/session.
+- 30 requests per day per IP/session.
+- Friendly limit messages returned from `/api/farmer-assistant`.
+
+This is intentionally lightweight and in-memory for the MVP. For stronger production control across Vercel serverless instances, move rate-limit counters to a shared store such as Vercel KV, Redis, or a database.
+
 ## Farmer Registration Integrations
 
 The complete farmer registration form lives at `/join/farmer`.

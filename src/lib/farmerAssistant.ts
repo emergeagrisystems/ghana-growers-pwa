@@ -76,7 +76,7 @@ export async function createFarmerAssistantReply(question: string, messages: Far
       model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
       instructions: farmerAssistantInstructions,
       input: toOpenAIInput(messages, question),
-      max_output_tokens: 700
+      max_output_tokens: 550
     }),
     signal: AbortSignal.timeout(30000)
   });
