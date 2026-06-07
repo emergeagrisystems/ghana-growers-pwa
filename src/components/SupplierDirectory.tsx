@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Building2, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
+import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import type { SupplierProfile } from "@/types";
 
@@ -113,6 +114,11 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredSuppliers.map((supplier) => (
             <article key={supplier.slug} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+              {(() => {
+                const trust = normalizeTrust(supplier.trust);
+
+                return (
+                  <>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase text-earth-700">{supplier.supplierCategory}</p>
@@ -122,6 +128,9 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
                   <Building2 size={22} aria-hidden="true" />
                 </div>
+              </div>
+              <div className="mt-4">
+                <TrustSummary kind="supplier" trust={trust} />
               </div>
 
               <p className="mt-4 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
@@ -143,6 +152,10 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 </div>
               </dl>
 
+              <div className="mt-5">
+                <TrustScoreCard score={trust.score} />
+              </div>
+
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <WhatsAppButton message={supplier.whatsappMessage} className="w-full" />
                 <Link
@@ -152,6 +165,9 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                   View Profile
                 </Link>
               </div>
+                  </>
+                );
+              })()}
             </article>
           ))}
         </div>

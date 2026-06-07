@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, CalendarDays, MapPin, PackageCheck, ShieldCheck, Sprout } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { farmerDirectory, getFarmerBySlug } from "@/data/farmers";
 
@@ -39,6 +40,8 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
     notFound();
   }
 
+  const trust = normalizeTrust(farmer.trust);
+
   return (
     <>
       <PageHero
@@ -69,13 +72,16 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                 <ShieldCheck size={17} aria-hidden="true" />
                 Verification status
               </p>
-              <p className="mt-3 inline-flex rounded-md bg-earth-50 px-3 py-2 text-sm font-black text-ink">
-                {farmer.verificationStatus}
-              </p>
+              <div className="mt-3">
+                <TrustSummary kind="farmer" trust={trust} />
+              </div>
               <p className="mt-3 text-sm leading-6 text-ink/65">
                 This placeholder can later show field verification, document checks, buyer feedback, or Ghana Growers approval status.
               </p>
             </div>
+
+            <VerificationRequirementsList requirements={trust.requirements} />
+            <TrustScoreCard score={trust.score} />
 
             <div className="rounded-md border border-leaf-900/10 bg-leaf-600 p-5 text-white">
               <p className="flex items-center gap-2 text-sm font-black uppercase text-earth-500">

@@ -3,6 +3,7 @@
 import { CalendarDays, MapPin, ShoppingBasket } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buyerRequests, buyerRequestsMeta } from "@/data/buyerRequests";
+import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 function unique(values: string[]) {
@@ -73,6 +74,11 @@ export function BuyerRequestsBoard() {
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredRequests.map((request) => (
             <article key={request.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+              {(() => {
+                const trust = normalizeTrust(request.trust);
+
+                return (
+                  <>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase text-earth-700">{request.buyerType}</p>
@@ -82,6 +88,9 @@ export function BuyerRequestsBoard() {
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
                   <ShoppingBasket size={22} aria-hidden="true" />
                 </div>
+              </div>
+              <div className="mt-4">
+                <TrustSummary kind="buyer" trust={trust} />
               </div>
 
               <dl className="mt-5 grid gap-3 text-sm text-ink/70">
@@ -109,10 +118,17 @@ export function BuyerRequestsBoard() {
                 </div>
               </dl>
 
+              <div className="mt-5">
+                <TrustScoreCard score={trust.score} />
+              </div>
+
               <WhatsAppButton
                 message={`Hello Ghana Growers, I am a farmer interested in the buyer request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`}
                 className="mt-5 w-full"
               />
+                  </>
+                );
+              })()}
             </article>
           ))}
         </div>

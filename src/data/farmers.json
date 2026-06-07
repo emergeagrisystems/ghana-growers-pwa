@@ -5,16 +5,37 @@
     "contactName": "Yaw Mensah",
     "region": "Ashanti Region",
     "district": "Offinso North",
-    "products": ["Tomatoes", "Pepper", "Onion"],
+    "products": [
+      "Tomatoes",
+      "Pepper",
+      "Onion"
+    ],
     "farmType": "Crop",
     "farmSize": "42 acres combined",
     "availabilityStatus": "Weekly supply available",
     "description": "A coordinated vegetable farmer group supplying tomatoes, pepper, and onions from farms around Akumadan. The group aggregates produce for buyers who need predictable crate and bulk volumes.",
     "harvestSeason": "Major supply from June to October, with smaller dry-season harvests when irrigation is available.",
     "capacityVolume": "Up to 180 tomato crates weekly during peak harvest.",
-    "photos": ["/images/category-vegetables.svg", "/images/category-packaging.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Akumadan Growers Group about tomatoes, pepper, and onion supply."
+    "photos": [
+      "/images/category-vegetables.svg",
+      "/images/category-packaging.svg"
+    ],
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Akumadan Growers Group about tomatoes, pepper, and onion supply.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 86,
+        "verificationLevel": 78,
+        "activityLevel": 72
+      }
+    }
   },
   {
     "slug": "nsawam-fruit-farmers",
@@ -22,16 +43,37 @@
     "contactName": "Ama Boateng",
     "region": "Eastern Region",
     "district": "Nsawam Adoagyiri",
-    "products": ["Pineapple", "Mango", "Pawpaw"],
+    "products": [
+      "Pineapple",
+      "Mango",
+      "Pawpaw"
+    ],
     "farmType": "Crop",
     "farmSize": "30 acres combined",
     "availabilityStatus": "Seasonal bulk orders",
     "description": "Fruit growers near Nsawam supplying pineapple, mango, and pawpaw to retailers, juice processors, hotels, and market distributors.",
     "harvestSeason": "Pineapple supply is strongest from March to August; mango and pawpaw availability varies by farm block.",
     "capacityVolume": "Truckload aggregation available with advance notice.",
-    "photos": ["/images/category-fruits.svg", "/images/category-logistics.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Nsawam Fruit Farmers about fruit supply."
+    "photos": [
+      "/images/category-fruits.svg",
+      "/images/category-logistics.svg"
+    ],
+    "verificationStatus": "Premium Member",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Nsawam Fruit Farmers about fruit supply.",
+    "trust": {
+      "status": "Premium Member",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": true
+      },
+      "score": {
+        "profileCompleteness": 96,
+        "verificationLevel": 92,
+        "activityLevel": 88
+      }
+    }
   },
   {
     "slug": "northern-root-crops-network",
@@ -39,16 +81,37 @@
     "contactName": "Abdul Rahman",
     "region": "Northern Region",
     "district": "Tamale Metropolitan",
-    "products": ["Yam", "Cassava", "Sweet Potato"],
+    "products": [
+      "Yam",
+      "Cassava",
+      "Sweet Potato"
+    ],
     "farmType": "Crop",
     "farmSize": "65 acres combined",
     "availabilityStatus": "Seasonal bulk supply",
     "description": "A northern Ghana root crop network supporting buyers looking for yam, cassava, and sweet potato in bulk quantities.",
     "harvestSeason": "Main yam harvest from August to December; cassava and sweet potato supply available across wider windows.",
     "capacityVolume": "Bulk orders from 500 tubers upward during harvest periods.",
-    "photos": ["/images/category-tubers.svg", "/images/category-logistics.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Northern Root Crops Network about yam and tuber supply."
+    "photos": [
+      "/images/category-tubers.svg",
+      "/images/category-logistics.svg"
+    ],
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Northern Root Crops Network about yam and tuber supply.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 68,
+        "verificationLevel": 42,
+        "activityLevel": 55
+      }
+    }
   },
   {
     "slug": "ada-vegetable-cooperative",
@@ -56,16 +119,37 @@
     "contactName": "Esi Nortey",
     "region": "Greater Accra Region",
     "district": "Ada East",
-    "products": ["Okra", "Garden Eggs", "Pepper"],
+    "products": [
+      "Okra",
+      "Garden Eggs",
+      "Pepper"
+    ],
     "farmType": "Crop",
     "farmSize": "24 acres combined",
     "availabilityStatus": "Available most weeks",
     "description": "Irrigated vegetable farmers serving Accra, Tema, and nearby markets with okra, garden eggs, and pepper.",
     "harvestSeason": "Multiple harvest cycles throughout the year, strongest from January to May.",
     "capacityVolume": "60 to 100 sacks or crates weekly depending on crop cycle.",
-    "photos": ["/images/category-vegetables.svg", "/images/category-inputs.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Ada Vegetable Cooperative about okra, garden eggs, and pepper."
+    "photos": [
+      "/images/category-vegetables.svg",
+      "/images/category-inputs.svg"
+    ],
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Ada Vegetable Cooperative about okra, garden eggs, and pepper.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 82,
+        "verificationLevel": 76,
+        "activityLevel": 69
+      }
+    }
   },
   {
     "slug": "volta-rice-and-fish-farm",
@@ -73,16 +157,36 @@
     "contactName": "Kofi Agbeko",
     "region": "Volta Region",
     "district": "North Tongu",
-    "products": ["Rice", "Tilapia"],
+    "products": [
+      "Rice",
+      "Tilapia"
+    ],
     "farmType": "Mixed",
     "farmSize": "18 acres plus fish ponds",
     "availabilityStatus": "Rice seasonal, fish by order",
     "description": "A mixed farm combining rice cultivation with tilapia ponds for buyers seeking grain and fresh fish supply from the Volta corridor.",
     "harvestSeason": "Rice harvest from September to December; tilapia supply is scheduled by pond cycle.",
     "capacityVolume": "Rice available in 50kg bags; tilapia orders require advance scheduling.",
-    "photos": ["/images/category-dairy.svg", "/images/category-logistics.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Rice and Fish Farm about rice or tilapia supply."
+    "photos": [
+      "/images/category-dairy.svg",
+      "/images/category-logistics.svg"
+    ],
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Rice and Fish Farm about rice or tilapia supply.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 63,
+        "verificationLevel": 38,
+        "activityLevel": 44
+      }
+    }
   },
   {
     "slug": "techiman-maize-and-beans-farm",
@@ -90,16 +194,37 @@
     "contactName": "Adwoa Frimpong",
     "region": "Bono East Region",
     "district": "Techiman Municipal",
-    "products": ["Maize", "Cowpea", "Soybean"],
+    "products": [
+      "Maize",
+      "Cowpea",
+      "Soybean"
+    ],
     "farmType": "Crop",
     "farmSize": "55 acres",
     "availabilityStatus": "Post-harvest stock available",
     "description": "A grain and legumes farm supplying maize, cowpea, and soybean for aggregators, feed producers, processors, and institutional buyers.",
     "harvestSeason": "Main harvest from August to November, with stored supply available after drying.",
     "capacityVolume": "Up to 350 bags across crop types after harvest.",
-    "photos": ["/images/category-inputs.svg", "/images/category-packaging.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Maize and Beans Farm about grain and legume supply."
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-packaging.svg"
+    ],
+    "verificationStatus": "Premium Member",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Maize and Beans Farm about grain and legume supply.",
+    "trust": {
+      "status": "Premium Member",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": true
+      },
+      "score": {
+        "profileCompleteness": 94,
+        "verificationLevel": 90,
+        "activityLevel": 83
+      }
+    }
   },
   {
     "slug": "cape-coast-poultry-unit",
@@ -107,16 +232,37 @@
     "contactName": "Kwame Arhin",
     "region": "Central Region",
     "district": "Cape Coast Metropolitan",
-    "products": ["Eggs", "Broilers", "Spent Layers"],
+    "products": [
+      "Eggs",
+      "Broilers",
+      "Spent Layers"
+    ],
     "farmType": "Livestock",
     "farmSize": "2,400 birds",
     "availabilityStatus": "Eggs available weekly",
     "description": "A poultry unit serving Cape Coast, Elmina, and nearby towns with eggs, broilers, and spent layers for restaurants, shops, and household buyers.",
     "harvestSeason": "Eggs available weekly; broiler cycles are scheduled every 6 to 8 weeks.",
     "capacityVolume": "Up to 120 crates of eggs weekly when flock production is stable.",
-    "photos": ["/images/category-livestock.svg", "/images/category-packaging.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Cape Coast Poultry Unit about eggs or poultry supply."
+    "photos": [
+      "/images/category-livestock.svg",
+      "/images/category-packaging.svg"
+    ],
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Cape Coast Poultry Unit about eggs or poultry supply.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 80,
+        "verificationLevel": 74,
+        "activityLevel": 70
+      }
+    }
   },
   {
     "slug": "upper-east-onion-growers",
@@ -124,16 +270,37 @@
     "contactName": "Salifu Ayariga",
     "region": "Upper East Region",
     "district": "Bawku West",
-    "products": ["Onion", "Tomatoes", "Pepper"],
+    "products": [
+      "Onion",
+      "Tomatoes",
+      "Pepper"
+    ],
     "farmType": "Crop",
     "farmSize": "38 acres combined",
     "availabilityStatus": "Seasonal onion supply",
     "description": "Dry-season vegetable growers known for onion supply, with additional tomato and pepper harvests depending on water availability.",
     "harvestSeason": "Onion harvest from February to May; tomatoes and pepper vary by irrigation access.",
     "capacityVolume": "Bulk onion sacks available during harvest peak.",
-    "photos": ["/images/category-vegetables.svg", "/images/category-logistics.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Onion Growers about onion supply."
+    "photos": [
+      "/images/category-vegetables.svg",
+      "/images/category-logistics.svg"
+    ],
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Onion Growers about onion supply.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 61,
+        "verificationLevel": 35,
+        "activityLevel": 49
+      }
+    }
   },
   {
     "slug": "western-cocoa-and-plantain-farm",
@@ -141,16 +308,37 @@
     "contactName": "Nana Yeboah",
     "region": "Western Region",
     "district": "Wassa Amenfi East",
-    "products": ["Plantain", "Cocoa", "Cocoyam"],
+    "products": [
+      "Plantain",
+      "Cocoa",
+      "Cocoyam"
+    ],
     "farmType": "Mixed",
     "farmSize": "27 acres",
     "availabilityStatus": "Plantain available monthly",
     "description": "A mixed tree-crop farm producing plantain, cocoa, and cocoyam for buyers interested in Western Region supply.",
     "harvestSeason": "Plantain available throughout much of the year; cocoa follows main and light crop seasons.",
     "capacityVolume": "Monthly plantain bunch supply with advance aggregation.",
-    "photos": ["/images/category-fruits.svg", "/images/category-tubers.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cocoa and Plantain Farm about plantain or cocoyam supply."
+    "photos": [
+      "/images/category-fruits.svg",
+      "/images/category-tubers.svg"
+    ],
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cocoa and Plantain Farm about plantain or cocoyam supply.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 84,
+        "verificationLevel": 79,
+        "activityLevel": 67
+      }
+    }
   },
   {
     "slug": "upper-west-shea-and-groundnut-farmers",
@@ -158,15 +346,36 @@
     "contactName": "Fati Issah",
     "region": "Upper West Region",
     "district": "Wa Municipal",
-    "products": ["Groundnut", "Shea Nuts", "Millet"],
+    "products": [
+      "Groundnut",
+      "Shea Nuts",
+      "Millet"
+    ],
     "farmType": "Crop",
     "farmSize": "46 acres combined",
     "availabilityStatus": "Seasonal aggregation available",
     "description": "A farmer group aggregating groundnut, shea nuts, and millet for processors, traders, and food businesses sourcing from Upper West Region.",
     "harvestSeason": "Groundnut and millet harvest from September to November; shea nut aggregation follows local collection periods.",
     "capacityVolume": "Aggregated sack volumes available after harvest and drying.",
-    "photos": ["/images/category-inputs.svg", "/images/category-packaging.svg"],
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper West Shea and Groundnut Farmers about groundnut, shea nuts, or millet."
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-packaging.svg"
+    ],
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper West Shea and Groundnut Farmers about groundnut, shea nuts, or millet.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 66,
+        "verificationLevel": 40,
+        "activityLevel": 52
+      }
+    }
   }
 ]

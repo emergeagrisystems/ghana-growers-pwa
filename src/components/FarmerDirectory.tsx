@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, Sprout } from "lucide-react";
 import { useMemo, useState } from "react";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -112,53 +113,68 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredFarmers.map((farmer) => (
             <article key={farmer.slug} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase text-earth-700">{farmer.region}</p>
-                  <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
-                  <p className="mt-2 text-sm font-bold text-leaf-700">{farmer.district}</p>
-                </div>
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
-                  <Sprout size={22} aria-hidden="true" />
-                </div>
-              </div>
+              {(() => {
+                const trust = normalizeTrust(farmer.trust);
 
-              <dl className="mt-5 grid gap-3 text-sm text-ink/70">
-                <div>
-                  <dt className="font-black text-ink">Products</dt>
-                  <dd className="mt-2 flex flex-wrap gap-2">
-                    {farmer.products.map((item) => (
-                      <span key={item} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
-                        {item}
-                      </span>
-                    ))}
-                  </dd>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <dt className="font-black text-ink">Farm Type</dt>
-                    <dd>{farmer.farmType}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-black text-ink">Farm Size</dt>
-                    <dd>{farmer.farmSize}</dd>
-                  </div>
-                </div>
-                <div>
-                  <dt className="font-black text-ink">Availability</dt>
-                  <dd>{farmer.availabilityStatus}</dd>
-                </div>
-              </dl>
+                return (
+                  <>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-black uppercase text-earth-700">{farmer.region}</p>
+                        <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
+                        <p className="mt-2 text-sm font-bold text-leaf-700">{farmer.district}</p>
+                      </div>
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                        <Sprout size={22} aria-hidden="true" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <TrustSummary kind="farmer" trust={trust} />
+                    </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <WhatsAppButton message={farmer.whatsappMessage} className="w-full" />
-                <Link
-                  href={`/farmer-directory/${farmer.slug}`}
-                  className="focus-ring inline-flex items-center justify-center rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink shadow-soft transition hover:bg-earth-700 hover:text-white"
-                >
-                  View Profile
-                </Link>
-              </div>
+                    <dl className="mt-5 grid gap-3 text-sm text-ink/70">
+                      <div>
+                        <dt className="font-black text-ink">Products</dt>
+                        <dd className="mt-2 flex flex-wrap gap-2">
+                          {farmer.products.map((item) => (
+                            <span key={item} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
+                              {item}
+                            </span>
+                          ))}
+                        </dd>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <dt className="font-black text-ink">Farm Type</dt>
+                          <dd>{farmer.farmType}</dd>
+                        </div>
+                        <div>
+                          <dt className="font-black text-ink">Farm Size</dt>
+                          <dd>{farmer.farmSize}</dd>
+                        </div>
+                      </div>
+                      <div>
+                        <dt className="font-black text-ink">Availability</dt>
+                        <dd>{farmer.availabilityStatus}</dd>
+                      </div>
+                    </dl>
+
+                    <div className="mt-5">
+                      <TrustScoreCard score={trust.score} />
+                    </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <WhatsAppButton message={farmer.whatsappMessage} className="w-full" />
+                      <Link
+                        href={`/farmer-directory/${farmer.slug}`}
+                        className="focus-ring inline-flex items-center justify-center rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink shadow-soft transition hover:bg-earth-700 hover:text-white"
+                      >
+                        View Profile
+                      </Link>
+                    </div>
+                  </>
+                );
+              })()}
             </article>
           ))}
         </div>

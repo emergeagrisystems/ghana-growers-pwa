@@ -31,6 +31,27 @@ export type BlogPost = {
   date: string;
 };
 
+export type TrustStatus = "Pending Verification" | "Verified" | "Premium Member";
+
+export type VerificationRequirements = {
+  phoneVerified: boolean;
+  whatsappVerified: boolean;
+  identitySubmitted: boolean;
+  businessRegistration: boolean;
+};
+
+export type TrustScore = {
+  profileCompleteness: number;
+  verificationLevel: number;
+  activityLevel: number;
+};
+
+export type TrustProfile = {
+  status: TrustStatus;
+  requirements: VerificationRequirements;
+  score: TrustScore;
+};
+
 export type FarmerProfile = {
   slug: string;
   farmName: string;
@@ -46,6 +67,7 @@ export type FarmerProfile = {
   capacityVolume: string;
   photos: string[];
   verificationStatus: string;
+  trust?: TrustProfile;
   whatsappMessage: string;
 };
 
@@ -75,5 +97,6 @@ export type SupplierProfile = {
   socialLink?: string;
   phone: string;
   verificationStatus: string;
+  trust?: TrustProfile;
   whatsappMessage: string;
 };

@@ -1,3 +1,4 @@
+import type { TrustProfile } from "@/types";
 import buyerRequestData from "@/data/buyerRequests.json";
 
 export type BuyerRequest = {
@@ -10,6 +11,7 @@ export type BuyerRequest = {
   buyerType: string;
   contactMethod: string;
   datePosted: string;
+  trust?: TrustProfile;
 };
 
 export const buyerRequestsMeta = {

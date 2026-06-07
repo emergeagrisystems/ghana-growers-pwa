@@ -6,16 +6,37 @@
     "supplierCategory": "Fertilizers",
     "region": "Greater Accra Region",
     "district": "Accra Metropolitan",
-    "productsServices": ["Organic Fertilizer", "Compost", "Soil Conditioner"],
+    "productsServices": [
+      "Organic Fertilizer",
+      "Compost",
+      "Soil Conditioner"
+    ],
     "shortDescription": "Organic fertilizer and soil improvement products for vegetable and field crop farmers.",
     "companyOverview": "Green Input Supply supports farmers with organic fertilizer, compost, and soil conditioners for healthier crop production. The company serves urban and peri-urban farms as well as larger growers needing regular input supply.",
     "serviceCoverageArea": "Greater Accra, Eastern Region, and Central Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-vegetables.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-vegetables.svg"
+    ],
     "website": "https://example.com/green-input-supply",
     "socialLink": "https://example.com/green-input-social",
     "phone": "+233 20 000 1001",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Green Input Supply about fertilizer and soil inputs."
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Green Input Supply about fertilizer and soil inputs.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 88,
+        "verificationLevel": 80,
+        "activityLevel": 74
+      }
+    }
   },
   {
     "slug": "marketpack-ghana-kumasi",
@@ -24,16 +45,37 @@
     "supplierCategory": "Packaging",
     "region": "Ashanti Region",
     "district": "Kumasi Metropolitan",
-    "productsServices": ["Reusable Crates", "Cartons", "Produce Labels"],
+    "productsServices": [
+      "Reusable Crates",
+      "Cartons",
+      "Produce Labels"
+    ],
     "shortDescription": "Packaging supplier for produce crates, cartons, sacks, and market-ready labels.",
     "companyOverview": "MarketPack Ghana provides reusable crates, cartons, sacks, and produce labels for farmers, aggregators, processors, and buyers who need cleaner handling and better presentation.",
     "serviceCoverageArea": "Ashanti Region, Bono East Region, and Ahafo Region",
-    "photos": ["/images/category-packaging.svg", "/images/category-logistics.svg"],
+    "photos": [
+      "/images/category-packaging.svg",
+      "/images/category-logistics.svg"
+    ],
     "website": "https://example.com/marketpack-ghana",
     "socialLink": "https://example.com/marketpack-social",
     "phone": "+233 24 000 1002",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact MarketPack Ghana about packaging supplies."
+    "verificationStatus": "Premium Member",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact MarketPack Ghana about packaging supplies.",
+    "trust": {
+      "status": "Premium Member",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": true
+      },
+      "score": {
+        "profileCompleteness": 97,
+        "verificationLevel": 94,
+        "activityLevel": 86
+      }
+    }
   },
   {
     "slug": "freshchain-logistics-tema",
@@ -42,16 +84,37 @@
     "supplierCategory": "Logistics",
     "region": "Greater Accra Region",
     "district": "Tema Metropolitan",
-    "productsServices": ["Produce Transport", "Cold Chain Support", "Market Delivery"],
+    "productsServices": [
+      "Produce Transport",
+      "Cold Chain Support",
+      "Market Delivery"
+    ],
     "shortDescription": "Transport and cold chain support for fresh produce moving into Accra and Tema markets.",
     "companyOverview": "FreshChain Logistics helps move fresh produce from farm gates and aggregation points to buyers, markets, restaurants, processors, and storage locations.",
     "serviceCoverageArea": "Greater Accra, Eastern Region, Volta Region, and Central Region",
-    "photos": ["/images/category-logistics.svg", "/images/category-fruits.svg"],
+    "photos": [
+      "/images/category-logistics.svg",
+      "/images/category-fruits.svg"
+    ],
     "website": "https://example.com/freshchain-logistics",
     "socialLink": "https://example.com/freshchain-social",
     "phone": "+233 27 000 1003",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact FreshChain Logistics about produce transport."
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact FreshChain Logistics about produce transport.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 85,
+        "verificationLevel": 78,
+        "activityLevel": 76
+      }
+    }
   },
   {
     "slug": "savanna-seed-services-tamale",
@@ -60,16 +123,37 @@
     "supplierCategory": "Seeds",
     "region": "Northern Region",
     "district": "Tamale Metropolitan",
-    "productsServices": ["Maize Seed", "Rice Seed", "Cowpea Seed"],
+    "productsServices": [
+      "Maize Seed",
+      "Rice Seed",
+      "Cowpea Seed"
+    ],
     "shortDescription": "Seed supplier serving grain and legume farmers across northern Ghana.",
     "companyOverview": "Savanna Seed Services supplies maize, rice, cowpea, and other seed varieties to smallholder farmers, farmer groups, and aggregation programs.",
     "serviceCoverageArea": "Northern Region, Savannah Region, North East Region, and Upper East Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-tubers.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-tubers.svg"
+    ],
     "website": "https://example.com/savanna-seed",
     "socialLink": "https://example.com/savanna-seed-social",
     "phone": "+233 54 000 1004",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Savanna Seed Services about seed supply."
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Savanna Seed Services about seed supply.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 70,
+        "verificationLevel": 45,
+        "activityLevel": 58
+      }
+    }
   },
   {
     "slug": "volta-irrigation-systems-ho",
@@ -78,16 +162,37 @@
     "supplierCategory": "Irrigation Systems",
     "region": "Volta Region",
     "district": "Ho Municipal",
-    "productsServices": ["Drip Irrigation", "Water Pumps", "Sprinkler Systems"],
+    "productsServices": [
+      "Drip Irrigation",
+      "Water Pumps",
+      "Sprinkler Systems"
+    ],
     "shortDescription": "Irrigation design, equipment supply, and installation for vegetable and fruit farms.",
     "companyOverview": "Volta Irrigation Systems helps farmers plan, install, and maintain drip, sprinkler, and pump-based irrigation systems for dry-season production.",
     "serviceCoverageArea": "Volta Region, Oti Region, and Eastern Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-vegetables.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-vegetables.svg"
+    ],
     "website": "https://example.com/volta-irrigation",
     "socialLink": "https://example.com/volta-irrigation-social",
     "phone": "+233 55 000 1005",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Irrigation Systems about irrigation support."
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Irrigation Systems about irrigation support.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 83,
+        "verificationLevel": 77,
+        "activityLevel": 68
+      }
+    }
   },
   {
     "slug": "central-agrocare-cape-coast",
@@ -96,16 +201,37 @@
     "supplierCategory": "Agrochemicals",
     "region": "Central Region",
     "district": "Cape Coast Metropolitan",
-    "productsServices": ["Crop Protection", "Sprayers", "Pest Control Advice"],
+    "productsServices": [
+      "Crop Protection",
+      "Sprayers",
+      "Pest Control Advice"
+    ],
     "shortDescription": "Crop protection products and safe-use advisory support for farmers.",
     "companyOverview": "Central AgroCare supplies crop protection products, sprayers, and practical pest management support. The company emphasizes responsible use and farmer education.",
     "serviceCoverageArea": "Central Region and Western Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-vegetables.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-vegetables.svg"
+    ],
     "website": "https://example.com/central-agrocare",
     "socialLink": "https://example.com/central-agrocare-social",
     "phone": "+233 26 000 1006",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Central AgroCare about agrochemicals and crop protection."
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Central AgroCare about agrochemicals and crop protection.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 64,
+        "verificationLevel": 39,
+        "activityLevel": 51
+      }
+    }
   },
   {
     "slug": "techiman-farm-machinery",
@@ -114,16 +240,37 @@
     "supplierCategory": "Farm Equipment",
     "region": "Bono East Region",
     "district": "Techiman Municipal",
-    "productsServices": ["Power Tillers", "Shellers", "Small Farm Tools"],
+    "productsServices": [
+      "Power Tillers",
+      "Shellers",
+      "Small Farm Tools"
+    ],
     "shortDescription": "Farm machinery and tools for grain, vegetable, and tuber producers.",
     "companyOverview": "Techiman Farm Machinery supplies small and medium farm equipment including power tillers, shellers, pumps, and hand tools for farmer groups and commercial growers.",
     "serviceCoverageArea": "Bono East Region, Bono Region, Ashanti Region, and Ahafo Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-logistics.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-logistics.svg"
+    ],
     "website": "https://example.com/techiman-machinery",
     "socialLink": "https://example.com/techiman-machinery-social",
     "phone": "+233 23 000 1007",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Farm Machinery about farm equipment."
+    "verificationStatus": "Premium Member",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Farm Machinery about farm equipment.",
+    "trust": {
+      "status": "Premium Member",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": true
+      },
+      "score": {
+        "profileCompleteness": 95,
+        "verificationLevel": 91,
+        "activityLevel": 84
+      }
+    }
   },
   {
     "slug": "western-cold-storage-takoradi",
@@ -132,16 +279,37 @@
     "supplierCategory": "Storage",
     "region": "Western Region",
     "district": "Sekondi-Takoradi Metropolitan",
-    "productsServices": ["Cold Storage", "Dry Storage", "Aggregation Space"],
+    "productsServices": [
+      "Cold Storage",
+      "Dry Storage",
+      "Aggregation Space"
+    ],
     "shortDescription": "Cold and dry storage support for produce aggregators, fish traders, and food processors.",
     "companyOverview": "Western Cold Storage offers short-term and scheduled storage options for fresh produce, fish, processed foods, and aggregated farm goods.",
     "serviceCoverageArea": "Western Region and Western North Region",
-    "photos": ["/images/category-logistics.svg", "/images/category-packaging.svg"],
+    "photos": [
+      "/images/category-logistics.svg",
+      "/images/category-packaging.svg"
+    ],
     "website": "https://example.com/western-cold-storage",
     "socialLink": "https://example.com/western-storage-social",
     "phone": "+233 50 000 1008",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cold Storage about storage services."
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cold Storage about storage services.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 81,
+        "verificationLevel": 75,
+        "activityLevel": 72
+      }
+    }
   },
   {
     "slug": "upper-east-farm-finance",
@@ -150,16 +318,37 @@
     "supplierCategory": "Financial Services",
     "region": "Upper East Region",
     "district": "Bolgatanga Municipal",
-    "productsServices": ["Input Credit", "Group Savings", "Farm Loan Advisory"],
+    "productsServices": [
+      "Input Credit",
+      "Group Savings",
+      "Farm Loan Advisory"
+    ],
     "shortDescription": "Financial service support for farmer groups and agricultural microenterprises.",
     "companyOverview": "Upper East Farm Finance supports farmer groups with input credit guidance, savings group structures, and farm loan advisory services.",
     "serviceCoverageArea": "Upper East Region and North East Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-packaging.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-packaging.svg"
+    ],
     "website": "https://example.com/upper-east-farm-finance",
     "socialLink": "https://example.com/ue-farm-finance-social",
     "phone": "+233 59 000 1009",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Farm Finance about financial services."
+    "verificationStatus": "Pending Verification",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Farm Finance about financial services.",
+    "trust": {
+      "status": "Pending Verification",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": false,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 67,
+        "verificationLevel": 43,
+        "activityLevel": 56
+      }
+    }
   },
   {
     "slug": "wa-agric-consulting",
@@ -168,15 +357,36 @@
     "supplierCategory": "Agricultural Consulting",
     "region": "Upper West Region",
     "district": "Wa Municipal",
-    "productsServices": ["Farm Advisory", "Training", "Aggregation Planning"],
+    "productsServices": [
+      "Farm Advisory",
+      "Training",
+      "Aggregation Planning"
+    ],
     "shortDescription": "Agricultural consulting and training for farmer groups, NGOs, and agribusiness programs.",
     "companyOverview": "Wa Agric Consulting provides advisory support, farmer training, production planning, and aggregation guidance for agriculture projects and farmer networks.",
     "serviceCoverageArea": "Upper West Region, Savannah Region, and Northern Region",
-    "photos": ["/images/category-inputs.svg", "/images/category-fruits.svg"],
+    "photos": [
+      "/images/category-inputs.svg",
+      "/images/category-fruits.svg"
+    ],
     "website": "https://example.com/wa-agric-consulting",
     "socialLink": "https://example.com/wa-agric-social",
     "phone": "+233 57 000 1010",
-    "verificationStatus": "Verification pending",
-    "whatsappMessage": "Hello Ghana Growers, I want to contact Wa Agric Consulting about agricultural consulting."
+    "verificationStatus": "Verified",
+    "whatsappMessage": "Hello Ghana Growers, I want to contact Wa Agric Consulting about agricultural consulting.",
+    "trust": {
+      "status": "Verified",
+      "requirements": {
+        "phoneVerified": true,
+        "whatsappVerified": true,
+        "identitySubmitted": true,
+        "businessRegistration": false
+      },
+      "score": {
+        "profileCompleteness": 86,
+        "verificationLevel": 82,
+        "activityLevel": 73
+      }
+    }
   }
 ]
