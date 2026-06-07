@@ -23,13 +23,16 @@ export default function HomePage() {
               Ghana Growers helps farmers sell produce, buyers find reliable supply, and agricultural suppliers reach the
               people who need their products and services.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/join/farmer">Join as Farmer</ButtonLink>
               <ButtonLink href="/join/buyer" variant="secondary">
                 Join as Buyer
               </ButtonLink>
               <ButtonLink href="/join/supplier" variant="light">
                 Become a Supplier
+              </ButtonLink>
+              <ButtonLink href="/whatsapp-communities" variant="secondary">
+                Join WhatsApp Community
               </ButtonLink>
             </div>
           </div>
@@ -138,9 +141,14 @@ export default function HomePage() {
               Ghana Growers is designed around direct communication, practical learning, and partnerships that reduce friction
               between production, buying, supply, and support.
             </p>
-            <Link href="/about" className="mt-6 inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
-              Learn about the mission <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link href="/about" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
+                Learn about the mission <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+              <Link href="/whatsapp-communities" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
+                Join a WhatsApp community <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
           <RegistrationForm title="Register your interest" audience="farmer" />
         </div>

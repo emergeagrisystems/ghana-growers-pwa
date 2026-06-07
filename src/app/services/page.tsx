@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -17,7 +18,17 @@ export default function ServicesPage() {
         eyebrow="Services"
         title="Digital tools and trusted connections for Ghana agriculture"
         description="Ghana Growers brings farmers, buyers, and suppliers into one practical platform for produce discovery, buyer access, supply listings, learning, and direct WhatsApp inquiry."
-      />
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <ButtonLink href="/join/farmer">Join as Farmer</ButtonLink>
+          <ButtonLink href="/join/buyer" variant="secondary">
+            Join as Buyer
+          </ButtonLink>
+          <ButtonLink href="/whatsapp-communities" variant="light">
+            Join WhatsApp Communities
+          </ButtonLink>
+        </div>
+      </PageHero>
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader title="Choose the service path that fits you" description="Each audience gets a dedicated experience while staying connected to the wider agricultural network." />

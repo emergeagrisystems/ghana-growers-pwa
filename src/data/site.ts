@@ -36,11 +36,13 @@ export const navigation: NavigationItem[] = [
     ]
   },
   { title: "Smart Solutions", href: "/smart-solutions" },
+  { title: "WhatsApp Communities", href: "/whatsapp-communities" },
   { title: "Learn", href: "/learn" },
   {
     title: "About",
     href: "/about",
     children: [
+      { title: "WhatsApp Communities", href: "/whatsapp-communities" },
       { title: "Careers", href: "/about/careers" },
       { title: "Partner With Us", href: "/about/partner-with-us" },
       { title: "Blog", href: "/about/blog" }

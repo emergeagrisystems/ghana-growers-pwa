@@ -2,6 +2,7 @@ import { CropHealthCheck } from "@/components/smart-solutions/CropHealthCheck";
 import { FarmerAssistant } from "@/components/smart-solutions/FarmerAssistant";
 import { MarketPricesDashboard } from "@/components/smart-solutions/MarketPricesDashboard";
 import { WeatherUpdates } from "@/components/smart-solutions/WeatherUpdates";
+import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 import { smartTools } from "@/data/smartTools";
@@ -30,6 +31,11 @@ export default function SmartSolutionsPage() {
               {tool.cta}
             </a>
           ))}
+        </div>
+        <div className="mt-3">
+          <ButtonLink href="/whatsapp-communities" variant="light">
+            Join WhatsApp Communities
+          </ButtonLink>
         </div>
       </PageHero>
 

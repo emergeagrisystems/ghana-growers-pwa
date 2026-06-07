@@ -32,6 +32,7 @@ public/images/           Placeholder visual assets
 - Smart Solutions market prices: edit `src/data/marketPrices.json`.
 - Smart Solutions locations: edit `src/data/weatherLocations.ts`.
 - Buyer requests board: edit `src/data/buyerRequests.json`.
+- WhatsApp community invite links: edit `src/data/whatsappCommunities.ts`.
 - Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Buyer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Supplier registration notification recipients: edit `src/data/notificationConfig.ts`.
@@ -112,6 +113,7 @@ Each request includes product name, quantity needed, region, district, deadline,
 
 - Responsive navigation with dropdown menus and mobile menu
 - Home, Services, Marketplace, Learn, About, Careers, Partner, and Blog pages
+- WhatsApp Communities hub and floating WhatsApp contact button
 - PWA manifest and service worker registration
 - Local data files ready to swap for a database/API later
 - WhatsApp contact buttons instead of checkout

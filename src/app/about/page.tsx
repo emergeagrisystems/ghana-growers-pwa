@@ -1,3 +1,4 @@
+import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 
@@ -20,7 +21,14 @@ export default function AboutPage() {
         eyebrow="About Ghana Growers"
         title="Building trusted digital connections for Ghana agriculture"
         description="Ghana Growers exists to make agricultural trade easier, more transparent, and more useful for the people who grow, buy, supply, package, transport, and support food systems."
-      />
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <ButtonLink href="/whatsapp-communities">Join WhatsApp Communities</ButtonLink>
+          <ButtonLink href="/about/partner-with-us" variant="secondary">
+            Partner With Us
+          </ButtonLink>
+        </div>
+      </PageHero>
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader title="Our purpose" description="The platform is intentionally simple today so it can grow into verified farmer profiles, richer marketplace tools, and partner integrations later." />
