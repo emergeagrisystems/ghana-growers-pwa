@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560">
+  <rect width="720" height="560" fill="#fff8ed"/>
+  <rect x="48" y="72" width="624" height="360" rx="28" fill="#dff0cf"/>
+  <path d="M90 406h540v48H90z" fill="#8d5c13"/>
+  <path d="M120 148h480v58H120z" fill="#477d22"/>
+  <path d="M160 206h80v200h-80zM320 206h80v200h-80zM480 206h80v200h-80z" fill="#fffaf0"/>
+  <circle cx="200" cy="300" r="42" fill="#d94b35"/>
+  <circle cx="360" cy="290" r="46" fill="#d89932"/>
+  <ellipse cx="520" cy="310" rx="52" ry="38" fill="#5f9f2f"/>
+  <path d="M144 142c34-40 70-40 108 0M304 142c34-40 70-40 108 0M464 142c34-40 70-40 108 0" stroke="#19330e" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <text x="360" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#19330e">Ghana Growers</text>
+</svg>

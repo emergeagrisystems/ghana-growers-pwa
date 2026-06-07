@@ -1,0 +1,80 @@
+"use client";
+
+import { Send } from "lucide-react";
+import { type FormEvent, useState } from "react";
+
+type RegistrationFormProps = {
+  title: string;
+  audience: "farmer" | "buyer" | "supplier" | "partner";
+};
+
+export function RegistrationForm({ title, audience }: RegistrationFormProps) {
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitted(true);
+    event.currentTarget.reset();
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+      <h3 className="text-xl font-black text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink/65">
+        This placeholder form is ready to connect to a database, CRM, email service, or form endpoint later.
+      </p>
+      <input type="hidden" name="audience" value={audience} />
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-bold text-ink/75">
+          Name
+          <input
+            className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal"
+            name="name"
+            placeholder="Full name"
+            required
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-bold text-ink/75">
+          Phone
+          <input
+            className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal"
+            name="phone"
+            placeholder="+233..."
+            required
+            type="tel"
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-bold text-ink/75 sm:col-span-2">
+          Location
+          <input
+            className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal"
+            name="location"
+            placeholder="Town, district, region"
+            required
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-bold text-ink/75 sm:col-span-2">
+          What do you need?
+          <textarea
+            className="focus-ring min-h-28 rounded-md border border-leaf-900/15 px-3 py-3 font-normal"
+            name="message"
+            placeholder="Tell us what you sell, buy, supply, or want to discuss."
+            required
+          />
+        </label>
+      </div>
+      <button
+        type="submit"
+        className="focus-ring mt-5 inline-flex items-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+      >
+        <Send size={17} aria-hidden="true" />
+        Submit Interest
+      </button>
+      {submitted ? (
+        <p className="mt-4 rounded-md bg-leaf-50 px-4 py-3 text-sm font-bold text-leaf-700">
+          Thanks. This demo form is working locally and ready to connect to a real endpoint.
+        </p>
+      ) : null}
+    </form>
+  );
+}

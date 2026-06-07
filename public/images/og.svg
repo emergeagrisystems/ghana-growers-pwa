@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fff8ed"/>
+  <rect x="80" y="80" width="1040" height="470" rx="34" fill="#dff0cf"/>
+  <text x="120" y="230" font-family="Arial, sans-serif" font-size="78" font-weight="900" fill="#132013">Ghana Growers</text>
+  <text x="120" y="320" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#477d22">Farmers, buyers, and suppliers connected</text>
+  <circle cx="930" cy="300" r="120" fill="#d89932"/>
+  <path d="M932 410c-10-94 28-164 112-211 8 87-34 154-112 211Z" fill="#477d22"/>
+  <path d="M914 410c10-116-39-205-149-266-10 110 45 199 149 266Z" fill="#d94b35"/>
+</svg>

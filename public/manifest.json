@@ -1,0 +1,25 @@
+{
+  "name": "Ghana Growers",
+  "short_name": "Growers",
+  "description": "Connect with Ghana farmers, buyers, and agricultural suppliers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffaf0",
+  "theme_color": "#477d22",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "food", "shopping", "productivity"]
+}
