@@ -3,22 +3,30 @@ import { Bot, CloudSun, LineChart, ScanSearch } from "lucide-react";
 export const smartTools = [
   {
     title: "Live Weather Updates",
-    description: "Check temperature, humidity, wind, rainfall chance, forecast, and farming advice by Ghana region.",
+    description: "Plan spraying, drying, irrigation, and harvesting with weather guidance for key Ghana regions.",
+    cta: "Check Weather",
+    href: "#weather",
     icon: CloudSun
   },
   {
     title: "Crop Health Check",
-    description: "Upload a crop or leaf photo and view an advisory mock diagnosis while API integrations are prepared.",
+    description: "Use a crop or leaf photo to preview how disease and nutrient-stress advice will work.",
+    cta: "Upload Crop Photo",
+    href: "#crop-health",
     icon: ScanSearch
   },
   {
     title: "AI Farmer Assistant",
-    description: "Ask sample farming questions about diseases, storage, fertilizer, market access, and buyers.",
+    description: "Ask practical questions about crop care, storage, fertilizer, buyers, and market access.",
+    cta: "Ask AI Assistant",
+    href: "#assistant",
     icon: Bot
   },
   {
     title: "Ghana Market Prices",
-    description: "Filter indicative crop prices by crop, region, and market using editable local data.",
+    description: "Compare indicative prices by crop, region, and market before starting trade conversations.",
+    cta: "View Market Prices",
+    href: "#market-prices",
     icon: LineChart
   }
 ];

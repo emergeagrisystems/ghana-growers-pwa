@@ -17,27 +17,46 @@ export default function SmartSolutionsPage() {
     <>
       <PageHero
         eyebrow="Smart Solutions"
-        title="Practical digital tools for Ghanaian farmers"
-        description="Check weather, review crop health, ask farming questions, and monitor indicative Ghana market prices from one mobile-friendly dashboard."
-      />
+        title="A professional AgriTech tool hub for Ghanaian farmers"
+        description="Use weather signals, crop photo checks, practical AI guidance, and market price data to make better day-to-day farm decisions."
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {smartTools.map((tool) => (
+            <a
+              key={tool.href}
+              href={tool.href}
+              className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-700"
+            >
+              {tool.cta}
+            </a>
+          ))}
+        </div>
+      </PageHero>
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
-            title="Tools built for everyday farm decisions"
-            description="These tools start with frontend experiences and editable local data, with clear paths to connect weather, crop disease, AI, and market data APIs later."
+            title="Digital support for decisions farmers make every week"
+            description="Each tool is designed around practical farm work: whether to spray, when to dry produce, what a leaf symptom might mean, how to ask for help, and where prices are moving."
           />
-          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {smartTools.map((tool) => {
               const Icon = tool.icon;
               return (
-                <div key={tool.title} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                <a
+                  key={tool.title}
+                  href={tool.href}
+                  className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-soft"
+                >
                   <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white">
                     <Icon size={22} aria-hidden="true" />
                   </div>
                   <h2 className="mt-4 text-lg font-black text-ink">{tool.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/65">{tool.description}</p>
-                </div>
+                  <span className="mt-5 inline-flex rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700">
+                    {tool.cta}
+                  </span>
+                </a>
               );
             })}
           </div>

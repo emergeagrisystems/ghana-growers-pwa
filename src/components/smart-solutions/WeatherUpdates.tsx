@@ -14,11 +14,11 @@ type WeatherState = {
 
 function farmingAdvice(weather?: WeatherState) {
   if (!weather) {
-    return "Select a region to load weather-based farming advice.";
+    return "Select your nearest city to see weather-based farming advice.";
   }
 
   if (weather.rainfallChance >= 60) {
-    return "Rain expected, delay spraying and protect harvested produce.";
+    return "Rain expected, delay spraying and keep harvested produce covered.";
   }
 
   if (weather.temperature >= 34) {
@@ -29,7 +29,7 @@ function farmingAdvice(weather?: WeatherState) {
     return "Good day for drying maize, cassava chips, and other produce.";
   }
 
-  return "Good fieldwork window, but monitor local clouds before spraying or drying.";
+    return "Good fieldwork window, but check local clouds before spraying or drying.";
 }
 
 export function WeatherUpdates() {
@@ -101,17 +101,20 @@ export function WeatherUpdates() {
   ];
 
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+    <section id="weather" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-black uppercase text-earth-700">Live Weather Updates</p>
-          <h2 className="mt-2 text-2xl font-black text-ink">Weather by Ghana region</h2>
-          <p className="mt-2 text-sm leading-6 text-ink/65">{status}</p>
+          <h2 className="mt-2 text-2xl font-black text-ink">Check Weather</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
+            Choose the nearest farming area before spraying, drying maize, irrigating, or moving produce to market.
+          </p>
+          <p className="mt-2 text-xs font-bold text-ink/55">{status}</p>
         </div>
-        <label className="grid gap-2 text-sm font-bold text-ink/75">
-          Select location
+        <label className="grid gap-2 text-sm font-bold text-ink/75 sm:min-w-64">
+          Nearest city or region
           <select
-            className="focus-ring min-w-52 rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
+            className="focus-ring w-full rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
             value={selected}
             onChange={(event) => setSelected(event.target.value)}
           >
@@ -139,11 +142,11 @@ export function WeatherUpdates() {
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div className="rounded-md bg-earth-50 p-4">
-          <p className="text-sm font-black text-ink">Forecast</p>
+          <p className="text-sm font-black text-ink">Today&apos;s forecast</p>
           <p className="mt-2 text-sm leading-6 text-ink/70">{weather?.forecast ?? "Forecast loading..."}</p>
         </div>
         <div className="rounded-md bg-leaf-600 p-4 text-white">
-          <p className="text-sm font-black">Farming advice</p>
+          <p className="text-sm font-black">What this means on the farm</p>
           <p className="mt-2 text-sm leading-6 text-white/85">{farmingAdvice(weather)}</p>
         </div>
       </div>

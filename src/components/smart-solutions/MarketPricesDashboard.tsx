@@ -44,11 +44,11 @@ export function MarketPricesDashboard() {
   ];
 
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+    <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <p className="text-sm font-black uppercase text-earth-700">Ghana Market Prices</p>
-      <h2 className="mt-2 text-2xl font-black text-ink">Indicative market price dashboard</h2>
+      <h2 className="mt-2 text-2xl font-black text-ink">View Market Prices</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Prices are indicative and should be verified before trading.
+        Compare indicative wholesale and retail prices before calling buyers, suppliers, or transporters. Prices should be verified before trading.
       </p>
 
       <div className="mt-5 grid gap-3 md:grid-cols-3">

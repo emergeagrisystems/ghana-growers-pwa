@@ -14,7 +14,7 @@ export function FarmerAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      text: "Hello. Ask about farming tips, crop diseases, market access, storage, fertilizer use, or buyer connections."
+      text: "Akwaaba. Ask about crop care, pests, fertilizer, storage, prices, or how to find buyers."
     }
   ]);
 
@@ -34,11 +34,11 @@ export function FarmerAssistant() {
   }
 
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+    <section id="assistant" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <p className="text-sm font-black uppercase text-earth-700">AI Farmer Assistant</p>
-      <h2 className="mt-2 text-2xl font-black text-ink">Ask practical farming questions</h2>
+      <h2 className="mt-2 text-2xl font-black text-ink">Ask AI Assistant</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Sample chatbot UI prepared for a future OpenAI API integration. Keep API keys server-side only.
+        Get quick sample guidance in plain language. A future OpenAI integration should run through a secure server endpoint, never with API keys in frontend code.
       </p>
 
       <div className="mt-5 max-h-96 overflow-y-auto rounded-md bg-leaf-50 p-4">
@@ -67,7 +67,7 @@ export function FarmerAssistant() {
             key={suggestion}
             type="button"
             onClick={() => ask(suggestion)}
-            className="focus-ring rounded-md bg-earth-50 px-3 py-2 text-xs font-bold text-ink hover:bg-earth-500"
+          className="focus-ring rounded-md bg-earth-50 px-3 py-2 text-xs font-bold text-ink hover:bg-earth-500"
           >
             {suggestion}
           </button>
@@ -89,7 +89,7 @@ export function FarmerAssistant() {
         />
         <button className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white hover:bg-leaf-700">
           <Send size={17} aria-hidden="true" />
-          Ask
+          Ask AI Assistant
         </button>
       </form>
     </section>
