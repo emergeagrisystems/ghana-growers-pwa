@@ -34,7 +34,8 @@ export const navigation: NavigationItem[] = [
       { title: "Shop Listings", href: "/marketplace" },
       { title: "Farmer Directory", href: "/farmer-directory" },
       { title: "Supplier Directory", href: "/supplier-directory" },
-      { title: "Buyer Requests", href: "/buyer-requests" }
+      { title: "Buyer Requests", href: "/buyer-requests" },
+      { title: "Market Intelligence", href: "/market-intelligence" }
     ]
   },
   { title: "Smart Solutions", href: "/smart-solutions" },

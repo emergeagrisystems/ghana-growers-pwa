@@ -1,0 +1,183 @@
+{
+  "lastUpdated": "2026-06-07",
+  "currency": "GHS",
+  "priceTrends": [
+    {
+      "product": "Maize",
+      "region": "Northern Region",
+      "unit": "100kg bag",
+      "currentPrice": 520,
+      "history": [
+        { "period": "Jan", "price": 610 },
+        { "period": "Feb", "price": 590 },
+        { "period": "Mar", "price": 570 },
+        { "period": "Apr", "price": 550 },
+        { "period": "May", "price": 535 },
+        { "period": "Jun", "price": 520 }
+      ]
+    },
+    {
+      "product": "Tomatoes",
+      "region": "Greater Accra Region",
+      "unit": "crate",
+      "currentPrice": 950,
+      "history": [
+        { "period": "Jan", "price": 620 },
+        { "period": "Feb", "price": 680 },
+        { "period": "Mar", "price": 760 },
+        { "period": "Apr", "price": 830 },
+        { "period": "May", "price": 900 },
+        { "period": "Jun", "price": 950 }
+      ]
+    },
+    {
+      "product": "Onions",
+      "region": "Ashanti Region",
+      "unit": "sack",
+      "currentPrice": 780,
+      "history": [
+        { "period": "Jan", "price": 720 },
+        { "period": "Feb", "price": 740 },
+        { "period": "Mar", "price": 760 },
+        { "period": "Apr", "price": 770 },
+        { "period": "May", "price": 785 },
+        { "period": "Jun", "price": 780 }
+      ]
+    },
+    {
+      "product": "Cassava",
+      "region": "Central Region",
+      "unit": "sack",
+      "currentPrice": 260,
+      "history": [
+        { "period": "Jan", "price": 235 },
+        { "period": "Feb", "price": 240 },
+        { "period": "Mar", "price": 250 },
+        { "period": "Apr", "price": 255 },
+        { "period": "May", "price": 265 },
+        { "period": "Jun", "price": 260 }
+      ]
+    },
+    {
+      "product": "Yam",
+      "region": "Bono East Region",
+      "unit": "100 tubers",
+      "currentPrice": 1100,
+      "history": [
+        { "period": "Jan", "price": 880 },
+        { "period": "Feb", "price": 920 },
+        { "period": "Mar", "price": 980 },
+        { "period": "Apr", "price": 1030 },
+        { "period": "May", "price": 1070 },
+        { "period": "Jun", "price": 1100 }
+      ]
+    },
+    {
+      "product": "Plantain",
+      "region": "Eastern Region",
+      "unit": "bunch lot",
+      "currentPrice": 420,
+      "history": [
+        { "period": "Jan", "price": 390 },
+        { "period": "Feb", "price": 400 },
+        { "period": "Mar", "price": 415 },
+        { "period": "Apr", "price": 430 },
+        { "period": "May", "price": 425 },
+        { "period": "Jun", "price": 420 }
+      ]
+    },
+    {
+      "product": "Rice",
+      "region": "Upper West Region",
+      "unit": "50kg bag",
+      "currentPrice": 640,
+      "history": [
+        { "period": "Jan", "price": 600 },
+        { "period": "Feb", "price": 615 },
+        { "period": "Mar", "price": 625 },
+        { "period": "Apr", "price": 635 },
+        { "period": "May", "price": 645 },
+        { "period": "Jun", "price": 640 }
+      ]
+    },
+    {
+      "product": "Eggs",
+      "region": "Western Region",
+      "unit": "crate",
+      "currentPrice": 78,
+      "history": [
+        { "period": "Jan", "price": 64 },
+        { "period": "Feb", "price": 67 },
+        { "period": "Mar", "price": 70 },
+        { "period": "Apr", "price": 73 },
+        { "period": "May", "price": 76 },
+        { "period": "Jun", "price": 78 }
+      ]
+    },
+    {
+      "product": "Poultry",
+      "region": "Upper East Region",
+      "unit": "bird",
+      "currentPrice": 95,
+      "history": [
+        { "period": "Jan", "price": 88 },
+        { "period": "Feb", "price": 90 },
+        { "period": "Mar", "price": 92 },
+        { "period": "Apr", "price": 94 },
+        { "period": "May", "price": 96 },
+        { "period": "Jun", "price": 95 }
+      ]
+    }
+  ],
+  "demandSignals": [
+    { "product": "Tomatoes", "region": "Greater Accra Region", "demandLevel": "High Demand", "lastUpdated": "2026-06-07" },
+    { "product": "Eggs", "region": "Western Region", "demandLevel": "High Demand", "lastUpdated": "2026-06-07" },
+    { "product": "Yam", "region": "Ashanti Region", "demandLevel": "High Demand", "lastUpdated": "2026-06-06" },
+    { "product": "Maize", "region": "Northern Region", "demandLevel": "Moderate Demand", "lastUpdated": "2026-06-06" },
+    { "product": "Rice", "region": "Upper West Region", "demandLevel": "Moderate Demand", "lastUpdated": "2026-06-05" },
+    { "product": "Plantain", "region": "Eastern Region", "demandLevel": "Moderate Demand", "lastUpdated": "2026-06-05" },
+    { "product": "Cassava", "region": "Central Region", "demandLevel": "Low Demand", "lastUpdated": "2026-06-04" },
+    { "product": "Onions", "region": "Upper East Region", "demandLevel": "Low Demand", "lastUpdated": "2026-06-04" },
+    { "product": "Poultry", "region": "Bono East Region", "demandLevel": "Moderate Demand", "lastUpdated": "2026-06-03" }
+  ],
+  "seasonalCalendar": [
+    { "product": "Maize", "plantingSeason": "March to May", "growingSeason": "May to August", "harvestSeason": "August to November" },
+    { "product": "Cassava", "plantingSeason": "April to June", "growingSeason": "June to March", "harvestSeason": "9 to 15 months after planting" },
+    { "product": "Tomatoes", "plantingSeason": "September to November", "growingSeason": "November to February", "harvestSeason": "January to April" },
+    { "product": "Plantain", "plantingSeason": "April to July", "growingSeason": "Year-round establishment", "harvestSeason": "10 to 15 months after planting" },
+    { "product": "Yam", "plantingSeason": "December to March", "growingSeason": "March to August", "harvestSeason": "August to December" },
+    { "product": "Rice", "plantingSeason": "May to July", "growingSeason": "July to October", "harvestSeason": "October to December" }
+  ],
+  "regionalOpportunities": [
+    {
+      "region": "Greater Accra Region",
+      "mostRequestedProducts": ["Tomatoes", "Eggs", "Poultry"],
+      "marketNotes": "Urban demand is strong for consistent vegetable and protein supply into markets, restaurants, hotels, and caterers."
+    },
+    {
+      "region": "Ashanti Region",
+      "mostRequestedProducts": ["Onions", "Yam", "Plantain"],
+      "marketNotes": "Kumasi remains a major aggregation and redistribution market for tubers, vegetables, and plantain."
+    },
+    {
+      "region": "Northern Region",
+      "mostRequestedProducts": ["Maize", "Rice", "Yam"],
+      "marketNotes": "Grain and tuber opportunities depend heavily on post-harvest storage, drying, and transport coordination."
+    },
+    {
+      "region": "Eastern Region",
+      "mostRequestedProducts": ["Plantain", "Pineapple", "Tomatoes"],
+      "marketNotes": "Fruit and plantain supply can serve Accra-facing buyers when packaging and logistics are well organized."
+    },
+    {
+      "region": "Central Region",
+      "mostRequestedProducts": ["Cassava", "Poultry", "Vegetables"],
+      "marketNotes": "Cassava and poultry demand can improve through processor links and steady institutional buying."
+    },
+    {
+      "region": "Upper East Region",
+      "mostRequestedProducts": ["Onions", "Tomatoes", "Poultry"],
+      "marketNotes": "Dry-season vegetable production creates opportunities when buyers plan ahead for aggregation and transport."
+    }
+  ]
+}

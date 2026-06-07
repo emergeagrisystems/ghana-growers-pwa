@@ -23,6 +23,7 @@ export default function MarketplacePage() {
           <ButtonLink href="/farmer-directory">Browse Farmer Directory</ButtonLink>
           <ButtonLink href="/supplier-directory" variant="secondary">Browse Supplier Directory</ButtonLink>
           <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>
+          <ButtonLink href="/market-intelligence" variant="light">Market Intelligence</ButtonLink>
           <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
           <ButtonLink href="/whatsapp-communities" variant="light">Join WhatsApp Communities</ButtonLink>
         </div>
