@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { PackageCheck } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
+import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -28,6 +29,11 @@ export default function MarketplacePage() {
           <ButtonLink href="/whatsapp-communities" variant="light">Join WhatsApp Communities</ButtonLink>
         </div>
       </PageHero>
+      <FeaturedListings
+        title="Featured marketplace opportunities"
+        description="Highlighted farmers, suppliers, and buyer requests to help visitors find priority connections faster."
+        background="white"
+      />
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader title="Categories" description="Use this structure to organize products and services before a full marketplace backend is added." />

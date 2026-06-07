@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { Search, SlidersHorizontal, Sprout } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
+import { featuredListingLabels, isFeaturedFarmer } from "@/data/featuredListings";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -112,12 +114,22 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
 
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredFarmers.map((farmer) => (
-            <article key={farmer.slug} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+            <article
+              key={farmer.slug}
+              className={`rounded-md bg-white p-5 shadow-soft ${
+                isFeaturedFarmer(farmer.slug) ? "border-2 border-earth-500" : "border border-leaf-900/10"
+              }`}
+            >
               {(() => {
                 const trust = normalizeTrust(farmer.trust);
 
                 return (
                   <>
+                    {isFeaturedFarmer(farmer.slug) ? (
+                      <div className="mb-4">
+                        <FeaturedRibbon label={featuredListingLabels.farmers} />
+                      </div>
+                    ) : null}
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase text-earth-700">{farmer.region}</p>

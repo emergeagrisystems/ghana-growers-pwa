@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ButtonLink";
+import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
 import { supplierDirectory } from "@/data/suppliers";
@@ -23,6 +24,12 @@ export default function SupplierDirectoryPage() {
           <ButtonLink href="/marketplace" variant="light">Browse Marketplace</ButtonLink>
         </div>
       </PageHero>
+      <FeaturedListings
+        kinds={["suppliers"]}
+        title="Featured suppliers"
+        description="Priority agricultural suppliers selected from the editable featured listings configuration."
+        background="leaf"
+      />
       <SupplierDirectory suppliers={supplierDirectory} />
     </>
   );

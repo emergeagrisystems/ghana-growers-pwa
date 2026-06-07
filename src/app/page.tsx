@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, UsersRound } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
+import { FeaturedListings } from "@/components/FeaturedListings";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -54,6 +55,12 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <FeaturedListings
+        title="Featured farmers, suppliers, and buyer requests"
+        description="A quick look at priority opportunities across the Ghana Growers ecosystem."
+        background="earth"
+      />
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

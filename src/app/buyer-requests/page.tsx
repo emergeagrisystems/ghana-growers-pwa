@@ -1,5 +1,6 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { BuyerRequestsBoard } from "@/components/BuyerRequestsBoard";
+import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 
 export const metadata = {
@@ -21,6 +22,12 @@ export default function BuyerRequestsPage() {
           <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
         </div>
       </PageHero>
+      <FeaturedListings
+        kinds={["buyerRequests"]}
+        title="Featured buyer requests"
+        description="Priority demand opportunities selected from the editable featured listings configuration."
+        background="leaf"
+      />
       <BuyerRequestsBoard />
     </>
   );

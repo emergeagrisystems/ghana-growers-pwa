@@ -1,0 +1,22 @@
+{
+  "farmerSlugs": [
+    "nsawam-fruit-farmers",
+    "techiman-maize-and-beans-farm",
+    "western-cocoa-and-plantain-farm"
+  ],
+  "supplierSlugs": [
+    "marketpack-ghana-kumasi",
+    "freshchain-logistics-tema",
+    "techiman-farm-machinery"
+  ],
+  "buyerRequestIds": [
+    "tomatoes-accra-market-women",
+    "yam-techiman-exporter",
+    "eggs-takoradi-hotel"
+  ],
+  "labels": {
+    "farmers": "Featured Farmer",
+    "suppliers": "Featured Supplier",
+    "buyerRequests": "Featured Buyer Request"
+  }
+}

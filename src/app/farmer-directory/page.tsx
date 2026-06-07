@@ -1,5 +1,6 @@
 import { FarmerDirectory } from "@/components/FarmerDirectory";
 import { ButtonLink } from "@/components/ButtonLink";
+import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { farmerDirectory } from "@/data/farmers";
 
@@ -23,6 +24,12 @@ export default function FarmerDirectoryPage() {
           <ButtonLink href="/marketplace" variant="light">Browse Marketplace</ButtonLink>
         </div>
       </PageHero>
+      <FeaturedListings
+        kinds={["farmers"]}
+        title="Featured farmers"
+        description="Priority farmer profiles selected from the editable featured listings configuration."
+        background="leaf"
+      />
       <FarmerDirectory farmers={farmerDirectory} />
     </>
   );

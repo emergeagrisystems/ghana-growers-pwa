@@ -3,8 +3,10 @@
 import { CalendarDays, MapPin, ShoppingBasket } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buyerRequests, buyerRequestsMeta } from "@/data/buyerRequests";
+import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { featuredListingLabels, isFeaturedBuyerRequest } from "@/data/featuredListings";
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
@@ -73,12 +75,22 @@ export function BuyerRequestsBoard() {
 
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredRequests.map((request) => (
-            <article key={request.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+            <article
+              key={request.id}
+              className={`rounded-md bg-white p-5 shadow-soft ${
+                isFeaturedBuyerRequest(request.id) ? "border-2 border-earth-500" : "border border-leaf-900/10"
+              }`}
+            >
               {(() => {
                 const trust = normalizeTrust(request.trust);
 
                 return (
                   <>
+              {isFeaturedBuyerRequest(request.id) ? (
+                <div className="mb-4">
+                  <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase text-earth-700">{request.buyerType}</p>

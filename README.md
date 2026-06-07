@@ -174,6 +174,16 @@ Admin-editable data file: `src/data/buyerRequests.json`
 
 Each request includes product name, quantity needed, region, district, deadline, buyer type, contact method, and date posted. Farmers use WhatsApp buttons to contact Ghana Growers about requests they can supply.
 
+## Featured Listings
+
+Featured listings are controlled by:
+
+```text
+src/data/featuredListings.json
+```
+
+Use farmer slugs, supplier slugs, and buyer request IDs from the existing data files to choose featured farmers, suppliers, and buyer requests. Featured listings appear on the homepage, marketplace, farmer directory, supplier directory, and buyer requests page, with highlighted cards and a featured ribbon.
+
 ## Verification and Trust System
 
 Reusable badge and trust-score components live in:

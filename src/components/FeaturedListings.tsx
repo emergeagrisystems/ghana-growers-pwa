@@ -1,0 +1,127 @@
+import Link from "next/link";
+import { Building2, ShoppingBasket, Sprout } from "lucide-react";
+import { FeaturedRibbon } from "@/components/FeaturedRibbon";
+import { SectionHeader } from "@/components/SectionHeader";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import {
+  featuredBuyerRequests,
+  featuredFarmers,
+  featuredListingLabels,
+  featuredSuppliers
+} from "@/data/featuredListings";
+
+type FeaturedListingKind = "farmers" | "suppliers" | "buyerRequests" | "all";
+
+type FeaturedListingsProps = {
+  kinds?: FeaturedListingKind[];
+  title?: string;
+  description?: string;
+  background?: "white" | "leaf" | "earth";
+};
+
+const backgrounds = {
+  white: "bg-white",
+  leaf: "bg-leaf-50",
+  earth: "bg-earth-50"
+};
+
+export function FeaturedListings({
+  kinds = ["all"],
+  title = "Featured listings",
+  description = "Highlighted farmers, suppliers, and buyer requests that Ghana Growers wants visitors to notice first.",
+  background = "white"
+}: FeaturedListingsProps) {
+  const showAll = kinds.includes("all");
+  const showFarmers = showAll || kinds.includes("farmers");
+  const showSuppliers = showAll || kinds.includes("suppliers");
+  const showBuyerRequests = showAll || kinds.includes("buyerRequests");
+
+  return (
+    <section className={`${backgrounds[background]} py-16`}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeader eyebrow="Featured" title={title} description={description} />
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {showFarmers
+            ? featuredFarmers.map((farmer) => (
+                <article key={farmer.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
+                  <div className="flex items-start justify-between gap-4">
+                    <FeaturedRibbon label={featuredListingLabels.farmers} />
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                      <Sprout size={20} aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 className="mt-4 text-xl font-black text-ink">{farmer.farmName}</h3>
+                  <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>
+                  <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {farmer.products.slice(0, 3).map((product) => (
+                      <span key={product} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
+                        {product}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    href={`/farmer-directory/${farmer.slug}`}
+                    className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+                  >
+                    View Farmer
+                  </Link>
+                </article>
+              ))
+            : null}
+
+          {showSuppliers
+            ? featuredSuppliers.map((supplier) => (
+                <article key={supplier.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
+                  <div className="flex items-start justify-between gap-4">
+                    <FeaturedRibbon label={featuredListingLabels.suppliers} />
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                      <Building2 size={20} aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 className="mt-4 text-xl font-black text-ink">{supplier.companyName}</h3>
+                  <p className="mt-1 text-sm font-bold text-leaf-700">{supplier.supplierCategory}</p>
+                  <p className="mt-3 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {supplier.productsServices.slice(0, 3).map((service) => (
+                      <span key={service} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    href={`/supplier-directory/${supplier.slug}`}
+                    className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+                  >
+                    View Supplier
+                  </Link>
+                </article>
+              ))
+            : null}
+
+          {showBuyerRequests
+            ? featuredBuyerRequests.map((request) => (
+                <article key={request.id} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
+                  <div className="flex items-start justify-between gap-4">
+                    <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                      <ShoppingBasket size={20} aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 className="mt-4 text-xl font-black text-ink">{request.productName}</h3>
+                  <p className="mt-1 text-sm font-bold text-leaf-700">{request.quantityNeeded}</p>
+                  <p className="mt-3 text-sm leading-6 text-ink/65">
+                    {request.buyerType} in {request.district}, {request.region}. Deadline: {request.deadline}.
+                  </p>
+                  <WhatsAppButton
+                    message={`Hello Ghana Growers, I am interested in the featured buyer request for ${request.quantityNeeded} of ${request.productName}.`}
+                    className="mt-5 w-full"
+                  />
+                </article>
+              ))
+            : null}
+        </div>
+      </div>
+    </section>
+  );
+}
