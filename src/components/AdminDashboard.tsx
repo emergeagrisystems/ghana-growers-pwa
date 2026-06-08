@@ -8,6 +8,7 @@ import {
   ChartLine,
   CircleDashed,
   ClipboardCheck,
+  Clock3,
   Eye,
   FilePenLine,
   LayoutDashboard,
@@ -200,6 +201,50 @@ const quickActions: Array<{
   { label: "Review Verifications", section: "verifications", intent: "Verification queue opened for review.", icon: ShieldCheck }
 ];
 
+const recentActivity: Array<{
+  action: string;
+  detail: string;
+  time: string;
+  section: AdminSectionId;
+  icon: typeof LayoutDashboard;
+}> = [
+  {
+    action: "Farmer verified",
+    detail: "Techiman Maize and Beans Farm marked as Verified Farmer",
+    time: "Today, 9:20 AM",
+    section: "verifications",
+    icon: BadgeCheck
+  },
+  {
+    action: "New farmer added",
+    detail: "Nsawam Fruit Farmers joined the farmer directory",
+    time: "Today, 8:45 AM",
+    section: "farmers",
+    icon: Sprout
+  },
+  {
+    action: "New supplier added",
+    detail: "FreshChain Logistics Tema added to supplier records",
+    time: "Yesterday, 4:10 PM",
+    section: "suppliers",
+    icon: Truck
+  },
+  {
+    action: "Buyer request created",
+    detail: "500 crates of tomatoes requested in Greater Accra",
+    time: "Yesterday, 2:35 PM",
+    section: "buyer-requests",
+    icon: PackageCheck
+  },
+  {
+    action: "Listing approved",
+    detail: "Bulk onions listing approved for marketplace visibility",
+    time: "Jun 7, 11:15 AM",
+    section: "marketplace",
+    icon: Store
+  }
+];
+
 function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
   const whatsappLeads = farmerDirectory.length + supplierDirectory.length + products.length + buyerRequests.length;
@@ -238,6 +283,35 @@ function pendingWork(rows: Record<AdminSectionId, AdminRow[]>) {
   ];
 }
 
+function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>) {
+  return [
+    {
+      label: "Pending Verifications",
+      value: rows.verifications.filter((row) => row.status === "Pending").length,
+      section: "verifications" as AdminSectionId,
+      icon: ShieldCheck
+    },
+    {
+      label: "Pending Listings",
+      value: products.filter((product) => !product.verified && product.available !== "Sold Out").length,
+      section: "marketplace" as AdminSectionId,
+      icon: Store
+    },
+    {
+      label: "Pending Buyer Requests",
+      value: buyerRequests.filter((request) => request.status !== "Fulfilled").length,
+      section: "buyer-requests" as AdminSectionId,
+      icon: PackageCheck
+    },
+    {
+      label: "New WhatsApp Leads",
+      value: farmerDirectory.length + supplierDirectory.length + products.filter((product) => product.available !== "Sold Out").length,
+      section: "buyers" as AdminSectionId,
+      icon: MessageCircle
+    }
+  ];
+}
+
 export function AdminDashboard() {
   const [accessGranted, setAccessGranted] = useState(() => {
     if (typeof window === "undefined") {
@@ -258,6 +332,7 @@ export function AdminDashboard() {
   const rowsBySection = useMemo(() => sectionRows(), []);
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
+  const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection), [rowsBySection]);
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -491,6 +566,77 @@ export function AdminDashboard() {
               );
             })}
           </div>
+
+          <section className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Recent Activity</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink">Latest platform updates</h2>
+                </div>
+                <span className="hidden h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700 sm:grid">
+                  <Clock3 className="h-5 w-5" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="mt-5 divide-y divide-leaf-900/10">
+                {recentActivity.map((activity) => {
+                  const Icon = activity.icon;
+
+                  return (
+                    <button
+                      key={`${activity.action}-${activity.time}`}
+                      type="button"
+                      onClick={() => runQuickAction(activity.section, `${activity.action} activity opened.`)}
+                      className="flex w-full items-start gap-3 py-3 text-left transition first:pt-0 last:pb-0 hover:text-leaf-800"
+                    >
+                      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-black text-ink">{activity.action}</span>
+                        <span className="mt-1 block text-sm leading-5 text-ink/60">{activity.detail}</span>
+                      </span>
+                      <span className="hidden shrink-0 text-xs font-black text-ink/45 sm:block">{activity.time}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
+                  <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Pending Tasks</p>
+                  <h2 className="text-2xl font-black text-ink">Admin queue</h2>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                {pendingTaskItems.map((task) => {
+                  const Icon = task.icon;
+
+                  return (
+                    <button
+                      key={task.label}
+                      type="button"
+                      onClick={() => runQuickAction(task.section, `${task.label} opened from pending tasks.`)}
+                      className="flex items-center justify-between gap-4 rounded-md bg-white p-4 text-left ring-1 ring-leaf-900/10 transition hover:ring-leaf-700/30"
+                    >
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="truncate text-sm font-black text-ink">{task.label}</span>
+                      </span>
+                      <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{task.value}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
 
           <section className="mt-8 rounded-md border border-leaf-900/10 bg-white shadow-sm">
             <div className="border-b border-leaf-900/10 p-5">
