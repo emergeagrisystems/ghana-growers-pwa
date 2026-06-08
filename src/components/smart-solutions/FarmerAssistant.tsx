@@ -69,13 +69,13 @@ export function FarmerAssistant() {
       const answer = data.answer;
 
       if (!response.ok || !answer) {
-        setErrorMessage(data.error || "The AI Farmer Assistant is temporarily unavailable. Please try again.");
+        setErrorMessage(data.error || "The Farm Help Assistant is temporarily unavailable. Please try again.");
         throw new Error("Assistant request failed");
       }
 
       setMessages((current) => [...current, { role: "assistant", text: answer }]);
     } catch {
-      setErrorMessage((current) => current || "The AI Farmer Assistant is temporarily unavailable. Please try again.");
+      setErrorMessage((current) => current || "The Farm Help Assistant is temporarily unavailable. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -83,8 +83,8 @@ export function FarmerAssistant() {
 
   return (
     <section id="assistant" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      <p className="text-sm font-black uppercase text-earth-700">AI Farmer Assistant</p>
-      <h2 className="mt-2 text-2xl font-black text-ink">Ask AI Assistant</h2>
+      <p className="text-sm font-black uppercase text-earth-700">Farm Help Assistant</p>
+      <h2 className="mt-2 text-2xl font-black text-ink">Ask Farm Help Assistant</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
         Ask practical farming, market, storage, input, and buyer questions. The assistant runs through a secure server endpoint, so API keys are never exposed in frontend code.
       </p>
@@ -164,7 +164,7 @@ export function FarmerAssistant() {
           className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25"
         >
           <Send size={17} aria-hidden="true" />
-          {isLoading ? "Thinking..." : "Ask AI Assistant"}
+          {isLoading ? "Thinking..." : "Ask Farm Help"}
         </button>
       </form>
     </section>

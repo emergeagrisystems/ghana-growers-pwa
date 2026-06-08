@@ -16,40 +16,42 @@ export const WHATSAPP_NUMBER = "233000000000";
 export const navigation: NavigationItem[] = [
   { title: "Home", href: "/" },
   {
-    title: "Services",
-    href: "/services",
-    children: [
-      { title: "Join as a Farmer", href: "/join/farmer" },
-      { title: "Join as a Buyer", href: "/join/buyer" },
-      { title: "Become a Supplier", href: "/join/supplier" },
-      { title: "For Farmers", href: "/services/farmers" },
-      { title: "For Buyers", href: "/services/buyers" },
-      { title: "For Suppliers", href: "/services/suppliers" }
-    ]
-  },
-  {
-    title: "Marketplace / Shop",
+    title: "Marketplace",
     href: "/marketplace",
     children: [
-      { title: "Shop Listings", href: "/marketplace" },
       { title: "Farmer Directory", href: "/farmer-directory" },
       { title: "Supplier Directory", href: "/supplier-directory" },
       { title: "Buyer Requests", href: "/buyer-requests" },
       { title: "Market Intelligence", href: "/market-intelligence" }
     ]
   },
-  { title: "Smart Solutions", href: "/smart-solutions" },
-  { title: "WhatsApp Communities", href: "/whatsapp-communities" },
+  { title: "Farmer Tools", href: "/smart-solutions" },
   { title: "Learn", href: "/learn" },
-  { title: "Verification", href: "/verification-requirements" },
   {
     title: "About",
     href: "/about",
     children: [
-      { title: "WhatsApp Communities", href: "/whatsapp-communities" },
       { title: "Careers", href: "/about/careers" },
       { title: "Partner With Us", href: "/about/partner-with-us" },
       { title: "Blog", href: "/about/blog" }
+    ]
+  },
+  {
+    title: "Join",
+    href: "/join",
+    children: [
+      { title: "Join as Farmer", href: "/join/farmer" },
+      { title: "Join as Buyer", href: "/join/buyer" },
+      { title: "Join as Supplier", href: "/join/supplier" }
+    ]
+  },
+  {
+    title: "Resources",
+    href: "/services",
+    children: [
+      { title: "Services", href: "/services" },
+      { title: "Verification", href: "/verification-requirements" },
+      { title: "WhatsApp Communities", href: "/whatsapp-communities" }
     ]
   }
 ];

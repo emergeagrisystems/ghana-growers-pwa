@@ -2,14 +2,14 @@
 
 ## Phase 1: Website Launch and Core Onboarding
 
-Phase 1 establishes the public website, initial community channels, registration workflows, and the first Smart Solutions prototypes.
+Phase 1 establishes the public website, initial community channels, registration workflows, and the first Farmer Tools prototypes.
 
 - Website launch
   - Launch the responsive Ghana Growers website on Vercel.
-  - Publish core pages for Home, Services, Marketplace, Learn, Smart Solutions, and About.
+  - Publish core pages for Home, Services, Marketplace, Learn, Farmer Tools, and About.
   - Confirm navigation, metadata, mobile layouts, and WhatsApp CTAs.
-- Smart Solutions
-  - Release the Smart Solutions dashboard.
+- Farmer Tools
+  - Release the Farmer Tools dashboard.
   - Include weather updates, crop health prototype, AI assistant prototype, and market prices dashboard.
   - Keep provider integrations server-ready without exposing API keys.
 - Farmer Registration
@@ -55,7 +55,7 @@ Phase 2 turns the website from a static launch platform into a more operational 
 
 ## Phase 3: Intelligence and Advisory Tools
 
-Phase 3 upgrades Smart Solutions from prototypes into practical decision-support tools.
+Phase 3 upgrades Farmer Tools from prototypes into practical decision-support tools.
 
 - OpenAI-powered Farmer Assistant
   - Connect the Farmer Assistant to OpenAI through a secure server-side route.

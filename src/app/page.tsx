@@ -46,7 +46,7 @@ const platformPillars = [
   },
   {
     title: "Smart farm support",
-    description: "Weather tools, market intelligence, crop health guidance, and an AI farmer assistant support better decisions.",
+    description: "Weather tools, market intelligence, crop health guidance, and the Farm Help Assistant support better decisions.",
     icon: BarChart3
   },
   {
@@ -266,7 +266,7 @@ export default function HomePage() {
             </p>
             <h2 className="mt-4 text-3xl font-black sm:text-4xl">Grow trusted agricultural connections across Ghana</h2>
             <p className="mt-4 leading-7 text-white/70">
-              Register interest, browse directories, join WhatsApp communities, and use Smart Solutions to make better decisions before buying, selling, supplying, or transporting agricultural products.
+              Register interest, browse directories, join WhatsApp communities, and use Farmer Tools to make better decisions before buying, selling, supplying, or transporting agricultural products.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/verification-requirements" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">

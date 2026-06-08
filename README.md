@@ -29,22 +29,22 @@ public/images/           Placeholder visual assets
 - Blog posts and learning content: edit `src/data/blog.ts`.
 - Service page content: edit `src/data/services.ts`.
 - Farmer directory placeholders: edit `src/data/farmers.ts`.
-- Smart Solutions market prices: edit `src/data/marketPrices.json`.
-- Smart Solutions locations: edit `src/data/weatherLocations.ts`.
+- Farmer Tools market prices: edit `src/data/marketPrices.json`.
+- Farmer Tools locations: edit `src/data/weatherLocations.ts`.
 - Buyer requests board: edit `src/data/buyerRequests.json`.
 - WhatsApp community invite links: edit `src/data/whatsappCommunities.ts`.
 - Farmer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Buyer registration notification recipients: edit `src/data/notificationConfig.ts`.
 - Supplier registration notification recipients: edit `src/data/notificationConfig.ts`.
 
-## Smart Solutions Integrations
+## Farmer Tools Integrations
 
 - Weather uses the free Open-Meteo API directly from the frontend.
-- AI Farmer Assistant uses `src/app/api/farmer-assistant/route.ts` and calls OpenAI from the server using `OPENAI_API_KEY`.
+- Farm Help Assistant uses `src/app/api/farmer-assistant/route.ts` and calls OpenAI from the server using `OPENAI_API_KEY`.
 - Crop Health Check uses `src/app/api/crop-health/route.ts`, ready for Plant.id, Crop.health, Plantix, or a similar provider.
 - Keep API keys in environment variables on the server. Do not expose provider keys in frontend components.
 
-### AI Farmer Assistant Setup
+### Farm Help Assistant Setup
 
 The chat UI lives in `src/components/smart-solutions/FarmerAssistant.tsx` and is displayed on `/smart-solutions`.
 
@@ -84,7 +84,7 @@ To test locally:
 2. Add `OPENAI_API_KEY=your_api_key_here`.
 3. Optionally add `OPENAI_MODEL="gpt-5.4-mini"`.
 4. Run the app.
-5. Open `/smart-solutions` and ask a question in the AI Farmer Assistant section.
+5. Open `/smart-solutions` and ask a question in the Farm Help Assistant section.
 
 Example local test:
 

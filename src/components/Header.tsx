@@ -47,28 +47,10 @@ export function Header() {
 
         <div className="hidden items-center gap-2 lg:flex">
           <Link
-            href="/join/farmer"
+            href="/join"
             className="focus-ring rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-700"
           >
-            Join Farmer
-          </Link>
-          <Link
-            href="/join/buyer"
-            className="focus-ring rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
-          >
-            Join Buyer
-          </Link>
-          <Link
-            href="/join/supplier"
-            className="focus-ring rounded-md bg-earth-500 px-4 py-2 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
-          >
-            Supplier
-          </Link>
-          <Link
-            href="/marketplace"
-            className="focus-ring rounded-md bg-white px-4 py-2 text-sm font-black text-ink ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
-          >
-            Browse Shop
+            Join Now
           </Link>
         </div>
 
@@ -110,6 +92,13 @@ export function Header() {
                 ) : null}
               </div>
             ))}
+            <Link
+              href="/join"
+              onClick={() => setOpen(false)}
+              className="focus-ring mt-2 block rounded-md bg-leaf-600 px-3 py-3 text-center font-black text-white hover:bg-leaf-700"
+            >
+              Join Now
+            </Link>
           </div>
         </div>
       ) : null}

@@ -8,7 +8,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { productCategories, products } from "@/data/products";
 
 export const metadata = {
-  title: "Marketplace / Shop",
+  title: "Marketplace",
   description: "Browse Ghana Growers produce, farm input, packaging, and logistics listings."
 };
 
@@ -16,7 +16,7 @@ export default function MarketplacePage() {
   return (
     <>
       <PageHero
-        eyebrow="Marketplace / Shop"
+        eyebrow="Marketplace"
         title="Browse produce, inputs, packaging, and logistics support"
         description="No checkout yet. Every listing uses direct WhatsApp contact so buyers, farmers, and suppliers can confirm price, availability, volume, and location."
       >

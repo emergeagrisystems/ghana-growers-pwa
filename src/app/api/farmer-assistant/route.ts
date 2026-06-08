@@ -66,8 +66,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: isMissingKey
-          ? "The AI Farmer Assistant is not configured in this deployment. Confirm OPENAI_API_KEY is set in Vercel and redeploy."
-          : "The AI Farmer Assistant is temporarily unavailable. Please try again shortly.",
+          ? "The Farm Help Assistant is not configured in this deployment. Confirm OPENAI_API_KEY is set in Vercel and redeploy."
+          : "The Farm Help Assistant is temporarily unavailable. Please try again shortly.",
         provider: "openai",
         integrationReady: false
       },

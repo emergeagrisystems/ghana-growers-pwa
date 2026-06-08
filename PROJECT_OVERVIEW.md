@@ -21,10 +21,10 @@ The current website is an MVP foundation for a broader AgriTech platform that ca
   - For Farmers
   - For Buyers
   - For Suppliers
-- Marketplace / Shop
-  - Shop Listings
+- Marketplace
+  - Listings
   - Buyer Requests
-- Smart Solutions
+- Farmer Tools
 - WhatsApp Communities
 - Learn
 - About
@@ -53,15 +53,15 @@ The current website is an MVP foundation for a broader AgriTech platform that ca
 - PWA manifest and lightweight service worker.
 - SEO metadata through Next.js.
 
-## Smart Solutions Features
+## Farmer Tools Features
 
 - Live Weather Updates using Open-Meteo from the frontend.
 - Weather-based farming advice for spraying, drying, irrigation, heat, wind, and rainfall decisions.
 - Crop Health Check prototype with image upload preview and mock advisory output.
-- OpenAI-powered AI Farmer Assistant with server-side chat API route, suggested questions, loading states, error handling, and agricultural disclaimer.
+- OpenAI-powered Farm Help Assistant with server-side chat API route, suggested questions, loading states, error handling, and agricultural disclaimer.
 - Market Prices Dashboard using local market price data with crop, region, and market filters.
 
-The Smart Solutions area is integration-ready. Weather is currently live through Open-Meteo, the AI Farmer Assistant uses OpenAI from a secure server route when `OPENAI_API_KEY` is configured, and the Crop Health Check is a mock/prototype service that should later connect to a secure crop disease provider.
+The Farmer Tools area is integration-ready. Weather is currently live through Open-Meteo, the Farm Help Assistant uses OpenAI from a secure server route when `OPENAI_API_KEY` is configured, and the Crop Health Check is a mock/prototype service that should later connect to a secure crop disease provider.
 
 ## Technology Stack
 

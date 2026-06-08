@@ -16,9 +16,9 @@ export const smartTools = [
     icon: ScanSearch
   },
   {
-    title: "AI Farmer Assistant",
+    title: "Farm Help Assistant",
     description: "Ask practical questions about crop care, storage, fertilizer, buyers, and market access.",
-    cta: "Ask AI Assistant",
+    cta: "Ask Farm Help",
     href: "#assistant",
     icon: Bot
   },

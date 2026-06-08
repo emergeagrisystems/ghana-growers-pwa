@@ -8,18 +8,18 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { smartTools } from "@/data/smartTools";
 
 export const metadata = {
-  title: "Smart Solutions",
+  title: "Farmer Tools",
   description:
-    "Practical digital tools for Ghanaian farmers including weather updates, crop health checks, AI farming advice, and market prices."
+    "Weather updates, market prices, crop health checks, and farming advice for Ghanaian farmers."
 };
 
 export default function SmartSolutionsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Smart Solutions"
-        title="A professional AgriTech tool hub for Ghanaian farmers"
-        description="Use weather signals, crop photo checks, practical AI guidance, and market price data to make better day-to-day farm decisions."
+        eyebrow="Farmer Tools"
+        title="Farmer Tools"
+        description="Weather Updates, Market Prices, Crop Health Checks, and Farming Advice for Ghanaian Farmers."
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {smartTools.map((tool) => (
@@ -43,7 +43,7 @@ export default function SmartSolutionsPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             eyebrow="Dashboard"
-            title="Smart Solutions dashboard"
+            title="Farmer Tools dashboard"
             description="Open the tool you need now, or scroll through the full dashboard. Each card is built around a practical farm decision."
           />
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">

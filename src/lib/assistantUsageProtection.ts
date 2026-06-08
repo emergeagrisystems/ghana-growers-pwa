@@ -74,7 +74,7 @@ export function checkAssistantUsageLimit(clientId: string, now = Date.now()) {
       ok: false,
       status: 429,
       retryAfterSeconds: Math.max(60, Math.ceil((DAILY_MS - (now - bucket.dayStartedAt)) / 1000)),
-      error: "You have reached today's AI Farmer Assistant limit. Please try again tomorrow, or contact Ghana Growers on WhatsApp for urgent support."
+      error: "You have reached today's Farm Help Assistant limit. Please try again tomorrow, or contact Ghana Growers on WhatsApp for urgent support."
     };
   }
 

@@ -32,9 +32,9 @@ const footerGroups = [
     ]
   },
   {
-    title: "Smart Solutions",
+    title: "Farmer Tools",
     links: [
-      { title: "AI Farmer Assistant", href: "/smart-solutions#farmer-assistant" },
+      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" },
       { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
       { title: "Weather Tools", href: "/smart-solutions#weather" },
       { title: "Market Prices", href: "/market-intelligence" }
