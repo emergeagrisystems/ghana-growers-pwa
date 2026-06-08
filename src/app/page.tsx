@@ -3,8 +3,11 @@ import {
   ArrowRight,
   BadgeCheck,
   BarChart3,
+  Bot,
+  CloudSun,
   Handshake,
   MessageCircle,
+  MapPinned,
   PackageCheck,
   Search,
   ShieldCheck,
@@ -63,10 +66,19 @@ const ghanaVisuals = [
   { title: "Agricultural supply chains", image: "/images/marketplace/logistics-truck.jpg" }
 ];
 
-const heroStats = [
-  { value: "200+", label: "Farmers" },
-  { value: "100+", label: "Buyers" },
-  { value: "75+", label: "Suppliers" }
+const heroCapabilities = [
+  { title: "10 Regions Covered", icon: MapPinned },
+  { title: "Live Market Prices", icon: BarChart3 },
+  { title: "Weather Updates", icon: CloudSun },
+  { title: "AI Farming Support", icon: Bot }
+];
+
+const platformHighlights = [
+  "Farmers from 10 Ghana regions",
+  "Live market prices",
+  "Weather forecasts",
+  "Direct buyer connections",
+  "AI farming assistance"
 ];
 
 export default function HomePage() {
@@ -79,23 +91,29 @@ export default function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-[3.4rem]">
               Connecting Ghana&apos;s Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/70">
               Ghana Growers helps farmers access buyers, buyers source quality produce, and suppliers reach Ghana&apos;s agricultural network.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/join/farmer">Sell your harvest/products</ButtonLink>
-              <ButtonLink href="/marketplace" variant="secondary">Buy Farm-Fresh</ButtonLink>
+              <ButtonLink href="/buyer-requests">Find Buyers</ButtonLink>
+              <ButtonLink href="/marketplace" variant="secondary">Browse Marketplace</ButtonLink>
             </div>
-            <div className="mt-7 grid max-w-xl grid-cols-3 gap-3">
-              {heroStats.map((stat) => (
-                <div key={stat.label} className="rounded-md border border-leaf-900/10 bg-white/90 p-4 shadow-soft backdrop-blur">
-                  <p className="text-2xl font-black text-leaf-700 sm:text-3xl">{stat.value}</p>
-                  <p className="mt-1 text-xs font-black uppercase text-ink/55">{stat.label}</p>
-                </div>
-              ))}
+            <div className="mt-7 grid max-w-xl grid-cols-2 gap-3">
+              {heroCapabilities.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <div key={item.title} className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                      <Icon size={20} aria-hidden="true" />
+                    </span>
+                    <p className="text-sm font-black leading-5 text-ink">{item.title}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="relative">
@@ -116,8 +134,15 @@ export default function HomePage() {
                 Verified network
               </div>
               <div className="absolute bottom-5 left-5 right-5 rounded-md bg-white/95 p-4 shadow-soft backdrop-blur sm:left-auto sm:max-w-sm">
-                <p className="text-sm font-black text-ink">Fresh produce, verified suppliers, real market access</p>
-                <p className="mt-2 text-xs leading-5 text-ink/65">A practical network for farm groups, buyers, suppliers, and Ghanaian agricultural communities.</p>
+                <p className="text-sm font-black text-ink">Today&apos;s Platform Highlights</p>
+                <ul className="mt-3 grid gap-1.5 text-xs font-bold leading-5 text-ink/70">
+                  {platformHighlights.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-leaf-600" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
