@@ -26,6 +26,8 @@ export function middleware(request: NextRequest) {
   }
 
   if (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
     pathname.startsWith("/api") ||
     pathname === "/launching-soon" ||
     pathname === "/dev-preview" ||
