@@ -1,44 +1,25 @@
 {
-  "lastUpdated": "2026-06-07",
+  "lastUpdated": "2026-06-08",
   "note": "Buyer requests are indicative and should be confirmed directly before harvesting, transporting, or trading.",
   "requests": [
     {
-      "id": "maize-tamale-feed-processor",
+      "id": "maize-kumasi-feed-processor",
       "productName": "Maize",
-      "quantityNeeded": "20 metric tonnes",
-      "region": "Northern",
-      "district": "Tamale Metro",
-      "deadline": "2026-07-15",
+      "quantityNeeded": "200 bags",
+      "region": "Ashanti",
+      "district": "Kumasi Metro",
+      "deadline": "2026-06-18",
       "buyerType": "Food Processor",
+      "buyerName": "Kumasi Feed & Foods Ltd.",
+      "deliveryPreference": "Delivery to warehouse in Asokwa preferred",
+      "budgetRange": "GHS 520 - 580 per bag",
+      "notes": "Buyer prefers clean, well-dried maize with low moisture content. Farmers should confirm grading and bag weights before delivery.",
+      "status": "Urgent",
+      "whatsappNumber": "233550000101",
       "contactMethod": "WhatsApp",
-      "datePosted": "2026-06-07",
+      "datePosted": "2026-06-08",
       "trust": {
         "status": "Verified",
-        "requirements": {
-          "phoneVerified": true,
-          "whatsappVerified": true,
-          "identitySubmitted": true,
-          "businessRegistration": false
-        },
-        "score": {
-          "profileCompleteness": 82,
-          "verificationLevel": 76,
-          "activityLevel": 71
-        }
-      }
-    },
-    {
-      "id": "tomatoes-accra-market-women",
-      "productName": "Tomatoes",
-      "quantityNeeded": "120 crates weekly",
-      "region": "Greater Accra",
-      "district": "Accra Metro",
-      "deadline": "2026-06-28",
-      "buyerType": "Market Woman",
-      "contactMethod": "WhatsApp",
-      "datePosted": "2026-06-06",
-      "trust": {
-        "status": "Premium Member",
         "requirements": {
           "phoneVerified": true,
           "whatsappVerified": true,
@@ -46,97 +27,28 @@
           "businessRegistration": true
         },
         "score": {
-          "profileCompleteness": 93,
-          "verificationLevel": 88,
-          "activityLevel": 86
+          "profileCompleteness": 88,
+          "verificationLevel": 84,
+          "activityLevel": 79
         }
       }
     },
     {
-      "id": "cassava-central-processor",
-      "productName": "Cassava",
-      "quantityNeeded": "15 tonnes",
-      "region": "Central",
-      "district": "Mfantsiman",
-      "deadline": "2026-07-05",
-      "buyerType": "Food Processor",
-      "contactMethod": "Phone / WhatsApp",
-      "datePosted": "2026-06-06",
-      "trust": {
-        "status": "Verified",
-        "requirements": {
-          "phoneVerified": true,
-          "whatsappVerified": true,
-          "identitySubmitted": true,
-          "businessRegistration": false
-        },
-        "score": {
-          "profileCompleteness": 79,
-          "verificationLevel": 73,
-          "activityLevel": 68
-        }
-      }
-    },
-    {
-      "id": "plantain-kumasi-restaurant",
-      "productName": "Plantain",
-      "quantityNeeded": "80 bunches weekly",
-      "region": "Ashanti",
-      "district": "Kumasi Metro",
-      "deadline": "2026-06-25",
-      "buyerType": "Restaurant",
+      "id": "tomatoes-accra-market-women",
+      "productName": "Tomatoes",
+      "quantityNeeded": "500 crates",
+      "region": "Greater Accra",
+      "district": "Accra Metro",
+      "deadline": "2026-06-22",
+      "buyerType": "Market Trader",
+      "buyerName": "Makola Fresh Produce Group",
+      "deliveryPreference": "Delivery to Makola or Agbogbloshie market",
+      "budgetRange": "Negotiable by crate quality",
+      "notes": "Looking for firm tomatoes suitable for wholesale. Consistent weekly supply is preferred.",
+      "status": "Open",
+      "whatsappNumber": "233550000102",
       "contactMethod": "WhatsApp",
-      "datePosted": "2026-06-05",
-      "trust": {
-        "status": "Pending Verification",
-        "requirements": {
-          "phoneVerified": true,
-          "whatsappVerified": true,
-          "identitySubmitted": false,
-          "businessRegistration": false
-        },
-        "score": {
-          "profileCompleteness": 60,
-          "verificationLevel": 36,
-          "activityLevel": 46
-        }
-      }
-    },
-    {
-      "id": "yam-techiman-exporter",
-      "productName": "Yam",
-      "quantityNeeded": "5,000 tubers",
-      "region": "Bono East",
-      "district": "Techiman",
-      "deadline": "2026-07-20",
-      "buyerType": "Exporter",
-      "contactMethod": "WhatsApp",
-      "datePosted": "2026-06-05",
-      "trust": {
-        "status": "Verified",
-        "requirements": {
-          "phoneVerified": true,
-          "whatsappVerified": true,
-          "identitySubmitted": true,
-          "businessRegistration": false
-        },
-        "score": {
-          "profileCompleteness": 84,
-          "verificationLevel": 78,
-          "activityLevel": 74
-        }
-      }
-    },
-    {
-      "id": "eggs-takoradi-hotel",
-      "productName": "Eggs",
-      "quantityNeeded": "250 crates monthly",
-      "region": "Western",
-      "district": "Sekondi-Takoradi",
-      "deadline": "2026-06-30",
-      "buyerType": "Hotel",
-      "contactMethod": "WhatsApp",
-      "datePosted": "2026-06-04",
+      "datePosted": "2026-06-08",
       "trust": {
         "status": "Premium Member",
         "requirements": {
@@ -148,20 +60,150 @@
         "score": {
           "profileCompleteness": 94,
           "verificationLevel": 90,
-          "activityLevel": 87
+          "activityLevel": 88
         }
       }
     },
     {
-      "id": "poultry-accra-caterer",
-      "productName": "Poultry",
-      "quantityNeeded": "300 birds",
-      "region": "Greater Accra",
-      "district": "Ga East",
-      "deadline": "2026-07-02",
-      "buyerType": "Caterer",
+      "id": "plantain-takoradi-wholesaler",
+      "productName": "Plantain",
+      "quantityNeeded": "1,000 bunches",
+      "region": "Western",
+      "district": "Sekondi-Takoradi",
+      "deadline": "2026-06-26",
+      "buyerType": "Wholesaler",
+      "buyerName": "Takoradi Plantain Buyers Network",
+      "deliveryPreference": "Pickup from farm gate if volume is confirmed",
+      "budgetRange": "GHS 85 - 110 per bunch",
+      "notes": "Buyer can aggregate from multiple farms. Mature green plantain preferred for resale.",
+      "status": "Open",
+      "whatsappNumber": "233550000103",
       "contactMethod": "Phone / WhatsApp",
-      "datePosted": "2026-06-04",
+      "datePosted": "2026-06-07",
+      "trust": {
+        "status": "Verified",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": true,
+          "businessRegistration": false
+        },
+        "score": {
+          "profileCompleteness": 83,
+          "verificationLevel": 76,
+          "activityLevel": 72
+        }
+      }
+    },
+    {
+      "id": "eggs-tamale-hotel-supply",
+      "productName": "Eggs",
+      "quantityNeeded": "300 crates",
+      "region": "Northern",
+      "district": "Tamale Metro",
+      "deadline": "2026-06-15",
+      "buyerType": "Hotel / Catering",
+      "buyerName": "Tamale Hospitality Supply Desk",
+      "deliveryPreference": "Delivery to Tamale central business district",
+      "budgetRange": "GHS 78 - 85 per crate",
+      "notes": "Medium to large eggs preferred. Buyer wants clean crates and reliable delivery schedule.",
+      "status": "Urgent",
+      "whatsappNumber": "233550000104",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-07",
+      "trust": {
+        "status": "Verified",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": true,
+          "businessRegistration": true
+        },
+        "score": {
+          "profileCompleteness": 90,
+          "verificationLevel": 86,
+          "activityLevel": 82
+        }
+      }
+    },
+    {
+      "id": "cassava-sunyani-processor",
+      "productName": "Cassava",
+      "quantityNeeded": "5 tonnes",
+      "region": "Bono",
+      "district": "Sunyani Municipal",
+      "deadline": "2026-07-03",
+      "buyerType": "Food Processor",
+      "buyerName": "Sunyani Gari Processing Cooperative",
+      "deliveryPreference": "Farm gate pickup within Sunyani and nearby districts",
+      "budgetRange": "GHS 850 - 1,000 per tonne",
+      "notes": "Fresh cassava needed for gari processing. Buyer can coordinate pickup for grouped farmers.",
+      "status": "Open",
+      "whatsappNumber": "233550000105",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-06",
+      "trust": {
+        "status": "Verified",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": true,
+          "businessRegistration": false
+        },
+        "score": {
+          "profileCompleteness": 82,
+          "verificationLevel": 76,
+          "activityLevel": 74
+        }
+      }
+    },
+    {
+      "id": "rice-ho-institutional-buyer",
+      "productName": "Rice",
+      "quantityNeeded": "50 bags",
+      "region": "Volta",
+      "district": "Ho Municipal",
+      "deadline": "2026-07-10",
+      "buyerType": "Institutional Buyer",
+      "buyerName": "Ho Schools Food Supply Desk",
+      "deliveryPreference": "Delivery to Ho Municipal stores",
+      "budgetRange": "GHS 620 - 700 per bag",
+      "notes": "Polished local rice preferred. Supplier should indicate variety and packaging size.",
+      "status": "Open",
+      "whatsappNumber": "233550000106",
+      "contactMethod": "Phone / WhatsApp",
+      "datePosted": "2026-06-06",
+      "trust": {
+        "status": "Pending Verification",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": false,
+          "businessRegistration": false
+        },
+        "score": {
+          "profileCompleteness": 66,
+          "verificationLevel": 42,
+          "activityLevel": 55
+        }
+      }
+    },
+    {
+      "id": "poultry-cape-coast-caterer",
+      "productName": "Poultry",
+      "quantityNeeded": "250 dressed birds",
+      "region": "Central",
+      "district": "Cape Coast Metro",
+      "deadline": "2026-06-21",
+      "buyerType": "Caterer",
+      "buyerName": "Cape Coast Events Catering",
+      "deliveryPreference": "Delivery to Cape Coast or pickup from nearby farms",
+      "budgetRange": "GHS 72 - 85 per dressed bird",
+      "notes": "Buyer needs consistent poultry supply for events. Farmers should confirm bird size and processing capacity.",
+      "status": "Open",
+      "whatsappNumber": "233550000107",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-05",
       "trust": {
         "status": "Pending Verification",
         "requirements": {
@@ -173,7 +215,69 @@
         "score": {
           "profileCompleteness": 62,
           "verificationLevel": 40,
-          "activityLevel": 50
+          "activityLevel": 52
+        }
+      }
+    },
+    {
+      "id": "yam-techiman-exporter",
+      "productName": "Yam",
+      "quantityNeeded": "3,000 tubers",
+      "region": "Bono East",
+      "district": "Techiman",
+      "deadline": "2026-07-18",
+      "buyerType": "Exporter",
+      "buyerName": "Techiman Yam Export Desk",
+      "deliveryPreference": "Delivery to aggregation point in Techiman",
+      "budgetRange": "Negotiable by tuber size",
+      "notes": "Export-grade yam preferred. Buyer will inspect size, bruising, and packaging before purchase.",
+      "status": "Open",
+      "whatsappNumber": "233550000108",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-05",
+      "trust": {
+        "status": "Verified",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": true,
+          "businessRegistration": true
+        },
+        "score": {
+          "profileCompleteness": 86,
+          "verificationLevel": 82,
+          "activityLevel": 76
+        }
+      }
+    },
+    {
+      "id": "onions-accra-restaurant-chain",
+      "productName": "Onions",
+      "quantityNeeded": "80 bags",
+      "region": "Greater Accra",
+      "district": "Tema",
+      "deadline": "2026-06-28",
+      "buyerType": "Restaurant Chain",
+      "buyerName": "Accra Quick Service Kitchens",
+      "deliveryPreference": "Delivery to Tema distribution point",
+      "budgetRange": "GHS 700 - 780 per bag",
+      "notes": "Clean, dry onions preferred. Buyer is comparing offers for regular monthly supply.",
+      "status": "Fulfilled",
+      "whatsappNumber": "233550000109",
+      "contactMethod": "WhatsApp",
+      "datePosted": "2026-06-03",
+      "trust": {
+        "status": "Premium Member",
+        "requirements": {
+          "phoneVerified": true,
+          "whatsappVerified": true,
+          "identitySubmitted": true,
+          "businessRegistration": true
+        },
+        "score": {
+          "profileCompleteness": 92,
+          "verificationLevel": 89,
+          "activityLevel": 84
         }
       }
     }

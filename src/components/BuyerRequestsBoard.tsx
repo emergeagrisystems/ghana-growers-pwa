@@ -1,156 +1,389 @@
 "use client";
 
-import { CalendarDays, MapPin, ShoppingBasket } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarDays,
+  ChevronDown,
+  Clock,
+  MapPin,
+  MessageCircle,
+  Search,
+  ShoppingBasket,
+  SlidersHorizontal,
+  X
+} from "lucide-react";
 import { useMemo, useState } from "react";
-import { buyerRequests, buyerRequestsMeta } from "@/data/buyerRequests";
+import { buyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
-import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { normalizeTrust, TrustSummary } from "@/components/TrustIndicators";
 import { featuredListingLabels, isFeaturedBuyerRequest } from "@/data/featuredListings";
+
+type FilterConfig = {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  options: string[];
+};
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
 }
 
+function buyerWhatsAppUrl(request: BuyerRequest) {
+  const message = `Hello, I am responding to your Ghana Growers buyer request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`;
+  return `https://wa.me/${request.whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
+function SearchBox({
+  searchTerm,
+  setSearchTerm
+}: {
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-black text-ink">Search</span>
+      <span className="relative block">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
+        <input
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search buyer requests..."
+          className="w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm outline-none transition focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
+        />
+      </span>
+    </label>
+  );
+}
+
+function FilterControls({ filters }: { filters: FilterConfig[] }) {
+  return (
+    <div className="grid gap-4 md:grid-cols-5">
+      {filters.map((filter) => (
+        <label key={filter.label} className="block">
+          <span className="mb-2 block text-sm font-black text-ink">{filter.label}</span>
+          <span className="relative block">
+            <select
+              value={filter.value}
+              onChange={(event) => filter.setValue(event.target.value)}
+              className="w-full appearance-none rounded-md border border-leaf-900/10 bg-white px-3 py-3 pr-9 text-sm text-ink/75 shadow-sm outline-none transition focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
+            >
+              <option value="All">All {filter.label.toLowerCase()}</option>
+              {filter.options.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: BuyerRequest["status"] }) {
+  const className =
+    status === "Urgent"
+      ? "bg-earth-500 text-ink"
+      : status === "Fulfilled"
+        ? "bg-ink/10 text-ink/60"
+        : "bg-leaf-50 text-leaf-700";
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black ${className}`}>
+      {status}
+    </span>
+  );
+}
+
+function RequestCard({
+  request,
+  onViewDetails
+}: {
+  request: BuyerRequest;
+  onViewDetails: (request: BuyerRequest) => void;
+}) {
+  const trust = normalizeTrust(request.trust);
+
+  return (
+    <article
+      className={`rounded-md bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft ${
+        isFeaturedBuyerRequest(request.id) ? "border-2 border-earth-500" : "border border-leaf-900/10"
+      }`}
+    >
+      {isFeaturedBuyerRequest(request.id) ? (
+        <div className="mb-4">
+          <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
+        </div>
+      ) : null}
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{request.buyerType}</p>
+          <h2 className="mt-2 text-2xl font-black text-ink">{request.productName}</h2>
+          <p className="mt-2 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
+        </div>
+        <StatusBadge status={request.status} />
+      </div>
+
+      <div className="mt-4">
+        <TrustSummary kind="buyer" trust={trust} />
+      </div>
+
+      <dl className="mt-5 grid gap-3 text-sm text-ink/62">
+        <div className="flex gap-2">
+          <MapPin className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
+          <div>
+            <dt className="font-black text-ink">Location</dt>
+            <dd>{request.district}, {request.region}</dd>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <CalendarDays className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
+          <div>
+            <dt className="font-black text-ink">Deadline</dt>
+            <dd>{request.deadline}</dd>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Clock className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
+          <div>
+            <dt className="font-black text-ink">Date posted</dt>
+            <dd>{request.datePosted}</dd>
+          </div>
+        </div>
+      </dl>
+
+      {trust.status !== "Pending Verification" ? (
+        <div className="mt-4 inline-flex items-center gap-2 text-xs font-black text-leaf-700">
+          <BadgeCheck className="h-4 w-4" />
+          Verified Buyer
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
+        <button
+          type="button"
+          onClick={() => onViewDetails(request)}
+          className="rounded-md bg-leaf-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
+        >
+          Details
+        </button>
+        <a
+          href={buyerWhatsAppUrl(request)}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp Buyer
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function RequestDetailsModal({
+  request,
+  onClose
+}: {
+  request: BuyerRequest;
+  onClose: () => void;
+}) {
+  const trust = normalizeTrust(request.trust);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+        <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer request</p>
+            <h2 className="text-2xl font-black text-ink">{request.productName}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close buyer request details"
+            className="grid h-10 w-10 place-items-center rounded-md border border-leaf-900/10 text-ink/65 transition hover:bg-leaf-50"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid gap-5 p-5 lg:grid-cols-[1fr_0.8fr]">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge status={request.status} />
+              <TrustSummary kind="buyer" trust={trust} />
+            </div>
+            <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+              <Detail label="Product needed" value={request.productName} />
+              <Detail label="Quantity" value={request.quantityNeeded} />
+              <Detail label="Buyer" value={request.buyerName} />
+              <Detail label="Buyer type" value={request.buyerType} />
+              <Detail label="Region" value={request.region} />
+              <Detail label="District" value={request.district} />
+              <Detail label="Delivery / pickup" value={request.deliveryPreference} />
+              <Detail label="Deadline" value={request.deadline} />
+              <Detail label="Budget / price range" value={request.budgetRange ?? "Confirm with buyer"} />
+              <Detail label="Verification" value={trust.status} />
+            </div>
+          </div>
+
+          <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <h3 className="font-black text-ink">Buyer notes</h3>
+            <p className="mt-3 text-sm leading-6 text-ink/65">{request.notes}</p>
+            <p className="mt-4 text-xs font-black uppercase tracking-wide text-ink/45">Posted {request.datePosted}</p>
+            <a
+              href={buyerWhatsAppUrl(request)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp Buyer
+            </a>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-leaf-900/10 bg-white p-3">
+      <p className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</p>
+      <p className="mt-1 font-semibold leading-6 text-ink/78">{value}</p>
+    </div>
+  );
+}
+
 export function BuyerRequestsBoard() {
+  const [searchTerm, setSearchTerm] = useState("");
   const [product, setProduct] = useState("All");
   const [region, setRegion] = useState("All");
   const [buyerType, setBuyerType] = useState("All");
+  const [status, setStatus] = useState("All");
+  const [deadline, setDeadline] = useState("All");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<BuyerRequest | null>(null);
 
   const products = useMemo(() => unique(buyerRequests.map((request) => request.productName)), []);
   const regions = useMemo(() => unique(buyerRequests.map((request) => request.region)), []);
   const buyerTypes = useMemo(() => unique(buyerRequests.map((request) => request.buyerType)), []);
+  const statuses = useMemo(() => unique(buyerRequests.map((request) => request.status)), []);
+  const deadlines = useMemo(() => unique(buyerRequests.map((request) => request.deadline)), []);
 
-  const filteredRequests = buyerRequests.filter((request) => {
-    return (
-      (product === "All" || request.productName === product) &&
-      (region === "All" || request.region === region) &&
-      (buyerType === "All" || request.buyerType === buyerType)
-    );
-  });
-
-  const filters = [
+  const filters: FilterConfig[] = [
     { label: "Product", value: product, setValue: setProduct, options: products },
     { label: "Region", value: region, setValue: setRegion, options: regions },
-    { label: "Buyer Type", value: buyerType, setValue: setBuyerType, options: buyerTypes }
+    { label: "Buyer Type", value: buyerType, setValue: setBuyerType, options: buyerTypes },
+    { label: "Status", value: status, setValue: setStatus, options: statuses },
+    { label: "Deadline", value: deadline, setValue: setDeadline, options: deadlines }
   ];
 
+  const filteredRequests = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return buyerRequests.filter((request) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          request.productName,
+          request.quantityNeeded,
+          request.region,
+          request.district,
+          request.buyerType,
+          request.buyerName,
+          request.status,
+          request.notes
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+
+      return (
+        matchesSearch &&
+        (product === "All" || request.productName === product) &&
+        (region === "All" || request.region === region) &&
+        (buyerType === "All" || request.buyerType === buyerType) &&
+        (status === "All" || request.status === status) &&
+        (deadline === "All" || request.deadline === deadline)
+      );
+    });
+  }, [buyerType, deadline, product, region, searchTerm, status]);
+
   return (
-    <section className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase text-earth-700">Live demand board</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Find buyers looking for farm produce</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                Filter buyer demand by crop, region, or buyer type. Farmers should confirm price, quality, timing,
-                transport, and payment before committing produce.
+    <>
+      <section className="bg-white py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Active demand</p>
+                <h2 className="mt-2 text-3xl font-black text-ink">Requests farmers can respond to</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
+                  Filter demand by product, region, buyer type, status, or deadline. Confirm price, quality, timing,
+                  transport, and payment before committing produce.
+                </p>
+                <p className="mt-2 text-xs font-black uppercase tracking-wide text-ink/45">
+                  Last updated: {buyerRequestsMeta.lastUpdated}
+                </p>
+              </div>
+              <p className="rounded-md bg-white px-4 py-3 text-sm font-semibold leading-6 text-ink/62">
+                {buyerRequestsMeta.note}
               </p>
-              <p className="mt-2 text-xs font-black uppercase text-ink/50">Last updated: {buyerRequestsMeta.lastUpdated}</p>
             </div>
-            <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">{buyerRequestsMeta.note}</p>
-          </div>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {filters.map((filter) => (
-              <label key={filter.label} className="grid gap-2 text-sm font-bold text-ink/75">
-                {filter.label}
-                <select
-                  className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
-                  value={filter.value}
-                  onChange={(event) => filter.setValue(event.target.value)}
-                >
-                  <option value="All">All {filter.label.toLowerCase()}</option>
-                  {filter.options.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
-        </div>
+            <div className="mt-6">
+              <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredRequests.map((request) => (
-            <article
-              key={request.id}
-              className={`rounded-md bg-white p-5 shadow-soft ${
-                isFeaturedBuyerRequest(request.id) ? "border-2 border-earth-500" : "border border-leaf-900/10"
-              }`}
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters((value) => !value)}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50 md:hidden"
             >
-              {(() => {
-                const trust = normalizeTrust(request.trust);
+              <SlidersHorizontal className="h-4 w-4" />
+              {showMobileFilters ? "Hide Filters" : "Show Filters"}
+            </button>
 
-                return (
-                  <>
-              {isFeaturedBuyerRequest(request.id) ? (
-                <div className="mb-4">
-                  <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
-                </div>
-              ) : null}
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase text-earth-700">{request.buyerType}</p>
-                  <h3 className="mt-1 text-2xl font-black text-ink">{request.productName}</h3>
-                  <p className="mt-2 text-sm font-bold text-leaf-700">{request.quantityNeeded}</p>
-                </div>
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
-                  <ShoppingBasket size={22} aria-hidden="true" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <TrustSummary kind="buyer" trust={trust} />
-              </div>
+            <div className={`${showMobileFilters ? "block" : "hidden"} mt-5 md:block`}>
+              <FilterControls filters={filters} />
+            </div>
+          </div>
 
-              <dl className="mt-5 grid gap-3 text-sm text-ink/70">
-                <div className="flex gap-2">
-                  <MapPin className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
-                  <div>
-                    <dt className="font-black text-ink">Location</dt>
-                    <dd>{request.district}, {request.region}</dd>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <CalendarDays className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
-                  <div>
-                    <dt className="font-black text-ink">Deadline</dt>
-                    <dd>{request.deadline}</dd>
-                  </div>
-                </div>
-                <div>
-                  <dt className="font-black text-ink">Contact Method</dt>
-                  <dd>{request.contactMethod}</dd>
-                </div>
-                <div>
-                  <dt className="font-black text-ink">Date Posted</dt>
-                  <dd>{request.datePosted}</dd>
-                </div>
-              </dl>
+          <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
+              <h2 className="mt-2 text-3xl font-black text-ink">Browse buyer requests</h2>
+            </div>
+            <p className="text-sm font-semibold text-ink/55">
+              Showing {filteredRequests.length} of {buyerRequests.length} requests
+            </p>
+          </div>
 
-              <div className="mt-5">
-                <TrustScoreCard score={trust.score} />
-              </div>
-
-              <WhatsAppButton
-                message={`Hello Ghana Growers, I am a farmer interested in the buyer request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`}
-                className="mt-5 w-full"
-              />
-                  </>
-                );
-              })()}
-            </article>
-          ))}
+          {filteredRequests.length > 0 ? (
+            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {filteredRequests.map((request) => (
+                <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+              <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
+              <h3 className="mt-4 text-xl font-black text-ink">No buyer requests found.</h3>
+              <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
+            </div>
+          )}
         </div>
+      </section>
 
-        {filteredRequests.length === 0 ? (
-          <p className="mt-8 rounded-md bg-leaf-50 p-5 text-sm font-bold text-ink/70">
-            No buyer requests match these filters. Try a different product, region, or buyer type.
-          </p>
-        ) : null}
-      </div>
-    </section>
+      {selectedRequest ? <RequestDetailsModal request={selectedRequest} onClose={() => setSelectedRequest(null)} /> : null}
+    </>
   );
 }

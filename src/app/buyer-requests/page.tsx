@@ -1,33 +1,31 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { BuyerRequestsBoard } from "@/components/BuyerRequestsBoard";
-import { FeaturedListings } from "@/components/FeaturedListings";
-import { PageHero } from "@/components/PageHero";
 
 export const metadata = {
-  title: "Buyer Requests",
+  title: "Buyer Demand Board | Ghana Growers",
   description:
-    "Browse buyer demand for maize, tomatoes, cassava, plantain, yam, eggs, poultry, and other farm products in Ghana."
+    "Find active buyer requests for produce, livestock, and agricultural supply across Ghana."
 };
 
 export default function BuyerRequestsPage() {
   return (
     <>
-      <PageHero
-        eyebrow="Buyer Requests"
-        title="Buyer demand board for Ghanaian farmers"
-        description="See what buyers are looking for, filter demand by product and region, and contact Ghana Growers on WhatsApp when you can supply."
-      >
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <ButtonLink href="/join/farmer">Register Your Farm</ButtonLink>
-          <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
+      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+          <div className="max-w-4xl">
+            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Demand Board</p>
+            <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">
+              Buyer Demand Board
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-ink/70">
+              Find active buyer requests for produce, livestock, and agricultural supply across Ghana.
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <ButtonLink href="/join/buyer">Post Buyer Request</ButtonLink>
+            </div>
+          </div>
         </div>
-      </PageHero>
-      <FeaturedListings
-        kinds={["buyerRequests"]}
-        title="Featured buyer requests"
-        description="Priority demand opportunities selected from the editable featured listings configuration."
-        background="leaf"
-      />
+      </section>
       <BuyerRequestsBoard />
     </>
   );

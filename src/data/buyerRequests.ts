@@ -9,6 +9,12 @@ export type BuyerRequest = {
   district: string;
   deadline: string;
   buyerType: string;
+  buyerName: string;
+  deliveryPreference: string;
+  budgetRange?: string;
+  notes: string;
+  status: "Open" | "Urgent" | "Fulfilled";
+  whatsappNumber: string;
   contactMethod: string;
   datePosted: string;
   trust?: TrustProfile;
