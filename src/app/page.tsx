@@ -72,8 +72,8 @@ const heroStats = [
 export default function HomePage() {
   return (
     <>
-      <section className="ghana-grid overflow-hidden bg-gradient-to-br from-leaf-50 via-white to-earth-50">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20 xl:gap-14">
+      <section className="overflow-hidden bg-gradient-to-br from-white via-leaf-50/70 to-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20 xl:gap-16">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-black uppercase text-earth-700 shadow-soft">
               <ShieldCheck size={17} aria-hidden="true" />
