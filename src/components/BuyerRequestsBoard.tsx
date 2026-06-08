@@ -4,7 +4,7 @@ import {
   BadgeCheck,
   CalendarDays,
   ChevronDown,
-  Clock,
+  Crown,
   MapPin,
   MessageCircle,
   Search,
@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
-import { FeaturedRibbon } from "@/components/FeaturedRibbon";
-import { normalizeTrust, TrustSummary } from "@/components/TrustIndicators";
-import { featuredListingLabels, isFeaturedBuyerRequest } from "@/data/featuredListings";
+import { normalizeTrust } from "@/components/TrustIndicators";
 
 type FilterConfig = {
   label: string;
@@ -99,6 +97,28 @@ function StatusBadge({ status }: { status: BuyerRequest["status"] }) {
   );
 }
 
+function BuyerTrustBadge({ status }: { status: string }) {
+  if (status === "Premium Member") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-500 px-3 py-1 text-xs font-black text-ink">
+        <Crown className="h-3.5 w-3.5" />
+        Premium Buyer
+      </span>
+    );
+  }
+
+  if (status === "Verified") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
+        <BadgeCheck className="h-3.5 w-3.5" />
+        Verified Buyer
+      </span>
+    );
+  }
+
+  return null;
+}
+
 function RequestCard({
   request,
   onViewDetails
@@ -109,62 +129,39 @@ function RequestCard({
   const trust = normalizeTrust(request.trust);
 
   return (
-    <article
-      className={`rounded-md bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft ${
-        isFeaturedBuyerRequest(request.id) ? "border-2 border-earth-500" : "border border-leaf-900/10"
-      }`}
-    >
-      {isFeaturedBuyerRequest(request.id) ? (
-        <div className="mb-4">
-          <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
-        </div>
-      ) : null}
-
-      <div className="flex items-start justify-between gap-4">
+    <article className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{request.buyerType}</p>
-          <h2 className="mt-2 text-2xl font-black text-ink">{request.productName}</h2>
-          <p className="mt-2 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
+          <h2 className="text-xl font-black text-ink">{request.productName}</h2>
+          <p className="mt-1 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
         </div>
         <StatusBadge status={request.status} />
       </div>
 
-      <div className="mt-4">
-        <TrustSummary kind="buyer" trust={trust} />
-      </div>
-
-      <dl className="mt-5 grid gap-3 text-sm text-ink/62">
+      <dl className="mt-4 grid gap-2.5 text-sm text-ink/62">
         <div className="flex gap-2">
-          <MapPin className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
+          <MapPin className="mt-0.5 shrink-0 text-leaf-600" size={16} aria-hidden="true" />
           <div>
             <dt className="font-black text-ink">Location</dt>
             <dd>{request.district}, {request.region}</dd>
           </div>
         </div>
         <div className="flex gap-2">
-          <CalendarDays className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
+          <CalendarDays className="mt-0.5 shrink-0 text-leaf-600" size={16} aria-hidden="true" />
           <div>
             <dt className="font-black text-ink">Deadline</dt>
             <dd>{request.deadline}</dd>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Clock className="mt-0.5 shrink-0 text-leaf-600" size={17} aria-hidden="true" />
-          <div>
-            <dt className="font-black text-ink">Date posted</dt>
-            <dd>{request.datePosted}</dd>
-          </div>
-        </div>
       </dl>
 
       {trust.status !== "Pending Verification" ? (
-        <div className="mt-4 inline-flex items-center gap-2 text-xs font-black text-leaf-700">
-          <BadgeCheck className="h-4 w-4" />
-          Verified Buyer
+        <div className="mt-4">
+          <BuyerTrustBadge status={trust.status} />
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
+      <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
         <button
           type="button"
           onClick={() => onViewDetails(request)}
@@ -176,7 +173,7 @@ function RequestCard({
           href={buyerWhatsAppUrl(request)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
         >
           <MessageCircle className="h-4 w-4" />
           WhatsApp Buyer
@@ -217,7 +214,7 @@ function RequestDetailsModal({
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={request.status} />
-              <TrustSummary kind="buyer" trust={trust} />
+              <BuyerTrustBadge status={trust.status} />
             </div>
             <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
               <Detail label="Product needed" value={request.productName} />
@@ -319,27 +316,26 @@ export function BuyerRequestsBoard() {
 
   return (
     <>
-      <section className="bg-white py-14">
+      <section className="bg-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Active demand</p>
-                <h2 className="mt-2 text-3xl font-black text-ink">Requests farmers can respond to</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                  Filter demand by product, region, buyer type, status, or deadline. Confirm price, quality, timing,
-                  transport, and payment before committing produce.
+                <h2 className="mt-2 text-3xl font-black text-ink">Buyer Demand Board</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
+                  Browse active requests from buyers across Ghana.
                 </p>
                 <p className="mt-2 text-xs font-black uppercase tracking-wide text-ink/45">
                   Last updated: {buyerRequestsMeta.lastUpdated}
                 </p>
               </div>
-              <p className="rounded-md bg-white px-4 py-3 text-sm font-semibold leading-6 text-ink/62">
+              <p className="max-w-md rounded-md bg-white px-3 py-2 text-xs font-semibold leading-5 text-ink/55">
                 {buyerRequestsMeta.note}
               </p>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-5">
               <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
             </div>
 
@@ -357,7 +353,7 @@ export function BuyerRequestsBoard() {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
               <h2 className="mt-2 text-3xl font-black text-ink">Browse buyer requests</h2>
@@ -368,7 +364,7 @@ export function BuyerRequestsBoard() {
           </div>
 
           {filteredRequests.length > 0 ? (
-            <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {filteredRequests.map((request) => (
                 <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
               ))}
