@@ -57,7 +57,7 @@ function SearchBox({
 
 function FilterControls({ filters }: { filters: FilterConfig[] }) {
   return (
-    <div className="grid gap-4 md:grid-cols-5">
+    <div className="grid gap-4">
       {filters.map((filter) => (
         <label key={filter.label} className="block">
           <span className="mb-2 block text-sm font-black text-ink">{filter.label}</span>
@@ -283,6 +283,15 @@ export function BuyerRequestsBoard() {
     { label: "Deadline", value: deadline, setValue: setDeadline, options: deadlines }
   ];
 
+  function clearFilters() {
+    setSearchTerm("");
+    setProduct("All");
+    setRegion("All");
+    setBuyerType("All");
+    setStatus("All");
+    setDeadline("All");
+  }
+
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -334,48 +343,84 @@ export function BuyerRequestsBoard() {
                 {buyerRequestsMeta.note}
               </p>
             </div>
-
-            <div className="mt-5">
-              <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters((value) => !value)}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50 md:hidden"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {showMobileFilters ? "Hide Filters" : "Show Filters"}
-            </button>
-
-            <div className={`${showMobileFilters ? "block" : "hidden"} mt-5 md:block`}>
-              <FilterControls filters={filters} />
-            </div>
           </div>
 
-          <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-8 grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                <h2 className="text-lg font-black text-ink">Find demand</h2>
+                <p className="mt-2 text-sm leading-6 text-ink/58">Search and filter active buyer requests.</p>
+                <div className="mt-5">
+                  <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                </div>
+                <div className="mt-5">
+                  <FilterControls filters={filters} />
+                </div>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="mt-5 w-full rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/70 transition hover:border-leaf-700 hover:bg-white hover:text-leaf-800"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </aside>
+
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Browse buyer requests</h2>
-            </div>
-            <p className="text-sm font-semibold text-ink/55">
-              Showing {filteredRequests.length} of {buyerRequests.length} requests
-            </p>
-          </div>
+              <div className="lg:hidden">
+                <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileFilters((value) => !value)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {showMobileFilters ? "Hide Filters" : "Show Filters"}
+                  </button>
 
-          {filteredRequests.length > 0 ? (
-            <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {filteredRequests.map((request) => (
-                <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
-              ))}
+                  {showMobileFilters ? (
+                    <div className="mt-4 border-t border-leaf-900/10 pt-4">
+                      <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                      <div className="mt-5">
+                        <FilterControls filters={filters} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="mt-5 w-full rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/70 transition hover:border-leaf-700 hover:bg-white hover:text-leaf-800"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
+                  <h2 className="mt-2 text-3xl font-black text-ink">Browse buyer requests</h2>
+                </div>
+                <p className="text-sm font-semibold text-ink/55">
+                  Showing {filteredRequests.length} of {buyerRequests.length} requests
+                </p>
+              </div>
+
+              {filteredRequests.length > 0 ? (
+                <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredRequests.map((request) => (
+                    <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                  <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
+                  <h3 className="mt-4 text-xl font-black text-ink">No buyer requests found.</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-              <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-              <h3 className="mt-4 text-xl font-black text-ink">No buyer requests found.</h3>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
-            </div>
-          )}
+          </div>
         </div>
       </section>
 
