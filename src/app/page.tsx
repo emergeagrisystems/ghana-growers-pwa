@@ -12,7 +12,6 @@ import {
   Truck,
   UsersRound
 } from "lucide-react";
-import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { RegistrationForm } from "@/components/RegistrationForm";
@@ -64,8 +63,6 @@ const ghanaVisuals = [
   { title: "Agricultural supply chains", image: "/images/marketplace/logistics-truck.jpg" }
 ];
 
-const trustBadges = ["Verified Farmer", "Verified Buyer", "Verified Supplier", "Premium Member"];
-
 const heroStats = [
   { value: "200+", label: "Farmers" },
   { value: "100+", label: "Buyers" },
@@ -76,7 +73,7 @@ export default function HomePage() {
   return (
     <>
       <section className="ghana-grid overflow-hidden bg-gradient-to-br from-leaf-50 via-white to-earth-50">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16 xl:gap-14">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20 xl:gap-14">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-black uppercase text-earth-700 shadow-soft">
               <ShieldCheck size={17} aria-hidden="true" />
@@ -98,14 +95,6 @@ export default function HomePage() {
                   <p className="text-2xl font-black text-leaf-700 sm:text-3xl">{stat.value}</p>
                   <p className="mt-1 text-xs font-black uppercase text-ink/55">{stat.label}</p>
                 </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {trustBadges.map((badge) => (
-                <span key={badge} className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 shadow-soft">
-                  <BadgeCheck size={15} aria-hidden="true" />
-                  {badge}
-                </span>
               ))}
             </div>
           </div>
@@ -131,34 +120,7 @@ export default function HomePage() {
                 <p className="mt-2 text-xs leading-5 text-ink/65">A practical network for farm groups, buyers, suppliers, and Ghanaian agricultural communities.</p>
               </div>
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-md bg-white p-4 shadow-soft">
-                <p className="text-2xl font-black text-leaf-700">10</p>
-                <p className="text-xs font-bold uppercase text-ink/55">Regions represented</p>
-              </div>
-              <div className="rounded-md bg-white p-4 shadow-soft">
-                <p className="text-2xl font-black text-leaf-700">24/7</p>
-                <p className="text-xs font-bold uppercase text-ink/55">WhatsApp inquiry access</p>
-              </div>
-              <div className="rounded-md bg-white p-4 shadow-soft">
-                <p className="text-2xl font-black text-leaf-700">AI</p>
-                <p className="text-xs font-bold uppercase text-ink/55">Farmer guidance tools</p>
-              </div>
-            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-14">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
-          {platformContent.statistics.map((stat) => (
-            <div key={stat.label} className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-soft">
-              <p className="text-4xl font-black text-leaf-700">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-              </p>
-              <p className="mt-2 text-sm font-black uppercase text-ink/60">{stat.label}</p>
-            </div>
-          ))}
         </div>
       </section>
 
