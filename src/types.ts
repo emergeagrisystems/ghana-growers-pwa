@@ -16,10 +16,16 @@ export type Product = {
   name: string;
   category: string;
   location: string;
+  region: string;
   seller: string;
+  quantity: string;
   unit: string;
   image: string;
   available: string;
+  datePosted: string;
+  verified?: boolean;
+  featured?: boolean;
+  whatsappNumber?: string;
 };
 
 export type BlogPost = {
