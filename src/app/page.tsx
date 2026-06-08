@@ -66,27 +66,39 @@ const ghanaVisuals = [
 
 const trustBadges = ["Verified Farmer", "Verified Buyer", "Verified Supplier", "Premium Member"];
 
+const heroStats = [
+  { value: "200+", label: "Farmers" },
+  { value: "100+", label: "Buyers" },
+  { value: "75+", label: "Suppliers" }
+];
+
 export default function HomePage() {
   return (
     <>
-      <section className="ghana-grid bg-leaf-50">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-20">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black uppercase text-earth-700 shadow-soft">
+      <section className="ghana-grid overflow-hidden bg-gradient-to-br from-leaf-50 via-white to-earth-50">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16 xl:gap-14">
+          <div className="relative z-10">
+            <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-black uppercase text-earth-700 shadow-soft">
               <ShieldCheck size={17} aria-hidden="true" />
-              Trusted agricultural trade in Ghana
+              Trusted Agriculture Platform
             </p>
-            <h1 className="mt-5 text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-6xl">
-              Farmers, buyers, and suppliers connected through one active platform
+            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-6xl">
+              Connecting Ghana&apos;s Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/70">
-              Ghana Growers helps farmer groups showcase produce, buyers discover reliable supply, and agricultural suppliers reach the communities that need inputs, packaging, logistics, storage, finance, and advisory services.
+              Ghana Growers helps farmers access buyers, buyers source quality produce, and suppliers reach Ghana&apos;s agricultural network.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/farmer-directory">Find Farmers</ButtonLink>
-              <ButtonLink href="/buyer-requests" variant="secondary">View Buyer Requests</ButtonLink>
-              <ButtonLink href="/supplier-directory" variant="light">Find Suppliers</ButtonLink>
-              <ButtonLink href="/smart-solutions" variant="secondary">Use Smart Solutions</ButtonLink>
+              <ButtonLink href="/join/farmer">Sell your harvest/products</ButtonLink>
+              <ButtonLink href="/marketplace" variant="secondary">Buy Farm-Fresh</ButtonLink>
+            </div>
+            <div className="mt-7 grid max-w-xl grid-cols-3 gap-3">
+              {heroStats.map((stat) => (
+                <div key={stat.label} className="rounded-md border border-leaf-900/10 bg-white/90 p-4 shadow-soft backdrop-blur">
+                  <p className="text-2xl font-black text-leaf-700 sm:text-3xl">{stat.value}</p>
+                  <p className="mt-1 text-xs font-black uppercase text-ink/55">{stat.label}</p>
+                </div>
+              ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
               {trustBadges.map((badge) => (
@@ -97,17 +109,29 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div className="grid gap-4">
-            <SafeImage
-              src="/images/marketplace/ghana-market-1.jpg"
-              alt="Ghana market scene with fresh produce and active agricultural trade"
-              width={720}
-              height={560}
-              fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
-              priority
-              className="h-auto w-full rounded-md border border-leaf-900/10 bg-white object-cover shadow-soft"
-            />
-            <div className="grid gap-4 sm:grid-cols-3">
+          <div className="relative">
+            <div className="relative overflow-hidden rounded-md border border-white/70 bg-white p-2 shadow-soft">
+              <SafeImage
+                src="/images/hero/ghana-growers-hero.jpg"
+                alt="Ghanaian farmers, buyers, and suppliers exchanging fresh produce near crop fields"
+                width={1778}
+                height={885}
+                fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+                priority
+                sizes="(min-width: 1024px) 54vw, 100vw"
+                className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[520px]"
+              />
+              <div className="absolute inset-2 rounded-md bg-gradient-to-t from-ink/45 via-transparent to-transparent" />
+              <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-black uppercase text-leaf-700 shadow-soft">
+                <BadgeCheck size={16} aria-hidden="true" />
+                Verified network
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 rounded-md bg-white/95 p-4 shadow-soft backdrop-blur sm:left-auto sm:max-w-sm">
+                <p className="text-sm font-black text-ink">Fresh produce, verified suppliers, real market access</p>
+                <p className="mt-2 text-xs leading-5 text-ink/65">A practical network for farm groups, buyers, suppliers, and Ghanaian agricultural communities.</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
               <div className="rounded-md bg-white p-4 shadow-soft">
                 <p className="text-2xl font-black text-leaf-700">10</p>
                 <p className="text-xs font-bold uppercase text-ink/55">Regions represented</p>
