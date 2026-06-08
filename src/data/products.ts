@@ -75,7 +75,8 @@ export const products: Product[] = [
     datePosted: "2026-06-06",
     verified: true,
     featured: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "akumadan-growers-group"
   },
   {
     id: "onions-bawku",
@@ -92,7 +93,8 @@ export const products: Product[] = [
     datePosted: "2026-06-05",
     verified: true,
     featured: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "upper-east-onion-growers"
   },
   {
     id: "maize-techiman",
@@ -109,7 +111,8 @@ export const products: Product[] = [
     datePosted: "2026-06-04",
     verified: true,
     featured: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "techiman-maize-and-beans-farm"
   },
   {
     id: "cassava-kintampo",
@@ -125,7 +128,8 @@ export const products: Product[] = [
     available: "Harvesting this week",
     datePosted: "2026-06-04",
     verified: false,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "northern-root-crops-network"
   },
   {
     id: "yam-tamale",
@@ -141,7 +145,8 @@ export const products: Product[] = [
     available: "Seasonal supply",
     datePosted: "2026-06-03",
     verified: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "northern-root-crops-network"
   },
   {
     id: "plantain-asamankese",
@@ -158,7 +163,8 @@ export const products: Product[] = [
     datePosted: "2026-06-02",
     verified: true,
     featured: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "western-cocoa-and-plantain-farm"
   },
   {
     id: "pepper-ada",
@@ -174,7 +180,8 @@ export const products: Product[] = [
     available: "Available now",
     datePosted: "2026-06-02",
     verified: false,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "ada-vegetable-cooperative"
   },
   {
     id: "rice-avaime",
@@ -190,7 +197,8 @@ export const products: Product[] = [
     available: "Bulk orders",
     datePosted: "2026-06-01",
     verified: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "volta-rice-and-fish-farm"
   },
   {
     id: "eggs-kumasi",
@@ -206,7 +214,8 @@ export const products: Product[] = [
     available: "Daily supply",
     datePosted: "2026-05-31",
     verified: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "cape-coast-poultry-unit"
   },
   {
     id: "poultry-dawhenya",
@@ -223,6 +232,7 @@ export const products: Product[] = [
     datePosted: "2026-05-30",
     verified: true,
     featured: true,
-    whatsappNumber: "233000000000"
+    whatsappNumber: "233000000000",
+    farmerSlug: "cape-coast-poultry-unit"
   }
 ];

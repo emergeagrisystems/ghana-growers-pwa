@@ -6,6 +6,7 @@ import { PageHero } from "@/components/PageHero";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { productCategories } from "@/data/products";
 import { getSupplierBySlug, supplierDirectory } from "@/data/suppliers";
 
 type SupplierProfilePageProps = {
@@ -33,6 +34,37 @@ export function generateMetadata({ params }: SupplierProfilePageProps) {
   };
 }
 
+function relatedMarketplaceCategories(category: string) {
+  const normalized = category.toLowerCase();
+  const slugs = new Set<string>();
+
+  if (normalized.includes("packaging")) {
+    slugs.add("packaging");
+  }
+
+  if (normalized.includes("logistics") || normalized.includes("storage")) {
+    slugs.add("logistics-services");
+  }
+
+  if (
+    normalized.includes("seed") ||
+    normalized.includes("fertilizer") ||
+    normalized.includes("agrochemical") ||
+    normalized.includes("equipment") ||
+    normalized.includes("irrigation") ||
+    normalized.includes("financial") ||
+    normalized.includes("consulting")
+  ) {
+    slugs.add("farm-inputs");
+  }
+
+  if (slugs.size === 0) {
+    slugs.add("farm-inputs");
+  }
+
+  return productCategories.filter((item) => slugs.has(item.slug));
+}
+
 export default function SupplierProfilePage({ params }: SupplierProfilePageProps) {
   const supplier = getSupplierBySlug(params.slug);
 
@@ -41,6 +73,7 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
   }
 
   const trust = normalizeTrust(supplier.trust);
+  const relatedCategories = relatedMarketplaceCategories(supplier.supplierCategory);
 
   return (
     <>
@@ -166,6 +199,30 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
                   <dd className="mt-2 leading-6">{supplier.companyOverview}</dd>
                 </div>
               </dl>
+            </div>
+
+            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace links</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink">Relevant marketplace categories</h2>
+                </div>
+                <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                  View Products
+                </Link>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {relatedCategories.map((category) => (
+                  <Link
+                    key={category.slug}
+                    href="/marketplace"
+                    className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 transition hover:border-leaf-700 hover:bg-white"
+                  >
+                    <p className="font-black text-ink">{category.name}</p>
+                    <p className="mt-2 text-sm leading-6 text-ink/62">{category.description}</p>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-md bg-earth-50 p-5">

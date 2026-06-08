@@ -8,6 +8,7 @@ import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { featuredListingLabels, isFeaturedSupplier } from "@/data/featuredListings";
+import { productCategories } from "@/data/products";
 import type { SupplierProfile } from "@/types";
 
 type SupplierDirectoryProps = {
@@ -16,6 +17,30 @@ type SupplierDirectoryProps = {
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
+}
+
+function relatedMarketplaceCategory(category: string) {
+  const normalized = category.toLowerCase();
+
+  if (normalized.includes("packaging")) {
+    return productCategories.find((item) => item.slug === "packaging");
+  }
+
+  if (normalized.includes("logistics") || normalized.includes("storage")) {
+    return productCategories.find((item) => item.slug === "logistics-services");
+  }
+
+  if (
+    normalized.includes("seed") ||
+    normalized.includes("fertilizer") ||
+    normalized.includes("agrochemical") ||
+    normalized.includes("equipment") ||
+    normalized.includes("irrigation")
+  ) {
+    return productCategories.find((item) => item.slug === "farm-inputs");
+  }
+
+  return productCategories.find((item) => item.slug === "farm-inputs");
 }
 
 export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
@@ -124,6 +149,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
             >
               {(() => {
                 const trust = normalizeTrust(supplier.trust);
+                const categoryMatch = relatedMarketplaceCategory(supplier.supplierCategory);
 
                 return (
                   <>
@@ -183,6 +209,14 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                   View Profile
                 </Link>
               </div>
+              {categoryMatch ? (
+                <Link
+                  href="/marketplace"
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
+                >
+                  View Products: {categoryMatch.name}
+                </Link>
+              ) : null}
                   </>
                 );
               })()}

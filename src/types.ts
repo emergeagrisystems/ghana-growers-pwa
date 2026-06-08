@@ -27,6 +27,7 @@ export type Product = {
   verified?: boolean;
   featured?: boolean;
   whatsappNumber?: string;
+  farmerSlug?: string;
 };
 
 export type BlogPost = {

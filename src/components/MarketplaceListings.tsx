@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   BadgeCheck,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
+import { farmerDirectory } from "@/data/farmers";
 import type { Product } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -32,6 +34,8 @@ const contactUrl = (product: Product) =>
   `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(
     `Hello Ghana Growers, I am interested in ${product.name} from ${product.seller}.`
   )}`;
+
+const farmerBySlug = new Map(farmerDirectory.map((farmer) => [farmer.slug, farmer]));
 
 function SearchBox({
   searchTerm,
@@ -124,17 +128,32 @@ function ListingCard({
   product: Product;
   onViewDetails: (product: Product) => void;
 }) {
+  const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+
   return (
     <article className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
       <div className="relative">
-        <SafeImage
-          src={product.image}
-          alt={`${product.name} available in ${product.region}`}
-          width={420}
-          height={260}
-          fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
-          className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-        />
+        {farmer ? (
+          <Link href={`/farmer-directory/${farmer.slug}`} aria-label={`View ${farmer.farmName} profile`}>
+            <SafeImage
+              src={product.image}
+              alt={`${product.name} available in ${product.region}`}
+              width={420}
+              height={260}
+              fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+              className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            />
+          </Link>
+        ) : (
+          <SafeImage
+            src={product.image}
+            alt={`${product.name} available in ${product.region}`}
+            width={420}
+            height={260}
+            fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+            className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          />
+        )}
         {product.verified ? (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
             <BadgeCheck className="h-3.5 w-3.5" />
@@ -152,6 +171,14 @@ function ListingCard({
           <p>
             <span className="font-semibold text-ink/75">Quantity:</span> {product.quantity} {product.unit}
           </p>
+          {farmer ? (
+            <p>
+              <span className="font-semibold text-ink/75">Farmer:</span>{" "}
+              <Link href={`/farmer-directory/${farmer.slug}`} className="font-black text-leaf-700 hover:text-leaf-800">
+                {farmer.farmName}
+              </Link>
+            </p>
+          ) : null}
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
           <button
@@ -171,6 +198,14 @@ function ListingCard({
             WhatsApp
           </a>
         </div>
+        {farmer ? (
+          <Link
+            href={`/farmer-directory/${farmer.slug}`}
+            className="mt-3 inline-flex w-full justify-center rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
+          >
+            View Farmer
+          </Link>
+        ) : null}
       </div>
     </article>
   );
@@ -183,6 +218,8 @@ function ProductDetailsModal({
   product: Product;
   onClose: () => void;
 }) {
+  const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
@@ -219,12 +256,21 @@ function ProductDetailsModal({
               <Detail label="Date posted" value={product.datePosted} />
               <Detail label="Verification" value={product.verified ? "Verified seller" : "Verification pending"} />
               <Detail label="Category" value={product.category} />
+              {farmer ? <Detail label="Farmer profile" value={farmer.farmName} /> : null}
             </div>
             <div className="mt-5 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
               <h3 className="font-black text-ink">Listing description</h3>
               <p className="mt-2 text-sm leading-6 text-ink/68">{product.description}</p>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {farmer ? (
+                <Link
+                  href={`/farmer-directory/${farmer.slug}`}
+                  className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 text-center text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
+                >
+                  View Farmer
+                </Link>
+              ) : null}
               <a
                 href={contactUrl(product)}
                 target="_blank"

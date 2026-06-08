@@ -15,6 +15,7 @@ import {
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory, getFarmerBySlug } from "@/data/farmers";
 import { products as marketplaceProducts } from "@/data/products";
 
@@ -104,12 +105,20 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
   }
 
   const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
+  const farmerProducts = farmer.products.map((product) => product.toLowerCase());
+  const activeMarketplaceListings = marketplaceProducts.filter((listing) => listing.farmerSlug === farmer.slug);
+  const relevantBuyerRequests = buyerRequests.filter((request) =>
+    farmerProducts.some((product) => {
+      const requestProduct = request.productName.toLowerCase();
+      return requestProduct.includes(product) || product.includes(requestProduct);
+    })
+  ).slice(0, 4);
   const productListings = farmer.products.map((product) => {
-    const marketplaceMatch = marketplaceProducts.find(
-      (listing) =>
-        listing.name.toLowerCase().includes(product.toLowerCase()) ||
-        product.toLowerCase().includes(listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", ""))
-    );
+    const marketplaceMatch = activeMarketplaceListings.find((listing) => {
+      const listingName = listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", "");
+      const productName = product.toLowerCase();
+      return listingName.includes(productName) || productName.includes(listingName);
+    });
 
     return {
       product,
@@ -190,8 +199,8 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Product listings</p>
                     <h2 className="mt-2 text-2xl font-black text-ink">Currently offered by this farmer</h2>
                   </div>
-                  <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-                    Browse Marketplace
+                  <Link href="/marketplace#marketplace-listings" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                    View Products
                   </Link>
                 </div>
                 <div className="mt-6 grid gap-5 md:grid-cols-3">
@@ -211,13 +220,48 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                         <p className="mt-2 inline-flex rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">{listing.status}</p>
                         {listing.href ? (
                           <Link href={listing.href} className="mt-4 inline-flex w-full justify-center rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50">
-                            Marketplace
+                            View Product
                           </Link>
                         ) : null}
                       </div>
                     </article>
                   ))}
                 </div>
+              </section>
+
+              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer demand</p>
+                    <h2 className="mt-2 text-2xl font-black text-ink">Relevant buyer requests</h2>
+                  </div>
+                  <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                    View Buyer Requests
+                  </Link>
+                </div>
+                {relevantBuyerRequests.length > 0 ? (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    {relevantBuyerRequests.map((request) => (
+                      <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="font-black text-ink">{request.productName}</h3>
+                            <p className="mt-1 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
+                          </div>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ink/65">{request.status}</span>
+                        </div>
+                        <p className="mt-3 text-sm text-ink/58">{request.district}, {request.region}</p>
+                        <Link href="/buyer-requests" className="mt-4 inline-flex w-full justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50">
+                          View Buyer Request
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm leading-6 text-ink/62">
+                    No matching buyer requests are listed yet. Buyers can post demand for these products on the Buyer Demand Board.
+                  </p>
+                )}
               </section>
             </div>
 
