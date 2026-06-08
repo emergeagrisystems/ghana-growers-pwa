@@ -7,12 +7,14 @@ import {
   BookOpen,
   ChartLine,
   CircleDashed,
+  ClipboardCheck,
   Eye,
   FilePenLine,
   LayoutDashboard,
   Lock,
   MessageCircle,
   PackageCheck,
+  PlusCircle,
   Search,
   ShieldCheck,
   Sprout,
@@ -184,6 +186,20 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
 
+const quickActions: Array<{
+  label: string;
+  section: AdminSectionId;
+  intent: string;
+  icon: typeof LayoutDashboard;
+}> = [
+  { label: "Add Farmer", section: "farmers", intent: "New farmer record form ready for database connection.", icon: Sprout },
+  { label: "Add Supplier", section: "suppliers", intent: "New supplier record form ready for database connection.", icon: Truck },
+  { label: "Add Marketplace Listing", section: "marketplace", intent: "New marketplace listing form ready for database connection.", icon: Store },
+  { label: "Add Buyer Request", section: "buyer-requests", intent: "New buyer request form ready for database connection.", icon: PackageCheck },
+  { label: "Add Market Price", section: "market-prices", intent: "New market price entry form ready for database connection.", icon: ChartLine },
+  { label: "Review Verifications", section: "verifications", intent: "Verification queue opened for review.", icon: ShieldCheck }
+];
+
 function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
   const whatsappLeads = farmerDirectory.length + supplierDirectory.length + products.length + buyerRequests.length;
@@ -196,6 +212,29 @@ function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
     { label: "Buyer Requests", value: rows["buyer-requests"].length, icon: PackageCheck },
     { label: "Pending Verifications", value: pendingVerifications, icon: CircleDashed },
     { label: "WhatsApp Leads", value: whatsappLeads, icon: MessageCircle }
+  ];
+}
+
+function pendingWork(rows: Record<AdminSectionId, AdminRow[]>) {
+  return [
+    {
+      label: "Pending Verifications",
+      value: rows.verifications.filter((row) => row.status === "Pending").length,
+      note: "Profiles waiting for Ghana Growers review",
+      section: "verifications" as AdminSectionId
+    },
+    {
+      label: "Pending Buyer Requests",
+      value: buyerRequests.filter((request) => request.status !== "Fulfilled").length,
+      note: "Open demand records to monitor",
+      section: "buyer-requests" as AdminSectionId
+    },
+    {
+      label: "Pending Listings",
+      value: products.filter((product) => !product.verified && product.available !== "Sold Out").length,
+      note: "Marketplace listings needing verification",
+      section: "marketplace" as AdminSectionId
+    }
   ];
 }
 
@@ -218,6 +257,7 @@ export function AdminDashboard() {
 
   const rowsBySection = useMemo(() => sectionRows(), []);
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
+  const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -268,6 +308,13 @@ export function AdminDashboard() {
     }
 
     setNotice(`${action} action prepared for ${row.name}. Connect a database to persist this change.`);
+  }
+
+  function runQuickAction(section: AdminSectionId, intent: string) {
+    setActiveSection(section);
+    setSearchTerm("");
+    setStatusFilter(section === "verifications" ? "Pending" : "All");
+    setNotice(`${intent} Phase 1 actions are mock controls until a database is connected.`);
   }
 
   if (!accessGranted) {
@@ -367,7 +414,68 @@ export function AdminDashboard() {
         </aside>
 
         <div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
+            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Quick Actions</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink">Manage common admin tasks</h2>
+                </div>
+                <span className="hidden h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700 sm:grid">
+                  <PlusCircle className="h-5 w-5" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+
+                  return (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={() => runQuickAction(action.section, action.intent)}
+                      className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50/70 px-4 py-3 text-left text-sm font-black text-ink transition hover:border-leaf-700 hover:bg-white hover:text-leaf-800"
+                    >
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      {action.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <aside className="rounded-md border border-earth-500/25 bg-earth-50 p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-earth-700 ring-1 ring-earth-500/20">
+                  <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Pending Work</p>
+                  <h2 className="text-xl font-black text-ink">Needs attention</h2>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {pendingItems.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => runQuickAction(item.section, `${item.label} opened for review.`)}
+                    className="rounded-md bg-white p-3 text-left ring-1 ring-earth-500/20 transition hover:ring-earth-600/40"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-black text-ink">{item.label}</p>
+                      <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{item.value}</span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-ink/55">{item.note}</p>
+                  </button>
+                ))}
+              </div>
+            </aside>
+          </section>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => {
               const Icon = card.icon;
               return (
