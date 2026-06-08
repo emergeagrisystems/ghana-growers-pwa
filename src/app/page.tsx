@@ -3,11 +3,9 @@ import {
   ArrowRight,
   BadgeCheck,
   BarChart3,
-  Bot,
   CloudSun,
   Handshake,
   MessageCircle,
-  MapPinned,
   PackageCheck,
   Search,
   ShieldCheck,
@@ -67,10 +65,9 @@ const ghanaVisuals = [
 ];
 
 const heroCapabilities = [
-  { title: "10 Regions Covered", icon: MapPinned },
+  { title: "100+ Farmers", icon: UsersRound },
   { title: "Live Market Prices", icon: BarChart3 },
-  { title: "Weather Updates", icon: CloudSun },
-  { title: "AI Farming Support", icon: Bot }
+  { title: "Weather Updates", icon: CloudSun }
 ];
 
 const platformHighlights = [
@@ -91,8 +88,8 @@ export default function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
-            <h1 className="mt-5 max-w-2xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-[3.4rem]">
-              Connecting Ghana&apos;s Farmers, Buyers &amp; Suppliers
+            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-[3.35rem] xl:text-[3.65rem]">
+              Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/70">
               Ghana Growers helps farmers access buyers, buyers source quality produce, and suppliers reach Ghana&apos;s agricultural network.
@@ -101,7 +98,7 @@ export default function HomePage() {
               <ButtonLink href="/buyer-requests">Find Buyers</ButtonLink>
               <ButtonLink href="/marketplace" variant="secondary">Browse Marketplace</ButtonLink>
             </div>
-            <div className="mt-7 grid max-w-xl grid-cols-2 gap-3">
+            <div className="mt-7 grid max-w-2xl gap-3 sm:grid-cols-3">
               {heroCapabilities.map((item) => {
                 const Icon = item.icon;
 
