@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -31,7 +30,7 @@ export const metadata = {
     title: "Ghana Growers | Trusted Agriculture Platform for Ghana",
     description:
       "Discover farmers, suppliers, buyer requests, market intelligence, and smart agricultural tools built for Ghana.",
-    images: ["/images/og.svg"]
+    images: ["/images/marketplace/ghana-market-1.jpg"]
   }
 };
 
@@ -99,13 +98,14 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid gap-4">
-            <Image
-              src="/images/hero-market.svg"
-              alt="Ghana Growers marketplace illustration with fresh produce and trade connections"
+            <SafeImage
+              src="/images/marketplace/ghana-market-1.jpg"
+              alt="Ghana market scene with fresh produce and active agricultural trade"
               width={720}
               height={560}
+              fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
               priority
-              className="h-auto w-full rounded-md border border-leaf-900/10 bg-white shadow-soft"
+              className="h-auto w-full rounded-md border border-leaf-900/10 bg-white object-cover shadow-soft"
             />
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-md bg-white p-4 shadow-soft">
@@ -235,7 +235,7 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="Ghana agricultural visuals"
             title="A platform shaped around crops, markets, activities, and supply chains"
-            description="Local placeholder visuals keep the site fast today while giving future image uploads clear places to land."
+            description="Local agriculture visuals keep the site fast today while giving future image uploads clear places to land."
           />
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ghanaVisuals.map((visual) => (
@@ -262,7 +262,7 @@ export default function HomePage() {
                 key={category.slug}
                 className="focus-ring rounded-md border border-leaf-900/10 bg-earth-50 p-4 transition hover:-translate-y-1 hover:shadow-soft"
               >
-                <SafeImage src={category.image} alt={`${category.name} category placeholder`} width={220} height={140} className="h-28 w-full rounded-md object-cover" />
+                <SafeImage src={category.image} alt={`${category.name} agriculture category image`} width={220} height={140} className="h-28 w-full rounded-md object-cover" />
                 <h3 className="mt-4 font-black text-ink">{category.name}</h3>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{category.description}</p>
               </Link>
