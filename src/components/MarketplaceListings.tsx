@@ -1,6 +1,16 @@
 "use client";
 
-import { BadgeCheck, ChevronDown, MessageCircle, PackageCheck, Search, SlidersHorizontal, Tag, UsersRound, X } from "lucide-react";
+import {
+  BadgeCheck,
+  ChevronDown,
+  MessageCircle,
+  PackageCheck,
+  Search,
+  SlidersHorizontal,
+  Tag,
+  UsersRound,
+  X
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import type { Product } from "@/types";
@@ -9,54 +19,145 @@ type MarketplaceListingsProps = {
   products: Product[];
 };
 
-function uniqueValues(values: string[]) {
-  return Array.from(new Set(values)).sort();
-}
+type FilterConfig = {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  options: string[];
+};
 
-function contactUrl(product: Product) {
-  const number = product.whatsappNumber || "233000000000";
-  const message = `Hello Ghana Growers, I am interested in ${product.name} from ${product.seller}. Is ${product.quantity} ${product.unit} still available in ${product.region}?`;
+const availabilityOptions = ["All", "Available", "Limited", "Sold Out"];
 
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-}
+const contactUrl = (product: Product) =>
+  `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(
+    `Hello Ghana Growers, I am interested in ${product.name} from ${product.seller}.`
+  )}`;
 
-function ListingCard({ product, featured = false, onViewDetails }: { product: Product; featured?: boolean; onViewDetails: (product: Product) => void }) {
+function SearchBox({
+  searchTerm,
+  setSearchTerm
+}: {
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+}) {
   return (
-    <article className={`overflow-hidden rounded-md bg-white shadow-soft ${featured ? "border border-earth-500" : "border border-leaf-900/10"}`}>
-      <div className="relative">
-        <SafeImage src={product.image} alt={product.name} width={520} height={340} className="h-32 w-full object-cover sm:h-36" />
-        {featured ? (
-          <span className="absolute left-3 top-3 rounded-md bg-earth-500 px-2 py-1 text-[10px] font-black uppercase text-ink shadow-soft">
-            Featured
+    <label className="block">
+      <span className="mb-2 block text-sm font-black text-ink">Search</span>
+      <span className="relative block">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
+        <input
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder="Search crops, livestock, suppliers..."
+          className="w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm outline-none transition focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
+        />
+      </span>
+    </label>
+  );
+}
+
+function FilterControls({ filters }: { filters: FilterConfig[] }) {
+  return (
+    <div className="grid gap-4">
+      {filters.map((filter) => (
+        <label key={filter.label} className="block">
+          <span className="mb-2 block text-sm font-black text-ink">{filter.label}</span>
+          <span className="relative block">
+            <select
+              value={filter.value}
+              onChange={(event) => filter.setValue(event.target.value)}
+              className="w-full appearance-none rounded-md border border-leaf-900/10 bg-white px-3 py-3 pr-9 text-sm text-ink/75 shadow-sm outline-none transition focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
+            >
+              {filter.options.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
           </span>
-        ) : null}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function MarketplaceStats({
+  activeListings,
+  productsAvailable,
+  verifiedSellers
+}: {
+  activeListings: number;
+  productsAvailable: number;
+  verifiedSellers: number;
+}) {
+  const stats = [
+    { label: "Active listings", value: activeListings, icon: PackageCheck },
+    { label: "Products available", value: productsAvailable, icon: Tag },
+    { label: "Verified sellers", value: verifiedSellers, icon: UsersRound }
+  ];
+
+  return (
+    <div className="grid gap-3">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <div key={stat.label} className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-white px-3 py-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-100 text-leaf-700">
+              <Icon className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block text-lg font-black leading-none text-ink">{stat.value}</span>
+              <span className="mt-1 block text-xs font-semibold uppercase tracking-wide text-ink/45">{stat.label}</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ListingCard({
+  product,
+  onViewDetails
+}: {
+  product: Product;
+  onViewDetails: (product: Product) => void;
+}) {
+  return (
+    <article className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+      <div className="relative">
+        <SafeImage
+          src={product.image}
+          alt={`${product.name} available in ${product.region}`}
+          width={420}
+          height={260}
+          fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+          className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        />
         {product.verified ? (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-black uppercase text-leaf-700 shadow-soft">
-            <BadgeCheck size={12} aria-hidden="true" />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
+            <BadgeCheck className="h-3.5 w-3.5" />
             Verified
           </span>
         ) : null}
       </div>
-
-      <div className="p-3.5">
-        <p className="text-[11px] font-black uppercase text-earth-700">{product.category}</p>
-        <h3 className="mt-1 text-lg font-black text-ink">{product.name}</h3>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-[11px] font-black uppercase text-ink/45">Region</p>
-            <p className="mt-1 font-bold text-ink/75">{product.region}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-black uppercase text-ink/45">Quantity</p>
-            <p className="mt-1 font-bold text-ink/75">{product.quantity} {product.unit}</p>
-          </div>
+      <div className="p-5">
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{product.category}</p>
+        <h2 className="mt-2 text-xl font-black text-ink">{product.name}</h2>
+        <div className="mt-4 grid gap-2 text-sm text-ink/58">
+          <p>
+            <span className="font-semibold text-ink/75">Region:</span> {product.region}
+          </p>
+          <p>
+            <span className="font-semibold text-ink/75">Quantity:</span> {product.quantity} {product.unit}
+          </p>
         </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
           <button
             type="button"
             onClick={() => onViewDetails(product)}
-            className="focus-ring inline-flex items-center justify-center rounded-md bg-white px-3 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+            className="rounded-md bg-leaf-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
           >
             View Details
           </button>
@@ -64,9 +165,9 @@ function ListingCard({ product, featured = false, onViewDetails }: { product: Pr
             href={contactUrl(product)}
             target="_blank"
             rel="noreferrer"
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-3 py-2.5 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
           >
-            <MessageCircle size={16} aria-hidden="true" />
+            <MessageCircle className="h-4 w-4" />
             WhatsApp
           </a>
         </div>
@@ -75,71 +176,70 @@ function ListingCard({ product, featured = false, onViewDetails }: { product: Pr
   );
 }
 
-function ProductDetailModal({ product, onClose }: { product: Product; onClose: () => void }) {
+function ProductDetailsModal({
+  product,
+  onClose
+}: {
+  product: Product;
+  onClose: () => void;
+}) {
   return (
-    <div className="fixed inset-0 z-[80] overflow-y-auto bg-ink/65 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
-      <div className="mx-auto max-w-4xl overflow-hidden rounded-md bg-white shadow-soft">
-        <div className="flex items-center justify-between border-b border-leaf-900/10 px-4 py-3 sm:px-5">
-          <p className="text-sm font-black uppercase text-earth-700">Product Details</p>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+        <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-earth-700">{product.category}</p>
+            <h2 className="text-2xl font-black text-ink">{product.name}</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring grid h-10 w-10 place-items-center rounded-md bg-leaf-50 text-ink hover:bg-leaf-100"
             aria-label="Close product details"
+            className="grid h-10 w-10 place-items-center rounded-md border border-leaf-900/10 text-ink/65 transition hover:bg-leaf-50"
           >
-            <X size={20} aria-hidden="true" />
+            <X className="h-5 w-5" />
           </button>
         </div>
-
-        <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[0.95fr_1.05fr]">
-          <SafeImage src={product.image} alt={`${product.name} product listing`} width={720} height={480} className="h-64 w-full rounded-md object-cover lg:h-full" />
+        <div className="grid gap-6 p-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <SafeImage
+            src={product.image}
+            alt={`${product.name} listing photo`}
+            width={560}
+            height={420}
+            fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+            className="h-72 w-full rounded-md object-cover lg:h-full"
+          />
           <div>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
-                <h2 id="product-detail-title" className="mt-2 text-3xl font-black text-ink">{product.name}</h2>
-              </div>
-              <span className={`rounded-md px-3 py-2 text-xs font-black uppercase ${product.verified ? "bg-leaf-50 text-leaf-700" : "bg-earth-50 text-ink/65"}`}>
-                {product.verified ? "Verified Seller" : "Pending Verification"}
-              </span>
+            <div className="grid gap-3 text-sm text-ink/68 sm:grid-cols-2">
+              <Detail label="Seller" value={product.seller} />
+              <Detail label="Region" value={product.region} />
+              <Detail label="District" value={product.location} />
+              <Detail label="Quantity" value={`${product.quantity} ${product.unit}`} />
+              <Detail label="Availability" value={product.available} />
+              <Detail label="Date posted" value={product.datePosted} />
+              <Detail label="Verification" value={product.verified ? "Verified seller" : "Verification pending"} />
+              <Detail label="Category" value={product.category} />
             </div>
-
-            <p className="mt-4 text-sm leading-6 text-ink/65">{product.description}</p>
-
-            <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-              {[
-                ["Seller/Farmer", product.seller],
-                ["Region", product.region],
-                ["District", product.location],
-                ["Quantity", `${product.quantity} ${product.unit}`],
-                ["Availability", product.available],
-                ["Date posted", product.datePosted],
-                ["Category", product.category],
-                ["Verification status", product.verified ? "Verified" : "Pending Verification"]
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-md bg-leaf-50 p-3">
-                  <dt className="text-xs font-black uppercase text-ink/50">{label}</dt>
-                  <dd className="mt-1 font-bold text-ink">{value}</dd>
-                </div>
-              ))}
-            </dl>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+              <h3 className="font-black text-ink">Listing description</h3>
+              <p className="mt-2 text-sm leading-6 text-ink/68">{product.description}</p>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <a
                 href={contactUrl(product)}
                 target="_blank"
                 rel="noreferrer"
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+                className="rounded-md bg-leaf-700 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-leaf-800"
               >
-                <MessageCircle size={17} aria-hidden="true" />
                 Contact Seller
               </a>
               <a
                 href={contactUrl(product)}
                 target="_blank"
                 rel="noreferrer"
-                className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
               >
+                <MessageCircle className="h-4 w-4" />
                 WhatsApp Inquiry
               </a>
             </div>
@@ -150,167 +250,179 @@ function ProductDetailModal({ product, onClose }: { product: Product; onClose: (
   );
 }
 
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-leaf-900/10 bg-white p-3">
+      <p className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</p>
+      <p className="mt-1 font-semibold text-ink/78">{value}</p>
+    </div>
+  );
+}
+
 export function MarketplaceListings({ products }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [productFilter, setProductFilter] = useState("All");
-  const [regionFilter, setRegionFilter] = useState("All");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [availabilityFilter, setAvailabilityFilter] = useState("All");
+  const [category, setCategory] = useState("All");
+  const [region, setRegion] = useState("All");
+  const [availability, setAvailability] = useState("All");
+  const [productName, setProductName] = useState("All");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const productsAvailable = uniqueValues(products.map((product) => product.name));
-  const regions = uniqueValues(products.map((product) => product.region));
-  const categories = uniqueValues(products.map((product) => product.category));
-  const availability = uniqueValues(products.map((product) => product.available));
+  const categories = useMemo(() => ["All", ...Array.from(new Set(products.map((product) => product.category)))], [products]);
+  const regions = useMemo(() => ["All", ...Array.from(new Set(products.map((product) => product.region)))], [products]);
+  const productNames = useMemo(() => ["All", ...Array.from(new Set(products.map((product) => product.name)))], [products]);
+
+  const filters: FilterConfig[] = [
+    { label: "Category", value: category, setValue: setCategory, options: categories },
+    { label: "Region", value: region, setValue: setRegion, options: regions },
+    { label: "Availability", value: availability, setValue: setAvailability, options: availabilityOptions },
+    { label: "Crop/Product", value: productName, setValue: setProductName, options: productNames }
+  ];
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return products.filter((product) => {
-      const searchableText = [product.name, product.category, product.region, product.location, product.seller, product.available]
-        .join(" ")
-        .toLowerCase();
+      const matchesSearch =
+        !normalizedSearch ||
+        [product.name, product.category, product.region, product.location, product.seller, product.description]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      const matchesCategory = category === "All" || product.category === category;
+      const matchesRegion = region === "All" || product.region === region;
+      const matchesAvailability = availability === "All" || product.available === availability;
+      const matchesProduct = productName === "All" || product.name === productName;
 
-      return (
-        (!normalizedSearch || searchableText.includes(normalizedSearch)) &&
-        (productFilter === "All" || product.name === productFilter) &&
-        (regionFilter === "All" || product.region === regionFilter) &&
-        (categoryFilter === "All" || product.category === categoryFilter) &&
-        (availabilityFilter === "All" || product.available === availabilityFilter)
-      );
+      return matchesSearch && matchesCategory && matchesRegion && matchesAvailability && matchesProduct;
     });
-  }, [availabilityFilter, categoryFilter, productFilter, products, regionFilter, searchTerm]);
+  }, [availability, category, productName, products, region, searchTerm]);
 
   const featuredProducts = products.filter((product) => product.featured).slice(0, 3);
-  const verifiedSellerCount = products.filter((product) => product.verified).length;
-
-  const filters = [
-    { label: "Crop/Product", value: productFilter, setValue: setProductFilter, options: productsAvailable },
-    { label: "Region", value: regionFilter, setValue: setRegionFilter, options: regions },
-    { label: "Category", value: categoryFilter, setValue: setCategoryFilter, options: categories },
-    { label: "Availability", value: availabilityFilter, setValue: setAvailabilityFilter, options: availability }
-  ];
+  const activeListings = products.length;
+  const productsAvailable = products.filter((product) => product.available !== "Sold Out").length;
+  const verifiedSellers = products.filter((product) => product.verified).length;
 
   return (
     <>
-      <section id="marketplace-listings" className="bg-white py-12">
+      <section id="marketplace-listings" className="bg-white py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-soft sm:p-5">
-            <label className="block text-sm font-black text-ink" htmlFor="marketplace-search">
-              Search Marketplace
-            </label>
-            <div className="mt-2 flex items-center gap-2 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
-              <Search className="shrink-0 text-leaf-600" size={18} aria-hidden="true" />
-              <input
-                id="marketplace-search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search crops, livestock, suppliers..."
-                className="min-h-10 w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters((value) => !value)}
-              className="focus-ring mt-4 inline-flex w-full items-center justify-between rounded-md bg-white px-3 py-3 text-sm font-black text-ink ring-1 ring-leaf-900/10 lg:hidden"
-            >
-              <span className="inline-flex items-center gap-2">
-                <SlidersHorizontal size={17} aria-hidden="true" />
-                Filter Listings
-              </span>
-              <ChevronDown className={`transition ${showMobileFilters ? "rotate-180" : ""}`} size={17} aria-hidden="true" />
-            </button>
-
-            <div className={`${showMobileFilters ? "grid" : "hidden"} mt-4 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-4`}>
-              {filters.map((filter) => (
-                <label key={filter.label} className="grid gap-2 text-sm font-black text-ink">
-                  {filter.label}
-                  <select
-                    value={filter.value}
-                    onChange={(event) => filter.setValue(event.target.value)}
-                    className="focus-ring min-h-11 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-semibold text-ink/75"
-                  >
-                    <option value="All">All</option>
-                    {filter.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "Active Listings", value: products.length, icon: PackageCheck },
-              { label: "Products Available", value: productsAvailable.length, icon: Tag },
-              { label: "Verified Sellers", value: verifiedSellerCount, icon: BadgeCheck }
-            ].map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-white px-4 py-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                    <Icon size={18} aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="text-xl font-black text-leaf-700">{stat.value}</p>
-                    <p className="text-[11px] font-black uppercase text-ink/55">{stat.label}</p>
-                  </div>
+          <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                <h2 className="text-lg font-black text-ink">Find listings</h2>
+                <p className="mt-2 text-sm leading-6 text-ink/58">Filter produce, livestock, and supply listings by what matters most.</p>
+                <div className="mt-5">
+                  <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
                 </div>
-              );
-            })}
-          </div>
+                <div className="mt-5">
+                  <FilterControls filters={filters} />
+                </div>
+                <div className="mt-6 border-t border-leaf-900/10 pt-5">
+                  <MarketplaceStats
+                    activeListings={activeListings}
+                    productsAvailable={productsAvailable}
+                    verifiedSellers={verifiedSellers}
+                  />
+                </div>
+              </div>
+            </aside>
 
-          <div className="mt-8 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-black uppercase text-earth-700">Marketplace Listings</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Available produce and livestock</h2>
+              <div className="lg:hidden">
+                <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                  <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+                  <button
+                    type="button"
+                    onClick={() => setShowMobileFilters((value) => !value)}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {showMobileFilters ? "Hide Filters" : "Show Filters"}
+                  </button>
+                  {showMobileFilters ? (
+                    <div className="mt-4 border-t border-leaf-900/10 pt-4">
+                      <FilterControls filters={filters} />
+                      <div className="mt-5">
+                        <MarketplaceStats
+                          activeListings={activeListings}
+                          productsAvailable={productsAvailable}
+                          verifiedSellers={verifiedSellers}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Available listings</p>
+                  <h2 className="mt-2 text-3xl font-black text-ink">Browse marketplace products</h2>
+                </div>
+                <p className="text-sm font-semibold text-ink/55">
+                  Showing {filteredProducts.length} of {products.length} listings
+                </p>
+              </div>
+
+              {filteredProducts.length > 0 ? (
+                <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {filteredProducts.map((product) => (
+                    <ListingCard key={product.id} product={product} onViewDetails={setSelectedProduct} />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                  <h3 className="text-xl font-black text-ink">No listings found.</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, category, availability, or region.</p>
+                </div>
+              )}
             </div>
-            <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700">
-              {filteredProducts.length} result{filteredProducts.length === 1 ? "" : "s"}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-earth-50 py-14">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Featured Produce</p>
+            <h2 className="mt-3 text-3xl font-black text-ink">Strong opportunities this week</h2>
+            <p className="mt-3 leading-7 text-ink/65">
+              A short editorial highlight of listings with quality imagery, strong availability, and direct inquiry paths.
             </p>
           </div>
-
-          {filteredProducts.length > 0 ? (
-            <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredProducts.map((product) => (
-                <ListingCard key={product.id} product={product} onViewDetails={setSelectedProduct} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-earth-50 p-8 text-center">
-              <UsersRound className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-              <h3 className="mt-4 text-xl font-black text-ink">No listings found.</h3>
-              <p className="mt-2 text-sm leading-6 text-ink/65">Try another search or region.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="bg-earth-50 py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-            <div>
-              <p className="text-sm font-black uppercase text-earth-700">Featured Produce</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Priority supply leads</h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-ink/65">
-                A few strong listings from the marketplace, highlighted for buyers who want quick sourcing conversations.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {featuredProducts.map((product) => (
-                <ListingCard key={product.id} product={product} featured onViewDetails={setSelectedProduct} />
-              ))}
-            </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {featuredProducts.map((product) => (
+              <article key={product.id} className="overflow-hidden rounded-md border border-white/70 bg-white shadow-sm">
+                <SafeImage
+                  src={product.image}
+                  alt={`${product.name} featured marketplace listing`}
+                  width={360}
+                  height={220}
+                  fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+                  className="h-36 w-full object-cover"
+                />
+                <div className="p-4">
+                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">{product.region}</p>
+                  <h3 className="mt-2 font-black text-ink">{product.name}</h3>
+                  <p className="mt-1 text-sm text-ink/58">
+                    {product.quantity} {product.unit} available
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProduct(product)}
+                    className="mt-4 w-full rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {selectedProduct ? <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
+      {selectedProduct ? <ProductDetailsModal product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
     </>
   );
 }
