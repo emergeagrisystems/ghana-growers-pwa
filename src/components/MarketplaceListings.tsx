@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, CalendarDays, MapPin, MessageCircle, PackageCheck, Search, Store, Tag, UsersRound } from "lucide-react";
+import { BadgeCheck, MessageCircle, PackageCheck, Search, Tag, UsersRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import type { Product } from "@/types";
@@ -20,87 +20,133 @@ function contactUrl(product: Product) {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
-function ListingCard({ product, featured = false }: { product: Product; featured?: boolean }) {
+function ListingCard({ product, featured = false, onViewDetails }: { product: Product; featured?: boolean; onViewDetails: (product: Product) => void }) {
   return (
     <article className={`overflow-hidden rounded-md bg-white shadow-soft ${featured ? "border-2 border-earth-500" : "border border-leaf-900/10"}`}>
       <div className="relative">
-        <SafeImage src={product.image} alt={`${product.name} from ${product.seller}`} width={520} height={340} className="h-48 w-full object-cover" />
+        <SafeImage src={product.image} alt={product.name} width={520} height={340} className="h-36 w-full object-cover sm:h-40" />
         {featured ? (
-          <span className="absolute left-3 top-3 rounded-md bg-earth-500 px-3 py-2 text-xs font-black uppercase text-ink shadow-soft">
-            Featured Produce
+          <span className="absolute left-3 top-3 rounded-md bg-earth-500 px-2 py-1 text-[10px] font-black uppercase text-ink shadow-soft">
+            Featured
+          </span>
+        ) : null}
+        {product.verified ? (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10px] font-black uppercase text-leaf-700 shadow-soft">
+            <BadgeCheck size={12} aria-hidden="true" />
+            Verified
           </span>
         ) : null}
       </div>
 
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
+      <div className="p-4">
+        <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
+        <h3 className="mt-1 text-lg font-black text-ink">{product.name}</h3>
+        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
-            <h3 className="mt-1 text-xl font-black text-ink">{product.name}</h3>
+            <p className="text-xs font-black uppercase text-ink/45">Region</p>
+            <p className="mt-1 font-bold text-ink/75">{product.region}</p>
           </div>
-          {product.verified ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-leaf-50 px-2 py-1 text-xs font-black text-leaf-700">
-              <BadgeCheck size={14} aria-hidden="true" />
-              Verified
-            </span>
-          ) : null}
+          <div>
+            <p className="text-xs font-black uppercase text-ink/45">Quantity</p>
+            <p className="mt-1 font-bold text-ink/75">{product.quantity} {product.unit}</p>
+          </div>
         </div>
 
-        <dl className="mt-4 grid gap-3 text-sm text-ink/70">
-          <div className="flex gap-2">
-            <Store className="mt-0.5 shrink-0 text-leaf-600" size={16} aria-hidden="true" />
-            <div>
-              <dt className="font-black text-ink">Seller/Farmer</dt>
-              <dd>{product.seller}</dd>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <MapPin className="mt-0.5 shrink-0 text-leaf-600" size={16} aria-hidden="true" />
-            <div>
-              <dt className="font-black text-ink">Region</dt>
-              <dd>{product.region} · {product.location}</dd>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <dt className="font-black text-ink">Quantity</dt>
-              <dd>{product.quantity} {product.unit}</dd>
-            </div>
-            <div>
-              <dt className="font-black text-ink">Availability</dt>
-              <dd>{product.available}</dd>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="shrink-0 text-leaf-600" size={16} aria-hidden="true" />
-            <div>
-              <dt className="sr-only">Date posted</dt>
-              <dd>Posted {product.datePosted}</dd>
-            </div>
-          </div>
-        </dl>
-
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <a
-            href={contactUrl(product)}
-            target="_blank"
-            rel="noreferrer"
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => onViewDetails(product)}
+            className="focus-ring inline-flex items-center justify-center rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
           >
-            <MessageCircle size={17} aria-hidden="true" />
-            Contact Seller
-          </a>
+            View Details
+          </button>
           <a
             href={contactUrl(product)}
             target="_blank"
             rel="noreferrer"
             className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
           >
-            WhatsApp Inquiry
+            <MessageCircle size={17} aria-hidden="true" />
+            WhatsApp
           </a>
         </div>
       </div>
     </article>
+  );
+}
+
+function ProductDetailModal({ product, onClose }: { product: Product; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[80] overflow-y-auto bg-ink/65 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+      <div className="mx-auto max-w-4xl overflow-hidden rounded-md bg-white shadow-soft">
+        <div className="flex items-center justify-between border-b border-leaf-900/10 px-4 py-3 sm:px-5">
+          <p className="text-sm font-black uppercase text-earth-700">Product Details</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring grid h-10 w-10 place-items-center rounded-md bg-leaf-50 text-ink hover:bg-leaf-100"
+            aria-label="Close product details"
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="grid gap-6 p-4 sm:p-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <SafeImage src={product.image} alt={`${product.name} product listing`} width={720} height={480} className="h-64 w-full rounded-md object-cover lg:h-full" />
+          <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
+                <h2 id="product-detail-title" className="mt-2 text-3xl font-black text-ink">{product.name}</h2>
+              </div>
+              <span className={`rounded-md px-3 py-2 text-xs font-black uppercase ${product.verified ? "bg-leaf-50 text-leaf-700" : "bg-earth-50 text-ink/65"}`}>
+                {product.verified ? "Verified Seller" : "Pending Verification"}
+              </span>
+            </div>
+
+            <p className="mt-4 text-sm leading-6 text-ink/65">{product.description}</p>
+
+            <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+              {[
+                ["Seller/Farmer", product.seller],
+                ["Region", product.region],
+                ["District", product.location],
+                ["Quantity", `${product.quantity} ${product.unit}`],
+                ["Availability", product.available],
+                ["Date posted", product.datePosted],
+                ["Category", product.category],
+                ["Verification status", product.verified ? "Verified" : "Pending Verification"]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-md bg-leaf-50 p-3">
+                  <dt className="text-xs font-black uppercase text-ink/50">{label}</dt>
+                  <dd className="mt-1 font-bold text-ink">{value}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <a
+                href={contactUrl(product)}
+                target="_blank"
+                rel="noreferrer"
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+              >
+                <MessageCircle size={17} aria-hidden="true" />
+                Contact Seller
+              </a>
+              <a
+                href={contactUrl(product)}
+                target="_blank"
+                rel="noreferrer"
+                className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
+              >
+                WhatsApp Inquiry
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -110,6 +156,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
   const [regionFilter, setRegionFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [availabilityFilter, setAvailabilityFilter] = useState("All");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const productsAvailable = uniqueValues(products.map((product) => product.name));
   const regions = uniqueValues(products.map((product) => product.region));
@@ -169,26 +216,24 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
         </div>
       </section>
 
-      <section className="bg-earth-50 py-16">
+      <section className="bg-earth-50 py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase text-earth-700">Featured Produce</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Priority marketplace opportunities</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/65">
-                Strong supply leads for buyers, traders, restaurants, wholesalers, processors, and exporters sourcing in Ghana.
-              </p>
-            </div>
+          <div>
+            <p className="text-sm font-black uppercase text-earth-700">Featured Produce</p>
+            <h2 className="mt-2 text-3xl font-black text-ink">Priority marketplace opportunities</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/65">
+              Strong supply leads for buyers, traders, restaurants, wholesalers, processors, and exporters sourcing in Ghana.
+            </p>
           </div>
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featuredProducts.map((product) => (
-              <ListingCard key={product.id} product={product} featured />
+              <ListingCard key={product.id} product={product} featured onViewDetails={setSelectedProduct} />
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-white py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-soft sm:p-5">
             <label className="block text-sm font-black text-ink" htmlFor="marketplace-search">
@@ -237,9 +282,9 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
           </div>
 
           {filteredProducts.length > 0 ? (
-            <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredProducts.map((product) => (
-                <ListingCard key={product.id} product={product} />
+                <ListingCard key={product.id} product={product} onViewDetails={setSelectedProduct} />
               ))}
             </div>
           ) : (
@@ -251,6 +296,8 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
           )}
         </div>
       </section>
+
+      {selectedProduct ? <ProductDetailModal product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
     </>
   );
 }

@@ -18,6 +18,7 @@ export type Product = {
   location: string;
   region: string;
   seller: string;
+  description: string;
   quantity: string;
   unit: string;
   image: string;
