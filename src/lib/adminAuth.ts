@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 export const adminSessionCookie = "ghana_growers_admin_session";
+export const adminSessionHeader = "x-ghana-growers-admin-session";
 
 const sessionValue = "granted";
 
@@ -28,21 +29,25 @@ function parseCookies(cookieHeader: string | null) {
 }
 
 export function createAdminSessionCookie() {
-  const signature = sign(sessionValue);
+  const signature = createAdminSessionToken();
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
 
-  return `${adminSessionCookie}=${sessionValue}.${signature}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800${secure}`;
+  return `${adminSessionCookie}=${signature}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800${secure}`;
 }
 
-export function hasValidAdminSession(request: Request) {
+export function createAdminSessionToken() {
+  const signature = sign(sessionValue);
+  return `${sessionValue}.${signature}`;
+}
+
+function isValidSessionToken(token?: string) {
   const expectedSignature = sign(sessionValue);
 
-  if (!expectedSignature) {
+  if (!expectedSignature || !token) {
     return false;
   }
 
-  const cookie = parseCookies(request.headers.get("cookie"))[adminSessionCookie];
-  const [value, signature] = cookie?.split(".") ?? [];
+  const [value, signature] = token.split(".");
 
   if (value !== sessionValue || !signature) {
     return false;
@@ -52,4 +57,16 @@ export function hasValidAdminSession(request: Request) {
   const actual = Buffer.from(signature);
 
   return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+export function hasValidAdminSession(request: Request) {
+  const headerToken = request.headers.get(adminSessionHeader) ?? undefined;
+
+  if (isValidSessionToken(headerToken)) {
+    return true;
+  }
+
+  const cookieToken = parseCookies(request.headers.get("cookie"))[adminSessionCookie];
+
+  return isValidSessionToken(cookieToken);
 }

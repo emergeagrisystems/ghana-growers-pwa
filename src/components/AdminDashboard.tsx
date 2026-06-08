@@ -68,6 +68,7 @@ type ActiveForm = {
 };
 
 const storageKey = "ghana-growers-admin-access";
+const adminSessionTokenKey = "ghana-growers-admin-session-token";
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
@@ -231,7 +232,8 @@ const createEndpoints: Partial<Record<AdminFormId, string>> = {
   suppliers: "/api/admin/suppliers",
   marketplace: "/api/admin/marketplace-listings",
   "buyer-requests": "/api/admin/buyer-requests",
-  "market-prices": "/api/admin/market-prices"
+  "market-prices": "/api/admin/market-prices",
+  learn: "/api/admin/learn-articles"
 };
 
 const formConfigs: Record<AdminFormId, FormField[]> = {
@@ -552,7 +554,7 @@ export function AdminDashboard() {
       return false;
     }
 
-    return window.sessionStorage.getItem(storageKey) === "granted";
+    return window.sessionStorage.getItem(storageKey) === "granted" && Boolean(window.sessionStorage.getItem(adminSessionTokenKey));
   });
   const [accessKey, setAccessKey] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -607,7 +609,15 @@ export function AdminDashboard() {
       return;
     }
 
+    const result = (await response.json().catch(() => null)) as { adminSessionToken?: string } | null;
+
+    if (!result?.adminSessionToken) {
+      setAccessError("Admin access required");
+      return;
+    }
+
     window.sessionStorage.setItem(storageKey, "granted");
+    window.sessionStorage.setItem(adminSessionTokenKey, result.adminSessionToken);
     setAccessGranted(true);
     setAccessKey("");
   }
@@ -672,10 +682,21 @@ export function AdminDashboard() {
     const endpoint = activeForm.mode === "add" ? createEndpoints[activeForm.id] : undefined;
 
     if (endpoint) {
+      const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
+
+      if (!adminSessionToken) {
+        setFormError("Admin access required. Please lock the dashboard and sign in again.");
+        setFormSuccess("");
+        return;
+      }
+
       setIsSubmittingForm(true);
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-ghana-growers-admin-session": adminSessionToken
+        },
         body: JSON.stringify(formValues)
       }).catch(() => null);
       setIsSubmittingForm(false);
@@ -683,6 +704,12 @@ export function AdminDashboard() {
       const result = (await response?.json().catch(() => null)) as { error?: string } | null;
 
       if (!response?.ok) {
+        if (response?.status === 401) {
+          window.sessionStorage.removeItem(storageKey);
+          window.sessionStorage.removeItem(adminSessionTokenKey);
+          setAccessGranted(false);
+        }
+
         setFormError(result?.error ?? "Supabase insert failed. Check the admin session, environment variables, and table schema.");
         setFormSuccess("");
         return;
@@ -756,6 +783,7 @@ export function AdminDashboard() {
               type="button"
               onClick={() => {
                 window.sessionStorage.removeItem(storageKey);
+                window.sessionStorage.removeItem(adminSessionTokenKey);
                 setAccessGranted(false);
               }}
               className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/65 transition hover:border-leaf-700 hover:text-leaf-800"

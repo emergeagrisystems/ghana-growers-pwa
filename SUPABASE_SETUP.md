@@ -30,6 +30,12 @@ The Phase 1 SQL migration is located at:
 supabase/migrations/001_phase_1_core_records.sql
 ```
 
+Admin Learn Article persistence uses this follow-up migration:
+
+```text
+supabase/migrations/002_learn_articles.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -37,6 +43,7 @@ It creates these tables:
 - `marketplace_listings`
 - `buyer_requests`
 - `market_prices`
+- `learn_articles` when the follow-up migration is run
 
 Each table includes an `id`, timestamps, status fields, and Ghana Growers operational fields such as region, district, verification status, contact details, and listing/request metadata.
 
@@ -48,7 +55,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 4. Copy the full SQL contents.
 5. Paste into Supabase SQL Editor.
 6. Run the query.
-7. Confirm the five tables appear under **Table Editor**.
+7. Repeat for `supabase/migrations/002_learn_articles.sql` if Learn Article persistence is needed.
+8. Confirm the tables appear under **Table Editor**.
 
 ## Current App Behavior
 
@@ -61,8 +69,9 @@ Phase 1 admin add forms now attempt to create records in Supabase for:
 - Marketplace Listings
 - Buyer Requests
 - Market Prices
+- Learn Articles
 
-Edit forms and Learn Article forms remain client-side workflow previews until later phases.
+Edit forms remain client-side workflow previews until update/archive API routes are added.
 
 ## API Routes
 
@@ -74,12 +83,14 @@ src/app/api/admin/suppliers/route.ts
 src/app/api/admin/marketplace-listings/route.ts
 src/app/api/admin/buyer-requests/route.ts
 src/app/api/admin/market-prices/route.ts
+src/app/api/admin/learn-articles/route.ts
 ```
 
 These routes:
 
 - Require the existing admin access flow.
 - Use a signed HTTP-only admin session cookie.
+- Accept the same signed admin session token in the `x-ghana-growers-admin-session` request header.
 - Use `SUPABASE_SERVICE_ROLE_KEY` only on the server.
 - Validate required fields before inserting.
 - Return friendly errors if Supabase is not configured or the insert fails.
