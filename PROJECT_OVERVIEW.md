@@ -60,6 +60,7 @@ The current website is an MVP foundation for a broader AgriTech platform that ca
 - Crop Health Check prototype with image upload preview and mock advisory output.
 - OpenAI-powered Farm Help Assistant with server-side chat API route, suggested questions, loading states, error handling, and agricultural disclaimer.
 - Market Prices Dashboard using local market price data with crop, region, and market filters.
+- Phase 1 Admin Dashboard at `/admin` for internal review of farmers, buyers, suppliers, marketplace listings, buyer requests, verifications, learn articles, and market prices.
 
 The Farmer Tools area is integration-ready. Weather is currently live through Open-Meteo, the Farm Help Assistant uses OpenAI from a secure server route when `OPENAI_API_KEY` is configured, and the Crop Health Check is a mock/prototype service that should later connect to a secure crop disease provider.
 
@@ -130,7 +131,10 @@ BUYER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 SUPPLIER_REGISTRATION_FROM_EMAIL="Ghana Growers <onboarding@ghanagrowers.com>"
 OPENAI_API_KEY=
 OPENAI_MODEL="gpt-5.4-mini"
+ADMIN_ACCESS_KEY=
 ```
+
+The `/admin` dashboard uses `ADMIN_ACCESS_KEY` through a server-side access route. This is a lightweight Phase 1 admin gate only. Add real authentication, role-based permissions, database-backed records, and audit logs before managing sensitive production data.
 
 Future provider credentials should also be server-only, for example:
 

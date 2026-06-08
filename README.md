@@ -65,6 +65,7 @@ Set these environment variables locally and in production:
 ```bash
 OPENAI_API_KEY=
 OPENAI_MODEL="gpt-5.4-mini"
+ADMIN_ACCESS_KEY=
 ```
 
 `OPENAI_MODEL` is optional. If it is not set, the app uses `gpt-5.4-mini`.
@@ -108,6 +109,30 @@ The assistant includes basic usage protection in `src/lib/assistantUsageProtecti
 - Friendly limit messages returned from `/api/farmer-assistant`.
 
 This is intentionally lightweight and in-memory for the MVP. For stronger production control across Vercel serverless instances, move rate-limit counters to a shared store such as Vercel KV, Redis, or a database.
+
+## Phase 1 Admin Dashboard
+
+The lightweight internal admin dashboard lives at:
+
+```text
+/admin
+```
+
+The dashboard uses existing local data files for farmers, buyers, suppliers, marketplace listings, buyer requests, verifications, learn articles, and market prices. Management actions are mock/client-side only in Phase 1.
+
+Admin access is checked by the server route:
+
+```text
+src/app/api/admin/access/route.ts
+```
+
+Set this environment variable locally and in Vercel:
+
+```bash
+ADMIN_ACCESS_KEY=
+```
+
+Security note: this is a lightweight Phase 1 admin gate, not a full authentication system. Before using the dashboard for real sensitive user data, add proper authentication, role-based permissions, audit logs, persistent database storage, and server-side authorization for every admin action. `ADMIN_ACCESS_KEY` must be configured in Vercel environment variables and must never be hardcoded in frontend code.
 
 ## Farmer Registration Integrations
 
