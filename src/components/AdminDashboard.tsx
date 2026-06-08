@@ -226,6 +226,14 @@ const formTitles: Record<AdminFormId, string> = {
   learn: "Learn Article"
 };
 
+const createEndpoints: Partial<Record<AdminFormId, string>> = {
+  farmers: "/api/admin/farmers",
+  suppliers: "/api/admin/suppliers",
+  marketplace: "/api/admin/marketplace-listings",
+  "buyer-requests": "/api/admin/buyer-requests",
+  "market-prices": "/api/admin/market-prices"
+};
+
 const formConfigs: Record<AdminFormId, FormField[]> = {
   farmers: [
     { name: "farmerName", label: "Farmer Name", required: true },
@@ -558,6 +566,7 @@ export function AdminDashboard() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const rowsBySection = useMemo(() => sectionRows(), []);
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
@@ -644,7 +653,7 @@ export function AdminDashboard() {
     setFormSuccess("");
   }
 
-  function submitAdminForm(event: FormEvent<HTMLFormElement>) {
+  async function submitAdminForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!activeForm) {
@@ -660,6 +669,31 @@ export function AdminDashboard() {
     }
 
     const recordLabel = formTitles[activeForm.id];
+    const endpoint = activeForm.mode === "add" ? createEndpoints[activeForm.id] : undefined;
+
+    if (endpoint) {
+      setIsSubmittingForm(true);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formValues)
+      }).catch(() => null);
+      setIsSubmittingForm(false);
+
+      const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response?.ok) {
+        setFormError(result?.error ?? "Supabase insert failed. Check the admin session, environment variables, and table schema.");
+        setFormSuccess("");
+        return;
+      }
+
+      setFormError("");
+      setFormSuccess(`${recordLabel} saved to Supabase successfully. Public pages still use JSON fallback until the read migration is enabled.`);
+      setNotice(`${recordLabel} created in Supabase. JSON-backed public pages continue working during Phase 1 migration.`);
+      return;
+    }
+
     setFormError("");
     setFormSuccess(
       `${activeForm.mode === "add" ? "New" : "Updated"} ${recordLabel.toLowerCase()} workflow previewed successfully. This Phase 1 admin form previews the workflow. Database persistence will be added in a later phase.`
@@ -1058,7 +1092,9 @@ export function AdminDashboard() {
                       <h2 className="mt-2 text-3xl font-black text-ink">{activeForm.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-ink/60">
                         {activeForm.recordName ? `Editing ${activeForm.recordName}. ` : ""}
-                        This Phase 1 admin form previews the workflow. Database persistence will be added in a later phase.
+                        {activeForm.mode === "add" && createEndpoints[activeForm.id]
+                          ? "This Phase 1 admin form saves new records to Supabase when the table schema and server environment variables are configured."
+                          : "This Phase 1 admin form previews the workflow. Database persistence for this action will be added in a later phase."}
                       </p>
                     </div>
                     <button
@@ -1148,9 +1184,16 @@ export function AdminDashboard() {
                     </button>
                     <button
                       type="submit"
+                      disabled={isSubmittingForm}
                       className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
                     >
-                      {activeForm.mode === "add" ? "Preview Add Workflow" : "Preview Edit Workflow"}
+                      {isSubmittingForm
+                        ? "Saving..."
+                        : activeForm.mode === "add" && createEndpoints[activeForm.id]
+                          ? "Save to Supabase"
+                          : activeForm.mode === "add"
+                            ? "Preview Add Workflow"
+                            : "Preview Edit Workflow"}
                     </button>
                   </div>
                 </form>
