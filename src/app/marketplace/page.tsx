@@ -13,36 +13,19 @@ export const metadata = {
 export default function MarketplacePage() {
   return (
     <>
-      <section className="overflow-hidden border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/70 to-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
-          <div>
+      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+          <div className="max-w-4xl">
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl">
-              Source farm produce and trusted agricultural supply across Ghana
+            <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">
+              Buy and Sell Farm Produce & Supplies Across Ghana
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/70">
-              Browse available produce, livestock, buyer-ready quantities, seller locations, and WhatsApp inquiry paths for faster agricultural trade.
+            <p className="mt-4 max-w-2xl text-lg leading-8 text-ink/70">
+              Browse produce, livestock, suppliers, and buyer requests from across Ghana.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
               <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Request</ButtonLink>
-            </div>
-          </div>
-          <div className="relative">
-            <SafeImage
-              src="/images/marketplace/ghana-market-1.jpg"
-              alt="Fresh produce at a Ghana agricultural market"
-              width={720}
-              height={480}
-              priority
-              fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
-              className="h-72 w-full rounded-md border border-white/80 object-cover shadow-soft sm:h-96"
-            />
-            <div className="absolute bottom-4 left-4 right-4 rounded-md border border-white/70 bg-white/92 p-4 shadow-soft backdrop-blur">
-              <p className="text-sm font-black text-ink">Direct agricultural sourcing</p>
-              <p className="mt-1 text-sm leading-6 text-ink/65">
-                Compare listings, filter by region, and contact sellers through WhatsApp.
-              </p>
             </div>
           </div>
         </div>
