@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, MessageCircle, PackageCheck, Search, Tag, UsersRound, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, MessageCircle, PackageCheck, Search, SlidersHorizontal, Tag, UsersRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import type { Product } from "@/types";
@@ -22,9 +22,9 @@ function contactUrl(product: Product) {
 
 function ListingCard({ product, featured = false, onViewDetails }: { product: Product; featured?: boolean; onViewDetails: (product: Product) => void }) {
   return (
-    <article className={`overflow-hidden rounded-md bg-white shadow-soft ${featured ? "border-2 border-earth-500" : "border border-leaf-900/10"}`}>
+    <article className={`overflow-hidden rounded-md bg-white shadow-soft ${featured ? "border border-earth-500" : "border border-leaf-900/10"}`}>
       <div className="relative">
-        <SafeImage src={product.image} alt={product.name} width={520} height={340} className="h-36 w-full object-cover sm:h-40" />
+        <SafeImage src={product.image} alt={product.name} width={520} height={340} className="h-32 w-full object-cover sm:h-36" />
         {featured ? (
           <span className="absolute left-3 top-3 rounded-md bg-earth-500 px-2 py-1 text-[10px] font-black uppercase text-ink shadow-soft">
             Featured
@@ -38,16 +38,16 @@ function ListingCard({ product, featured = false, onViewDetails }: { product: Pr
         ) : null}
       </div>
 
-      <div className="p-4">
-        <p className="text-xs font-black uppercase text-earth-700">{product.category}</p>
+      <div className="p-3.5">
+        <p className="text-[11px] font-black uppercase text-earth-700">{product.category}</p>
         <h3 className="mt-1 text-lg font-black text-ink">{product.name}</h3>
         <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs font-black uppercase text-ink/45">Region</p>
+            <p className="text-[11px] font-black uppercase text-ink/45">Region</p>
             <p className="mt-1 font-bold text-ink/75">{product.region}</p>
           </div>
           <div>
-            <p className="text-xs font-black uppercase text-ink/45">Quantity</p>
+            <p className="text-[11px] font-black uppercase text-ink/45">Quantity</p>
             <p className="mt-1 font-bold text-ink/75">{product.quantity} {product.unit}</p>
           </div>
         </div>
@@ -56,7 +56,7 @@ function ListingCard({ product, featured = false, onViewDetails }: { product: Pr
           <button
             type="button"
             onClick={() => onViewDetails(product)}
-            className="focus-ring inline-flex items-center justify-center rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+            className="focus-ring inline-flex items-center justify-center rounded-md bg-white px-3 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
           >
             View Details
           </button>
@@ -64,9 +64,9 @@ function ListingCard({ product, featured = false, onViewDetails }: { product: Pr
             href={contactUrl(product)}
             target="_blank"
             rel="noreferrer"
-            className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
+            className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-3 py-2.5 text-sm font-black text-ink transition hover:bg-earth-700 hover:text-white"
           >
-            <MessageCircle size={17} aria-hidden="true" />
+            <MessageCircle size={16} aria-hidden="true" />
             WhatsApp
           </a>
         </div>
@@ -156,6 +156,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
   const [regionFilter, setRegionFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [availabilityFilter, setAvailabilityFilter] = useState("All");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const productsAvailable = uniqueValues(products.map((product) => product.name));
@@ -181,7 +182,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
     });
   }, [availabilityFilter, categoryFilter, productFilter, products, regionFilter, searchTerm]);
 
-  const featuredProducts = products.filter((product) => product.featured).slice(0, 4);
+  const featuredProducts = products.filter((product) => product.featured).slice(0, 3);
   const verifiedSellerCount = products.filter((product) => product.verified).length;
 
   const filters = [
@@ -193,47 +194,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
 
   return (
     <>
-      <section className="bg-white py-12">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
-          {[
-            { label: "Active Listings", value: products.length, icon: PackageCheck },
-            { label: "Products Available", value: productsAvailable.length, icon: Tag },
-            { label: "Verified Sellers", value: verifiedSellerCount, icon: BadgeCheck }
-          ].map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div key={stat.label} className="flex items-center gap-4 rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-soft">
-                <span className="grid h-12 w-12 place-items-center rounded-md bg-leaf-600 text-white">
-                  <Icon size={22} aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-3xl font-black text-leaf-700">{stat.value}</p>
-                  <p className="text-xs font-black uppercase text-ink/60">{stat.label}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="bg-earth-50 py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div>
-            <p className="text-sm font-black uppercase text-earth-700">Featured Produce</p>
-            <h2 className="mt-2 text-3xl font-black text-ink">Priority marketplace opportunities</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/65">
-              Strong supply leads for buyers, traders, restaurants, wholesalers, processors, and exporters sourcing in Ghana.
-            </p>
-          </div>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ListingCard key={product.id} product={product} featured onViewDetails={setSelectedProduct} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-14">
+      <section id="marketplace-listings" className="bg-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-soft sm:p-5">
             <label className="block text-sm font-black text-ink" htmlFor="marketplace-search">
@@ -250,7 +211,19 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
               />
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters((value) => !value)}
+              className="focus-ring mt-4 inline-flex w-full items-center justify-between rounded-md bg-white px-3 py-3 text-sm font-black text-ink ring-1 ring-leaf-900/10 lg:hidden"
+            >
+              <span className="inline-flex items-center gap-2">
+                <SlidersHorizontal size={17} aria-hidden="true" />
+                Filter Listings
+              </span>
+              <ChevronDown className={`transition ${showMobileFilters ? "rotate-180" : ""}`} size={17} aria-hidden="true" />
+            </button>
+
+            <div className={`${showMobileFilters ? "grid" : "hidden"} mt-4 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-4`}>
               {filters.map((filter) => (
                 <label key={filter.label} className="grid gap-2 text-sm font-black text-ink">
                   {filter.label}
@@ -269,6 +242,27 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Active Listings", value: products.length, icon: PackageCheck },
+              { label: "Products Available", value: productsAvailable.length, icon: Tag },
+              { label: "Verified Sellers", value: verifiedSellerCount, icon: BadgeCheck }
+            ].map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-white px-4 py-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-xl font-black text-leaf-700">{stat.value}</p>
+                    <p className="text-[11px] font-black uppercase text-ink/55">{stat.label}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-8 flex items-center justify-between gap-4">
@@ -294,6 +288,25 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
               <p className="mt-2 text-sm leading-6 text-ink/65">Try another search or region.</p>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="bg-earth-50 py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <p className="text-sm font-black uppercase text-earth-700">Featured Produce</p>
+              <h2 className="mt-2 text-3xl font-black text-ink">Priority supply leads</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-ink/65">
+                A few strong listings from the marketplace, highlighted for buyers who want quick sourcing conversations.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {featuredProducts.map((product) => (
+                <ListingCard key={product.id} product={product} featured onViewDetails={setSelectedProduct} />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

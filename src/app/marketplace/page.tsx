@@ -20,18 +20,33 @@ export default function MarketplacePage() {
         description="Find available produce, livestock, buyer-ready quantities, seller locations, verification signals, and WhatsApp inquiry paths for faster agricultural trade."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/farmer-directory">Browse Farmer Directory</ButtonLink>
-          <ButtonLink href="/supplier-directory" variant="secondary">Browse Supplier Directory</ButtonLink>
-          <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>
-          <ButtonLink href="/market-intelligence" variant="light">Market Intelligence</ButtonLink>
-          <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Demand</ButtonLink>
-          <ButtonLink href="/whatsapp-communities" variant="light">Join WhatsApp Communities</ButtonLink>
+          <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
+          <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Request</ButtonLink>
         </div>
       </PageHero>
 
       <MarketplaceListings products={products} />
 
-      <section className="bg-white py-16">
+      <section className="bg-white py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <SectionHeader
+              eyebrow="Marketplace Resources"
+              title="Helpful ways to source, compare, and connect"
+              description="Use these supporting tools when you need directories, buyer demand, market intelligence, or WhatsApp communities."
+            />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <ButtonLink href="/farmer-directory" variant="light">Farmer Directory</ButtonLink>
+              <ButtonLink href="/supplier-directory" variant="light">Supplier Directory</ButtonLink>
+              <ButtonLink href="/buyer-requests" variant="light">Buyer Requests</ButtonLink>
+              <ButtonLink href="/market-intelligence" variant="light">Market Intelligence</ButtonLink>
+              <ButtonLink href="/whatsapp-communities" variant="light">WhatsApp Communities</ButtonLink>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader title="Marketplace categories" description="Browse the main product and service groups Ghana Growers is organizing for buyers, sellers, processors, exporters, restaurants, and farm suppliers." />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
