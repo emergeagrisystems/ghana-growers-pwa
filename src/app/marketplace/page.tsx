@@ -18,10 +18,10 @@ export default function MarketplacePage() {
           <div className="max-w-4xl">
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
             <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">
-              Buy and Sell Farm Produce & Supplies Across Ghana
+              Farm Produce Marketplace
             </h1>
             <p className="mt-4 max-w-2xl text-lg leading-8 text-ink/70">
-              Browse produce, livestock, suppliers, and buyer requests from across Ghana.
+              Browse produce from Farmers & Suppliers across Ghana.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>

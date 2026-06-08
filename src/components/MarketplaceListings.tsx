@@ -159,7 +159,7 @@ function ListingCard({
             onClick={() => onViewDetails(product)}
             className="rounded-md bg-leaf-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
           >
-            View Details
+            Details
           </button>
           <a
             href={contactUrl(product)}
@@ -413,7 +413,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
                     onClick={() => setSelectedProduct(product)}
                     className="mt-4 w-full rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
                   >
-                    View Details
+                    Details
                   </button>
                 </div>
               </article>
