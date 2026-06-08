@@ -144,7 +144,6 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
             </div>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <WhatsAppButton message={farmer.whatsappMessage} label="WhatsApp Farmer" />
-              <WhatsAppButton message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`} label="Send Inquiry" className="bg-earth-500 text-ink hover:bg-earth-700 hover:text-white" />
               <ButtonLink href="/farmer-directory" variant="light">Back to Directory</ButtonLink>
             </div>
           </div>
@@ -171,6 +170,22 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
             <ProfileFact icon={CalendarDays} label="Years farming" value={farmer.yearsFarming ?? "Available on request"} detail="Reported experience" />
             <ProfileFact icon={Truck} label="Delivery" value={farmer.deliveryOptions?.[0] ?? "Buyer pickup"} detail="Confirm before purchase" />
           </div>
+
+          <section className="mt-6 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Products supplied</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {farmer.products.map((product) => (
+                    <span key={product} className="rounded-md bg-white px-3 py-1.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
+                      {product}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-ink/65">{farmer.availableQuantities ?? farmer.capacityVolume}</p>
+            </div>
+          </section>
 
           <div className="mt-10 grid gap-8 lg:grid-cols-[1.35fr_0.75fr]">
             <div className="grid gap-8">
@@ -276,8 +291,7 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                   Confirm quantity, grading, harvest timing, pickup, delivery, and payment terms before committing to trade.
                 </p>
                 <div className="mt-5 grid gap-3">
-                  <WhatsAppButton message={farmer.whatsappMessage} label="WhatsApp Farmer" className="bg-white text-leaf-700 hover:bg-leaf-50" />
-                  <WhatsAppButton message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`} label="Send Inquiry" className="bg-earth-500 text-ink hover:bg-earth-700 hover:text-white" />
+                  <WhatsAppButton message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`} label="Send Inquiry" className="bg-white text-leaf-700 hover:bg-leaf-50" />
                 </div>
               </section>
 
@@ -287,24 +301,24 @@ export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
                   <FarmerTrustBadges status={farmer.verificationStatus} />
                 </div>
                 <p className="mt-4 text-sm leading-6 text-ink/62">
-                  Verification placeholders can later connect to field checks, documents, buyer feedback, and Ghana Growers approval status.
+                  {farmer.verificationStatus === "Pending Verification"
+                    ? "Verification review is in progress. Buyers should confirm current supply and trade terms before committing."
+                    : "Profile reviewed by Ghana Growers."}
                 </p>
               </section>
 
               <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
-                <div className="relative flex h-56 items-center justify-center bg-leaf-50">
-                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(37,99,65,0.08)_1px,transparent_1px),linear-gradient(rgba(37,99,65,0.08)_1px,transparent_1px)] bg-[size:28px_28px]" />
-                  <div className="relative mx-6 rounded-md border border-leaf-900/10 bg-white/90 p-5 text-center shadow-soft backdrop-blur">
-                    <MapPin className="mx-auto h-7 w-7 text-leaf-600" aria-hidden="true" />
-                    <p className="mt-3 text-lg font-black text-ink">{farmer.region}</p>
-                    <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}</p>
-                  </div>
-                </div>
                 <div className="p-5">
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Region map placeholder</p>
-                  <p className="mt-2 text-sm leading-6 text-ink/62">
-                    A verified map or farm cluster location can be connected here when location review is enabled.
+                  <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
+                    Location
                   </p>
+                  <div className="mt-4 grid gap-3 text-sm">
+                    <LocationRow label="Region" value={farmer.region} />
+                    <LocationRow label="District" value={farmer.district} />
+                    <LocationRow label="Service area" value={`${farmer.district} and nearby buyer routes`} />
+                    <LocationRow label="Delivery / pickup" value={farmer.deliveryOptions?.[0] ?? "Buyer pickup from farm or aggregation point"} />
+                  </div>
                 </div>
               </section>
             </aside>
@@ -343,6 +357,15 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
     <div className="rounded-md bg-leaf-50 p-4">
       <p className="text-xs font-black uppercase tracking-wide text-earth-700">{label}</p>
       <p className="mt-2 text-sm leading-6 text-ink/68">{value}</p>
+    </div>
+  );
+}
+
+function LocationRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-leaf-50 px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</p>
+      <p className="mt-1 font-semibold leading-6 text-ink/72">{value}</p>
     </div>
   );
 }

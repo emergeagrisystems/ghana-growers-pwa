@@ -89,8 +89,8 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
               </p>
               <h2 className="mt-2 text-3xl font-black text-ink">Search verified-ready farmer profiles</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                Browse sample farmer records by region, district, product, and farm type. Ghana Growers can replace this
-                local JSON data with verified database records as the network grows.
+                Browse farmers across the Ghana Growers network by region, district, product, and farm type. Profiles include location,
+                products, verification status, and contact options.
               </p>
             </div>
             <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">
