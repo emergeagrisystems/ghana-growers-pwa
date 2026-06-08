@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { BadgeCheck, Crown, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
-import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
-import { featuredListingLabels, isFeaturedFarmer } from "@/data/featuredListings";
+import { normalizeTrust } from "@/components/TrustIndicators";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -16,6 +13,28 @@ type FarmerDirectoryProps = {
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
+}
+
+function FarmerBadge({ status }: { status: string }) {
+  if (status === "Premium Member") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-500 px-3 py-1 text-xs font-black text-ink">
+        <Crown className="h-3.5 w-3.5" />
+        Premium Farmer
+      </span>
+    );
+  }
+
+  if (status === "Verified") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
+        <BadgeCheck className="h-3.5 w-3.5" />
+        Verified Farmer
+      </span>
+    );
+  }
+
+  return null;
 }
 
 export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
@@ -115,77 +134,43 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
 
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredFarmers.map((farmer) => (
-            <article
-              key={farmer.slug}
-              className={`rounded-md bg-white p-5 shadow-soft ${
-                isFeaturedFarmer(farmer.slug) ? "border-2 border-earth-500" : "border border-leaf-900/10"
-              }`}
-            >
+            <article key={farmer.slug} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
               {(() => {
                 const trust = normalizeTrust(farmer.trust);
+                const mainProducts = farmer.products.slice(0, 3);
 
                 return (
                   <>
-                    {isFeaturedFarmer(farmer.slug) ? (
-                      <div className="mb-4">
-                        <FeaturedRibbon label={featuredListingLabels.farmers} />
-                      </div>
-                    ) : null}
                     <SafeImage
                       src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
                       alt={`${farmer.farmName} farm photo`}
                       width={520}
                       height={320}
-                      className="mb-5 h-44 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                      className="h-48 w-full bg-leaf-50 object-cover"
                       fallbackSrc="/images/farmers/farmer-1.jpg"
                     />
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-black uppercase text-earth-700">{farmer.region}</p>
-                        <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
-                        <p className="mt-2 text-sm font-bold text-leaf-700">{farmer.district}</p>
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{farmer.region}</p>
+                          <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
+                        </div>
+                        <FarmerBadge status={trust.status} />
                       </div>
-                    </div>
-                    <div className="mt-4">
-                      <TrustSummary kind="farmer" trust={trust} />
-                    </div>
 
-                    <dl className="mt-5 grid gap-3 text-sm text-ink/70">
-                      <div>
-                        <dt className="font-black text-ink">Products</dt>
-                        <dd className="mt-2 flex flex-wrap gap-2">
-                          {farmer.products.map((item) => (
+                      <p className="mt-3 text-sm font-semibold text-ink/58">{farmer.district}</p>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {mainProducts.map((item) => (
                             <span key={item} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
                               {item}
                             </span>
-                          ))}
-                        </dd>
+                        ))}
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <dt className="font-black text-ink">Farm Type</dt>
-                          <dd>{farmer.farmType}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-black text-ink">Farm Size</dt>
-                          <dd>{farmer.farmSize}</dd>
-                        </div>
-                      </div>
-                      <div>
-                        <dt className="font-black text-ink">Availability</dt>
-                        <dd>{farmer.availabilityStatus}</dd>
-                      </div>
-                    </dl>
 
-                    <div className="mt-5">
-                      <TrustScoreCard score={trust.score} />
-                    </div>
-
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <WhatsAppButton message={farmer.whatsappMessage} className="w-full" />
                       <Link
                         href={`/farmer-directory/${farmer.slug}`}
-                        className="focus-ring inline-flex items-center justify-center rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink shadow-soft transition hover:bg-earth-700 hover:text-white"
+                        className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
                       >
                         View Profile
                       </Link>

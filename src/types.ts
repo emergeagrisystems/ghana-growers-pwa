@@ -68,10 +68,13 @@ export type FarmerProfile = {
   products: string[];
   farmType: "Crop" | "Livestock" | "Mixed";
   farmSize: string;
+  yearsFarming?: string;
   availabilityStatus: string;
   description: string;
   harvestSeason: string;
   capacityVolume: string;
+  availableQuantities?: string;
+  deliveryOptions?: string[];
   photos: string[];
   verificationStatus: string;
   trust?: TrustProfile;

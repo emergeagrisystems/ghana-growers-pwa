@@ -12,10 +12,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "42 acres combined",
+    "yearsFarming": "9 years",
     "availabilityStatus": "Weekly supply available",
     "description": "A coordinated vegetable farmer group supplying tomatoes, pepper, and onions from farms around Akumadan. The group aggregates produce for buyers who need predictable crate and bulk volumes.",
     "harvestSeason": "Major supply from June to October, with smaller dry-season harvests when irrigation is available.",
     "capacityVolume": "Up to 180 tomato crates weekly during peak harvest.",
+    "availableQuantities": "80 to 180 crates weekly depending on harvest cycle.",
+    "deliveryOptions": [
+      "Buyer pickup from Akumadan aggregation point",
+      "Coordinated delivery to Kumasi with advance booking"
+    ],
     "photos": [
       "/images/farmers/farmer-1.jpg",
       "/images/crops/tomatoes.jpg"
@@ -50,10 +56,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "30 acres combined",
+    "yearsFarming": "11 years",
     "availabilityStatus": "Seasonal bulk orders",
     "description": "Fruit growers near Nsawam supplying pineapple, mango, and pawpaw to retailers, juice processors, hotels, and market distributors.",
     "harvestSeason": "Pineapple supply is strongest from March to August; mango and pawpaw availability varies by farm block.",
     "capacityVolume": "Truckload aggregation available with advance notice.",
+    "availableQuantities": "Truckload orders available during peak fruit harvest.",
+    "deliveryOptions": [
+      "Farm gate pickup near Nsawam",
+      "Delivery support to Accra for bulk buyers"
+    ],
     "photos": [
       "/images/farmers/farmer-2.jpg",
       "/images/crops/pineapple.jpg"
@@ -88,10 +100,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "65 acres combined",
+    "yearsFarming": "14 years",
     "availabilityStatus": "Seasonal bulk supply",
     "description": "A northern Ghana root crop network supporting buyers looking for yam, cassava, and sweet potato in bulk quantities.",
     "harvestSeason": "Main yam harvest from August to December; cassava and sweet potato supply available across wider windows.",
     "capacityVolume": "Bulk orders from 500 tubers upward during harvest periods.",
+    "availableQuantities": "500+ yam tubers and tuber crop aggregation by order.",
+    "deliveryOptions": [
+      "Buyer pickup from Tamale aggregation point",
+      "Transport coordination for large tuber orders"
+    ],
     "photos": [
       "/images/farmers/farmer-3.jpg",
       "/images/crops/yam.jpg"
@@ -126,10 +144,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "24 acres combined",
+    "yearsFarming": "7 years",
     "availabilityStatus": "Available most weeks",
     "description": "Irrigated vegetable farmers serving Accra, Tema, and nearby markets with okra, garden eggs, and pepper.",
     "harvestSeason": "Multiple harvest cycles throughout the year, strongest from January to May.",
     "capacityVolume": "60 to 100 sacks or crates weekly depending on crop cycle.",
+    "availableQuantities": "60 to 100 sacks or crates weekly depending on crop cycle.",
+    "deliveryOptions": [
+      "Pickup from Ada East farms",
+      "Delivery to Accra and Tema by arrangement"
+    ],
     "photos": [
       "/images/farmers/farmer-4.jpg",
       "/images/crops/tomatoes.jpg"
@@ -163,10 +187,16 @@
     ],
     "farmType": "Mixed",
     "farmSize": "18 acres plus fish ponds",
+    "yearsFarming": "8 years",
     "availabilityStatus": "Rice seasonal, fish by order",
     "description": "A mixed farm combining rice cultivation with tilapia ponds for buyers seeking grain and fresh fish supply from the Volta corridor.",
     "harvestSeason": "Rice harvest from September to December; tilapia supply is scheduled by pond cycle.",
     "capacityVolume": "Rice available in 50kg bags; tilapia orders require advance scheduling.",
+    "availableQuantities": "Rice in 50kg bags and tilapia by pond cycle.",
+    "deliveryOptions": [
+      "Pickup from North Tongu",
+      "Delivery arranged for scheduled rice and fish orders"
+    ],
     "photos": [
       "/images/farmers/farmer-5.jpg",
       "/images/crops/eggs.jpg"
@@ -201,10 +231,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "55 acres",
+    "yearsFarming": "12 years",
     "availabilityStatus": "Post-harvest stock available",
     "description": "A grain and legumes farm supplying maize, cowpea, and soybean for aggregators, feed producers, processors, and institutional buyers.",
     "harvestSeason": "Main harvest from August to November, with stored supply available after drying.",
     "capacityVolume": "Up to 350 bags across crop types after harvest.",
+    "availableQuantities": "Up to 350 bags across maize, cowpea, and soybean after harvest.",
+    "deliveryOptions": [
+      "Pickup from Techiman Municipal",
+      "Bulk delivery support through local transport partners"
+    ],
     "photos": [
       "/images/farmers/farmer-6.jpg",
       "/images/crops/inputs.jpg"
@@ -239,10 +275,16 @@
     ],
     "farmType": "Livestock",
     "farmSize": "2,400 birds",
+    "yearsFarming": "6 years",
     "availabilityStatus": "Eggs available weekly",
     "description": "A poultry unit serving Cape Coast, Elmina, and nearby towns with eggs, broilers, and spent layers for restaurants, shops, and household buyers.",
     "harvestSeason": "Eggs available weekly; broiler cycles are scheduled every 6 to 8 weeks.",
     "capacityVolume": "Up to 120 crates of eggs weekly when flock production is stable.",
+    "availableQuantities": "Up to 120 crates of eggs weekly, broilers by cycle.",
+    "deliveryOptions": [
+      "Pickup from Cape Coast poultry unit",
+      "Delivery to Cape Coast and Elmina for regular buyers"
+    ],
     "photos": [
       "/images/farmers/farmer-7.jpg",
       "/images/crops/poultry.jpg"
@@ -277,10 +319,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "38 acres combined",
+    "yearsFarming": "10 years",
     "availabilityStatus": "Seasonal onion supply",
     "description": "Dry-season vegetable growers known for onion supply, with additional tomato and pepper harvests depending on water availability.",
     "harvestSeason": "Onion harvest from February to May; tomatoes and pepper vary by irrigation access.",
     "capacityVolume": "Bulk onion sacks available during harvest peak.",
+    "availableQuantities": "Bulk onion sacks during peak harvest, vegetable crates by availability.",
+    "deliveryOptions": [
+      "Pickup from Bawku West aggregation point",
+      "Transport coordination for bulk onion orders"
+    ],
     "photos": [
       "/images/farmers/farmer-8.jpg",
       "/images/crops/tomatoes.jpg"
@@ -315,10 +363,16 @@
     ],
     "farmType": "Mixed",
     "farmSize": "27 acres",
+    "yearsFarming": "13 years",
     "availabilityStatus": "Plantain available monthly",
     "description": "A mixed tree-crop farm producing plantain, cocoa, and cocoyam for buyers interested in Western Region supply.",
     "harvestSeason": "Plantain available throughout much of the year; cocoa follows main and light crop seasons.",
     "capacityVolume": "Monthly plantain bunch supply with advance aggregation.",
+    "availableQuantities": "Monthly plantain bunch supply with cocoyam by harvest window.",
+    "deliveryOptions": [
+      "Farm gate pickup in Wassa Amenfi East",
+      "Aggregation support for plantain buyers"
+    ],
     "photos": [
       "/images/farmers/farmer-9.jpg",
       "/images/crops/pineapple.jpg"
@@ -353,10 +407,16 @@
     ],
     "farmType": "Crop",
     "farmSize": "46 acres combined",
+    "yearsFarming": "9 years",
     "availabilityStatus": "Seasonal aggregation available",
     "description": "A farmer group aggregating groundnut, shea nuts, and millet for processors, traders, and food businesses sourcing from Upper West Region.",
     "harvestSeason": "Groundnut and millet harvest from September to November; shea nut aggregation follows local collection periods.",
     "capacityVolume": "Aggregated sack volumes available after harvest and drying.",
+    "availableQuantities": "Aggregated sack volumes available after harvest and drying.",
+    "deliveryOptions": [
+      "Pickup from Wa Municipal aggregation point",
+      "Bulk transport arranged after quantity confirmation"
+    ],
     "photos": [
       "/images/farmers/farmer-10.jpg",
       "/images/crops/yam.jpg"
