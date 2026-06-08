@@ -446,7 +446,7 @@ export function BuyerRequestsBoard() {
               </div>
 
               {filteredRequests.length > 0 ? (
-                <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {filteredRequests.map((request) => (
                     <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
                   ))}
