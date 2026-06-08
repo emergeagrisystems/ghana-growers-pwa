@@ -140,7 +140,6 @@ function RequestCard({
   onViewDetails: (request: BuyerRequest) => void;
 }) {
   const trust = normalizeTrust(request.trust);
-  const relatedProducts = relatedProductsForRequest(request);
 
   return (
     <article className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
@@ -175,22 +174,14 @@ function RequestCard({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => onViewDetails(request)}
-          className="rounded-md bg-leaf-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
+          className="rounded-md bg-leaf-700 px-3 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
         >
           Details
         </button>
-        {relatedProducts.length > 0 ? (
-          <Link
-            href="/marketplace#marketplace-listings"
-            className="inline-flex items-center justify-center rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
-          >
-            View Products
-          </Link>
-        ) : null}
         <a
           href={buyerWhatsAppUrl(request)}
           target="_blank"
@@ -447,7 +438,7 @@ export function BuyerRequestsBoard() {
               <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
                 <div>
                   <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
-                  <h2 className="mt-2 text-3xl font-black text-ink">Browse buyer requests</h2>
+                  <h2 className="mt-2 text-3xl font-black text-ink">Buyer Requests</h2>
                 </div>
                 <p className="text-sm font-semibold text-ink/55">
                   Showing {filteredRequests.length} of {buyerRequests.length} requests
@@ -455,7 +446,7 @@ export function BuyerRequestsBoard() {
               </div>
 
               {filteredRequests.length > 0 ? (
-                <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {filteredRequests.map((request) => (
                     <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
                   ))}
