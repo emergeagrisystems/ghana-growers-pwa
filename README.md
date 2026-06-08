@@ -120,6 +120,17 @@ The lightweight internal admin dashboard lives at:
 
 The dashboard uses existing local data files for farmers, buyers, suppliers, marketplace listings, buyer requests, verifications, learn articles, and market prices. Management actions are mock/client-side only in Phase 1.
 
+Phase 1 admin forms are available from the quick actions and table edit controls for:
+
+- Farmers
+- Suppliers
+- Marketplace listings
+- Buyer requests
+- Market prices
+- Learn articles
+
+These forms validate required fields and preview the add/edit workflow in the browser. They do not write back to the local JSON files or persist changes in production yet. Database persistence, server-side validation, audit logs, and role-based permissions should be added before using these forms to manage real operational data.
+
 Admin access is checked by the server route:
 
 ```text

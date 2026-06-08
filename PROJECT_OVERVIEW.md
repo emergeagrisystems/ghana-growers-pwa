@@ -61,6 +61,7 @@ The current website is an MVP foundation for a broader AgriTech platform that ca
 - OpenAI-powered Farm Help Assistant with server-side chat API route, suggested questions, loading states, error handling, and agricultural disclaimer.
 - Market Prices Dashboard using local market price data with crop, region, and market filters.
 - Phase 1 Admin Dashboard at `/admin` for internal review of farmers, buyers, suppliers, marketplace listings, buyer requests, verifications, learn articles, and market prices.
+- Phase 1 admin add/edit forms for farmers, suppliers, marketplace listings, buyer requests, market prices, and learn articles. These forms validate required fields and preview workflows client-side only until database persistence is added.
 
 The Farmer Tools area is integration-ready. Weather is currently live through Open-Meteo, the Farm Help Assistant uses OpenAI from a secure server route when `OPENAI_API_KEY` is configured, and the Crop Health Check is a mock/prototype service that should later connect to a secure crop disease provider.
 
@@ -134,7 +135,7 @@ OPENAI_MODEL="gpt-5.4-mini"
 ADMIN_ACCESS_KEY=
 ```
 
-The `/admin` dashboard uses `ADMIN_ACCESS_KEY` through a server-side access route. This is a lightweight Phase 1 admin gate only. Add real authentication, role-based permissions, database-backed records, and audit logs before managing sensitive production data.
+The `/admin` dashboard uses `ADMIN_ACCESS_KEY` through a server-side access route. This is a lightweight Phase 1 admin gate only. Current admin forms and table actions are mock/client-side workflow previews and do not persist changes. Add real authentication, role-based permissions, database-backed records, server-side validation, and audit logs before managing sensitive production data.
 
 Future provider credentials should also be server-only, for example:
 

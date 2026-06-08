@@ -41,6 +41,7 @@ type AdminSectionId =
   | "verifications"
   | "learn"
   | "market-prices";
+type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
 
 type AdminRow = {
   id: string;
@@ -50,6 +51,20 @@ type AdminRow = {
   status: AdminStatus;
   dateAdded: string;
   href?: string;
+};
+type FormField = {
+  name: string;
+  label: string;
+  type?: "text" | "date" | "number" | "url" | "textarea" | "select";
+  required?: boolean;
+  helper?: string;
+  options?: string[];
+};
+type ActiveForm = {
+  id: AdminFormId;
+  mode: "add" | "edit";
+  title: string;
+  recordName?: string;
 };
 
 const storageKey = "ghana-growers-admin-access";
@@ -192,14 +207,90 @@ const quickActions: Array<{
   section: AdminSectionId;
   intent: string;
   icon: typeof LayoutDashboard;
+  form?: AdminFormId;
 }> = [
-  { label: "Add Farmer", section: "farmers", intent: "New farmer record form ready for database connection.", icon: Sprout },
-  { label: "Add Supplier", section: "suppliers", intent: "New supplier record form ready for database connection.", icon: Truck },
-  { label: "Add Marketplace Listing", section: "marketplace", intent: "New marketplace listing form ready for database connection.", icon: Store },
-  { label: "Add Buyer Request", section: "buyer-requests", intent: "New buyer request form ready for database connection.", icon: PackageCheck },
-  { label: "Add Market Price", section: "market-prices", intent: "New market price entry form ready for database connection.", icon: ChartLine },
+  { label: "Add Farmer", section: "farmers", intent: "New farmer record form ready for database connection.", icon: Sprout, form: "farmers" },
+  { label: "Add Supplier", section: "suppliers", intent: "New supplier record form ready for database connection.", icon: Truck, form: "suppliers" },
+  { label: "Add Marketplace Listing", section: "marketplace", intent: "New marketplace listing form ready for database connection.", icon: Store, form: "marketplace" },
+  { label: "Add Buyer Request", section: "buyer-requests", intent: "New buyer request form ready for database connection.", icon: PackageCheck, form: "buyer-requests" },
+  { label: "Add Market Price", section: "market-prices", intent: "New market price entry form ready for database connection.", icon: ChartLine, form: "market-prices" },
   { label: "Review Verifications", section: "verifications", intent: "Verification queue opened for review.", icon: ShieldCheck }
 ];
+
+const formTitles: Record<AdminFormId, string> = {
+  farmers: "Farmer",
+  suppliers: "Supplier",
+  marketplace: "Marketplace Listing",
+  "buyer-requests": "Buyer Request",
+  "market-prices": "Market Price",
+  learn: "Learn Article"
+};
+
+const formConfigs: Record<AdminFormId, FormField[]> = {
+  farmers: [
+    { name: "farmerName", label: "Farmer Name", required: true },
+    { name: "farmName", label: "Farm Name", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "district", label: "District", required: true },
+    { name: "farmType", label: "Farm Type", type: "select", required: true, options: ["Crop", "Livestock", "Mixed"] },
+    { name: "products", label: "Products", required: true, helper: "Separate multiple products with commas." },
+    { name: "farmSize", label: "Farm Size", required: true },
+    { name: "whatsappNumber", label: "WhatsApp Number", required: true },
+    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending Verification", "Verified Farmer", "Premium Farmer", "Active Seller"] },
+    { name: "profileImageUrl", label: "Profile Image URL", type: "url", helper: "Use a local /images path or approved image URL." }
+  ],
+  suppliers: [
+    { name: "companyName", label: "Company Name", required: true },
+    { name: "contactPerson", label: "Contact Person", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "district", label: "District", required: true },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Seeds", "Fertilizers", "Agrochemicals", "Farm Equipment", "Irrigation Systems", "Packaging", "Logistics", "Storage", "Financial Services", "Agricultural Consulting"] },
+    { name: "productsServices", label: "Products/Services", required: true, helper: "Separate multiple services with commas." },
+    { name: "whatsappNumber", label: "WhatsApp Number", required: true },
+    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending Verification", "Verified Supplier", "Premium Member"] },
+    { name: "website", label: "Website", type: "url" }
+  ],
+  marketplace: [
+    { name: "productName", label: "Product Name", required: true },
+    { name: "category", label: "Category", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "district", label: "District", required: true },
+    { name: "sellerFarmer", label: "Seller/Farmer", required: true },
+    { name: "quantity", label: "Quantity", required: true },
+    { name: "unit", label: "Unit", required: true },
+    { name: "availability", label: "Availability", required: true },
+    { name: "whatsappNumber", label: "WhatsApp Number", required: true },
+    { name: "imageUrl", label: "Image URL", type: "url" }
+  ],
+  "buyer-requests": [
+    { name: "productNeeded", label: "Product Needed", required: true },
+    { name: "quantity", label: "Quantity", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "district", label: "District", required: true },
+    { name: "buyerType", label: "Buyer Type", required: true },
+    { name: "deadline", label: "Deadline", type: "date", required: true },
+    { name: "status", label: "Status", type: "select", required: true, options: ["Open", "Urgent", "Fulfilled"] },
+    { name: "whatsappNumber", label: "WhatsApp Number", required: true },
+    { name: "notes", label: "Notes", type: "textarea" }
+  ],
+  "market-prices": [
+    { name: "product", label: "Product", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "market", label: "Market", required: true },
+    { name: "wholesalePrice", label: "Wholesale Price", required: true },
+    { name: "retailPrice", label: "Retail Price", required: true },
+    { name: "dateUpdated", label: "Date Updated", type: "date", required: true },
+    { name: "trend", label: "Trend", type: "select", required: true, options: ["Rising", "Stable", "Falling"] }
+  ],
+  learn: [
+    { name: "title", label: "Title", required: true },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Crop Production", "Livestock", "Agribusiness", "Market Prices", "Success Stories"] },
+    { name: "summary", label: "Summary", type: "textarea", required: true },
+    { name: "author", label: "Author", required: true },
+    { name: "publishDate", label: "Publish Date", type: "date", required: true },
+    { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Active", "Archived"] }
+  ]
+};
 
 const recentActivity: Array<{
   action: string;
@@ -312,6 +403,141 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>) {
   ];
 }
 
+function emptyFormValues(formId: AdminFormId) {
+  return Object.fromEntries(formConfigs[formId].map((field) => [field.name, ""]));
+}
+
+function districtFromLocation(location?: string) {
+  return location?.split(",")[0]?.trim() ?? "";
+}
+
+function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
+  const values = emptyFormValues(formId);
+
+  if (!row) {
+    if (formId === "learn") {
+      values.author = "Ghana Growers Team";
+      values.status = "Draft";
+    }
+
+    if (formId === "buyer-requests") {
+      values.status = "Open";
+    }
+
+    if (formId === "market-prices") {
+      values.trend = "Stable";
+    }
+
+    return values;
+  }
+
+  if (formId === "farmers") {
+    const farmer = farmerDirectory.find((record) => record.slug === row.id);
+    return {
+      ...values,
+      farmerName: farmer?.contactName ?? "",
+      farmName: farmer?.farmName ?? row.name,
+      region: farmer?.region ?? row.region,
+      district: farmer?.district ?? "",
+      farmType: farmer?.farmType ?? row.type,
+      products: farmer?.products.join(", ") ?? "",
+      farmSize: farmer?.farmSize ?? "",
+      whatsappNumber: "",
+      verificationStatus: farmer?.verificationStatus ?? row.status,
+      profileImageUrl: farmer?.photos[0] ?? ""
+    };
+  }
+
+  if (formId === "suppliers") {
+    const supplier = supplierDirectory.find((record) => record.slug === row.id);
+    return {
+      ...values,
+      companyName: supplier?.companyName ?? row.name,
+      contactPerson: supplier?.contactPerson ?? "",
+      region: supplier?.region ?? row.region,
+      district: supplier?.district ?? "",
+      category: supplier?.supplierCategory ?? row.type,
+      productsServices: supplier?.productsServices.join(", ") ?? "",
+      whatsappNumber: supplier?.phone ?? "",
+      verificationStatus: supplier?.verificationStatus ?? row.status,
+      website: supplier?.website ?? ""
+    };
+  }
+
+  if (formId === "marketplace") {
+    const product = products.find((record) => record.id === row.id);
+    return {
+      ...values,
+      productName: product?.name ?? row.name,
+      category: product?.category ?? row.type,
+      region: product?.region ?? row.region,
+      district: districtFromLocation(product?.location),
+      sellerFarmer: product?.seller ?? "",
+      quantity: product?.quantity ?? "",
+      unit: product?.unit ?? "",
+      availability: product?.available ?? "",
+      whatsappNumber: product?.whatsappNumber ?? "",
+      imageUrl: product?.image ?? ""
+    };
+  }
+
+  if (formId === "buyer-requests") {
+    const request = buyerRequests.find((record) => record.id === row.id);
+    return {
+      ...values,
+      productNeeded: request?.productName ?? row.name,
+      quantity: request?.quantityNeeded ?? "",
+      region: request?.region ?? row.region,
+      district: request?.district ?? "",
+      buyerType: request?.buyerType ?? row.type,
+      deadline: request?.deadline ?? "",
+      status: request?.status ?? "Open",
+      whatsappNumber: request?.whatsappNumber ?? "",
+      notes: request?.notes ?? ""
+    };
+  }
+
+  if (formId === "market-prices") {
+    const price = marketPrices.find((record) => `${record.crop}-${record.market}` === row.id);
+    return {
+      ...values,
+      product: price?.crop ?? row.name,
+      region: price?.region ?? row.region,
+      market: price?.market ?? "",
+      wholesalePrice: price?.wholesalePrice ?? "",
+      retailPrice: price?.retailPrice ?? "",
+      dateUpdated: price?.dateUpdated ?? "",
+      trend: price?.trend ?? "Stable"
+    };
+  }
+
+  const article = learnArticles.find((record) => record.slug === row.id);
+  return {
+    ...values,
+    title: article?.title ?? row.name,
+    category: article?.category ?? row.type,
+    summary: article?.excerpt ?? "",
+    author: "Ghana Growers Team",
+    publishDate: article?.date ?? "",
+    status: row.status
+  };
+}
+
+function formIdForSection(section: AdminSectionId): AdminFormId | null {
+  if (
+    section === "farmers" ||
+    section === "suppliers" ||
+    section === "marketplace" ||
+    section === "buyer-requests" ||
+    section === "market-prices" ||
+    section === "learn"
+  ) {
+    return section;
+  }
+
+  return null;
+}
+
 export function AdminDashboard() {
   const [accessGranted, setAccessGranted] = useState(() => {
     if (typeof window === "undefined") {
@@ -328,6 +554,10 @@ export function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<"All" | AdminStatus>("All");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, AdminStatus>>({});
   const [notice, setNotice] = useState("Actions are mock controls for Phase 1 admin.");
+  const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const rowsBySection = useMemo(() => sectionRows(), []);
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
@@ -392,6 +622,51 @@ export function AdminDashboard() {
     setNotice(`${intent} Phase 1 actions are mock controls until a database is connected.`);
   }
 
+  function openAdminForm(formId: AdminFormId, mode: "add" | "edit", row?: AdminRow) {
+    setActiveSection(formId);
+    setSearchTerm("");
+    setStatusFilter("All");
+    setFormValues(formValuesForRow(formId, row));
+    setFormError("");
+    setFormSuccess("");
+    setActiveForm({
+      id: formId,
+      mode,
+      title: `${mode === "add" ? "Add" : "Edit"} ${formTitles[formId]}`,
+      recordName: row?.name
+    });
+  }
+
+  function closeAdminForm() {
+    setActiveForm(null);
+    setFormValues({});
+    setFormError("");
+    setFormSuccess("");
+  }
+
+  function submitAdminForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!activeForm) {
+      return;
+    }
+
+    const missingField = formConfigs[activeForm.id].find((field) => field.required && !formValues[field.name]?.trim());
+
+    if (missingField) {
+      setFormError(`${missingField.label} is required.`);
+      setFormSuccess("");
+      return;
+    }
+
+    const recordLabel = formTitles[activeForm.id];
+    setFormError("");
+    setFormSuccess(
+      `${activeForm.mode === "add" ? "New" : "Updated"} ${recordLabel.toLowerCase()} workflow previewed successfully. This Phase 1 admin form previews the workflow. Database persistence will be added in a later phase.`
+    );
+    setNotice(`${activeForm.title} completed as a Phase 1 workflow preview. Connect a database to persist this record.`);
+  }
+
   if (!accessGranted) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-white via-leaf-50/70 to-white px-4 py-16">
@@ -429,6 +704,7 @@ export function AdminDashboard() {
   }
 
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
+  const activeSectionFormId = formIdForSection(activeSection);
 
   return (
     <main className="min-h-screen bg-white">
@@ -508,7 +784,15 @@ export function AdminDashboard() {
                     <button
                       key={action.label}
                       type="button"
-                      onClick={() => runQuickAction(action.section, action.intent)}
+                      onClick={() => {
+                        if (action.form) {
+                          openAdminForm(action.form, "add");
+                          setNotice(`${action.intent} This Phase 1 form previews the workflow until database persistence is added.`);
+                          return;
+                        }
+
+                        runQuickAction(action.section, action.intent);
+                      }}
                       className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50/70 px-4 py-3 text-left text-sm font-black text-ink transition hover:border-leaf-700 hover:bg-white hover:text-leaf-800"
                     >
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
@@ -646,7 +930,17 @@ export function AdminDashboard() {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
+                  {activeSectionFormId ? (
+                    <button
+                      type="button"
+                      onClick={() => openAdminForm(activeSectionFormId, "add")}
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                    >
+                      <PlusCircle className="h-4 w-4" aria-hidden="true" />
+                      Add {formTitles[activeSectionFormId]}
+                    </button>
+                  ) : null}
                   <label className="relative block">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
                     <input
@@ -710,7 +1004,16 @@ export function AdminDashboard() {
                           )}
                           <button
                             type="button"
-                            onClick={() => mockAction(row, "Edit")}
+                            onClick={() => {
+                              const formId = formIdForSection(activeSection);
+
+                              if (formId) {
+                                openAdminForm(formId, "edit", row);
+                                return;
+                              }
+
+                              mockAction(row, "Edit");
+                            }}
                             className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                           >
                             <FilePenLine className="h-3.5 w-3.5" />
@@ -744,6 +1047,116 @@ export function AdminDashboard() {
               <p className="p-6 text-sm font-semibold text-ink/60">No records match this search or status filter.</p>
             ) : null}
           </section>
+
+          {activeForm ? (
+            <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6">
+              <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-md bg-white shadow-soft">
+                <div className="border-b border-leaf-900/10 p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Admin Form</p>
+                      <h2 className="mt-2 text-3xl font-black text-ink">{activeForm.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-ink/60">
+                        {activeForm.recordName ? `Editing ${activeForm.recordName}. ` : ""}
+                        This Phase 1 admin form previews the workflow. Database persistence will be added in a later phase.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeAdminForm}
+                      className="rounded-md border border-leaf-900/10 px-4 py-2 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+
+                <form className="p-5" onSubmit={submitAdminForm}>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {formConfigs[activeForm.id].map((field) => {
+                      const fieldId = `admin-${activeForm.id}-${field.name}`;
+                      const value = formValues[field.name] ?? "";
+
+                      if (field.type === "textarea") {
+                        return (
+                          <label key={field.name} htmlFor={fieldId} className="grid gap-2 text-sm font-black text-ink md:col-span-2">
+                            {field.label}
+                            <textarea
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              onChange={(event) => setFormValues((current) => ({ ...current, [field.name]: event.target.value }))}
+                              rows={4}
+                              className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                            />
+                            {field.helper ? <span className="text-xs font-semibold leading-5 text-ink/50">{field.helper}</span> : null}
+                          </label>
+                        );
+                      }
+
+                      if (field.type === "select") {
+                        return (
+                          <label key={field.name} htmlFor={fieldId} className="grid gap-2 text-sm font-black text-ink">
+                            {field.label}
+                            <select
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              onChange={(event) => setFormValues((current) => ({ ...current, [field.name]: event.target.value }))}
+                              className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                            >
+                              <option value="">Select {field.label.toLowerCase()}</option>
+                              {field.options?.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                            {field.helper ? <span className="text-xs font-semibold leading-5 text-ink/50">{field.helper}</span> : null}
+                          </label>
+                        );
+                      }
+
+                      return (
+                        <label key={field.name} htmlFor={fieldId} className="grid gap-2 text-sm font-black text-ink">
+                          {field.label}
+                          <input
+                            id={fieldId}
+                            type={field.type === "date" || field.type === "number" ? field.type : "text"}
+                            inputMode={field.type === "url" ? "url" : undefined}
+                            value={value}
+                            required={field.required}
+                            onChange={(event) => setFormValues((current) => ({ ...current, [field.name]: event.target.value }))}
+                            className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                          />
+                          {field.helper ? <span className="text-xs font-semibold leading-5 text-ink/50">{field.helper}</span> : null}
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {formError ? <p className="mt-5 rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">{formError}</p> : null}
+                  {formSuccess ? <p className="mt-5 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black leading-6 text-leaf-700">{formSuccess}</p> : null}
+
+                  <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={closeAdminForm}
+                      className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                    >
+                      {activeForm.mode === "add" ? "Preview Add Workflow" : "Preview Edit Workflow"}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          ) : null}
 
           <section className="mt-6 rounded-md border border-earth-500/30 bg-earth-50 p-5">
             <h2 className="text-lg font-black text-ink">Phase 1 Admin Security Note</h2>
