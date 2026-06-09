@@ -3,7 +3,10 @@
 import { ImagePlus, ScanSearch } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { CropHealthResult } from "@/lib/cropHealth";
+import { cropHealthDisclaimer, type CropHealthResult } from "@/lib/cropHealth";
+
+const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+const maxSize = 5 * 1024 * 1024;
 
 export function CropHealthCheck() {
   const [fileName, setFileName] = useState("");
@@ -11,6 +14,7 @@ export function CropHealthCheck() {
   const [result, setResult] = useState<CropHealthResult | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | undefined>();
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     return () => {
@@ -27,6 +31,7 @@ export function CropHealthCheck() {
 
     setIsLoading(true);
     setResult(undefined);
+    setErrorMessage("");
 
     const formData = new FormData();
     formData.append("photo", selectedFile);
@@ -37,17 +42,30 @@ export function CropHealthCheck() {
         body: formData
       });
 
-      if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as CropHealthResult | { error?: string } | null;
+
+      if (!response.ok || !payload) {
         throw new Error("Crop health request failed");
       }
 
-      setResult((await response.json()) as CropHealthResult);
-    } catch {
+      if ("error" in payload) {
+        const apiError = payload as { error?: string };
+        throw new Error(apiError.error || "Crop health request failed");
+      }
+
+      setResult(payload as CropHealthResult);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Crop health request failed";
+      setErrorMessage(message);
       setResult({
         possibleIssue: "Unable to complete image advisory",
         confidence: 0,
+        symptoms: "The image could not be checked at this time.",
         recommendedAction: "Please try again with a clear photo and confirm urgent crop issues with an extension officer.",
-        disclaimer: "This is advisory only. Please confirm with an agricultural extension officer."
+        severity: "Unknown",
+        disclaimer: cropHealthDisclaimer,
+        provider: "mock",
+        lowConfidence: true
       });
     } finally {
       setIsLoading(false);
@@ -59,7 +77,7 @@ export function CropHealthCheck() {
       <p className="text-sm font-black uppercase text-earth-700">Crop Health Check</p>
       <h2 className="mt-2 text-2xl font-black text-ink">Upload Crop Photo</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Take a clear photo of the affected leaf, stem, fruit, or whole plant. This demo shows how future crop health results will guide the next step.
+        Take a clear photo of the affected leaf, stem, fruit, or whole plant. Ghana Growers checks the image through a secure server route and returns advisory next steps.
       </p>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -79,21 +97,47 @@ export function CropHealthCheck() {
           <span className="mt-4 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white">
             {fileName || "Upload Crop Photo"}
           </span>
-          <span className="mt-3 text-xs leading-5 text-ink/60">Use JPG, PNG, or WEBP. No file is uploaded in this demo.</span>
+          <span className="mt-3 text-xs leading-5 text-ink/60">Use JPG, PNG, or WEBP. Maximum file size: 5MB.</span>
           <input
             className="sr-only"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              setFileName(file?.name ?? "");
-              setSelectedFile(file);
+              setErrorMessage("");
               setResult(undefined);
 
               if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
               }
 
+              if (!file) {
+                setFileName("");
+                setSelectedFile(undefined);
+                setPreviewUrl("");
+                return;
+              }
+
+              if (!allowedTypes.includes(file.type)) {
+                setFileName("");
+                setSelectedFile(undefined);
+                setPreviewUrl("");
+                setErrorMessage("Upload a JPG, PNG, or WEBP crop image.");
+                event.target.value = "";
+                return;
+              }
+
+              if (file.size > maxSize) {
+                setFileName("");
+                setSelectedFile(undefined);
+                setPreviewUrl("");
+                setErrorMessage("Crop image must be 5MB or smaller.");
+                event.target.value = "";
+                return;
+              }
+
+              setFileName(file.name);
+              setSelectedFile(file);
               setPreviewUrl(file ? URL.createObjectURL(file) : "");
             }}
           />
@@ -112,8 +156,25 @@ export function CropHealthCheck() {
 
           {result ? (
             <div className="mt-5 grid gap-3 text-sm">
+              {errorMessage ? (
+                <p className="rounded-md bg-white p-3 font-bold text-tomato">
+                  {errorMessage}
+                </p>
+              ) : null}
+              {result.noDiseaseDetected ? (
+                <p className="rounded-md bg-white p-3 font-bold text-leaf-700">
+                  No strong disease match was detected. Keep monitoring and upload a clearer symptom photo if the problem continues.
+                </p>
+              ) : null}
+              {result.lowConfidence ? (
+                <p className="rounded-md bg-white p-3 font-bold text-earth-700">
+                  Low confidence result. Take another close-up photo in good light and confirm before treatment.
+                </p>
+              ) : null}
               <p><span className="font-black text-ink">Possible issue:</span> {result.possibleIssue}</p>
-              <p><span className="font-black text-ink">Confidence level:</span> {result.confidence}% mock confidence.</p>
+              <p><span className="font-black text-ink">Confidence level:</span> {result.confidence}%{result.provider === "mock" ? " mock confidence" : ""}.</p>
+              {result.severity ? <p><span className="font-black text-ink">Severity:</span> {result.severity}</p> : null}
+              {result.symptoms ? <p><span className="font-black text-ink">Symptoms:</span> {result.symptoms}</p> : null}
               <p><span className="font-black text-ink">Recommended action:</span> {result.recommendedAction}</p>
               <p className="rounded-md bg-white p-3 font-bold text-tomato">
                 {result.disclaimer}
@@ -125,7 +186,7 @@ export function CropHealthCheck() {
             </p>
           ) : (
             <p className="mt-5 text-sm leading-6 text-ink/65">
-              Upload a clear photo first. Later this area can connect to Plant.id, Crop.health, Plantix, or another crop disease API.
+              Upload a clear crop photo first. This tool provides advisory guidance only. Please confirm serious crop problems with an agricultural extension officer.
             </p>
           )}
         </div>

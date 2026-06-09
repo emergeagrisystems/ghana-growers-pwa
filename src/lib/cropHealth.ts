@@ -1,9 +1,17 @@
 export type CropHealthResult = {
   possibleIssue: string;
   confidence: number;
+  symptoms?: string;
   recommendedAction: string;
+  severity?: string;
   disclaimer: string;
+  provider?: "crop.health" | "mock";
+  noDiseaseDetected?: boolean;
+  lowConfidence?: boolean;
 };
+
+export const cropHealthDisclaimer =
+  "This tool provides advisory guidance only. Please confirm serious crop problems with an agricultural extension officer.";
 
 export async function mockAnalyzeCropImage(fileName: string): Promise<CropHealthResult> {
   await new Promise((resolve) => setTimeout(resolve, 900));
@@ -16,8 +24,11 @@ export async function mockAnalyzeCropImage(fileName: string): Promise<CropHealth
   return {
     possibleIssue,
     confidence: 72,
+    symptoms: "Visible leaf discoloration, spots, wilting, or growth stress may be present in the uploaded photo.",
     recommendedAction:
       "Remove badly affected leaves, avoid overhead watering, take another photo in two days, and ask an extension officer before applying chemicals.",
-    disclaimer: "This is advisory only. Please confirm with an agricultural extension officer."
+    severity: "Advisory review needed",
+    disclaimer: cropHealthDisclaimer,
+    provider: "mock"
   };
 }
