@@ -8,6 +8,51 @@ import type { CropHealthResult } from "@/lib/cropHealth";
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxSize = 5 * 1024 * 1024;
 
+function splitText(value?: string) {
+  return (value ?? "")
+    .split(/(?<=[.!?])\s+|;\s+|\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function confidenceClass(confidence: number) {
+  if (confidence > 80) {
+    return "bg-leaf-600 text-white";
+  }
+
+  if (confidence >= 60) {
+    return "bg-earth-500 text-ink";
+  }
+
+  return "bg-ink/10 text-ink/60";
+}
+
+function severityLevel(value?: string) {
+  const lower = value?.toLowerCase() ?? "";
+
+  if (lower.includes("high") || lower.includes("severe") || lower.includes("likely")) {
+    return "High";
+  }
+
+  if (lower.includes("medium") || lower.includes("moderate") || lower.includes("confirm")) {
+    return "Medium";
+  }
+
+  return "Low";
+}
+
+function severityClass(level: string) {
+  if (level === "High") {
+    return "bg-tomato text-white";
+  }
+
+  if (level === "Medium") {
+    return "bg-earth-500 text-ink";
+  }
+
+  return "bg-leaf-50 text-leaf-700";
+}
+
 export function CropHealthCheck() {
   const [fileName, setFileName] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
@@ -15,6 +60,7 @@ export function CropHealthCheck() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
+  const [showFullDetails, setShowFullDetails] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -32,6 +78,7 @@ export function CropHealthCheck() {
     setIsLoading(true);
     setResult(undefined);
     setErrorMessage("");
+    setShowFullDetails(false);
 
     const formData = new FormData();
     formData.append("photo", selectedFile);
@@ -96,6 +143,7 @@ export function CropHealthCheck() {
               const file = event.target.files?.[0];
               setErrorMessage("");
               setResult(undefined);
+              setShowFullDetails(false);
 
               if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
@@ -145,7 +193,7 @@ export function CropHealthCheck() {
           </button>
 
           {result ? (
-            <div className="mt-5 grid gap-3 text-sm">
+            <div className="mt-5 grid gap-4 text-sm">
               {result.noDiseaseDetected ? (
                 <p className="rounded-md bg-white p-3 font-bold text-leaf-700">
                   No strong disease match was detected. Keep monitoring and upload a clearer symptom photo if the problem continues.
@@ -156,17 +204,93 @@ export function CropHealthCheck() {
                   Low confidence result. Take another close-up photo in good light and confirm before treatment.
                 </p>
               ) : null}
-              <p><span className="font-black text-ink">Possible issue:</span> {result.possibleIssue}</p>
-              <p><span className="font-black text-ink">Confidence level:</span> {result.confidence}%{result.provider === "mock" ? " mock confidence" : ""}.</p>
-              <p>
-                <span className="font-black text-ink">Result source:</span>{" "}
-                {result.provider === "crop.health"
-                  ? "Crop.health API"
-                  : `Mock fallback${result.diagnostics?.fallbackReason === "api_key_missing" ? " - API key missing on server" : ""}`}
-              </p>
-              {result.severity ? <p><span className="font-black text-ink">Severity:</span> {result.severity}</p> : null}
-              {result.symptoms ? <p><span className="font-black text-ink">Symptoms:</span> {result.symptoms}</p> : null}
-              <p><span className="font-black text-ink">Recommended action:</span> {result.recommendedAction}</p>
+              {(() => {
+                const symptoms = splitText(result.symptoms);
+                const symptomPreview = symptoms.slice(0, 3);
+                const actions = splitText(result.recommendedAction);
+                const severity = severityLevel(result.severity);
+                const source =
+                  result.provider === "crop.health"
+                    ? "Crop.health API"
+                    : `Mock fallback${result.diagnostics?.fallbackReason === "api_key_missing" ? " - API key missing on server" : ""}`;
+
+                return (
+                  <>
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis summary</p>
+                          <h3 className="mt-2 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                          <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                            {result.confidence}% confidence
+                          </span>
+                          <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
+                            {severity} severity
+                          </span>
+                        </div>
+                      </div>
+
+                      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <dt className="text-xs font-black uppercase tracking-wide text-ink/45">Possible issue</dt>
+                          <dd className="mt-1 font-bold leading-6 text-ink/75">{result.possibleIssue}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-black uppercase tracking-wide text-ink/45">Result source</dt>
+                          <dd className="mt-1 font-bold leading-6 text-ink/75">{source}</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <h3 className="font-black text-ink">Symptoms</h3>
+                      {symptomPreview.length > 0 ? (
+                        <ul className="mt-3 grid gap-2">
+                          {symptomPreview.map((symptom) => (
+                            <li key={symptom} className="flex gap-2 leading-6 text-ink/68">
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-leaf-600" />
+                              <span>{symptom}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 leading-6 text-ink/68">No detailed symptoms were returned by the diagnosis provider.</p>
+                      )}
+
+                      {symptoms.length > symptomPreview.length ? (
+                        <div className="mt-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowFullDetails((value) => !value)}
+                            className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
+                          >
+                            {showFullDetails ? "Hide details" : "Read More"}
+                          </button>
+                          {showFullDetails ? (
+                            <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
+                              {result.symptoms}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <h3 className="font-black text-ink">Recommended Actions</h3>
+                      <ul className="mt-3 grid gap-2">
+                        {(actions.length ? actions : [result.recommendedAction]).map((action) => (
+                          <li key={action} className="flex gap-2 leading-6 text-ink/68">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-earth-500" />
+                            <span>{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                );
+              })()}
               <p className="rounded-md bg-white p-3 font-bold text-tomato">
                 {result.disclaimer}
               </p>
