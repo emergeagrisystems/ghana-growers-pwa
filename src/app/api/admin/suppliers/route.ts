@@ -1,13 +1,15 @@
-import { createRecord, generateUniqueSlug, splitList, uniqueSlugAdminMessage } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, splitList, uniqueSlugAdminMessage, updateRecord } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const requiredFields = ["companyName", "contactPerson", "region", "district", "category", "productsServices", "whatsappNumber", "verificationStatus"];
 
 export async function POST(request: Request) {
   return createRecord({
     request,
     table: "suppliers",
-    requiredFields: ["companyName", "contactPerson", "region", "district", "category", "productsServices", "whatsappNumber", "verificationStatus"],
+    requiredFields,
     mapPayload: async (payload) => {
       const uniqueSlug = await generateUniqueSlug("suppliers", payload.companyName);
 
@@ -34,5 +36,30 @@ export async function POST(request: Request) {
         status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
       };
     }
+  });
+}
+
+export async function PATCH(request: Request) {
+  return updateRecord({
+    request,
+    table: "suppliers",
+    filterColumn: "slug",
+    requiredFields,
+    mapPayload: (payload) => ({
+      company_name: payload.companyName,
+      contact_person: payload.contactPerson,
+      region: payload.region,
+      district: payload.district,
+      category: payload.category,
+      products_services: splitList(payload.productsServices),
+      whatsapp_number: payload.whatsappNumber,
+      phone: payload.whatsappNumber,
+      verification_status: payload.verificationStatus,
+      verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
+      verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
+      logo_url: payload.logoUrl || null,
+      website: payload.website || null,
+      status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
+    })
   });
 }

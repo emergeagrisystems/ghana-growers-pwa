@@ -73,6 +73,7 @@ type ActiveForm = {
   id: AdminFormId;
   mode: "add" | "edit";
   title: string;
+  recordId?: string;
   recordName?: string;
 };
 
@@ -370,7 +371,7 @@ const recentActivity: Array<{
 
 function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
-  const whatsappLeads = farmerDirectory.length + supplierDirectory.length + products.length + buyerRequests.length;
+  const whatsappLeads = rows.farmers.length + rows.suppliers.length + rows.marketplace.length + rows["buyer-requests"].length;
 
   return [
     { label: "Farmers", value: rows.farmers.length, icon: Sprout },
@@ -393,13 +394,13 @@ function pendingWork(rows: Record<AdminSectionId, AdminRow[]>) {
     },
     {
       label: "Pending Buyer Requests",
-      value: buyerRequests.filter((request) => request.status !== "Fulfilled").length,
+      value: rows["buyer-requests"].filter((request) => request.status !== "Archived").length,
       note: "Open demand records to monitor",
       section: "buyer-requests" as AdminSectionId
     },
     {
       label: "Pending Listings",
-      value: products.filter((product) => !product.verified && product.available !== "Sold Out").length,
+      value: rows.marketplace.filter((product) => product.status !== "Archived").length,
       note: "Marketplace listings needing verification",
       section: "marketplace" as AdminSectionId
     }
@@ -416,19 +417,19 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>) {
     },
     {
       label: "Pending Listings",
-      value: products.filter((product) => !product.verified && product.available !== "Sold Out").length,
+      value: rows.marketplace.filter((product) => product.status !== "Archived").length,
       section: "marketplace" as AdminSectionId,
       icon: Store
     },
     {
       label: "Pending Buyer Requests",
-      value: buyerRequests.filter((request) => request.status !== "Fulfilled").length,
+      value: rows["buyer-requests"].filter((request) => request.status !== "Archived").length,
       section: "buyer-requests" as AdminSectionId,
       icon: PackageCheck
     },
     {
       label: "New WhatsApp Leads",
-      value: farmerDirectory.length + supplierDirectory.length + products.filter((product) => product.available !== "Sold Out").length,
+      value: rows.farmers.length + rows.suppliers.length + rows.marketplace.filter((product) => product.status !== "Archived").length,
       section: "buyers" as AdminSectionId,
       icon: MessageCircle
     }
@@ -571,6 +572,156 @@ function formIdForSection(section: AdminSectionId): AdminFormId | null {
   return null;
 }
 
+function sectionForForm(formId: AdminFormId): AdminSectionId {
+  return formId;
+}
+
+function localAdminId(prefix: string, value: string) {
+  const clean = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return clean || `${prefix}-${Date.now()}`;
+}
+
+function recordString(record: unknown, key: string) {
+  if (!record || typeof record !== "object") {
+    return "";
+  }
+
+  const value = (record as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : "";
+}
+
+function rowIdFromRecord(record: unknown, fallback: string) {
+  return recordString(record, "slug") || recordString(record, "id") || fallback;
+}
+
+function statusFromForm(formId: AdminFormId, values: Record<string, string>): AdminStatus {
+  if (formId === "farmers" || formId === "suppliers") {
+    return statusFromTrust(values.verificationStatus);
+  }
+
+  if (formId === "buyer-requests") {
+    return values.status === "Fulfilled" ? "Archived" : "Active";
+  }
+
+  if (formId === "learn") {
+    return values.status === "Archived" ? "Archived" : values.status === "Active" ? "Active" : "Pending";
+  }
+
+  return "Active";
+}
+
+function rowFromForm(formId: AdminFormId, values: Record<string, string>, record: unknown, existingId?: string): AdminRow {
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (formId === "farmers") {
+    const fallbackId = localAdminId("farmer", values.farmerName || values.farmName);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.farmName || values.farmerName,
+      type: values.farmType || "Farmer",
+      region: values.region || "Ghana",
+      status: statusFromForm(formId, values),
+      dateAdded: today,
+      href: `/farmer-directory/${id}`,
+      verificationTarget: { subject: "farmer", recordId: id }
+    };
+  }
+
+  if (formId === "suppliers") {
+    const fallbackId = localAdminId("supplier", values.companyName);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.companyName,
+      type: values.category || "Supplier",
+      region: values.region || "Ghana",
+      status: statusFromForm(formId, values),
+      dateAdded: today,
+      href: `/supplier-directory/${id}`,
+      verificationTarget: { subject: "supplier", recordId: id }
+    };
+  }
+
+  if (formId === "marketplace") {
+    const fallbackId = localAdminId("listing", `${values.productName}-${values.sellerFarmer}`);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.productName,
+      type: values.category || "Marketplace Listing",
+      region: values.region || "Ghana",
+      status: "Active",
+      dateAdded: today,
+      href: "/marketplace#marketplace-listings"
+    };
+  }
+
+  if (formId === "buyer-requests") {
+    const fallbackId = localAdminId("buyer-request", `${values.productNeeded}-${values.region}`);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.productNeeded,
+      type: values.buyerType || "Buyer Request",
+      region: values.region || "Ghana",
+      status: statusFromForm(formId, values),
+      dateAdded: today,
+      href: "/buyer-requests",
+      verificationTarget: { subject: "buyer", recordId: id }
+    };
+  }
+
+  if (formId === "market-prices") {
+    const fallbackId = localAdminId("market-price", `${values.product}-${values.market}`);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.product,
+      type: values.trend || "Market Price",
+      region: values.region || "Ghana",
+      status: "Active",
+      dateAdded: values.dateUpdated || today,
+      href: "/market-intelligence"
+    };
+  }
+
+  const fallbackId = localAdminId("learn", values.title);
+  const id = existingId ?? rowIdFromRecord(record, fallbackId);
+  return {
+    id,
+    name: values.title,
+    type: values.category || "Learn Article",
+    region: "Ghana",
+    status: statusFromForm(formId, values),
+    dateAdded: values.publishDate || today,
+    href: "/learn"
+  };
+}
+
+function verificationRowFromAdminRow(formId: AdminFormId, row: AdminRow): AdminRow | null {
+  if (formId !== "farmers" && formId !== "suppliers" && formId !== "buyer-requests") {
+    return null;
+  }
+
+  const subject = formId === "farmers" ? "farmer" : formId === "suppliers" ? "supplier" : "buyer";
+  return {
+    ...row,
+    id: `verify-${subject}-${row.id}`,
+    type: subject === "buyer" ? "Buyer" : subject === "farmer" ? "Farmer" : "Supplier",
+    verificationTarget: { subject, recordId: row.id }
+  };
+}
+
+function canPersistAdminForm(formId: AdminFormId, mode: "add" | "edit") {
+  return Boolean(createEndpoints[formId] && (mode === "add" || formId !== "learn"));
+}
+
 export function AdminDashboard() {
   const [accessGranted, setAccessGranted] = useState(() => {
     if (typeof window === "undefined") {
@@ -595,8 +746,8 @@ export function AdminDashboard() {
   const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({});
+  const [rowsBySection, setRowsBySection] = useState<Record<AdminSectionId, AdminRow[]>>(() => sectionRows());
 
-  const rowsBySection = useMemo(() => sectionRows(), []);
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection), [rowsBySection]);
@@ -727,6 +878,7 @@ export function AdminDashboard() {
       id: formId,
       mode,
       title: `${mode === "add" ? "Add" : "Edit"} ${formTitles[formId]}`,
+      recordId: row?.id,
       recordName: row?.name
     });
   }
@@ -812,6 +964,34 @@ export function AdminDashboard() {
     setFormSuccess("Image removed from this form. Save the form to update the record.");
   }
 
+  function refreshAdminRows(formId: AdminFormId, mode: "add" | "edit", row: AdminRow) {
+    const section = sectionForForm(formId);
+    const verificationRow = verificationRowFromAdminRow(formId, row);
+
+    setRowsBySection((current) => {
+      const upsert = (rows: AdminRow[], item: AdminRow) => {
+        const existingIndex = rows.findIndex((record) => record.id === item.id);
+
+        if (existingIndex === -1) {
+          return mode === "add" ? [item, ...rows] : rows;
+        }
+
+        return rows.map((record) => (record.id === item.id ? { ...record, ...item } : record));
+      };
+
+      const next = {
+        ...current,
+        [section]: upsert(current[section], row)
+      };
+
+      if (verificationRow) {
+        next.verifications = upsert(current.verifications, verificationRow);
+      }
+
+      return next;
+    });
+  }
+
   async function submitAdminForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -828,9 +1008,10 @@ export function AdminDashboard() {
     }
 
     const recordLabel = formTitles[activeForm.id];
-    const endpoint = activeForm.mode === "add" ? createEndpoints[activeForm.id] : undefined;
+    const endpoint = createEndpoints[activeForm.id];
+    const canPersist = canPersistAdminForm(activeForm.id, activeForm.mode);
 
-    if (endpoint) {
+    if (endpoint && canPersist) {
       const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
 
       if (!adminSessionToken) {
@@ -841,16 +1022,19 @@ export function AdminDashboard() {
 
       setIsSubmittingForm(true);
       const response = await fetch(endpoint, {
-        method: "POST",
+        method: activeForm.mode === "add" ? "POST" : "PATCH",
         headers: {
           "Content-Type": "application/json",
           "x-ghana-growers-admin-session": adminSessionToken
         },
-        body: JSON.stringify(formValues)
+        body: JSON.stringify({
+          ...formValues,
+          recordId: activeForm.recordId
+        })
       }).catch(() => null);
       setIsSubmittingForm(false);
 
-      const result = (await response?.json().catch(() => null)) as { error?: string; message?: string } | null;
+      const result = (await response?.json().catch(() => null)) as { error?: string; message?: string; record?: unknown } | null;
 
       if (!response?.ok) {
         if (response?.status === 401) {
@@ -864,21 +1048,27 @@ export function AdminDashboard() {
         return;
       }
 
+      const savedRow = rowFromForm(activeForm.id, formValues, result?.record, activeForm.mode === "edit" ? activeForm.recordId : undefined);
+      refreshAdminRows(activeForm.id, activeForm.mode, savedRow);
       setFormError("");
-      setFormSuccess(
-        `${recordLabel} saved to Supabase successfully. ${result?.message ? `${result.message} ` : ""}Uploaded images will display on public pages when the record is shown.`
-      );
+      setFormSuccess("Saved successfully.");
       setNotice(
-        `${recordLabel} created in Supabase. ${result?.message ? `${result.message} ` : ""}Local JSON fallback remains available if Supabase is empty or unavailable.`
+        `Saved successfully. ${result?.message ? `${result.message} ` : ""}${recordLabel} table and dashboard counts have been refreshed.`
       );
+      window.setTimeout(() => {
+        closeAdminForm();
+      }, 650);
       return;
     }
 
     setFormError("");
-    setFormSuccess(
-      `${activeForm.mode === "add" ? "New" : "Updated"} ${recordLabel.toLowerCase()} workflow previewed successfully. This Phase 1 admin form previews the workflow. Database persistence will be added in a later phase.`
-    );
-    setNotice(`${activeForm.title} completed as a Phase 1 workflow preview. Connect a database to persist this record.`);
+    const previewRow = rowFromForm(activeForm.id, formValues, null, activeForm.mode === "edit" ? activeForm.recordId : undefined);
+    refreshAdminRows(activeForm.id, activeForm.mode, previewRow);
+    setFormSuccess("Saved successfully.");
+    setNotice(`Saved successfully. ${recordLabel} table and dashboard counts have been refreshed.`);
+    window.setTimeout(() => {
+      closeAdminForm();
+    }, 650);
   }
 
   if (!accessGranted) {
@@ -1315,8 +1505,8 @@ export function AdminDashboard() {
                       <h2 className="mt-2 text-3xl font-black text-ink">{activeForm.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-ink/60">
                         {activeForm.recordName ? `Editing ${activeForm.recordName}. ` : ""}
-                        {activeForm.mode === "add" && createEndpoints[activeForm.id]
-                          ? "This Phase 1 admin form saves new records to Supabase when the table schema and server environment variables are configured."
+                        {canPersistAdminForm(activeForm.id, activeForm.mode)
+                          ? "This Phase 1 admin form saves records to Supabase when the table schema and server environment variables are configured."
                           : "This Phase 1 admin form previews the workflow. Database persistence for this action will be added in a later phase."}
                       </p>
                     </div>
@@ -1477,7 +1667,7 @@ export function AdminDashboard() {
                     >
                       {isSubmittingForm
                         ? "Saving..."
-                        : activeForm.mode === "add" && createEndpoints[activeForm.id]
+                        : canPersistAdminForm(activeForm.id, activeForm.mode)
                           ? "Save to Supabase"
                           : activeForm.mode === "add"
                             ? "Preview Add Workflow"

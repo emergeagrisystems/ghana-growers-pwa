@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasValidAdminSession } from "@/lib/adminAuth";
-import { insertSupabaseRecord, selectSupabaseRecords } from "@/lib/supabase/admin";
+import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type AdminFormPayload = Record<string, string>;
 
@@ -8,6 +8,14 @@ type CreateRecordOptions = {
   request: Request;
   table: string;
   requiredFields: string[];
+  mapPayload: (payload: AdminFormPayload) => Record<string, unknown> | Promise<Record<string, unknown>>;
+};
+
+type UpdateRecordOptions = {
+  request: Request;
+  table: string;
+  requiredFields: string[];
+  filterColumn?: "id" | "slug";
   mapPayload: (payload: AdminFormPayload) => Record<string, unknown> | Promise<Record<string, unknown>>;
 };
 
@@ -32,6 +40,15 @@ export function splitList(value?: string) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function recordFilter(recordId: string, filterColumn: "id" | "slug") {
+  const column = filterColumn === "slug" && isUuid(recordId) ? "id" : filterColumn;
+  return `${column}=eq.${encodeURIComponent(recordId)}`;
 }
 
 function escapeRegExp(value: string) {
@@ -182,4 +199,32 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
     },
     { status: 201 }
   );
+}
+
+export async function updateRecord({ request, table, requiredFields, filterColumn = "id", mapPayload }: UpdateRecordOptions) {
+  if (!hasValidAdminSession(request)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 401 });
+  }
+
+  const payload = (await request.json().catch(() => ({}))) as AdminFormPayload;
+  const recordId = payload.recordId?.trim();
+
+  if (!recordId) {
+    return NextResponse.json({ error: "Record ID is required." }, { status: 400 });
+  }
+
+  const missingField = requiredFields.find((field) => !payload[field]?.trim());
+
+  if (missingField) {
+    return NextResponse.json({ error: `${missingField} is required.` }, { status: 400 });
+  }
+
+  const recordPayload = await mapPayload(payload);
+  const update = await updateSupabaseRecord(table, recordFilter(recordId, filterColumn), recordPayload);
+
+  if (update.error) {
+    return NextResponse.json({ error: friendlyAdminSaveError(update.error) }, { status: update.status });
+  }
+
+  return NextResponse.json({ ok: true, record: update.data }, { status: 200 });
 }
