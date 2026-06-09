@@ -80,6 +80,7 @@ The following actions require a Supabase Auth admin session:
 - Update verification status
 - Upload images
 - Read the admin activity log
+- Read WhatsApp lead tracking
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
 
@@ -98,6 +99,22 @@ supabase/migrations/006_admin_activity_log.sql
 ```
 
 The dashboard Recent Activity panel displays the latest 25 activity records. Activity is written server-side after successful admin actions for Farmers, Suppliers, Marketplace Listings, and Buyer Requests.
+
+## WhatsApp Lead Tracking
+
+Public WhatsApp contact clicks are tracked in:
+
+```text
+whatsapp_leads
+```
+
+Run this migration in Supabase SQL Editor:
+
+```text
+supabase/migrations/007_whatsapp_leads.sql
+```
+
+The dashboard WhatsApp Leads section displays latest leads, leads by source type, and top clicked farmers, suppliers, listings, and buyer requests. Public click tracking happens through `src/app/api/whatsapp-leads/route.ts`; dashboard reads happen through the protected admin route.
 
 ## Password Reset
 
@@ -123,6 +140,7 @@ Protected admin routes:
 
 ```text
 src/app/api/admin/activity/route.ts
+src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/admin/archive/route.ts
 src/app/api/admin/farmers/route.ts
 src/app/api/admin/suppliers/route.ts

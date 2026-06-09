@@ -5,6 +5,7 @@ import { BadgeCheck, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -159,12 +160,22 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                         ))}
                       </div>
 
-                      <Link
-                        href={`/farmer-directory/${farmer.slug}`}
-                        className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
-                      >
-                        View Profile
-                      </Link>
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        <Link
+                          href={`/farmer-directory/${farmer.slug}`}
+                          className="inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                        >
+                          View Profile
+                        </Link>
+                        <WhatsAppButton
+                          message={farmer.whatsappMessage}
+                          label="WhatsApp"
+                          sourceType="Farmer"
+                          sourceId={farmer.slug}
+                          sourceName={farmer.farmName}
+                          className="w-full border border-leaf-900/10 bg-white text-leaf-700 shadow-none hover:bg-leaf-50"
+                        />
+                      </div>
                     </div>
                   </>
                 );

@@ -83,7 +83,14 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
         description={supplier.companyOverview}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <WhatsAppButton message={supplier.whatsappMessage} label="Contact on WhatsApp" />
+          <WhatsAppButton
+            message={supplier.whatsappMessage}
+            label="Contact on WhatsApp"
+            sourceType="Supplier"
+            sourceId={supplier.slug}
+            sourceName={supplier.companyName}
+            phoneNumber={supplier.phone}
+          />
           <a
             href={`tel:${supplier.phone.replace(/\s/g, "")}`}
             className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-earth-500 px-5 py-3 text-sm font-bold text-ink shadow-soft transition hover:bg-earth-700 hover:text-white"

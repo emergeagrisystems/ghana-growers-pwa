@@ -43,6 +43,7 @@ type AdminSectionId =
   | "marketplace"
   | "buyer-requests"
   | "verifications"
+  | "whatsapp-leads"
   | "learn"
   | "market-prices";
 type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
@@ -67,6 +68,16 @@ type AdminActivityRecord = {
   entity_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Buyer Request";
   entity_id: string | null;
   entity_name: string;
+  created_at: string;
+};
+type WhatsAppLeadRecord = {
+  id: string;
+  source_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Buyer Request" | "Floating WhatsApp" | "Platform";
+  source_id: string;
+  source_name: string;
+  phone_number: string;
+  page_path: string;
+  user_agent: string | null;
   created_at: string;
 };
 type FormField = {
@@ -198,6 +209,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       href: "/buyer-requests",
       verificationTarget: { subject: "buyer" as const, recordId: request.id }
     })),
+    "whatsapp-leads": [],
     verifications: verificationRows,
     learn: learnArticles.map((article) => ({
       id: article.slug,
@@ -227,6 +239,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "marketplace", label: "Marketplace Listings", icon: Store },
   { id: "buyer-requests", label: "Buyer Requests", icon: PackageCheck },
   { id: "verifications", label: "Verification Queue", icon: ShieldCheck },
+  { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
@@ -331,9 +344,8 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ]
 };
 
-function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
+function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: number) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
-  const whatsappLeads = rows.farmers.length + rows.suppliers.length + rows.marketplace.length + rows["buyer-requests"].length;
 
   return [
     { label: "Farmers", value: rows.farmers.length, icon: Sprout },
@@ -342,7 +354,7 @@ function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
     { label: "Marketplace Listings", value: rows.marketplace.length, icon: Store },
     { label: "Buyer Requests", value: rows["buyer-requests"].length, icon: PackageCheck },
     { label: "Pending Verifications", value: pendingVerifications, icon: CircleDashed },
-    { label: "WhatsApp Leads", value: whatsappLeads, icon: MessageCircle }
+    { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle }
   ];
 }
 
@@ -369,7 +381,7 @@ function pendingWork(rows: Record<AdminSectionId, AdminRow[]>) {
   ];
 }
 
-function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>) {
+function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: number) {
   return [
     {
       label: "Pending Verifications",
@@ -391,8 +403,8 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>) {
     },
     {
       label: "New WhatsApp Leads",
-      value: rows.farmers.length + rows.suppliers.length + rows.marketplace.filter((product) => product.status !== "Archived").length,
-      section: "buyers" as AdminSectionId,
+      value: whatsappLeadCount,
+      section: "whatsapp-leads" as AdminSectionId,
       icon: MessageCircle
     }
   ];
@@ -773,6 +785,41 @@ function relativeActivityTime(value: string) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+function sourceLabel(sourceType: WhatsAppLeadRecord["source_type"]) {
+  return sourceType === "Floating WhatsApp" ? "Floating Button" : sourceType;
+}
+
+function sourceTypeTotals(leads: WhatsAppLeadRecord[]) {
+  const counts = new Map<string, number>();
+
+  leads.forEach((lead) => {
+    counts.set(lead.source_type, (counts.get(lead.source_type) ?? 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+function topClickedSources(leads: WhatsAppLeadRecord[]) {
+  const counts = new Map<string, { name: string; type: string; value: number }>();
+
+  leads.forEach((lead) => {
+    const key = `${lead.source_type}:${lead.source_id}`;
+    const current = counts.get(key);
+
+    counts.set(key, {
+      name: lead.source_name,
+      type: lead.source_type,
+      value: (current?.value ?? 0) + 1
+    });
+  });
+
+  return Array.from(counts.values())
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+}
+
 export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("farmers");
   const [searchTerm, setSearchTerm] = useState("");
@@ -790,6 +837,8 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [rowsBySection, setRowsBySection] = useState<Record<AdminSectionId, AdminRow[]>>(() => sectionRows());
   const [activityRows, setActivityRows] = useState<AdminActivityRecord[]>([]);
   const [activityError, setActivityError] = useState("");
+  const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
+  const [whatsappLeadError, setWhatsappLeadError] = useState("");
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -813,9 +862,33 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     void loadActivity();
   }, [loadActivity]);
 
-  const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
+  const loadWhatsAppLeads = useCallback(async () => {
+    const response = await fetch("/api/admin/whatsapp-leads").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { leads?: WhatsAppLeadRecord[]; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setWhatsappLeadError(result?.error ?? "WhatsApp leads are unavailable.");
+      return;
+    }
+
+    setWhatsappLeads(result?.leads ?? []);
+    setWhatsappLeadError("");
+  }, []);
+
+  useEffect(() => {
+    void loadWhatsAppLeads();
+  }, [loadWhatsAppLeads]);
+
+  const summaryCards = useMemo(() => summarize(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
-  const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection), [rowsBySection]);
+  const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
+  const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
+  const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -1133,6 +1206,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
 
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
+  const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
 
   async function logoutAdmin() {
     await fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => null);
@@ -1374,6 +1448,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
+                {!isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -1408,9 +1483,78 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                     <option value="Archived">Archived</option>
                   </select>
                 </div>
+                ) : null}
               </div>
             </div>
 
+            {isWhatsAppLeadsSection ? (
+              <div className="grid gap-6 p-5">
+                {whatsappLeadError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{whatsappLeadError}</div>
+                ) : null}
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Total Clicks</p>
+                    <p className="mt-3 text-4xl font-black text-ink">{whatsappLeads.length}</p>
+                    <p className="mt-2 text-sm leading-6 text-ink/58">Recent tracked WhatsApp contact clicks.</p>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-4 lg:col-span-2">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads by Source Type</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {leadSourceTotals.length > 0 ? leadSourceTotals.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2">
+                          <span className="text-sm font-black text-ink">{sourceLabel(item.label as WhatsAppLeadRecord["source_type"])}</span>
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-leaf-700">{item.value}</span>
+                        </div>
+                      )) : (
+                        <p className="text-sm font-semibold text-ink/58">No lead source data yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                  <section className="rounded-md border border-leaf-900/10 bg-white p-5">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Latest Leads</p>
+                    <div className="mt-4 divide-y divide-leaf-900/10">
+                      {whatsappLeads.slice(0, 25).map((lead) => (
+                        <div key={lead.id} className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[1fr_auto] sm:items-start">
+                          <div>
+                            <p className="text-sm font-black text-ink">{lead.source_name}</p>
+                            <p className="mt-1 text-sm leading-5 text-ink/60">
+                              {sourceLabel(lead.source_type)} · {lead.phone_number} · {lead.page_path}
+                            </p>
+                          </div>
+                          <p className="text-xs font-black text-ink/45">{relativeActivityTime(lead.created_at)}</p>
+                        </div>
+                      ))}
+                      {whatsappLeads.length === 0 && !whatsappLeadError ? (
+                        <p className="rounded-md bg-leaf-50 p-4 text-sm font-semibold text-ink/58">No WhatsApp leads have been recorded yet.</p>
+                      ) : null}
+                    </div>
+                  </section>
+
+                  <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Clicked Sources</p>
+                    <div className="mt-4 grid gap-3">
+                      {topLeadSources.map((item) => (
+                        <div key={`${item.type}-${item.name}`} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-ink">{item.name}</p>
+                            <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{item.value}</span>
+                          </div>
+                          <p className="mt-1 text-xs font-black uppercase tracking-wide text-ink/40">{sourceLabel(item.type as WhatsAppLeadRecord["source_type"])}</p>
+                        </div>
+                      ))}
+                      {topLeadSources.length === 0 ? (
+                        <p className="rounded-md bg-white p-4 text-sm font-semibold text-ink/58">Top clicked sources will appear after users contact farmers, suppliers, listings, or buyers on WhatsApp.</p>
+                      ) : null}
+                    </div>
+                  </section>
+                </div>
+              </div>
+            ) : (
+            <>
             <div className="overflow-x-auto">
               <table className="min-w-[900px] w-full border-collapse text-left text-sm">
                 <thead className="bg-leaf-50 text-xs font-black uppercase tracking-wide text-ink/50">
@@ -1532,6 +1676,8 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
             {filteredRows.length === 0 ? (
               <p className="p-6 text-sm font-semibold text-ink/60">No records match this search or status filter.</p>
             ) : null}
+            </>
+            )}
           </section>
 
           {activeForm ? (

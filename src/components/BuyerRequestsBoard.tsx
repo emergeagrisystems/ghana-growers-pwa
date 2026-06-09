@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import { products as fallbackMarketplaceProducts } from "@/data/products";
 import { normalizeTrust } from "@/components/TrustIndicators";
+import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { Product } from "@/types";
 
 type FilterConfig = {
@@ -182,6 +183,14 @@ function RequestCard({
           href={buyerWhatsAppUrl(request)}
           target="_blank"
           rel="noreferrer"
+          onClick={() =>
+            trackWhatsAppLead({
+              sourceType: "Buyer Request",
+              sourceId: request.id,
+              sourceName: request.productName,
+              phoneNumber: request.whatsappNumber
+            })
+          }
           className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
         >
           <MessageCircle className="h-4 w-4" />
@@ -251,6 +260,14 @@ function RequestDetailsModal({
               href={buyerWhatsAppUrl(request)}
               target="_blank"
               rel="noreferrer"
+              onClick={() =>
+                trackWhatsAppLead({
+                  sourceType: "Buyer Request",
+                  sourceId: request.id,
+                  sourceName: request.productName,
+                  phoneNumber: request.whatsappNumber
+                })
+              }
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
             >
               <MessageCircle className="h-4 w-4" />

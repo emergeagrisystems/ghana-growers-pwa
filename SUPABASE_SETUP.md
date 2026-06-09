@@ -61,6 +61,12 @@ Admin action tracking uses this migration:
 supabase/migrations/006_admin_activity_log.sql
 ```
 
+WhatsApp lead tracking uses this migration:
+
+```text
+supabase/migrations/007_whatsapp_leads.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -71,6 +77,7 @@ It creates these tables:
 - `learn_articles` when the follow-up migration is run
 - `crop_health_reports` when the crop health reports migration is run
 - `admin_activity_log` when the admin activity log migration is run
+- `whatsapp_leads` when the WhatsApp lead tracking migration is run
 
 The verification workflow migration adds:
 
@@ -96,7 +103,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 9. Repeat for `supabase/migrations/004_storage_buckets.sql` to create the `farmers`, `suppliers`, and `marketplace` Storage buckets.
 10. Repeat for `supabase/migrations/005_crop_health_reports.sql` to create saved crop health reports and the `crop-health-reports` Storage bucket.
 11. Repeat for `supabase/migrations/006_admin_activity_log.sql` to create the admin activity log table.
-12. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
+12. Repeat for `supabase/migrations/007_whatsapp_leads.sql` to create the WhatsApp lead tracking table.
+13. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -115,6 +123,8 @@ Archive actions are protected admin API calls where supported.
 
 The admin activity log records create, edit, verify, and archive actions for Farmers, Suppliers, Marketplace Listings, and Buyer Requests. The dashboard Recent Activity panel reads the latest 25 records through a protected server-side admin API route.
 
+WhatsApp lead tracking records public WhatsApp contact clicks from farmer cards and profiles, supplier cards and profiles, marketplace listings, buyer requests, and the floating WhatsApp button. Public clicks are inserted through a server-side API route and the admin dashboard reads leads through a protected admin route.
+
 ## API Routes
 
 The server-side create routes are:
@@ -129,7 +139,9 @@ src/app/api/admin/learn-articles/route.ts
 src/app/api/admin/verifications/route.ts
 src/app/api/admin/uploads/route.ts
 src/app/api/admin/activity/route.ts
+src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/crop-health-reports/route.ts
+src/app/api/whatsapp-leads/route.ts
 ```
 
 These routes:
@@ -143,6 +155,7 @@ These routes:
 - Upload admin images to Supabase Storage server-side and return public image URLs.
 - Save Crop Health Check diagnosis reports with uploaded image URLs, diagnosis JSON, date, and confidence.
 - Read Recent Activity from `admin_activity_log` after validating the admin session.
+- Record WhatsApp contact clicks in `whatsapp_leads` without exposing the service role key.
 
 ## Recommended Migration Path
 

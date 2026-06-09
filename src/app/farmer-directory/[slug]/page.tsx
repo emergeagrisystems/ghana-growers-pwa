@@ -134,7 +134,13 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               <FarmerTrustBadges status={farmer.verificationStatus} />
             </div>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <WhatsAppButton message={farmer.whatsappMessage} label="WhatsApp Farmer" />
+              <WhatsAppButton
+                message={farmer.whatsappMessage}
+                label="WhatsApp Farmer"
+                sourceType="Farmer"
+                sourceId={farmer.slug}
+                sourceName={farmer.farmName}
+              />
               <ButtonLink href="/farmer-directory" variant="light">Back to Directory</ButtonLink>
             </div>
           </div>
@@ -287,7 +293,14 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                   Confirm quantity, grading, harvest timing, pickup, delivery, and payment terms before committing to trade.
                 </p>
                 <div className="mt-5 grid gap-3">
-                  <WhatsAppButton message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`} label="Send Inquiry" className="bg-white text-leaf-700 hover:bg-leaf-50" />
+                  <WhatsAppButton
+                    message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`}
+                    label="Send Inquiry"
+                    sourceType="Farmer"
+                    sourceId={farmer.slug}
+                    sourceName={farmer.farmName}
+                    className="bg-white text-leaf-700 hover:bg-leaf-50"
+                  />
                 </div>
               </section>
 

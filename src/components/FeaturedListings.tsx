@@ -159,6 +159,10 @@ export function FeaturedListings({
                   </p>
                   <WhatsAppButton
                     message={`Hello Ghana Growers, I am interested in the featured buyer request for ${request.quantityNeeded} of ${request.productName}.`}
+                    sourceType="Buyer Request"
+                    sourceId={request.id}
+                    sourceName={request.productName}
+                    phoneNumber={request.whatsappNumber}
                     className="mt-5 w-full"
                   />
                 </article>

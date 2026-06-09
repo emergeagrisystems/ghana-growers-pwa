@@ -201,7 +201,14 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <WhatsAppButton message={supplier.whatsappMessage} className="w-full" />
+                <WhatsAppButton
+                  message={supplier.whatsappMessage}
+                  sourceType="Supplier"
+                  sourceId={supplier.slug}
+                  sourceName={supplier.companyName}
+                  phoneNumber={supplier.phone}
+                  className="w-full"
+                />
                 <Link
                   href={`/supplier-directory/${supplier.slug}`}
                   className="focus-ring inline-flex items-center justify-center rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink shadow-soft transition hover:bg-earth-700 hover:text-white"

@@ -14,7 +14,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
+import { WHATSAPP_NUMBER } from "@/data/site";
 import { farmerDirectory } from "@/data/farmers";
+import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { FarmerProfile, Product } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -193,6 +195,14 @@ function ListingCard({
             href={contactUrl(product)}
             target="_blank"
             rel="noreferrer"
+            onClick={() =>
+              trackWhatsAppLead({
+                sourceType: "Marketplace Listing",
+                sourceId: product.id,
+                sourceName: product.name,
+                phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
+              })
+            }
             className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
           >
             <MessageCircle className="h-4 w-4" />
@@ -278,6 +288,14 @@ function ProductDetailsModal({
                 href={contactUrl(product)}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() =>
+                  trackWhatsAppLead({
+                    sourceType: "Marketplace Listing",
+                    sourceId: product.id,
+                    sourceName: product.name,
+                    phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
+                  })
+                }
                 className="rounded-md bg-leaf-700 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-leaf-800"
               >
                 Contact Seller
@@ -286,6 +304,14 @@ function ProductDetailsModal({
                 href={contactUrl(product)}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() =>
+                  trackWhatsAppLead({
+                    sourceType: "Marketplace Listing",
+                    sourceId: product.id,
+                    sourceName: product.name,
+                    phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
+                  })
+                }
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
               >
                 <MessageCircle className="h-4 w-4" />
