@@ -194,24 +194,26 @@ export function CropHealthCheck() {
         Take a clear photo of the affected leaf, stem, fruit, or whole plant. Ghana Growers checks the image through a secure server route and returns advisory next steps.
       </p>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <label className="focus-ring flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-leaf-600 bg-leaf-50 p-6 text-center">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(260px,0.72fr)_minmax(0,1.45fr)] lg:items-start">
+        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-leaf-600 bg-leaf-50 p-4 text-center sm:p-5">
           {previewUrl ? (
             <Image
               src={previewUrl}
               alt="Selected crop preview"
               width={360}
               height={240}
-              className="h-44 w-full rounded-md object-cover"
+              className="h-56 w-full rounded-md object-cover"
               unoptimized
             />
           ) : (
-            <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
+            <div className="grid h-48 w-full place-items-center rounded-md bg-white">
+              <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
+            </div>
           )}
-          <span className="mt-4 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white">
+          <span className="mt-3 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white">
             {fileName || "Upload Crop Photo"}
           </span>
-          <span className="mt-3 text-xs leading-5 text-ink/60">Use JPG, PNG, or WEBP. Maximum file size: 5MB.</span>
+          <span className="mt-2 text-xs leading-5 text-ink/60">JPG, PNG, or WEBP. Maximum 5MB.</span>
           <input
             className="sr-only"
             type="file"
@@ -259,7 +261,7 @@ export function CropHealthCheck() {
           />
         </label>
 
-        <div className="rounded-md bg-earth-50 p-5">
+        <div className="rounded-md bg-earth-50 p-4 sm:p-5">
           <button
             type="button"
             disabled={!selectedFile || isLoading}
@@ -300,32 +302,22 @@ export function CropHealthCheck() {
                 return (
                   <>
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                      <div className="grid gap-4 sm:grid-cols-[112px_1fr]">
-                        {previewUrl ? (
-                          <Image
-                            src={previewUrl}
-                            alt="Uploaded crop diagnosis preview"
-                            width={112}
-                            height={112}
-                            className="h-28 w-full rounded-md object-cover sm:w-28"
-                            unoptimized
-                          />
-                        ) : null}
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis summary</p>
                           <h3 className="mt-2 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
-                          <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
-                              {result.confidence}% confidence
-                            </span>
-                            <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
-                              {severity} severity
-                            </span>
-                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                          <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                            {result.confidence}% confidence
+                          </span>
+                          <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
+                            {severity} severity
+                          </span>
                         </div>
                       </div>
 
+                      <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
                       <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
                     </div>
 
