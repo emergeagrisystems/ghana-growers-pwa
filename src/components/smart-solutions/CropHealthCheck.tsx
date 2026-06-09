@@ -206,19 +206,19 @@ export function CropHealthCheck() {
         Take a clear photo of the affected leaf, stem, fruit, or whole plant. Ghana Growers checks the image through a secure server route and returns advisory next steps.
       </p>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)] lg:items-start">
+      <div className="mt-5 grid gap-4">
         <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-leaf-600 bg-leaf-50 p-4 text-center sm:p-5">
           {previewUrl ? (
             <Image
               src={previewUrl}
               alt="Selected crop preview"
-              width={360}
-              height={240}
-              className="h-56 w-full rounded-md object-cover"
+              width={960}
+              height={520}
+              className="h-64 w-full rounded-md object-cover sm:h-80"
               unoptimized
             />
           ) : (
-            <div className="grid h-48 w-full place-items-center rounded-md bg-white">
+            <div className="grid h-56 w-full place-items-center rounded-md bg-white sm:h-72">
               <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
             </div>
           )}
@@ -311,7 +311,7 @@ export function CropHealthCheck() {
                       </div>
                       <div className="mt-4">
                         <p className="text-xs font-black uppercase tracking-wide text-ink/45">Farmer Summary</p>
-                        <p className="mt-2 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
+                        <p className="mt-2 max-w-4xl text-sm font-semibold leading-6 text-ink/70">{summary}</p>
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
@@ -356,7 +356,7 @@ export function CropHealthCheck() {
                             onClick={() => setShowMoreSymptoms((value) => !value)}
                             className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
                           >
-                            {showMoreSymptoms ? "Hide symptoms" : "Read More Symptoms"}
+                            {showMoreSymptoms ? "Hide symptoms" : "Read more symptoms"}
                           </button>
                           {showMoreSymptoms ? (
                             <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
@@ -384,7 +384,7 @@ export function CropHealthCheck() {
                             onClick={() => setShowMoreActions((value) => !value)}
                             className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
                           >
-                            {showMoreActions ? "Hide actions" : "Read More Actions"}
+                            {showMoreActions ? "Hide actions" : "Read more actions"}
                           </button>
                           {showMoreActions ? (
                             <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
