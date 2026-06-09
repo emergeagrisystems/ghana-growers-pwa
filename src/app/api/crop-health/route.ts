@@ -99,7 +99,7 @@ function treatmentFrom(details?: KindwiseSuggestion["details"]) {
   return treatment || "Take clear follow-up photos, isolate badly affected plants where possible, and confirm treatment with an extension officer before applying chemicals.";
 }
 
-function mapKindwiseResult(data: KindwiseResponse): CropHealthResult {
+function mapKindwiseResult(data: KindwiseResponse, kindwiseStatus: number): CropHealthResult {
   const suggestions = data.result?.disease?.suggestions ?? [];
   const topSuggestion = suggestions[0];
   const probability = topSuggestion?.probability ?? 0;
@@ -118,6 +118,12 @@ function mapKindwiseResult(data: KindwiseResponse): CropHealthResult {
       severity: "Low",
       disclaimer: cropHealthDisclaimer,
       provider: "crop.health",
+      diagnostics: {
+        apiKeyConfigured: true,
+        mode: "crop.health",
+        kindwiseStatus,
+        suggestionCount: suggestions.length
+      },
       noDiseaseDetected: true,
       lowConfidence: confidence > 0 && confidence < 45
     };
@@ -131,12 +137,28 @@ function mapKindwiseResult(data: KindwiseResponse): CropHealthResult {
     severity: topSuggestion.details?.severity ?? (confidence >= 75 ? "Likely issue" : "Needs confirmation"),
     disclaimer: cropHealthDisclaimer,
     provider: "crop.health",
+    diagnostics: {
+      apiKeyConfigured: true,
+      mode: "crop.health",
+      kindwiseStatus,
+      suggestionCount: suggestions.length
+    },
     lowConfidence
   };
 }
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    apiKeyConfigured: Boolean(process.env.CROP_HEALTH_API_KEY),
+    provider: "crop.health",
+    endpoint: "https://crop.kindwise.com/api/v1/identification",
+    mockFallbackWhen: "CROP_HEALTH_API_KEY is missing"
+  });
+}
 
 export async function POST(request: Request) {
   if (!checkUsage(request)) {
@@ -164,14 +186,21 @@ export async function POST(request: Request) {
   const apiKey = process.env.CROP_HEALTH_API_KEY;
 
   if (!apiKey) {
+    console.info("[crop-health] Using mock fallback because CROP_HEALTH_API_KEY is not configured.");
     const result = await mockAnalyzeCropImage(file.name);
     return NextResponse.json({
       ...result,
       provider: "mock",
+      diagnostics: {
+        apiKeyConfigured: false,
+        mode: "mock",
+        fallbackReason: "api_key_missing"
+      },
       integrationReady: true
     });
   }
 
+  console.info("[crop-health] Calling Kindwise Crop.health API.");
   const imageBase64 = Buffer.from(await file.arrayBuffer()).toString("base64");
   const endpoint = new URL("https://crop.kindwise.com/api/v1/identification");
   endpoint.searchParams.set("details", "description,symptoms,treatment,prevention,biological_treatment,chemical_treatment,taxonomy,wiki_url");
@@ -188,11 +217,29 @@ export async function POST(request: Request) {
   const data = (await response?.json().catch(() => null)) as KindwiseResponse | null;
 
   if (!response?.ok || !data) {
+    console.error("[crop-health] Crop.health API failed.", {
+      status: response?.status ?? 502,
+      hasResponseBody: Boolean(data),
+      message: data?.message
+    });
+
     return NextResponse.json(
-      { error: data?.message ?? "Crop Health API request failed. Please try again with a clear photo." },
+      {
+        error: data?.message ?? "Crop Health API request failed. Please try again with a clear photo.",
+        diagnostics: {
+          apiKeyConfigured: true,
+          mode: "crop.health",
+          kindwiseStatus: response?.status ?? 502
+        }
+      },
       { status: response?.status ?? 502 }
     );
   }
 
-  return NextResponse.json(mapKindwiseResult(data));
+  console.info("[crop-health] Crop.health API returned diagnosis.", {
+    status: response.status,
+    suggestionCount: data.result?.disease?.suggestions?.length ?? 0
+  });
+
+  return NextResponse.json(mapKindwiseResult(data, response.status));
 }

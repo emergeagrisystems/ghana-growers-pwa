@@ -6,6 +6,13 @@ export type CropHealthResult = {
   severity?: string;
   disclaimer: string;
   provider?: "crop.health" | "mock";
+  diagnostics?: {
+    apiKeyConfigured: boolean;
+    mode: "crop.health" | "mock";
+    fallbackReason?: "api_key_missing";
+    kindwiseStatus?: number;
+    suggestionCount?: number;
+  };
   noDiseaseDetected?: boolean;
   lowConfidence?: boolean;
 };

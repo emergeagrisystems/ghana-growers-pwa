@@ -3,7 +3,7 @@
 import { ImagePlus, ScanSearch } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { cropHealthDisclaimer, type CropHealthResult } from "@/lib/cropHealth";
+import type { CropHealthResult } from "@/lib/cropHealth";
 
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxSize = 5 * 1024 * 1024;
@@ -42,7 +42,7 @@ export function CropHealthCheck() {
         body: formData
       });
 
-      const payload = (await response.json().catch(() => null)) as CropHealthResult | { error?: string } | null;
+      const payload = (await response.json().catch(() => null)) as CropHealthResult | { error?: string; diagnostics?: CropHealthResult["diagnostics"] } | null;
 
       if (!response.ok || !payload) {
         throw new Error("Crop health request failed");
@@ -57,16 +57,6 @@ export function CropHealthCheck() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Crop health request failed";
       setErrorMessage(message);
-      setResult({
-        possibleIssue: "Unable to complete image advisory",
-        confidence: 0,
-        symptoms: "The image could not be checked at this time.",
-        recommendedAction: "Please try again with a clear photo and confirm urgent crop issues with an extension officer.",
-        severity: "Unknown",
-        disclaimer: cropHealthDisclaimer,
-        provider: "mock",
-        lowConfidence: true
-      });
     } finally {
       setIsLoading(false);
     }
@@ -156,11 +146,6 @@ export function CropHealthCheck() {
 
           {result ? (
             <div className="mt-5 grid gap-3 text-sm">
-              {errorMessage ? (
-                <p className="rounded-md bg-white p-3 font-bold text-tomato">
-                  {errorMessage}
-                </p>
-              ) : null}
               {result.noDiseaseDetected ? (
                 <p className="rounded-md bg-white p-3 font-bold text-leaf-700">
                   No strong disease match was detected. Keep monitoring and upload a clearer symptom photo if the problem continues.
@@ -173,6 +158,12 @@ export function CropHealthCheck() {
               ) : null}
               <p><span className="font-black text-ink">Possible issue:</span> {result.possibleIssue}</p>
               <p><span className="font-black text-ink">Confidence level:</span> {result.confidence}%{result.provider === "mock" ? " mock confidence" : ""}.</p>
+              <p>
+                <span className="font-black text-ink">Result source:</span>{" "}
+                {result.provider === "crop.health"
+                  ? "Crop.health API"
+                  : `Mock fallback${result.diagnostics?.fallbackReason === "api_key_missing" ? " - API key missing on server" : ""}`}
+              </p>
               {result.severity ? <p><span className="font-black text-ink">Severity:</span> {result.severity}</p> : null}
               {result.symptoms ? <p><span className="font-black text-ink">Symptoms:</span> {result.symptoms}</p> : null}
               <p><span className="font-black text-ink">Recommended action:</span> {result.recommendedAction}</p>
@@ -183,6 +174,10 @@ export function CropHealthCheck() {
           ) : isLoading ? (
             <p className="mt-5 rounded-md bg-white p-3 text-sm font-bold text-leaf-700">
               Checking the photo and preparing an advisory result...
+            </p>
+          ) : errorMessage ? (
+            <p className="mt-5 rounded-md bg-white p-3 text-sm font-bold text-tomato">
+              {errorMessage}
             </p>
           ) : (
             <p className="mt-5 text-sm leading-6 text-ink/65">
