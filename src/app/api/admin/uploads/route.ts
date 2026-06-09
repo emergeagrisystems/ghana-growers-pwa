@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasValidAdminSession } from "@/lib/adminAuth";
+import { requireAdminUser } from "@/lib/adminAuth";
 import { uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 
 const allowedBuckets = new Set(["farmers", "suppliers", "marketplace"]);
@@ -25,7 +25,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  if (!hasValidAdminSession(request)) {
+  const adminUser = await requireAdminUser(request);
+
+  if (!adminUser) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 

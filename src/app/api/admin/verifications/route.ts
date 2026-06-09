@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasValidAdminSession } from "@/lib/adminAuth";
+import { requireAdminUser } from "@/lib/adminAuth";
 import { updateSupabaseRecord } from "@/lib/supabase/admin";
 
 type VerificationSubject = "farmer" | "supplier" | "buyer";
@@ -15,7 +15,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(request: Request) {
-  if (!hasValidAdminSession(request)) {
+  const adminUser = await requireAdminUser(request);
+
+  if (!adminUser) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
@@ -33,7 +35,7 @@ export async function PATCH(request: Request) {
 
   const target = targetTables[body.subject];
   const verificationDate = body.status === "Verified" ? new Date().toISOString().slice(0, 10) : null;
-  const verifiedBy = body.status === "Verified" ? body.verifiedBy || "Ghana Growers Admin" : null;
+  const verifiedBy = body.status === "Verified" ? body.verifiedBy || adminUser.email : null;
   const filter = `${target.filterColumn}=eq.${encodeURIComponent(body.recordId)}`;
   const update = await updateSupabaseRecord(target.table, filter, {
     verification_status: body.status,

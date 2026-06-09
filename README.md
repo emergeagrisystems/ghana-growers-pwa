@@ -65,7 +65,9 @@ Set these environment variables locally and in production:
 ```bash
 OPENAI_API_KEY=
 OPENAI_MODEL="gpt-5.4-mini"
-ADMIN_ACCESS_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 `OPENAI_MODEL` is optional. If it is not set, the app uses `gpt-5.4-mini`.
@@ -110,17 +112,23 @@ The assistant includes basic usage protection in `src/lib/assistantUsageProtecti
 
 This is intentionally lightweight and in-memory for the MVP. For stronger production control across Vercel serverless instances, move rate-limit counters to a shared store such as Vercel KV, Redis, or a database.
 
-## Phase 1 Admin Dashboard
+## Admin Dashboard
 
-The lightweight internal admin dashboard lives at:
+The protected internal admin dashboard lives at:
 
 ```text
 /admin
 ```
 
-The dashboard uses existing local data files for farmers, buyers, suppliers, marketplace listings, buyer requests, verifications, learn articles, and market prices. Management actions are mock/client-side only in Phase 1.
+Admins sign in at:
 
-Phase 1 admin forms are available from the quick actions and table edit controls for:
+```text
+/admin/login
+```
+
+Admin authentication uses Supabase Auth. Only authenticated users with an admin role in Supabase metadata can access the dashboard or admin API routes.
+
+Admin forms are available from quick actions and table edit controls for:
 
 - Farmers
 - Suppliers
@@ -129,21 +137,13 @@ Phase 1 admin forms are available from the quick actions and table edit controls
 - Market prices
 - Learn articles
 
-These forms validate required fields and preview the add/edit workflow in the browser. They do not write back to the local JSON files or persist changes in production yet. Database persistence, server-side validation, audit logs, and role-based permissions should be added before using these forms to manage real operational data.
-
-Admin access is checked by the server route:
+Admin auth setup is documented in:
 
 ```text
-src/app/api/admin/access/route.ts
+ADMIN_SETUP.md
 ```
 
-Set this environment variable locally and in Vercel:
-
-```bash
-ADMIN_ACCESS_KEY=
-```
-
-Security note: this is a lightweight Phase 1 admin gate, not a full authentication system. Before using the dashboard for real sensitive user data, add proper authentication, role-based permissions, audit logs, persistent database storage, and server-side authorization for every admin action. `ADMIN_ACCESS_KEY` must be configured in Vercel environment variables and must never be hardcoded in frontend code.
+Security note: `SUPABASE_SERVICE_ROLE_KEY` must remain server-only. Do not expose it in frontend code or `NEXT_PUBLIC_` variables.
 
 ## Farmer Registration Integrations
 

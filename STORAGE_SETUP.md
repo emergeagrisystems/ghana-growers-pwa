@@ -124,11 +124,12 @@ Fallback display locations:
 
 ## Testing Steps
 
-1. Confirm `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ADMIN_ACCESS_KEY` are configured in Vercel.
+1. Confirm `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are configured in Vercel.
 2. Run `supabase/migrations/004_storage_buckets.sql` in the Supabase SQL Editor.
-3. Open `/admin` and unlock the dashboard with the admin key.
-4. Open Add Farmer, Add Supplier, or Add Marketplace Listing.
-5. Upload a JPG, PNG, or WEBP file smaller than 5MB.
-6. Confirm the image preview appears and the form shows an uploaded public URL.
-7. Save the form and confirm the public page displays the uploaded image.
-8. Test Replace Image and Remove Image before saving another record.
+3. Create a Supabase Auth user with an admin role as described in `ADMIN_SETUP.md`.
+4. Open `/admin/login` and sign in as the admin user.
+5. Open Add Farmer, Add Supplier, or Add Marketplace Listing.
+6. Upload a JPG, PNG, or WEBP file smaller than 5MB.
+7. Confirm the image preview appears and the form shows an uploaded public URL.
+8. Save the form and confirm the public page displays the uploaded image.
+9. Test Replace Image and Remove Image before saving another record.

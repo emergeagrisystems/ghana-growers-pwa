@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasValidAdminSession } from "@/lib/adminAuth";
+import { requireAdminUser } from "@/lib/adminAuth";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type AdminFormPayload = Record<string, string>;
@@ -115,7 +115,9 @@ function friendlyAdminSaveError(error: string) {
 }
 
 export async function createRecord({ request, table, requiredFields, mapPayload }: CreateRecordOptions) {
-  if (!hasValidAdminSession(request)) {
+  const adminUser = await requireAdminUser(request);
+
+  if (!adminUser) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
@@ -202,7 +204,9 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
 }
 
 export async function updateRecord({ request, table, requiredFields, filterColumn = "id", mapPayload }: UpdateRecordOptions) {
-  if (!hasValidAdminSession(request)) {
+  const adminUser = await requireAdminUser(request);
+
+  if (!adminUser) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 

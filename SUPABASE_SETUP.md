@@ -19,8 +19,9 @@ For local testing, add the same values to `.env.local`.
 - `SUPABASE_SERVICE_ROLE_KEY` must only be used on the server.
 - Never import the server admin Supabase helper into a client component.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` through `NEXT_PUBLIC_` variables.
-- The current `/admin` area still uses `ADMIN_ACCESS_KEY` as a lightweight Phase 1 access gate.
-- Before managing sensitive production data, add full admin authentication, roles, audit logs, and stricter server-side authorization.
+- `/admin` uses Supabase Auth and requires an authenticated user with an admin role.
+- Admin setup is documented in `ADMIN_SETUP.md`.
+- Add detailed audit logs before using the dashboard for high-risk production operations.
 
 ## SQL Schema
 
@@ -93,7 +94,7 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 
 The app keeps all current local JSON/data files as fallback. Public pages continue working even if Supabase is empty.
 
-Phase 1 admin add forms now attempt to create records in Supabase for:
+Admin add and edit forms now attempt to write records in Supabase for:
 
 - Farmers
 - Suppliers
@@ -102,7 +103,7 @@ Phase 1 admin add forms now attempt to create records in Supabase for:
 - Market Prices
 - Learn Articles
 
-Edit forms remain client-side workflow previews until update/archive API routes are added.
+Archive actions are protected admin API calls where supported.
 
 ## API Routes
 
@@ -122,9 +123,9 @@ src/app/api/crop-health-reports/route.ts
 
 These routes:
 
-- Require the existing admin access flow.
-- Use a signed HTTP-only admin session cookie.
-- Accept the same signed admin session token in the `x-ghana-growers-admin-session` request header.
+- Require Supabase Auth.
+- Require the authenticated user to have an admin role.
+- Use HTTP-only auth cookies set by `/api/admin/auth/login`.
 - Use `SUPABASE_SERVICE_ROLE_KEY` only on the server.
 - Validate required fields before inserting.
 - Return friendly errors if Supabase is not configured or the insert fails.
@@ -138,6 +139,6 @@ These routes:
 3. Test each admin add form from `/admin`.
 4. Add seed scripts to import existing JSON records into Supabase.
 5. Update public pages to read from Supabase first and local JSON second.
-6. Add update/archive API routes for edit actions.
-7. Add proper admin authentication and activity logs.
+6. Add seed scripts and activity logs for production operations.
+7. Review admin role assignments regularly.
 8. Move uploaded images to Supabase Storage when media management is needed.

@@ -12,7 +12,6 @@ import {
   Eye,
   FilePenLine,
   LayoutDashboard,
-  Lock,
   MessageCircle,
   PackageCheck,
   PlusCircle,
@@ -32,6 +31,7 @@ import learnArticles from "@/data/learnArticles.json";
 import { marketPrices } from "@/data/marketPrices";
 import { products } from "@/data/products";
 import { supplierDirectory } from "@/data/suppliers";
+import type { AdminUser } from "@/lib/adminAuth";
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived";
 type VerificationSubject = "farmer" | "supplier" | "buyer";
@@ -76,9 +76,6 @@ type ActiveForm = {
   recordId?: string;
   recordName?: string;
 };
-
-const storageKey = "ghana-growers-admin-access";
-const adminSessionTokenKey = "ghana-growers-admin-session-token";
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
@@ -722,17 +719,7 @@ function canPersistAdminForm(formId: AdminFormId, mode: "add" | "edit") {
   return Boolean(createEndpoints[formId] && (mode === "add" || formId !== "learn"));
 }
 
-export function AdminDashboard() {
-  const [accessGranted, setAccessGranted] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.sessionStorage.getItem(storageKey) === "granted" && Boolean(window.sessionStorage.getItem(adminSessionTokenKey));
-  });
-  const [accessKey, setAccessKey] = useState("");
-  const [accessError, setAccessError] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
+export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("farmers");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | AdminStatus>("All");
@@ -768,37 +755,6 @@ export function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  async function submitAccess(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAccessError("");
-    setIsChecking(true);
-
-    const response = await fetch("/api/admin/access", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accessKey })
-    }).catch(() => null);
-
-    setIsChecking(false);
-
-    if (!response?.ok) {
-      setAccessError("Admin access required");
-      return;
-    }
-
-    const result = (await response.json().catch(() => null)) as { adminSessionToken?: string } | null;
-
-    if (!result?.adminSessionToken) {
-      setAccessError("Admin access required");
-      return;
-    }
-
-    window.sessionStorage.setItem(storageKey, "granted");
-    window.sessionStorage.setItem(adminSessionTokenKey, result.adminSessionToken);
-    setAccessGranted(true);
-    setAccessKey("");
-  }
-
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
       setStatusOverrides((current) => ({ ...current, [row.id]: "Verified" }));
@@ -817,20 +773,12 @@ export function AdminDashboard() {
       return;
     }
 
-    const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
-
-    if (!adminSessionToken) {
-      setNotice("Admin access required. Please lock the dashboard and sign in again.");
-      return;
-    }
-
     setStatusOverrides((current) => ({ ...current, [row.id]: status }));
 
     const response = await fetch("/api/admin/verifications", {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
-        "x-ghana-growers-admin-session": adminSessionToken
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         ...row.verificationTarget,
@@ -843,12 +791,57 @@ export function AdminDashboard() {
     const result = (await response?.json().catch(() => null)) as { error?: string } | null;
 
     if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
       setNotice(result?.error ?? `Could not update verification status for ${row.name}.`);
       return;
     }
 
     setNotice(`${row.name} verification status updated to ${status}.`);
     setVerificationNotes((current) => ({ ...current, [row.id]: "" }));
+  }
+
+  async function archiveAdminRow(row: AdminRow) {
+    const formId = formIdForSection(activeSection);
+
+    if (!formId) {
+      mockAction(row, "Archive");
+      return;
+    }
+
+    setStatusOverrides((current) => ({ ...current, [row.id]: "Archived" }));
+
+    const response = await fetch("/api/admin/archive", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        section: formId,
+        recordId: row.id
+      })
+    }).catch(() => null);
+
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? `Could not archive ${row.name}.`);
+      return;
+    }
+
+    setRowsBySection((current) => ({
+      ...current,
+      [activeSection]: current[activeSection].map((record) => (record.id === row.id ? { ...record, status: "Archived" } : record))
+    }));
+    setNotice(`${row.name} archived successfully.`);
   }
 
   function runQuickAction(section: AdminSectionId, intent: string) {
@@ -913,14 +906,6 @@ export function AdminDashboard() {
       return;
     }
 
-    const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
-
-    if (!adminSessionToken) {
-      setFormError("Admin access required. Please lock the dashboard and sign in again.");
-      event.target.value = "";
-      return;
-    }
-
     const localPreview = URL.createObjectURL(file);
     setImagePreviews((current) => ({ ...current, [field.name]: localPreview }));
     setUploadingField(field.name);
@@ -933,9 +918,6 @@ export function AdminDashboard() {
 
     const response = await fetch("/api/admin/uploads", {
       method: "POST",
-      headers: {
-        "x-ghana-growers-admin-session": adminSessionToken
-      },
       body: formData
     }).catch(() => null);
     setUploadingField(null);
@@ -944,6 +926,11 @@ export function AdminDashboard() {
     const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
 
     if (!response?.ok || !result?.publicUrl) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
       setFormError(result?.error ?? "Image upload failed. Check Supabase Storage configuration.");
       return;
     }
@@ -1012,20 +999,11 @@ export function AdminDashboard() {
     const canPersist = canPersistAdminForm(activeForm.id, activeForm.mode);
 
     if (endpoint && canPersist) {
-      const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
-
-      if (!adminSessionToken) {
-        setFormError("Admin access required. Please lock the dashboard and sign in again.");
-        setFormSuccess("");
-        return;
-      }
-
       setIsSubmittingForm(true);
       const response = await fetch(endpoint, {
         method: activeForm.mode === "add" ? "POST" : "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "x-ghana-growers-admin-session": adminSessionToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           ...formValues,
@@ -1038,9 +1016,8 @@ export function AdminDashboard() {
 
       if (!response?.ok) {
         if (response?.status === 401) {
-          window.sessionStorage.removeItem(storageKey);
-          window.sessionStorage.removeItem(adminSessionTokenKey);
-          setAccessGranted(false);
+          window.location.href = "/admin/login";
+          return;
         }
 
         setFormError(result?.error ?? "Supabase insert failed. Check the admin session, environment variables, and table schema.");
@@ -1071,44 +1048,13 @@ export function AdminDashboard() {
     }, 650);
   }
 
-  if (!accessGranted) {
-    return (
-      <main className="min-h-screen bg-gradient-to-br from-white via-leaf-50/70 to-white px-4 py-16">
-        <section className="mx-auto max-w-md rounded-md border border-leaf-900/10 bg-white p-6 shadow-soft">
-          <div className="grid h-12 w-12 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-            <Lock className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <h1 className="mt-5 text-3xl font-black text-ink">Admin access required</h1>
-          <p className="mt-3 text-sm leading-6 text-ink/65">
-            Enter the internal Ghana Growers admin access key to open the Phase 1 dashboard.
-          </p>
-          <form className="mt-6 grid gap-4" onSubmit={submitAccess}>
-            <label className="grid gap-2 text-sm font-black text-ink">
-              Access key
-              <input
-                type="password"
-                value={accessKey}
-                onChange={(event) => setAccessKey(event.target.value)}
-                className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                placeholder="Enter admin access key"
-              />
-            </label>
-            {accessError ? <p className="rounded-md bg-earth-50 px-3 py-2 text-sm font-black text-earth-700">{accessError}</p> : null}
-            <button
-              type="submit"
-              disabled={isChecking}
-              className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isChecking ? "Checking..." : "Open Dashboard"}
-            </button>
-          </form>
-        </section>
-      </main>
-    );
-  }
-
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
+
+  async function logoutAdmin() {
+    await fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => null);
+    window.location.href = "/admin/login";
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -1122,17 +1068,16 @@ export function AdminDashboard() {
                 Phase 1 dashboard for reviewing platform records, content, buyer demand, verifications, and operational leads.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                window.sessionStorage.removeItem(storageKey);
-                window.sessionStorage.removeItem(adminSessionTokenKey);
-                setAccessGranted(false);
-              }}
-              className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/65 transition hover:border-leaf-700 hover:text-leaf-800"
-            >
-              Lock Dashboard
-            </button>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <p className="text-sm font-bold text-ink/60">Signed in as {currentAdmin.email}</p>
+              <button
+                type="button"
+                onClick={logoutAdmin}
+                className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/65 transition hover:border-leaf-700 hover:text-leaf-800"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1474,7 +1419,7 @@ export function AdminDashboard() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => mockAction(row, "Archive")}
+                                onClick={() => archiveAdminRow(row)}
                                 className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                               >
                                 <Archive className="h-3.5 w-3.5" />
@@ -1680,10 +1625,10 @@ export function AdminDashboard() {
           ) : null}
 
           <section className="mt-6 rounded-md border border-earth-500/30 bg-earth-50 p-5">
-            <h2 className="text-lg font-black text-ink">Phase 1 Admin Security Note</h2>
+            <h2 className="text-lg font-black text-ink">Admin Security Note</h2>
             <p className="mt-2 text-sm leading-6 text-ink/65">
-              This dashboard uses a lightweight access key gate and local data for internal review only. Add real authentication,
-              roles, audit logs, and a database before managing sensitive user data or production operations.
+              This dashboard is protected with Supabase Auth and an admin role check. Keep admin accounts limited to trusted users,
+              review access regularly, and add detailed audit logs before managing sensitive production operations.
             </p>
           </section>
         </div>
