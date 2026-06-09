@@ -206,7 +206,7 @@ export function CropHealthCheck() {
         Take a clear photo of the affected leaf, stem, fruit, or whole plant. Ghana Growers checks the image through a secure server route and returns advisory next steps.
       </p>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(260px,0.72fr)_minmax(0,1.45fr)] lg:items-start">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)] lg:items-start">
         <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-leaf-600 bg-leaf-50 p-4 text-center sm:p-5">
           {previewUrl ? (
             <Image
@@ -286,16 +286,6 @@ export function CropHealthCheck() {
 
           {result ? (
             <div className="mt-5 grid gap-4 text-sm">
-              {result.noDiseaseDetected ? (
-                <p className="rounded-md bg-white p-3 font-bold text-leaf-700">
-                  No strong disease match was detected. Keep monitoring and upload a clearer symptom photo if the problem continues.
-                </p>
-              ) : null}
-              {result.lowConfidence ? (
-                <p className="rounded-md bg-white p-3 font-bold text-earth-700">
-                  Low confidence result. Take another close-up photo in good light and confirm before treatment.
-                </p>
-              ) : null}
               {(() => {
                 const symptoms = splitText(result.symptoms);
                 const symptomPreview = symptoms.slice(0, 3);
@@ -314,33 +304,34 @@ export function CropHealthCheck() {
                 return (
                   <>
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                      <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-                        {previewUrl ? (
-                          <Image
-                            src={previewUrl}
-                            alt="Uploaded crop diagnosis preview"
-                            width={220}
-                            height={180}
-                            className="h-44 w-full rounded-md object-cover sm:h-full"
-                            unoptimized
-                          />
-                        ) : null}
-                        <div className="min-w-0">
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis</p>
-                          <h3 className="mt-2 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
-                          <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">Farmer Summary</p>
-                          <p className="mt-2 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
-                              {confidenceLabel(result.confidence)}
-                            </span>
-                            <span className={`rounded-full px-3 py-1 text-xs font-black ${attentionClass(attention)}`}>
-                              {attention}
-                            </span>
-                          </div>
-                          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
-                        </div>
+                      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis Summary</p>
+                      <div className="mt-3">
+                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Diagnosis</p>
+                        <h3 className="mt-1 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
                       </div>
+                      <div className="mt-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Farmer Summary</p>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                          {confidenceLabel(result.confidence)}
+                        </span>
+                        <span className={`rounded-full px-3 py-1 text-xs font-black ${attentionClass(attention)}`}>
+                          {attention}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
+                      {result.noDiseaseDetected ? (
+                        <p className="mt-3 rounded-md bg-leaf-50 p-3 font-bold leading-5 text-leaf-700">
+                          No strong disease match was detected. Keep monitoring and upload a clearer symptom photo if the problem continues.
+                        </p>
+                      ) : null}
+                      {result.lowConfidence ? (
+                        <p className="mt-3 rounded-md bg-earth-50 p-3 font-bold leading-5 text-earth-700">
+                          Low confidence result. Take another close-up photo in good light and confirm before treatment.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
