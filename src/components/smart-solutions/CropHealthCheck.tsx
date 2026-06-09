@@ -74,7 +74,8 @@ export function CropHealthCheck() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
-  const [showFullDetails, setShowFullDetails] = useState(false);
+  const [showMoreSymptoms, setShowMoreSymptoms] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [reports, setReports] = useState<SavedCropHealthReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<SavedCropHealthReport | null>(null);
@@ -123,7 +124,8 @@ export function CropHealthCheck() {
     setIsLoading(true);
     setResult(undefined);
     setErrorMessage("");
-    setShowFullDetails(false);
+    setShowMoreSymptoms(false);
+    setShowMoreActions(false);
 
     const formData = new FormData();
     formData.append("photo", selectedFile);
@@ -218,7 +220,8 @@ export function CropHealthCheck() {
               const file = event.target.files?.[0];
               setErrorMessage("");
               setResult(undefined);
-              setShowFullDetails(false);
+              setShowMoreSymptoms(false);
+              setShowMoreActions(false);
 
               if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
@@ -283,40 +286,47 @@ export function CropHealthCheck() {
                 const symptoms = splitText(result.symptoms);
                 const symptomPreview = symptoms.slice(0, 3);
                 const actions = splitText(result.recommendedAction);
+                const actionPreview = actions.slice(0, 3);
                 const severity = severityLevel(result.severity);
                 const source =
                   result.provider === "crop.health"
                     ? "Crop.health API"
                     : `Mock fallback${result.diagnostics?.fallbackReason === "api_key_missing" ? " - API key missing on server" : ""}`;
+                const summary =
+                  result.noDiseaseDetected
+                    ? "No serious problem was clearly detected. Keep monitoring the plant and take another clear photo if symptoms continue."
+                    : `${result.possibleIssue}. Check soil condition, water properly, remove badly affected leaves if needed, and avoid applying chemicals until confirmed.`;
 
                 return (
                   <>
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
+                      <div className="grid gap-4 sm:grid-cols-[112px_1fr]">
+                        {previewUrl ? (
+                          <Image
+                            src={previewUrl}
+                            alt="Uploaded crop diagnosis preview"
+                            width={112}
+                            height={112}
+                            className="h-28 w-full rounded-md object-cover sm:w-28"
+                            unoptimized
+                          />
+                        ) : null}
+                        <div className="min-w-0">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis summary</p>
                           <h3 className="mt-2 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2 sm:justify-end">
-                          <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
-                            {result.confidence}% confidence
-                          </span>
-                          <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
-                            {severity} severity
-                          </span>
+                          <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                              {result.confidence}% confidence
+                            </span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
+                              {severity} severity
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <dt className="text-xs font-black uppercase tracking-wide text-ink/45">Possible issue</dt>
-                          <dd className="mt-1 font-bold leading-6 text-ink/75">{result.possibleIssue}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs font-black uppercase tracking-wide text-ink/45">Result source</dt>
-                          <dd className="mt-1 font-bold leading-6 text-ink/75">{source}</dd>
-                        </div>
-                      </dl>
+                      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
                     </div>
 
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
@@ -338,12 +348,12 @@ export function CropHealthCheck() {
                         <div className="mt-3">
                           <button
                             type="button"
-                            onClick={() => setShowFullDetails((value) => !value)}
+                            onClick={() => setShowMoreSymptoms((value) => !value)}
                             className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
                           >
-                            {showFullDetails ? "Hide details" : "Read More"}
+                            {showMoreSymptoms ? "Hide symptoms" : "Read more symptoms"}
                           </button>
-                          {showFullDetails ? (
+                          {showMoreSymptoms ? (
                             <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
                               {result.symptoms}
                             </p>
@@ -355,13 +365,29 @@ export function CropHealthCheck() {
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
                       <h3 className="font-black text-ink">Recommended Actions</h3>
                       <ul className="mt-3 grid gap-2">
-                        {(actions.length ? actions : [result.recommendedAction]).map((action) => (
+                        {(actionPreview.length ? actionPreview : [result.recommendedAction]).map((action) => (
                           <li key={action} className="flex gap-2 leading-6 text-ink/68">
                             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-earth-500" />
                             <span>{action}</span>
                           </li>
                         ))}
                       </ul>
+                      {actions.length > actionPreview.length ? (
+                        <div className="mt-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowMoreActions((value) => !value)}
+                            className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
+                          >
+                            {showMoreActions ? "Hide actions" : "Read more actions"}
+                          </button>
+                          {showMoreActions ? (
+                            <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
+                              {result.recommendedAction}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </>
                 );
