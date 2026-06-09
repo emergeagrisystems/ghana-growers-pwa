@@ -81,6 +81,7 @@ The following actions require a Supabase Auth admin session:
 - Upload images
 - Read the admin activity log
 - Read WhatsApp lead tracking
+- Read platform analytics
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
 
@@ -140,6 +141,7 @@ Protected admin routes:
 
 ```text
 src/app/api/admin/activity/route.ts
+src/app/api/admin/analytics/route.ts
 src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/admin/archive/route.ts
 src/app/api/admin/farmers/route.ts

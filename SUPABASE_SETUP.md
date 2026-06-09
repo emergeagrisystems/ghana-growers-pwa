@@ -139,6 +139,7 @@ src/app/api/admin/learn-articles/route.ts
 src/app/api/admin/verifications/route.ts
 src/app/api/admin/uploads/route.ts
 src/app/api/admin/activity/route.ts
+src/app/api/admin/analytics/route.ts
 src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/crop-health-reports/route.ts
 src/app/api/whatsapp-leads/route.ts
@@ -156,6 +157,7 @@ These routes:
 - Save Crop Health Check diagnosis reports with uploaded image URLs, diagnosis JSON, date, and confidence.
 - Read Recent Activity from `admin_activity_log` after validating the admin session.
 - Record WhatsApp contact clicks in `whatsapp_leads` without exposing the service role key.
+- Read admin analytics from Supabase tables first, while the dashboard keeps local data as fallback when tables are empty.
 
 ## Recommended Migration Path
 

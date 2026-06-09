@@ -37,6 +37,7 @@ type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Activ
 type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
+  | "analytics"
   | "farmers"
   | "buyers"
   | "suppliers"
@@ -79,6 +80,16 @@ type WhatsAppLeadRecord = {
   page_path: string;
   user_agent: string | null;
   created_at: string;
+};
+type AnalyticsRecord = Record<string, unknown>;
+type AnalyticsData = {
+  farmers: AnalyticsRecord[];
+  suppliers: AnalyticsRecord[];
+  marketplaceListings: AnalyticsRecord[];
+  buyerRequests: AnalyticsRecord[];
+  whatsappLeads: AnalyticsRecord[];
+  cropHealthReports: AnalyticsRecord[];
+  marketPrices: AnalyticsRecord[];
 };
 type FormField = {
   name: string;
@@ -169,6 +180,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
   ];
 
   return {
+    analytics: [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
       name: farmer.farmName,
@@ -233,6 +245,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 }
 
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
+  { id: "analytics", label: "Analytics", icon: ChartLine },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
   { id: "suppliers", label: "Suppliers", icon: Truck },
@@ -820,8 +833,118 @@ function topClickedSources(leads: WhatsAppLeadRecord[]) {
     .slice(0, 6);
 }
 
+function textValue(record: AnalyticsRecord, key: string) {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
+function countBy(records: AnalyticsRecord[], key: string, fallback = "Unspecified") {
+  const counts = new Map<string, number>();
+
+  records.forEach((record) => {
+    const label = textValue(record, key) || fallback;
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+function verifiedCount(records: AnalyticsRecord[]) {
+  return records.filter((record) => textValue(record, "verification_status") === "Verified").length;
+}
+
+function activeBuyerRequestCount(records: AnalyticsRecord[]) {
+  return records.filter((record) => {
+    const status = textValue(record, "status");
+    return status !== "Fulfilled" && status !== "Archived";
+  }).length;
+}
+
+function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): AnalyticsData {
+  return {
+    farmers: farmerDirectory.map((farmer) => ({
+      id: farmer.slug,
+      farm_name: farmer.farmName,
+      region: farmer.region,
+      verification_status: farmer.verificationStatus,
+      status: farmer.availabilityStatus
+    })),
+    suppliers: supplierDirectory.map((supplier) => ({
+      id: supplier.slug,
+      company_name: supplier.companyName,
+      category: supplier.supplierCategory,
+      verification_status: supplier.verificationStatus,
+      status: "Active"
+    })),
+    marketplaceListings: products.map((product) => ({
+      id: product.id,
+      product_name: product.name,
+      category: product.category,
+      status: product.available === "Sold Out" ? "Archived" : "Active",
+      availability: product.available
+    })),
+    buyerRequests: buyerRequests.map((request) => ({
+      id: request.id,
+      product_needed: request.productName,
+      status: request.status,
+      verification_status: request.verificationStatus
+    })),
+    whatsappLeads: whatsappLeadRows,
+    cropHealthReports: [],
+    marketPrices: marketPrices.map((price) => ({
+      id: `${price.crop}-${price.market}`,
+      product: price.crop,
+      region: price.region,
+      market: price.market,
+      trend: price.trend
+    }))
+  };
+}
+
+function mergeAnalyticsWithFallback(data: AnalyticsData | null, fallback: AnalyticsData): AnalyticsData {
+  if (!data) {
+    return fallback;
+  }
+
+  return {
+    farmers: data.farmers.length > 0 ? data.farmers : fallback.farmers,
+    suppliers: data.suppliers.length > 0 ? data.suppliers : fallback.suppliers,
+    marketplaceListings: data.marketplaceListings.length > 0 ? data.marketplaceListings : fallback.marketplaceListings,
+    buyerRequests: data.buyerRequests.length > 0 ? data.buyerRequests : fallback.buyerRequests,
+    whatsappLeads: data.whatsappLeads.length > 0 ? data.whatsappLeads : fallback.whatsappLeads,
+    cropHealthReports: data.cropHealthReports,
+    marketPrices: data.marketPrices.length > 0 ? data.marketPrices : fallback.marketPrices
+  };
+}
+
+function SimpleBarList({ items, emptyLabel }: { items: Array<{ label: string; value: number }>; emptyLabel: string }) {
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  if (items.length === 0) {
+    return <p className="rounded-md bg-leaf-50 p-4 text-sm font-semibold text-ink/58">{emptyLabel}</p>;
+  }
+
+  return (
+    <div className="grid gap-3">
+      {items.slice(0, 8).map((item) => (
+        <div key={item.label}>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="font-black text-ink">{item.label}</span>
+            <span className="font-black text-leaf-700">{item.value}</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-leaf-50">
+            <div className="h-full rounded-full bg-leaf-600" style={{ width: `${Math.max(8, (item.value / maxValue) * 100)}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
-  const [activeSection, setActiveSection] = useState<AdminSectionId>("farmers");
+  const [activeSection, setActiveSection] = useState<AdminSectionId>("analytics");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | AdminStatus>("All");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, AdminStatus>>({});
@@ -839,6 +962,8 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [activityError, setActivityError] = useState("");
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsError, setAnalyticsError] = useState("");
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -884,11 +1009,60 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     void loadWhatsAppLeads();
   }, [loadWhatsAppLeads]);
 
+  const loadAnalytics = useCallback(async () => {
+    const response = await fetch("/api/admin/analytics").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as (AnalyticsData & { error?: string }) | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setAnalyticsError(result?.error ?? "Analytics data is unavailable. Local fallback values are shown.");
+      return;
+    }
+
+    setAnalyticsData({
+      farmers: result?.farmers ?? [],
+      suppliers: result?.suppliers ?? [],
+      marketplaceListings: result?.marketplaceListings ?? [],
+      buyerRequests: result?.buyerRequests ?? [],
+      whatsappLeads: result?.whatsappLeads ?? [],
+      cropHealthReports: result?.cropHealthReports ?? [],
+      marketPrices: result?.marketPrices ?? []
+    });
+    setAnalyticsError("");
+  }, []);
+
+  useEffect(() => {
+    void loadAnalytics();
+  }, [loadAnalytics]);
+
   const summaryCards = useMemo(() => summarize(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
+  const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads), [whatsappLeads]);
+  const analytics = useMemo(() => mergeAnalyticsWithFallback(analyticsData, analyticsFallback), [analyticsData, analyticsFallback]);
+  const analyticsCards = useMemo(() => [
+    { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
+    { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
+    { label: "Total suppliers", value: analytics.suppliers.length, icon: Truck },
+    { label: "Verified suppliers", value: verifiedCount(analytics.suppliers), icon: ShieldCheck },
+    { label: "Marketplace listings", value: analytics.marketplaceListings.length, icon: Store },
+    { label: "Active buyer requests", value: activeBuyerRequestCount(analytics.buyerRequests), icon: PackageCheck },
+    { label: "WhatsApp leads", value: analytics.whatsappLeads.length, icon: MessageCircle },
+    { label: "Crop health checks", value: analytics.cropHealthReports.length, icon: ClipboardCheck },
+    { label: "Market price records", value: analytics.marketPrices.length, icon: ChartLine }
+  ], [analytics]);
+  const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
+  const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
+  const listingsByCategory = useMemo(() => countBy(analytics.marketplaceListings, "category"), [analytics.marketplaceListings]);
+  const buyerRequestsByProduct = useMemo(() => countBy(analytics.buyerRequests, "product_needed"), [analytics.buyerRequests]);
+  const farmersByRegion = useMemo(() => countBy(analytics.farmers, "region"), [analytics.farmers]);
+  const suppliersByCategory = useMemo(() => countBy(analytics.suppliers, "category"), [analytics.suppliers]);
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -1206,6 +1380,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
 
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
+  const isAnalyticsSection = activeSection === "analytics";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
 
   async function logoutAdmin() {
@@ -1448,7 +1623,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -1487,7 +1662,125 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
               </div>
             </div>
 
-            {isWhatsAppLeadsSection ? (
+            {isAnalyticsSection ? (
+              <div className="grid gap-6 p-5">
+                {analyticsError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{analyticsError}</div>
+                ) : null}
+
+                <section>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Platform Overview</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Growth, activity, and demand</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void loadAnalytics();
+                        void loadWhatsAppLeads();
+                      }}
+                      className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                    >
+                      Refresh Analytics
+                    </button>
+                  </div>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {analyticsCards.map((card) => {
+                      const Icon = card.icon;
+
+                      return (
+                        <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-ink/60">{card.label}</p>
+                            <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                              <Icon className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                          </div>
+                          <p className="mt-3 text-3xl font-black text-ink">{card.value}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="grid gap-4 xl:grid-cols-2">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace Activity</p>
+                    <h3 className="mt-2 text-xl font-black text-ink">Listings by category</h3>
+                    <div className="mt-5">
+                      <SimpleBarList items={listingsByCategory} emptyLabel="No marketplace listing data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand</p>
+                    <h3 className="mt-2 text-xl font-black text-ink">Buyer requests by product</h3>
+                    <div className="mt-5">
+                      <SimpleBarList items={buyerRequestsByProduct} emptyLabel="No buyer request data yet." />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">WhatsApp Interest</p>
+                    <h3 className="mt-2 text-xl font-black text-ink">Leads by source type</h3>
+                    <div className="mt-5">
+                      <SimpleBarList items={analyticsLeadSources} emptyLabel="No WhatsApp lead data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Clicked Sources</p>
+                    <div className="mt-5 grid gap-3">
+                      {analyticsTopSources.map((item) => (
+                        <div key={`${item.type}-${item.name}`} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-ink">{item.name}</p>
+                            <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{item.value}</span>
+                          </div>
+                          <p className="mt-1 text-xs font-black uppercase tracking-wide text-ink/40">{sourceLabel(item.type as WhatsAppLeadRecord["source_type"])}</p>
+                        </div>
+                      ))}
+                      {analyticsTopSources.length === 0 ? (
+                        <p className="rounded-md bg-white p-4 text-sm font-semibold text-ink/58">Top clicked farmers, listings, and suppliers will appear after WhatsApp clicks are recorded.</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-4 xl:grid-cols-3">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmers by Region</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={farmersByRegion} emptyLabel="No farmer region data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Suppliers by Category</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={suppliersByCategory} emptyLabel="No supplier category data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Verification Status</p>
+                    <div className="mt-5 grid gap-3">
+                      <div className="rounded-md bg-leaf-50 p-4">
+                        <p className="text-sm font-black text-ink">Farmers verified</p>
+                        <p className="mt-2 text-2xl font-black text-leaf-700">{verifiedCount(analytics.farmers)} / {analytics.farmers.length}</p>
+                      </div>
+                      <div className="rounded-md bg-leaf-50 p-4">
+                        <p className="text-sm font-black text-ink">Suppliers verified</p>
+                        <p className="mt-2 text-2xl font-black text-leaf-700">{verifiedCount(analytics.suppliers)} / {analytics.suppliers.length}</p>
+                      </div>
+                      <div className="rounded-md bg-leaf-50 p-4">
+                        <p className="text-sm font-black text-ink">Buyer requests active</p>
+                        <p className="mt-2 text-2xl font-black text-leaf-700">{activeBuyerRequestCount(analytics.buyerRequests)} / {analytics.buyerRequests.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">
                 {whatsappLeadError ? (
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{whatsappLeadError}</div>
