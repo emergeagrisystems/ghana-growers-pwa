@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Sprout,
   Store,
+  Trash2,
   Truck,
   UploadCloud,
   UsersRound
@@ -800,6 +801,17 @@ export function AdminDashboard() {
     setFormSuccess("Image uploaded. Save the form to attach it to this record.");
   }
 
+  function removeImage(fieldName: string) {
+    setFormValues((current) => ({ ...current, [fieldName]: "" }));
+    setImagePreviews((current) => {
+      const next = { ...current };
+      delete next[fieldName];
+      return next;
+    });
+    setFormError("");
+    setFormSuccess("Image removed from this form. Save the form to update the record.");
+  }
+
   async function submitAdminForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -853,8 +865,8 @@ export function AdminDashboard() {
       }
 
       setFormError("");
-      setFormSuccess(`${recordLabel} saved to Supabase successfully. Public pages still use JSON fallback until the read migration is enabled.`);
-      setNotice(`${recordLabel} created in Supabase. JSON-backed public pages continue working during Phase 1 migration.`);
+      setFormSuccess(`${recordLabel} saved to Supabase successfully. Uploaded images will display on public pages when the record is shown.`);
+      setNotice(`${recordLabel} created in Supabase. Local JSON fallback remains available if Supabase is empty or unavailable.`);
       return;
     }
 
@@ -1343,21 +1355,34 @@ export function AdminDashboard() {
                                 )}
                               </div>
                               <div>
-                                <label
-                                  htmlFor={fieldId}
-                                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
-                                >
-                                  <UploadCloud className="h-4 w-4" aria-hidden="true" />
-                                  {isUploading ? "Uploading..." : "Upload Image"}
-                                </label>
-                                <input
-                                  id={fieldId}
-                                  type="file"
-                                  accept="image/jpeg,image/png,image/webp"
-                                  disabled={isUploading}
-                                  onChange={(event) => uploadImage(field, event)}
-                                  className="sr-only"
-                                />
+                                <div className="flex flex-wrap gap-2">
+                                  <label
+                                    htmlFor={fieldId}
+                                    className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                                  >
+                                    <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                                    {isUploading ? "Uploading..." : value || preview ? "Replace Image" : "Upload Image"}
+                                  </label>
+                                  <input
+                                    id={fieldId}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    disabled={isUploading}
+                                    onChange={(event) => uploadImage(field, event)}
+                                    className="sr-only"
+                                  />
+                                  {value || preview ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImage(field.name)}
+                                      disabled={isUploading}
+                                      className="inline-flex items-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/65 transition hover:border-tomato hover:text-tomato disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                      Remove Image
+                                    </button>
+                                  ) : null}
+                                </div>
                                 {value ? (
                                   <p className="mt-3 break-all text-xs font-semibold leading-5 text-ink/55">
                                     Uploaded URL: {value}

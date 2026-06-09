@@ -27,6 +27,29 @@ supabase/migrations/004_storage_buckets.sql
 
 It creates or updates the three buckets and adds a public read policy for uploaded Ghana Growers images.
 
+The migration creates:
+
+```sql
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values
+  ('farmers', 'farmers', true, 5242880, array['image/jpeg', 'image/png', 'image/webp']),
+  ('suppliers', 'suppliers', true, 5242880, array['image/jpeg', 'image/png', 'image/webp']),
+  ('marketplace', 'marketplace', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public read Ghana Growers images" on storage.objects;
+
+create policy "Public read Ghana Growers images"
+on storage.objects
+for select
+to public
+using (bucket_id in ('farmers', 'suppliers', 'marketplace'));
+```
+
 ## Manual Bucket Setup
 
 If creating buckets manually in the Supabase dashboard:
@@ -62,6 +85,13 @@ Flow:
    - Suppliers: `suppliers.logo_url`
    - Marketplace Listings: `marketplace_listings.image_url`
 
+Admin forms support:
+
+- Upload Image when no image is attached.
+- Image preview before saving the record.
+- Replace Image when an image already exists.
+- Remove Image to clear the image field before saving.
+
 ## Environment Variables
 
 The upload route uses the existing Supabase server environment variables:
@@ -85,3 +115,20 @@ SUPABASE_SERVICE_ROLE_KEY=
 ## Fallback Images
 
 If no uploaded image URL exists, the public pages continue to use the current local fallback images from `/public/images`.
+
+Fallback display locations:
+
+- Farmer images: Farmer Directory and Farmer Profile.
+- Supplier images: Supplier Directory and Supplier Profile.
+- Marketplace listing images: Marketplace cards and listing detail views.
+
+## Testing Steps
+
+1. Confirm `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ADMIN_ACCESS_KEY` are configured in Vercel.
+2. Run `supabase/migrations/004_storage_buckets.sql` in the Supabase SQL Editor.
+3. Open `/admin` and unlock the dashboard with the admin key.
+4. Open Add Farmer, Add Supplier, or Add Marketplace Listing.
+5. Upload a JPG, PNG, or WEBP file smaller than 5MB.
+6. Confirm the image preview appears and the form shows an uploaded public URL.
+7. Save the form and confirm the public page displays the uploaded image.
+8. Test Replace Image and Remove Image before saving another record.
