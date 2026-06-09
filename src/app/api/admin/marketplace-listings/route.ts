@@ -1,4 +1,4 @@
-import { createRecord, generateUniqueSlug } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, uniqueSlugAdminMessage } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,13 +9,15 @@ export async function POST(request: Request) {
     table: "marketplace_listings",
     requiredFields: ["productName", "category", "region", "district", "sellerFarmer", "quantity", "unit", "availability", "whatsappNumber"],
     mapPayload: async (payload) => {
-      const uniqueSlug = await generateUniqueSlug("marketplace_listings", `${payload.productName}-${payload.sellerFarmer}`);
+      const slugSource = `${payload.productName}-${payload.sellerFarmer}`;
+      const uniqueSlug = await generateUniqueSlug("marketplace_listings", slugSource);
 
       return {
         slug: uniqueSlug.slug,
-        __adminMessage: uniqueSlug.wasChanged
-          ? "A record with this URL already exists. A unique URL has been generated automatically."
-          : undefined,
+        __slugBaseValue: slugSource,
+        __adminError: uniqueSlug.error ? "Could not check whether this listing URL is available. Please try again." : undefined,
+        __adminStatus: uniqueSlug.status,
+        __adminMessage: uniqueSlug.wasChanged ? uniqueSlugAdminMessage() : undefined,
         product_name: payload.productName,
         category: payload.category,
         region: payload.region,

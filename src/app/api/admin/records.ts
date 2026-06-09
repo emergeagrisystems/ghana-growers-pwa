@@ -15,6 +15,8 @@ type SlugRow = {
   slug: string | null;
 };
 
+const uniqueSlugMessage = "A record with this URL already exists. A unique URL has been generated automatically.";
+
 export function slugify(value: string) {
   const slug = value
     .toLowerCase()
@@ -69,9 +71,30 @@ export async function generateUniqueSlug(table: string, baseValue: string) {
   return { slug: `${baseSlug}-${suffix}`, wasChanged: true };
 }
 
+export function uniqueSlugAdminMessage() {
+  return uniqueSlugMessage;
+}
+
 function isDuplicateSlugError(error: string) {
   const lower = error.toLowerCase();
-  return lower.includes("duplicate") && lower.includes("slug");
+  return (
+    (lower.includes("duplicate") || lower.includes("unique constraint")) &&
+    (lower.includes("slug") || lower.includes("_slug_key"))
+  );
+}
+
+function friendlyAdminSaveError(error: string) {
+  const lower = error.toLowerCase();
+
+  if (lower.includes("supabase is not configured")) {
+    return error;
+  }
+
+  if (lower.includes("violates") || lower.includes("constraint") || lower.includes("duplicate")) {
+    return "Could not save this record because one of its fields conflicts with an existing record. Please review the form and try again.";
+  }
+
+  return "Could not save this record. Please check the fields and try again.";
 }
 
 export async function createRecord({ request, table, requiredFields, mapPayload }: CreateRecordOptions) {
@@ -88,18 +111,66 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
 
   const recordPayload = await mapPayload(payload);
   const adminMessage = typeof recordPayload.__adminMessage === "string" ? recordPayload.__adminMessage : undefined;
+  const adminError = typeof recordPayload.__adminError === "string" ? recordPayload.__adminError : undefined;
+  const adminStatus = typeof recordPayload.__adminStatus === "number" ? recordPayload.__adminStatus : 500;
+  const slugBaseValue = typeof recordPayload.__slugBaseValue === "string" ? recordPayload.__slugBaseValue : undefined;
   delete recordPayload.__adminMessage;
+  delete recordPayload.__adminError;
+  delete recordPayload.__adminStatus;
+  delete recordPayload.__slugBaseValue;
+
+  if (adminError) {
+    return NextResponse.json({ error: adminError }, { status: adminStatus });
+  }
+
   const insert = await insertSupabaseRecord(table, recordPayload);
 
   if (insert.error) {
+    if (isDuplicateSlugError(insert.error) && slugBaseValue) {
+      const uniqueSlug = await generateUniqueSlug(table, slugBaseValue);
+
+      if (uniqueSlug.error) {
+        return NextResponse.json(
+          { error: "A record with this URL already exists. Please try saving again." },
+          { status: uniqueSlug.status ?? 409 }
+        );
+      }
+
+      const retryInsert = await insertSupabaseRecord(table, {
+        ...recordPayload,
+        slug: uniqueSlug.slug
+      });
+
+      if (!retryInsert.error) {
+        return NextResponse.json(
+          {
+            ok: true,
+            record: retryInsert.data,
+            message: uniqueSlugMessage,
+            slug: uniqueSlug.slug
+          },
+          { status: 201 }
+        );
+      }
+
+      if (isDuplicateSlugError(retryInsert.error)) {
+        return NextResponse.json(
+          { error: "A record with this URL already exists. Please try saving again." },
+          { status: 409 }
+        );
+      }
+
+      return NextResponse.json({ error: friendlyAdminSaveError(retryInsert.error) }, { status: retryInsert.status });
+    }
+
     if (isDuplicateSlugError(insert.error)) {
       return NextResponse.json(
-        { error: "A record with this URL already exists. A unique URL has been generated automatically. Please submit the form again." },
+        { error: "A record with this URL already exists. Please try saving again." },
         { status: 409 }
       );
     }
 
-    return NextResponse.json({ error: insert.error }, { status: insert.status });
+    return NextResponse.json({ error: friendlyAdminSaveError(insert.error) }, { status: insert.status });
   }
 
   return NextResponse.json(

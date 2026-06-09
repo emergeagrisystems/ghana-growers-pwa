@@ -1,4 +1,4 @@
-import { createRecord, generateUniqueSlug, splitList } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, splitList, uniqueSlugAdminMessage } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,9 +13,10 @@ export async function POST(request: Request) {
 
       return {
         slug: uniqueSlug.slug,
-        __adminMessage: uniqueSlug.wasChanged
-          ? "A record with this URL already exists. A unique URL has been generated automatically."
-          : undefined,
+        __slugBaseValue: payload.companyName,
+        __adminError: uniqueSlug.error ? "Could not check whether this supplier URL is available. Please try again." : undefined,
+        __adminStatus: uniqueSlug.status,
+        __adminMessage: uniqueSlug.wasChanged ? uniqueSlugAdminMessage() : undefined,
         company_name: payload.companyName,
         contact_person: payload.contactPerson,
         region: payload.region,

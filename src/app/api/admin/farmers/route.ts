@@ -1,7 +1,18 @@
-import { createRecord, generateUniqueSlug, splitList } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, splitList, uniqueSlugAdminMessage } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function farmerSlugSource(farmerName: string, farmName: string) {
+  const cleanFarmerName = farmerName.trim();
+  const cleanFarmName = farmName.trim();
+
+  if (cleanFarmerName.split(/\s+/).filter(Boolean).length >= 2) {
+    return cleanFarmerName;
+  }
+
+  return cleanFarmName || cleanFarmerName;
+}
 
 export async function POST(request: Request) {
   return createRecord({
@@ -9,13 +20,15 @@ export async function POST(request: Request) {
     table: "farmers",
     requiredFields: ["farmerName", "farmName", "region", "district", "farmType", "products", "farmSize", "whatsappNumber", "verificationStatus"],
     mapPayload: async (payload) => {
-      const uniqueSlug = await generateUniqueSlug("farmers", payload.farmerName);
+      const slugSource = farmerSlugSource(payload.farmerName, payload.farmName);
+      const uniqueSlug = await generateUniqueSlug("farmers", slugSource);
 
       return {
         slug: uniqueSlug.slug,
-        __adminMessage: uniqueSlug.wasChanged
-          ? "A record with this URL already exists. A unique URL has been generated automatically."
-          : undefined,
+        __slugBaseValue: slugSource,
+        __adminError: uniqueSlug.error ? "Could not check whether this farmer URL is available. Please try again." : undefined,
+        __adminStatus: uniqueSlug.status,
+        __adminMessage: uniqueSlug.wasChanged ? uniqueSlugAdminMessage() : undefined,
         farmer_name: payload.farmerName,
         farm_name: payload.farmName,
         region: payload.region,
