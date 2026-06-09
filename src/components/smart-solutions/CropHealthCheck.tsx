@@ -12,11 +12,13 @@ const sessionStorageKey = "ghana-growers-crop-health-session";
 type SavedCropHealthReport = {
   id: string;
   image_url: string;
-  diagnosis_result: CropHealthResult;
-  possible_issue: string | null;
+  diagnosis: string;
   confidence: number;
   severity: string | null;
+  symptoms: string | null;
+  recommendations: string | null;
   provider: string | null;
+  created_at: string;
   report_date: string;
 };
 
@@ -75,6 +77,7 @@ export function CropHealthCheck() {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [reports, setReports] = useState<SavedCropHealthReport[]>([]);
+  const [selectedReport, setSelectedReport] = useState<SavedCropHealthReport | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -411,14 +414,13 @@ export function CropHealthCheck() {
         {reports.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {reports.map((report) => {
-              const reportResult = report.diagnosis_result;
-              const severity = severityLevel(report.severity ?? reportResult.severity);
+              const severity = severityLevel(report.severity ?? undefined);
 
               return (
                 <article key={report.id} className="grid gap-3 rounded-md bg-white p-3 shadow-sm sm:grid-cols-[96px_1fr]">
                   <div
                     role="img"
-                    aria-label={`${report.possible_issue ?? "Crop health"} report image`}
+                    aria-label={`${report.diagnosis} report image`}
                     className="h-24 w-full rounded-md bg-leaf-50 bg-cover bg-center sm:w-24"
                     style={{ backgroundImage: `url(${report.image_url})` }}
                   />
@@ -431,10 +433,17 @@ export function CropHealthCheck() {
                         {severity}
                       </span>
                     </div>
-                    <h4 className="mt-2 font-black leading-tight text-ink">{report.possible_issue ?? reportResult.possibleIssue}</h4>
+                    <h4 className="mt-2 font-black leading-tight text-ink">{report.diagnosis}</h4>
                     <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/45">
                       {new Date(report.report_date).toLocaleDateString()} · {report.provider === "crop.health" ? "Crop.health API" : "Mock fallback"}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedReport(report)}
+                      className="mt-3 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700 transition hover:bg-leaf-100"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </article>
               );
@@ -442,9 +451,57 @@ export function CropHealthCheck() {
           </div>
         ) : (
           <p className="mt-4 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/60">
-            Saved diagnoses will appear here after you upload a crop photo, get a result, and select Save Diagnosis.
+            No crop health reports saved yet.
           </p>
         )}
+
+        {selectedReport ? (
+          <div className="mt-4 rounded-md border border-leaf-900/10 bg-white p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">Report details</p>
+                <h4 className="mt-1 text-xl font-black text-ink">{selectedReport.diagnosis}</h4>
+                <p className="mt-1 text-sm font-bold text-ink/50">{new Date(selectedReport.created_at).toLocaleString()}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedReport(null)}
+                className="rounded-md border border-leaf-900/10 px-3 py-2 text-xs font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
+              >
+                Close Details
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-md bg-leaf-50 p-3">
+                <p className="text-xs font-black uppercase tracking-wide text-ink/45">Confidence</p>
+                <p className="mt-1 font-black text-ink">{selectedReport.confidence}%</p>
+              </div>
+              <div className="rounded-md bg-leaf-50 p-3">
+                <p className="text-xs font-black uppercase tracking-wide text-ink/45">Severity</p>
+                <p className="mt-1 font-black text-ink">{severityLevel(selectedReport.severity ?? undefined)}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4">
+              <div>
+                <h5 className="font-black text-ink">Symptoms</h5>
+                <p className="mt-2 leading-6 text-ink/68">{selectedReport.symptoms || "No symptom details saved for this report."}</p>
+              </div>
+              <div>
+                <h5 className="font-black text-ink">Recommendations</h5>
+                <ul className="mt-2 grid gap-2">
+                  {(splitText(selectedReport.recommendations ?? "").length ? splitText(selectedReport.recommendations ?? "") : ["No recommendations saved for this report."]).map((item) => (
+                    <li key={item} className="flex gap-2 leading-6 text-ink/68">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-earth-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

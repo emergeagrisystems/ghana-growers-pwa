@@ -7,17 +7,22 @@ create table if not exists public.crop_health_reports (
   id uuid primary key default gen_random_uuid(),
   session_id text not null,
   image_url text not null,
-  diagnosis_result jsonb not null,
-  possible_issue text,
+  diagnosis text not null,
   confidence integer not null default 0,
   severity text,
+  symptoms text,
+  recommendations text,
   provider text,
-  report_date timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
 
+alter table public.crop_health_reports
+  add column if not exists diagnosis text,
+  add column if not exists symptoms text,
+  add column if not exists recommendations text;
+
 create index if not exists crop_health_reports_session_id_idx on public.crop_health_reports(session_id);
-create index if not exists crop_health_reports_report_date_idx on public.crop_health_reports(report_date desc);
+create index if not exists crop_health_reports_created_at_idx on public.crop_health_reports(created_at desc);
 
 alter table public.crop_health_reports enable row level security;
 

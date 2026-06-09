@@ -9,12 +9,14 @@ type CropHealthReportRow = {
   id: string;
   session_id: string;
   image_url: string;
-  diagnosis_result: CropHealthResult;
-  possible_issue: string | null;
+  diagnosis: string;
   confidence: number;
   severity: string | null;
+  symptoms: string | null;
+  recommendations: string | null;
   provider: string | null;
-  report_date: string;
+  created_at: string;
+  report_date?: string;
 };
 
 function supabaseConfig() {
@@ -53,9 +55,9 @@ async function fetchReports(sessionId: string) {
   }
 
   const endpoint = new URL(`${url.replace(/\/$/, "")}/rest/v1/crop_health_reports`);
-  endpoint.searchParams.set("select", "id,session_id,image_url,diagnosis_result,possible_issue,confidence,severity,provider,report_date");
+  endpoint.searchParams.set("select", "id,session_id,image_url,diagnosis,confidence,severity,symptoms,recommendations,provider,created_at");
   endpoint.searchParams.set("session_id", `eq.${sessionId}`);
-  endpoint.searchParams.set("order", "report_date.desc");
+  endpoint.searchParams.set("order", "created_at.desc");
   endpoint.searchParams.set("limit", "12");
 
   const response = await fetch(endpoint, {
@@ -76,7 +78,7 @@ async function fetchReports(sessionId: string) {
     };
   }
 
-  return { rows: result, status: 200 };
+  return { rows: result.map((row) => ({ ...row, report_date: row.created_at })), status: 200 };
 }
 
 export const runtime = "nodejs";
@@ -142,10 +144,11 @@ export async function POST(request: Request) {
   const insert = await insertSupabaseRecord("crop_health_reports", {
     session_id: sessionId,
     image_url: upload.publicUrl,
-    diagnosis_result: parsedDiagnosis,
-    possible_issue: parsedDiagnosis.possibleIssue,
+    diagnosis: parsedDiagnosis.possibleIssue,
     confidence: parsedDiagnosis.confidence,
     severity: parsedDiagnosis.severity ?? null,
+    symptoms: parsedDiagnosis.symptoms ?? null,
+    recommendations: parsedDiagnosis.recommendedAction,
     provider: parsedDiagnosis.provider ?? null
   });
 
@@ -153,5 +156,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insert.error }, { status: insert.status });
   }
 
-  return NextResponse.json({ ok: true, report: insert.data });
+  const inserted = insert.data as Record<string, unknown> | undefined;
+  const report = inserted ? { ...inserted, report_date: String(inserted.created_at ?? new Date().toISOString()) } : undefined;
+
+  return NextResponse.json({ ok: true, report });
 }

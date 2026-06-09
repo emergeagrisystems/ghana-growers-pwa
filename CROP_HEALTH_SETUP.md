@@ -83,11 +83,12 @@ src/app/api/crop-health-reports/route.ts
 The saved report flow stores:
 
 - Uploaded crop image URL
-- Diagnosis result JSON
+- Diagnosis
 - Report date
 - Confidence
-- Possible issue
 - Severity
+- Symptoms
+- Recommendations
 - Result provider
 
 Run `supabase/migrations/005_crop_health_reports.sql` in Supabase SQL Editor before using Save Diagnosis in production.
