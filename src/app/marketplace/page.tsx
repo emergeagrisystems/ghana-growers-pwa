@@ -30,7 +30,8 @@ export default async function MarketplacePage() {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
-              <ButtonLink href="/join/buyer" variant="secondary">Post Buyer Request</ButtonLink>
+              <ButtonLink href="/submit-produce-listing" variant="secondary">Submit Produce Listing</ButtonLink>
+              <ButtonLink href="/submit-buyer-request" variant="light">Post Buyer Request</ButtonLink>
             </div>
           </div>
         </div>
@@ -50,8 +51,9 @@ export default async function MarketplacePage() {
               <ButtonLink href="/farmer-directory" variant="light">Farmer Directory</ButtonLink>
               <ButtonLink href="/supplier-directory" variant="light">Supplier Directory</ButtonLink>
               <ButtonLink href="/buyer-requests" variant="light">Buyer Requests</ButtonLink>
+              <ButtonLink href="/submit-produce-listing" variant="light">Submit Listing</ButtonLink>
+              <ButtonLink href="/submit-buyer-request" variant="light">Submit Request</ButtonLink>
               <ButtonLink href="/market-intelligence" variant="light">Market Intelligence</ButtonLink>
-              <ButtonLink href="/whatsapp-communities" variant="light">WhatsApp Communities</ButtonLink>
             </div>
           </div>
         </div>

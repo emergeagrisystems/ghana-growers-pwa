@@ -26,7 +26,7 @@ export default async function BuyerRequestsPage() {
               Find active buyer requests for produce, livestock, and agricultural supply across Ghana.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/join/buyer">Post Buyer Request</ButtonLink>
+              <ButtonLink href="/submit-buyer-request">Post Buyer Request</ButtonLink>
             </div>
           </div>
         </div>

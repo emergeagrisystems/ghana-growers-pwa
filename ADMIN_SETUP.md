@@ -83,6 +83,7 @@ The following actions require a Supabase Auth admin session:
 - Read WhatsApp lead tracking
 - Read platform analytics
 - Review public registration applications
+- Review public marketplace and buyer request submissions
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
 
@@ -103,6 +104,23 @@ supabase/migrations/008_applications.sql
 ```
 
 The admin dashboard Applications section lets admins mark applications Under Review, Approved, Rejected, or Converted. These status changes are written through a protected server-side API and logged in the admin activity log.
+
+## Public Marketplace Submissions
+
+Public listing and buyer request submissions are stored in:
+
+```text
+listing_submissions
+buyer_request_submissions
+```
+
+Run this migration in Supabase SQL Editor:
+
+```text
+supabase/migrations/009_public_submissions.sql
+```
+
+The admin dashboard Submissions section lets admins view submissions, mark them Under Review, Approve, Reject, or Convert them into live Marketplace Listing / Buyer Request records. These status changes and conversions are written through a protected server-side API and logged in the admin activity log.
 
 ## Activity Log
 
@@ -162,6 +180,7 @@ Protected admin routes:
 src/app/api/admin/activity/route.ts
 src/app/api/admin/analytics/route.ts
 src/app/api/admin/applications/route.ts
+src/app/api/admin/submissions/route.ts
 src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/admin/archive/route.ts
 src/app/api/admin/farmers/route.ts

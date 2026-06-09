@@ -8,7 +8,9 @@ export type AdminEntityType =
   | "Buyer Request"
   | "Farmer Application"
   | "Buyer Application"
-  | "Supplier Application";
+  | "Supplier Application"
+  | "Listing Submission"
+  | "Buyer Request Submission";
 
 export type AdminActivityLog = {
   id: string;

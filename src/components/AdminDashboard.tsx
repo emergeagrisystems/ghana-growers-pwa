@@ -45,6 +45,7 @@ type AdminSectionId =
   | "buyer-requests"
   | "verifications"
   | "applications"
+  | "submissions"
   | "whatsapp-leads"
   | "learn"
   | "market-prices";
@@ -74,7 +75,9 @@ type AdminActivityRecord = {
     | "Buyer Request"
     | "Farmer Application"
     | "Buyer Application"
-    | "Supplier Application";
+    | "Supplier Application"
+    | "Listing Submission"
+    | "Buyer Request Submission";
   entity_id: string | null;
   entity_name: string;
   created_at: string;
@@ -101,6 +104,8 @@ type AnalyticsData = {
 };
 type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type SubmissionKind = "listing" | "buyer-request";
+type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -114,6 +119,38 @@ type ApplicationRecord = {
   products_or_services: string | null;
   notes: string | null;
   status: ApplicationStatus;
+  created_at: string;
+  updated_at: string;
+};
+type ListingSubmissionRecord = {
+  id: string;
+  product_name: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  region: string;
+  district: string;
+  seller_name: string;
+  seller_type: "Farmer" | "Supplier";
+  whatsapp_number: string;
+  description: string;
+  image_url: string | null;
+  status: SubmissionStatus;
+  created_at: string;
+  updated_at: string;
+};
+type BuyerRequestSubmissionRecord = {
+  id: string;
+  product_needed: string;
+  quantity: string;
+  region: string;
+  district: string;
+  buyer_name: string;
+  buyer_type: string;
+  whatsapp_number: string;
+  deadline: string;
+  notes: string | null;
+  status: SubmissionStatus;
   created_at: string;
   updated_at: string;
 };
@@ -265,6 +302,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
     })),
     "whatsapp-leads": [],
     applications: [],
+    submissions: [],
     verifications: verificationRows,
     learn: learnArticles.map((article) => ({
       id: article.slug,
@@ -296,6 +334,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "buyer-requests", label: "Buyer Requests", icon: PackageCheck },
   { id: "verifications", label: "Verification Queue", icon: ShieldCheck },
   { id: "applications", label: "Applications", icon: ClipboardCheck },
+  { id: "submissions", label: "Submissions", icon: ClipboardCheck },
   { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
@@ -401,7 +440,12 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ]
 };
 
-function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: number, applicationCounts: { farmers: number; buyers: number; suppliers: number }) {
+function summarize(
+  rows: Record<AdminSectionId, AdminRow[]>,
+  whatsappLeadCount: number,
+  applicationCounts: { farmers: number; buyers: number; suppliers: number },
+  submissionCounts: { listings: number; buyerRequests: number }
+) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
 
   return [
@@ -414,7 +458,9 @@ function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: 
     { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle },
     { label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout },
     { label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound },
-    { label: "New Supplier Applications", value: applicationCounts.suppliers, icon: Truck }
+    { label: "New Supplier Applications", value: applicationCounts.suppliers, icon: Truck },
+    { label: "New Listing Submissions", value: submissionCounts.listings, icon: Store },
+    { label: "New Buyer Request Submissions", value: submissionCounts.buyerRequests, icon: PackageCheck }
   ];
 }
 
@@ -757,6 +803,10 @@ function canPersistAdminForm(formId: AdminFormId, mode: "add" | "edit") {
 }
 
 function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminSectionId {
+  if (entityType.includes("Submission")) {
+    return "submissions";
+  }
+
   if (entityType.includes("Application")) {
     return "applications";
   }
@@ -777,6 +827,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
 }
 
 function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
+  if (entityType.includes("Submission")) {
+    return ClipboardCheck;
+  }
+
   if (entityType.includes("Application")) {
     return ClipboardCheck;
   }
@@ -1030,6 +1084,15 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   });
   const [applicationTab, setApplicationTab] = useState<ApplicationKind>("farmer");
   const [applicationError, setApplicationError] = useState("");
+  const [submissions, setSubmissions] = useState<{
+    listings: ListingSubmissionRecord[];
+    buyerRequests: BuyerRequestSubmissionRecord[];
+  }>({
+    listings: [],
+    buyerRequests: []
+  });
+  const [submissionTab, setSubmissionTab] = useState<SubmissionKind>("listing");
+  const [submissionError, setSubmissionError] = useState("");
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -1136,12 +1199,48 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     void loadApplications();
   }, [loadApplications]);
 
+  const loadSubmissions = useCallback(async () => {
+    const response = await fetch("/api/admin/submissions").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      listings?: ListingSubmissionRecord[];
+      buyerRequests?: BuyerRequestSubmissionRecord[];
+      error?: string;
+    } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setSubmissionError(result?.error ?? "Public submissions are unavailable.");
+      return;
+    }
+
+    setSubmissions({
+      listings: result?.listings ?? [],
+      buyerRequests: result?.buyerRequests ?? []
+    });
+    setSubmissionError("");
+  }, []);
+
+  useEffect(() => {
+    void loadSubmissions();
+  }, [loadSubmissions]);
+
   const newApplicationCounts = useMemo(() => ({
     farmers: applications.farmer.filter((application) => application.status === "New").length,
     buyers: applications.buyer.filter((application) => application.status === "New").length,
     suppliers: applications.supplier.filter((application) => application.status === "New").length
   }), [applications]);
-  const summaryCards = useMemo(() => summarize(rowsBySection, whatsappLeads.length, newApplicationCounts), [rowsBySection, whatsappLeads.length, newApplicationCounts]);
+  const newSubmissionCounts = useMemo(() => ({
+    listings: submissions.listings.filter((submission) => submission.status === "New").length,
+    buyerRequests: submissions.buyerRequests.filter((submission) => submission.status === "New").length
+  }), [submissions]);
+  const summaryCards = useMemo(
+    () => summarize(rowsBySection, whatsappLeads.length, newApplicationCounts, newSubmissionCounts),
+    [rowsBySection, whatsappLeads.length, newApplicationCounts, newSubmissionCounts]
+  );
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
@@ -1484,6 +1583,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const activeSectionFormId = formIdForSection(activeSection);
   const isAnalyticsSection = activeSection === "analytics";
   const isApplicationsSection = activeSection === "applications";
+  const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
 
   async function updateApplication(application: ApplicationRecord, status: ApplicationStatus) {
@@ -1515,6 +1615,123 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     }));
     setApplicationError("");
     setNotice(`${application.name} application marked ${status}.`);
+    void loadActivity();
+  }
+
+  async function updateSubmissionStatus(
+    submission: ListingSubmissionRecord | BuyerRequestSubmissionRecord,
+    status: Exclude<SubmissionStatus, "New" | "Converted">
+  ) {
+    const entityName = submissionTab === "listing"
+      ? (submission as ListingSubmissionRecord).product_name
+      : (submission as BuyerRequestSubmissionRecord).product_needed;
+    const response = await fetch("/api/admin/submissions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: submissionTab,
+        id: submission.id,
+        status,
+        entityName
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setSubmissionError(result?.error ?? "Could not update submission.");
+      return;
+    }
+
+    if (submissionTab === "listing") {
+      setSubmissions((current) => ({
+        ...current,
+        listings: current.listings.map((item) => (item.id === submission.id ? { ...item, status, updated_at: new Date().toISOString() } : item))
+      }));
+    } else {
+      setSubmissions((current) => ({
+        ...current,
+        buyerRequests: current.buyerRequests.map((item) => (item.id === submission.id ? { ...item, status, updated_at: new Date().toISOString() } : item))
+      }));
+    }
+
+    setSubmissionError("");
+    setNotice(`${entityName} submission marked ${status}.`);
+    void loadActivity();
+  }
+
+  async function convertSubmission(submission: ListingSubmissionRecord | BuyerRequestSubmissionRecord) {
+    const entityName = submissionTab === "listing"
+      ? (submission as ListingSubmissionRecord).product_name
+      : (submission as BuyerRequestSubmissionRecord).product_needed;
+    const response = await fetch("/api/admin/submissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: submissionTab,
+        submission
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setSubmissionError(result?.error ?? "Could not convert submission.");
+      return;
+    }
+
+    if (submissionTab === "listing") {
+      setSubmissions((current) => ({
+        ...current,
+        listings: current.listings.map((item) => (item.id === submission.id ? { ...item, status: "Converted", updated_at: new Date().toISOString() } : item))
+      }));
+      setRowsBySection((current) => ({
+        ...current,
+        marketplace: [
+          {
+            id: submission.id,
+            name: entityName,
+            type: (submission as ListingSubmissionRecord).category,
+            region: (submission as ListingSubmissionRecord).region,
+            status: "Active",
+            dateAdded: new Date().toISOString().slice(0, 10),
+            href: "/marketplace#marketplace-listings"
+          },
+          ...current.marketplace
+        ]
+      }));
+    } else {
+      setSubmissions((current) => ({
+        ...current,
+        buyerRequests: current.buyerRequests.map((item) => (item.id === submission.id ? { ...item, status: "Converted", updated_at: new Date().toISOString() } : item))
+      }));
+      setRowsBySection((current) => ({
+        ...current,
+        "buyer-requests": [
+          {
+            id: submission.id,
+            name: entityName,
+            type: (submission as BuyerRequestSubmissionRecord).buyer_type,
+            region: (submission as BuyerRequestSubmissionRecord).region,
+            status: "Active",
+            dateAdded: new Date().toISOString().slice(0, 10),
+            href: "/buyer-requests"
+          },
+          ...current["buyer-requests"]
+        ]
+      }));
+    }
+
+    setSubmissionError("");
+    setNotice(`${entityName} converted to a live ${submissionTab === "listing" ? "marketplace listing" : "buyer request"}.`);
     void loadActivity();
   }
 
@@ -1705,7 +1922,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-black text-ink">{activitySentence(activity)}</span>
                         <span className="mt-1 block text-sm leading-5 text-ink/60">
-                          {activity.action_type} · {activity.entity_type} · {activity.admin_email} · {relativeActivityTime(activity.created_at)}
+                          {activity.action_type} - {activity.entity_type} - {activity.admin_email} - {relativeActivityTime(activity.created_at)}
                         </span>
                       </span>
                       <span className="hidden shrink-0 text-xs font-black text-ink/45 sm:block">{relativeActivityTime(activity.created_at)}</span>
@@ -1758,7 +1975,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isApplicationsSection && !isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -1945,7 +2162,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                         <div>
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">{application.user_type} Application</p>
                           <h3 className="mt-1 text-2xl font-black text-ink">{application.business_or_farm_name || application.name}</h3>
-                          <p className="mt-2 text-sm font-semibold text-ink/60">{application.name} · {application.email} · {application.whatsapp_number}</p>
+                          <p className="mt-2 text-sm font-semibold text-ink/60">{application.name} - {application.email} - {application.whatsapp_number}</p>
                         </div>
                         <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(application.status)}`}>
                           {application.status}
@@ -1989,6 +2206,167 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   ) : null}
                 </div>
               </div>
+            ) : isSubmissionsSection ? (
+              <div className="grid gap-5 p-5">
+                {submissionError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{submissionError}</div>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["listing", "Listing Submissions", submissions.listings.filter((submission) => submission.status === "New").length],
+                    ["buyer-request", "Buyer Request Submissions", submissions.buyerRequests.filter((submission) => submission.status === "New").length]
+                  ] as Array<[SubmissionKind, string, number]>).map(([kind, label, count]) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => setSubmissionTab(kind)}
+                      className={`rounded-md px-4 py-2.5 text-sm font-black transition ${
+                        submissionTab === kind ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-800 hover:bg-white"
+                      }`}
+                    >
+                      {label} ({count})
+                    </button>
+                  ))}
+                </div>
+
+                {submissionTab === "listing" ? (
+                  <div className="grid gap-4">
+                    {submissions.listings.map((submission) => (
+                      <article key={submission.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        <div className="grid gap-5 lg:grid-cols-[160px_1fr]">
+                          <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                            {submission.image_url ? (
+                              <div
+                                role="img"
+                                aria-label={`${submission.product_name} submitted listing`}
+                                className="h-full w-full bg-cover bg-center"
+                                style={{ backgroundImage: `url(${submission.image_url})` }}
+                              />
+                            ) : (
+                              <div className="grid h-full place-items-center px-4 text-center text-xs font-black uppercase tracking-wide text-ink/35">
+                                No image
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                              <div>
+                                <p className="text-xs font-black uppercase tracking-wide text-earth-700">Listing Submission</p>
+                                <h3 className="mt-1 text-2xl font-black text-ink">{submission.product_name}</h3>
+                                <p className="mt-2 text-sm font-semibold text-ink/60">
+                                  {submission.quantity} {submission.unit} - {submission.category} - {submission.district}, {submission.region}
+                                </p>
+                              </div>
+                              <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(submission.status)}`}>
+                                {submission.status}
+                              </span>
+                            </div>
+                            <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+                              <div className="rounded-md bg-leaf-50 p-3">
+                                <dt className="font-black text-ink">Seller</dt>
+                                <dd className="mt-1 text-ink/65">{submission.seller_name}</dd>
+                              </div>
+                              <div className="rounded-md bg-leaf-50 p-3">
+                                <dt className="font-black text-ink">Seller Type</dt>
+                                <dd className="mt-1 text-ink/65">{submission.seller_type}</dd>
+                              </div>
+                              <div className="rounded-md bg-leaf-50 p-3">
+                                <dt className="font-black text-ink">WhatsApp</dt>
+                                <dd className="mt-1 text-ink/65">{submission.whatsapp_number}</dd>
+                              </div>
+                              <div className="rounded-md bg-leaf-50 p-3">
+                                <dt className="font-black text-ink">Submitted</dt>
+                                <dd className="mt-1 text-ink/65">{new Date(submission.created_at).toLocaleDateString()}</dd>
+                              </div>
+                            </dl>
+                            <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-ink/65 ring-1 ring-leaf-900/10">{submission.description}</p>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                              <button type="button" onClick={() => setNotice(`Viewing listing submission: ${submission.product_name}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                                View
+                              </button>
+                              <button type="button" onClick={() => updateSubmissionStatus(submission, "Under Review")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                                Mark Under Review
+                              </button>
+                              <button type="button" onClick={() => updateSubmissionStatus(submission, "Approved")} className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
+                                Approve
+                              </button>
+                              <button type="button" onClick={() => updateSubmissionStatus(submission, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato">
+                                Reject
+                              </button>
+                              <button type="button" onClick={() => convertSubmission(submission)} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                                Convert to Live Listing
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                    {submissions.listings.length === 0 ? (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No listing submissions in this queue yet.</p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {submissions.buyerRequests.map((submission) => (
+                      <article key={submission.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Request Submission</p>
+                            <h3 className="mt-1 text-2xl font-black text-ink">{submission.product_needed}</h3>
+                            <p className="mt-2 text-sm font-semibold text-ink/60">
+                              {submission.quantity} - {submission.district}, {submission.region} - Deadline {submission.deadline}
+                            </p>
+                          </div>
+                          <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(submission.status)}`}>
+                            {submission.status}
+                          </span>
+                        </div>
+                        <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+                          <div className="rounded-md bg-leaf-50 p-3">
+                            <dt className="font-black text-ink">Buyer</dt>
+                            <dd className="mt-1 text-ink/65">{submission.buyer_name}</dd>
+                          </div>
+                          <div className="rounded-md bg-leaf-50 p-3">
+                            <dt className="font-black text-ink">Buyer Type</dt>
+                            <dd className="mt-1 text-ink/65">{submission.buyer_type}</dd>
+                          </div>
+                          <div className="rounded-md bg-leaf-50 p-3">
+                            <dt className="font-black text-ink">WhatsApp</dt>
+                            <dd className="mt-1 text-ink/65">{submission.whatsapp_number}</dd>
+                          </div>
+                          <div className="rounded-md bg-leaf-50 p-3">
+                            <dt className="font-black text-ink">Submitted</dt>
+                            <dd className="mt-1 text-ink/65">{new Date(submission.created_at).toLocaleDateString()}</dd>
+                          </div>
+                        </dl>
+                        {submission.notes ? (
+                          <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-ink/65 ring-1 ring-leaf-900/10">{submission.notes}</p>
+                        ) : null}
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => setNotice(`Viewing buyer request submission: ${submission.product_needed}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                            View
+                          </button>
+                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Under Review")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                            Mark Under Review
+                          </button>
+                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Approved")} className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
+                            Approve
+                          </button>
+                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato">
+                            Reject
+                          </button>
+                          <button type="button" onClick={() => convertSubmission(submission)} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                            Convert to Live Buyer Request
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                    {submissions.buyerRequests.length === 0 ? (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No buyer request submissions in this queue yet.</p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
             ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">
                 {whatsappLeadError ? (
@@ -2024,7 +2402,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                           <div>
                             <p className="text-sm font-black text-ink">{lead.source_name}</p>
                             <p className="mt-1 text-sm leading-5 text-ink/60">
-                              {sourceLabel(lead.source_type)} · {lead.phone_number} · {lead.page_path}
+                              {sourceLabel(lead.source_type)} - {lead.phone_number} - {lead.page_path}
                             </p>
                           </div>
                           <p className="text-xs font-black text-ink/45">{relativeActivityTime(lead.created_at)}</p>
