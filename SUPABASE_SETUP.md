@@ -56,6 +56,7 @@ The verification workflow migration adds:
 - `verification_status`
 - `verification_date`
 - `verified_by`
+- `verification_notes`
 
 for farmers, suppliers, and buyer requests where appropriate.
 

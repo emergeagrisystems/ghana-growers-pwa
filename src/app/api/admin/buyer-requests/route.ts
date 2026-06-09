@@ -18,7 +18,10 @@ export async function POST(request: Request) {
       status: payload.status,
       whatsapp_number: payload.whatsappNumber,
       notes: payload.notes || null,
-      verification_status: "Pending Verification"
+      verification_status: "Pending",
+      verification_date: null,
+      verified_by: null,
+      verification_notes: null
     })
   });
 }

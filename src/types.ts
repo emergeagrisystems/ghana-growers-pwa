@@ -81,6 +81,7 @@ export type FarmerProfile = {
   verificationStatus: string;
   verificationDate?: string;
   verifiedBy?: string;
+  verificationNotes?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };
@@ -113,6 +114,7 @@ export type SupplierProfile = {
   verificationStatus: string;
   verificationDate?: string;
   verifiedBy?: string;
+  verificationNotes?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };

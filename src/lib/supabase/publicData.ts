@@ -19,6 +19,7 @@ type SupabaseFarmer = {
   verification_status: string | null;
   verification_date: string | null;
   verified_by: string | null;
+  verification_notes: string | null;
   profile_image_url: string | null;
   description: string | null;
   status: string | null;
@@ -41,6 +42,7 @@ type SupabaseSupplier = {
   verification_status: string | null;
   verification_date: string | null;
   verified_by: string | null;
+  verification_notes: string | null;
   logo_url: string | null;
   status: string | null;
   created_at: string;
@@ -84,6 +86,7 @@ type SupabaseBuyerRequest = {
   verification_status: string | null;
   verification_date: string | null;
   verified_by: string | null;
+  verification_notes: string | null;
   created_at: string;
 };
 
@@ -210,6 +213,7 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     verificationStatus,
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
+    verificationNotes: row.verification_notes ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I am interested in contacting ${row.farm_name} in ${row.district}, ${row.region}.`
   };
@@ -237,6 +241,7 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     verificationStatus,
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
+    verificationNotes: row.verification_notes ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I want to contact ${row.company_name} about ${services.slice(0, 2).join(" and ")}.`
   };
@@ -285,6 +290,7 @@ function mapBuyerRequest(row: SupabaseBuyerRequest): BuyerRequest {
     verificationStatus: trustStatus(row.verification_status),
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
+    verificationNotes: row.verification_notes ?? undefined,
     trust: trustProfile(row.verification_status)
   };
 }

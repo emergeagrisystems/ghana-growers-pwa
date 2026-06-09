@@ -20,6 +20,7 @@ export type BuyerRequest = {
   verificationStatus?: string;
   verificationDate?: string;
   verifiedBy?: string;
+  verificationNotes?: string;
   trust?: TrustProfile;
 };
 

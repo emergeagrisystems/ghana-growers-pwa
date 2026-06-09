@@ -24,6 +24,7 @@ export async function PATCH(request: Request) {
     recordId?: string;
     status?: VerificationStatus;
     verifiedBy?: string;
+    verificationNotes?: string;
   };
 
   if (!body.subject || !body.recordId || !body.status || !targetTables[body.subject]) {
@@ -37,7 +38,8 @@ export async function PATCH(request: Request) {
   const update = await updateSupabaseRecord(target.table, filter, {
     verification_status: body.status,
     verification_date: verificationDate,
-    verified_by: verifiedBy
+    verified_by: verifiedBy,
+    verification_notes: body.verificationNotes?.trim() || null
   });
 
   if (update.error) {

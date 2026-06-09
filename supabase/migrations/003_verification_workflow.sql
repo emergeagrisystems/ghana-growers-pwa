@@ -3,15 +3,18 @@
 
 alter table public.farmers
   add column if not exists verification_date date,
-  add column if not exists verified_by text;
+  add column if not exists verified_by text,
+  add column if not exists verification_notes text;
 
 alter table public.suppliers
   add column if not exists verification_date date,
-  add column if not exists verified_by text;
+  add column if not exists verified_by text,
+  add column if not exists verification_notes text;
 
 alter table public.buyer_requests
   add column if not exists verification_date date,
-  add column if not exists verified_by text;
+  add column if not exists verified_by text,
+  add column if not exists verification_notes text;
 
 update public.farmers
 set verification_status = 'Pending'

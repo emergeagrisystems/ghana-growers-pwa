@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       verification_status: payload.verificationStatus,
       verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
       verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
+      verification_notes: null,
       profile_image_url: payload.profileImageUrl || null,
       status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
     })

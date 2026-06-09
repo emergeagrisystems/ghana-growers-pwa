@@ -238,10 +238,8 @@ function RequestDetailsModal({
               <Detail label="Delivery / pickup" value={request.deliveryPreference} />
               <Detail label="Deadline" value={request.deadline} />
               <Detail label="Budget / price range" value={request.budgetRange ?? "Confirm with buyer"} />
-              <Detail label="Buyer verification" value={trust.status} />
-              {request.verificationDate && trust.status === "Verified" ? (
-                <Detail label="Verification date" value={request.verificationDate} />
-              ) : null}
+              {trust.status === "Verified" ? <Detail label="Buyer verification" value="Verified by Ghana Growers" /> : null}
+              {request.verificationDate && trust.status === "Verified" ? <Detail label="Verification date" value={request.verificationDate} /> : null}
             </div>
           </div>
 
