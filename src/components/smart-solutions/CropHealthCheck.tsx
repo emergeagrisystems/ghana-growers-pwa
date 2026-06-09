@@ -41,26 +41,38 @@ function confidenceClass(confidence: number) {
   return "bg-ink/10 text-ink/60";
 }
 
-function severityLevel(value?: string) {
+function confidenceLabel(confidence: number) {
+  if (confidence >= 80) {
+    return `High Confidence (${confidence}%)`;
+  }
+
+  if (confidence >= 60) {
+    return `Moderate Confidence (${confidence}%)`;
+  }
+
+  return `Low Confidence (${confidence}%)`;
+}
+
+function attentionLevel(value?: string) {
   const lower = value?.toLowerCase() ?? "";
 
   if (lower.includes("high") || lower.includes("severe") || lower.includes("likely")) {
-    return "High";
+    return "High Attention Needed";
   }
 
   if (lower.includes("medium") || lower.includes("moderate") || lower.includes("confirm")) {
-    return "Medium";
+    return "Medium Attention Needed";
   }
 
-  return "Low";
+  return "Low Attention Needed";
 }
 
-function severityClass(level: string) {
-  if (level === "High") {
+function attentionClass(level: string) {
+  if (level.startsWith("High")) {
     return "bg-tomato text-white";
   }
 
-  if (level === "Medium") {
+  if (level.startsWith("Medium")) {
     return "bg-earth-500 text-ink";
   }
 
@@ -289,7 +301,7 @@ export function CropHealthCheck() {
                 const symptomPreview = symptoms.slice(0, 3);
                 const actions = splitText(result.recommendedAction);
                 const actionPreview = actions.slice(0, 3);
-                const severity = severityLevel(result.severity);
+                const attention = attentionLevel(result.severity);
                 const source =
                   result.provider === "crop.health"
                     ? "Crop.health API"
@@ -302,23 +314,33 @@ export function CropHealthCheck() {
                 return (
                   <>
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
+                        {previewUrl ? (
+                          <Image
+                            src={previewUrl}
+                            alt="Uploaded crop diagnosis preview"
+                            width={220}
+                            height={180}
+                            className="h-44 w-full rounded-md object-cover sm:h-full"
+                            unoptimized
+                          />
+                        ) : null}
                         <div className="min-w-0">
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis summary</p>
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis</p>
                           <h3 className="mt-2 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
-                        </div>
-                        <div className="flex flex-wrap gap-2 sm:justify-end">
-                          <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
-                            {result.confidence}% confidence
-                          </span>
-                          <span className={`rounded-full px-3 py-1 text-xs font-black ${severityClass(severity)}`}>
-                            {severity} severity
-                          </span>
+                          <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">Farmer Summary</p>
+                          <p className="mt-2 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                              {confidenceLabel(result.confidence)}
+                            </span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${attentionClass(attention)}`}>
+                              {attention}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
                         </div>
                       </div>
-
-                      <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">{summary}</p>
-                      <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
                     </div>
 
                     <div className="rounded-md border border-leaf-900/10 bg-white p-4">
@@ -343,7 +365,7 @@ export function CropHealthCheck() {
                             onClick={() => setShowMoreSymptoms((value) => !value)}
                             className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
                           >
-                            {showMoreSymptoms ? "Hide symptoms" : "Read more symptoms"}
+                            {showMoreSymptoms ? "Hide symptoms" : "Read More Symptoms"}
                           </button>
                           {showMoreSymptoms ? (
                             <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
@@ -371,7 +393,7 @@ export function CropHealthCheck() {
                             onClick={() => setShowMoreActions((value) => !value)}
                             className="text-sm font-black text-leaf-700 underline-offset-4 hover:underline"
                           >
-                            {showMoreActions ? "Hide actions" : "Read more actions"}
+                            {showMoreActions ? "Hide actions" : "Read More Actions"}
                           </button>
                           {showMoreActions ? (
                             <p className="mt-3 rounded-md bg-leaf-50 p-3 leading-6 text-ink/70">
@@ -432,7 +454,7 @@ export function CropHealthCheck() {
         {reports.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {reports.map((report) => {
-              const severity = severityLevel(report.severity ?? undefined);
+              const attention = attentionLevel(report.severity ?? undefined);
 
               return (
                 <article key={report.id} className="grid gap-3 rounded-md bg-white p-3 shadow-sm sm:grid-cols-[96px_1fr]">
@@ -445,10 +467,10 @@ export function CropHealthCheck() {
                   <div>
                     <div className="flex flex-wrap gap-2">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-black ${confidenceClass(report.confidence)}`}>
-                        {report.confidence}% confidence
+                        {confidenceLabel(report.confidence)}
                       </span>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-black ${severityClass(severity)}`}>
-                        {severity}
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-black ${attentionClass(attention)}`}>
+                        {attention}
                       </span>
                     </div>
                     <h4 className="mt-2 font-black leading-tight text-ink">{report.diagnosis}</h4>
@@ -493,11 +515,11 @@ export function CropHealthCheck() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-md bg-leaf-50 p-3">
                 <p className="text-xs font-black uppercase tracking-wide text-ink/45">Confidence</p>
-                <p className="mt-1 font-black text-ink">{selectedReport.confidence}%</p>
+                <p className="mt-1 font-black text-ink">{confidenceLabel(selectedReport.confidence)}</p>
               </div>
               <div className="rounded-md bg-leaf-50 p-3">
-                <p className="text-xs font-black uppercase tracking-wide text-ink/45">Severity</p>
-                <p className="mt-1 font-black text-ink">{severityLevel(selectedReport.severity ?? undefined)}</p>
+                <p className="text-xs font-black uppercase tracking-wide text-ink/45">Attention Needed</p>
+                <p className="mt-1 font-black text-ink">{attentionLevel(selectedReport.severity ?? undefined)}</p>
               </div>
             </div>
 
