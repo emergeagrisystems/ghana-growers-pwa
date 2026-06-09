@@ -67,6 +67,12 @@ WhatsApp lead tracking uses this migration:
 supabase/migrations/007_whatsapp_leads.sql
 ```
 
+Public registration applications use this migration:
+
+```text
+supabase/migrations/008_applications.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -78,6 +84,7 @@ It creates these tables:
 - `crop_health_reports` when the crop health reports migration is run
 - `admin_activity_log` when the admin activity log migration is run
 - `whatsapp_leads` when the WhatsApp lead tracking migration is run
+- `farmer_applications`, `buyer_applications`, and `supplier_applications` when the applications migration is run
 
 The verification workflow migration adds:
 
@@ -104,7 +111,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 10. Repeat for `supabase/migrations/005_crop_health_reports.sql` to create saved crop health reports and the `crop-health-reports` Storage bucket.
 11. Repeat for `supabase/migrations/006_admin_activity_log.sql` to create the admin activity log table.
 12. Repeat for `supabase/migrations/007_whatsapp_leads.sql` to create the WhatsApp lead tracking table.
-13. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
+13. Repeat for `supabase/migrations/008_applications.sql` to create public registration application queues.
+14. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -140,9 +148,11 @@ src/app/api/admin/verifications/route.ts
 src/app/api/admin/uploads/route.ts
 src/app/api/admin/activity/route.ts
 src/app/api/admin/analytics/route.ts
+src/app/api/admin/applications/route.ts
 src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/crop-health-reports/route.ts
 src/app/api/whatsapp-leads/route.ts
+src/app/api/waitlist/route.ts
 ```
 
 These routes:
@@ -158,6 +168,7 @@ These routes:
 - Read Recent Activity from `admin_activity_log` after validating the admin session.
 - Record WhatsApp contact clicks in `whatsapp_leads` without exposing the service role key.
 - Read admin analytics from Supabase tables first, while the dashboard keeps local data as fallback when tables are empty.
+- Save public farmer, buyer, supplier, and waiting list submissions into application tables for admin review.
 
 ## Recommended Migration Path
 

@@ -1,7 +1,14 @@
 import { insertSupabaseRecord, selectSupabaseRecords } from "@/lib/supabase/admin";
 
-export type AdminActionType = "Create" | "Edit" | "Verify" | "Archive";
-export type AdminEntityType = "Farmer" | "Supplier" | "Marketplace Listing" | "Buyer Request";
+export type AdminActionType = "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert";
+export type AdminEntityType =
+  | "Farmer"
+  | "Supplier"
+  | "Marketplace Listing"
+  | "Buyer Request"
+  | "Farmer Application"
+  | "Buyer Application"
+  | "Supplier Application";
 
 export type AdminActivityLog = {
   id: string;

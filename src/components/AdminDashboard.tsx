@@ -44,6 +44,7 @@ type AdminSectionId =
   | "marketplace"
   | "buyer-requests"
   | "verifications"
+  | "applications"
   | "whatsapp-leads"
   | "learn"
   | "market-prices";
@@ -65,8 +66,15 @@ type AdminRow = {
 type AdminActivityRecord = {
   id: string;
   admin_email: string;
-  action_type: "Create" | "Edit" | "Verify" | "Archive";
-  entity_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Buyer Request";
+  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert";
+  entity_type:
+    | "Farmer"
+    | "Supplier"
+    | "Marketplace Listing"
+    | "Buyer Request"
+    | "Farmer Application"
+    | "Buyer Application"
+    | "Supplier Application";
   entity_id: string | null;
   entity_name: string;
   created_at: string;
@@ -90,6 +98,24 @@ type AnalyticsData = {
   whatsappLeads: AnalyticsRecord[];
   cropHealthReports: AnalyticsRecord[];
   marketPrices: AnalyticsRecord[];
+};
+type ApplicationKind = "farmer" | "buyer" | "supplier";
+type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type ApplicationRecord = {
+  id: string;
+  name: string;
+  business_or_farm_name: string | null;
+  phone: string;
+  whatsapp_number: string;
+  email: string;
+  region: string | null;
+  district: string | null;
+  user_type: "Farmer" | "Buyer" | "Supplier";
+  products_or_services: string | null;
+  notes: string | null;
+  status: ApplicationStatus;
+  created_at: string;
+  updated_at: string;
 };
 type FormField = {
   name: string;
@@ -127,6 +153,22 @@ function statusFromTrust(status?: string): AdminStatus {
   }
 
   return "Pending";
+}
+
+function applicationStatusClass(status: ApplicationStatus) {
+  if (status === "New") {
+    return statusStyles.Pending;
+  }
+
+  if (status === "Under Review") {
+    return statusStyles["Under Review"];
+  }
+
+  if (status === "Approved" || status === "Converted") {
+    return statusStyles.Active;
+  }
+
+  return statusStyles.Rejected;
 }
 
 function sectionRows(): Record<AdminSectionId, AdminRow[]> {
@@ -222,6 +264,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       verificationTarget: { subject: "buyer" as const, recordId: request.id }
     })),
     "whatsapp-leads": [],
+    applications: [],
     verifications: verificationRows,
     learn: learnArticles.map((article) => ({
       id: article.slug,
@@ -252,6 +295,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "marketplace", label: "Marketplace Listings", icon: Store },
   { id: "buyer-requests", label: "Buyer Requests", icon: PackageCheck },
   { id: "verifications", label: "Verification Queue", icon: ShieldCheck },
+  { id: "applications", label: "Applications", icon: ClipboardCheck },
   { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
@@ -357,7 +401,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ]
 };
 
-function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: number) {
+function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: number, applicationCounts: { farmers: number; buyers: number; suppliers: number }) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
 
   return [
@@ -367,7 +411,10 @@ function summarize(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCount: 
     { label: "Marketplace Listings", value: rows.marketplace.length, icon: Store },
     { label: "Buyer Requests", value: rows["buyer-requests"].length, icon: PackageCheck },
     { label: "Pending Verifications", value: pendingVerifications, icon: CircleDashed },
-    { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle }
+    { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle },
+    { label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout },
+    { label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound },
+    { label: "New Supplier Applications", value: applicationCounts.suppliers, icon: Truck }
   ];
 }
 
@@ -710,6 +757,10 @@ function canPersistAdminForm(formId: AdminFormId, mode: "add" | "edit") {
 }
 
 function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminSectionId {
+  if (entityType.includes("Application")) {
+    return "applications";
+  }
+
   if (entityType === "Farmer") {
     return "farmers";
   }
@@ -726,6 +777,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
 }
 
 function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
+  if (entityType.includes("Application")) {
+    return ClipboardCheck;
+  }
+
   if (entityType === "Farmer") {
     return Sprout;
   }
@@ -760,7 +815,11 @@ function activitySentence(activity: AdminActivityRecord) {
     Create: "created",
     Edit: "edited",
     Verify: "verified",
-    Archive: "archived"
+    Archive: "archived",
+    Review: "reviewed",
+    Approve: "approved",
+    Reject: "rejected",
+    Convert: "converted"
   };
   const verb = verbs[activity.action_type];
   const entity = activity.entity_type.toLowerCase();
@@ -964,6 +1023,13 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
+  const [applications, setApplications] = useState<Record<ApplicationKind, ApplicationRecord[]>>({
+    farmer: [],
+    buyer: [],
+    supplier: []
+  });
+  const [applicationTab, setApplicationTab] = useState<ApplicationKind>("farmer");
+  const [applicationError, setApplicationError] = useState("");
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -1039,7 +1105,43 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     void loadAnalytics();
   }, [loadAnalytics]);
 
-  const summaryCards = useMemo(() => summarize(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
+  const loadApplications = useCallback(async () => {
+    const response = await fetch("/api/admin/applications").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      farmers?: ApplicationRecord[];
+      buyers?: ApplicationRecord[];
+      suppliers?: ApplicationRecord[];
+      error?: string;
+    } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setApplicationError(result?.error ?? "Applications are unavailable.");
+      return;
+    }
+
+    setApplications({
+      farmer: result?.farmers ?? [],
+      buyer: result?.buyers ?? [],
+      supplier: result?.suppliers ?? []
+    });
+    setApplicationError("");
+  }, []);
+
+  useEffect(() => {
+    void loadApplications();
+  }, [loadApplications]);
+
+  const newApplicationCounts = useMemo(() => ({
+    farmers: applications.farmer.filter((application) => application.status === "New").length,
+    buyers: applications.buyer.filter((application) => application.status === "New").length,
+    suppliers: applications.supplier.filter((application) => application.status === "New").length
+  }), [applications]);
+  const summaryCards = useMemo(() => summarize(rowsBySection, whatsappLeads.length, newApplicationCounts), [rowsBySection, whatsappLeads.length, newApplicationCounts]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
@@ -1381,7 +1483,40 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
   const isAnalyticsSection = activeSection === "analytics";
+  const isApplicationsSection = activeSection === "applications";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
+
+  async function updateApplication(application: ApplicationRecord, status: ApplicationStatus) {
+    const response = await fetch("/api/admin/applications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: applicationTab,
+        id: application.id,
+        status,
+        entityName: application.business_or_farm_name || application.name
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setApplicationError(result?.error ?? "Could not update application.");
+      return;
+    }
+
+    setApplications((current) => ({
+      ...current,
+      [applicationTab]: current[applicationTab].map((item) => (item.id === application.id ? { ...item, status, updated_at: new Date().toISOString() } : item))
+    }));
+    setApplicationError("");
+    setNotice(`${application.name} application marked ${status}.`);
+    void loadActivity();
+  }
 
   async function logoutAdmin() {
     await fetch("/api/admin/auth/logout", { method: "POST" }).catch(() => null);
@@ -1623,7 +1758,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isApplicationsSection && !isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -1779,6 +1914,80 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                     </div>
                   </div>
                 </section>
+              </div>
+            ) : isApplicationsSection ? (
+              <div className="grid gap-5 p-5">
+                {applicationError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{applicationError}</div>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    ["farmer", "Farmer Applications"],
+                    ["buyer", "Buyer Applications"],
+                    ["supplier", "Supplier Applications"]
+                  ] as Array<[ApplicationKind, string]>).map(([kind, label]) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => setApplicationTab(kind)}
+                      className={`rounded-md px-4 py-2.5 text-sm font-black transition ${
+                        applicationTab === kind ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-800 hover:bg-white"
+                      }`}
+                    >
+                      {label} ({applications[kind].filter((application) => application.status === "New").length})
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-4">
+                  {applications[applicationTab].map((application) => (
+                    <article key={application.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{application.user_type} Application</p>
+                          <h3 className="mt-1 text-2xl font-black text-ink">{application.business_or_farm_name || application.name}</h3>
+                          <p className="mt-2 text-sm font-semibold text-ink/60">{application.name} · {application.email} · {application.whatsapp_number}</p>
+                        </div>
+                        <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(application.status)}`}>
+                          {application.status}
+                        </span>
+                      </div>
+                      <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <dt className="font-black text-ink">Phone</dt>
+                          <dd className="mt-1 text-ink/65">{application.phone}</dd>
+                        </div>
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <dt className="font-black text-ink">Location</dt>
+                          <dd className="mt-1 text-ink/65">{[application.district, application.region].filter(Boolean).join(", ") || "Not provided"}</dd>
+                        </div>
+                        <div className="rounded-md bg-leaf-50 p-3 md:col-span-2">
+                          <dt className="font-black text-ink">Products / Services</dt>
+                          <dd className="mt-1 text-ink/65">{application.products_or_services || "Not provided"}</dd>
+                        </div>
+                      </dl>
+                      {application.notes ? (
+                        <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-ink/65 ring-1 ring-leaf-900/10">{application.notes}</p>
+                      ) : null}
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => updateApplication(application, "Under Review")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                          Mark Under Review
+                        </button>
+                        <button type="button" onClick={() => updateApplication(application, "Approved")} className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
+                          Approve
+                        </button>
+                        <button type="button" onClick={() => updateApplication(application, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato">
+                          Reject
+                        </button>
+                        <button type="button" onClick={() => updateApplication(application, "Converted")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                          Convert
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                  {applications[applicationTab].length === 0 ? (
+                    <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No applications in this queue yet.</p>
+                  ) : null}
+                </div>
               </div>
             ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">

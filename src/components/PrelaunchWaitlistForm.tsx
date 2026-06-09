@@ -1,20 +1,46 @@
 "use client";
 
 import { CheckCircle2, Send } from "lucide-react";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 
 const userTypes = ["Farmer", "Buyer", "Supplier"];
 
 export function PrelaunchWaitlistForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitted(false);
+    setError("");
+    setIsSubmitting(true);
+
+    const formData = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(formData.entries());
+
+    const response = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+
+    setIsSubmitting(false);
+
+    if (!response?.ok || !result?.ok) {
+      setError(result?.error ?? "We could not save your waiting list request. Please try again.");
+      return;
+    }
+
+    event.currentTarget.reset();
+    setSubmitted(true);
+  }
 
   return (
     <form
       className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setSubmitted(true);
-      }}
+      onSubmit={handleSubmit}
     >
       <div>
         <p className="text-sm font-black uppercase text-earth-700">Join Waiting List</p>
@@ -57,10 +83,11 @@ export function PrelaunchWaitlistForm() {
 
       <button
         type="submit"
+        disabled={isSubmitting}
         className="focus-ring mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-700"
       >
         <Send size={17} aria-hidden="true" />
-        Join Waiting List
+        {isSubmitting ? "Submitting..." : "Join Waiting List"}
       </button>
 
       {submitted ? (
@@ -69,6 +96,7 @@ export function PrelaunchWaitlistForm() {
           Thank you. Your interest has been noted for launch follow-up.
         </p>
       ) : null}
+      {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-bold text-tomato">{error}</p> : null}
     </form>
   );
 }
