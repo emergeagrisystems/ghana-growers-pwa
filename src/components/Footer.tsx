@@ -37,6 +37,7 @@ const footerGroups = [
       { title: "Market Prices", href: "/smart-solutions#market-prices" },
       { title: "Weather", href: "/smart-solutions#weather" },
       { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
+      { title: "My Crop Health Reports", href: "/smart-solutions#crop-health-reports" },
       { title: "Farm Assistant", href: "/smart-solutions#assistant" },
       { title: "Learn", href: "/learn" }
     ]

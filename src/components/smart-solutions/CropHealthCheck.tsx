@@ -1,12 +1,24 @@
 "use client";
 
-import { ImagePlus, ScanSearch } from "lucide-react";
+import { ImagePlus, Save, ScanSearch } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { CropHealthResult } from "@/lib/cropHealth";
 
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxSize = 5 * 1024 * 1024;
+const sessionStorageKey = "ghana-growers-crop-health-session";
+
+type SavedCropHealthReport = {
+  id: string;
+  image_url: string;
+  diagnosis_result: CropHealthResult;
+  possible_issue: string | null;
+  confidence: number;
+  severity: string | null;
+  provider: string | null;
+  report_date: string;
+};
 
 function splitText(value?: string) {
   return (value ?? "")
@@ -61,6 +73,36 @@ export function CropHealthCheck() {
   const [selectedFile, setSelectedFile] = useState<File | undefined>();
   const [errorMessage, setErrorMessage] = useState("");
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [sessionId, setSessionId] = useState("");
+  const [reports, setReports] = useState<SavedCropHealthReport[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  useEffect(() => {
+    const existing = window.localStorage.getItem(sessionStorageKey);
+    const nextSessionId = existing || crypto.randomUUID();
+
+    if (!existing) {
+      window.localStorage.setItem(sessionStorageKey, nextSessionId);
+    }
+
+    setSessionId(nextSessionId);
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    fetch(`/api/crop-health-reports?sessionId=${encodeURIComponent(sessionId)}`)
+      .then((response) => response.json())
+      .then((payload) => {
+        if (Array.isArray(payload.reports)) {
+          setReports(payload.reports);
+        }
+      })
+      .catch(() => undefined);
+  }, [sessionId]);
 
   useEffect(() => {
     return () => {
@@ -101,12 +143,42 @@ export function CropHealthCheck() {
       }
 
       setResult(payload as CropHealthResult);
+      setSaveMessage("");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Crop health request failed";
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function saveDiagnosis() {
+    if (!result || !selectedFile || !sessionId) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage("");
+
+    const formData = new FormData();
+    formData.append("photo", selectedFile);
+    formData.append("sessionId", sessionId);
+    formData.append("diagnosis", JSON.stringify(result));
+
+    const response = await fetch("/api/crop-health-reports", {
+      method: "POST",
+      body: formData
+    }).catch(() => null);
+    const payload = (await response?.json().catch(() => null)) as { report?: SavedCropHealthReport; error?: string } | null;
+    setIsSaving(false);
+
+    if (!response?.ok || !payload?.report) {
+      setSaveMessage(payload?.error ?? "Could not save this diagnosis. Check Supabase setup and try again.");
+      return;
+    }
+
+    setReports((current) => [payload.report as SavedCropHealthReport, ...current].slice(0, 12));
+    setSaveMessage("Diagnosis saved to My Crop Health Reports.");
   }
 
   return (
@@ -294,6 +366,22 @@ export function CropHealthCheck() {
               <p className="rounded-md bg-white p-3 font-bold text-tomato">
                 {result.disclaimer}
               </p>
+              <div className="rounded-md bg-white p-3">
+                <button
+                  type="button"
+                  onClick={saveDiagnosis}
+                  disabled={isSaving || !sessionId}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25 sm:w-auto"
+                >
+                  <Save size={16} aria-hidden="true" />
+                  {isSaving ? "Saving Diagnosis..." : "Save Diagnosis"}
+                </button>
+                {saveMessage ? (
+                  <p className={`mt-3 text-sm font-bold ${saveMessage.includes("saved") ? "text-leaf-700" : "text-tomato"}`}>
+                    {saveMessage}
+                  </p>
+                ) : null}
+              </div>
             </div>
           ) : isLoading ? (
             <p className="mt-5 rounded-md bg-white p-3 text-sm font-bold text-leaf-700">
@@ -309,6 +397,54 @@ export function CropHealthCheck() {
             </p>
           )}
         </div>
+      </div>
+
+      <div id="crop-health-reports" className="mt-8 scroll-mt-28 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-black uppercase text-earth-700">Saved diagnoses</p>
+            <h3 className="mt-1 text-xl font-black text-ink">My Crop Health Reports</h3>
+          </div>
+          <p className="text-sm font-bold text-ink/55">{reports.length} saved</p>
+        </div>
+
+        {reports.length > 0 ? (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {reports.map((report) => {
+              const reportResult = report.diagnosis_result;
+              const severity = severityLevel(report.severity ?? reportResult.severity);
+
+              return (
+                <article key={report.id} className="grid gap-3 rounded-md bg-white p-3 shadow-sm sm:grid-cols-[96px_1fr]">
+                  <div
+                    role="img"
+                    aria-label={`${report.possible_issue ?? "Crop health"} report image`}
+                    className="h-24 w-full rounded-md bg-leaf-50 bg-cover bg-center sm:w-24"
+                    style={{ backgroundImage: `url(${report.image_url})` }}
+                  />
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-black ${confidenceClass(report.confidence)}`}>
+                        {report.confidence}% confidence
+                      </span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-black ${severityClass(severity)}`}>
+                        {severity}
+                      </span>
+                    </div>
+                    <h4 className="mt-2 font-black leading-tight text-ink">{report.possible_issue ?? reportResult.possibleIssue}</h4>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/45">
+                      {new Date(report.report_date).toLocaleDateString()} · {report.provider === "crop.health" ? "Crop.health API" : "Mock fallback"}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/60">
+            Saved diagnoses will appear here after you upload a crop photo, get a result, and select Save Diagnosis.
+          </p>
+        )}
       </div>
     </section>
   );

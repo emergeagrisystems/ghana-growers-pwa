@@ -48,6 +48,12 @@ Supabase Storage buckets for admin image uploads use this migration:
 supabase/migrations/004_storage_buckets.sql
 ```
 
+Saved Crop Health Check reports use this migration:
+
+```text
+supabase/migrations/005_crop_health_reports.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -56,6 +62,7 @@ It creates these tables:
 - `buyer_requests`
 - `market_prices`
 - `learn_articles` when the follow-up migration is run
+- `crop_health_reports` when the crop health reports migration is run
 
 The verification workflow migration adds:
 
@@ -79,7 +86,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 7. Repeat for `supabase/migrations/002_learn_articles.sql` if Learn Article persistence is needed.
 8. Repeat for `supabase/migrations/003_verification_workflow.sql` to enable the verification queue workflow.
 9. Repeat for `supabase/migrations/004_storage_buckets.sql` to create the `farmers`, `suppliers`, and `marketplace` Storage buckets.
-10. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
+10. Repeat for `supabase/migrations/005_crop_health_reports.sql` to create saved crop health reports and the `crop-health-reports` Storage bucket.
+11. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -109,6 +117,7 @@ src/app/api/admin/market-prices/route.ts
 src/app/api/admin/learn-articles/route.ts
 src/app/api/admin/verifications/route.ts
 src/app/api/admin/uploads/route.ts
+src/app/api/crop-health-reports/route.ts
 ```
 
 These routes:
@@ -120,6 +129,7 @@ These routes:
 - Validate required fields before inserting.
 - Return friendly errors if Supabase is not configured or the insert fails.
 - Upload admin images to Supabase Storage server-side and return public image URLs.
+- Save Crop Health Check diagnosis reports with uploaded image URLs, diagnosis JSON, date, and confidence.
 
 ## Recommended Migration Path
 
