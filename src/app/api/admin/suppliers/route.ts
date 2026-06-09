@@ -1,4 +1,4 @@
-import { createRecord, slugify, splitList } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, splitList } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,23 +8,30 @@ export async function POST(request: Request) {
     request,
     table: "suppliers",
     requiredFields: ["companyName", "contactPerson", "region", "district", "category", "productsServices", "whatsappNumber", "verificationStatus"],
-    mapPayload: (payload) => ({
-      slug: slugify(payload.companyName),
-      company_name: payload.companyName,
-      contact_person: payload.contactPerson,
-      region: payload.region,
-      district: payload.district,
-      category: payload.category,
-      products_services: splitList(payload.productsServices),
-      whatsapp_number: payload.whatsappNumber,
-      phone: payload.whatsappNumber,
-      verification_status: payload.verificationStatus,
-      verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
-      verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
-      verification_notes: null,
-      logo_url: payload.logoUrl || null,
-      website: payload.website || null,
-      status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
-    })
+    mapPayload: async (payload) => {
+      const uniqueSlug = await generateUniqueSlug("suppliers", payload.companyName);
+
+      return {
+        slug: uniqueSlug.slug,
+        __adminMessage: uniqueSlug.wasChanged
+          ? "A record with this URL already exists. A unique URL has been generated automatically."
+          : undefined,
+        company_name: payload.companyName,
+        contact_person: payload.contactPerson,
+        region: payload.region,
+        district: payload.district,
+        category: payload.category,
+        products_services: splitList(payload.productsServices),
+        whatsapp_number: payload.whatsappNumber,
+        phone: payload.whatsappNumber,
+        verification_status: payload.verificationStatus,
+        verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
+        verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
+        verification_notes: null,
+        logo_url: payload.logoUrl || null,
+        website: payload.website || null,
+        status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
+      };
+    }
   });
 }

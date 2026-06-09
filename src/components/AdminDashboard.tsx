@@ -850,7 +850,7 @@ export function AdminDashboard() {
       }).catch(() => null);
       setIsSubmittingForm(false);
 
-      const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+      const result = (await response?.json().catch(() => null)) as { error?: string; message?: string } | null;
 
       if (!response?.ok) {
         if (response?.status === 401) {
@@ -865,8 +865,12 @@ export function AdminDashboard() {
       }
 
       setFormError("");
-      setFormSuccess(`${recordLabel} saved to Supabase successfully. Uploaded images will display on public pages when the record is shown.`);
-      setNotice(`${recordLabel} created in Supabase. Local JSON fallback remains available if Supabase is empty or unavailable.`);
+      setFormSuccess(
+        `${recordLabel} saved to Supabase successfully. ${result?.message ? `${result.message} ` : ""}Uploaded images will display on public pages when the record is shown.`
+      );
+      setNotice(
+        `${recordLabel} created in Supabase. ${result?.message ? `${result.message} ` : ""}Local JSON fallback remains available if Supabase is empty or unavailable.`
+      );
       return;
     }
 

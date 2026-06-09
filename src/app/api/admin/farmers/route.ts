@@ -1,4 +1,4 @@
-import { createRecord, slugify, splitList } from "@/app/api/admin/records";
+import { createRecord, generateUniqueSlug, splitList } from "@/app/api/admin/records";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,22 +8,29 @@ export async function POST(request: Request) {
     request,
     table: "farmers",
     requiredFields: ["farmerName", "farmName", "region", "district", "farmType", "products", "farmSize", "whatsappNumber", "verificationStatus"],
-    mapPayload: (payload) => ({
-      slug: slugify(payload.farmName),
-      farmer_name: payload.farmerName,
-      farm_name: payload.farmName,
-      region: payload.region,
-      district: payload.district,
-      farm_type: payload.farmType,
-      products: splitList(payload.products),
-      farm_size: payload.farmSize,
-      whatsapp_number: payload.whatsappNumber,
-      verification_status: payload.verificationStatus,
-      verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
-      verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
-      verification_notes: null,
-      profile_image_url: payload.profileImageUrl || null,
-      status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
-    })
+    mapPayload: async (payload) => {
+      const uniqueSlug = await generateUniqueSlug("farmers", payload.farmerName);
+
+      return {
+        slug: uniqueSlug.slug,
+        __adminMessage: uniqueSlug.wasChanged
+          ? "A record with this URL already exists. A unique URL has been generated automatically."
+          : undefined,
+        farmer_name: payload.farmerName,
+        farm_name: payload.farmName,
+        region: payload.region,
+        district: payload.district,
+        farm_type: payload.farmType,
+        products: splitList(payload.products),
+        farm_size: payload.farmSize,
+        whatsapp_number: payload.whatsappNumber,
+        verification_status: payload.verificationStatus,
+        verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
+        verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
+        verification_notes: null,
+        profile_image_url: payload.profileImageUrl || null,
+        status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
+      };
+    }
   });
 }
