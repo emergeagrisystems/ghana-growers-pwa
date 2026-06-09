@@ -23,21 +23,22 @@ const footerGroups = [
     ]
   },
   {
-    title: "Marketplace",
+    title: "Directory",
     links: [
-      { title: "Farmer Directory", href: "/farmer-directory" },
-      { title: "Supplier Directory", href: "/supplier-directory" },
+      { title: "Farmers", href: "/farmer-directory" },
+      { title: "Suppliers", href: "/supplier-directory" },
+      { title: "Marketplace Listings", href: "/marketplace" },
       { title: "Buyer Requests", href: "/buyer-requests" },
-      { title: "Market Intelligence", href: "/market-intelligence" }
     ]
   },
   {
-    title: "Farmer Tools",
+    title: "Digital Farm",
     links: [
-      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" },
+      { title: "Market Prices", href: "/smart-solutions#market-prices" },
+      { title: "Weather", href: "/smart-solutions#weather" },
       { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
-      { title: "Weather Tools", href: "/smart-solutions#weather" },
-      { title: "Market Prices", href: "/market-intelligence" }
+      { title: "Farm Assistant", href: "/smart-solutions#assistant" },
+      { title: "Learn", href: "/learn" }
     ]
   }
 ];

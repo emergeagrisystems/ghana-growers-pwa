@@ -47,10 +47,10 @@ export function Header() {
 
         <div className="hidden items-center gap-2 lg:flex">
           <Link
-            href="/join"
+            href="/marketplace"
             className="focus-ring rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-700"
           >
-            Join Now
+            Shop Now
           </Link>
         </div>
 
@@ -93,11 +93,11 @@ export function Header() {
               </div>
             ))}
             <Link
-              href="/join"
+              href="/marketplace"
               onClick={() => setOpen(false)}
               className="focus-ring mt-2 block rounded-md bg-leaf-600 px-3 py-3 text-center font-black text-white hover:bg-leaf-700"
             >
-              Join Now
+              Shop Now
             </Link>
           </div>
         </div>

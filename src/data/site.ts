@@ -16,17 +16,26 @@ export const WHATSAPP_NUMBER = "233000000000";
 export const navigation: NavigationItem[] = [
   { title: "Home", href: "/" },
   {
-    title: "Marketplace",
+    title: "Directory",
     href: "/marketplace",
     children: [
-      { title: "Farmer Directory", href: "/farmer-directory" },
-      { title: "Supplier Directory", href: "/supplier-directory" },
-      { title: "Buyer Requests", href: "/buyer-requests" },
-      { title: "Market Intelligence", href: "/market-intelligence" }
+      { title: "Farmers", href: "/farmer-directory" },
+      { title: "Suppliers", href: "/supplier-directory" },
+      { title: "Marketplace Listings", href: "/marketplace" },
+      { title: "Buyer Requests", href: "/buyer-requests" }
     ]
   },
-  { title: "Farmer Tools", href: "/smart-solutions" },
-  { title: "Learn", href: "/learn" },
+  {
+    title: "Digital Farm",
+    href: "/smart-solutions",
+    children: [
+      { title: "Market Prices", href: "/smart-solutions#market-prices" },
+      { title: "Weather", href: "/smart-solutions#weather" },
+      { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
+      { title: "Farm Assistant", href: "/smart-solutions#assistant" },
+      { title: "Learn", href: "/learn" }
+    ]
+  },
   {
     title: "About",
     href: "/about",
