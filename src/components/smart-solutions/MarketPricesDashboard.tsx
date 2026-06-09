@@ -2,7 +2,11 @@
 
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { marketPriceMeta, marketPrices } from "@/data/marketPrices";
+import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
+
+type MarketPricesDashboardProps = {
+  prices?: MarketPrice[];
+};
 
 function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
@@ -20,16 +24,16 @@ function TrendIcon({ trend }: { trend: string }) {
   return <Minus className="text-earth-700" size={18} aria-hidden="true" />;
 }
 
-export function MarketPricesDashboard() {
+export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketPricesDashboardProps) {
   const [crop, setCrop] = useState("All");
   const [region, setRegion] = useState("All");
   const [market, setMarket] = useState("All");
 
-  const crops = useMemo(() => unique(marketPrices.map((item) => item.crop)), []);
-  const regions = useMemo(() => unique(marketPrices.map((item) => item.region)), []);
-  const markets = useMemo(() => unique(marketPrices.map((item) => item.market)), []);
+  const crops = useMemo(() => unique(prices.map((item) => item.crop)), [prices]);
+  const regions = useMemo(() => unique(prices.map((item) => item.region)), [prices]);
+  const markets = useMemo(() => unique(prices.map((item) => item.market)), [prices]);
 
-  const filtered = marketPrices.filter((item) => {
+  const filtered = prices.filter((item) => {
     return (
       (crop === "All" || item.crop === crop) &&
       (region === "All" || item.region === region) &&

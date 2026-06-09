@@ -14,9 +14,10 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
-import { products as marketplaceProducts } from "@/data/products";
+import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
+import { products as fallbackMarketplaceProducts } from "@/data/products";
 import { normalizeTrust } from "@/components/TrustIndicators";
+import type { Product } from "@/types";
 
 type FilterConfig = {
   label: string;
@@ -34,7 +35,12 @@ function buyerWhatsAppUrl(request: BuyerRequest) {
   return `https://wa.me/${request.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-function relatedProductsForRequest(request: BuyerRequest) {
+type BuyerRequestsBoardProps = {
+  requests?: BuyerRequest[];
+  marketplaceProducts?: Product[];
+};
+
+function relatedProductsForRequest(request: BuyerRequest, marketplaceProducts: Product[]) {
   const requestProduct = request.productName.toLowerCase();
 
   return marketplaceProducts
@@ -198,13 +204,15 @@ function RequestCard({
 
 function RequestDetailsModal({
   request,
+  marketplaceProducts,
   onClose
 }: {
   request: BuyerRequest;
+  marketplaceProducts: Product[];
   onClose: () => void;
 }) {
   const trust = normalizeTrust(request.trust);
-  const relatedProducts = relatedProductsForRequest(request);
+  const relatedProducts = relatedProductsForRequest(request, marketplaceProducts);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -298,7 +306,10 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function BuyerRequestsBoard() {
+export function BuyerRequestsBoard({
+  requests = fallbackBuyerRequests,
+  marketplaceProducts = fallbackMarketplaceProducts
+}: BuyerRequestsBoardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [product, setProduct] = useState("All");
   const [region, setRegion] = useState("All");
@@ -308,11 +319,11 @@ export function BuyerRequestsBoard() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BuyerRequest | null>(null);
 
-  const products = useMemo(() => unique(buyerRequests.map((request) => request.productName)), []);
-  const regions = useMemo(() => unique(buyerRequests.map((request) => request.region)), []);
-  const buyerTypes = useMemo(() => unique(buyerRequests.map((request) => request.buyerType)), []);
-  const statuses = useMemo(() => unique(buyerRequests.map((request) => request.status)), []);
-  const deadlines = useMemo(() => unique(buyerRequests.map((request) => request.deadline)), []);
+  const products = useMemo(() => unique(requests.map((request) => request.productName)), [requests]);
+  const regions = useMemo(() => unique(requests.map((request) => request.region)), [requests]);
+  const buyerTypes = useMemo(() => unique(requests.map((request) => request.buyerType)), [requests]);
+  const statuses = useMemo(() => unique(requests.map((request) => request.status)), [requests]);
+  const deadlines = useMemo(() => unique(requests.map((request) => request.deadline)), [requests]);
 
   const filters: FilterConfig[] = [
     { label: "Product", value: product, setValue: setProduct, options: products },
@@ -334,7 +345,7 @@ export function BuyerRequestsBoard() {
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return buyerRequests.filter((request) => {
+    return requests.filter((request) => {
       const matchesSearch =
         !normalizedSearch ||
         [
@@ -360,7 +371,7 @@ export function BuyerRequestsBoard() {
         (deadline === "All" || request.deadline === deadline)
       );
     });
-  }, [buyerType, deadline, product, region, searchTerm, status]);
+  }, [buyerType, deadline, product, region, requests, searchTerm, status]);
 
   return (
     <>
@@ -441,7 +452,7 @@ export function BuyerRequestsBoard() {
                   <h2 className="mt-2 text-3xl font-black text-ink">Buyer Requests</h2>
                 </div>
                 <p className="text-sm font-semibold text-ink/55">
-                  Showing {filteredRequests.length} of {buyerRequests.length} requests
+                  Showing {filteredRequests.length} of {requests.length} requests
                 </p>
               </div>
 
@@ -463,7 +474,9 @@ export function BuyerRequestsBoard() {
         </div>
       </section>
 
-      {selectedRequest ? <RequestDetailsModal request={selectedRequest} onClose={() => setSelectedRequest(null)} /> : null}
+      {selectedRequest ? (
+        <RequestDetailsModal request={selectedRequest} marketplaceProducts={marketplaceProducts} onClose={() => setSelectedRequest(null)} />
+      ) : null}
     </>
   );
 }

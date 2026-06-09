@@ -15,10 +15,11 @@ import {
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { farmerDirectory } from "@/data/farmers";
-import type { Product } from "@/types";
+import type { FarmerProfile, Product } from "@/types";
 
 type MarketplaceListingsProps = {
   products: Product[];
+  farmers?: FarmerProfile[];
 };
 
 type FilterConfig = {
@@ -34,8 +35,6 @@ const contactUrl = (product: Product) =>
   `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(
     `Hello Ghana Growers, I am interested in ${product.name} from ${product.seller}.`
   )}`;
-
-const farmerBySlug = new Map(farmerDirectory.map((farmer) => [farmer.slug, farmer]));
 
 function SearchBox({
   searchTerm,
@@ -123,9 +122,11 @@ function MarketplaceStats({
 
 function ListingCard({
   product,
+  farmerBySlug,
   onViewDetails
 }: {
   product: Product;
+  farmerBySlug: Map<string, FarmerProfile>;
   onViewDetails: (product: Product) => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
@@ -213,9 +214,11 @@ function ListingCard({
 
 function ProductDetailsModal({
   product,
+  farmerBySlug,
   onClose
 }: {
   product: Product;
+  farmerBySlug: Map<string, FarmerProfile>;
   onClose: () => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
@@ -305,7 +308,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MarketplaceListings({ products }: MarketplaceListingsProps) {
+export function MarketplaceListings({ products, farmers = farmerDirectory }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
@@ -348,6 +351,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
   const activeListings = products.length;
   const productsAvailable = products.filter((product) => product.available !== "Sold Out").length;
   const verifiedSellers = products.filter((product) => product.verified).length;
+  const farmerBySlug = useMemo(() => new Map(farmers.map((farmer) => [farmer.slug, farmer])), [farmers]);
 
   return (
     <>
@@ -414,7 +418,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
               {filteredProducts.length > 0 ? (
                 <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredProducts.map((product) => (
-                    <ListingCard key={product.id} product={product} onViewDetails={setSelectedProduct} />
+                    <ListingCard key={product.id} product={product} farmerBySlug={farmerBySlug} onViewDetails={setSelectedProduct} />
                   ))}
                 </div>
               ) : (
@@ -468,7 +472,7 @@ export function MarketplaceListings({ products }: MarketplaceListingsProps) {
         </div>
       </section>
 
-      {selectedProduct ? <ProductDetailsModal product={selectedProduct} onClose={() => setSelectedProduct(null)} /> : null}
+      {selectedProduct ? <ProductDetailsModal product={selectedProduct} farmerBySlug={farmerBySlug} onClose={() => setSelectedProduct(null)} /> : null}
     </>
   );
 }

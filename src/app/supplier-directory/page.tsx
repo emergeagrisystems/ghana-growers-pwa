@@ -2,7 +2,9 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
-import { supplierDirectory } from "@/data/suppliers";
+import { getSuppliersData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Supplier Directory",
@@ -10,7 +12,9 @@ export const metadata = {
     "Discover agricultural suppliers and service providers across Ghana by region, district, category, and service coverage area."
 };
 
-export default function SupplierDirectoryPage() {
+export default async function SupplierDirectoryPage() {
+  const suppliers = await getSuppliersData();
+
   return (
     <>
       <PageHero
@@ -30,7 +34,7 @@ export default function SupplierDirectoryPage() {
         description="Priority agricultural suppliers selected from the editable featured listings configuration."
         background="leaf"
       />
-      <SupplierDirectory suppliers={supplierDirectory} />
+      <SupplierDirectory suppliers={suppliers} />
     </>
   );
 }

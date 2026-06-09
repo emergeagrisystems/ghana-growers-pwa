@@ -6,6 +6,9 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 import { smartTools } from "@/data/smartTools";
+import { getMarketPricesData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Farmer Tools",
@@ -13,7 +16,9 @@ export const metadata = {
     "Weather updates, market prices, crop health checks, and farming advice for Ghanaian farmers."
 };
 
-export default function SmartSolutionsPage() {
+export default async function SmartSolutionsPage() {
+  const marketPrices = await getMarketPricesData();
+
   return (
     <>
       <PageHero
@@ -77,7 +82,7 @@ export default function SmartSolutionsPage() {
             <CropHealthCheck />
             <FarmerAssistant />
           </div>
-          <MarketPricesDashboard />
+          <MarketPricesDashboard prices={marketPrices} />
         </div>
       </section>
     </>

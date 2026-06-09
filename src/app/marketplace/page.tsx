@@ -2,7 +2,10 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { MarketplaceListings } from "@/components/MarketplaceListings";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
-import { productCategories, products } from "@/data/products";
+import { productCategories } from "@/data/products";
+import { getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Marketplace | Ghana Growers",
@@ -10,7 +13,9 @@ export const metadata = {
     "Browse Ghana Growers marketplace listings for tomatoes, onions, maize, cassava, yam, plantain, pepper, rice, eggs, poultry, farm supply, and verified seller leads across Ghana."
 };
 
-export default function MarketplacePage() {
+export default async function MarketplacePage() {
+  const [products, farmers] = await Promise.all([getMarketplaceListingsData(), getFarmersData()]);
+
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
@@ -31,7 +36,7 @@ export default function MarketplacePage() {
         </div>
       </section>
 
-      <MarketplaceListings products={products} />
+      <MarketplaceListings products={products} farmers={farmers} />
 
       <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

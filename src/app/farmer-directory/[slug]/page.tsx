@@ -15,9 +15,9 @@ import {
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { buyerRequests } from "@/data/buyerRequests";
-import { farmerDirectory, getFarmerBySlug } from "@/data/farmers";
-import { products as marketplaceProducts } from "@/data/products";
+import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 type FarmerProfilePageProps = {
   params: {
@@ -25,12 +25,9 @@ type FarmerProfilePageProps = {
   };
 };
 
-export function generateStaticParams() {
-  return farmerDirectory.map((farmer) => ({ slug: farmer.slug }));
-}
-
-export function generateMetadata({ params }: FarmerProfilePageProps) {
-  const farmer = getFarmerBySlug(params.slug);
+export async function generateMetadata({ params }: FarmerProfilePageProps) {
+  const farmers = await getFarmersData();
+  const farmer = farmers.find((record) => record.slug === params.slug);
 
   if (!farmer) {
     return {
@@ -97,8 +94,13 @@ function imageForProduct(product: string) {
   return "/images/marketplace/farm-activity-1.jpg";
 }
 
-export default function FarmerProfilePage({ params }: FarmerProfilePageProps) {
-  const farmer = getFarmerBySlug(params.slug);
+export default async function FarmerProfilePage({ params }: FarmerProfilePageProps) {
+  const [farmers, marketplaceProducts, buyerRequests] = await Promise.all([
+    getFarmersData(),
+    getMarketplaceListingsData(),
+    getBuyerRequestsData()
+  ]);
+  const farmer = farmers.find((record) => record.slug === params.slug);
 
   if (!farmer) {
     notFound();

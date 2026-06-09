@@ -1,5 +1,8 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { BuyerRequestsBoard } from "@/components/BuyerRequestsBoard";
+import { getBuyerRequestsData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Buyer Demand Board | Ghana Growers",
@@ -7,7 +10,9 @@ export const metadata = {
     "Find active buyer requests for produce, livestock, and agricultural supply across Ghana."
 };
 
-export default function BuyerRequestsPage() {
+export default async function BuyerRequestsPage() {
+  const [requests, marketplaceProducts] = await Promise.all([getBuyerRequestsData(), getMarketplaceListingsData()]);
+
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
@@ -26,7 +31,7 @@ export default function BuyerRequestsPage() {
           </div>
         </div>
       </section>
-      <BuyerRequestsBoard />
+      <BuyerRequestsBoard requests={requests} marketplaceProducts={marketplaceProducts} />
     </>
   );
 }

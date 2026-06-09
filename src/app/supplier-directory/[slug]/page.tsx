@@ -7,7 +7,9 @@ import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { productCategories } from "@/data/products";
-import { getSupplierBySlug, supplierDirectory } from "@/data/suppliers";
+import { getSuppliersData } from "@/lib/supabase/publicData";
+
+export const dynamic = "force-dynamic";
 
 type SupplierProfilePageProps = {
   params: {
@@ -15,12 +17,9 @@ type SupplierProfilePageProps = {
   };
 };
 
-export function generateStaticParams() {
-  return supplierDirectory.map((supplier) => ({ slug: supplier.slug }));
-}
-
-export function generateMetadata({ params }: SupplierProfilePageProps) {
-  const supplier = getSupplierBySlug(params.slug);
+export async function generateMetadata({ params }: SupplierProfilePageProps) {
+  const suppliers = await getSuppliersData();
+  const supplier = suppliers.find((record) => record.slug === params.slug);
 
   if (!supplier) {
     return {
@@ -65,8 +64,9 @@ function relatedMarketplaceCategories(category: string) {
   return productCategories.filter((item) => slugs.has(item.slug));
 }
 
-export default function SupplierProfilePage({ params }: SupplierProfilePageProps) {
-  const supplier = getSupplierBySlug(params.slug);
+export default async function SupplierProfilePage({ params }: SupplierProfilePageProps) {
+  const suppliers = await getSuppliersData();
+  const supplier = suppliers.find((record) => record.slug === params.slug);
 
   if (!supplier) {
     notFound();
