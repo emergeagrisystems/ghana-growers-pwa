@@ -42,6 +42,12 @@ The operational verification workflow uses this migration:
 supabase/migrations/003_verification_workflow.sql
 ```
 
+Supabase Storage buckets for admin image uploads use this migration:
+
+```text
+supabase/migrations/004_storage_buckets.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -72,7 +78,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 6. Run the query.
 7. Repeat for `supabase/migrations/002_learn_articles.sql` if Learn Article persistence is needed.
 8. Repeat for `supabase/migrations/003_verification_workflow.sql` to enable the verification queue workflow.
-9. Confirm the tables appear under **Table Editor**.
+9. Repeat for `supabase/migrations/004_storage_buckets.sql` to create the `farmers`, `suppliers`, and `marketplace` Storage buckets.
+10. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -101,6 +108,7 @@ src/app/api/admin/buyer-requests/route.ts
 src/app/api/admin/market-prices/route.ts
 src/app/api/admin/learn-articles/route.ts
 src/app/api/admin/verifications/route.ts
+src/app/api/admin/uploads/route.ts
 ```
 
 These routes:
@@ -111,6 +119,7 @@ These routes:
 - Use `SUPABASE_SERVICE_ROLE_KEY` only on the server.
 - Validate required fields before inserting.
 - Return friendly errors if Supabase is not configured or the insert fails.
+- Upload admin images to Supabase Storage server-side and return public image URLs.
 
 ## Recommended Migration Path
 

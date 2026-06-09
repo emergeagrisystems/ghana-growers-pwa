@@ -4,6 +4,13 @@ type InsertResponse<T> = {
   status: number;
 };
 
+type StorageUploadResponse = {
+  path?: string;
+  publicUrl?: string;
+  error?: string;
+  status: number;
+};
+
 function supabaseConfig() {
   return {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -88,4 +95,57 @@ export async function updateSupabaseRecord<T extends Record<string, unknown>>(
   }
 
   return { status: response.status, data: Array.isArray(result) ? result[0] : undefined };
+}
+
+export async function uploadSupabaseStorageObject({
+  bucket,
+  path,
+  contentType,
+  body
+}: {
+  bucket: string;
+  path: string;
+  contentType: string;
+  body: ArrayBuffer;
+}): Promise<StorageUploadResponse> {
+  const { url, serviceRoleKey } = supabaseConfig();
+
+  if (!url || !serviceRoleKey) {
+    return {
+      status: 503,
+      error: "Supabase Storage is not configured on the server. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+    };
+  }
+
+  const cleanUrl = url.replace(/\/$/, "");
+  const encodedPath = path
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+
+  const response = await fetch(`${cleanUrl}/storage/v1/object/${bucket}/${encodedPath}`, {
+    method: "POST",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": contentType,
+      "x-upsert": "true"
+    },
+    body
+  });
+
+  const result = (await response.json().catch(() => null)) as { message?: string; error?: string } | null;
+
+  if (!response.ok) {
+    return {
+      status: response.status,
+      error: result?.message || result?.error || "Supabase Storage upload failed."
+    };
+  }
+
+  return {
+    status: response.status,
+    path,
+    publicUrl: `${cleanUrl}/storage/v1/object/public/${bucket}/${encodedPath}`
+  };
 }

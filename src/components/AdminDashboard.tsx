@@ -21,9 +21,10 @@ import {
   Sprout,
   Store,
   Truck,
+  UploadCloud,
   UsersRound
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import learnArticles from "@/data/learnArticles.json";
@@ -61,10 +62,11 @@ type AdminRow = {
 type FormField = {
   name: string;
   label: string;
-  type?: "text" | "date" | "number" | "url" | "textarea" | "select";
+  type?: "text" | "date" | "number" | "url" | "textarea" | "select" | "image";
   required?: boolean;
   helper?: string;
   options?: string[];
+  bucket?: "farmers" | "suppliers" | "marketplace";
 };
 type ActiveForm = {
   id: AdminFormId;
@@ -265,7 +267,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "farmSize", label: "Farm Size", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
-    { name: "profileImageUrl", label: "Profile Image URL", type: "url", helper: "Use a local /images path or approved image URL." }
+    { name: "profileImageUrl", label: "Farmer Profile Image", type: "image", bucket: "farmers", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
   ],
   suppliers: [
     { name: "companyName", label: "Company Name", required: true },
@@ -276,6 +278,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "productsServices", label: "Products/Services", required: true, helper: "Separate multiple services with commas." },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
+    { name: "logoUrl", label: "Supplier Image or Logo", type: "image", bucket: "suppliers", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." },
     { name: "website", label: "Website", type: "url" }
   ],
   marketplace: [
@@ -288,7 +291,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "unit", label: "Unit", required: true },
     { name: "availability", label: "Availability", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
-    { name: "imageUrl", label: "Image URL", type: "url" }
+    { name: "imageUrl", label: "Listing Image", type: "image", bucket: "marketplace", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
   ],
   "buyer-requests": [
     { name: "productNeeded", label: "Product Needed", required: true },
@@ -488,6 +491,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       productsServices: supplier?.productsServices.join(", ") ?? "",
       whatsappNumber: supplier?.phone ?? "",
       verificationStatus: supplier?.verificationStatus ?? row.status,
+      logoUrl: supplier?.photos[0] ?? "",
       website: supplier?.website ?? ""
     };
   }
@@ -587,6 +591,8 @@ export function AdminDashboard() {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({});
 
   const rowsBySection = useMemo(() => sectionRows(), []);
@@ -704,9 +710,18 @@ export function AdminDashboard() {
     setActiveSection(formId);
     setSearchTerm("");
     setStatusFilter("All");
-    setFormValues(formValuesForRow(formId, row));
+    const nextValues = formValuesForRow(formId, row);
+    setFormValues(nextValues);
+    setImagePreviews(
+      Object.fromEntries(
+        formConfigs[formId]
+          .filter((field) => field.type === "image" && nextValues[field.name])
+          .map((field) => [field.name, nextValues[field.name]])
+      )
+    );
     setFormError("");
     setFormSuccess("");
+    setUploadingField(null);
     setActiveForm({
       id: formId,
       mode,
@@ -718,8 +733,71 @@ export function AdminDashboard() {
   function closeAdminForm() {
     setActiveForm(null);
     setFormValues({});
+    setImagePreviews({});
     setFormError("");
     setFormSuccess("");
+    setUploadingField(null);
+  }
+
+  async function uploadImage(field: FormField, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file || !field.bucket) {
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setFormError("Upload a JPG, PNG, or WEBP image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("Image must be 5MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
+    const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
+
+    if (!adminSessionToken) {
+      setFormError("Admin access required. Please lock the dashboard and sign in again.");
+      event.target.value = "";
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    setImagePreviews((current) => ({ ...current, [field.name]: localPreview }));
+    setUploadingField(field.name);
+    setFormError("");
+    setFormSuccess("");
+
+    const formData = new FormData();
+    formData.append("bucket", field.bucket);
+    formData.append("file", file);
+
+    const response = await fetch("/api/admin/uploads", {
+      method: "POST",
+      headers: {
+        "x-ghana-growers-admin-session": adminSessionToken
+      },
+      body: formData
+    }).catch(() => null);
+    setUploadingField(null);
+    event.target.value = "";
+
+    const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+
+    if (!response?.ok || !result?.publicUrl) {
+      setFormError(result?.error ?? "Image upload failed. Check Supabase Storage configuration.");
+      return;
+    }
+
+    setFormValues((current) => ({ ...current, [field.name]: result.publicUrl ?? "" }));
+    setImagePreviews((current) => ({ ...current, [field.name]: result.publicUrl ?? localPreview }));
+    setFormSuccess("Image uploaded. Save the form to attach it to this record.");
   }
 
   async function submitAdminForm(event: FormEvent<HTMLFormElement>) {
@@ -1241,6 +1319,58 @@ export function AdminDashboard() {
                     {formConfigs[activeForm.id].map((field) => {
                       const fieldId = `admin-${activeForm.id}-${field.name}`;
                       const value = formValues[field.name] ?? "";
+
+                      if (field.type === "image") {
+                        const preview = imagePreviews[field.name] || value;
+                        const isUploading = uploadingField === field.name;
+
+                        return (
+                          <div key={field.name} className="grid gap-3 text-sm font-black text-ink md:col-span-2">
+                            <span>{field.label}</span>
+                            <div className="grid gap-4 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-[180px_1fr] sm:items-center">
+                              <div className="aspect-[4/3] overflow-hidden rounded-md bg-white ring-1 ring-leaf-900/10">
+                                {preview ? (
+                                  <div
+                                    role="img"
+                                    aria-label={`${field.label} preview`}
+                                    className="h-full w-full bg-cover bg-center"
+                                    style={{ backgroundImage: `url(${preview})` }}
+                                  />
+                                ) : (
+                                  <div className="grid h-full place-items-center px-4 text-center text-xs font-black uppercase tracking-wide text-ink/35">
+                                    Image preview
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={fieldId}
+                                  className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                                >
+                                  <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                                  {isUploading ? "Uploading..." : "Upload Image"}
+                                </label>
+                                <input
+                                  id={fieldId}
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  disabled={isUploading}
+                                  onChange={(event) => uploadImage(field, event)}
+                                  className="sr-only"
+                                />
+                                {value ? (
+                                  <p className="mt-3 break-all text-xs font-semibold leading-5 text-ink/55">
+                                    Uploaded URL: {value}
+                                  </p>
+                                ) : null}
+                                <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+                                  {field.helper ?? "Upload a JPG, PNG, or WEBP image up to 5MB."}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
 
                       if (field.type === "textarea") {
                         return (
