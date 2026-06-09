@@ -67,6 +67,12 @@ The dashboard is available at:
 /admin
 ```
 
+The launch readiness checklist is available at:
+
+```text
+/admin/launch-checklist
+```
+
 Unauthenticated users and non-admin users are redirected to `/admin/login`.
 
 ## Protected Admin Actions
@@ -84,6 +90,7 @@ The following actions require a Supabase Auth admin session:
 - Read platform analytics
 - Review public registration applications
 - Review public marketplace and buyer request submissions
+- Track launch readiness before farmer, buyer, and supplier onboarding
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
 

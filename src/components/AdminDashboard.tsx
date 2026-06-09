@@ -11,6 +11,7 @@ import {
   Clock3,
   Eye,
   FilePenLine,
+  ListChecks,
   LayoutDashboard,
   MessageCircle,
   PackageCheck,
@@ -38,6 +39,7 @@ type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
   | "analytics"
+  | "launch-checklist"
   | "farmers"
   | "buyers"
   | "suppliers"
@@ -106,6 +108,7 @@ type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type LaunchStatus = "Not Started" | "In Progress" | "Complete";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -170,6 +173,17 @@ type ActiveForm = {
   recordId?: string;
   recordName?: string;
 };
+
+const manualLaunchChecklistItems = [
+  "Verify all WhatsApp links",
+  "Confirm admin login works",
+  "Confirm public forms work",
+  "Confirm image uploads work",
+  "Confirm Crop Health Check works",
+  "Confirm mobile navigation works",
+  "Confirm domain and SSL work"
+] as const;
+type ManualLaunchChecklistItem = (typeof manualLaunchChecklistItems)[number];
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
@@ -260,6 +274,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 
   return {
     analytics: [],
+    "launch-checklist": [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
       name: farmer.farmName,
@@ -327,6 +342,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
   { id: "analytics", label: "Analytics", icon: ChartLine },
+  { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
   { id: "suppliers", label: "Suppliers", icon: Truck },
@@ -514,6 +530,42 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCoun
       icon: MessageCircle
     }
   ];
+}
+
+function launchStatusFromCount(count: number, target: number): LaunchStatus {
+  if (count >= target) {
+    return "Complete";
+  }
+
+  if (count > 0) {
+    return "In Progress";
+  }
+
+  return "Not Started";
+}
+
+function launchStatusClass(status: LaunchStatus) {
+  if (status === "Complete") {
+    return "bg-leaf-50 text-leaf-700";
+  }
+
+  if (status === "In Progress") {
+    return "bg-earth-50 text-earth-700";
+  }
+
+  return "bg-ink/10 text-ink/55";
+}
+
+function statusProgress(status: LaunchStatus) {
+  if (status === "Complete") {
+    return 1;
+  }
+
+  if (status === "In Progress") {
+    return 0.5;
+  }
+
+  return 0;
 }
 
 function emptyFormValues(formId: AdminFormId) {
@@ -1056,8 +1108,8 @@ function SimpleBarList({ items, emptyLabel }: { items: Array<{ label: string; va
   );
 }
 
-export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
-  const [activeSection, setActiveSection] = useState<AdminSectionId>("analytics");
+export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: { currentAdmin: AdminUser; initialSection?: AdminSectionId }) {
+  const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | AdminStatus>("All");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, AdminStatus>>({});
@@ -1093,6 +1145,31 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   });
   const [submissionTab, setSubmissionTab] = useState<SubmissionKind>("listing");
   const [submissionError, setSubmissionError] = useState("");
+  const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
+    Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Not Started"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
+  );
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("ghana-growers-launch-checklist");
+
+    if (!saved) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(saved) as Partial<Record<ManualLaunchChecklistItem, LaunchStatus>>;
+      setManualLaunchStatuses((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          manualLaunchChecklistItems
+            .filter((item) => parsed[item] === "Not Started" || parsed[item] === "In Progress" || parsed[item] === "Complete")
+            .map((item) => [item, parsed[item] as LaunchStatus])
+        )
+      }));
+    } catch {
+      window.localStorage.removeItem("ghana-growers-launch-checklist");
+    }
+  }, []);
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -1264,6 +1341,53 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const buyerRequestsByProduct = useMemo(() => countBy(analytics.buyerRequests, "product_needed"), [analytics.buyerRequests]);
   const farmersByRegion = useMemo(() => countBy(analytics.farmers, "region"), [analytics.farmers]);
   const suppliersByCategory = useMemo(() => countBy(analytics.suppliers, "category"), [analytics.suppliers]);
+  const launchChecklistItems = useMemo(() => {
+    const dataItems = [
+      {
+        id: "farmers",
+        label: "Add at least 20 farmers",
+        status: launchStatusFromCount(analytics.farmers.length, 20),
+        detail: `${analytics.farmers.length} of 20 farmers added`,
+        section: "farmers" as AdminSectionId
+      },
+      {
+        id: "suppliers",
+        label: "Add at least 10 suppliers",
+        status: launchStatusFromCount(analytics.suppliers.length, 10),
+        detail: `${analytics.suppliers.length} of 10 suppliers added`,
+        section: "suppliers" as AdminSectionId
+      },
+      {
+        id: "marketplace",
+        label: "Add at least 20 marketplace listings",
+        status: launchStatusFromCount(analytics.marketplaceListings.length, 20),
+        detail: `${analytics.marketplaceListings.length} of 20 listings added`,
+        section: "marketplace" as AdminSectionId
+      },
+      {
+        id: "buyer-requests",
+        label: "Add at least 10 buyer requests",
+        status: launchStatusFromCount(analytics.buyerRequests.length, 10),
+        detail: `${analytics.buyerRequests.length} of 10 buyer requests added`,
+        section: "buyer-requests" as AdminSectionId
+      }
+    ];
+    const manualItems = manualLaunchChecklistItems.map((label) => ({
+      id: label.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      label,
+      status: manualLaunchStatuses[label],
+      detail: "Manual launch check",
+      section: null
+    }));
+
+    return [...dataItems, ...manualItems];
+  }, [analytics, manualLaunchStatuses]);
+  const launchProgress = useMemo(() => {
+    const total = launchChecklistItems.length || 1;
+    const score = launchChecklistItems.reduce((sum, item) => sum + statusProgress(item.status), 0);
+
+    return Math.round((score / total) * 100);
+  }, [launchChecklistItems]);
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -1582,6 +1706,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
   const isAnalyticsSection = activeSection === "analytics";
+  const isLaunchChecklistSection = activeSection === "launch-checklist";
   const isApplicationsSection = activeSection === "applications";
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
@@ -1733,6 +1858,15 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
     setSubmissionError("");
     setNotice(`${entityName} converted to a live ${submissionTab === "listing" ? "marketplace listing" : "buyer request"}.`);
     void loadActivity();
+  }
+
+  function updateManualLaunchStatus(label: ManualLaunchChecklistItem, status: LaunchStatus) {
+    setManualLaunchStatuses((current) => {
+      const next = { ...current, [label]: status };
+      window.localStorage.setItem("ghana-growers-launch-checklist", JSON.stringify(next));
+      return next;
+    });
+    setNotice(`${label} marked ${status}.`);
   }
 
   async function logoutAdmin() {
@@ -1975,7 +2109,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -2130,6 +2264,76 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                       </div>
                     </div>
                   </div>
+                </section>
+              </div>
+            ) : isLaunchChecklistSection ? (
+              <div className="grid gap-6 p-5">
+                <section className="rounded-md border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5">
+                  <div className="grid gap-5 lg:grid-cols-[1fr_220px] lg:items-center">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Launch Readiness</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Prepare Ghana Growers for onboarding</h3>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
+                        Track the core content, operations, and platform checks needed before real farmers, buyers, and suppliers are invited onto the platform.
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-white p-4 text-center shadow-sm ring-1 ring-leaf-900/10">
+                      <p className="text-sm font-black uppercase tracking-wide text-ink/45">Progress</p>
+                      <p className="mt-2 text-5xl font-black text-leaf-700">{launchProgress}%</p>
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-leaf-900/10">
+                        <div className="h-full rounded-full bg-leaf-700 transition-all" style={{ width: `${launchProgress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className="grid gap-4">
+                  {launchChecklistItems.map((item) => {
+                    const isManual = manualLaunchChecklistItems.includes(item.label as ManualLaunchChecklistItem);
+
+                    return (
+                      <article key={item.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                          <div>
+                            <h3 className="text-lg font-black text-ink">{item.label}</h3>
+                            <p className="mt-1 text-sm font-semibold text-ink/58">{item.detail}</p>
+                          </div>
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${launchStatusClass(item.status)}`}>
+                              {item.status}
+                            </span>
+                            {isManual ? (
+                              <select
+                                value={item.status}
+                                onChange={(event) => updateManualLaunchStatus(item.label as ManualLaunchChecklistItem, event.target.value as LaunchStatus)}
+                                className="rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                              >
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Complete">Complete</option>
+                              </select>
+                            ) : item.section ? (
+                              <button
+                                type="button"
+                                onClick={() => runQuickAction(item.section, `${item.label} opened from launch checklist.`)}
+                                className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                              >
+                                View Records
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <section className="rounded-md border border-earth-500/30 bg-earth-50 p-5">
+                  <h3 className="text-lg font-black text-ink">Launch Notes</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink/65">
+                    Record-count items update from platform data. Operational checks are saved in this admin browser for quick internal readiness tracking.
+                    Before launch, review these checks with the Ghana Growers operations team and confirm the production domain directly.
+                  </p>
                 </section>
               </div>
             ) : isApplicationsSection ? (
