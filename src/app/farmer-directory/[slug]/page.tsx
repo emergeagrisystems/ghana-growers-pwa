@@ -4,7 +4,6 @@ import {
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
-  Crown,
   MapPin,
   MessageCircle,
   PackageCheck,
@@ -44,23 +43,13 @@ export async function generateMetadata({ params }: FarmerProfilePageProps) {
 function FarmerTrustBadges({ status }: { status: string }) {
   const badges = [];
 
-  if (status === "Premium Member") {
-    badges.push(
-      <span key="premium" className="inline-flex items-center gap-1.5 rounded-full bg-earth-500 px-3 py-1.5 text-xs font-black text-ink">
-        <Crown className="h-3.5 w-3.5" />
-        Premium Farmer
-      </span>
-    );
-  } else if (status === "Verified") {
+  if (status === "Verified") {
     badges.push(
       <span key="verified" className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-black text-leaf-700">
         <BadgeCheck className="h-3.5 w-3.5" />
-        Verified Farmer
+        Verified by Ghana Growers
       </span>
     );
-  }
-
-  if (status !== "Pending Verification") {
     badges.push(
       <span key="active" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10">
         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -168,7 +157,12 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <ProfileFact icon={MapPin} label="Region" value={farmer.region} detail={farmer.district} />
             <ProfileFact icon={Sprout} label="Farm type" value={farmer.farmType} detail={farmer.farmSize} />
-            <ProfileFact icon={ShieldCheck} label="Verification" value={farmer.verificationStatus} detail="Ghana Growers profile status" />
+            <ProfileFact
+              icon={ShieldCheck}
+              label="Verification"
+              value={farmer.verificationStatus}
+              detail={farmer.verificationStatus === "Verified" && farmer.verificationDate ? `Verified on ${farmer.verificationDate}` : "Ghana Growers profile status"}
+            />
             <ProfileFact icon={CalendarDays} label="Years farming" value={farmer.yearsFarming ?? "Available on request"} detail="Reported experience" />
             <ProfileFact icon={Truck} label="Delivery" value={farmer.deliveryOptions?.[0] ?? "Buyer pickup"} detail="Confirm before purchase" />
           </div>
@@ -305,7 +299,9 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 <p className="mt-4 text-sm leading-6 text-ink/62">
                   {farmer.verificationStatus === "Pending Verification"
                     ? "Verification review is in progress. Buyers should confirm current supply and trade terms before committing."
-                    : "Profile reviewed by Ghana Growers."}
+                    : farmer.verificationStatus === "Verified"
+                      ? `Verified by Ghana Growers${farmer.verificationDate ? ` on ${farmer.verificationDate}` : ""}.`
+                      : "Verification status is not currently verified. Buyers should confirm details before committing."}
                 </p>
               </section>
 

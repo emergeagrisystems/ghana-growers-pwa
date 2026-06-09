@@ -17,6 +17,8 @@ type SupabaseFarmer = {
   farm_size: string | null;
   whatsapp_number: string | null;
   verification_status: string | null;
+  verification_date: string | null;
+  verified_by: string | null;
   profile_image_url: string | null;
   description: string | null;
   status: string | null;
@@ -37,6 +39,8 @@ type SupabaseSupplier = {
   phone: string | null;
   website: string | null;
   verification_status: string | null;
+  verification_date: string | null;
+  verified_by: string | null;
   logo_url: string | null;
   status: string | null;
   created_at: string;
@@ -78,6 +82,8 @@ type SupabaseBuyerRequest = {
   whatsapp_number: string | null;
   notes: string | null;
   verification_status: string | null;
+  verification_date: string | null;
+  verified_by: string | null;
   created_at: string;
 };
 
@@ -138,20 +144,24 @@ function slugify(value: string) {
 }
 
 function trustStatus(value?: string | null): TrustStatus {
+  if (value === "Under Review" || value === "Rejected" || value === "Pending") {
+    return value;
+  }
+
   if (value === "Premium Member" || value === "Premium Farmer") {
-    return "Premium Member";
+    return "Verified";
   }
 
   if (value?.includes("Verified")) {
     return "Verified";
   }
 
-  return "Pending Verification";
+  return "Pending";
 }
 
 function trustProfile(value?: string | null): TrustProfile {
   const status = trustStatus(value);
-  const verified = status !== "Pending Verification";
+  const verified = status === "Verified";
 
   return {
     status,
@@ -159,7 +169,7 @@ function trustProfile(value?: string | null): TrustProfile {
       phoneVerified: verified,
       whatsappVerified: verified,
       identitySubmitted: verified,
-      businessRegistration: status === "Premium Member"
+      businessRegistration: verified
     },
     score: {
       profileCompleteness: verified ? 85 : 55,
@@ -198,6 +208,8 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     deliveryOptions: ["Buyer pickup or delivery arranged through Ghana Growers"],
     photos: [row.profile_image_url || "/images/farmers/farmer-1.jpg"],
     verificationStatus,
+    verificationDate: row.verification_date ?? undefined,
+    verifiedBy: row.verified_by ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I am interested in contacting ${row.farm_name} in ${row.district}, ${row.region}.`
   };
@@ -223,6 +235,8 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     website: row.website ?? undefined,
     phone: row.phone ?? row.whatsapp_number ?? "",
     verificationStatus,
+    verificationDate: row.verification_date ?? undefined,
+    verifiedBy: row.verified_by ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I want to contact ${row.company_name} about ${services.slice(0, 2).join(" and ")}.`
   };
@@ -242,7 +256,7 @@ function mapListing(row: SupabaseListing): Product {
     image: row.image_url || "/images/marketplace/farm-activity-1.jpg",
     available: row.availability,
     datePosted: dateOnly(row.created_at),
-    verified: trustStatus(row.verification_status) !== "Pending Verification",
+    verified: trustStatus(row.verification_status) === "Verified",
     featured: Boolean(row.featured),
     whatsappNumber: row.whatsapp_number ?? "233000000000",
     farmerSlug: slugify(row.seller_name)
@@ -268,6 +282,9 @@ function mapBuyerRequest(row: SupabaseBuyerRequest): BuyerRequest {
     whatsappNumber: row.whatsapp_number ?? "233000000000",
     contactMethod: "WhatsApp",
     datePosted: dateOnly(row.created_at),
+    verificationStatus: trustStatus(row.verification_status),
+    verificationDate: row.verification_date ?? undefined,
+    verifiedBy: row.verified_by ?? undefined,
     trust: trustProfile(row.verification_status)
   };
 }

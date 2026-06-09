@@ -17,6 +17,9 @@ export type BuyerRequest = {
   whatsappNumber: string;
   contactMethod: string;
   datePosted: string;
+  verificationStatus?: string;
+  verificationDate?: string;
+  verifiedBy?: string;
   trust?: TrustProfile;
 };
 

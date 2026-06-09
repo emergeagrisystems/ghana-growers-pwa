@@ -5,7 +5,6 @@ import {
   BadgeCheck,
   CalendarDays,
   ChevronDown,
-  Crown,
   MapPin,
   MessageCircle,
   Search,
@@ -117,20 +116,11 @@ function StatusBadge({ status }: { status: BuyerRequest["status"] }) {
 }
 
 function BuyerTrustBadge({ status }: { status: string }) {
-  if (status === "Premium Member") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-500 px-3 py-1 text-xs font-black text-ink">
-        <Crown className="h-3.5 w-3.5" />
-        Premium Buyer
-      </span>
-    );
-  }
-
   if (status === "Verified") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
         <BadgeCheck className="h-3.5 w-3.5" />
-        Verified Buyer
+        Verified by Ghana Growers
       </span>
     );
   }
@@ -174,7 +164,7 @@ function RequestCard({
         </div>
       </dl>
 
-      {trust.status !== "Pending Verification" ? (
+      {trust.status === "Verified" ? (
         <div className="mt-4">
           <BuyerTrustBadge status={trust.status} />
         </div>
@@ -248,7 +238,10 @@ function RequestDetailsModal({
               <Detail label="Delivery / pickup" value={request.deliveryPreference} />
               <Detail label="Deadline" value={request.deadline} />
               <Detail label="Budget / price range" value={request.budgetRange ?? "Confirm with buyer"} />
-              <Detail label="Verification" value={trust.status} />
+              <Detail label="Buyer verification" value={trust.status} />
+              {request.verificationDate && trust.status === "Verified" ? (
+                <Detail label="Verification date" value={request.verificationDate} />
+              ) : null}
             </div>
           </div>
 

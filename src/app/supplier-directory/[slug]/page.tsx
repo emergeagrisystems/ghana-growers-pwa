@@ -4,7 +4,7 @@ import { BadgeCheck, Building2, ExternalLink, MapPin, PackageCheck, Phone, Shiel
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SafeImage } from "@/components/SafeImage";
-import { normalizeTrust, TrustScoreCard, TrustSummary, VerificationRequirementsList } from "@/components/TrustIndicators";
+import { normalizeTrust, TrustScoreCard, VerificationBadge, VerificationRequirementsList } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { productCategories } from "@/data/products";
 import { getSuppliersData } from "@/lib/supabase/publicData";
@@ -125,10 +125,12 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 Verification status
               </p>
               <div className="mt-3">
-                <TrustSummary kind="supplier" trust={trust} />
+                <VerificationBadge kind="supplier" status={trust.status} />
               </div>
               <p className="mt-3 text-sm leading-6 text-ink/65">
-                This placeholder can later show business checks, document review, customer feedback, and Ghana Growers approval status.
+                {supplier.verificationStatus === "Verified"
+                  ? `Verified by Ghana Growers${supplier.verificationDate ? ` on ${supplier.verificationDate}` : ""}.`
+                  : `Verification status: ${supplier.verificationStatus}.`}
               </p>
             </div>
 

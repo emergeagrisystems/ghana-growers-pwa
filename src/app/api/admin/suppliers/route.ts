@@ -19,8 +19,10 @@ export async function POST(request: Request) {
       whatsapp_number: payload.whatsappNumber,
       phone: payload.whatsappNumber,
       verification_status: payload.verificationStatus,
+      verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
+      verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
       website: payload.website || null,
-      status: payload.verificationStatus === "Pending Verification" ? "Pending" : "Active"
+      status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
     })
   });
 }

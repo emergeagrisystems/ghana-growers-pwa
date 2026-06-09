@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
-import { normalizeTrust, TrustScoreCard, TrustSummary } from "@/components/TrustIndicators";
+import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { featuredListingLabels, isFeaturedSupplier } from "@/data/featuredListings";
 import { productCategories } from "@/data/products";
@@ -174,7 +174,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 </div>
               </div>
               <div className="mt-4">
-                <TrustSummary kind="supplier" trust={trust} />
+                <VerificationBadge kind="supplier" status={trust.status} />
               </div>
 
               <p className="mt-4 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>

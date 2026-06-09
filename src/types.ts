@@ -39,7 +39,8 @@ export type BlogPost = {
   date: string;
 };
 
-export type TrustStatus = "Pending Verification" | "Verified" | "Premium Member";
+export type VerificationWorkflowStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
+export type TrustStatus = VerificationWorkflowStatus | "Pending Verification" | "Premium Member";
 
 export type VerificationRequirements = {
   phoneVerified: boolean;
@@ -78,6 +79,8 @@ export type FarmerProfile = {
   deliveryOptions?: string[];
   photos: string[];
   verificationStatus: string;
+  verificationDate?: string;
+  verifiedBy?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };
@@ -108,6 +111,8 @@ export type SupplierProfile = {
   socialLink?: string;
   phone: string;
   verificationStatus: string;
+  verificationDate?: string;
+  verifiedBy?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };

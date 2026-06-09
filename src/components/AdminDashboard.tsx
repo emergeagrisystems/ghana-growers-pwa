@@ -31,7 +31,9 @@ import { marketPrices } from "@/data/marketPrices";
 import { products } from "@/data/products";
 import { supplierDirectory } from "@/data/suppliers";
 
-type AdminStatus = "Pending" | "Verified" | "Active" | "Archived";
+type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived";
+type VerificationSubject = "farmer" | "supplier" | "buyer";
+type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
   | "farmers"
   | "buyers"
@@ -51,6 +53,10 @@ type AdminRow = {
   status: AdminStatus;
   dateAdded: string;
   href?: string;
+  verificationTarget?: {
+    subject: VerificationSubject;
+    recordId: string;
+  };
 };
 type FormField = {
   name: string;
@@ -72,14 +78,20 @@ const adminSessionTokenKey = "ghana-growers-admin-session-token";
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
+  "Under Review": "bg-leaf-50 text-leaf-700",
   Verified: "bg-leaf-50 text-leaf-700",
+  Rejected: "bg-tomato/10 text-tomato",
   Active: "bg-white text-leaf-700 ring-1 ring-leaf-900/10",
   Archived: "bg-ink/10 text-ink/55"
 };
 
 function statusFromTrust(status?: string): AdminStatus {
-  if (status === "Verified" || status === "Premium Member") {
+  if (status === "Verified" || status === "Premium Member" || status?.includes("Verified")) {
     return "Verified";
+  }
+
+  if (status === "Under Review" || status === "Rejected" || status === "Pending") {
+    return status;
   }
 
   return "Pending";
@@ -110,7 +122,8 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: farmer.region,
       status: statusFromTrust(farmer.trust?.status),
       dateAdded: "2026-06-07",
-      href: `/farmer-directory/${farmer.slug}`
+      href: `/farmer-directory/${farmer.slug}`,
+      verificationTarget: { subject: "farmer" as const, recordId: farmer.slug }
     })),
     ...supplierDirectory.map((supplier) => ({
       id: `verify-supplier-${supplier.slug}`,
@@ -119,7 +132,8 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: supplier.region,
       status: statusFromTrust(supplier.trust?.status),
       dateAdded: "2026-06-07",
-      href: `/supplier-directory/${supplier.slug}`
+      href: `/supplier-directory/${supplier.slug}`,
+      verificationTarget: { subject: "supplier" as const, recordId: supplier.slug }
     })),
     ...buyerRequests.map((request) => ({
       id: `verify-buyer-${request.id}`,
@@ -128,7 +142,8 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: request.region,
       status: statusFromTrust(request.trust?.status),
       dateAdded: request.datePosted,
-      href: "/buyer-requests"
+      href: "/buyer-requests",
+      verificationTarget: { subject: "buyer" as const, recordId: request.id }
     }))
   ];
 
@@ -198,7 +213,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "suppliers", label: "Suppliers", icon: Truck },
   { id: "marketplace", label: "Marketplace Listings", icon: Store },
   { id: "buyer-requests", label: "Buyer Requests", icon: PackageCheck },
-  { id: "verifications", label: "Verifications", icon: ShieldCheck },
+  { id: "verifications", label: "Verification Queue", icon: ShieldCheck },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
@@ -246,7 +261,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "products", label: "Products", required: true, helper: "Separate multiple products with commas." },
     { name: "farmSize", label: "Farm Size", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
-    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending Verification", "Verified Farmer", "Premium Farmer", "Active Seller"] },
+    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
     { name: "profileImageUrl", label: "Profile Image URL", type: "url", helper: "Use a local /images path or approved image URL." }
   ],
   suppliers: [
@@ -257,7 +272,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "category", label: "Category", type: "select", required: true, options: ["Seeds", "Fertilizers", "Agrochemicals", "Farm Equipment", "Irrigation Systems", "Packaging", "Logistics", "Storage", "Financial Services", "Agricultural Consulting"] },
     { name: "productsServices", label: "Products/Services", required: true, helper: "Separate multiple services with commas." },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
-    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending Verification", "Verified Supplier", "Premium Member"] },
+    { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
     { name: "website", label: "Website", type: "url" }
   ],
   marketplace: [
@@ -632,6 +647,44 @@ export function AdminDashboard() {
     }
 
     setNotice(`${action} action prepared for ${row.name}. Connect a database to persist this change.`);
+  }
+
+  async function updateVerificationStatus(row: AdminRow, status: VerificationStatus) {
+    if (!row.verificationTarget) {
+      setNotice(`Verification target is missing for ${row.name}.`);
+      return;
+    }
+
+    const adminSessionToken = window.sessionStorage.getItem(adminSessionTokenKey);
+
+    if (!adminSessionToken) {
+      setNotice("Admin access required. Please lock the dashboard and sign in again.");
+      return;
+    }
+
+    setStatusOverrides((current) => ({ ...current, [row.id]: status }));
+
+    const response = await fetch("/api/admin/verifications", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-ghana-growers-admin-session": adminSessionToken
+      },
+      body: JSON.stringify({
+        ...row.verificationTarget,
+        status,
+        verifiedBy: "Ghana Growers Admin"
+      })
+    }).catch(() => null);
+
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      setNotice(result?.error ?? `Could not update verification status for ${row.name}.`);
+      return;
+    }
+
+    setNotice(`${row.name} verification status updated to ${status}.`);
   }
 
   function runQuickAction(section: AdminSectionId, intent: string) {
@@ -1019,7 +1072,9 @@ export function AdminDashboard() {
                   >
                     <option value="All">All statuses</option>
                     <option value="Pending">Pending</option>
+                    <option value="Under Review">Under Review</option>
                     <option value="Verified">Verified</option>
+                    <option value="Rejected">Rejected</option>
                     <option value="Active">Active</option>
                     <option value="Archived">Archived</option>
                   </select>
@@ -1056,7 +1111,7 @@ export function AdminDashboard() {
                           {row.href ? (
                             <Link href={row.href} className="inline-flex items-center gap-1 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700 transition hover:bg-leaf-100">
                               <Eye className="h-3.5 w-3.5" />
-                              View
+                              {activeSection === "verifications" ? "Review" : "View"}
                             </Link>
                           ) : (
                             <button type="button" className="inline-flex items-center gap-1 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700">
@@ -1064,39 +1119,70 @@ export function AdminDashboard() {
                               View
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const formId = formIdForSection(activeSection);
+                          {activeSection === "verifications" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => updateVerificationStatus(row, "Under Review")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <FilePenLine className="h-3.5 w-3.5" />
+                                Mark Under Review
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateVerificationStatus(row, "Verified")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <BadgeCheck className="h-3.5 w-3.5" />
+                                Verify
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateVerificationStatus(row, "Rejected")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                                Reject
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const formId = formIdForSection(activeSection);
 
-                              if (formId) {
-                                openAdminForm(formId, "edit", row);
-                                return;
-                              }
+                                  if (formId) {
+                                    openAdminForm(formId, "edit", row);
+                                    return;
+                                  }
 
-                              mockAction(row, "Edit");
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
-                          >
-                            <FilePenLine className="h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => mockAction(row, "Mark Verified")}
-                            className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
-                          >
-                            <BadgeCheck className="h-3.5 w-3.5" />
-                            Mark Verified
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => mockAction(row, "Archive")}
-                            className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
-                          >
-                            <Archive className="h-3.5 w-3.5" />
-                            Archive
-                          </button>
+                                  mockAction(row, "Edit");
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <FilePenLine className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => mockAction(row, "Mark Verified")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <BadgeCheck className="h-3.5 w-3.5" />
+                                Mark Verified
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => mockAction(row, "Archive")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                                Archive
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

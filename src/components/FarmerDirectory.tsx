@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Crown, Search, SlidersHorizontal } from "lucide-react";
+import { BadgeCheck, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
@@ -16,20 +16,11 @@ function unique(values: string[]) {
 }
 
 function FarmerBadge({ status }: { status: string }) {
-  if (status === "Premium Member") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-500 px-3 py-1 text-xs font-black text-ink">
-        <Crown className="h-3.5 w-3.5" />
-        Premium Farmer
-      </span>
-    );
-  }
-
   if (status === "Verified") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
         <BadgeCheck className="h-3.5 w-3.5" />
-        Verified Farmer
+        Verified by Ghana Growers
       </span>
     );
   }

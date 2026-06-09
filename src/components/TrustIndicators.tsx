@@ -1,4 +1,4 @@
-import { BadgeCheck, CheckCircle2, CircleDashed, Crown, ShieldCheck, Star, XCircle } from "lucide-react";
+import { BadgeCheck, CheckCircle2, CircleDashed, ShieldCheck, Star, XCircle } from "lucide-react";
 import type { TrustProfile, TrustScore, TrustStatus, VerificationRequirements } from "@/types";
 
 type ProfileKind = "farmer" | "buyer" | "supplier";
@@ -22,8 +22,12 @@ const defaultScore: TrustScore = {
 };
 
 export function normalizeTrust(trust?: TrustProfile, fallbackStatus: TrustStatus = "Pending Verification"): TrustProfile {
+  const rawStatus = trust?.status ?? fallbackStatus;
+  const status: TrustStatus =
+    rawStatus === "Pending Verification" ? "Pending" : rawStatus === "Premium Member" ? "Verified" : rawStatus;
+
   return {
-    status: trust?.status ?? fallbackStatus,
+    status,
     requirements: trust?.requirements ?? defaultRequirements,
     score: trust?.score ?? defaultScore
   };
@@ -34,12 +38,12 @@ export function trustScoreTotal(score: TrustScore) {
 }
 
 export function VerificationBadge({ kind, status }: TrustBadgeProps) {
-  if (status === "Pending Verification") {
+  if (status !== "Verified") {
     return null;
   }
 
-  const label = kind === "farmer" ? "Verified Farmer" : kind === "buyer" ? "Verified Buyer" : "Verified Supplier";
-  const Icon = status === "Premium Member" ? Crown : BadgeCheck;
+  const label = kind === "farmer" ? "Verified by Ghana Growers" : kind === "buyer" ? "Verified by Ghana Growers" : "Verified by Ghana Growers";
+  const Icon = BadgeCheck;
 
   return (
     <span className="inline-flex items-center gap-2 rounded-md bg-leaf-600 px-3 py-2 text-xs font-black text-white">
@@ -50,11 +54,11 @@ export function VerificationBadge({ kind, status }: TrustBadgeProps) {
 }
 
 export function ProfileStatusBadge({ status }: { status: TrustStatus }) {
-  const Icon = status === "Premium Member" ? Crown : status === "Verified" ? ShieldCheck : CircleDashed;
-  const className = status === "Premium Member"
-    ? "bg-earth-500 text-ink"
-    : status === "Verified"
+  const Icon = status === "Verified" ? ShieldCheck : CircleDashed;
+  const className = status === "Verified"
       ? "bg-leaf-50 text-leaf-700"
+      : status === "Rejected"
+        ? "bg-tomato/10 text-tomato"
       : "bg-ink/10 text-ink/70";
 
   return (

@@ -36,6 +36,12 @@ Admin Learn Article persistence uses this follow-up migration:
 supabase/migrations/002_learn_articles.sql
 ```
 
+The operational verification workflow uses this migration:
+
+```text
+supabase/migrations/003_verification_workflow.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -44,6 +50,14 @@ It creates these tables:
 - `buyer_requests`
 - `market_prices`
 - `learn_articles` when the follow-up migration is run
+
+The verification workflow migration adds:
+
+- `verification_status`
+- `verification_date`
+- `verified_by`
+
+for farmers, suppliers, and buyer requests where appropriate.
 
 Each table includes an `id`, timestamps, status fields, and Ghana Growers operational fields such as region, district, verification status, contact details, and listing/request metadata.
 
@@ -56,7 +70,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 5. Paste into Supabase SQL Editor.
 6. Run the query.
 7. Repeat for `supabase/migrations/002_learn_articles.sql` if Learn Article persistence is needed.
-8. Confirm the tables appear under **Table Editor**.
+8. Repeat for `supabase/migrations/003_verification_workflow.sql` to enable the verification queue workflow.
+9. Confirm the tables appear under **Table Editor**.
 
 ## Current App Behavior
 
@@ -84,6 +99,7 @@ src/app/api/admin/marketplace-listings/route.ts
 src/app/api/admin/buyer-requests/route.ts
 src/app/api/admin/market-prices/route.ts
 src/app/api/admin/learn-articles/route.ts
+src/app/api/admin/verifications/route.ts
 ```
 
 These routes:
