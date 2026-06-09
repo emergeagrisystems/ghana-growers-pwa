@@ -24,7 +24,7 @@ import {
   UploadCloud,
   UsersRound
 } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import learnArticles from "@/data/learnArticles.json";
@@ -59,6 +59,15 @@ type AdminRow = {
     subject: VerificationSubject;
     recordId: string;
   };
+};
+type AdminActivityRecord = {
+  id: string;
+  admin_email: string;
+  action_type: "Create" | "Edit" | "Verify" | "Archive";
+  entity_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Buyer Request";
+  entity_id: string | null;
+  entity_name: string;
+  created_at: string;
 };
 type FormField = {
   name: string;
@@ -321,50 +330,6 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Active", "Archived"] }
   ]
 };
-
-const recentActivity: Array<{
-  action: string;
-  detail: string;
-  time: string;
-  section: AdminSectionId;
-  icon: typeof LayoutDashboard;
-}> = [
-  {
-    action: "Farmer verified",
-    detail: "Techiman Maize and Beans Farm marked as Verified Farmer",
-    time: "Today, 9:20 AM",
-    section: "verifications",
-    icon: BadgeCheck
-  },
-  {
-    action: "New farmer added",
-    detail: "Nsawam Fruit Farmers joined the farmer directory",
-    time: "Today, 8:45 AM",
-    section: "farmers",
-    icon: Sprout
-  },
-  {
-    action: "New supplier added",
-    detail: "FreshChain Logistics Tema added to supplier records",
-    time: "Yesterday, 4:10 PM",
-    section: "suppliers",
-    icon: Truck
-  },
-  {
-    action: "Buyer request created",
-    detail: "500 crates of tomatoes requested in Greater Accra",
-    time: "Yesterday, 2:35 PM",
-    section: "buyer-requests",
-    icon: PackageCheck
-  },
-  {
-    action: "Listing approved",
-    detail: "Bulk onions listing approved for marketplace visibility",
-    time: "Jun 7, 11:15 AM",
-    section: "marketplace",
-    icon: Store
-  }
-];
 
 function summarize(rows: Record<AdminSectionId, AdminRow[]>) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
@@ -719,6 +684,95 @@ function canPersistAdminForm(formId: AdminFormId, mode: "add" | "edit") {
   return Boolean(createEndpoints[formId] && (mode === "add" || formId !== "learn"));
 }
 
+function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminSectionId {
+  if (entityType === "Farmer") {
+    return "farmers";
+  }
+
+  if (entityType === "Supplier") {
+    return "suppliers";
+  }
+
+  if (entityType === "Marketplace Listing") {
+    return "marketplace";
+  }
+
+  return "buyer-requests";
+}
+
+function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
+  if (entityType === "Farmer") {
+    return Sprout;
+  }
+
+  if (entityType === "Supplier") {
+    return Truck;
+  }
+
+  if (entityType === "Marketplace Listing") {
+    return Store;
+  }
+
+  return PackageCheck;
+}
+
+function displayAdminName(email: string) {
+  const name = email.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+
+  if (!name) {
+    return "Admin";
+  }
+
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function activitySentence(activity: AdminActivityRecord) {
+  const verbs: Record<AdminActivityRecord["action_type"], string> = {
+    Create: "created",
+    Edit: "edited",
+    Verify: "verified",
+    Archive: "archived"
+  };
+  const verb = verbs[activity.action_type];
+  const entity = activity.entity_type.toLowerCase();
+
+  return `${displayAdminName(activity.admin_email)} ${verb} ${entity} ${activity.entity_name}`;
+}
+
+function relativeActivityTime(value: string) {
+  const timestamp = new Date(value).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return "Recently";
+  }
+
+  const seconds = Math.max(1, Math.round((Date.now() - timestamp) / 1000));
+
+  if (seconds < 60) {
+    return "Just now";
+  }
+
+  const minutes = Math.round(seconds / 60);
+
+  if (minutes < 60) {
+    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  }
+
+  const hours = Math.round(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  }
+
+  const days = Math.round(hours / 24);
+
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
 export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("farmers");
   const [searchTerm, setSearchTerm] = useState("");
@@ -734,6 +788,30 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({});
   const [rowsBySection, setRowsBySection] = useState<Record<AdminSectionId, AdminRow[]>>(() => sectionRows());
+  const [activityRows, setActivityRows] = useState<AdminActivityRecord[]>([]);
+  const [activityError, setActivityError] = useState("");
+
+  const loadActivity = useCallback(async () => {
+    const response = await fetch("/api/admin/activity").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { activity?: AdminActivityRecord[]; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setActivityError(result?.error ?? "Admin activity is unavailable.");
+      return;
+    }
+
+    setActivityRows(result?.activity ?? []);
+    setActivityError("");
+  }, []);
+
+  useEffect(() => {
+    void loadActivity();
+  }, [loadActivity]);
 
   const summaryCards = useMemo(() => summarize(rowsBySection), [rowsBySection]);
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
@@ -784,7 +862,8 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
         ...row.verificationTarget,
         status,
         verifiedBy: "Ghana Growers Admin",
-        verificationNotes: verificationNotes[row.id] ?? ""
+        verificationNotes: verificationNotes[row.id] ?? "",
+        entityName: row.name
       })
     }).catch(() => null);
 
@@ -802,6 +881,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
 
     setNotice(`${row.name} verification status updated to ${status}.`);
     setVerificationNotes((current) => ({ ...current, [row.id]: "" }));
+    void loadActivity();
   }
 
   async function archiveAdminRow(row: AdminRow) {
@@ -821,7 +901,8 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
       },
       body: JSON.stringify({
         section: formId,
-        recordId: row.id
+        recordId: row.id,
+        entityName: row.name
       })
     }).catch(() => null);
 
@@ -842,6 +923,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
       [activeSection]: current[activeSection].map((record) => (record.id === row.id ? { ...record, status: "Archived" } : record))
     }));
     setNotice(`${row.name} archived successfully.`);
+    void loadActivity();
   }
 
   function runQuickAction(section: AdminSectionId, intent: string) {
@@ -1027,6 +1109,7 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
 
       const savedRow = rowFromForm(activeForm.id, formValues, result?.record, activeForm.mode === "edit" ? activeForm.recordId : undefined);
       refreshAdminRows(activeForm.id, activeForm.mode, savedRow);
+      void loadActivity();
       setFormError("");
       setFormSuccess("Saved successfully.");
       setNotice(
@@ -1213,24 +1296,35 @@ export function AdminDashboard({ currentAdmin }: { currentAdmin: AdminUser }) {
                 </span>
               </div>
               <div className="mt-5 divide-y divide-leaf-900/10">
-                {recentActivity.map((activity) => {
-                  const Icon = activity.icon;
+                {activityError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{activityError}</div>
+                ) : null}
+                {!activityError && activityRows.length === 0 ? (
+                  <div className="rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/60">
+                    No admin activity has been recorded yet.
+                  </div>
+                ) : null}
+                {activityRows.map((activity) => {
+                  const Icon = activityIcon(activity.entity_type);
+                  const section = activitySection(activity.entity_type);
 
                   return (
                     <button
-                      key={`${activity.action}-${activity.time}`}
+                      key={activity.id}
                       type="button"
-                      onClick={() => runQuickAction(activity.section, `${activity.action} activity opened.`)}
+                      onClick={() => runQuickAction(section, `${activity.action_type} activity opened.`)}
                       className="flex w-full items-start gap-3 py-3 text-left transition first:pt-0 last:pb-0 hover:text-leaf-800"
                     >
                       <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
                         <Icon className="h-4 w-4" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-black text-ink">{activity.action}</span>
-                        <span className="mt-1 block text-sm leading-5 text-ink/60">{activity.detail}</span>
+                        <span className="block text-sm font-black text-ink">{activitySentence(activity)}</span>
+                        <span className="mt-1 block text-sm leading-5 text-ink/60">
+                          {activity.action_type} · {activity.entity_type} · {activity.admin_email} · {relativeActivityTime(activity.created_at)}
+                        </span>
                       </span>
-                      <span className="hidden shrink-0 text-xs font-black text-ink/45 sm:block">{activity.time}</span>
+                      <span className="hidden shrink-0 text-xs font-black text-ink/45 sm:block">{relativeActivityTime(activity.created_at)}</span>
                     </button>
                   );
                 })}

@@ -79,8 +79,25 @@ The following actions require a Supabase Auth admin session:
 - Archive records
 - Update verification status
 - Upload images
+- Read the admin activity log
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
+
+## Activity Log
+
+Admin create, edit, verify, and archive actions are tracked in:
+
+```text
+admin_activity_log
+```
+
+Run this migration in Supabase SQL Editor:
+
+```text
+supabase/migrations/006_admin_activity_log.sql
+```
+
+The dashboard Recent Activity panel displays the latest 25 activity records. Activity is written server-side after successful admin actions for Farmers, Suppliers, Marketplace Listings, and Buyer Requests.
 
 ## Password Reset
 
@@ -105,6 +122,7 @@ src/app/api/admin/auth/forgot-password/route.ts
 Protected admin routes:
 
 ```text
+src/app/api/admin/activity/route.ts
 src/app/api/admin/archive/route.ts
 src/app/api/admin/farmers/route.ts
 src/app/api/admin/suppliers/route.ts
@@ -121,4 +139,4 @@ src/app/api/admin/uploads/route.ts
 - Do not expose `SUPABASE_SERVICE_ROLE_KEY` in frontend code.
 - Use admin role metadata only for trusted internal accounts.
 - Review Supabase Auth logs regularly.
-- Add detailed activity logs before using the dashboard for high-risk production operations.
+- Review the admin activity log regularly before using the dashboard for high-risk production operations.

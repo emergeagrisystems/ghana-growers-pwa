@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
+import { logAdminActivity, type AdminEntityType } from "@/lib/adminActivity";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type AdminFormPayload = Record<string, string>;
@@ -9,6 +10,10 @@ type CreateRecordOptions = {
   table: string;
   requiredFields: string[];
   mapPayload: (payload: AdminFormPayload) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  activity?: {
+    entityType: AdminEntityType;
+    entityName: (payload: AdminFormPayload, record?: unknown) => string;
+  };
 };
 
 type UpdateRecordOptions = {
@@ -17,6 +22,10 @@ type UpdateRecordOptions = {
   requiredFields: string[];
   filterColumn?: "id" | "slug";
   mapPayload: (payload: AdminFormPayload) => Record<string, unknown> | Promise<Record<string, unknown>>;
+  activity?: {
+    entityType: AdminEntityType;
+    entityName: (payload: AdminFormPayload, record?: unknown) => string;
+  };
 };
 
 type SlugRow = {
@@ -114,7 +123,53 @@ function friendlyAdminSaveError(error: string) {
   return "Could not save this record. Please check the fields and try again.";
 }
 
-export async function createRecord({ request, table, requiredFields, mapPayload }: CreateRecordOptions) {
+function recordIdentifier(record: unknown, fallback?: unknown) {
+  if (record && typeof record === "object") {
+    const values = record as Record<string, unknown>;
+    const slug = values.slug;
+    const id = values.id;
+
+    if (typeof slug === "string" && slug) {
+      return slug;
+    }
+
+    if (typeof id === "string" && id) {
+      return id;
+    }
+  }
+
+  return typeof fallback === "string" ? fallback : null;
+}
+
+async function writeActivity({
+  adminEmail,
+  actionType,
+  activity,
+  payload,
+  record,
+  fallbackId
+}: {
+  adminEmail: string;
+  actionType: "Create" | "Edit";
+  activity?: CreateRecordOptions["activity"];
+  payload: AdminFormPayload;
+  record?: unknown;
+  fallbackId?: unknown;
+}) {
+  if (!activity) {
+    return;
+  }
+
+  await logAdminActivity({
+    adminEmail,
+    actionType,
+    entityType: activity.entityType,
+    entityId: recordIdentifier(record, fallbackId),
+    entityName: activity.entityName(payload, record)
+  });
+}
+
+export async function createRecord({ request, table, requiredFields, mapPayload, activity }: CreateRecordOptions) {
   const adminUser = await requireAdminUser(request);
 
   if (!adminUser) {
@@ -161,6 +216,15 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
       });
 
       if (!retryInsert.error) {
+        await writeActivity({
+          adminEmail: adminUser.email,
+          actionType: "Create",
+          activity,
+          payload,
+          record: retryInsert.data,
+          fallbackId: uniqueSlug.slug
+        });
+
         return NextResponse.json(
           {
             ok: true,
@@ -192,6 +256,15 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
     return NextResponse.json({ error: friendlyAdminSaveError(insert.error) }, { status: insert.status });
   }
 
+  await writeActivity({
+    adminEmail: adminUser.email,
+    actionType: "Create",
+    activity,
+    payload,
+    record: insert.data,
+    fallbackId: recordPayload.slug
+  });
+
   return NextResponse.json(
     {
       ok: true,
@@ -203,7 +276,7 @@ export async function createRecord({ request, table, requiredFields, mapPayload 
   );
 }
 
-export async function updateRecord({ request, table, requiredFields, filterColumn = "id", mapPayload }: UpdateRecordOptions) {
+export async function updateRecord({ request, table, requiredFields, filterColumn = "id", mapPayload, activity }: UpdateRecordOptions) {
   const adminUser = await requireAdminUser(request);
 
   if (!adminUser) {
@@ -229,6 +302,15 @@ export async function updateRecord({ request, table, requiredFields, filterColum
   if (update.error) {
     return NextResponse.json({ error: friendlyAdminSaveError(update.error) }, { status: update.status });
   }
+
+  await writeActivity({
+    adminEmail: adminUser.email,
+    actionType: "Edit",
+    activity,
+    payload,
+    record: update.data,
+    fallbackId: recordId
+  });
 
   return NextResponse.json({ ok: true, record: update.data }, { status: 200 });
 }

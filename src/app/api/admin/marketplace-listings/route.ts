@@ -10,6 +10,10 @@ export async function POST(request: Request) {
     request,
     table: "marketplace_listings",
     requiredFields,
+    activity: {
+      entityType: "Marketplace Listing",
+      entityName: (payload) => payload.productName
+    },
     mapPayload: async (payload) => {
       const slugSource = `${payload.productName}-${payload.sellerFarmer}`;
       const uniqueSlug = await generateUniqueSlug("marketplace_listings", slugSource);
@@ -45,6 +49,10 @@ export async function PATCH(request: Request) {
     table: "marketplace_listings",
     filterColumn: "slug",
     requiredFields,
+    activity: {
+      entityType: "Marketplace Listing",
+      entityName: (payload) => payload.productName
+    },
     mapPayload: (payload) => ({
       product_name: payload.productName,
       category: payload.category,

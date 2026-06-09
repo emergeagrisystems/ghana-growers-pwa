@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
+import { logAdminActivity, type AdminEntityType } from "@/lib/adminActivity";
 import { updateSupabaseRecord } from "@/lib/supabase/admin";
 
 type VerificationSubject = "farmer" | "supplier" | "buyer";
@@ -9,6 +10,12 @@ const targetTables: Record<VerificationSubject, { table: string; filterColumn: "
   farmer: { table: "farmers", filterColumn: "slug" },
   supplier: { table: "suppliers", filterColumn: "slug" },
   buyer: { table: "buyer_requests", filterColumn: "id" }
+};
+
+const entityTypes: Record<VerificationSubject, AdminEntityType> = {
+  farmer: "Farmer",
+  supplier: "Supplier",
+  buyer: "Buyer Request"
 };
 
 export const runtime = "nodejs";
@@ -27,6 +34,7 @@ export async function PATCH(request: Request) {
     status?: VerificationStatus;
     verifiedBy?: string;
     verificationNotes?: string;
+    entityName?: string;
   };
 
   if (!body.subject || !body.recordId || !body.status || !targetTables[body.subject]) {
@@ -46,6 +54,16 @@ export async function PATCH(request: Request) {
 
   if (update.error) {
     return NextResponse.json({ error: update.error }, { status: update.status });
+  }
+
+  if (body.status === "Verified") {
+    await logAdminActivity({
+      adminEmail: adminUser.email,
+      actionType: "Verify",
+      entityType: entityTypes[body.subject],
+      entityId: body.recordId,
+      entityName: body.entityName || body.recordId
+    });
   }
 
   return NextResponse.json({ ok: true, record: update.data });

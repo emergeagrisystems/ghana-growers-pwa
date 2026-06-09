@@ -10,6 +10,10 @@ export async function POST(request: Request) {
     request,
     table: "suppliers",
     requiredFields,
+    activity: {
+      entityType: "Supplier",
+      entityName: (payload) => payload.companyName
+    },
     mapPayload: async (payload) => {
       const uniqueSlug = await generateUniqueSlug("suppliers", payload.companyName);
 
@@ -45,6 +49,10 @@ export async function PATCH(request: Request) {
     table: "suppliers",
     filterColumn: "slug",
     requiredFields,
+    activity: {
+      entityType: "Supplier",
+      entityName: (payload) => payload.companyName
+    },
     mapPayload: (payload) => ({
       company_name: payload.companyName,
       contact_person: payload.contactPerson,

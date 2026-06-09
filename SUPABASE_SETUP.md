@@ -55,6 +55,12 @@ Saved Crop Health Check reports use this migration:
 supabase/migrations/005_crop_health_reports.sql
 ```
 
+Admin action tracking uses this migration:
+
+```text
+supabase/migrations/006_admin_activity_log.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -64,6 +70,7 @@ It creates these tables:
 - `market_prices`
 - `learn_articles` when the follow-up migration is run
 - `crop_health_reports` when the crop health reports migration is run
+- `admin_activity_log` when the admin activity log migration is run
 
 The verification workflow migration adds:
 
@@ -88,7 +95,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 8. Repeat for `supabase/migrations/003_verification_workflow.sql` to enable the verification queue workflow.
 9. Repeat for `supabase/migrations/004_storage_buckets.sql` to create the `farmers`, `suppliers`, and `marketplace` Storage buckets.
 10. Repeat for `supabase/migrations/005_crop_health_reports.sql` to create saved crop health reports and the `crop-health-reports` Storage bucket.
-11. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
+11. Repeat for `supabase/migrations/006_admin_activity_log.sql` to create the admin activity log table.
+12. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -105,6 +113,8 @@ Admin add and edit forms now attempt to write records in Supabase for:
 
 Archive actions are protected admin API calls where supported.
 
+The admin activity log records create, edit, verify, and archive actions for Farmers, Suppliers, Marketplace Listings, and Buyer Requests. The dashboard Recent Activity panel reads the latest 25 records through a protected server-side admin API route.
+
 ## API Routes
 
 The server-side create routes are:
@@ -118,6 +128,7 @@ src/app/api/admin/market-prices/route.ts
 src/app/api/admin/learn-articles/route.ts
 src/app/api/admin/verifications/route.ts
 src/app/api/admin/uploads/route.ts
+src/app/api/admin/activity/route.ts
 src/app/api/crop-health-reports/route.ts
 ```
 
@@ -131,6 +142,7 @@ These routes:
 - Return friendly errors if Supabase is not configured or the insert fails.
 - Upload admin images to Supabase Storage server-side and return public image URLs.
 - Save Crop Health Check diagnosis reports with uploaded image URLs, diagnosis JSON, date, and confidence.
+- Read Recent Activity from `admin_activity_log` after validating the admin session.
 
 ## Recommended Migration Path
 
@@ -139,6 +151,6 @@ These routes:
 3. Test each admin add form from `/admin`.
 4. Add seed scripts to import existing JSON records into Supabase.
 5. Update public pages to read from Supabase first and local JSON second.
-6. Add seed scripts and activity logs for production operations.
+6. Add seed scripts and review activity logs for production operations.
 7. Review admin role assignments regularly.
 8. Move uploaded images to Supabase Storage when media management is needed.

@@ -24,6 +24,10 @@ export async function POST(request: Request) {
     request,
     table: "buyer_requests",
     requiredFields,
+    activity: {
+      entityType: "Buyer Request",
+      entityName: (payload) => payload.productNeeded
+    },
     mapPayload: (payload) => ({
       ...mapBuyerRequestPayload(payload),
       verification_status: "Pending",
@@ -39,6 +43,10 @@ export async function PATCH(request: Request) {
     request,
     table: "buyer_requests",
     requiredFields,
+    activity: {
+      entityType: "Buyer Request",
+      entityName: (payload) => payload.productNeeded
+    },
     mapPayload: mapBuyerRequestPayload
   });
 }

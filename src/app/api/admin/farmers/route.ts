@@ -21,6 +21,10 @@ export async function POST(request: Request) {
     request,
     table: "farmers",
     requiredFields,
+    activity: {
+      entityType: "Farmer",
+      entityName: (payload) => payload.farmName || payload.farmerName
+    },
     mapPayload: async (payload) => {
       const slugSource = farmerSlugSource(payload.farmerName, payload.farmName);
       const uniqueSlug = await generateUniqueSlug("farmers", slugSource);
@@ -56,6 +60,10 @@ export async function PATCH(request: Request) {
     table: "farmers",
     filterColumn: "slug",
     requiredFields,
+    activity: {
+      entityType: "Farmer",
+      entityName: (payload) => payload.farmName || payload.farmerName
+    },
     mapPayload: (payload) => ({
       farmer_name: payload.farmerName,
       farm_name: payload.farmName,

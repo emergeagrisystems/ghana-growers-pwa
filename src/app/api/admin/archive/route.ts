@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
+import { logAdminActivity, type AdminEntityType } from "@/lib/adminActivity";
 import { updateSupabaseRecord } from "@/lib/supabase/admin";
 
 type ArchiveSection = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
 
-const archiveTargets: Record<ArchiveSection, { table: string; filterColumn: "id" | "slug" }> = {
-  farmers: { table: "farmers", filterColumn: "slug" },
-  suppliers: { table: "suppliers", filterColumn: "slug" },
-  marketplace: { table: "marketplace_listings", filterColumn: "slug" },
-  "buyer-requests": { table: "buyer_requests", filterColumn: "id" },
+const archiveTargets: Record<ArchiveSection, { table: string; filterColumn: "id" | "slug"; entityType?: AdminEntityType }> = {
+  farmers: { table: "farmers", filterColumn: "slug", entityType: "Farmer" },
+  suppliers: { table: "suppliers", filterColumn: "slug", entityType: "Supplier" },
+  marketplace: { table: "marketplace_listings", filterColumn: "slug", entityType: "Marketplace Listing" },
+  "buyer-requests": { table: "buyer_requests", filterColumn: "id", entityType: "Buyer Request" },
   "market-prices": { table: "market_prices", filterColumn: "id" },
   learn: { table: "learn_articles", filterColumn: "slug" }
 };
@@ -32,7 +33,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { section?: ArchiveSection; recordId?: string };
+  const body = (await request.json().catch(() => ({}))) as { section?: ArchiveSection; recordId?: string; entityName?: string };
 
   if (!body.section || !body.recordId || !archiveTargets[body.section]) {
     return NextResponse.json({ error: "Admin section and record ID are required." }, { status: 400 });
@@ -45,6 +46,16 @@ export async function PATCH(request: Request) {
 
   if (update.error) {
     return NextResponse.json({ error: "Could not archive this record. Please try again." }, { status: update.status });
+  }
+
+  if (target.entityType) {
+    await logAdminActivity({
+      adminEmail: adminUser.email,
+      actionType: "Archive",
+      entityType: target.entityType,
+      entityId: body.recordId,
+      entityName: body.entityName || body.recordId
+    });
   }
 
   return NextResponse.json({ ok: true, record: update.data });
