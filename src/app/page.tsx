@@ -9,11 +9,10 @@ import {
 import { ButtonLink } from "@/components/ButtonLink";
 import { ChooseYourPath } from "@/components/ChooseYourPath";
 import { FeaturedListings } from "@/components/FeaturedListings";
+import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SafeImage } from "@/components/SafeImage";
-import { SectionHeader } from "@/components/SectionHeader";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { productCategories } from "@/data/products";
 
 export const metadata = {
   title: "Trusted Agriculture Platform for Ghana",
@@ -32,19 +31,6 @@ const heroHighlights = [
   { title: "Digital Farm Tools", icon: CloudSun },
   { title: "Verified Members", icon: ShieldCheck },
   { title: "Fair Market Access", icon: BarChart3 }
-];
-
-const homepageCategories = [
-  ...productCategories.map((category) => ({
-    ...category,
-    name: category.name === "Logistics Services" ? "Logistics" : category.name
-  })),
-  {
-    slug: "farm-services",
-    name: "Farm Services",
-    description: "Agricultural advisory, land preparation, mechanization, and farm support.",
-    image: "/images/marketplace/farm-activity-2.jpg"
-  }
 ];
 
 export default function HomePage() {
@@ -123,35 +109,7 @@ export default function HomePage() {
         limit={3}
       />
 
-      <section className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader
-            eyebrow="Marketplace"
-            title="Explore Marketplace Categories"
-            description="Browse produce, inputs, livestock, packaging, logistics, and agricultural services."
-          />
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {homepageCategories.map((category) => (
-              <Link
-                href="/marketplace"
-                key={category.slug}
-                className="focus-ring group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
-              >
-                <SafeImage
-                  src={category.image}
-                  alt={`${category.name} marketplace category`}
-                  width={320}
-                  height={220}
-                  fallbackKind="crop"
-                  sizes="(min-width: 1024px) 20vw, (min-width: 640px) 50vw, 100vw"
-                  className="h-28 w-full object-cover transition duration-300 group-hover:scale-105"
-                />
-                <h3 className="px-4 py-3 text-sm font-black text-ink">{category.name}</h3>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MarketplaceCategoryShowcase />
 
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
