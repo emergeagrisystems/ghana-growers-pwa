@@ -112,6 +112,7 @@ type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Con
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type LaunchStatus = "Not Started" | "In Progress" | "Complete";
+type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "archive";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -223,6 +224,14 @@ const manualLaunchChecklistItems = [
   "Confirm domain and SSL work"
 ] as const;
 type ManualLaunchChecklistItem = (typeof manualLaunchChecklistItems)[number];
+
+const farmerBulkActionLabels: Record<FarmerBulkAction, string> = {
+  active: "Mark Active",
+  "pending-review": "Mark Pending Review",
+  "under-review": "Mark Under Review",
+  verified: "Mark Verified",
+  archive: "Archive"
+};
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
@@ -1211,6 +1220,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<"All" | "Tally Import" | "Manual/Test">("All");
+  const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
+  const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
+  const [isUpdatingFarmersBulk, setIsUpdatingFarmersBulk] = useState(false);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ImportAdminStatus>>({});
   const [notice, setNotice] = useState("Actions are mock controls for Phase 1 admin.");
   const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
@@ -1525,6 +1537,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
     return matchesSearch && matchesStatus && matchesFarmerSource;
   });
+  const visibleFarmerRowIds = activeSection === "farmers" ? filteredRows.map((row) => row.id) : [];
+  const selectedVisibleFarmerCount = visibleFarmerRowIds.filter((id) => selectedFarmerRowIds.includes(id)).length;
+  const allVisibleFarmersSelected = visibleFarmerRowIds.length > 0 && selectedVisibleFarmerCount === visibleFarmerRowIds.length;
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
@@ -1650,6 +1665,58 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setStatusFilter("Archived");
     setFarmerSourceFilter("Manual/Test");
     setNotice(`${result?.archived ?? 0} manual/test farmer${result?.archived === 1 ? "" : "s"} archived. Tally-imported farmers were left unchanged.`);
+    void loadActivity();
+    void loadAnalytics();
+  }
+
+  function toggleFarmerSelection(rowId: string, checked: boolean) {
+    setSelectedFarmerRowIds((current) =>
+      checked ? Array.from(new Set([...current, rowId])) : current.filter((id) => id !== rowId)
+    );
+  }
+
+  function toggleVisibleFarmerSelection(checked: boolean) {
+    setSelectedFarmerRowIds((current) => {
+      const visible = new Set(visibleFarmerRowIds);
+
+      if (checked) {
+        return Array.from(new Set([...current, ...visibleFarmerRowIds]));
+      }
+
+      return current.filter((id) => !visible.has(id));
+    });
+  }
+
+  async function applyFarmerBulkAction() {
+    if (!pendingFarmerBulkAction || selectedFarmerRowIds.length === 0) {
+      return;
+    }
+
+    setIsUpdatingFarmersBulk(true);
+    const response = await fetch("/api/admin/farmers/bulk", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: pendingFarmerBulkAction,
+        recordIds: selectedFarmerRowIds
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string; updated?: number; status?: string } | null;
+    setIsUpdatingFarmersBulk(false);
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? "Could not update selected farmers.");
+      return;
+    }
+
+    setPendingFarmerBulkAction(null);
+    setSelectedFarmerRowIds([]);
+    setNotice(`${result?.updated ?? 0} farmer${result?.updated === 1 ? "" : "s"} updated to ${result?.status ?? farmerBulkActionLabels[pendingFarmerBulkAction]}.`);
     void loadActivity();
     void loadAnalytics();
   }
@@ -3245,10 +3312,56 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
               </div>
             ) : (
             <>
+            {activeSection === "farmers" && selectedFarmerRowIds.length > 0 ? (
+              <div className="border-b border-leaf-900/10 bg-leaf-50 p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <p className="text-sm font-black text-ink">
+                    {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"} selected
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["active", "pending-review", "under-review", "verified", "archive"] as FarmerBulkAction[]).map((action) => (
+                      <button
+                        key={action}
+                        type="button"
+                        onClick={() => setPendingFarmerBulkAction(action)}
+                        className={`rounded-md px-3 py-2 text-xs font-black ring-1 ring-leaf-900/10 transition ${
+                          action === "archive"
+                            ? "bg-white text-tomato hover:ring-tomato/30"
+                            : action === "verified"
+                              ? "bg-leaf-700 text-white hover:bg-leaf-800"
+                              : "bg-white text-ink/65 hover:text-leaf-800"
+                        }`}
+                      >
+                        {farmerBulkActionLabels[action]}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFarmerRowIds([])}
+                      className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                    >
+                      Clear Selection
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="overflow-x-auto">
               <table className="min-w-[900px] w-full border-collapse text-left text-sm">
                 <thead className="bg-leaf-50 text-xs font-black uppercase tracking-wide text-ink/50">
                   <tr>
+                    {activeSection === "farmers" ? (
+                      <th className="px-5 py-4">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleFarmersSelected}
+                          disabled={visibleFarmerRowIds.length === 0}
+                          onChange={(event) => toggleVisibleFarmerSelection(event.target.checked)}
+                          aria-label="Select all visible farmers"
+                          className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
+                        />
+                      </th>
+                    ) : null}
                     <th className="px-5 py-4">Name/title</th>
                     <th className="px-5 py-4">Type/category</th>
                     <th className="px-5 py-4">Region</th>
@@ -3261,6 +3374,17 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 <tbody className="divide-y divide-leaf-900/10">
                   {filteredRows.map((row) => (
                     <tr key={row.id} className="align-top">
+                      {activeSection === "farmers" ? (
+                        <td className="px-5 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedFarmerRowIds.includes(row.id)}
+                            onChange={(event) => toggleFarmerSelection(row.id, event.target.checked)}
+                            aria-label={`Select ${row.name}`}
+                            className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
+                          />
+                        </td>
+                      ) : null}
                       <td className="px-5 py-4 font-black text-ink">{row.name}</td>
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
@@ -3373,6 +3497,39 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
             </>
             )}
           </section>
+
+          {pendingFarmerBulkAction ? (
+            <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6">
+              <section className="w-full max-w-lg rounded-md bg-white p-6 shadow-soft">
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Confirm Bulk Update</p>
+                <h2 className="mt-2 text-2xl font-black text-ink">
+                  Are you sure you want to update {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"}?
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-ink/65">
+                  This will apply <span className="font-black text-ink">{farmerBulkActionLabels[pendingFarmerBulkAction]}</span> to the selected farmer records in Supabase.
+                  No farmer records will be deleted.
+                </p>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPendingFarmerBulkAction(null)}
+                    disabled={isUpdatingFarmersBulk}
+                    className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyFarmerBulkAction}
+                    disabled={isUpdatingFarmersBulk}
+                    className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                  >
+                    {isUpdatingFarmersBulk ? "Updating..." : "Confirm Update"}
+                  </button>
+                </div>
+              </section>
+            </div>
+          ) : null}
 
           {activeForm ? (
             <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6">
