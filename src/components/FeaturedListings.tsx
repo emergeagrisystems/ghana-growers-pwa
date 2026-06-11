@@ -3,7 +3,7 @@ import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout } from "lucide-
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
-import { normalizeTrust, TrustSummary } from "@/components/TrustIndicators";
+import { normalizeTrust, VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import {
   featuredBuyerRequests,
@@ -19,6 +19,8 @@ type FeaturedListingsProps = {
   title?: string;
   description?: string;
   background?: "white" | "leaf" | "earth";
+  limit?: number;
+  compact?: boolean;
 };
 
 const backgrounds = {
@@ -31,7 +33,9 @@ export function FeaturedListings({
   kinds = ["all"],
   title = "Featured listings",
   description = "Highlighted farmers, suppliers, and buyer requests that Ghana Growers wants visitors to notice first.",
-  background = "white"
+  background = "white",
+  limit,
+  compact = false
 }: FeaturedListingsProps) {
   const showAll = kinds.includes("all");
   const showFarmers = showAll || kinds.includes("farmers");
@@ -44,32 +48,39 @@ export function FeaturedListings({
         <SectionHeader eyebrow="Featured" title={title} description={description} />
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {showFarmers
-            ? featuredFarmers.map((farmer) => {
+            ? featuredFarmers.slice(0, limit).map((farmer) => {
                 const trust = normalizeTrust(farmer.trust);
 
                 return (
-                <article key={farmer.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
-                  <div className="flex items-start justify-between gap-4">
-                    <FeaturedRibbon label={featuredListingLabels.farmers} />
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
-                      <Sprout size={20} aria-hidden="true" />
+                <article
+                  key={farmer.slug}
+                  className={`relative overflow-hidden rounded-md bg-white shadow-soft ${compact ? "border border-leaf-900/10 p-4" : "border-2 border-earth-500 p-5"}`}
+                >
+                  {compact ? null : (
+                    <div className="flex items-start justify-between gap-4">
+                      <FeaturedRibbon label={featuredListingLabels.farmers} />
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                        <Sprout size={20} aria-hidden="true" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <SafeImage
                     src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
                     alt={`${farmer.farmName} farm photo`}
                     width={420}
                     height={240}
-                    className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                    className={`${compact ? "h-40" : "mt-4 h-36"} w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover`}
                     fallbackKind="farmer"
                     sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />
-                  <h3 className="mt-4 text-xl font-black text-ink">{farmer.farmName}</h3>
+                  <h3 className={`${compact ? "text-lg" : "text-xl"} mt-4 font-black text-ink`}>{farmer.farmName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>
-                  <div className="mt-3">
-                    <TrustSummary kind="farmer" trust={trust} />
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>
+                  {trust.status === "Verified" ? (
+                    <div className="mt-3">
+                      <VerificationBadge kind="farmer" status={trust.status} />
+                    </div>
+                  ) : null}
+                  {compact ? null : <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {farmer.products.slice(0, 3).map((product) => (
                       <span key={product} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
@@ -89,7 +100,7 @@ export function FeaturedListings({
             : null}
 
           {showSuppliers
-            ? featuredSuppliers.map((supplier) => {
+            ? featuredSuppliers.slice(0, limit).map((supplier) => {
                 const trust = normalizeTrust(supplier.trust);
 
                 return (
@@ -115,9 +126,11 @@ export function FeaturedListings({
                     <MapPin size={14} aria-hidden="true" />
                     {supplier.region}
                   </p>
-                  <div className="mt-3">
-                    <TrustSummary kind="supplier" trust={trust} />
-                  </div>
+                  {trust.status === "Verified" ? (
+                    <div className="mt-3">
+                      <VerificationBadge kind="supplier" status={trust.status} />
+                    </div>
+                  ) : null}
                   <p className="mt-3 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {supplier.productsServices.slice(0, 3).map((service) => (
@@ -138,7 +151,7 @@ export function FeaturedListings({
             : null}
 
           {showBuyerRequests
-            ? featuredBuyerRequests.map((request) => (
+            ? featuredBuyerRequests.slice(0, limit).map((request) => (
                 <article key={request.id} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.buyerRequests} />

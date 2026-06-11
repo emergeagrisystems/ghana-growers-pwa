@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShoppingBasket, Sprout, Tractor, type LucideIcon } from "lucide-react";
+import { ShoppingBasket, Sprout, Tractor, type LucideIcon } from "lucide-react";
 
 type PathCard = {
   title: string;
@@ -7,46 +7,35 @@ type PathCard = {
   icon: LucideIcon;
   primaryLabel: string;
   primaryHref: string;
-  secondaryLabel: string;
-  secondaryHref: string;
   tone: "leaf" | "earth" | "cream";
 };
 
 const pathCards: PathCard[] = [
   {
-    title: "🌱 Grow & Sell",
-    description:
-      "Create your farmer profile, showcase your produce, connect with buyers, and access digital farm tools designed for Ghanaian farmers.",
+    title: "Grow & Sell",
+    description: "Create your farmer profile, showcase produce, and connect with buyers.",
     icon: Sprout,
     primaryLabel: "Join as Farmer",
     primaryHref: "/join/farmer",
-    secondaryLabel: "View Buyer Requests",
-    secondaryHref: "/buyer-requests",
     tone: "leaf"
   },
   {
-    title: "🛒 Buy Produce",
-    description: "Find farmers, browse available produce, post buying requests, and connect directly through WhatsApp.",
+    title: "Buy Produce",
+    description: "Find farmers, browse listings, and post buyer demand.",
     icon: ShoppingBasket,
     primaryLabel: "Find Produce",
     primaryHref: "/marketplace",
-    secondaryLabel: "Post Buyer Request",
-    secondaryHref: "/submit-buyer-request",
     tone: "earth"
   },
   {
-    title: "🚜 Supply Farmers",
-    description: "Promote seeds, fertilizer, equipment, transport, and agricultural services to farmers across Ghana.",
+    title: "Supply Farmers",
+    description: "Promote farm inputs, equipment, logistics, and agricultural services.",
     icon: Tractor,
     primaryLabel: "Join as Supplier",
     primaryHref: "/join/supplier",
-    secondaryLabel: "Browse Suppliers",
-    secondaryHref: "/supplier-directory",
     tone: "cream"
   }
 ];
-
-const trustItems = ["115+ Farmers", "Buyer Demand Board", "Verified Profiles", "Digital Farm Tools"];
 
 const toneClasses = {
   leaf: {
@@ -68,7 +57,7 @@ const toneClasses = {
 
 export function ChooseYourPath() {
   return (
-    <section className="bg-white py-14 sm:py-16" aria-labelledby="choose-your-path-title">
+    <section className="bg-white py-12 sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Start here</p>
@@ -80,7 +69,7 @@ export function ChooseYourPath() {
           </p>
         </div>
 
-        <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {pathCards.map((card, index) => {
             const Icon = card.icon;
             const tone = toneClasses[card.tone];
@@ -101,39 +90,21 @@ export function ChooseYourPath() {
                 </div>
 
                 <div className="mt-6 flex flex-1 flex-col">
-                  <h3 className="text-2xl font-black text-ink">{card.title}</h3>
+                  <h3 className="text-xl font-black text-ink">{card.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-ink/65">{card.description}</p>
 
-                  <div className="mt-6 grid gap-3">
+                  <div className="mt-6">
                     <Link
                       href={card.primaryHref}
                       className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-leaf-700"
                     >
                       {card.primaryLabel}
                     </Link>
-                    <Link
-                      href={card.secondaryHref}
-                      className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
-                    >
-                      {card.secondaryLabel}
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
                   </div>
                 </div>
               </article>
             );
           })}
-        </div>
-
-        <div className="mt-8 rounded-lg border border-leaf-900/10 bg-leaf-50/75 px-4 py-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {trustItems.map((item) => (
-              <div key={item} className="flex items-center justify-center gap-2 rounded-md bg-white px-3 py-3 text-sm font-black text-ink/75 ring-1 ring-leaf-900/10">
-                <span className="h-2 w-2 rounded-full bg-leaf-600" aria-hidden="true" />
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
