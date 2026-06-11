@@ -79,6 +79,12 @@ Public marketplace and buyer request submissions use this migration:
 supabase/migrations/009_public_submissions.sql
 ```
 
+Tally farmer CSV imports use this migration:
+
+```text
+supabase/migrations/010_tally_farmer_import.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -92,6 +98,11 @@ It creates these tables:
 - `whatsapp_leads` when the WhatsApp lead tracking migration is run
 - `farmer_applications`, `buyer_applications`, and `supplier_applications` when the applications migration is run
 - `listing_submissions` and `buyer_request_submissions` when the public submissions migration is run
+
+The Tally import migration adds:
+
+- `farmers.source`
+- indexes for farmer phone-number duplicate checks and import source reporting
 
 The verification workflow migration adds:
 
@@ -120,7 +131,8 @@ Each table includes an `id`, timestamps, status fields, and Ghana Growers operat
 12. Repeat for `supabase/migrations/007_whatsapp_leads.sql` to create the WhatsApp lead tracking table.
 13. Repeat for `supabase/migrations/008_applications.sql` to create public registration application queues.
 14. Repeat for `supabase/migrations/009_public_submissions.sql` to create public listing and buyer request review queues.
-15. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
+15. Repeat for `supabase/migrations/010_tally_farmer_import.sql` before using the Farmer Import admin tool.
+16. Confirm the tables appear under **Table Editor** and the buckets appear under **Storage**.
 
 ## Current App Behavior
 
@@ -149,12 +161,22 @@ Public marketplace submissions are stored for admin review before publication:
 - Public listing image uploads are stored server-side in the existing `marketplace` Storage bucket and the public URL is saved with the submission.
 - Public submission receipt, review, approval, rejection, and conversion events are written to `admin_activity_log`.
 
+Tally farmer imports are handled through the protected Admin Dashboard Farmer Import section:
+
+- Uploads are parsed server-side from CSV.
+- Imported farmers are saved to `farmers` with `status = Pending Review`, `verification_status = Pending`, and `source = Tally Import`.
+- Duplicate phone numbers are detected before insert.
+- Exact duplicates are skipped.
+- Imported farmers are not shown publicly until approved or verified.
+- Bulk actions can approve, verify, or archive imported farmers.
+
 ## API Routes
 
 The server-side create routes are:
 
 ```text
 src/app/api/admin/farmers/route.ts
+src/app/api/admin/farmer-import/route.ts
 src/app/api/admin/suppliers/route.ts
 src/app/api/admin/marketplace-listings/route.ts
 src/app/api/admin/buyer-requests/route.ts
@@ -189,6 +211,7 @@ These routes:
 - Read admin analytics from Supabase tables first, while the dashboard keeps local data as fallback when tables are empty.
 - Save public farmer, buyer, supplier, and waiting list submissions into application tables for admin review.
 - Save public produce listings and buyer requests into review queues before admin conversion to live marketplace records.
+- Import Tally farmer CSV exports into the farmer review queue without exposing imported records publicly.
 
 ## Recommended Migration Path
 

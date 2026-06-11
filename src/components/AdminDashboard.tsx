@@ -35,11 +35,13 @@ import { supplierDirectory } from "@/data/suppliers";
 import type { AdminUser } from "@/lib/adminAuth";
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived";
+type ImportAdminStatus = AdminStatus | "Pending Review";
 type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
   | "analytics"
   | "launch-checklist"
+  | "farmer-import"
   | "farmers"
   | "buyers"
   | "suppliers"
@@ -58,7 +60,7 @@ type AdminRow = {
   name: string;
   type: string;
   region: string;
-  status: AdminStatus;
+  status: ImportAdminStatus;
   dateAdded: string;
   href?: string;
   verificationTarget?: {
@@ -157,6 +159,28 @@ type BuyerRequestSubmissionRecord = {
   created_at: string;
   updated_at: string;
 };
+type ImportedFarmerRecord = {
+  id: string;
+  slug: string;
+  farmer_name: string;
+  farm_name: string;
+  region: string;
+  district: string;
+  farm_type: string;
+  products: string[];
+  farm_size: string;
+  whatsapp_number: string;
+  status: ImportAdminStatus;
+  verification_status: string;
+  source: string;
+};
+type FarmerImportReport = {
+  imported: number;
+  duplicates: number;
+  errors: number;
+  duplicateRows: Array<{ row: number; phone: string; reason: string }>;
+  errorRows: Array<{ row: number; message: string }>;
+};
 type FormField = {
   name: string;
   label: string;
@@ -192,6 +216,10 @@ const statusStyles: Record<AdminStatus, string> = {
   Rejected: "bg-tomato/10 text-tomato",
   Active: "bg-white text-leaf-700 ring-1 ring-leaf-900/10",
   Archived: "bg-ink/10 text-ink/55"
+};
+const importStatusStyles: Record<ImportAdminStatus, string> = {
+  ...statusStyles,
+  "Pending Review": "bg-earth-50 text-earth-700"
 };
 
 function statusFromTrust(status?: string): AdminStatus {
@@ -275,6 +303,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
   return {
     analytics: [],
     "launch-checklist": [],
+    "farmer-import": [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
       name: farmer.farmName,
@@ -343,6 +372,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
   { id: "analytics", label: "Analytics", icon: ChartLine },
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
+  { id: "farmer-import", label: "Farmer Import", icon: UploadCloud },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
   { id: "suppliers", label: "Suppliers", icon: Truck },
@@ -836,6 +866,19 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
   };
 }
 
+function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
+  return {
+    id: farmer.slug || farmer.id,
+    name: farmer.farm_name || farmer.farmer_name,
+    type: farmer.farm_type,
+    region: farmer.region,
+    status: farmer.status,
+    dateAdded: new Date().toISOString().slice(0, 10),
+    href: farmer.status === "Active" ? `/farmer-directory/${farmer.slug || farmer.id}` : undefined,
+    verificationTarget: { subject: "farmer", recordId: farmer.slug || farmer.id }
+  };
+}
+
 function verificationRowFromAdminRow(formId: AdminFormId, row: AdminRow): AdminRow | null {
   if (formId !== "farmers" && formId !== "suppliers" && formId !== "buyer-requests") {
     return null;
@@ -1111,8 +1154,8 @@ function SimpleBarList({ items, emptyLabel }: { items: Array<{ label: string; va
 export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: { currentAdmin: AdminUser; initialSection?: AdminSectionId }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | AdminStatus>("All");
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, AdminStatus>>({});
+  const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, ImportAdminStatus>>({});
   const [notice, setNotice] = useState("Actions are mock controls for Phase 1 admin.");
   const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -1145,6 +1188,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   });
   const [submissionTab, setSubmissionTab] = useState<SubmissionKind>("listing");
   const [submissionError, setSubmissionError] = useState("");
+  const [importedFarmers, setImportedFarmers] = useState<ImportedFarmerRecord[]>([]);
+  const [selectedImportedFarmerIds, setSelectedImportedFarmerIds] = useState<string[]>([]);
+  const [farmerImportReport, setFarmerImportReport] = useState<FarmerImportReport | null>(null);
+  const [farmerImportError, setFarmerImportError] = useState("");
+  const [isImportingFarmers, setIsImportingFarmers] = useState(false);
+  const [isUpdatingImportedFarmers, setIsUpdatingImportedFarmers] = useState(false);
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Not Started"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -1498,6 +1547,122 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadActivity();
   }
 
+  async function importTallyFarmers(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fileInput = form.elements.namedItem("csv") as HTMLInputElement | null;
+    const file = fileInput?.files?.[0];
+
+    if (!file) {
+      setFarmerImportError("Upload a Tally CSV file.");
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv" && file.type !== "application/vnd.ms-excel") {
+      setFarmerImportError("Upload a CSV file exported from Tally.");
+      return;
+    }
+
+    setIsImportingFarmers(true);
+    setFarmerImportError("");
+    setFarmerImportReport(null);
+    const formData = new FormData();
+    formData.append("csv", file);
+
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "POST",
+      body: formData
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      report?: FarmerImportReport;
+      farmers?: ImportedFarmerRecord[];
+      error?: string;
+    } | null;
+    setIsImportingFarmers(false);
+
+    if (!response?.ok || !result?.report) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerImportError(result?.error ?? "Could not import farmers from this CSV.");
+      return;
+    }
+
+    const farmers = result.farmers ?? [];
+    setFarmerImportReport(result.report);
+    setImportedFarmers(farmers);
+    setSelectedImportedFarmerIds(farmers.map((farmer) => farmer.id));
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: [...farmers.map(rowFromImportedFarmer), ...current.farmers]
+    }));
+    setNotice(`Tally import complete: ${result.report.imported} imported, ${result.report.duplicates} duplicates, ${result.report.errors} errors.`);
+    form.reset();
+    void loadActivity();
+    void loadAnalytics();
+  }
+
+  async function bulkUpdateImportedFarmers(action: "approve" | "verify" | "archive") {
+    if (selectedImportedFarmerIds.length === 0) {
+      setFarmerImportError("Select at least one imported farmer.");
+      return;
+    }
+
+    setIsUpdatingImportedFarmers(true);
+    setFarmerImportError("");
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        ids: selectedImportedFarmerIds
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string; updated?: number } | null;
+    setIsUpdatingImportedFarmers(false);
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerImportError(result?.error ?? "Could not update imported farmers.");
+      return;
+    }
+
+    const nextStatus: ImportAdminStatus = action === "archive" ? "Archived" : "Active";
+    const nextVerification = action === "verify" ? "Verified" : "Pending";
+    setImportedFarmers((current) =>
+      current.map((farmer) =>
+        selectedImportedFarmerIds.includes(farmer.id)
+          ? { ...farmer, status: nextStatus, verification_status: nextVerification }
+          : farmer
+      )
+    );
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: current.farmers.map((row) => {
+        const matched = importedFarmers.find((farmer) => selectedImportedFarmerIds.includes(farmer.id) && (farmer.slug === row.id || farmer.id === row.id));
+
+        if (!matched) {
+          return row;
+        }
+
+        return {
+          ...row,
+          status: nextStatus,
+          href: nextStatus === "Active" ? `/farmer-directory/${matched.slug || matched.id}` : undefined
+        };
+      })
+    }));
+    setNotice(`${result?.updated ?? selectedImportedFarmerIds.length} imported farmer${selectedImportedFarmerIds.length === 1 ? "" : "s"} updated.`);
+    void loadActivity();
+    void loadAnalytics();
+  }
+
   function runQuickAction(section: AdminSectionId, intent: string) {
     setActiveSection(section);
     setSearchTerm("");
@@ -1707,6 +1872,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const activeSectionFormId = formIdForSection(activeSection);
   const isAnalyticsSection = activeSection === "analytics";
   const isLaunchChecklistSection = activeSection === "launch-checklist";
+  const isFarmerImportSection = activeSection === "farmer-import";
   const isApplicationsSection = activeSection === "applications";
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
@@ -2109,7 +2275,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -2132,11 +2298,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   </label>
                   <select
                     value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value as "All" | AdminStatus)}
+                    onChange={(event) => setStatusFilter(event.target.value as "All" | ImportAdminStatus)}
                     className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                   >
                     <option value="All">All statuses</option>
                     <option value="Pending">Pending</option>
+                    <option value="Pending Review">Pending Review</option>
                     <option value="Under Review">Under Review</option>
                     <option value="Verified">Verified</option>
                     <option value="Rejected">Rejected</option>
@@ -2334,6 +2501,191 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     Record-count items update from platform data. Operational checks are saved in this admin browser for quick internal readiness tracking.
                     Before launch, review these checks with the Ghana Growers operations team and confirm the production domain directly.
                   </p>
+                </section>
+              </div>
+            ) : isFarmerImportSection ? (
+              <div className="grid gap-6 p-5">
+                <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                  <div className="grid gap-5 lg:grid-cols-[1fr_360px] lg:items-start">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Tally CSV Import</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Import farmer submissions for review</h3>
+                      <p className="mt-2 text-sm leading-6 text-ink/65">
+                        Upload the Tally export CSV. Farmers are saved as Pending Review with verification Pending and source Tally Import.
+                        They are not published publicly until approved or verified.
+                      </p>
+                    </div>
+                    <form onSubmit={importTallyFarmers} className="rounded-md bg-white p-4 shadow-sm ring-1 ring-leaf-900/10">
+                      <label className="grid gap-2 text-sm font-black text-ink">
+                        Tally CSV file
+                        <input
+                          name="csv"
+                          type="file"
+                          accept=".csv,text/csv"
+                          className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-semibold text-ink/70 file:mr-3 file:rounded-md file:border-0 file:bg-leaf-50 file:px-3 file:py-2 file:text-sm file:font-black file:text-leaf-800"
+                        />
+                      </label>
+                      <button
+                        type="submit"
+                        disabled={isImportingFarmers}
+                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                      >
+                        <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                        {isImportingFarmers ? "Importing..." : "Import Farmers"}
+                      </button>
+                    </form>
+                  </div>
+                </section>
+
+                {farmerImportError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{farmerImportError}</div>
+                ) : null}
+
+                {farmerImportReport ? (
+                  <section className="grid gap-4 md:grid-cols-3">
+                    {([
+                      ["Imported", farmerImportReport.imported, "bg-leaf-50 text-leaf-700"],
+                      ["Duplicates", farmerImportReport.duplicates, "bg-earth-50 text-earth-700"],
+                      ["Errors", farmerImportReport.errors, "bg-tomato/10 text-tomato"]
+                    ] as Array<[string, number, string]>).map(([label, value, className]) => (
+                      <div key={label} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        <p className="text-sm font-black uppercase tracking-wide text-ink/45">{label}</p>
+                        <p className={`mt-3 w-fit rounded-md px-3 py-2 text-3xl font-black ${className}`}>{value}</p>
+                      </div>
+                    ))}
+                  </section>
+                ) : null}
+
+                {farmerImportReport?.duplicateRows.length || farmerImportReport?.errorRows.length ? (
+                  <section className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <h3 className="text-lg font-black text-ink">Duplicate Phone Numbers</h3>
+                      <div className="mt-4 grid gap-2">
+                        {farmerImportReport.duplicateRows.slice(0, 10).map((item) => (
+                          <p key={`${item.row}-${item.phone}`} className="rounded-md bg-earth-50 px-3 py-2 text-sm font-semibold text-earth-700">
+                            Row {item.row}: {item.phone} - {item.reason}
+                          </p>
+                        ))}
+                        {farmerImportReport.duplicateRows.length === 0 ? (
+                          <p className="text-sm font-semibold text-ink/58">No duplicate phone numbers detected.</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <h3 className="text-lg font-black text-ink">Import Errors</h3>
+                      <div className="mt-4 grid gap-2">
+                        {farmerImportReport.errorRows.slice(0, 10).map((item) => (
+                          <p key={`${item.row}-${item.message}`} className="rounded-md bg-tomato/10 px-3 py-2 text-sm font-semibold text-tomato">
+                            Row {item.row}: {item.message}
+                          </p>
+                        ))}
+                        {farmerImportReport.errorRows.length === 0 ? (
+                          <p className="text-sm font-semibold text-ink/58">No import errors found.</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+
+                <section className="rounded-md border border-leaf-900/10 bg-white shadow-sm">
+                  <div className="border-b border-leaf-900/10 p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <h3 className="text-xl font-black text-ink">Imported Farmers</h3>
+                        <p className="mt-1 text-sm font-semibold text-ink/58">{selectedImportedFarmerIds.length} selected for bulk action.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImportedFarmerIds(importedFarmers.map((farmer) => farmer.id))}
+                          className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImportedFarmerIds([])}
+                          className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateImportedFarmers("approve")}
+                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
+                          className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateImportedFarmers("verify")}
+                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
+                          className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Verify
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateImportedFarmers("archive")}
+                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
+                          className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Archive
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[900px] w-full border-collapse text-left text-sm">
+                      <thead className="bg-leaf-50 text-xs font-black uppercase tracking-wide text-ink/50">
+                        <tr>
+                          <th className="px-5 py-4">Select</th>
+                          <th className="px-5 py-4">Farmer/Farm</th>
+                          <th className="px-5 py-4">Phone</th>
+                          <th className="px-5 py-4">Location</th>
+                          <th className="px-5 py-4">Products</th>
+                          <th className="px-5 py-4">Status</th>
+                          <th className="px-5 py-4">Source</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-leaf-900/10">
+                        {importedFarmers.map((farmer) => (
+                          <tr key={farmer.id} className="align-top">
+                            <td className="px-5 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedImportedFarmerIds.includes(farmer.id)}
+                                onChange={(event) => {
+                                  setSelectedImportedFarmerIds((current) =>
+                                    event.target.checked ? [...current, farmer.id] : current.filter((id) => id !== farmer.id)
+                                  );
+                                }}
+                                className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
+                              />
+                            </td>
+                            <td className="px-5 py-4">
+                              <p className="font-black text-ink">{farmer.farm_name}</p>
+                              <p className="mt-1 text-xs font-semibold text-ink/50">{farmer.farmer_name}</p>
+                            </td>
+                            <td className="px-5 py-4 text-ink/65">{farmer.whatsapp_number}</td>
+                            <td className="px-5 py-4 text-ink/65">{farmer.district}, {farmer.region}</td>
+                            <td className="px-5 py-4 text-ink/65">{farmer.products.join(", ") || "Not provided"}</td>
+                            <td className="px-5 py-4">
+                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${importStatusStyles[farmer.status]}`}>
+                                {farmer.status}
+                              </span>
+                              <p className="mt-2 text-xs font-semibold text-ink/45">Verification: {farmer.verification_status}</p>
+                            </td>
+                            <td className="px-5 py-4 text-ink/65">{farmer.source}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {importedFarmers.length === 0 ? (
+                    <p className="p-6 text-sm font-semibold text-ink/60">Upload a Tally CSV to preview imported farmers here.</p>
+                  ) : null}
                 </section>
               </div>
             ) : isApplicationsSection ? (
@@ -2658,7 +3010,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
                       <td className="px-5 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${statusStyles[row.status]}`}>
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${importStatusStyles[row.status]}`}>
                           {row.status}
                         </span>
                       </td>

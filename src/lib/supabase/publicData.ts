@@ -23,6 +23,7 @@ type SupabaseFarmer = {
   profile_image_url: string | null;
   description: string | null;
   status: string | null;
+  source: string | null;
   created_at: string;
 };
 
@@ -311,7 +312,8 @@ function mapMarketPrice(row: SupabaseMarketPrice): MarketPrice {
 
 export async function getFarmersData() {
   const rows = await fetchRows<SupabaseFarmer>("farmers");
-  return rows.length > 0 ? rows.map(mapFarmer) : fallbackFarmers;
+  const publicRows = rows.filter((row) => row.status === "Active");
+  return publicRows.length > 0 ? publicRows.map(mapFarmer) : fallbackFarmers;
 }
 
 export async function getSuppliersData() {

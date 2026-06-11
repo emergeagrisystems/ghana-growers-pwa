@@ -91,6 +91,7 @@ The following actions require a Supabase Auth admin session:
 - Review public registration applications
 - Review public marketplace and buyer request submissions
 - Track launch readiness before farmer, buyer, and supplier onboarding
+- Import Tally farmer CSV exports for admin review
 
 Admin APIs validate the HTTP-only Supabase access cookie server-side. Browser code does not receive or store the service role key.
 
@@ -128,6 +129,26 @@ supabase/migrations/009_public_submissions.sql
 ```
 
 The admin dashboard Submissions section lets admins view submissions, mark them Under Review, Approve, Reject, or Convert them into live Marketplace Listing / Buyer Request records. These status changes and conversions are written through a protected server-side API and logged in the admin activity log.
+
+## Tally Farmer Import
+
+The Farmer Import admin section accepts a CSV export from Tally and imports farmer submissions into the `farmers` table for review.
+
+Run this migration before using the import tool:
+
+```text
+supabase/migrations/010_tally_farmer_import.sql
+```
+
+Imported farmers are saved with:
+
+```text
+status = Pending Review
+verification_status = Pending
+source = Tally Import
+```
+
+The importer detects duplicate phone numbers, skips exact duplicates, and returns a report with imported records, duplicates, and errors. Imported farmers are not published publicly until an admin approves or verifies them.
 
 ## Activity Log
 
@@ -190,6 +211,7 @@ src/app/api/admin/applications/route.ts
 src/app/api/admin/submissions/route.ts
 src/app/api/admin/whatsapp-leads/route.ts
 src/app/api/admin/archive/route.ts
+src/app/api/admin/farmer-import/route.ts
 src/app/api/admin/farmers/route.ts
 src/app/api/admin/suppliers/route.ts
 src/app/api/admin/marketplace-listings/route.ts
