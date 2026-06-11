@@ -139,7 +139,8 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                       width={520}
                       height={320}
                       className="h-48 w-full bg-leaf-50 object-cover"
-                      fallbackSrc="/images/farmers/farmer-1.jpg"
+                      fallbackKind="farmer"
+                      sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                     />
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">

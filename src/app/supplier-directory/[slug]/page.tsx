@@ -170,11 +170,12 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 <SafeImage
                   key={photo}
                   src={photo}
-                  alt={`${supplier.companyName} placeholder ${index + 1}`}
+                  alt={`${supplier.companyName} supplier operation photo ${index + 1}`}
                   width={520}
                   height={320}
                   className="h-56 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover shadow-soft"
-                  fallbackSrc="/images/suppliers/supplier-1.jpg"
+                  fallbackKind="supplier"
+                  sizes="(min-width: 1024px) 28vw, (min-width: 640px) 50vw, 100vw"
                 />
               ))}
             </div>

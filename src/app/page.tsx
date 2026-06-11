@@ -122,6 +122,7 @@ export default function HomePage() {
                 width={1778}
                 height={885}
                 fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+                fallbackKind="hero"
                 priority
                 sizes="(min-width: 1024px) 54vw, 100vw"
                 className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[520px]"
@@ -251,7 +252,7 @@ export default function HomePage() {
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ghanaVisuals.map((visual) => (
               <article key={visual.title} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft">
-                <SafeImage src={visual.image} alt={visual.title} width={360} height={220} className="h-36 w-full rounded-md bg-earth-50 object-cover" />
+                <SafeImage src={visual.image} alt={visual.title} width={360} height={220} fallbackKind="default" sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" className="h-36 w-full rounded-md bg-earth-50 object-cover" />
                 <h3 className="mt-4 font-black text-ink">{visual.title}</h3>
               </article>
             ))}
@@ -273,7 +274,7 @@ export default function HomePage() {
                 key={category.slug}
                 className="focus-ring rounded-md border border-leaf-900/10 bg-earth-50 p-4 transition hover:-translate-y-1 hover:shadow-soft"
               >
-                <SafeImage src={category.image} alt={`${category.name} agriculture category image`} width={220} height={140} className="h-28 w-full rounded-md object-cover" />
+                <SafeImage src={category.image} alt={`${category.name} agriculture category image`} width={220} height={140} fallbackKind="crop" sizes="(min-width: 1024px) 20vw, (min-width: 640px) 50vw, 100vw" className="h-28 w-full rounded-md object-cover" />
                 <h3 className="mt-4 font-black text-ink">{category.name}</h3>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{category.description}</p>
               </Link>

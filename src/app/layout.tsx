@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
-    images: ["/images/og.svg"],
+    images: ["/images/marketplace/ghana-market-1.jpg"],
     locale: "en_GH",
     type: "website"
   },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: ["/images/og.svg"]
+    images: ["/images/marketplace/ghana-market-1.jpg"]
   }
 };
 

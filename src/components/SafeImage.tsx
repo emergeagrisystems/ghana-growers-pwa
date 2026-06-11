@@ -2,12 +2,15 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useState } from "react";
+import { fallbackForImage, type ImageFallbackKind } from "@/lib/imageFallbacks";
 
 type SafeImageProps = ImageProps & {
   fallbackSrc?: string;
+  fallbackKind?: ImageFallbackKind;
 };
 
-export function SafeImage({ fallbackSrc = "/images/crops/tomatoes.jpg", src, alt, onError, ...props }: SafeImageProps) {
+export function SafeImage({ fallbackSrc, fallbackKind = "default", src, alt, onError, ...props }: SafeImageProps) {
+  const resolvedFallback = fallbackSrc ?? fallbackForImage(fallbackKind);
   const [currentSrc, setCurrentSrc] = useState(src);
 
   return (
@@ -16,8 +19,8 @@ export function SafeImage({ fallbackSrc = "/images/crops/tomatoes.jpg", src, alt
       src={currentSrc}
       alt={alt}
       onError={(event) => {
-        if (currentSrc !== fallbackSrc) {
-          setCurrentSrc(fallbackSrc);
+        if (currentSrc !== resolvedFallback) {
+          setCurrentSrc(resolvedFallback);
         }
 
         onError?.(event);

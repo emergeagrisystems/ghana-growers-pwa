@@ -21,7 +21,7 @@ export function RegistrationForm({ title, audience }: RegistrationFormProps) {
     <form onSubmit={handleSubmit} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
       <h3 className="text-xl font-black text-ink">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        This placeholder form is ready to connect to a database, CRM, email service, or form endpoint later.
+        Share your interest and the Ghana Growers team will review your details for follow-up.
       </p>
       <input type="hidden" name="audience" value={audience} />
       <div className="mt-5 grid gap-4 sm:grid-cols-2">

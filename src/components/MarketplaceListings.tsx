@@ -146,7 +146,8 @@ function ListingCard({
               alt={`${product.name} available in ${product.region}`}
               width={420}
               height={260}
-              fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+              fallbackKind="marketplace"
+              sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
               className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
             />
           </Link>
@@ -156,7 +157,8 @@ function ListingCard({
             alt={`${product.name} available in ${product.region}`}
             width={420}
             height={260}
-            fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+            fallbackKind="marketplace"
+            sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
             className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
           />
         )}
@@ -262,7 +264,8 @@ function ProductDetailsModal({
             alt={`${product.name} listing photo`}
             width={560}
             height={420}
-            fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+            fallbackKind="marketplace"
+            sizes="(min-width: 1024px) 45vw, 100vw"
             className="h-72 w-full rounded-md object-cover lg:h-full"
           />
           <div>
@@ -506,7 +509,8 @@ export function MarketplaceListings({ products, farmers = farmerDirectory, buyer
                   alt={`${product.name} featured marketplace listing`}
                   width={360}
                   height={220}
-                  fallbackSrc="/images/marketplace/fresh-tomatoes.jpg"
+                  fallbackKind="marketplace"
+                  sizes="(min-width: 768px) 33vw, 100vw"
                   className="h-36 w-full object-cover"
                 />
                 <div className="p-4">

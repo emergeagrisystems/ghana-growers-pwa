@@ -146,7 +146,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               width={720}
               height={520}
               priority
-              fallbackSrc="/images/farmers/farmer-1.jpg"
+              fallbackKind="farmer"
+              sizes="(min-width: 1024px) 45vw, 100vw"
               className="h-72 w-full rounded-md border border-white/80 object-cover shadow-soft sm:h-96"
             />
           </div>
@@ -223,7 +224,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                         alt={`${listing.product} from ${farmer.farmName}`}
                         width={360}
                         height={220}
-                        fallbackSrc="/images/marketplace/farm-activity-1.jpg"
+                        fallbackKind="marketplace"
+                        sizes="(min-width: 1024px) 22vw, (min-width: 768px) 33vw, 100vw"
                         className="h-36 w-full object-cover"
                       />
                       <div className="p-4">

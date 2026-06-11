@@ -57,11 +57,12 @@ export function FeaturedListings({
                   </div>
                   <SafeImage
                     src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
-                    alt={`${farmer.farmName} farm placeholder`}
+                    alt={`${farmer.farmName} farm photo`}
                     width={420}
                     height={240}
                     className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
-                    fallbackSrc="/images/farmers/farmer-1.jpg"
+                    fallbackKind="farmer"
+                    sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />
                   <h3 className="mt-4 text-xl font-black text-ink">{farmer.farmName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>
@@ -105,7 +106,8 @@ export function FeaturedListings({
                     width={420}
                     height={240}
                     className="mt-4 h-36 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
-                    fallbackSrc="/images/suppliers/supplier-1.jpg"
+                    fallbackKind="supplier"
+                    sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />
                   <h3 className="mt-4 text-xl font-black text-ink">{supplier.companyName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{supplier.supplierCategory}</p>

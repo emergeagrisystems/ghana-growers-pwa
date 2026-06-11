@@ -1,5 +1,5 @@
-const CACHE_NAME = "ghana-growers-v1";
-const APP_SHELL = ["/", "/manifest.json", "/images/hero-market.svg"];
+const CACHE_NAME = "ghana-growers-v2";
+const APP_SHELL = ["/manifest.json", "/images/hero/ghana-growers-hero.jpg", "/images/marketplace/ghana-market-1.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));

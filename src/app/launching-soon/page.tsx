@@ -14,7 +14,7 @@ export const metadata = {
   openGraph: {
     title: "Ghana's Agricultural Network is Growing",
     description: "Ghana Growers is preparing to connect farmers, buyers, and suppliers across Ghana.",
-    images: ["/images/og.svg"]
+    images: ["/images/marketplace/ghana-market-1.jpg"]
   }
 };
 
@@ -76,6 +76,8 @@ export default function LaunchingSoonPage() {
               height={480}
               className="h-auto w-full rounded-md border border-leaf-900/10 bg-white object-cover shadow-soft"
               priority
+              fallbackKind="default"
+              sizes="(min-width: 1024px) 50vw, 100vw"
             />
             <div className="grid gap-4 sm:grid-cols-3">
               {["Farmers", "Buyers", "Suppliers"].map((label) => (
@@ -105,7 +107,7 @@ export default function LaunchingSoonPage() {
                 {socials.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <span key={item.label} className="grid h-10 w-10 place-items-center rounded-md bg-white/10 text-white/80" title={`${item.label} placeholder`}>
+                    <span key={item.label} className="grid h-10 w-10 place-items-center rounded-md bg-white/10 text-white/80" title={`${item.label} channel`}>
                       <Icon size={18} aria-hidden="true" />
                     </span>
                   );

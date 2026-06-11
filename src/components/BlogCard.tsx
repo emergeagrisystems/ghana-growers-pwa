@@ -20,7 +20,8 @@ export function BlogCard({ post }: { post: BlogPost }) {
         width={520}
         height={300}
         className="h-40 w-full bg-leaf-50 object-cover"
-        fallbackSrc="/images/marketplace/farm-activity-1.jpg"
+        fallbackKind="default"
+        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
       />
       <div className="p-5">
       <p className="text-xs font-black uppercase text-earth-700">{post.category}</p>

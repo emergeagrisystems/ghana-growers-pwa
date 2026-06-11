@@ -164,7 +164,8 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 width={520}
                 height={320}
                 className="mb-5 h-44 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
-                fallbackSrc="/images/suppliers/supplier-1.jpg"
+                fallbackKind="supplier"
+                sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
               />
               <div className="flex items-start justify-between gap-4">
                 <div>

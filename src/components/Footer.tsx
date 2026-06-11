@@ -96,7 +96,7 @@ export function Footer() {
             {socialLinks.map((item) => {
               const Icon = item.icon;
               return (
-                <span key={item.title} className="grid h-10 w-10 place-items-center rounded-md bg-white/10 text-white/75" title={`${item.title} placeholder`}>
+                <span key={item.title} className="grid h-10 w-10 place-items-center rounded-md bg-white/10 text-white/75" title={`${item.title} channel`}>
                   <Icon size={18} aria-hidden="true" />
                 </span>
               );
@@ -123,7 +123,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>&copy; {new Date().getFullYear()} Ghana Growers. Built for trusted agricultural trade in Ghana.</p>
-          <p>Social media links are placeholders until official channels are connected.</p>
+          <p>Official social media channels will be connected before public launch.</p>
         </div>
       </div>
     </footer>

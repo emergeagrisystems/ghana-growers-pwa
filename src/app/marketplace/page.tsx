@@ -69,7 +69,7 @@ export default async function MarketplacePage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {productCategories.map((category) => (
               <div key={category.slug} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                <SafeImage src={category.image} alt={`${category.name} marketplace category`} width={240} height={150} className="h-28 w-full rounded-md object-cover" />
+                <SafeImage src={category.image} alt={`${category.name} marketplace category`} width={240} height={150} fallbackKind="crop" sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" className="h-28 w-full rounded-md object-cover" />
                 <h2 className="mt-4 font-black text-ink">{category.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-ink/65">{category.description}</p>
               </div>
