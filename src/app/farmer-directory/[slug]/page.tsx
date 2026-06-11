@@ -14,6 +14,7 @@ import {
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -96,14 +97,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   }
 
   const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
-  const farmerProducts = farmer.products.map((product) => product.toLowerCase());
   const activeMarketplaceListings = marketplaceProducts.filter((listing) => listing.farmerSlug === farmer.slug);
-  const relevantBuyerRequests = buyerRequests.filter((request) =>
-    farmerProducts.some((product) => {
-      const requestProduct = request.productName.toLowerCase();
-      return requestProduct.includes(product) || product.includes(requestProduct);
-    })
-  ).slice(0, 4);
+  const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
   const productListings = farmer.products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => {
       const listingName = listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", "");
@@ -250,7 +245,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer demand</p>
-                    <h2 className="mt-2 text-2xl font-black text-ink">Relevant buyer requests</h2>
+                    <h2 className="mt-2 text-2xl font-black text-ink">Matching Buyer Requests</h2>
                   </div>
                   <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
                     View Buyer Requests

@@ -31,8 +31,10 @@ import { farmerDirectory } from "@/data/farmers";
 import learnArticles from "@/data/learnArticles.json";
 import { marketPrices } from "@/data/marketPrices";
 import { products } from "@/data/products";
+import { WHATSAPP_NUMBER } from "@/data/site";
 import { supplierDirectory } from "@/data/suppliers";
 import type { AdminUser } from "@/lib/adminAuth";
+import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matching";
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived";
 type ImportAdminStatus = AdminStatus | "Pending Review";
@@ -51,6 +53,7 @@ type AdminSectionId =
   | "applications"
   | "submissions"
   | "whatsapp-leads"
+  | "match-opportunities"
   | "learn"
   | "market-prices";
 type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
@@ -72,7 +75,7 @@ type AdminRow = {
 type AdminActivityRecord = {
   id: string;
   admin_email: string;
-  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert";
+  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Close";
   entity_type:
     | "Farmer"
     | "Supplier"
@@ -82,7 +85,8 @@ type AdminActivityRecord = {
     | "Buyer Application"
     | "Supplier Application"
     | "Listing Submission"
-    | "Buyer Request Submission";
+    | "Buyer Request Submission"
+    | "Match Opportunity";
   entity_id: string | null;
   entity_name: string;
   created_at: string;
@@ -106,6 +110,12 @@ type AnalyticsData = {
   whatsappLeads: AnalyticsRecord[];
   cropHealthReports: AnalyticsRecord[];
   marketPrices: AnalyticsRecord[];
+};
+type AdminMatchOpportunity = {
+  id: string;
+  request: AnalyticsRecord;
+  farmers: AnalyticsRecord[];
+  listings: AnalyticsRecord[];
 };
 type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
@@ -370,6 +380,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       verificationTarget: { subject: "buyer" as const, recordId: request.id }
     })),
     "whatsapp-leads": [],
+    "match-opportunities": [],
     applications: [],
     submissions: [],
     verifications: verificationRows,
@@ -407,6 +418,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "applications", label: "Applications", icon: ClipboardCheck },
   { id: "submissions", label: "Submissions", icon: ClipboardCheck },
   { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
+  { id: "match-opportunities", label: "Match Opportunities", icon: PackageCheck },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
@@ -932,6 +944,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
     return "applications";
   }
 
+  if (entityType === "Match Opportunity") {
+    return "match-opportunities";
+  }
+
   if (entityType === "Farmer") {
     return "farmers";
   }
@@ -954,6 +970,10 @@ function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
 
   if (entityType.includes("Application")) {
     return ClipboardCheck;
+  }
+
+  if (entityType === "Match Opportunity") {
+    return PackageCheck;
   }
 
   if (entityType === "Farmer") {
@@ -994,7 +1014,10 @@ function activitySentence(activity: AdminActivityRecord) {
     Review: "reviewed",
     Approve: "approved",
     Reject: "rejected",
-    Convert: "converted"
+    Convert: "converted",
+    View: "viewed",
+    Contact: "contacted",
+    Close: "closed"
   };
   const verb = verbs[activity.action_type];
   const entity = activity.entity_type.toLowerCase();
@@ -1072,6 +1095,83 @@ function textValue(record: AnalyticsRecord, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function arrayValue(record: AnalyticsRecord, key: string) {
+  const value = record[key];
+
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function recordName(record: AnalyticsRecord, ...keys: string[]) {
+  return keys.map((key) => textValue(record, key)).find(Boolean) ?? "Record";
+}
+
+function adminLocationScore(request: AnalyticsRecord, candidate: AnalyticsRecord) {
+  let score = 0;
+  const requestRegion = normalizeMatchText(textValue(request, "region"));
+  const requestDistrict = normalizeMatchText(textValue(request, "district"));
+  const candidateRegion = normalizeMatchText(textValue(candidate, "region"));
+  const candidateDistrict = normalizeMatchText(textValue(candidate, "district"));
+
+  if (requestRegion && candidateRegion && requestRegion === candidateRegion) {
+    score += 3;
+  }
+
+  if (requestDistrict && candidateDistrict && (requestDistrict === candidateDistrict || candidateDistrict.includes(requestDistrict) || requestDistrict.includes(candidateDistrict))) {
+    score += 2;
+  }
+
+  return score;
+}
+
+function farmerMatchScore(request: AnalyticsRecord, farmer: AnalyticsRecord) {
+  const requestProduct = textValue(request, "product_needed");
+  const farmerProducts = arrayValue(farmer, "products");
+  const productScore = Math.max(...farmerProducts.map((product) => productMatchScore(requestProduct, product)), 0);
+
+  return productScore + adminLocationScore(request, farmer);
+}
+
+function listingMatchScore(request: AnalyticsRecord, listing: AnalyticsRecord) {
+  const requestProduct = textValue(request, "product_needed");
+  const productScore = Math.max(
+    productMatchScore(requestProduct, textValue(listing, "product_name")),
+    productMatchScore(requestProduct, textValue(listing, "category"))
+  );
+
+  return productScore + adminLocationScore(request, listing);
+}
+
+function buildAdminMatchOpportunities(analytics: AnalyticsData): AdminMatchOpportunity[] {
+  return analytics.buyerRequests
+    .map((request) => {
+      const farmers = analytics.farmers
+        .map((farmer) => ({ farmer, score: farmerMatchScore(request, farmer) }))
+        .filter((match) => match.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map((match) => match.farmer);
+      const listings = analytics.marketplaceListings
+        .map((listing) => ({ listing, score: listingMatchScore(request, listing) }))
+        .filter((match) => match.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map((match) => match.listing);
+
+      return {
+        id: textValue(request, "id") || `match-${matchTokens(textValue(request, "product_needed")).join("-")}`,
+        request,
+        farmers,
+        listings
+      };
+    })
+    .filter((opportunity) => opportunity.farmers.length > 0 || opportunity.listings.length > 0);
+}
+
+function whatsappUrl(phoneNumber: string, message: string) {
+  const digits = phoneNumber.replace(/[^\d]/g, "") || WHATSAPP_NUMBER;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
 function countBy(records: AnalyticsRecord[], key: string, fallback = "Unspecified") {
   const counts = new Map<string, number>();
 
@@ -1138,6 +1238,9 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): Analyti
       farm_name: farmer.farmName,
       farm_type: farmer.farmType,
       region: farmer.region,
+      district: farmer.district,
+      products: farmer.products,
+      whatsapp_number: WHATSAPP_NUMBER,
       verification_status: farmer.verificationStatus,
       status: farmer.availabilityStatus,
       source: null,
@@ -1154,12 +1257,21 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): Analyti
       id: product.id,
       product_name: product.name,
       category: product.category,
+      region: product.region,
+      district: product.location,
+      seller_name: product.seller,
+      whatsapp_number: product.whatsappNumber ?? WHATSAPP_NUMBER,
       status: product.available === "Sold Out" ? "Archived" : "Active",
       availability: product.available
     })),
     buyerRequests: buyerRequests.map((request) => ({
       id: request.id,
       product_needed: request.productName,
+      region: request.region,
+      district: request.district,
+      buyer_name: request.buyerName,
+      buyer_type: request.buyerType,
+      whatsapp_number: request.whatsappNumber,
       status: request.status,
       verification_status: request.verificationStatus
     })),
@@ -1240,6 +1352,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
+  const [closedMatchIds, setClosedMatchIds] = useState<string[]>([]);
   const [applications, setApplications] = useState<Record<ApplicationKind, ApplicationRecord[]>>({
     farmer: [],
     buyer: [],
@@ -1469,6 +1582,23 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const buyerRequestsByProduct = useMemo(() => countBy(analytics.buyerRequests, "product_needed"), [analytics.buyerRequests]);
   const farmersByRegion = useMemo(() => countBy(analytics.farmers, "region"), [analytics.farmers]);
   const suppliersByCategory = useMemo(() => countBy(analytics.suppliers, "category"), [analytics.suppliers]);
+  const matchOpportunities = useMemo(() => buildAdminMatchOpportunities(analytics), [analytics]);
+  const totalMatches = useMemo(
+    () => matchOpportunities.reduce((total, opportunity) => total + opportunity.farmers.length + opportunity.listings.length, 0),
+    [matchOpportunities]
+  );
+  const closedMatchIdSet = useMemo(
+    () =>
+      new Set([
+        ...closedMatchIds,
+        ...activityRows
+          .filter((activity) => activity.entity_type === "Match Opportunity" && activity.action_type === "Close" && activity.entity_id)
+          .map((activity) => activity.entity_id as string)
+      ]),
+    [activityRows, closedMatchIds]
+  );
+  const closedMatches = useMemo(() => matchOpportunities.filter((opportunity) => closedMatchIdSet.has(opportunity.id)).length, [closedMatchIdSet, matchOpportunities]);
+  const openMatches = Math.max(totalMatches - closedMatches, 0);
   const launchChecklistItems = useMemo(() => {
     const dataItems = [
       {
@@ -2084,6 +2214,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const isApplicationsSection = activeSection === "applications";
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
+  const isMatchOpportunitiesSection = activeSection === "match-opportunities";
 
   async function updateApplication(application: ApplicationRecord, status: ApplicationStatus) {
     const response = await fetch("/api/admin/applications", {
@@ -2241,6 +2372,29 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       return next;
     });
     setNotice(`${label} marked ${status}.`);
+  }
+
+  async function recordMatchActivity(action: "View" | "Contact" | "Close", opportunity: AdminMatchOpportunity) {
+    const requestName = recordName(opportunity.request, "product_needed");
+
+    await fetch("/api/admin/matches/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        matchId: opportunity.id,
+        entityName: requestName
+      })
+    }).catch(() => null);
+
+    if (action === "Close") {
+      setClosedMatchIds((current) => Array.from(new Set([...current, opportunity.id])));
+      setNotice(`${requestName} match opportunity marked closed.`);
+    } else {
+      setNotice(`${requestName} match opportunity ${action === "View" ? "viewed" : "contact recorded"}.`);
+    }
+
+    void loadActivity();
   }
 
   async function logoutAdmin() {
@@ -2483,7 +2637,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -3309,6 +3463,141 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     </div>
                   </section>
                 </div>
+              </div>
+            ) : isMatchOpportunitiesSection ? (
+              <div className="grid gap-6 p-5">
+                <section className="grid gap-4 md:grid-cols-3">
+                  {[
+                    { label: "Total Matches", value: totalMatches },
+                    { label: "Open Matches", value: openMatches },
+                    { label: "Closed Matches", value: closedMatches }
+                  ].map((metric) => (
+                    <div key={metric.label} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">{metric.label}</p>
+                      <p className="mt-3 text-4xl font-black text-ink">{metric.value}</p>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="rounded-md border border-leaf-900/10 bg-white p-5">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Match Opportunities</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Buyer requests with likely supply matches</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void loadAnalytics()}
+                      className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                    >
+                      Refresh Matches
+                    </button>
+                  </div>
+
+                  <div className="mt-5 grid gap-4">
+                    {matchOpportunities.map((opportunity) => {
+                      const requestName = recordName(opportunity.request, "product_needed");
+                      const requestRegion = textValue(opportunity.request, "region") || "Ghana";
+                      const requestDistrict = textValue(opportunity.request, "district");
+                      const buyerPhone = textValue(opportunity.request, "whatsapp_number");
+                      const isClosed = closedMatchIdSet.has(opportunity.id);
+
+                      return (
+                        <article key={opportunity.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-xl font-black text-ink">{requestName}</h4>
+                                <span className={`rounded-full px-3 py-1 text-xs font-black ${isClosed ? "bg-ink/10 text-ink/55" : "bg-leaf-100 text-leaf-700"}`}>
+                                  {isClosed ? "Closed" : "Open"}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm font-semibold text-ink/60">
+                                {requestDistrict ? `${requestDistrict}, ` : ""}{requestRegion} - {recordName(opportunity.request, "buyer_name", "buyer_type")}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void recordMatchActivity("View", opportunity)}
+                                className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                View
+                              </button>
+                              <a
+                                href={whatsappUrl(buyerPhone, `Hello, I am following up on your Ghana Growers buyer request for ${requestName}.`)}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => void recordMatchActivity("Contact", opportunity)}
+                                className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                Contact Buyer
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => void recordMatchActivity("Close", opportunity)}
+                                disabled={isClosed}
+                                className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                              >
+                                Close Match
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                            <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Matching Farmers ({opportunity.farmers.length})</p>
+                              <div className="mt-3 grid gap-3">
+                                {opportunity.farmers.map((farmer) => {
+                                  const farmerName = recordName(farmer, "farm_name", "farmer_name");
+                                  const farmerPhone = textValue(farmer, "whatsapp_number");
+
+                                  return (
+                                    <div key={textValue(farmer, "id") || farmerName} className="flex flex-col gap-3 rounded-md bg-leaf-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                      <div>
+                                        <p className="font-black text-ink">{farmerName}</p>
+                                        <p className="mt-1 text-sm text-ink/58">{textValue(farmer, "district")}, {textValue(farmer, "region")}</p>
+                                      </div>
+                                      <a
+                                        href={whatsappUrl(farmerPhone, `Hello, Ghana Growers has a buyer request for ${requestName} that may match your farm products.`)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={() => void recordMatchActivity("Contact", opportunity)}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                      >
+                                        <MessageCircle className="h-3.5 w-3.5" />
+                                        Contact Farmer
+                                      </a>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Matching Listings ({opportunity.listings.length})</p>
+                              <div className="mt-3 grid gap-3">
+                                {opportunity.listings.map((listing) => (
+                                  <div key={textValue(listing, "id") || recordName(listing, "product_name")} className="rounded-md bg-leaf-50 p-3">
+                                    <p className="font-black text-ink">{recordName(listing, "product_name")}</p>
+                                    <p className="mt-1 text-sm text-ink/58">{recordName(listing, "seller_name")} - {textValue(listing, "district")}, {textValue(listing, "region")}</p>
+                                    <p className="mt-1 text-xs font-black uppercase tracking-wide text-leaf-700">{recordName(listing, "category")}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                    {matchOpportunities.length === 0 ? (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">
+                        No match opportunities found yet. Add buyer requests, farmers, and listings with matching products or regions.
+                      </p>
+                    ) : null}
+                  </div>
+                </section>
               </div>
             ) : (
             <>

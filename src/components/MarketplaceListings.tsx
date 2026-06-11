@@ -14,14 +14,17 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
+import type { BuyerRequest } from "@/data/buyerRequests";
 import { WHATSAPP_NUMBER } from "@/data/site";
 import { farmerDirectory } from "@/data/farmers";
+import { findBuyerRequestsForListing } from "@/lib/matching";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { FarmerProfile, Product } from "@/types";
 
 type MarketplaceListingsProps = {
   products: Product[];
   farmers?: FarmerProfile[];
+  buyerRequests?: BuyerRequest[];
 };
 
 type FilterConfig = {
@@ -225,13 +228,16 @@ function ListingCard({
 function ProductDetailsModal({
   product,
   farmerBySlug,
+  buyerRequests,
   onClose
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
+  buyerRequests: BuyerRequest[];
   onClose: () => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+  const relevantBuyerRequests = findBuyerRequestsForListing(product, buyerRequests, 3);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -320,6 +326,31 @@ function ProductDetailsModal({
             </div>
           </div>
         </div>
+        {relevantBuyerRequests.length > 0 ? (
+          <div className="border-t border-leaf-900/10 p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Relevant Buyer Requests</p>
+                <h3 className="mt-2 text-xl font-black text-ink">Active demand for this product or category</h3>
+              </div>
+              <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                View Buyer Requests
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {relevantBuyerRequests.map((request) => (
+                <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                  <h4 className="font-black text-ink">{request.productName}</h4>
+                  <p className="mt-1 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
+                  <p className="mt-2 text-sm text-ink/58">{request.district}, {request.region}</p>
+                  <Link href="/buyer-requests" className="mt-4 inline-flex text-sm font-black text-leaf-700 hover:text-leaf-800">
+                    View Demand
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -334,7 +365,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MarketplaceListings({ products, farmers = farmerDirectory }: MarketplaceListingsProps) {
+export function MarketplaceListings({ products, farmers = farmerDirectory, buyerRequests = [] }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
@@ -498,7 +529,14 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
         </div>
       </section>
 
-      {selectedProduct ? <ProductDetailsModal product={selectedProduct} farmerBySlug={farmerBySlug} onClose={() => setSelectedProduct(null)} /> : null}
+      {selectedProduct ? (
+        <ProductDetailsModal
+          product={selectedProduct}
+          farmerBySlug={farmerBySlug}
+          buyerRequests={buyerRequests}
+          onClose={() => setSelectedProduct(null)}
+        />
+      ) : null}
     </>
   );
 }

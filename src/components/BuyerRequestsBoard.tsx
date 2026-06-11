@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
+import { farmerDirectory } from "@/data/farmers";
 import { products as fallbackMarketplaceProducts } from "@/data/products";
 import { normalizeTrust } from "@/components/TrustIndicators";
+import { buildBuyerRequestMatches, findMatchingFarmersForRequest, findMatchingListingsForRequest } from "@/lib/matching";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
-import type { Product } from "@/types";
+import type { FarmerProfile, Product } from "@/types";
 
 type FilterConfig = {
   label: string;
@@ -38,18 +40,8 @@ function buyerWhatsAppUrl(request: BuyerRequest) {
 type BuyerRequestsBoardProps = {
   requests?: BuyerRequest[];
   marketplaceProducts?: Product[];
+  farmers?: FarmerProfile[];
 };
-
-function relatedProductsForRequest(request: BuyerRequest, marketplaceProducts: Product[]) {
-  const requestProduct = request.productName.toLowerCase();
-
-  return marketplaceProducts
-    .filter((product) => {
-      const listingName = product.name.toLowerCase();
-      return listingName.includes(requestProduct) || requestProduct.includes(listingName.replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", ""));
-    })
-    .slice(0, 3);
-}
 
 function SearchBox({
   searchTerm,
@@ -204,14 +196,17 @@ function RequestCard({
 function RequestDetailsModal({
   request,
   marketplaceProducts,
+  farmers,
   onClose
 }: {
   request: BuyerRequest;
   marketplaceProducts: Product[];
+  farmers: FarmerProfile[];
   onClose: () => void;
 }) {
   const trust = normalizeTrust(request.trust);
-  const relatedProducts = relatedProductsForRequest(request, marketplaceProducts);
+  const matchingFarmers = findMatchingFarmersForRequest(request, farmers, 3);
+  const relatedProducts = findMatchingListingsForRequest(request, marketplaceProducts, 3);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -275,28 +270,47 @@ function RequestDetailsModal({
             </a>
           </aside>
         </div>
-        {relatedProducts.length > 0 ? (
+        {matchingFarmers.length > 0 || relatedProducts.length > 0 ? (
           <div className="border-t border-leaf-900/10 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Related marketplace products</p>
-                <h3 className="mt-2 text-xl font-black text-ink">Available supply that may match this request</h3>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Potential Matches</p>
+                <h3 className="mt-2 text-xl font-black text-ink">Farmers and listings that may satisfy this request</h3>
               </div>
               <Link href="/marketplace#marketplace-listings" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
                 View Products
               </Link>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {relatedProducts.map((product) => (
-                <article key={product.id} className="rounded-md border border-leaf-900/10 bg-white p-4">
-                  <h4 className="font-black text-ink">{product.name}</h4>
-                  <p className="mt-1 text-sm font-black text-leaf-700">{product.quantity} {product.unit}</p>
-                  <p className="mt-2 text-sm text-ink/58">{product.region}</p>
-                  <Link href="/marketplace#marketplace-listings" className="mt-4 inline-flex w-full justify-center rounded-md bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
-                    View Product
-                  </Link>
-                </article>
-              ))}
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                <h4 className="font-black text-ink">Matching Farmers</h4>
+                <div className="mt-3 grid gap-3">
+                  {matchingFarmers.map((farmer) => (
+                    <Link key={farmer.slug} href={`/farmer-directory/${farmer.slug}`} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10 transition hover:ring-leaf-700/30">
+                      <span className="block font-black text-ink">{farmer.farmName}</span>
+                      <span className="mt-1 block text-sm text-ink/58">{farmer.district}, {farmer.region}</span>
+                      <span className="mt-1 block text-xs font-black uppercase tracking-wide text-leaf-700">{farmer.products.slice(0, 3).join(", ")}</span>
+                    </Link>
+                  ))}
+                  {matchingFarmers.length === 0 ? <p className="text-sm font-semibold text-ink/58">No matching farmers found yet.</p> : null}
+                </div>
+              </div>
+              <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                <h4 className="font-black text-ink">Matching Marketplace Listings</h4>
+                <div className="mt-3 grid gap-3">
+                  {relatedProducts.map((product) => (
+                    <article key={product.id} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                      <h5 className="font-black text-ink">{product.name}</h5>
+                      <p className="mt-1 text-sm font-black text-leaf-700">{product.quantity} {product.unit}</p>
+                      <p className="mt-1 text-sm text-ink/58">{product.region}</p>
+                      <Link href="/marketplace#marketplace-listings" className="mt-3 inline-flex text-sm font-black text-leaf-700 hover:text-leaf-800">
+                        View Product
+                      </Link>
+                    </article>
+                  ))}
+                  {relatedProducts.length === 0 ? <p className="text-sm font-semibold text-ink/58">No matching listings found yet.</p> : null}
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
@@ -316,7 +330,8 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 export function BuyerRequestsBoard({
   requests = fallbackBuyerRequests,
-  marketplaceProducts = fallbackMarketplaceProducts
+  marketplaceProducts = fallbackMarketplaceProducts,
+  farmers = farmerDirectory
 }: BuyerRequestsBoardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [product, setProduct] = useState("All");
@@ -380,6 +395,10 @@ export function BuyerRequestsBoard({
       );
     });
   }, [buyerType, deadline, product, region, requests, searchTerm, status]);
+  const potentialMatches = useMemo(
+    () => buildBuyerRequestMatches(filteredRequests, farmers, marketplaceProducts, 3).slice(0, 4),
+    [farmers, filteredRequests, marketplaceProducts]
+  );
 
   return (
     <>
@@ -477,13 +496,42 @@ export function BuyerRequestsBoard({
                   <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
                 </div>
               )}
+
+              {potentialMatches.length > 0 ? (
+                <section className="mt-10 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Potential Matches</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Supply opportunities for active requests</h3>
+                    </div>
+                    <p className="text-sm font-semibold text-ink/58">Open a request for full match details.</p>
+                  </div>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    {potentialMatches.map((match) => (
+                      <button
+                        key={match.request.id}
+                        type="button"
+                        onClick={() => setSelectedRequest(match.request)}
+                        className="rounded-md bg-white p-4 text-left ring-1 ring-leaf-900/10 transition hover:-translate-y-0.5 hover:ring-leaf-700/30"
+                      >
+                        <span className="block text-lg font-black text-ink">{match.request.productName}</span>
+                        <span className="mt-1 block text-sm font-semibold text-ink/58">{match.request.district}, {match.request.region}</span>
+                        <span className="mt-3 grid gap-2 text-sm text-ink/65 sm:grid-cols-2">
+                          <span className="rounded-md bg-leaf-50 p-3 font-black text-leaf-700">{match.farmers.length} matching farmers</span>
+                          <span className="rounded-md bg-earth-50 p-3 font-black text-earth-700">{match.listings.length} matching listings</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </div>
           </div>
         </div>
       </section>
 
       {selectedRequest ? (
-        <RequestDetailsModal request={selectedRequest} marketplaceProducts={marketplaceProducts} onClose={() => setSelectedRequest(null)} />
+        <RequestDetailsModal request={selectedRequest} marketplaceProducts={marketplaceProducts} farmers={farmers} onClose={() => setSelectedRequest(null)} />
       ) : null}
     </>
   );

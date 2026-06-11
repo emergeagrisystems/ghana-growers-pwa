@@ -1,6 +1,6 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { BuyerRequestsBoard } from "@/components/BuyerRequestsBoard";
-import { getBuyerRequestsData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
+import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,11 @@ export const metadata = {
 };
 
 export default async function BuyerRequestsPage() {
-  const [requests, marketplaceProducts] = await Promise.all([getBuyerRequestsData(), getMarketplaceListingsData()]);
+  const [requests, marketplaceProducts, farmers] = await Promise.all([
+    getBuyerRequestsData(),
+    getMarketplaceListingsData(),
+    getFarmersData()
+  ]);
 
   return (
     <>
@@ -31,7 +35,7 @@ export default async function BuyerRequestsPage() {
           </div>
         </div>
       </section>
-      <BuyerRequestsBoard requests={requests} marketplaceProducts={marketplaceProducts} />
+      <BuyerRequestsBoard requests={requests} marketplaceProducts={marketplaceProducts} farmers={farmers} />
     </>
   );
 }
