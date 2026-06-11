@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     cropHealthReports,
     marketPrices
   ] = await Promise.all([
-    readTable("farmers", "select=id,slug,farm_name,region,verification_status,status&limit=1000"),
+    readTable("farmers", "select=id,slug,farmer_name,farm_name,region,district,farm_type,verification_status,status,source,created_at&limit=1000"),
     readTable("suppliers", "select=id,slug,company_name,category,verification_status,status&limit=1000"),
     readTable("marketplace_listings", "select=id,slug,product_name,category,status,availability&limit=1000"),
     readTable("buyer_requests", "select=id,product_needed,status,verification_status&limit=1000"),

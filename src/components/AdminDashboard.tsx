@@ -62,6 +62,7 @@ type AdminRow = {
   region: string;
   status: ImportAdminStatus;
   dateAdded: string;
+  source?: string | null;
   href?: string;
   verificationTarget?: {
     subject: VerificationSubject;
@@ -289,6 +290,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: farmer.region,
       status: statusFromTrust(farmer.trust?.status),
       dateAdded: "2026-06-07",
+      source: null,
       href: `/farmer-directory/${farmer.slug}`,
       verificationTarget: { subject: "farmer" as const, recordId: farmer.slug }
     })),
@@ -888,6 +890,7 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     region: farmer.region,
     status: farmer.status,
     dateAdded: new Date().toISOString().slice(0, 10),
+    source: farmer.source,
     href: farmer.status === "Active" ? `/farmer-directory/${farmer.slug || farmer.id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: farmer.slug || farmer.id }
   };
@@ -1084,14 +1087,52 @@ function activeBuyerRequestCount(records: AnalyticsRecord[]) {
   }).length;
 }
 
+function importAdminStatusFromRecord(record: AnalyticsRecord): ImportAdminStatus {
+  const status = textValue(record, "status");
+
+  if (status === "Pending Review") {
+    return "Pending Review";
+  }
+
+  if (status === "Archived") {
+    return "Archived";
+  }
+
+  if (status === "Active") {
+    return "Active";
+  }
+
+  return statusFromTrust(textValue(record, "verification_status") || status);
+}
+
+function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
+  const id = textValue(record, "slug") || textValue(record, "id");
+  const status = importAdminStatusFromRecord(record);
+
+  return {
+    id,
+    name: textValue(record, "farm_name") || textValue(record, "farmer_name") || "Farmer record",
+    type: textValue(record, "farm_type") || "Farmer",
+    region: textValue(record, "region") || "Ghana",
+    status,
+    dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
+    source: textValue(record, "source") || null,
+    href: status === "Active" ? `/farmer-directory/${id}` : undefined,
+    verificationTarget: { subject: "farmer", recordId: id }
+  };
+}
+
 function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): AnalyticsData {
   return {
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
       farm_name: farmer.farmName,
+      farm_type: farmer.farmType,
       region: farmer.region,
       verification_status: farmer.verificationStatus,
-      status: farmer.availabilityStatus
+      status: farmer.availabilityStatus,
+      source: null,
+      created_at: "2026-06-07"
     })),
     suppliers: supplierDirectory.map((supplier) => ({
       id: supplier.slug,
@@ -1169,6 +1210,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
+  const [farmerSourceFilter, setFarmerSourceFilter] = useState<"All" | "Tally Import" | "Manual/Test">("All");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ImportAdminStatus>>({});
   const [notice, setNotice] = useState("Actions are mock controls for Phase 1 admin.");
   const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
@@ -1388,6 +1430,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads), [whatsappLeads]);
   const analytics = useMemo(() => mergeAnalyticsWithFallback(analyticsData, analyticsFallback), [analyticsData, analyticsFallback]);
+  useEffect(() => {
+    if (!analyticsData?.farmers.length) {
+      return;
+    }
+
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: analyticsData.farmers.map(adminFarmerRowFromAnalytics)
+    }));
+  }, [analyticsData?.farmers]);
   const analyticsCards = useMemo(() => [
     { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
     { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
@@ -1460,13 +1512,18 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     const query = searchTerm.trim().toLowerCase();
     const matchesSearch =
       !query ||
-      [row.name, row.type, row.region, row.status, row.dateAdded]
+      [row.name, row.type, row.region, row.status, row.source ?? "", row.dateAdded]
         .join(" ")
         .toLowerCase()
         .includes(query);
     const matchesStatus = statusFilter === "All" || row.status === statusFilter;
+    const matchesFarmerSource =
+      activeSection !== "farmers" ||
+      farmerSourceFilter === "All" ||
+      (farmerSourceFilter === "Tally Import" && row.source === "Tally Import") ||
+      (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import");
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesFarmerSource;
   });
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
@@ -1560,6 +1617,41 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }));
     setNotice(`${row.name} archived successfully.`);
     void loadActivity();
+  }
+
+  async function archiveNonTallyFarmers() {
+    const confirmed = window.confirm(
+      "Archive all farmers that are not from the Tally Import? This will hide demo, manual, and test farmers from public launch views without deleting records."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch("/api/admin/farmers/cleanup", {
+      method: "PATCH"
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { archived?: number; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? "Could not archive manual/test farmers.");
+      return;
+    }
+
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: current.farmers.map((row) => (row.source === "Tally Import" ? row : { ...row, status: "Archived", href: undefined }))
+    }));
+    setStatusFilter("Archived");
+    setFarmerSourceFilter("Manual/Test");
+    setNotice(`${result?.archived ?? 0} manual/test farmer${result?.archived === 1 ? "" : "s"} archived. Tally-imported farmers were left unchanged.`);
+    void loadActivity();
+    void loadAnalytics();
   }
 
   async function importTallyFarmers(event: FormEvent<HTMLFormElement>) {
@@ -2359,6 +2451,26 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     <option value="Active">Active</option>
                     <option value="Archived">Archived</option>
                   </select>
+                  {activeSection === "farmers" ? (
+                    <>
+                      <select
+                        value={farmerSourceFilter}
+                        onChange={(event) => setFarmerSourceFilter(event.target.value as "All" | "Tally Import" | "Manual/Test")}
+                        className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        <option value="All">All sources</option>
+                        <option value="Tally Import">Tally Import</option>
+                        <option value="Manual/Test">Manual/Test</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={archiveNonTallyFarmers}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-leaf-900/10 transition hover:ring-tomato/30"
+                      >
+                        Archive Manual/Test
+                      </button>
+                    </>
+                  ) : null}
                 </div>
                 ) : null}
               </div>
@@ -3140,6 +3252,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     <th className="px-5 py-4">Name/title</th>
                     <th className="px-5 py-4">Type/category</th>
                     <th className="px-5 py-4">Region</th>
+                    {activeSection === "farmers" ? <th className="px-5 py-4">Source</th> : null}
                     <th className="px-5 py-4">Status</th>
                     <th className="px-5 py-4">Date added</th>
                     <th className="px-5 py-4">Actions</th>
@@ -3151,6 +3264,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 font-black text-ink">{row.name}</td>
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
+                      {activeSection === "farmers" ? (
+                        <td className="px-5 py-4 text-ink/65">{row.source === "Tally Import" ? "Tally Import" : "Manual/Test"}</td>
+                      ) : null}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${importStatusStyles[row.status]}`}>
                           {row.status}
