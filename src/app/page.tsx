@@ -14,6 +14,7 @@ import {
   UsersRound
 } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
+import { ChooseYourPath } from "@/components/ChooseYourPath";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SafeImage } from "@/components/SafeImage";
@@ -145,6 +146,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <ChooseYourPath />
 
       <section className="bg-earth-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
