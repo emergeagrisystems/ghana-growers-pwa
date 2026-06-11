@@ -181,6 +181,20 @@ type FarmerImportReport = {
   duplicateRows: Array<{ row: number; phone: string; reason: string }>;
   errorRows: Array<{ row: number; message: string }>;
 };
+type FarmerImportPreview = {
+  detectedHeaders: string[];
+  normalizedHeaders: string[];
+  fieldMappings: Record<string, { label: string; detectedHeader: string; normalizedHeader: string; index: number } | null>;
+  missingRequiredFields: string[];
+  previewRows: Array<{
+    farmerName: string;
+    farmName: string;
+    phone: string;
+    location: string;
+    products: string;
+  }>;
+  totalRows?: number;
+};
 type FormField = {
   name: string;
   label: string;
@@ -1191,6 +1205,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [importedFarmers, setImportedFarmers] = useState<ImportedFarmerRecord[]>([]);
   const [selectedImportedFarmerIds, setSelectedImportedFarmerIds] = useState<string[]>([]);
   const [farmerImportReport, setFarmerImportReport] = useState<FarmerImportReport | null>(null);
+  const [farmerImportPreview, setFarmerImportPreview] = useState<FarmerImportPreview | null>(null);
   const [farmerImportError, setFarmerImportError] = useState("");
   const [isImportingFarmers, setIsImportingFarmers] = useState(false);
   const [isUpdatingImportedFarmers, setIsUpdatingImportedFarmers] = useState(false);
@@ -1549,6 +1564,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
   async function importTallyFarmers(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const mode = submitter?.value === "import" ? "import" : "preview";
     const form = event.currentTarget;
     const fileInput = form.elements.namedItem("csv") as HTMLInputElement | null;
     const file = fileInput?.files?.[0];
@@ -1565,9 +1582,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
     setIsImportingFarmers(true);
     setFarmerImportError("");
-    setFarmerImportReport(null);
+    if (mode === "import") {
+      setFarmerImportReport(null);
+    }
     const formData = new FormData();
     formData.append("csv", file);
+    formData.append("mode", mode);
 
     const response = await fetch("/api/admin/farmer-import", {
       method: "POST",
@@ -1576,17 +1596,46 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     const result = (await response?.json().catch(() => null)) as {
       report?: FarmerImportReport;
       farmers?: ImportedFarmerRecord[];
+      detectedHeaders?: string[];
+      normalizedHeaders?: string[];
+      fieldMappings?: FarmerImportPreview["fieldMappings"];
+      missingRequiredFields?: string[];
+      previewRows?: FarmerImportPreview["previewRows"];
+      totalRows?: number;
       error?: string;
     } | null;
     setIsImportingFarmers(false);
 
-    if (!response?.ok || !result?.report) {
+    const preview = {
+      detectedHeaders: result?.detectedHeaders ?? [],
+      normalizedHeaders: result?.normalizedHeaders ?? [],
+      fieldMappings: result?.fieldMappings ?? {},
+      missingRequiredFields: result?.missingRequiredFields ?? [],
+      previewRows: result?.previewRows ?? [],
+      totalRows: result?.totalRows
+    };
+    setFarmerImportPreview(preview);
+
+    if (!response?.ok) {
       if (response?.status === 401) {
         window.location.href = "/admin/login";
         return;
       }
 
       setFarmerImportError(result?.error ?? "Could not import farmers from this CSV.");
+      return;
+    }
+
+    if (mode === "preview") {
+      setFarmerImportReport(null);
+      setImportedFarmers([]);
+      setSelectedImportedFarmerIds([]);
+      setNotice(`CSV preview ready: ${result?.totalRows ?? preview.previewRows.length} rows detected.`);
+      return;
+    }
+
+    if (!result?.report) {
+      setFarmerImportError("Import did not return a report.");
       return;
     }
 
@@ -2525,20 +2574,113 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-semibold text-ink/70 file:mr-3 file:rounded-md file:border-0 file:bg-leaf-50 file:px-3 file:py-2 file:text-sm file:font-black file:text-leaf-800"
                         />
                       </label>
-                      <button
-                        type="submit"
-                        disabled={isImportingFarmers}
-                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
-                      >
-                        <UploadCloud className="h-4 w-4" aria-hidden="true" />
-                        {isImportingFarmers ? "Importing..." : "Import Farmers"}
-                      </button>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        <button
+                          type="submit"
+                          name="mode"
+                          value="preview"
+                          disabled={isImportingFarmers}
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                          {isImportingFarmers ? "Reading..." : "Preview CSV"}
+                        </button>
+                        <button
+                          type="submit"
+                          name="mode"
+                          value="import"
+                          disabled={isImportingFarmers}
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                        >
+                          <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                          {isImportingFarmers ? "Importing..." : "Import Farmers"}
+                        </button>
+                      </div>
                     </form>
                   </div>
                 </section>
 
                 {farmerImportError ? (
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{farmerImportError}</div>
+                ) : null}
+
+                {farmerImportPreview ? (
+                  <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-wide text-earth-700">Detected Headers</p>
+                          <h3 className="mt-2 text-xl font-black text-ink">CSV columns found</h3>
+                        </div>
+                        {farmerImportPreview.totalRows ? (
+                          <span className="w-fit rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
+                            {farmerImportPreview.totalRows} rows
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {farmerImportPreview.detectedHeaders.map((header, index) => (
+                          <span key={`${header}-${index}`} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-ink/60">
+                            {header}
+                          </span>
+                        ))}
+                      </div>
+                      {farmerImportPreview.missingRequiredFields.length > 0 ? (
+                        <p className="mt-4 rounded-md bg-tomato/10 p-3 text-sm font-black text-tomato">
+                          Missing required mapping: {farmerImportPreview.missingRequiredFields.join(", ")}
+                        </p>
+                      ) : (
+                        <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-black text-leaf-700">
+                          Required columns were detected.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Field Mapping</p>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {Object.entries(farmerImportPreview.fieldMappings).map(([field, mapping]) => (
+                          <div key={field} className="rounded-md bg-leaf-50 p-3">
+                            <p className="text-xs font-black uppercase tracking-wide text-ink/45">{mapping?.label ?? field}</p>
+                            <p className={`mt-1 text-sm font-black ${mapping ? "text-ink" : "text-tomato"}`}>
+                              {mapping?.detectedHeader ?? "No matching column"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-leaf-900/10 bg-white shadow-sm xl:col-span-2">
+                      <div className="border-b border-leaf-900/10 p-5">
+                        <p className="text-sm font-black uppercase tracking-wide text-earth-700">CSV Preview</p>
+                        <h3 className="mt-2 text-xl font-black text-ink">First mapped rows before import</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-[760px] w-full border-collapse text-left text-sm">
+                          <thead className="bg-leaf-50 text-xs font-black uppercase tracking-wide text-ink/50">
+                            <tr>
+                              <th className="px-5 py-4">Farmer Name</th>
+                              <th className="px-5 py-4">Farm Name</th>
+                              <th className="px-5 py-4">Phone</th>
+                              <th className="px-5 py-4">Location</th>
+                              <th className="px-5 py-4">Products</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-leaf-900/10">
+                            {farmerImportPreview.previewRows.map((row, index) => (
+                              <tr key={`${row.phone}-${index}`}>
+                                <td className="px-5 py-4 font-black text-ink">{row.farmerName || "Not detected"}</td>
+                                <td className="px-5 py-4 text-ink/65">{row.farmName || "Not detected"}</td>
+                                <td className="px-5 py-4 text-ink/65">{row.phone || "Not detected"}</td>
+                                <td className="px-5 py-4 text-ink/65">{row.location || "Not detected"}</td>
+                                <td className="px-5 py-4 text-ink/65">{row.products || "Not detected"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
                 ) : null}
 
                 {farmerImportReport ? (

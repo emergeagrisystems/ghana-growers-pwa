@@ -37,15 +37,77 @@ type ImportableFarmer = {
   source: "Tally Import";
 };
 
-const headerAliases: Record<string, string[]> = {
-  farmerName: ["farmer name", "full name", "name", "your name", "respondent name"],
-  farmName: ["farm name", "business or farm name", "business name", "company name"],
-  region: ["region", "farm region", "location region"],
-  district: ["district", "farm district", "location district", "city", "town"],
-  farmType: ["farm type", "type of farm", "farmer type"],
-  products: ["products", "crops", "main crops", "products grown", "crops grown", "produce", "what do you grow"],
-  farmSize: ["farm size", "farm size/acres", "acreage", "size of farm"],
-  whatsappNumber: ["whatsapp", "whatsapp number", "phone", "phone number", "mobile number", "contact number"]
+const fieldLabels = {
+  farmerName: "Farmer Name",
+  farmName: "Farm Name",
+  region: "Region",
+  district: "District",
+  farmType: "Farm Type",
+  products: "Products",
+  farmSize: "Farm Size",
+  whatsappNumber: "Phone / WhatsApp Number"
+} as const;
+type ImportFieldKey = keyof typeof fieldLabels;
+
+const requiredImportFields: ImportFieldKey[] = ["farmerName", "whatsappNumber"];
+
+const headerAliases: Record<ImportFieldKey, string[]> = {
+  farmerName: [
+    "farmer name",
+    "full name",
+    "full names",
+    "name",
+    "your name",
+    "respondent name",
+    "what is your full name",
+    "what s your full name",
+    "please enter your full name",
+    "applicant name",
+    "contact name"
+  ],
+  farmName: [
+    "farm name",
+    "business or farm name",
+    "business farm name",
+    "business name",
+    "company name",
+    "name of farm",
+    "what is the name of your farm",
+    "what s the name of your farm"
+  ],
+  region: ["region", "farm region", "location region", "which region", "region in ghana", "where is your farm located region"],
+  district: ["district", "farm district", "location district", "city", "town", "community", "municipality", "where is your farm located district"],
+  farmType: ["farm type", "type of farm", "farmer type", "what type of farming", "type of farming", "farming type"],
+  products: [
+    "products",
+    "crops",
+    "main crops",
+    "products grown",
+    "crops grown",
+    "produce",
+    "what do you grow",
+    "what crops do you grow",
+    "what products do you produce",
+    "main products",
+    "farm produce"
+  ],
+  farmSize: ["farm size", "farm size acres", "acreage", "size of farm", "how large is your farm", "number of acres"],
+  whatsappNumber: [
+    "whatsapp",
+    "whatsapp number",
+    "phone",
+    "phone number",
+    "mobile number",
+    "contact number",
+    "telephone",
+    "tel",
+    "contact",
+    "your phone number",
+    "your whatsapp number",
+    "mobile",
+    "phone whatsapp",
+    "whatsapp phone number"
+  ]
 };
 
 function parseCsv(text: string) {
@@ -114,20 +176,100 @@ function normalizePhone(value: string) {
   return digits;
 }
 
-function valueFromRow(row: Record<string, string>, key: keyof typeof headerAliases) {
-  for (const alias of headerAliases[key]) {
-    const value = row[alias];
+function resolveFieldIndex(headers: string[], key: ImportFieldKey) {
+  const aliases = headerAliases[key].map(normalizeHeader);
+  const exactIndex = headers.findIndex((header) => aliases.includes(header));
 
-    if (value?.trim()) {
-      return value.trim();
+  if (exactIndex !== -1) {
+    return exactIndex;
+  }
+
+  const containsIndex = headers.findIndex((header) =>
+    aliases.some((alias) => header.includes(alias) || alias.includes(header))
+  );
+
+  if (containsIndex !== -1) {
+    return containsIndex;
+  }
+
+  if (key === "farmerName") {
+    return headers.findIndex((header) => header.includes("name") && !header.includes("farm") && !header.includes("business"));
+  }
+
+  if (key === "whatsappNumber") {
+    return headers.findIndex((header) => header.includes("phone") || header.includes("whatsapp") || header.includes("mobile") || header.includes("contact"));
+  }
+
+  if (key === "products") {
+    return headers.findIndex((header) => header.includes("crop") || header.includes("product") || header.includes("produce"));
+  }
+
+  return -1;
+}
+
+function csvHeaderInfo(rawHeaders: string[]) {
+  const normalizedHeaders = rawHeaders.map(normalizeHeader);
+  const mappings = Object.fromEntries(
+    (Object.keys(headerAliases) as ImportFieldKey[]).map((key) => {
+      const index = resolveFieldIndex(normalizedHeaders, key);
+
+      return [
+        key,
+        index === -1
+          ? null
+          : {
+              index,
+              label: fieldLabels[key],
+              detectedHeader: rawHeaders[index],
+              normalizedHeader: normalizedHeaders[index]
+            }
+      ];
+    })
+  ) as Record<ImportFieldKey, { index: number; label: string; detectedHeader: string; normalizedHeader: string } | null>;
+  const missingRequiredFields = requiredImportFields
+    .filter((key) => !mappings[key])
+    .map((key) => fieldLabels[key]);
+
+  return {
+    rawHeaders,
+    normalizedHeaders,
+    mappings,
+    missingRequiredFields
+  };
+}
+
+function valueFromRow(values: string[], headerInfo: ReturnType<typeof csvHeaderInfo>, key: ImportFieldKey) {
+  const mapping = headerInfo.mappings[key];
+
+  if (!mapping) {
+    return "";
+  }
+
+  return values[mapping.index]?.trim() ?? "";
+}
+
+function rowToPreview(values: string[], headerInfo: ReturnType<typeof csvHeaderInfo>) {
+  const mapped = mapTallyRow(values, headerInfo);
+
+  return {
+    farmerName: mapped.farmer_name,
+    farmName: mapped.farm_name,
+    phone: mapped.whatsapp_number,
+    location: [mapped.district, mapped.region].filter((value) => value && value !== "Not provided" && value !== "Ghana").join(", ") || mapped.region,
+    products: mapped.products.join(", ")
+  };
+}
+
+function firstMissingRequiredValue(values: string[], headerInfo: ReturnType<typeof csvHeaderInfo>) {
+  for (const key of requiredImportFields) {
+    const value = valueFromRow(values, headerInfo, key);
+
+    if (!value.trim()) {
+      return fieldLabels[key];
     }
   }
 
-  return "";
-}
-
-function rowToRecord(headers: string[], values: string[]) {
-  return Object.fromEntries(headers.map((header, index) => [header, values[index]?.trim() ?? ""]));
+  return null;
 }
 
 function normalizeProducts(value: string) {
@@ -150,20 +292,20 @@ function farmerSignature(farmer: Pick<ImportableFarmer, "farmer_name" | "farm_na
     .trim();
 }
 
-function mapTallyRow(row: Record<string, string>): ImportableFarmer {
-  const farmerName = valueFromRow(row, "farmerName");
-  const farmName = valueFromRow(row, "farmName") || (farmerName ? `${farmerName} Farm` : "");
-  const products = normalizeProducts(valueFromRow(row, "products"));
+function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderInfo>): ImportableFarmer {
+  const farmerName = valueFromRow(values, headerInfo, "farmerName");
+  const farmName = valueFromRow(values, headerInfo, "farmName") || (farmerName ? `${farmerName} Farm` : "");
+  const products = normalizeProducts(valueFromRow(values, headerInfo, "products"));
 
   return {
     farmer_name: farmerName,
     farm_name: farmName,
-    region: valueFromRow(row, "region") || "Ghana",
-    district: valueFromRow(row, "district") || "Not provided",
-    farm_type: valueFromRow(row, "farmType") || "Mixed",
+    region: valueFromRow(values, headerInfo, "region") || "Ghana",
+    district: valueFromRow(values, headerInfo, "district") || "Not provided",
+    farm_type: valueFromRow(values, headerInfo, "farmType") || "Mixed",
     products,
-    farm_size: valueFromRow(row, "farmSize") || "Not provided",
-    whatsapp_number: normalizePhone(valueFromRow(row, "whatsappNumber")),
+    farm_size: valueFromRow(values, headerInfo, "farmSize") || "Not provided",
+    whatsapp_number: normalizePhone(valueFromRow(values, headerInfo, "whatsappNumber")),
     status: "Pending Review",
     verification_status: "Pending",
     source: "Tally Import"
@@ -209,12 +351,42 @@ export async function POST(request: Request) {
   const text = await file.text();
   const rows = parseCsv(text);
   const [rawHeaders, ...bodyRows] = rows;
+  const mode = formData?.get("mode") === "import" ? "import" : "preview";
 
   if (!rawHeaders || bodyRows.length === 0) {
     return NextResponse.json({ error: "CSV file does not contain farmer records." }, { status: 400 });
   }
 
-  const headers = rawHeaders.map(normalizeHeader);
+  const headerInfo = csvHeaderInfo(rawHeaders);
+  const previewRows = bodyRows.slice(0, 8).map((values) => rowToPreview(values, headerInfo));
+
+  if (headerInfo.missingRequiredFields.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Required CSV column mapping missing: ${headerInfo.missingRequiredFields.join(", ")}.`,
+        detectedHeaders: headerInfo.rawHeaders,
+        normalizedHeaders: headerInfo.normalizedHeaders,
+        fieldMappings: headerInfo.mappings,
+        missingRequiredFields: headerInfo.missingRequiredFields,
+        previewRows
+      },
+      { status: 400 }
+    );
+  }
+
+  if (mode === "preview") {
+    return NextResponse.json({
+      ok: true,
+      mode: "preview",
+      detectedHeaders: headerInfo.rawHeaders,
+      normalizedHeaders: headerInfo.normalizedHeaders,
+      fieldMappings: headerInfo.mappings,
+      missingRequiredFields: headerInfo.missingRequiredFields,
+      previewRows,
+      totalRows: bodyRows.length
+    });
+  }
+
   const existing = await selectSupabaseRecords<ExistingFarmer>(
     "farmers",
     "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,source&limit=5000"
@@ -243,10 +415,17 @@ export async function POST(request: Request) {
   for (let index = 0; index < bodyRows.length; index += 1) {
     const values = bodyRows[index];
     const rowNumber = index + 2;
-    const mapped = mapTallyRow(rowToRecord(headers, values));
+    const missingRequiredValue = firstMissingRequiredValue(values, headerInfo);
+
+    if (missingRequiredValue) {
+      errors.push({ row: rowNumber, message: `${missingRequiredValue} is empty in the mapped CSV column.` });
+      continue;
+    }
+
+    const mapped = mapTallyRow(values, headerInfo);
 
     if (!mapped.farmer_name || !mapped.whatsapp_number) {
-      errors.push({ row: rowNumber, message: "Farmer name and phone/WhatsApp number are required." });
+      errors.push({ row: rowNumber, message: "Mapped Farmer Name or Phone / WhatsApp Number is empty." });
       continue;
     }
 
@@ -326,6 +505,11 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
+    detectedHeaders: headerInfo.rawHeaders,
+    normalizedHeaders: headerInfo.normalizedHeaders,
+    fieldMappings: headerInfo.mappings,
+    missingRequiredFields: headerInfo.missingRequiredFields,
+    previewRows,
     report: {
       imported: imported.length,
       duplicates: duplicates.length,
