@@ -124,9 +124,9 @@ export function MarketplaceCategoryShowcase() {
   return (
     <section className="bg-white py-16" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
+        <div className="max-w-[18rem] sm:max-w-3xl">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
-          <h2 id="marketplace-category-showcase-title" className="mt-3 text-3xl font-black text-ink sm:text-4xl">
+          <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-4xl">
             Explore Marketplace
           </h2>
           <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg">

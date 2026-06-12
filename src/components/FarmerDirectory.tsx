@@ -79,7 +79,7 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 Farmer discovery
               </p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Search verified-ready farmer profiles</h2>
+              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search verified-ready farmer profiles</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
                 Browse farmers across the Ghana Growers network by region, district, product, and farm type. Profiles include location,
                 products, verification status, and contact options.
@@ -143,10 +143,10 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                       sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                     />
                     <div className="p-5">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                         <div>
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">{farmer.region}</p>
-                          <h3 className="mt-1 text-2xl font-black text-ink">{farmer.farmName}</h3>
+                          <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">{farmer.farmName}</h3>
                         </div>
                         <FarmerBadge status={trust.status} />
                       </div>

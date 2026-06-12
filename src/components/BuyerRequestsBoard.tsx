@@ -129,11 +129,11 @@ function RequestCard({
   const trust = normalizeTrust(request.trust);
 
   return (
-    <article className="rounded-md bg-white p-5 shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft">
+    <article className="rounded-md bg-white p-4 shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black leading-tight text-ink">{request.productName}</h2>
-          <p className="mt-2 text-lg font-black text-leaf-700">{request.quantityNeeded}</p>
+          <h2 className="text-xl font-black leading-tight text-ink sm:text-2xl">{request.productName}</h2>
+          <p className="mt-2 text-base font-black text-leaf-700 sm:text-lg">{request.quantityNeeded}</p>
         </div>
         <StatusBadge status={request.status} />
       </div>
@@ -189,7 +189,7 @@ function RequestDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+      <div className="max-h-[92dvh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
         <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Request</p>
           <button
@@ -202,14 +202,14 @@ function RequestDetailsModal({
           </button>
         </div>
 
-        <div className="grid gap-6 p-5 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.25fr_0.75fr] lg:gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={request.status} />
               <BuyerTrustBadge status={trust.status} />
             </div>
-            <h2 className="mt-4 text-3xl font-black leading-tight text-ink">{request.productName}</h2>
-            <p className="mt-2 text-xl font-black text-leaf-700">{request.quantityNeeded}</p>
+            <h2 className="mt-4 text-2xl font-black leading-tight text-ink sm:text-3xl">{request.productName}</h2>
+            <p className="mt-2 text-lg font-black text-leaf-700 sm:text-xl">{request.quantityNeeded}</p>
             <div className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
               <Detail label="Product needed" value={request.productName} />
               <Detail label="Quantity" value={request.quantityNeeded} />
@@ -377,7 +377,7 @@ export function BuyerRequestsBoard({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Active demand</p>
-                <h2 className="mt-2 text-3xl font-black text-ink">Buyer Demand Board</h2>
+                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Buyer Demand Board</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
                   Browse active requests from buyers across Ghana.
                 </p>
@@ -445,7 +445,7 @@ export function BuyerRequestsBoard({
               <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
                 <div>
                   <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
-                  <h2 className="mt-2 text-3xl font-black text-ink">Buyer Requests</h2>
+                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Buyer Requests</h2>
                 </div>
                 <p className="text-sm font-semibold text-ink/55">
                   Showing {filteredRequests.length} of {requests.length} requests

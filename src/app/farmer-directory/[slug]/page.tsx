@@ -143,7 +143,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Profile</p>
-            <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">{farmer.contactName}</h1>
+            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{farmer.contactName}</h1>
             <p className="mt-2 text-xl font-black text-leaf-700">{farmer.farmName}</p>
             <div className="mt-5 grid gap-3 text-sm font-bold text-ink/68 sm:grid-cols-2">
               <span className="inline-flex items-center gap-2">

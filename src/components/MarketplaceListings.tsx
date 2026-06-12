@@ -147,7 +147,7 @@ function ListingCard({
               height={260}
               fallbackKind="marketplace"
               sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-              className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+              className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] sm:h-52"
             />
           </Link>
         ) : (
@@ -158,7 +158,7 @@ function ListingCard({
             height={260}
             fallbackKind="marketplace"
             sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] sm:h-52"
           />
         )}
         {product.verified ? (
@@ -168,8 +168,8 @@ function ListingCard({
           </span>
         ) : null}
       </div>
-      <div className="p-5">
-        <h2 className="text-xl font-black text-ink">{product.name}</h2>
+      <div className="p-4 sm:p-5">
+        <h2 className="text-lg font-black text-ink sm:text-xl">{product.name}</h2>
         <div className="mt-3 grid gap-1.5 text-sm leading-6 text-ink/62">
           <p>{product.region}</p>
           <p>
@@ -185,11 +185,11 @@ function ListingCard({
         <div className="mt-5 grid grid-cols-2 gap-3 border-t border-leaf-900/10 pt-4">
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-ink/40">Quantity</p>
-            <p className="mt-1 text-sm font-black text-ink">{product.quantity} {product.unit}</p>
+            <p className="mt-1 text-sm font-black leading-5 text-ink">{product.quantity} {product.unit}</p>
           </div>
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-ink/40">Availability</p>
-            <p className="mt-1 text-sm font-black text-leaf-700">{product.available}</p>
+            <p className="mt-1 text-sm font-black leading-5 text-leaf-700">{product.available}</p>
           </div>
         </div>
         <div className="mt-5">
@@ -224,7 +224,7 @@ function ProductDetailsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+      <div className="max-h-[92dvh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
         <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Marketplace Listing</p>
           <button
@@ -236,7 +236,7 @@ function ProductDetailsModal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="grid gap-7 p-5 lg:grid-cols-[1fr_1fr]">
+        <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_1fr] lg:gap-7">
           <SafeImage
             src={product.image}
             alt={`${product.name} listing photo`}
@@ -244,10 +244,10 @@ function ProductDetailsModal({
             height={420}
             fallbackKind="marketplace"
             sizes="(min-width: 1024px) 45vw, 100vw"
-            className="h-80 w-full rounded-md object-cover lg:h-full"
+            className="h-56 w-full rounded-md object-cover sm:h-80 lg:h-full"
           />
           <div>
-            <h2 className="text-3xl font-black leading-tight text-ink">{product.name}</h2>
+            <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
             <div className="mt-5 grid gap-3 text-sm text-ink/68">
               <Detail label="Seller" value={farmer?.farmName ?? product.seller} />
               <Detail label="Region" value={product.region} />
@@ -422,7 +422,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
               <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
                 <div>
                   <p className="text-sm font-black uppercase tracking-wide text-earth-700">Available listings</p>
-                  <h2 className="mt-2 text-3xl font-black text-ink">Browse marketplace products</h2>
+                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Browse marketplace products</h2>
                 </div>
                 <p className="text-sm font-semibold text-ink/55">
                   Showing {filteredProducts.length} of {products.length} listings

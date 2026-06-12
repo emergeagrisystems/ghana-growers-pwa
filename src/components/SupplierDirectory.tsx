@@ -94,7 +94,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 Supplier discovery
               </p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Search agricultural suppliers and service providers</h2>
+              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search agricultural suppliers and service providers</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
                 Find seed suppliers, input providers, equipment dealers, packaging companies, logistics partners,
                 storage operators, finance providers, and agricultural consultants across Ghana.
@@ -163,14 +163,14 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 alt={`${supplier.companyName} supplier photo`}
                 width={520}
                 height={320}
-                className="mb-5 h-44 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover"
+                className="mb-5 h-40 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover sm:h-44"
                 fallbackKind="supplier"
                 sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
               />
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase text-earth-700">{supplier.supplierCategory}</p>
-                  <h3 className="mt-1 text-2xl font-black text-ink">{supplier.companyName}</h3>
+                  <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">{supplier.companyName}</h3>
                   <p className="mt-2 text-sm font-bold text-leaf-700">{supplier.district}, {supplier.region}</p>
                 </div>
               </div>

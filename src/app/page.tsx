@@ -43,10 +43,10 @@ export default function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-[3.15rem] xl:text-[3.5rem]">
+            <h1 className="mt-5 max-w-[18rem] break-words text-[1.55rem] font-black leading-tight text-ink sm:max-w-3xl sm:text-5xl lg:text-[3.15rem] xl:text-[3.5rem]">
               Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/70">
+            <p className="mt-5 max-w-[18rem] text-base leading-7 text-ink/70 sm:max-w-2xl sm:text-lg sm:leading-8">
               Connect with farmers, buyers, suppliers, market prices, buyer requests, and digital farm tools across Ghana.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -118,7 +118,7 @@ export default function HomePage() {
               <UsersRound size={18} aria-hidden="true" />
               Join the network
             </p>
-            <h2 className="mt-4 text-3xl font-black sm:text-4xl">Grow trusted agricultural connections across Ghana</h2>
+            <h2 className="mt-4 text-2xl font-black sm:text-4xl">Grow trusted agricultural connections across Ghana</h2>
             <p className="mt-4 leading-7 text-white/70">
               Register interest, browse directories, join WhatsApp communities, and use Farmer Tools to make better decisions before buying, selling, supplying, or transporting agricultural products.
             </p>

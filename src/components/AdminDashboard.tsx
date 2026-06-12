@@ -2409,7 +2409,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Internal Admin</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-4xl font-black text-ink">Ghana Growers Admin Dashboard</h1>
+              <h1 className="text-3xl font-black text-ink sm:text-4xl">Ghana Growers Admin Dashboard</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
                 Phase 1 dashboard for reviewing platform records, content, buyer demand, verifications, and operational leads.
               </p>
@@ -2428,7 +2428,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[260px_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr] lg:gap-8 lg:px-8 lg:py-8">
         <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
@@ -2634,7 +2634,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <p className="text-sm font-black uppercase tracking-wide text-earth-700">Manage Records</p>
-                  <h2 className="mt-2 text-3xl font-black text-ink">{activeSectionLabel}</h2>
+                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
                 {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
@@ -2828,7 +2828,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     </div>
                     <div className="rounded-md bg-white p-4 text-center shadow-sm ring-1 ring-leaf-900/10">
                       <p className="text-sm font-black uppercase tracking-wide text-ink/45">Progress</p>
-                      <p className="mt-2 text-5xl font-black text-leaf-700">{launchProgress}%</p>
+                      <p className="mt-2 text-4xl font-black text-leaf-700 sm:text-5xl">{launchProgress}%</p>
                       <div className="mt-4 h-3 overflow-hidden rounded-full bg-leaf-900/10">
                         <div className="h-full rounded-full bg-leaf-700 transition-all" style={{ width: `${launchProgress}%` }} />
                       </div>
@@ -3788,8 +3788,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
           </section>
 
           {pendingFarmerBulkAction ? (
-            <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6">
-              <section className="w-full max-w-lg rounded-md bg-white p-6 shadow-soft">
+            <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 px-4 py-6">
+              <section className="w-full max-w-lg rounded-md bg-white p-5 shadow-soft sm:p-6">
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Confirm Bulk Update</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">
                   Are you sure you want to update {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"}?
@@ -3821,13 +3821,13 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
           ) : null}
 
           {activeForm ? (
-            <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6">
-              <section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-md bg-white shadow-soft">
+            <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 px-3 py-4 sm:px-4 sm:py-6">
+              <section className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-md bg-white shadow-soft">
                 <div className="border-b border-leaf-900/10 p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Admin Form</p>
-                      <h2 className="mt-2 text-3xl font-black text-ink">{activeForm.title}</h2>
+                      <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{activeForm.title}</h2>
                       <p className="mt-2 text-sm leading-6 text-ink/60">
                         {activeForm.recordName ? `Editing ${activeForm.recordName}. ` : ""}
                         {canPersistAdminForm(activeForm.id, activeForm.mode)
@@ -3845,7 +3845,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   </div>
                 </div>
 
-                <form className="p-5" onSubmit={submitAdminForm}>
+                <form className="p-4 sm:p-5" onSubmit={submitAdminForm}>
                   <div className="grid gap-4 md:grid-cols-2">
                     {formConfigs[activeForm.id].map((field) => {
                       const fieldId = `admin-${activeForm.id}-${field.name}`;

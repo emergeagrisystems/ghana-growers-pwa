@@ -59,9 +59,9 @@ export function ChooseYourPath() {
   return (
     <section className="bg-white py-12 sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Start here</p>
-          <h2 id="choose-your-path-title" className="mt-3 text-3xl font-black tracking-normal text-ink sm:text-4xl">
+          <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-ink sm:text-4xl">
             Choose Your Path
           </h2>
           <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">

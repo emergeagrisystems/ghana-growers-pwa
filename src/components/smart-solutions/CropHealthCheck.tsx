@@ -214,11 +214,11 @@ export function CropHealthCheck() {
               alt="Selected crop preview"
               width={960}
               height={520}
-              className="h-64 w-full rounded-md object-cover sm:h-80"
+              className="h-52 w-full rounded-md object-cover sm:h-80"
               unoptimized
             />
           ) : (
-            <div className="grid h-56 w-full place-items-center rounded-md bg-white sm:h-72">
+            <div className="grid h-44 w-full place-items-center rounded-md bg-white sm:h-72">
               <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
             </div>
           )}

@@ -10,12 +10,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(19,32,19,0.08)]">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="focus-ring flex items-center gap-2 rounded-md text-lg font-black text-leaf-700">
-          <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-600 text-white">
-            <Sprout size={23} aria-hidden="true" />
+      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-6 lg:px-8">
+        <Link href="/" className="focus-ring flex min-w-0 items-center gap-2 rounded-md text-sm font-black text-leaf-700 sm:text-lg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-600 text-white sm:h-10 sm:w-10">
+            <Sprout size={21} aria-hidden="true" />
           </span>
-          Ghana Growers
+          <span className="truncate">Ghana Growers</span>
         </Link>
 
         <div className="hidden items-center gap-1 lg:flex">
@@ -58,14 +58,14 @@ export function Header() {
           type="button"
           aria-label="Open navigation menu"
           onClick={() => setOpen((value) => !value)}
-          className="focus-ring grid h-11 w-11 place-items-center rounded-md border border-leaf-900/10 bg-white text-ink lg:hidden"
+          className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-md border border-leaf-900/10 bg-white text-ink sm:h-11 sm:w-11 lg:hidden"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </nav>
 
       {open ? (
-        <div className="border-t border-leaf-900/10 bg-white px-4 py-4 lg:hidden">
+        <div className="max-h-[calc(100dvh-68px)] overflow-y-auto border-t border-leaf-900/10 bg-white px-4 py-4 lg:hidden">
           <div className="mx-auto grid max-w-7xl gap-2">
             {navigation.map((item) => (
               <div key={item.href}>
