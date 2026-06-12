@@ -17,7 +17,6 @@ import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
 import { WHATSAPP_NUMBER } from "@/data/site";
 import { farmerDirectory } from "@/data/farmers";
-import { findBuyerRequestsForListing } from "@/lib/matching";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { FarmerProfile, Product } from "@/types";
 
@@ -137,7 +136,7 @@ function ListingCard({
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
 
   return (
-    <article className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+    <article className="group overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft">
       <div className="relative">
         {farmer ? (
           <Link href={`/farmer-directory/${farmer.slug}`} aria-label={`View ${farmer.farmName} profile`}>
@@ -148,7 +147,7 @@ function ListingCard({
               height={260}
               fallbackKind="marketplace"
               sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-              className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+              className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
             />
           </Link>
         ) : (
@@ -159,69 +158,49 @@ function ListingCard({
             height={260}
             fallbackKind="marketplace"
             sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
           />
         )}
         {product.verified ? (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
             <BadgeCheck className="h-3.5 w-3.5" />
             Verified
           </span>
         ) : null}
       </div>
       <div className="p-5">
-        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{product.category}</p>
-        <h2 className="mt-2 text-xl font-black text-ink">{product.name}</h2>
-        <div className="mt-4 grid gap-2 text-sm text-ink/58">
+        <h2 className="text-xl font-black text-ink">{product.name}</h2>
+        <div className="mt-3 grid gap-1.5 text-sm leading-6 text-ink/62">
+          <p>{product.region}</p>
           <p>
-            <span className="font-semibold text-ink/75">Region:</span> {product.region}
-          </p>
-          <p>
-            <span className="font-semibold text-ink/75">Quantity:</span> {product.quantity} {product.unit}
-          </p>
-          {farmer ? (
-            <p>
-              <span className="font-semibold text-ink/75">Farmer:</span>{" "}
+            {farmer ? (
               <Link href={`/farmer-directory/${farmer.slug}`} className="font-black text-leaf-700 hover:text-leaf-800">
                 {farmer.farmName}
               </Link>
-            </p>
-          ) : null}
+            ) : (
+              <span className="font-black text-ink/72">{product.seller}</span>
+            )}
+          </p>
         </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-leaf-900/10 pt-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-ink/40">Quantity</p>
+            <p className="mt-1 text-sm font-black text-ink">{product.quantity} {product.unit}</p>
+          </div>
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-ink/40">Availability</p>
+            <p className="mt-1 text-sm font-black text-leaf-700">{product.available}</p>
+          </div>
+        </div>
+        <div className="mt-5">
           <button
             type="button"
             onClick={() => onViewDetails(product)}
-            className="rounded-md bg-leaf-700 px-4 py-2.5 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
+            className="w-full rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
           >
-            Details
+            View Listing
           </button>
-          <a
-            href={contactUrl(product)}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() =>
-              trackWhatsAppLead({
-                sourceType: "Marketplace Listing",
-                sourceId: product.id,
-                sourceName: product.name,
-                phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
-              })
-            }
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </a>
         </div>
-        {farmer ? (
-          <Link
-            href={`/farmer-directory/${farmer.slug}`}
-            className="mt-3 inline-flex w-full justify-center rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
-          >
-            View Farmer
-          </Link>
-        ) : null}
       </div>
     </article>
   );
@@ -230,25 +209,24 @@ function ListingCard({
 function ProductDetailsModal({
   product,
   farmerBySlug,
-  buyerRequests,
+  products,
   onClose
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
-  buyerRequests: BuyerRequest[];
+  products: Product[];
   onClose: () => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
-  const relevantBuyerRequests = findBuyerRequestsForListing(product, buyerRequests, 3);
+  const relatedProducts = products
+    .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
+    .slice(0, 4);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
         <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-earth-700">{product.category}</p>
-            <h2 className="text-2xl font-black text-ink">{product.name}</h2>
-          </div>
+          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Marketplace Listing</p>
           <button
             type="button"
             onClick={onClose}
@@ -258,7 +236,7 @@ function ProductDetailsModal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="grid gap-6 p-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid gap-7 p-5 lg:grid-cols-[1fr_1fr]">
           <SafeImage
             src={product.image}
             alt={`${product.name} listing photo`}
@@ -266,33 +244,21 @@ function ProductDetailsModal({
             height={420}
             fallbackKind="marketplace"
             sizes="(min-width: 1024px) 45vw, 100vw"
-            className="h-72 w-full rounded-md object-cover lg:h-full"
+            className="h-80 w-full rounded-md object-cover lg:h-full"
           />
           <div>
-            <div className="grid gap-3 text-sm text-ink/68 sm:grid-cols-2">
-              <Detail label="Seller" value={product.seller} />
+            <h2 className="text-3xl font-black leading-tight text-ink">{product.name}</h2>
+            <div className="mt-5 grid gap-3 text-sm text-ink/68">
+              <Detail label="Seller" value={farmer?.farmName ?? product.seller} />
               <Detail label="Region" value={product.region} />
-              <Detail label="District" value={product.location} />
               <Detail label="Quantity" value={`${product.quantity} ${product.unit}`} />
               <Detail label="Availability" value={product.available} />
-              <Detail label="Date posted" value={product.datePosted} />
-              <Detail label="Verification" value={product.verified ? "Verified seller" : "Verification pending"} />
-              <Detail label="Category" value={product.category} />
-              {farmer ? <Detail label="Farmer profile" value={farmer.farmName} /> : null}
             </div>
             <div className="mt-5 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-              <h3 className="font-black text-ink">Listing description</h3>
+              <h3 className="font-black text-ink">Description</h3>
               <p className="mt-2 text-sm leading-6 text-ink/68">{product.description}</p>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {farmer ? (
-                <Link
-                  href={`/farmer-directory/${farmer.slug}`}
-                  className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 text-center text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
-                >
-                  View Farmer
-                </Link>
-              ) : null}
+            <div className="mt-5">
               <a
                 href={contactUrl(product)}
                 target="_blank"
@@ -305,50 +271,38 @@ function ProductDetailsModal({
                     phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
                   })
                 }
-                className="rounded-md bg-leaf-700 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-leaf-800"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
               >
-                Contact Seller
-              </a>
-              <a
-                href={contactUrl(product)}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() =>
-                  trackWhatsAppLead({
-                    sourceType: "Marketplace Listing",
-                    sourceId: product.id,
-                    sourceName: product.name,
-                    phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
-                  })
-                }
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
-              >
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp Inquiry
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                WhatsApp Seller
               </a>
             </div>
           </div>
         </div>
-        {relevantBuyerRequests.length > 0 ? (
+        {relatedProducts.length > 0 ? (
           <div className="border-t border-leaf-900/10 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Relevant Buyer Requests</p>
-                <h3 className="mt-2 text-xl font-black text-ink">Active demand for this product or category</h3>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Related Products</p>
+                <h3 className="mt-2 text-xl font-black text-ink">Similar listings to compare</h3>
               </div>
-              <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-                View Buyer Requests
-              </Link>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {relevantBuyerRequests.map((request) => (
-                <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                  <h4 className="font-black text-ink">{request.productName}</h4>
-                  <p className="mt-1 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
-                  <p className="mt-2 text-sm text-ink/58">{request.district}, {request.region}</p>
-                  <Link href="/buyer-requests" className="mt-4 inline-flex text-sm font-black text-leaf-700 hover:text-leaf-800">
-                    View Demand
-                  </Link>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedProducts.map((listing) => (
+                <article key={listing.id} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
+                  <SafeImage
+                    src={listing.image}
+                    alt={`${listing.name} related listing`}
+                    width={280}
+                    height={180}
+                    fallbackKind="marketplace"
+                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 50vw, 100vw"
+                    className="h-28 w-full object-cover"
+                  />
+                  <div className="p-3">
+                    <h4 className="font-black text-ink">{listing.name}</h4>
+                    <p className="mt-1 text-sm text-ink/58">{listing.region}</p>
+                  </div>
                 </article>
               ))}
             </div>
@@ -361,14 +315,14 @@ function ProductDetailsModal({
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-leaf-900/10 bg-white p-3">
+    <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
       <p className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</p>
       <p className="mt-1 font-semibold text-ink/78">{value}</p>
     </div>
   );
 }
 
-export function MarketplaceListings({ products, farmers = farmerDirectory, buyerRequests = [] }: MarketplaceListingsProps) {
+export function MarketplaceListings({ products, farmers = farmerDirectory }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
@@ -524,7 +478,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory, buyer
                     onClick={() => setSelectedProduct(product)}
                     className="mt-4 w-full rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
                   >
-                    Details
+                    View Listing
                   </button>
                 </div>
               </article>
@@ -537,7 +491,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory, buyer
         <ProductDetailsModal
           product={selectedProduct}
           farmerBySlug={farmerBySlug}
-          buyerRequests={buyerRequests}
+          products={products}
           onClose={() => setSelectedProduct(null)}
         />
       ) : null}
