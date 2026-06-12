@@ -1,6 +1,7 @@
 import { ShieldCheck, Sprout, UsersRound } from "lucide-react";
 import { FarmerRegistrationForm } from "@/components/FarmerRegistrationForm";
 import { PageHero } from "@/components/PageHero";
+import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 
 export const metadata = {
   title: "Join as a Farmer",
@@ -11,6 +12,7 @@ export const metadata = {
 export default function JoinFarmerPage() {
   return (
     <>
+      <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Farmer"
         title="Register your farm with Ghana Growers"
@@ -51,6 +53,7 @@ export default function JoinFarmerPage() {
           <FarmerRegistrationForm />
         </div>
       </section>
+      <PrelaunchFooter />
     </>
   );
 }

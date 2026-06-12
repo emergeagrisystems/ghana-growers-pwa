@@ -1,6 +1,7 @@
 import { Building2, ShoppingBasket, Truck } from "lucide-react";
 import { BuyerRegistrationForm } from "@/components/BuyerRegistrationForm";
 import { PageHero } from "@/components/PageHero";
+import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { buyerTypes } from "@/data/buyerTypes";
 
 export const metadata = {
@@ -12,6 +13,7 @@ export const metadata = {
 export default function JoinBuyerPage() {
   return (
     <>
+      <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Buyer"
         title="Register your produce buying needs"
@@ -60,6 +62,7 @@ export default function JoinBuyerPage() {
           <BuyerRegistrationForm />
         </div>
       </section>
+      <PrelaunchFooter />
     </>
   );
 }

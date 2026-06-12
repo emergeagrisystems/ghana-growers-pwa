@@ -18,6 +18,23 @@ function isPublicAsset(pathname: string) {
   );
 }
 
+function isAllowedPrelaunchRoute(pathname: string) {
+  return (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname.startsWith("/api") ||
+    pathname === "/launching-soon" ||
+    pathname === "/dev-preview" ||
+    pathname === "/preview" ||
+    pathname === "/supplier-registration" ||
+    pathname === "/join/supplier" ||
+    pathname === "/join/farmer" ||
+    pathname === "/join/buyer" ||
+    pathname === "/waitlist" ||
+    isPublicAsset(pathname)
+  );
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -25,14 +42,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/") ||
-    pathname.startsWith("/api") ||
-    pathname === "/launching-soon" ||
-    pathname === "/dev-preview" ||
-    isPublicAsset(pathname)
-  ) {
+  if (pathname === "/") {
+    return NextResponse.rewrite(new URL("/launching-soon", request.url));
+  }
+
+  if (isAllowedPrelaunchRoute(pathname)) {
     return NextResponse.next();
   }
 

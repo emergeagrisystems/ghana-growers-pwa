@@ -1,6 +1,7 @@
 import { BadgeCheck, Boxes, Eye, Handshake, Store, Truck, Users } from "lucide-react";
 import { SupplierRegistrationForm } from "@/components/SupplierRegistrationForm";
 import { PageHero } from "@/components/PageHero";
+import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { supplierCategories } from "@/data/supplierCategories";
 
 export const metadata = {
@@ -40,6 +41,7 @@ export default function JoinSupplierPage() {
 
   return (
     <>
+      <PrelaunchHeader />
       <PageHero
         eyebrow="Supplier Registration"
         title="Register your agricultural supply business"
@@ -108,6 +110,7 @@ export default function JoinSupplierPage() {
           <SupplierRegistrationForm />
         </div>
       </section>
+      <PrelaunchFooter />
     </>
   );
 }
