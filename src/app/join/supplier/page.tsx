@@ -1,25 +1,73 @@
-import { Boxes, Handshake, Truck } from "lucide-react";
+import { BadgeCheck, Boxes, Eye, Handshake, Store, Truck, Users } from "lucide-react";
 import { SupplierRegistrationForm } from "@/components/SupplierRegistrationForm";
 import { PageHero } from "@/components/PageHero";
 import { supplierCategories } from "@/data/supplierCategories";
 
 export const metadata = {
-  title: "Become a Supplier",
+  title: "Supplier Registration",
   description:
-    "Register as a Ghana Growers supplier for seeds, fertilizer, agrochemicals, equipment, irrigation, packaging, logistics, storage, finance, or consulting."
+    "Register as a Ghana Growers supplier to reach farmers, buyers, and agricultural businesses across Ghana."
 };
 
 export default function JoinSupplierPage() {
+  const benefits = [
+    {
+      title: "Supplier Directory profile",
+      description: "Create a public supplier profile farmers and buyers can discover.",
+      icon: Store
+    },
+    {
+      title: "Visibility to farmers",
+      description: "Promote inputs, equipment, logistics, finance, and advisory services to Ghanaian farmers.",
+      icon: Users
+    },
+    {
+      title: "Visibility to buyers",
+      description: "Show buyers and aggregators where your services can support agricultural trade.",
+      icon: Eye
+    },
+    {
+      title: "Verification opportunity",
+      description: "Apply for Ghana Growers review so trusted suppliers can stand out.",
+      icon: BadgeCheck
+    },
+    {
+      title: "Marketplace exposure",
+      description: "Prepare your products and services for future marketplace listing opportunities.",
+      icon: Handshake
+    }
+  ];
+
   return (
     <>
       <PageHero
-        eyebrow="Become a Supplier"
-        title="List your agricultural products and services"
-        description="Register your company so Ghana Growers can understand what you supply, where you operate, and how you can support farmers and buyers."
+        eyebrow="Supplier Registration"
+        title="Register your agricultural supply business"
+        description="Join Ghana Growers to become visible to farmers, buyers, and agricultural partners looking for trusted products and services across Ghana."
       />
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
           <div className="grid gap-4 self-start">
+            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Why register</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Supplier benefits</h2>
+              <div className="mt-5 grid gap-3">
+                {benefits.map((benefit) => {
+                  const Icon = benefit.icon;
+                  return (
+                    <div key={benefit.title} className="flex gap-3 rounded-md bg-leaf-50 p-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
+                        <Icon size={18} aria-hidden="true" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-black text-ink">{benefit.title}</span>
+                        <span className="mt-1 block text-xs font-semibold leading-5 text-ink/58">{benefit.description}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
               <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white">
                 <Boxes size={22} aria-hidden="true" />

@@ -8,10 +8,13 @@ export type SupplierRegistrationPayload = {
   whatsapp: string;
   email: string;
   region: string;
+  district: string;
   supplierCategory: string;
   productsServicesOffered: string;
+  deliveryCoverage: string;
   website: string;
   description: string;
+  logoImageUrl: string;
   privacyAccepted: boolean;
 };
 
@@ -22,15 +25,14 @@ export type SupplierRegistrationResult = {
 };
 
 const requiredFields: Array<keyof SupplierRegistrationPayload> = [
-  "companyName",
   "contactPerson",
   "phone",
   "whatsapp",
-  "email",
   "region",
+  "district",
   "supplierCategory",
   "productsServicesOffered",
-  "description"
+  "deliveryCoverage"
 ];
 
 function clean(value: unknown) {
@@ -45,10 +47,13 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
     whatsapp: clean(input.whatsapp),
     email: clean(input.email),
     region: clean(input.region),
+    district: clean(input.district),
     supplierCategory: clean(input.supplierCategory),
     productsServicesOffered: clean(input.productsServicesOffered),
+    deliveryCoverage: clean(input.deliveryCoverage),
     website: clean(input.website),
     description: clean(input.description),
+    logoImageUrl: clean(input.logoImageUrl),
     privacyAccepted: input.privacyAccepted === true
   };
   const errors: SupplierRegistrationResult["errors"] = {};
@@ -82,7 +87,7 @@ export async function appendSupplierRegistrationToSheet(data: SupplierRegistrati
   const sheetName = process.env.GOOGLE_SHEETS_SUPPLIER_SHEET_NAME || supplierRegistrationNotifications.googleSheetName;
   const submittedAt = new Date().toISOString();
 
-  return appendValuesToGoogleSheet(sheetName, "A:K", [[
+  return appendValuesToGoogleSheet(sheetName, "A:N", [[
     submittedAt,
     data.companyName,
     data.contactPerson,
@@ -90,10 +95,13 @@ export async function appendSupplierRegistrationToSheet(data: SupplierRegistrati
     data.whatsapp,
     data.email,
     data.region,
+    data.district,
     data.supplierCategory,
     data.productsServicesOffered,
+    data.deliveryCoverage,
     data.website,
-    data.description
+    data.description,
+    data.logoImageUrl
   ]]);
 }
 
@@ -113,18 +121,21 @@ export async function sendSupplierRegistrationEmail(data: SupplierRegistrationPa
     body: JSON.stringify({
       from: process.env.SUPPLIER_REGISTRATION_FROM_EMAIL || supplierRegistrationNotifications.fromEmail,
       to: supplierRegistrationNotifications.adminEmails,
-      subject: `${supplierRegistrationNotifications.subjectPrefix}: ${data.companyName}`,
+      subject: `${supplierRegistrationNotifications.subjectPrefix}: ${data.companyName || data.contactPerson}`,
       text: [
-        `Company Name: ${data.companyName}`,
+        `Company Name: ${data.companyName || "Not provided"}`,
         `Contact Person: ${data.contactPerson}`,
         `Phone: ${data.phone}`,
         `WhatsApp: ${data.whatsapp}`,
-        `Email: ${data.email}`,
+        `Email: ${data.email || "Not provided"}`,
         `Region: ${data.region}`,
+        `District: ${data.district}`,
         `Supplier Category: ${data.supplierCategory}`,
         `Products/Services Offered: ${data.productsServicesOffered}`,
+        `Delivery Coverage: ${data.deliveryCoverage}`,
         `Website: ${data.website || "None"}`,
-        `Description: ${data.description}`
+        `Logo/Image: ${data.logoImageUrl || "None"}`,
+        `Description: ${data.description || "None"}`
       ].join("\n")
     })
   });
