@@ -9,7 +9,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(19,32,19,0.08)]">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="focus-ring flex items-center gap-2 rounded-md text-lg font-black text-leaf-700">
           <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-600 text-white">
@@ -23,7 +23,7 @@ export function Header() {
             <div key={item.href} className="group relative">
               <Link
                 href={item.href}
-                className="focus-ring inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold text-ink/80 transition hover:bg-leaf-50 hover:text-leaf-700"
+                className="focus-ring inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold text-ink transition hover:bg-leaf-50 hover:text-leaf-700"
               >
                 {item.title}
                 {item.children ? <ChevronDown size={15} aria-hidden="true" /> : null}
