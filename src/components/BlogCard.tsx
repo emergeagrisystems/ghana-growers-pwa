@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Clock } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
 import type { BlogPost } from "@/types";
@@ -31,9 +30,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         <span>{new Date(post.date).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" })}</span>
         <span className="inline-flex items-center gap-1"><Clock size={14} aria-hidden="true" /> {post.readTime}</span>
       </div>
-      <Link href="/about/blog" className="mt-5 inline-flex font-black text-leaf-700 hover:text-earth-700">
-        Read preview
-      </Link>
+      <p className="mt-5 text-sm font-black text-leaf-700">Preview article</p>
       </div>
     </article>
   );

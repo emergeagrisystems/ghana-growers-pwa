@@ -27,6 +27,7 @@ function isAllowedPrelaunchRoute(pathname: string) {
     pathname === "/dev-preview" ||
     pathname === "/preview" ||
     pathname === "/supplier-registration" ||
+    pathname === "/join" ||
     pathname === "/join/supplier" ||
     pathname === "/join/farmer" ||
     pathname === "/join/buyer" ||

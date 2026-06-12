@@ -50,8 +50,8 @@ export default function HomePage() {
               Connect with farmers, buyers, suppliers, market prices, buyer requests, and digital farm tools across Ghana.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/farmer-directory">Browse Directory</ButtonLink>
-              <ButtonLink href="/join/farmer" variant="secondary">Join Ghana Growers</ButtonLink>
+              <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
+              <ButtonLink href="/join" variant="secondary">Join Ghana Growers</ButtonLink>
             </div>
           </div>
           <div className="relative">
@@ -120,14 +120,14 @@ export default function HomePage() {
             </p>
             <h2 className="mt-4 text-2xl font-black sm:text-4xl">Grow trusted agricultural connections across Ghana</h2>
             <p className="mt-4 leading-7 text-white/70">
-              Register interest, browse directories, join WhatsApp communities, and use Farmer Tools to make better decisions before buying, selling, supplying, or transporting agricultural products.
+              Register interest, browse marketplace opportunities, and use Digital Farm tools to make better decisions before buying, selling, supplying, or transporting agricultural products.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/verification-requirements" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
                 Understand verification <ArrowRight size={18} aria-hidden="true" />
               </Link>
-              <Link href="/whatsapp-communities" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
-                Join a WhatsApp community <ArrowRight size={18} aria-hidden="true" />
+              <Link href="/join" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
+                Join Ghana Growers <ArrowRight size={18} aria-hidden="true" />
               </Link>
               <Link href="/market-intelligence" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
                 View market intelligence <ArrowRight size={18} aria-hidden="true" />

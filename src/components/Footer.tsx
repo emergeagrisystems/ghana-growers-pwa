@@ -1,16 +1,20 @@
 import Link from "next/link";
-import { Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Sprout } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Sprout } from "lucide-react";
 import { siteConfig } from "@/data/site";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const footerGroups = [
   {
-    title: "Quick Links",
+    title: "Marketplace",
     links: [
-      { title: "Home", href: "/" },
-      { title: "Learn", href: "/learn" },
-      { title: "About", href: "/about" },
-      { title: "Verification", href: "/verification-requirements" }
+      { title: "Marketplace Listings", href: "/marketplace" },
+      { title: "Buyer Requests", href: "/buyer-requests" }
+    ]
+  },
+  {
+    title: "Our Database",
+    links: [
+      { title: "View our Farmers", href: "/farmer-directory" },
+      { title: "View our Suppliers", href: "/supplier-directory" }
     ]
   },
   {
@@ -23,23 +27,31 @@ const footerGroups = [
     ]
   },
   {
-    title: "Directory",
-    links: [
-      { title: "Farmers", href: "/farmer-directory" },
-      { title: "Suppliers", href: "/supplier-directory" },
-      { title: "Marketplace Listings", href: "/marketplace" },
-      { title: "Buyer Requests", href: "/buyer-requests" },
-    ]
-  },
-  {
     title: "Digital Farm",
     links: [
       { title: "Market Prices", href: "/smart-solutions#market-prices" },
       { title: "Weather", href: "/smart-solutions#weather" },
       { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
-      { title: "My Crop Health Reports", href: "/smart-solutions#crop-health-reports" },
-      { title: "Farm Assistant", href: "/smart-solutions#assistant" },
-      { title: "Learn", href: "/learn" }
+      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" }
+    ]
+  },
+  {
+    title: "About",
+    links: [
+      { title: "Who we are", href: "/about" },
+      { title: "Partner with us", href: "/about/partner-with-us" },
+      { title: "Job listing", href: "/about/careers" },
+      { title: "Verification process", href: "/verification-requirements" },
+      { title: "Contact Us", href: "/contact" }
+    ]
+  },
+  {
+    title: "Join Ghana Growers",
+    links: [
+      { title: "Choose your role", href: "/join" },
+      { title: "Join as Farmer", href: "/join/farmer" },
+      { title: "Join as Buyer", href: "/join/buyer" },
+      { title: "Join as Supplier", href: "/supplier-registration" }
     ]
   }
 ];
@@ -73,23 +85,9 @@ export function Footer() {
               {siteConfig.email}
             </a>
             <span className="flex items-center gap-2">
-              <Phone size={16} aria-hidden="true" />
-              WhatsApp-first support for Ghana Growers members
+              <Sprout size={16} aria-hidden="true" />
+              Preparing Ghana&apos;s agricultural network for launch
             </span>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <WhatsAppButton
-              message="Hello Ghana Growers, I would like to make an inquiry."
-              className="bg-earth-500 text-ink hover:bg-white hover:text-ink"
-            />
-            <Link
-              href="/whatsapp-communities"
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-700 hover:bg-leaf-50"
-            >
-              <MessageCircle size={17} aria-hidden="true" />
-              WhatsApp Communities
-            </Link>
           </div>
 
           <div className="mt-6 flex gap-3">
@@ -104,7 +102,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {footerGroups.map((group) => (
             <div key={group.title}>
               <h2 className="font-black text-white">{group.title}</h2>

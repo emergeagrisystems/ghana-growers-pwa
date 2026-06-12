@@ -195,7 +195,7 @@ export function CropHealthCheck() {
     }
 
     setReports((current) => [payload.report as SavedCropHealthReport, ...current].slice(0, 12));
-    setSaveMessage("Diagnosis saved to My Crop Health Reports.");
+    setSaveMessage("Diagnosis saved to Saved Crop Health Reports.");
   }
 
   return (
@@ -437,7 +437,7 @@ export function CropHealthCheck() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-black uppercase text-earth-700">Saved diagnoses</p>
-            <h3 className="mt-1 text-xl font-black text-ink">My Crop Health Reports</h3>
+            <h3 className="mt-1 text-xl font-black text-ink">Saved Crop Health Reports</h3>
           </div>
           <p className="text-sm font-bold text-ink/55">{reports.length} saved</p>
         </div>

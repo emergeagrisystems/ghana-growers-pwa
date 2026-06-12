@@ -23,7 +23,7 @@ export default function AboutPage() {
         description="Ghana Growers exists to make agricultural trade easier, more transparent, and more useful for the people who grow, buy, supply, package, transport, and support food systems."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/whatsapp-communities">Join WhatsApp Communities</ButtonLink>
+          <ButtonLink href="/join">Join Ghana Growers</ButtonLink>
           <ButtonLink href="/about/partner-with-us" variant="secondary">
             Partner With Us
           </ButtonLink>

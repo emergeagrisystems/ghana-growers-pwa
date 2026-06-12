@@ -2,7 +2,6 @@ import { CropHealthCheck } from "@/components/smart-solutions/CropHealthCheck";
 import { FarmerAssistant } from "@/components/smart-solutions/FarmerAssistant";
 import { MarketPricesDashboard } from "@/components/smart-solutions/MarketPricesDashboard";
 import { WeatherUpdates } from "@/components/smart-solutions/WeatherUpdates";
-import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
 import { smartTools } from "@/data/smartTools";
@@ -11,7 +10,7 @@ import { getMarketPricesData } from "@/lib/supabase/publicData";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Farmer Tools",
+  title: "Digital Farm",
   description:
     "Weather updates, market prices, crop health checks, and farming advice for Ghanaian farmers."
 };
@@ -22,8 +21,8 @@ export default async function SmartSolutionsPage() {
   return (
     <>
       <PageHero
-        eyebrow="Farmer Tools"
-        title="Farmer Tools"
+        eyebrow="Digital Farm"
+        title="Digital Farm"
         description="Weather Updates, Market Prices, Crop Health Checks, and Farming Advice for Ghanaian Farmers."
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -37,18 +36,13 @@ export default async function SmartSolutionsPage() {
             </a>
           ))}
         </div>
-        <div className="mt-3">
-          <ButtonLink href="/whatsapp-communities" variant="light">
-            Join WhatsApp Communities
-          </ButtonLink>
-        </div>
       </PageHero>
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             eyebrow="Dashboard"
-            title="Farmer Tools dashboard"
+            title="Digital Farm dashboard"
             description="Open the tool you need now, or scroll through the full dashboard. Each card is built around a practical farm decision."
           />
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">

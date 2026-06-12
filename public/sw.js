@@ -1,4 +1,4 @@
-const CACHE_NAME = "ghana-growers-v2";
+const CACHE_NAME = "ghana-growers-v3";
 const APP_SHELL = ["/manifest.json", "/images/hero/ghana-growers-hero.jpg", "/images/marketplace/ghana-market-1.jpg"];
 
 self.addEventListener("install", (event) => {

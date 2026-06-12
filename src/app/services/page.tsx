@@ -24,8 +24,8 @@ export default function ServicesPage() {
           <ButtonLink href="/join/buyer" variant="secondary">
             Join as Buyer
           </ButtonLink>
-          <ButtonLink href="/whatsapp-communities" variant="light">
-            Join WhatsApp Communities
+          <ButtonLink href="/supplier-registration" variant="light">
+            Join as Supplier
           </ButtonLink>
         </div>
       </PageHero>

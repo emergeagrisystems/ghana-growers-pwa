@@ -14,15 +14,22 @@ export const siteConfig = {
 export const WHATSAPP_NUMBER = "233000000000";
 
 export const navigation: NavigationItem[] = [
-  { title: "Home", href: "/" },
+  { title: "Marketplace", href: "/marketplace" },
   {
-    title: "Directory",
-    href: "/marketplace",
+    title: "Our Database",
+    href: "/farmer-directory",
     children: [
-      { title: "Farmers", href: "/farmer-directory" },
-      { title: "Suppliers", href: "/supplier-directory" },
-      { title: "Marketplace Listings", href: "/marketplace" },
-      { title: "Buyer Requests", href: "/buyer-requests" }
+      { title: "View our Farmers", href: "/farmer-directory" },
+      { title: "View our Suppliers", href: "/supplier-directory" }
+    ]
+  },
+  {
+    title: "Services",
+    href: "/services",
+    children: [
+      { title: "For Farmers", href: "/services/farmers" },
+      { title: "For Buyers", href: "/services/buyers" },
+      { title: "For Suppliers", href: "/services/suppliers" }
     ]
   },
   {
@@ -32,36 +39,18 @@ export const navigation: NavigationItem[] = [
       { title: "Market Prices", href: "/smart-solutions#market-prices" },
       { title: "Weather", href: "/smart-solutions#weather" },
       { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
-      { title: "My Crop Health Reports", href: "/smart-solutions#crop-health-reports" },
-      { title: "Farm Assistant", href: "/smart-solutions#assistant" },
-      { title: "Learn", href: "/learn" }
+      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" }
     ]
   },
   {
     title: "About",
     href: "/about",
     children: [
-      { title: "Careers", href: "/about/careers" },
-      { title: "Partner With Us", href: "/about/partner-with-us" },
-      { title: "Blog", href: "/about/blog" }
-    ]
-  },
-  {
-    title: "Join",
-    href: "/join",
-    children: [
-      { title: "Join as Farmer", href: "/join/farmer" },
-      { title: "Join as Buyer", href: "/join/buyer" },
-      { title: "Join as Supplier", href: "/join/supplier" }
-    ]
-  },
-  {
-    title: "Resources",
-    href: "/services",
-    children: [
-      { title: "Services", href: "/services" },
-      { title: "Verification", href: "/verification-requirements" },
-      { title: "WhatsApp Communities", href: "/whatsapp-communities" }
+      { title: "Who we are", href: "/about" },
+      { title: "Partner with us", href: "/about/partner-with-us" },
+      { title: "Job listing", href: "/about/careers" },
+      { title: "Verification process", href: "/verification-requirements" },
+      { title: "Contact Us", href: "/contact" }
     ]
   }
 ];
