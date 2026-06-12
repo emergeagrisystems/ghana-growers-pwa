@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import {
   BadgeCheck,
   Building2,
-  CalendarDays,
   CheckCircle2,
   ExternalLink,
   Globe2,
@@ -166,22 +165,27 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
     { icon: ShieldCheck, label: "Verification Status", value: supplier.verificationStatus },
     { icon: Globe2, label: "Website", value: websiteLabel(supplier.website) }
   ];
+  const trustItems = [
+    { icon: BadgeCheck, label: "Verified by Ghana Growers" },
+    { icon: CheckCircle2, label: "Business Details Reviewed" },
+    { icon: ShieldCheck, label: "Profile Approved" }
+  ];
 
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/60 to-earth-50/35">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.72fr_1.28fr_0.62fr] lg:items-center lg:px-8 lg:py-12">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.56fr_1.38fr_0.66fr] lg:items-center lg:px-8 lg:py-12">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
               <SafeImage
                 src={profileImage}
                 alt={`${supplier.companyName} supplier profile image`}
-                width={560}
-                height={560}
+                width={440}
+                height={440}
                 priority
                 fallbackKind="supplier"
-                sizes="(min-width: 1024px) 25vw, 100vw"
-                className="aspect-[4/3] w-full rounded-md object-cover lg:aspect-square"
+                sizes="(min-width: 1024px) 20vw, 100vw"
+                className="aspect-[4/3] w-full rounded-md object-cover lg:aspect-[4/5]"
               />
               {supplier.verificationStatus === "Verified" ? (
                 <div className="absolute bottom-5 left-5">
@@ -243,9 +247,9 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
         </div>
       </section>
 
-      <section className="bg-white py-12">
+      <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+          <section className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Supplier Snapshot</p>
@@ -255,14 +259,14 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 Back to Directory
               </Link>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {snapshotItems.map((item) => (
                 <SnapshotCard key={item.label} icon={item.icon} label={item.label} value={item.value} />
               ))}
             </div>
           </section>
 
-          <section className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+          <section className="mt-6 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Products and Services</p>
@@ -270,7 +274,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
               </div>
               <p className="max-w-xl text-sm leading-6 text-ink/62">{supplier.serviceCoverageArea}</p>
             </div>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-5 grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {serviceCards.map((service) => (
                 <article key={service.name} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft">
                   <SafeImage
@@ -280,11 +284,11 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                     height={260}
                     fallbackKind="supplier"
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    className="h-40 w-full object-cover"
+                    className="h-32 w-full object-cover sm:h-36"
                   />
-                  <div className="p-4">
+                  <div className="p-3.5">
                     <h3 className="font-black text-ink">{service.name}</h3>
-                    <p className="mt-2 text-sm font-bold text-ink/52">{supplier.supplierCategory}</p>
+                    <p className="mt-1.5 text-sm font-bold text-ink/52">{supplier.supplierCategory}</p>
                   </div>
                 </article>
               ))}
@@ -298,18 +302,6 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 <h2 className="mt-2 text-2xl font-black text-ink">About {supplier.companyName}</h2>
                 <p className="mt-4 text-sm leading-7 text-ink/68">{supplier.companyOverview}</p>
               </section>
-
-              {supplier.verificationStatus === "Verified" ? (
-                <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Trust</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink">Verified supplier profile</h2>
-                  <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                    <TrustItem icon={BadgeCheck} label="Verified by Ghana Growers" value="Supplier profile reviewed" />
-                    <TrustItem icon={CalendarDays} label="Verification Date" value={supplier.verificationDate ?? "Available on request"} />
-                    <TrustItem icon={CheckCircle2} label="Profile Reviewed" value="Business and service details checked" />
-                  </div>
-                </section>
-              ) : null}
 
               {relatedListings.length > 0 ? (
                 <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
@@ -384,6 +376,20 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                   </a>
                 ) : null}
               </section>
+
+              {supplier.verificationStatus === "Verified" ? (
+                <section className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Trust Information</p>
+                  <div className="mt-3 grid gap-2">
+                    {trustItems.map((item) => (
+                      <TrustBarItem key={item.label} icon={item.icon} label={item.label} />
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs font-semibold leading-5 text-ink/50">
+                    {supplier.verificationDate ? `Verified on ${supplier.verificationDate}.` : "Verification date available on request."}
+                  </p>
+                </section>
+              ) : null}
             </aside>
           </div>
         </div>
@@ -394,24 +400,25 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
 
 function SnapshotCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+    <div className="rounded-md border border-leaf-900/10 bg-white p-3.5 shadow-sm">
       <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </p>
-      <p className="mt-3 text-sm font-black leading-6 text-ink">{value}</p>
+      <p className="mt-2 text-sm font-black leading-5 text-ink">{value}</p>
     </div>
   );
 }
 
-function TrustItem({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+function TrustBarItem({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <div className="rounded-md bg-leaf-50 p-4">
-      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
-        <Icon className="h-4 w-4" aria-hidden="true" />
+    <div className="flex items-center gap-2 rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-ink">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white text-leaf-700 ring-1 ring-leaf-900/10">
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+      <span>
         {label}
-      </p>
-      <p className="mt-2 text-sm font-bold leading-6 text-ink/70">{value}</p>
+      </span>
     </div>
   );
 }
