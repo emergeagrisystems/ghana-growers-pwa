@@ -1,12 +1,19 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Sprout } from "lucide-react";
+
+const PREVIEW_COOKIE = "ghana_growers_dev_preview";
 
 function prelaunchEnabled() {
   return process.env.SITE_PRELAUNCH !== "false";
 }
 
+function previewEnabled() {
+  return cookies().get(PREVIEW_COOKIE)?.value === "enabled";
+}
+
 export function PrelaunchHeader() {
-  if (!prelaunchEnabled()) {
+  if (!prelaunchEnabled() || previewEnabled()) {
     return null;
   }
 
@@ -28,7 +35,7 @@ export function PrelaunchHeader() {
 }
 
 export function PrelaunchFooter() {
-  if (!prelaunchEnabled()) {
+  if (!prelaunchEnabled() || previewEnabled()) {
     return null;
   }
 

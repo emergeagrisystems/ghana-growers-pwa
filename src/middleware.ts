@@ -43,15 +43,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (request.cookies.get(PREVIEW_COOKIE)?.value === "enabled") {
+    return NextResponse.next();
+  }
+
   if (pathname === "/") {
     return NextResponse.rewrite(new URL("/launching-soon", request.url));
   }
 
   if (isAllowedPrelaunchRoute(pathname)) {
-    return NextResponse.next();
-  }
-
-  if (request.cookies.get(PREVIEW_COOKIE)?.value === "enabled") {
     return NextResponse.next();
   }
 
