@@ -4,14 +4,15 @@ import {
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
+  Clock3,
+  CreditCard,
   MapPin,
-  MessageCircle,
   PackageCheck,
-  ShieldCheck,
+  Ruler,
   Sprout,
-  Truck
+  Truck,
+  type LucideIcon
 } from "lucide-react";
-import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
@@ -41,25 +42,17 @@ export async function generateMetadata({ params }: FarmerProfilePageProps) {
   };
 }
 
-function FarmerTrustBadges({ status }: { status: string }) {
-  const badges = [];
-
-  if (status === "Verified") {
-    badges.push(
-      <span key="verified" className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-black text-leaf-700">
-        <BadgeCheck className="h-3.5 w-3.5" />
-        Verified by Ghana Growers
-      </span>
-    );
-    badges.push(
-      <span key="active" className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10">
-        <CheckCircle2 className="h-3.5 w-3.5" />
-        Active Seller
-      </span>
-    );
+function FarmerVerificationBadge({ status }: { status: string }) {
+  if (status !== "Verified") {
+    return null;
   }
 
-  return <div className="flex flex-wrap gap-2">{badges}</div>;
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-leaf-600 px-3 py-2 text-xs font-black text-white shadow-sm">
+      <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+      Verified by Ghana Growers
+    </span>
+  );
 }
 
 function imageForProduct(product: string) {
@@ -99,6 +92,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
   const activeMarketplaceListings = marketplaceProducts.filter((listing) => listing.farmerSlug === farmer.slug);
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
+  const deliveryOption = farmer.deliveryOptions?.[0] ?? "Buyer pickup from farm or aggregation point";
   const productListings = farmer.products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => {
       const listingName = listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", "");
@@ -110,45 +104,78 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
       product,
       image: marketplaceMatch?.image ?? imageForProduct(product),
       quantity: marketplaceMatch?.seller === farmer.farmName ? `${marketplaceMatch.quantity} ${marketplaceMatch.unit}` : farmer.availableQuantities ?? farmer.capacityVolume,
-      status: marketplaceMatch?.seller === farmer.farmName ? marketplaceMatch.available : farmer.availabilityStatus,
-      href: marketplaceMatch ? "/marketplace#marketplace-listings" : undefined
+      status: marketplaceMatch?.seller === farmer.farmName ? marketplaceMatch.available : farmer.availabilityStatus
     };
   });
 
+  const snapshotItems = [
+    { icon: Sprout, label: "Farm Type", value: farmer.farmType },
+    { icon: CalendarDays, label: "Years Farming", value: farmer.yearsFarming ?? "Available on request" },
+    { icon: Ruler, label: "Farm Size", value: farmer.farmSize },
+    { icon: Clock3, label: "Supply Frequency", value: farmer.availabilityStatus },
+    { icon: Truck, label: "Collection Point Delivery", value: deliveryOption },
+    { icon: CreditCard, label: "Preferred Payment Method", value: "Confirm with farmer" }
+  ];
+
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8 lg:py-12">
-          <div className="order-2 lg:order-1">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Profile</p>
-            <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">{farmer.farmName}</h1>
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-ink/70">
-              {farmer.contactName} is a {farmer.products.slice(0, 2).join(" and ")} farmer in {farmer.district} supplying traders, processors, wholesalers, and buyers across Ghana.
-            </p>
-            <div className="mt-5">
-              <FarmerTrustBadges status={farmer.verificationStatus} />
-            </div>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <WhatsAppButton
-                message={farmer.whatsappMessage}
-                label="WhatsApp Farmer"
-                sourceType="Farmer"
-                sourceId={farmer.slug}
-                sourceName={farmer.farmName}
+      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/60 to-earth-50/35">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.72fr_1.28fr_0.62fr] lg:items-center lg:px-8 lg:py-12">
+          <div>
+            <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
+              <SafeImage
+                src={profilePhoto}
+                alt={`${farmer.farmName} profile photo`}
+                width={560}
+                height={560}
+                priority
+                fallbackKind="farmer"
+                sizes="(min-width: 1024px) 25vw, 100vw"
+                className="aspect-[4/3] w-full rounded-md object-cover lg:aspect-square"
               />
-              <ButtonLink href="/farmer-directory" variant="light">Back to Directory</ButtonLink>
+              {farmer.verificationStatus === "Verified" ? (
+                <div className="absolute bottom-5 left-5">
+                  <FarmerVerificationBadge status={farmer.verificationStatus} />
+                </div>
+              ) : null}
             </div>
           </div>
-          <div className="order-1 lg:order-2">
-            <SafeImage
-              src={profilePhoto}
-              alt={`${farmer.farmName} profile photo`}
-              width={720}
-              height={520}
-              priority
-              fallbackKind="farmer"
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="h-72 w-full rounded-md border border-white/80 object-cover shadow-soft sm:h-96"
+
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Profile</p>
+            <h1 className="mt-3 text-4xl font-black leading-tight text-ink sm:text-5xl">{farmer.contactName}</h1>
+            <p className="mt-2 text-xl font-black text-leaf-700">{farmer.farmName}</p>
+            <div className="mt-5 grid gap-3 text-sm font-bold text-ink/68 sm:grid-cols-2">
+              <span className="inline-flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-leaf-700" aria-hidden="true" />
+                {farmer.district}, {farmer.region}
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <PackageCheck className="h-4 w-4 text-leaf-700" aria-hidden="true" />
+                {farmer.capacityVolume}
+              </span>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {farmer.products.slice(0, 5).map((product) => (
+                <span key={product} className="rounded-md bg-white px-3 py-1.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
+                  {product}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Contact farmer</p>
+            <p className="mt-3 text-sm leading-6 text-ink/62">
+              Confirm harvest timing, volume, pickup or delivery, grading, and payment terms before trade.
+            </p>
+            <WhatsAppButton
+              message={farmer.whatsappMessage}
+              label="WhatsApp Farmer"
+              sourceType="Farmer"
+              sourceId={farmer.slug}
+              sourceName={farmer.farmName}
+              className="mt-5 w-full"
             />
           </div>
         </div>
@@ -156,98 +183,79 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
       <section className="bg-white py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <ProfileFact icon={MapPin} label="Region" value={farmer.region} detail={farmer.district} />
-            <ProfileFact icon={Sprout} label="Farm type" value={farmer.farmType} detail={farmer.farmSize} />
-            <ProfileFact
-              icon={ShieldCheck}
-              label="Verification"
-              value={farmer.verificationStatus}
-              detail={farmer.verificationStatus === "Verified" && farmer.verificationDate ? `Verified on ${farmer.verificationDate}` : "Ghana Growers profile status"}
-            />
-            <ProfileFact icon={CalendarDays} label="Years farming" value={farmer.yearsFarming ?? "Available on request"} detail="Reported experience" />
-            <ProfileFact icon={Truck} label="Delivery" value={farmer.deliveryOptions?.[0] ?? "Buyer pickup"} detail="Confirm before purchase" />
-          </div>
-
-          <section className="mt-6 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Products supplied</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {farmer.products.map((product) => (
-                    <span key={product} className="rounded-md bg-white px-3 py-1.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
-                      {product}
-                    </span>
-                  ))}
-                </div>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Snapshot</p>
+                <h2 className="mt-2 text-2xl font-black text-ink">Supply readiness at a glance</h2>
               </div>
-              <p className="max-w-xl text-sm leading-6 text-ink/65">{farmer.availableQuantities ?? farmer.capacityVolume}</p>
+              <Link href="/farmer-directory" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                Back to Directory
+              </Link>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {snapshotItems.map((item) => (
+                <SnapshotCard key={item.label} icon={item.icon} label={item.label} value={item.value} />
+              ))}
             </div>
           </section>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1.35fr_0.75fr]">
-            <div className="grid gap-8">
-              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farm information</p>
-                <h2 className="mt-2 text-2xl font-black text-ink">Supply overview</h2>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  <InfoBlock label="Main crops/products" value={farmer.products.join(", ")} />
-                  <InfoBlock label="Production capacity" value={farmer.capacityVolume} />
-                  <InfoBlock label="Harvest periods" value={farmer.harvestSeason} />
-                  <InfoBlock label="Available quantities" value={farmer.availableQuantities ?? farmer.capacityVolume} />
-                  <InfoBlock label="Delivery options" value={(farmer.deliveryOptions ?? ["Buyer pickup from farm or aggregation point"]).join("; ")} />
-                  <InfoBlock label="Current availability" value={farmer.availabilityStatus} />
-                </div>
-              </section>
+          <section className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Products</p>
+                <h2 className="mt-2 text-2xl font-black text-ink">Products supplied</h2>
+              </div>
+              <p className="max-w-xl text-sm leading-6 text-ink/62">{farmer.availableQuantities ?? farmer.capacityVolume}</p>
+            </div>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {productListings.map((listing) => (
+                <article key={listing.product} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
+                  <SafeImage
+                    src={listing.image}
+                    alt={`${listing.product} from ${farmer.farmName}`}
+                    width={420}
+                    height={260}
+                    fallbackKind="marketplace"
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="h-40 w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="font-black text-ink">{listing.product}</h3>
+                    <p className="mt-2 inline-flex rounded-md bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
+                      {listing.status}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
 
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_0.75fr]">
+            <div className="grid gap-8">
               <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">About the farmer</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">About {farmer.contactName}</h2>
                 <p className="mt-4 text-sm leading-7 text-ink/68">{farmer.description}</p>
               </section>
 
-              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Product listings</p>
-                    <h2 className="mt-2 text-2xl font-black text-ink">Currently offered by this farmer</h2>
+              {farmer.verificationStatus === "Verified" ? (
+                <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Trust</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink">Verified profile</h2>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                    <TrustItem icon={BadgeCheck} label="Verified by Ghana Growers" value="Profile reviewed" />
+                    <TrustItem icon={CalendarDays} label="Verification Date" value={farmer.verificationDate ?? "Available on request"} />
+                    <TrustItem icon={CheckCircle2} label="Profile Reviewed" value="Contact and farm details checked" />
                   </div>
-                  <Link href="/marketplace#marketplace-listings" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-                    View Products
-                  </Link>
-                </div>
-                <div className="mt-6 grid gap-5 md:grid-cols-3">
-                  {productListings.map((listing) => (
-                    <article key={listing.product} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
-                      <SafeImage
-                        src={listing.image}
-                        alt={`${listing.product} from ${farmer.farmName}`}
-                        width={360}
-                        height={220}
-                        fallbackKind="marketplace"
-                        sizes="(min-width: 1024px) 22vw, (min-width: 768px) 33vw, 100vw"
-                        className="h-36 w-full object-cover"
-                      />
-                      <div className="p-4">
-                        <h3 className="font-black text-ink">{listing.product}</h3>
-                        <p className="mt-2 text-sm text-ink/58">{listing.quantity}</p>
-                        <p className="mt-2 inline-flex rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">{listing.status}</p>
-                        {listing.href ? (
-                          <Link href={listing.href} className="mt-4 inline-flex w-full justify-center rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50">
-                            View Product
-                          </Link>
-                        ) : null}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
+                </section>
+              ) : null}
 
               <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer demand</p>
-                    <h2 className="mt-2 text-2xl font-black text-ink">Matching Buyer Requests</h2>
+                    <h2 className="mt-2 text-2xl font-black text-ink">Related Buyer Requests</h2>
                   </div>
                   <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
                     View Buyer Requests
@@ -257,17 +265,9 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
                     {relevantBuyerRequests.map((request) => (
                       <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="font-black text-ink">{request.productName}</h3>
-                            <p className="mt-1 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
-                          </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-ink/65">{request.status}</span>
-                        </div>
-                        <p className="mt-3 text-sm text-ink/58">{request.district}, {request.region}</p>
-                        <Link href="/buyer-requests" className="mt-4 inline-flex w-full justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50">
-                          View Buyer Request
-                        </Link>
+                        <h3 className="font-black text-ink">{request.productName}</h3>
+                        <p className="mt-2 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
+                        <p className="mt-2 text-sm text-ink/58">{request.district}, {request.region}</p>
                       </article>
                     ))}
                   </div>
@@ -280,41 +280,6 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             </div>
 
             <aside className="grid content-start gap-5">
-              <section className="rounded-md border border-leaf-900/10 bg-leaf-700 p-6 text-white">
-                <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-500">
-                  <MessageCircle className="h-4 w-4" />
-                  Contact area
-                </p>
-                <h2 className="mt-3 text-2xl font-black">Start a farm conversation</h2>
-                <p className="mt-3 text-sm leading-6 text-white/85">
-                  Confirm quantity, grading, harvest timing, pickup, delivery, and payment terms before committing to trade.
-                </p>
-                <div className="mt-5 grid gap-3">
-                  <WhatsAppButton
-                    message={`Hello Ghana Growers, I want to send an inquiry to ${farmer.farmName}.`}
-                    label="Send Inquiry"
-                    sourceType="Farmer"
-                    sourceId={farmer.slug}
-                    sourceName={farmer.farmName}
-                    className="bg-white text-leaf-700 hover:bg-leaf-50"
-                  />
-                </div>
-              </section>
-
-              <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Trust indicators</p>
-                <div className="mt-4">
-                  <FarmerTrustBadges status={farmer.verificationStatus} />
-                </div>
-                <p className="mt-4 text-sm leading-6 text-ink/62">
-                  {farmer.verificationStatus === "Pending Verification"
-                    ? "Verification review is in progress. Buyers should confirm current supply and trade terms before committing."
-                    : farmer.verificationStatus === "Verified"
-                      ? `Verified by Ghana Growers${farmer.verificationDate ? ` on ${farmer.verificationDate}` : ""}.`
-                      : "Verification status is not currently verified. Buyers should confirm details before committing."}
-                </p>
-              </section>
-
               <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
                 <div className="p-5">
                   <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
@@ -325,7 +290,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                     <LocationRow label="Region" value={farmer.region} />
                     <LocationRow label="District" value={farmer.district} />
                     <LocationRow label="Service area" value={`${farmer.district} and nearby buyer routes`} />
-                    <LocationRow label="Delivery / pickup" value={farmer.deliveryOptions?.[0] ?? "Buyer pickup from farm or aggregation point"} />
+                    <LocationRow label="Delivery / pickup" value={deliveryOption} />
                   </div>
                 </div>
               </section>
@@ -337,34 +302,26 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   );
 }
 
-function ProfileFact({
-  icon: Icon,
-  label,
-  value,
-  detail
-}: {
-  icon: typeof MapPin;
-  label: string;
-  value: string;
-  detail: string;
-}) {
+function SnapshotCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
       <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
       </p>
-      <p className="mt-3 text-lg font-black text-ink">{value}</p>
-      <p className="mt-1 text-sm text-ink/58">{detail}</p>
+      <p className="mt-3 text-sm font-black leading-6 text-ink">{value}</p>
     </div>
   );
 }
 
-function InfoBlock({ label, value }: { label: string; value: string }) {
+function TrustItem({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className="rounded-md bg-leaf-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-earth-700">{label}</p>
-      <p className="mt-2 text-sm leading-6 text-ink/68">{value}</p>
+      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-bold leading-6 text-ink/70">{value}</p>
     </div>
   );
 }
