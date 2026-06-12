@@ -16,14 +16,19 @@ export default function JoinBuyerPage() {
       <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Buyer"
-        title="Register your produce buying needs"
+        title="Join Ghana Growers as a Buyer"
         description="Tell Ghana Growers what you buy, how often you buy, and where you operate so we can help connect you with trusted farmers and supply support."
+        variant="compact"
       />
-      <section className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-          <div className="grid gap-4 self-start">
-            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-              <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white">
+      <section className="bg-white py-8 sm:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:px-8">
+          <div className="grid gap-4 self-start rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer benefits</p>
+              <h2 className="mt-2 text-xl font-black text-ink">Source produce with clearer demand</h2>
+            </div>
+            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm">
+              <div className="grid h-12 w-12 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
                 <ShoppingBasket size={22} aria-hidden="true" />
               </div>
               <h2 className="mt-4 text-lg font-black text-ink">Who can join?</h2>
@@ -49,8 +54,8 @@ export default function JoinBuyerPage() {
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-                  <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white">
+                <div key={item.title} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm">
+                  <div className="grid h-12 w-12 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
                     <Icon size={22} aria-hidden="true" />
                   </div>
                   <h2 className="mt-4 text-lg font-black text-ink">{item.title}</h2>

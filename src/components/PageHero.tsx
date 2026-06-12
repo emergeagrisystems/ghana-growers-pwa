@@ -5,16 +5,19 @@ type PageHeroProps = {
   title: string;
   description: string;
   children?: ReactNode;
+  variant?: "default" | "compact";
 };
 
-export function PageHero({ eyebrow, title, description, children }: PageHeroProps) {
+export function PageHero({ eyebrow, title, description, children, variant = "default" }: PageHeroProps) {
+  const isCompact = variant === "compact";
+
   return (
-    <section className="ghana-grid border-b border-leaf-900/10 bg-leaf-50">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <p className="text-sm font-black uppercase text-earth-700">{eyebrow}</p>
-        <h1 className="mt-4 max-w-full break-words text-3xl font-black leading-tight text-ink sm:max-w-4xl sm:text-5xl">{title}</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-ink/70">{description}</p>
-        {children ? <div className="mt-8">{children}</div> : null}
+    <section className={`${isCompact ? "bg-gradient-to-br from-white via-leaf-50/55 to-earth-50/35" : "ghana-grid bg-leaf-50"} border-b border-leaf-900/10`}>
+      <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isCompact ? "py-8 sm:py-10" : "py-16"}`}>
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700 sm:text-sm">{eyebrow}</p>
+        <h1 className={`${isCompact ? "mt-3 text-2xl sm:text-4xl" : "mt-4 text-3xl sm:text-5xl"} max-w-full break-words font-black leading-tight text-ink sm:max-w-4xl`}>{title}</h1>
+        <p className={`${isCompact ? "mt-3 max-w-2xl text-sm leading-6 sm:text-base sm:leading-7" : "mt-5 max-w-3xl text-lg leading-8"} text-ink/70`}>{description}</p>
+        {children ? <div className={isCompact ? "mt-5" : "mt-8"}>{children}</div> : null}
       </div>
     </section>
   );

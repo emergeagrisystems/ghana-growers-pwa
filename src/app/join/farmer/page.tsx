@@ -15,12 +15,17 @@ export default function JoinFarmerPage() {
       <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Farmer"
-        title="Register your farm with Ghana Growers"
+        title="Join Ghana Growers as a Farmer"
         description="Tell us what you grow or raise, where your farm is located, and when you expect harvest so we can help connect you with buyers and useful support."
+        variant="compact"
       />
-      <section className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-          <div className="grid gap-4 self-start">
+      <section className="bg-white py-8 sm:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:px-8">
+          <div className="grid gap-4 self-start rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer benefits</p>
+              <h2 className="mt-2 text-xl font-black text-ink">Get ready to sell with confidence</h2>
+            </div>
             {[
               {
                 title: "Buyer access",
@@ -40,8 +45,8 @@ export default function JoinFarmerPage() {
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-                  <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white">
+                <div key={item.title} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm">
+                  <div className="grid h-12 w-12 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
                     <Icon size={22} aria-hidden="true" />
                   </div>
                   <h2 className="mt-4 text-lg font-black text-ink">{item.title}</h2>

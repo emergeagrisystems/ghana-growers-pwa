@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, LockKeyhole, ShoppingBasket, Sprout, Store, UsersRound } from "lucide-react";
+import { LockKeyhole, ShoppingBasket, Sprout, Store, UsersRound } from "lucide-react";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { SafeImage } from "@/components/SafeImage";
 
@@ -45,12 +45,6 @@ const benefitCards = [
     description:
       "A trusted agricultural connection platform being prepared for Ghana's farmers, buyers, suppliers, and agribusiness partners.",
     icon: UsersRound
-  },
-  {
-    title: "Why we are onboarding first",
-    description:
-      "We are currently collecting quality farmer, buyer, and supplier records before opening the full platform to the public.",
-    icon: BadgeCheck
   }
 ];
 
@@ -111,7 +105,7 @@ export default function LaunchingSoonPage() {
         </section>
 
         <section className="bg-white/78 py-12">
-          <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
+          <div className="mx-auto grid max-w-3xl gap-5 px-4 sm:px-6 lg:px-8">
             {benefitCards.map((card) => {
               const Icon = card.icon;
               return (
