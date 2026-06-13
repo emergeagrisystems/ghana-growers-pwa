@@ -34,13 +34,7 @@ export const navigation: NavigationItem[] = [
   },
   {
     title: "Digital Farm",
-    href: "/smart-solutions",
-    children: [
-      { title: "Market Prices", href: "/smart-solutions#market-prices" },
-      { title: "Weather", href: "/smart-solutions#weather" },
-      { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
-      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" }
-    ]
+    href: "/smart-solutions"
   },
   {
     title: "About",

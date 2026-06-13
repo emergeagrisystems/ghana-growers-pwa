@@ -29,10 +29,7 @@ const footerGroups = [
   {
     title: "Digital Farm",
     links: [
-      { title: "Market Prices", href: "/smart-solutions#market-prices" },
-      { title: "Weather", href: "/smart-solutions#weather" },
-      { title: "Crop Health Check", href: "/smart-solutions#crop-health" },
-      { title: "Farm Help Assistant", href: "/smart-solutions#assistant" }
+      { title: "Digital Farm", href: "/smart-solutions" }
     ]
   },
   {
@@ -65,7 +62,7 @@ const socialLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-leaf-900/10 bg-ink text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_1.95fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_2.05fr] lg:px-8">
         <div>
           <Link href="/" className="flex items-center gap-2 text-xl font-black">
             <span className="grid h-10 w-10 place-items-center rounded-md bg-earth-500 text-ink">
@@ -73,9 +70,9 @@ export function Footer() {
             </span>
             Ghana Growers
           </Link>
-          <p className="mt-4 max-w-md text-sm leading-6 text-white/70">{siteConfig.description}</p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-white/70">{siteConfig.description}</p>
 
-          <div className="mt-6 grid gap-3 text-sm text-white/75">
+          <div className="mt-5 grid gap-2.5 text-sm text-white/75">
             <span className="flex items-center gap-2">
               <MapPin size={16} aria-hidden="true" />
               {siteConfig.location}
@@ -90,7 +87,7 @@ export function Footer() {
             </span>
           </div>
 
-          <div className="mt-6 flex gap-3">
+          <div className="mt-5 flex gap-3">
             {socialLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -102,11 +99,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {footerGroups.map((group) => (
             <div key={group.title}>
               <h2 className="font-black text-white">{group.title}</h2>
-              <div className="mt-4 grid gap-3">
+              <div className="mt-3 grid gap-2.5">
                 {group.links.map((link) => (
                   <Link key={link.href} href={link.href} className="text-sm text-white/65 hover:text-earth-500">
                     {link.title}
@@ -119,7 +116,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>&copy; {new Date().getFullYear()} Ghana Growers. Built for trusted agricultural trade in Ghana.</p>
           <p>Official social media channels will be connected before public launch.</p>
         </div>

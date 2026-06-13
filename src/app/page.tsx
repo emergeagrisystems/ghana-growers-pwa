@@ -140,6 +140,12 @@ export default function HomePage() {
           <RegistrationForm title="Register your interest" audience="farmer" />
         </div>
       </section>
+
+      <section className="border-y border-leaf-900/10 bg-earth-50 py-6" aria-label="End of homepage content">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="h-px bg-leaf-900/10" />
+        </div>
+      </section>
     </>
   );
 }
