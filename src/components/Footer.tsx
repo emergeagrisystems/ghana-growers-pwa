@@ -6,13 +6,8 @@ const footerGroups = [
   {
     title: "Marketplace",
     links: [
-      { title: "Marketplace Listings", href: "/marketplace" },
-      { title: "Buyer Requests", href: "/buyer-requests" }
-    ]
-  },
-  {
-    title: "Our Database",
-    links: [
+      { title: "Marketplace Listing", href: "/marketplace" },
+      { title: "Buyer Request", href: "/buyer-requests" },
       { title: "View our Farmers", href: "/farmer-directory" },
       { title: "View our Suppliers", href: "/supplier-directory" }
     ]
@@ -20,16 +15,10 @@ const footerGroups = [
   {
     title: "Services",
     links: [
+      { title: "Digital Farm", href: "/smart-solutions" },
       { title: "For Farmers", href: "/services/farmers" },
       { title: "For Buyers", href: "/services/buyers" },
-      { title: "For Suppliers", href: "/services/suppliers" },
-      { title: "Partner With Us", href: "/about/partner-with-us" }
-    ]
-  },
-  {
-    title: "Digital Farm",
-    links: [
-      { title: "Digital Farm", href: "/smart-solutions" }
+      { title: "For Suppliers", href: "/services/suppliers" }
     ]
   },
   {
@@ -40,15 +29,6 @@ const footerGroups = [
       { title: "Job listing", href: "/about/careers" },
       { title: "Verification process", href: "/verification-requirements" },
       { title: "Contact Us", href: "/contact" }
-    ]
-  },
-  {
-    title: "Join Ghana Growers",
-    links: [
-      { title: "Choose your role", href: "/join" },
-      { title: "Join as Farmer", href: "/join/farmer" },
-      { title: "Join as Buyer", href: "/join/buyer" },
-      { title: "Join as Supplier", href: "/supplier-registration" }
     ]
   }
 ];
@@ -62,7 +42,7 @@ const socialLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-leaf-900/10 bg-ink text-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_2.05fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-7 px-4 py-9 sm:px-6 lg:grid-cols-[1fr_1.8fr] lg:px-8">
         <div>
           <Link href="/" className="flex items-center gap-2 text-xl font-black">
             <span className="grid h-10 w-10 place-items-center rounded-md bg-earth-500 text-ink">
@@ -72,7 +52,7 @@ export function Footer() {
           </Link>
           <p className="mt-3 max-w-md text-sm leading-6 text-white/70">{siteConfig.description}</p>
 
-          <div className="mt-5 grid gap-2.5 text-sm text-white/75">
+          <div className="mt-4 grid gap-2 text-sm text-white/75">
             <span className="flex items-center gap-2">
               <MapPin size={16} aria-hidden="true" />
               {siteConfig.location}
@@ -87,7 +67,7 @@ export function Footer() {
             </span>
           </div>
 
-          <div className="mt-5 flex gap-3">
+          <div className="mt-4 flex gap-3">
             {socialLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -99,7 +79,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-3">
           {footerGroups.map((group) => (
             <div key={group.title}>
               <h2 className="font-black text-white">{group.title}</h2>
