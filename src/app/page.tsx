@@ -22,7 +22,7 @@ export const metadata = {
     title: "Ghana Growers | Trusted Agriculture Platform for Ghana",
     description:
       "Discover farmers, suppliers, buyer requests, market intelligence, and smart agricultural tools built for Ghana.",
-    images: ["/images/marketplace/ghana-market-1.jpg"]
+    images: ["/images/hero/ghana-growers-hero.jpg"]
   }
 };
 
@@ -50,45 +50,44 @@ export default function HomePage() {
               Connect with farmers, buyers, suppliers, market prices, buyer requests, and digital farm tools across Ghana.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
+              <ButtonLink href="/farmer-directory">Browse Directory</ButtonLink>
               <ButtonLink href="/join" variant="secondary">Join Ghana Growers</ButtonLink>
             </div>
           </div>
           <div className="relative">
             <div className="relative overflow-hidden rounded-md border border-white/70 bg-white p-2 shadow-soft">
               <SafeImage
-                src="/images/marketplace/ghana-market-1.jpg"
-                alt="Ghanaian agricultural marketplace with fresh produce and active buyer connections"
+                src="/images/hero/ghana-growers-hero.jpg"
+                alt="Ghanaian farmer, buyer, and supplier exchanging fresh produce at a farm marketplace"
                 width={1778}
                 height={885}
-                fallbackSrc="/images/hero/ghana-growers-hero.jpg"
+                fallbackSrc="/images/marketplace/ghana-market-1.jpg"
                 fallbackKind="default"
                 priority
                 sizes="(min-width: 1024px) 54vw, 100vw"
                 className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[500px]"
               />
               <div className="absolute inset-2 rounded-md bg-gradient-to-t from-ink/45 via-transparent to-transparent" />
+              <div className="absolute inset-x-5 bottom-5 grid gap-2 rounded-md bg-white/94 p-3 shadow-soft backdrop-blur sm:grid-cols-2 lg:grid-cols-4">
+                {heroHighlights.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <div key={item.title} className="flex items-center gap-2 text-xs font-black text-ink">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-900/10">
+                        <Icon size={16} aria-hidden="true" />
+                      </span>
+                      <span>{item.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-leaf-900/10 bg-white py-5" aria-label="Ghana Growers platform highlights">
-        <div className="mx-auto grid max-w-7xl gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {heroHighlights.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <div key={item.title} className="flex items-center justify-center gap-3 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-                <span>{item.title}</span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <MarketplaceCategoryShowcase />
 
       <ChooseYourPath />
 
@@ -108,8 +107,6 @@ export default function HomePage() {
         background="earth"
         limit={3}
       />
-
-      <MarketplaceCategoryShowcase />
 
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">

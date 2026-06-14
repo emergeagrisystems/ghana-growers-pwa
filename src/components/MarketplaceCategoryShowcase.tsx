@@ -122,7 +122,7 @@ export function MarketplaceCategoryShowcase() {
   const activeCategory = marketplaceShowcaseData.find((category) => category.slug === activeSlug) ?? marketplaceShowcaseData[0];
 
   return (
-    <section className="bg-white py-16" aria-labelledby="marketplace-category-showcase-title">
+    <section className="bg-gradient-to-b from-white via-leaf-50/55 to-white py-12 sm:py-14" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-[18rem] sm:max-w-3xl">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
@@ -130,12 +130,12 @@ export function MarketplaceCategoryShowcase() {
             Explore Marketplace
           </h2>
           <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg">
-            Browse produce, livestock, farm inputs, packaging, logistics, and agricultural services across Ghana.
+            See what farmers, buyers, and suppliers can trade across Ghana.
           </p>
         </div>
 
         <div className="mt-8 grid gap-5 lg:grid-cols-[0.8fr_2.4fr_0.8fr] lg:items-start">
-          <aside className="rounded-lg border border-leaf-900/10 bg-leaf-50/80 p-3 shadow-sm">
+          <aside className="rounded-lg border border-leaf-900/10 bg-white/95 p-3 shadow-sm">
             <h3 className="px-2 py-2 text-sm font-black uppercase tracking-wide text-ink/55">Marketplace Categories</h3>
             <div className="mt-2 grid gap-2" role="tablist" aria-label="Marketplace categories">
               {marketplaceShowcaseData.map((category) => {
@@ -166,7 +166,7 @@ export function MarketplaceCategoryShowcase() {
           <div
             id={`category-panel-${activeCategory.slug}`}
             role="tabpanel"
-            className="rounded-lg border border-leaf-900/10 bg-white p-4 shadow-sm"
+            className="rounded-lg border border-leaf-900/10 bg-white p-4 shadow-soft"
           >
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -190,24 +190,24 @@ export function MarketplaceCategoryShowcase() {
                     height={300}
                     fallbackKind="marketplace"
                     sizes="(min-width: 1280px) 15vw, (min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
-                    className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
+                    className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
                   />
-                  <h4 className="px-4 py-4 text-base font-black text-ink">{item.name}</h4>
+                  <h4 className="px-4 py-3 text-base font-black text-ink">{item.name}</h4>
                 </article>
               ))}
             </div>
           </div>
 
-          <aside className="rounded-lg border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Marketplace Snapshot</p>
+          <aside className="rounded-lg border border-leaf-900/10 bg-gradient-to-br from-leaf-700 via-leaf-800 to-ink p-5 text-white shadow-soft">
+            <p className="text-xs font-black uppercase tracking-wide text-earth-400">Marketplace Snapshot</p>
             <div className="mt-4 grid gap-3">
               {marketplaceSnapshot.map((item) => (
-                <div key={item} className="rounded-md bg-white px-4 py-3 text-sm font-black text-ink shadow-sm ring-1 ring-leaf-900/10">
+                <div key={item} className="rounded-md bg-white/10 px-4 py-3 text-sm font-black text-white ring-1 ring-white/15">
                   {item}
                 </div>
               ))}
             </div>
-            <Link href="/marketplace" className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+            <Link href="/marketplace" className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-white">
               Browse Marketplace →
             </Link>
           </aside>

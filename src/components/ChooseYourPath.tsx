@@ -13,7 +13,7 @@ type PathCard = {
 const pathCards: PathCard[] = [
   {
     title: "Grow & Sell",
-    description: "Create your farmer profile, showcase produce, and connect with buyers.",
+    description: "Sell produce and connect with buyers.",
     icon: Sprout,
     primaryLabel: "Join as Farmer",
     primaryHref: "/join/farmer",
@@ -21,7 +21,7 @@ const pathCards: PathCard[] = [
   },
   {
     title: "Buy Produce",
-    description: "Find farmers, browse listings, and post buyer demand.",
+    description: "Find trusted farmers and available produce.",
     icon: ShoppingBasket,
     primaryLabel: "Find Produce",
     primaryHref: "/marketplace",
@@ -29,7 +29,7 @@ const pathCards: PathCard[] = [
   },
   {
     title: "Supply Farmers",
-    description: "Promote farm inputs, equipment, logistics, and agricultural services.",
+    description: "Promote agricultural products and services.",
     icon: Tractor,
     primaryLabel: "Join as Supplier",
     primaryHref: "/join/supplier",
@@ -39,17 +39,17 @@ const pathCards: PathCard[] = [
 
 const toneClasses = {
   leaf: {
-    shell: "from-leaf-50 via-white to-white",
+    shell: "from-white via-leaf-50 to-white",
     icon: "bg-leaf-600 text-white",
     ring: "group-hover:border-leaf-600/35 group-hover:shadow-[0_22px_60px_rgba(53,96,27,0.14)]"
   },
   earth: {
-    shell: "from-earth-50 via-white to-white",
+    shell: "from-white via-earth-50 to-white",
     icon: "bg-earth-500 text-ink",
     ring: "group-hover:border-earth-500/45 group-hover:shadow-[0_22px_60px_rgba(216,153,50,0.16)]"
   },
   cream: {
-    shell: "from-white via-leaf-50/50 to-earth-50",
+    shell: "from-white via-leaf-50/50 to-white",
     icon: "bg-ink text-white",
     ring: "group-hover:border-leaf-900/20 group-hover:shadow-[0_22px_60px_rgba(19,32,19,0.12)]"
   }
@@ -57,14 +57,14 @@ const toneClasses = {
 
 export function ChooseYourPath() {
   return (
-    <section className="bg-white py-12 sm:py-14" aria-labelledby="choose-your-path-title">
+    <section className="bg-gradient-to-br from-ink via-leaf-900 to-leaf-700 py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
-          <p className="text-sm font-black uppercase tracking-wide text-earth-700">Start here</p>
-          <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-ink sm:text-4xl">
+          <p className="text-sm font-black uppercase tracking-wide text-earth-400">Start here</p>
+          <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-white sm:text-4xl">
             Choose Your Path
           </h2>
-          <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
+          <p className="mt-4 text-base leading-7 text-white/72 sm:text-lg sm:leading-8">
             Whether you grow, buy, or supply, Ghana Growers helps you connect with the right people across Ghana&apos;s agricultural network.
           </p>
         </div>
@@ -77,17 +77,12 @@ export function ChooseYourPath() {
             return (
               <article
                 key={card.title}
-                className={`choose-path-card group flex h-full flex-col rounded-lg border border-leaf-900/10 bg-gradient-to-br ${tone.shell} p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
+                className={`choose-path-card group flex h-full flex-col rounded-lg border border-white/70 bg-gradient-to-br ${tone.shell} p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
                 style={{ animation: `choosePathFadeUp 560ms ease-out ${index * 90}ms both` }}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-md ${tone.icon}`}>
-                    <Icon className="h-6 w-6" aria-hidden="true" />
-                  </span>
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-wide text-ink/45 ring-1 ring-leaf-900/10">
-                    Path {index + 1}
-                  </span>
-                </div>
+                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-md ${tone.icon}`}>
+                  <Icon className="h-6 w-6" aria-hidden="true" />
+                </span>
 
                 <div className="mt-6 flex flex-1 flex-col">
                   <h3 className="text-xl font-black text-ink">{card.title}</h3>
