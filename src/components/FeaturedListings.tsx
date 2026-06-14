@@ -54,7 +54,7 @@ export function FeaturedListings({
                 return (
                 <article
                   key={farmer.slug}
-                  className={`relative overflow-hidden rounded-md bg-white shadow-soft ${compact ? "border border-leaf-900/10 p-4" : "border-2 border-earth-500 p-5"}`}
+                  className={`relative overflow-hidden rounded-md bg-white shadow-soft ${compact ? "border border-leaf-900/10 p-3.5" : "border-2 border-earth-500 p-5"}`}
                 >
                   {compact ? null : (
                     <div className="flex items-start justify-between gap-4">
@@ -88,12 +88,14 @@ export function FeaturedListings({
                       </span>
                     ))}
                   </div>
-                  <Link
-                    href={`/farmer-directory/${farmer.slug}`}
-                    className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
-                  >
-                    View Farmer
-                  </Link>
+                  {compact ? null : (
+                    <Link
+                      href={`/farmer-directory/${farmer.slug}`}
+                      className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+                    >
+                      View Farmer
+                    </Link>
+                  )}
                 </article>
                 );
               })
@@ -184,6 +186,16 @@ export function FeaturedListings({
               ))
             : null}
         </div>
+        {compact && showFarmers && !showSuppliers && !showBuyerRequests ? (
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/farmer-directory"
+              className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
+            >
+              View all Farmers
+            </Link>
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BarChart3,
-  CloudSun,
   ShieldCheck,
   UsersRound
 } from "lucide-react";
@@ -22,16 +20,9 @@ export const metadata = {
     title: "Ghana Growers | Trusted Agriculture Platform for Ghana",
     description:
       "Discover farmers, suppliers, buyer requests, market intelligence, and smart agricultural tools built for Ghana.",
-    images: ["/images/hero/ghana-growers-hero.jpg"]
+    images: ["/images/hero/ghana-growers-trade-hero.png"]
   }
 };
-
-const heroHighlights = [
-  { title: "115+ Farmers", description: "Growing network", icon: UsersRound },
-  { title: "Verified Members", description: "Reviewed profiles", icon: ShieldCheck },
-  { title: "Digital Farm Tools", description: "Market and field support", icon: CloudSun },
-  { title: "Fair Market Access", description: "Direct connections", icon: BarChart3 }
-];
 
 export default function HomePage() {
   return (
@@ -57,7 +48,7 @@ export default function HomePage() {
           <div className="relative">
             <div className="relative overflow-hidden rounded-md border border-white/70 bg-white p-2 shadow-soft">
               <SafeImage
-                src="/images/hero/ghana-growers-hero.jpg"
+                src="/images/hero/ghana-growers-trade-hero.png"
                 alt="Ghanaian farmer, buyer, and supplier exchanging fresh produce at a farm marketplace"
                 width={1778}
                 height={885}
@@ -67,23 +58,6 @@ export default function HomePage() {
                 sizes="(min-width: 1024px) 54vw, 100vw"
                 className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[500px]"
               />
-              <div className="mt-3 grid gap-3 rounded-md bg-white p-4 shadow-soft ring-1 ring-leaf-900/10 md:absolute md:bottom-5 md:right-5 md:mt-0 md:w-[min(92%,28rem)] md:grid-cols-2">
-                {heroHighlights.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <div key={item.title} className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-900/10">
-                        <Icon size={19} aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-black leading-tight text-ink">{item.title}</span>
-                        <span className="mt-0.5 block text-xs font-bold leading-snug text-ink/58">{item.description}</span>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
         </div>
