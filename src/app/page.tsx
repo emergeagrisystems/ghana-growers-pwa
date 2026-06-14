@@ -27,10 +27,10 @@ export const metadata = {
 };
 
 const heroHighlights = [
-  { title: "115+ Farmers", icon: UsersRound },
-  { title: "Digital Farm Tools", icon: CloudSun },
-  { title: "Verified Members", icon: ShieldCheck },
-  { title: "Fair Market Access", icon: BarChart3 }
+  { title: "115+ Farmers", description: "Growing network", icon: UsersRound },
+  { title: "Verified Members", description: "Reviewed profiles", icon: ShieldCheck },
+  { title: "Digital Farm Tools", description: "Market and field support", icon: CloudSun },
+  { title: "Fair Market Access", description: "Direct connections", icon: BarChart3 }
 ];
 
 export default function HomePage() {
@@ -67,17 +67,19 @@ export default function HomePage() {
                 sizes="(min-width: 1024px) 54vw, 100vw"
                 className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[500px]"
               />
-              <div className="absolute inset-2 rounded-md bg-gradient-to-t from-ink/45 via-transparent to-transparent" />
-              <div className="absolute inset-x-5 bottom-5 grid gap-2 rounded-md bg-white/94 p-3 shadow-soft backdrop-blur sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-3 grid gap-3 rounded-md bg-white p-4 shadow-soft ring-1 ring-leaf-900/10 md:absolute md:bottom-5 md:right-5 md:mt-0 md:w-[min(92%,28rem)] md:grid-cols-2">
                 {heroHighlights.map((item) => {
                   const Icon = item.icon;
 
                   return (
-                    <div key={item.title} className="flex items-center gap-2 text-xs font-black text-ink">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-900/10">
-                        <Icon size={16} aria-hidden="true" />
+                    <div key={item.title} className="flex items-center gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-900/10">
+                        <Icon size={19} aria-hidden="true" />
                       </span>
-                      <span>{item.title}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-black leading-tight text-ink">{item.title}</span>
+                        <span className="mt-0.5 block text-xs font-bold leading-snug text-ink/58">{item.description}</span>
+                      </span>
                     </div>
                   );
                 })}
