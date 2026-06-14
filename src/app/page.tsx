@@ -47,7 +47,7 @@ export default function HomePage() {
               Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-[18rem] text-base leading-7 text-ink/70 sm:max-w-2xl sm:text-lg sm:leading-8">
-              Connect with farmers, buyers, suppliers, market prices, buyer requests, and digital farm tools across Ghana.
+              Connect with trusted farmers, buyers, and suppliers. Discover produce, buyer demand, market intelligence, and digital farm tools across Ghana.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="/farmer-directory">Browse Directory</ButtonLink>

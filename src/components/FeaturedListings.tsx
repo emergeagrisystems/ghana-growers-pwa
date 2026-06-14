@@ -74,7 +74,7 @@ export function FeaturedListings({
                     sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />
                   <h3 className={`${compact ? "text-lg" : "text-xl"} mt-4 font-black text-ink`}>{farmer.farmName}</h3>
-                  <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.district}, {farmer.region}</p>
+                  <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.region}</p>
                   {trust.status === "Verified" ? (
                     <div className="mt-3">
                       <VerificationBadge kind="farmer" status={trust.status} />
