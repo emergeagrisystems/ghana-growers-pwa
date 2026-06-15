@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
+import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { featuredListingLabels, isFeaturedSupplier } from "@/data/featuredListings";
 import { productCategories } from "@/data/products";
 import type { SupplierProfile } from "@/types";
@@ -202,12 +202,12 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <WhatsAppButton
-                  message={supplier.whatsappMessage}
+                <RequestConnectionButton
+                  label="Request Connection"
                   sourceType="Supplier"
                   sourceId={supplier.slug}
                   sourceName={supplier.companyName}
-                  phoneNumber={supplier.phone}
+                  productInterest={supplier.productsServices.slice(0, 3).join(", ")}
                   className="w-full"
                 />
                 <Link

@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     marketplaceListings,
     buyerRequests,
     whatsappLeads,
+    leadRequests,
     cropHealthReports,
     marketPrices
   ] = await Promise.all([
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
     readTable("marketplace_listings", "select=id,slug,product_name,category,region,district,seller_name,whatsapp_number,status,availability&limit=1000"),
     readTable("buyer_requests", "select=id,product_needed,region,district,buyer_name,buyer_type,whatsapp_number,status,verification_status&limit=1000"),
     readTable("whatsapp_leads", "select=id,source_type,source_id,source_name,created_at&order=created_at.desc&limit=1000"),
+    readTable("lead_requests", "select=id,source_type,source_id,source_name,product_interest,status,created_at&order=created_at.desc&limit=1000"),
     readTable("crop_health_reports", "select=id,created_at&limit=1000"),
     readTable("market_prices", "select=id,product,region,market,trend&limit=1000")
   ]);
@@ -42,6 +44,7 @@ export async function GET(request: Request) {
     marketplaceListings,
     buyerRequests,
     whatsappLeads,
+    leadRequests,
     cropHealthReports,
     marketPrices
   });

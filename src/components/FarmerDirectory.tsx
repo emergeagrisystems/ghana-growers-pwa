@@ -5,7 +5,7 @@ import { BadgeCheck, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -168,12 +168,12 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                         >
                           View Profile
                         </Link>
-                        <WhatsAppButton
-                          message={farmer.whatsappMessage}
-                          label="WhatsApp"
+                        <RequestConnectionButton
+                          label="Request"
                           sourceType="Farmer"
                           sourceId={farmer.slug}
                           sourceName={farmer.farmName}
+                          productInterest={farmer.products.slice(0, 3).join(", ")}
                           className="w-full border border-leaf-900/10 bg-white text-leaf-700 shadow-none hover:bg-leaf-50"
                         />
                       </div>

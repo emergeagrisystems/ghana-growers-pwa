@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   BadgeCheck,
   ChevronDown,
-  MessageCircle,
   PackageCheck,
   Search,
   SlidersHorizontal,
@@ -13,11 +12,10 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
-import { WHATSAPP_NUMBER } from "@/data/site";
 import { farmerDirectory } from "@/data/farmers";
-import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { FarmerProfile, Product } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -34,11 +32,6 @@ type FilterConfig = {
 };
 
 const availabilityOptions = ["All", "Available", "Limited", "Sold Out"];
-
-const contactUrl = (product: Product) =>
-  `https://wa.me/${product.whatsappNumber}?text=${encodeURIComponent(
-    `Hello Ghana Growers, I am interested in ${product.name} from ${product.seller}.`
-  )}`;
 
 function SearchBox({
   searchTerm,
@@ -259,23 +252,14 @@ function ProductDetailsModal({
               <p className="mt-2 text-sm leading-6 text-ink/68">{product.description}</p>
             </div>
             <div className="mt-5">
-              <a
-                href={contactUrl(product)}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() =>
-                  trackWhatsAppLead({
-                    sourceType: "Marketplace Listing",
-                    sourceId: product.id,
-                    sourceName: product.name,
-                    phoneNumber: product.whatsappNumber ?? WHATSAPP_NUMBER
-                  })
-                }
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                WhatsApp Seller
-              </a>
+              <RequestConnectionButton
+                label="Request Connection"
+                sourceType="Marketplace Listing"
+                sourceId={product.id}
+                sourceName={product.name}
+                productInterest={product.name}
+                className="w-full"
+              />
             </div>
           </div>
         </div>

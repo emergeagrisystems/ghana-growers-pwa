@@ -43,6 +43,7 @@ type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
   | "analytics"
   | "launch-checklist"
+  | "lead-queue"
   | "farmer-import"
   | "farmers"
   | "buyers"
@@ -75,7 +76,7 @@ type AdminRow = {
 type AdminActivityRecord = {
   id: string;
   admin_email: string;
-  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Close";
+  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Close" | "Submit";
   entity_type:
     | "Farmer"
     | "Supplier"
@@ -86,7 +87,8 @@ type AdminActivityRecord = {
     | "Supplier Application"
     | "Listing Submission"
     | "Buyer Request Submission"
-    | "Match Opportunity";
+    | "Match Opportunity"
+    | "Lead Request";
   entity_id: string | null;
   entity_name: string;
   created_at: string;
@@ -101,6 +103,23 @@ type WhatsAppLeadRecord = {
   user_agent: string | null;
   created_at: string;
 };
+type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Closed";
+type LeadRequestRecord = {
+  id: string;
+  created_at: string;
+  requester_name: string;
+  phone: string;
+  whatsapp: string;
+  location: string;
+  product_interest: string;
+  quantity_needed: string | null;
+  message: string | null;
+  source_type: "Farmer" | "Supplier" | "Marketplace Listing";
+  source_id: string;
+  source_name: string;
+  source_page: string | null;
+  status: LeadRequestStatus;
+};
 type AnalyticsRecord = Record<string, unknown>;
 type AnalyticsData = {
   farmers: AnalyticsRecord[];
@@ -108,6 +127,7 @@ type AnalyticsData = {
   marketplaceListings: AnalyticsRecord[];
   buyerRequests: AnalyticsRecord[];
   whatsappLeads: AnalyticsRecord[];
+  leadRequests: AnalyticsRecord[];
   cropHealthReports: AnalyticsRecord[];
   marketPrices: AnalyticsRecord[];
 };
@@ -346,6 +366,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
   return {
     analytics: [],
     "launch-checklist": [],
+    "lead-queue": [],
     "farmer-import": [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
@@ -416,6 +437,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
   { id: "analytics", label: "Analytics", icon: ChartLine },
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
+  { id: "lead-queue", label: "Lead Queue", icon: MessageCircle },
   { id: "farmer-import", label: "Farmer Import", icon: UploadCloud },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
@@ -534,6 +556,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
 function summarize(
   rows: Record<AdminSectionId, AdminRow[]>,
   whatsappLeadCount: number,
+  leadRequestCount: number,
   applicationCounts: { farmers: number; buyers: number; suppliers: number },
   submissionCounts: { listings: number; buyerRequests: number }
 ) {
@@ -546,6 +569,7 @@ function summarize(
     { label: "Marketplace Listings", value: rows.marketplace.length, icon: Store },
     { label: "Buyer Requests", value: rows["buyer-requests"].length, icon: PackageCheck },
     { label: "Pending Verifications", value: pendingVerifications, icon: CircleDashed },
+    { label: "Total Leads", value: leadRequestCount, icon: MessageCircle },
     { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle },
     { label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout },
     { label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound },
@@ -984,6 +1008,10 @@ function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
     return PackageCheck;
   }
 
+  if (entityType === "Lead Request") {
+    return MessageCircle;
+  }
+
   if (entityType === "Farmer") {
     return Sprout;
   }
@@ -1025,7 +1053,8 @@ function activitySentence(activity: AdminActivityRecord) {
     Convert: "converted",
     View: "viewed",
     Contact: "contacted",
-    Close: "closed"
+    Close: "closed",
+    Submit: "submitted"
   };
   const verb = verbs[activity.action_type];
   const entity = activity.entity_type.toLowerCase();
@@ -1239,7 +1268,7 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
   };
 }
 
-function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): AnalyticsData {
+function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequestRows: LeadRequestRecord[]): AnalyticsData {
   return {
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
@@ -1284,6 +1313,7 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[]): Analyti
       verification_status: request.verificationStatus
     })),
     whatsappLeads: whatsappLeadRows,
+    leadRequests: leadRequestRows,
     cropHealthReports: [],
     marketPrices: marketPrices.map((price) => ({
       id: `${price.crop}-${price.market}`,
@@ -1306,6 +1336,7 @@ function mergeAnalyticsWithFallback(data: AnalyticsData | null, fallback: Analyt
     marketplaceListings: data.marketplaceListings.length > 0 ? data.marketplaceListings : fallback.marketplaceListings,
     buyerRequests: data.buyerRequests.length > 0 ? data.buyerRequests : fallback.buyerRequests,
     whatsappLeads: data.whatsappLeads.length > 0 ? data.whatsappLeads : fallback.whatsappLeads,
+    leadRequests: data.leadRequests.length > 0 ? data.leadRequests : fallback.leadRequests,
     cropHealthReports: data.cropHealthReports,
     marketPrices: data.marketPrices.length > 0 ? data.marketPrices : fallback.marketPrices
   };
@@ -1358,6 +1389,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [activityError, setActivityError] = useState("");
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
+  const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
+  const [leadRequestError, setLeadRequestError] = useState("");
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
   const [closedMatchIds, setClosedMatchIds] = useState<string[]>([]);
@@ -1457,6 +1490,28 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadWhatsAppLeads();
   }, [loadWhatsAppLeads]);
 
+  const loadLeadRequests = useCallback(async () => {
+    const response = await fetch("/api/admin/lead-requests").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { leads?: LeadRequestRecord[]; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setLeadRequestError(result?.error ?? "Lead requests are unavailable.");
+      return;
+    }
+
+    setLeadRequests(result?.leads ?? []);
+    setLeadRequestError("");
+  }, []);
+
+  useEffect(() => {
+    void loadLeadRequests();
+  }, [loadLeadRequests]);
+
   const loadAnalytics = useCallback(async () => {
     const response = await fetch("/api/admin/analytics").catch(() => null);
     const result = (await response?.json().catch(() => null)) as (AnalyticsData & { error?: string }) | null;
@@ -1477,6 +1532,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       marketplaceListings: result?.marketplaceListings ?? [],
       buyerRequests: result?.buyerRequests ?? [],
       whatsappLeads: result?.whatsappLeads ?? [],
+      leadRequests: result?.leadRequests ?? [],
       cropHealthReports: result?.cropHealthReports ?? [],
       marketPrices: result?.marketPrices ?? []
     });
@@ -1590,14 +1646,14 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     buyerRequests: submissions.buyerRequests.filter((submission) => submission.status === "New").length
   }), [submissions]);
   const summaryCards = useMemo(
-    () => summarize(rowsBySection, whatsappLeads.length, newApplicationCounts, newSubmissionCounts),
-    [rowsBySection, whatsappLeads.length, newApplicationCounts, newSubmissionCounts]
+    () => summarize(rowsBySection, whatsappLeads.length, leadRequests.length, newApplicationCounts, newSubmissionCounts),
+    [rowsBySection, whatsappLeads.length, leadRequests.length, newApplicationCounts, newSubmissionCounts]
   );
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
-  const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads), [whatsappLeads]);
+  const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
   const analytics = useMemo(() => mergeAnalyticsWithFallback(analyticsData, analyticsFallback), [analyticsData, analyticsFallback]);
   useEffect(() => {
     if (!analyticsData?.farmers.length) {
@@ -1617,6 +1673,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     { label: "Marketplace listings", value: analytics.marketplaceListings.length, icon: Store },
     { label: "Active buyer requests", value: activeBuyerRequestCount(analytics.buyerRequests), icon: PackageCheck },
     { label: "WhatsApp leads", value: analytics.whatsappLeads.length, icon: MessageCircle },
+    { label: "Total leads", value: analytics.leadRequests.length, icon: MessageCircle },
     { label: "Crop health checks", value: analytics.cropHealthReports.length, icon: ClipboardCheck },
     { label: "Market price records", value: analytics.marketPrices.length, icon: ChartLine }
   ], [analytics]);
@@ -2390,7 +2447,33 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const isApplicationsSection = activeSection === "applications";
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
+  const isLeadQueueSection = activeSection === "lead-queue";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
+
+  async function updateLeadRequestStatus(lead: LeadRequestRecord, status: LeadRequestStatus) {
+    const response = await fetch("/api/admin/lead-requests", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: lead.id, status })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setLeadRequestError(result?.error ?? "Could not update this lead request.");
+      return;
+    }
+
+    setLeadRequests((current) => current.map((item) => (item.id === lead.id ? { ...item, status } : item)));
+    setLeadRequestError("");
+    setNotice(`${lead.requester_name} lead marked ${status}.`);
+    void loadActivity();
+    void loadAnalytics();
+  }
 
   async function updateApplication(application: ApplicationRecord, status: ApplicationStatus) {
     const response = await fetch("/api/admin/applications", {
@@ -2813,7 +2896,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -3585,6 +3668,76 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     ) : null}
                   </div>
                 )}
+              </div>
+            ) : isLeadQueueSection ? (
+              <div className="grid gap-6 p-5">
+                {leadRequestError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
+                ) : null}
+                <section className="grid gap-4 md:grid-cols-4">
+                  {(["New", "Contacted", "Negotiating", "Closed"] as LeadRequestStatus[]).map((status) => (
+                    <div key={status} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                      <p className="text-sm font-black uppercase tracking-wide text-ink/45">{status}</p>
+                      <p className="mt-3 text-3xl font-black text-ink">{leadRequests.filter((lead) => lead.status === status).length}</p>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Queue</p>
+                      <h2 className="mt-2 text-2xl font-black text-ink">Connection requests</h2>
+                    </div>
+                    <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{leadRequests.length} total leads</p>
+                  </div>
+                  <div className="mt-5 grid gap-4">
+                    {leadRequests.slice(0, 100).map((lead) => (
+                      <article key={lead.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-lg font-black text-ink">{lead.requester_name}</h3>
+                              <span className={`rounded-full px-3 py-1 text-xs font-black ${lead.status === "Closed" ? "bg-ink text-white" : lead.status === "New" ? "bg-earth-50 text-earth-700" : "bg-white text-leaf-700"}`}>
+                                {lead.status}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
+                              {lead.product_interest} {lead.quantity_needed ? `- ${lead.quantity_needed}` : ""} - {lead.location}
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-ink/58">
+                              Source: {lead.source_type} - {lead.source_name} - {relativeActivityTime(lead.created_at)}
+                            </p>
+                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                              <p className="rounded-md bg-white px-3 py-2 font-semibold text-ink/65">Phone: {lead.phone}</p>
+                              <p className="rounded-md bg-white px-3 py-2 font-semibold text-ink/65">WhatsApp: {lead.whatsapp}</p>
+                            </div>
+                            {lead.message ? (
+                              <p className="mt-3 rounded-md bg-white p-3 text-sm leading-6 text-ink/65">{lead.message}</p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap gap-2 lg:max-w-[260px] lg:justify-end">
+                            <button type="button" onClick={() => setNotice(`Viewing lead from ${lead.requester_name}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                              View
+                            </button>
+                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                              Mark Contacted
+                            </button>
+                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
+                              Mark Negotiating
+                            </button>
+                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Closed")} className="rounded-md bg-ink px-3 py-2 text-xs font-black text-white transition hover:bg-ink/80">
+                              Mark Closed
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                    {leadRequests.length === 0 && !leadRequestError ? (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No connection requests have been submitted yet.</p>
+                    ) : null}
+                  </div>
+                </section>
               </div>
             ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">

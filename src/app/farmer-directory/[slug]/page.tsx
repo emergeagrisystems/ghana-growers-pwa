@@ -13,8 +13,8 @@ import {
   Truck,
   type LucideIcon
 } from "lucide-react";
+import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
@@ -169,12 +169,12 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             <p className="mt-3 text-sm leading-6 text-ink/62">
               Confirm harvest timing, volume, pickup or delivery, grading, and payment terms before trade.
             </p>
-            <WhatsAppButton
-              message={farmer.whatsappMessage}
-              label="WhatsApp Farmer"
+            <RequestConnectionButton
+              label="Request Connection"
               sourceType="Farmer"
               sourceId={farmer.slug}
               sourceName={farmer.farmName}
+              productInterest={farmer.products.slice(0, 3).join(", ")}
               className="mt-5 w-full"
             />
           </div>

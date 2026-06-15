@@ -12,8 +12,8 @@ import {
   Truck,
   type LucideIcon
 } from "lucide-react";
+import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 import type { Product, SupplierProfile } from "@/types";
 
@@ -223,13 +223,12 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
             <p className="mt-3 text-sm leading-6 text-ink/62">
               Confirm product availability, delivery coverage, pricing, and support terms before purchase.
             </p>
-            <WhatsAppButton
-              message={supplier.whatsappMessage}
-              label="WhatsApp Supplier"
+            <RequestConnectionButton
+              label="Request Connection"
               sourceType="Supplier"
               sourceId={supplier.slug}
               sourceName={supplier.companyName}
-              phoneNumber={supplier.phone}
+              productInterest={supplier.productsServices.slice(0, 3).join(", ")}
               className="mt-5 w-full"
             />
             {supplier.website ? (
