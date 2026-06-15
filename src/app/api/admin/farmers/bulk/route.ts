@@ -6,7 +6,7 @@ import { selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admi
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "archive";
+type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
 type FarmerBulkRow = {
   id: string;
   slug: string | null;
@@ -18,6 +18,7 @@ const actionLabels: Record<FarmerBulkAction, string> = {
   "pending-review": "Pending Review",
   "under-review": "Under Review",
   verified: "Verified",
+  founding: "Founding Farmer",
   archive: "Archived"
 };
 
@@ -40,6 +41,10 @@ function payloadForAction(action: FarmerBulkAction, adminEmail: string) {
     return { verification_status: "Verified", verification_date: today, verified_by: adminEmail };
   }
 
+  if (action === "founding") {
+    return { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminEmail, source: "Founding Farmer" };
+  }
+
   return { status: "Archived" };
 }
 
@@ -48,7 +53,7 @@ function activityAction(action: FarmerBulkAction) {
     return "Archive" as const;
   }
 
-  if (action === "verified") {
+  if (action === "verified" || action === "founding") {
     return "Verify" as const;
   }
 

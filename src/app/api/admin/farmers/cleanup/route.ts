@@ -15,7 +15,7 @@ type FarmerCleanupRow = {
 };
 
 function nonTallyFarmers(rows: FarmerCleanupRow[]) {
-  return rows.filter((row) => row.status !== "Archived" && row.source !== "Tally Import");
+  return rows.filter((row) => row.status !== "Archived" && row.source !== "Tally Import" && row.source !== "Founding Farmer");
 }
 
 export async function GET(request: Request) {
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
     totalFarmers: rows.length,
     nonTallyCount: targets.length,
     tallyImportCount: rows.filter((row) => row.source === "Tally Import").length,
+    foundingFarmerCount: rows.filter((row) => row.source === "Founding Farmer").length,
     targets: targets.slice(0, 25)
   });
 }

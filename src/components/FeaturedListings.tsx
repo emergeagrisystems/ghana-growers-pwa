@@ -11,6 +11,7 @@ import {
   featuredListingLabels,
   featuredSuppliers
 } from "@/data/featuredListings";
+import type { FarmerProfile } from "@/types";
 
 type FeaturedListingKind = "farmers" | "suppliers" | "buyerRequests" | "all";
 
@@ -21,6 +22,7 @@ type FeaturedListingsProps = {
   background?: "white" | "leaf" | "earth";
   limit?: number;
   compact?: boolean;
+  farmers?: FarmerProfile[];
 };
 
 const backgrounds = {
@@ -35,12 +37,14 @@ export function FeaturedListings({
   description = "Highlighted farmers, suppliers, and buyer requests that Ghana Growers wants visitors to notice first.",
   background = "white",
   limit,
-  compact = false
+  compact = false,
+  farmers
 }: FeaturedListingsProps) {
   const showAll = kinds.includes("all");
   const showFarmers = showAll || kinds.includes("farmers");
   const showSuppliers = showAll || kinds.includes("suppliers");
   const showBuyerRequests = showAll || kinds.includes("buyerRequests");
+  const selectedFarmers = farmers ?? featuredFarmers;
 
   return (
     <section className={`${backgrounds[background]} py-16`}>
@@ -48,7 +52,7 @@ export function FeaturedListings({
         <SectionHeader eyebrow="Featured" title={title} description={description} />
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {showFarmers
-            ? featuredFarmers.slice(0, limit).map((farmer) => {
+            ? selectedFarmers.slice(0, limit).map((farmer) => {
                 const trust = normalizeTrust(farmer.trust);
 
                 return (

@@ -215,6 +215,7 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
+    source: row.source ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I am interested in contacting ${row.farm_name} in ${row.district}, ${row.region}.`
   };

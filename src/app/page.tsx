@@ -11,6 +11,7 @@ import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategorySho
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { getFarmersData } from "@/lib/supabase/publicData";
 
 export const metadata = {
   title: "Trusted Agriculture Platform for Ghana",
@@ -24,7 +25,10 @@ export const metadata = {
   }
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const farmers = await getFarmersData();
+  const homepageFeaturedFarmers = farmers.filter((farmer) => farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer");
+
   return (
     <>
       <section className="overflow-hidden bg-gradient-to-br from-white via-leaf-50/70 to-earth-50/40">
@@ -74,6 +78,7 @@ export default function HomePage() {
         background="leaf"
         limit={3}
         compact
+        farmers={homepageFeaturedFarmers}
       />
 
       <FeaturedListings

@@ -528,10 +528,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { action?: "approve" | "verify" | "archive"; ids?: string[] };
+  const body = (await request.json().catch(() => ({}))) as { action?: "approve" | "verify" | "founding" | "archive"; ids?: string[] };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "verify", "archive"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "verify", "founding", "archive"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -540,6 +540,8 @@ export async function PATCH(request: Request) {
   const payload =
     body.action === "archive"
       ? { status: "Archived" }
+      : body.action === "founding"
+        ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email, source: "Founding Farmer" }
       : body.action === "verify"
         ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email }
         : { status: "Active", verification_status: "Pending", verification_date: null, verified_by: null };
@@ -551,10 +553,10 @@ export async function PATCH(request: Request) {
 
   await logAdminActivity({
     adminEmail: adminUser.email,
-    actionType: body.action === "archive" ? "Archive" : body.action === "verify" ? "Verify" : "Approve",
+    actionType: body.action === "archive" ? "Archive" : body.action === "verify" || body.action === "founding" ? "Verify" : "Approve",
     entityType: "Farmer",
     entityId: ids.join(","),
-    entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}`
+    entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}${body.action === "founding" ? " assigned Founding Farmer" : ""}`
   });
 
   return NextResponse.json({ ok: true, updated: ids.length });

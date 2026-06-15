@@ -82,6 +82,7 @@ export type FarmerProfile = {
   verificationDate?: string;
   verifiedBy?: string;
   verificationNotes?: string;
+  source?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };

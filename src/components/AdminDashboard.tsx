@@ -122,7 +122,8 @@ type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Con
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type LaunchStatus = "Not Started" | "In Progress" | "Complete";
-type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "archive";
+type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
+type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -240,6 +241,7 @@ const farmerBulkActionLabels: Record<FarmerBulkAction, string> = {
   "pending-review": "Mark Pending Review",
   "under-review": "Mark Under Review",
   verified: "Mark Verified",
+  founding: "Assign Founding Farmer",
   archive: "Archive"
 };
 
@@ -1331,7 +1333,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
-  const [farmerSourceFilter, setFarmerSourceFilter] = useState<"All" | "Tally Import" | "Manual/Test">("All");
+  const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
   const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
   const [isUpdatingFarmersBulk, setIsUpdatingFarmersBulk] = useState(false);
@@ -1663,7 +1665,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       activeSection !== "farmers" ||
       farmerSourceFilter === "All" ||
       (farmerSourceFilter === "Tally Import" && row.source === "Tally Import") ||
-      (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import");
+      (farmerSourceFilter === "Founding Farmer" && row.source === "Founding Farmer") ||
+      (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import" && row.source !== "Founding Farmer");
 
     return matchesSearch && matchesStatus && matchesFarmerSource;
   });
@@ -1766,7 +1769,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
   async function archiveNonTallyFarmers() {
     const confirmed = window.confirm(
-      "Archive all farmers that are not from the Tally Import? This will hide demo, manual, and test farmers from public launch views without deleting records."
+      "Archive all farmers that are not Tally Import or Founding Farmers? This will hide demo, manual, and test farmers from public launch views without deleting records."
     );
 
     if (!confirmed) {
@@ -1790,7 +1793,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
     setRowsBySection((current) => ({
       ...current,
-      farmers: current.farmers.map((row) => (row.source === "Tally Import" ? row : { ...row, status: "Archived", href: undefined }))
+      farmers: current.farmers.map((row) =>
+        row.source === "Tally Import" || row.source === "Founding Farmer" ? row : { ...row, status: "Archived", href: undefined }
+      )
     }));
     setStatusFilter("Archived");
     setFarmerSourceFilter("Manual/Test");
@@ -1846,6 +1851,32 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
     setPendingFarmerBulkAction(null);
     setSelectedFarmerRowIds([]);
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: current.farmers.map((row) => {
+        if (!selectedFarmerRowIds.includes(row.id)) {
+          return row;
+        }
+
+        if (pendingFarmerBulkAction === "founding") {
+          return { ...row, status: "Active", source: "Founding Farmer", href: `/farmer-directory/${row.id}` };
+        }
+
+        if (pendingFarmerBulkAction === "active") {
+          return { ...row, status: "Active", href: `/farmer-directory/${row.id}` };
+        }
+
+        if (pendingFarmerBulkAction === "pending-review") {
+          return { ...row, status: "Pending Review", href: undefined };
+        }
+
+        if (pendingFarmerBulkAction === "archive") {
+          return { ...row, status: "Archived", href: undefined };
+        }
+
+        return row;
+      })
+    }));
     setNotice(`${result?.updated ?? 0} farmer${result?.updated === 1 ? "" : "s"} updated to ${result?.status ?? farmerBulkActionLabels[pendingFarmerBulkAction]}.`);
     void loadActivity();
     void loadAnalytics();
@@ -1942,7 +1973,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadAnalytics();
   }
 
-  async function bulkUpdateImportedFarmers(action: "approve" | "verify" | "archive") {
+  async function bulkUpdateImportedFarmers(action: "approve" | "verify" | "founding" | "archive") {
     if (selectedImportedFarmerIds.length === 0) {
       setFarmerImportError("Select at least one imported farmer.");
       return;
@@ -1972,11 +2003,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }
 
     const nextStatus: ImportAdminStatus = action === "archive" ? "Archived" : "Active";
-    const nextVerification = action === "verify" ? "Verified" : "Pending";
+    const nextVerification = action === "verify" || action === "founding" ? "Verified" : "Pending";
+    const nextSource = action === "founding" ? "Founding Farmer" : undefined;
     setImportedFarmers((current) =>
       current.map((farmer) =>
         selectedImportedFarmerIds.includes(farmer.id)
-          ? { ...farmer, status: nextStatus, verification_status: nextVerification }
+          ? { ...farmer, status: nextStatus, verification_status: nextVerification, source: nextSource ?? farmer.source }
           : farmer
       )
     );
@@ -1992,6 +2024,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
         return {
           ...row,
           status: nextStatus,
+          source: nextSource ?? row.source,
           href: nextStatus === "Active" ? `/farmer-directory/${matched.slug || matched.id}` : undefined
         };
       })
@@ -2676,11 +2709,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     <>
                       <select
                         value={farmerSourceFilter}
-                        onChange={(event) => setFarmerSourceFilter(event.target.value as "All" | "Tally Import" | "Manual/Test")}
+                        onChange={(event) => setFarmerSourceFilter(event.target.value as FarmerSourceFilter)}
                         className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                       >
                         <option value="All">All sources</option>
                         <option value="Tally Import">Tally Import</option>
+                        <option value="Founding Farmer">Founding Farmers</option>
                         <option value="Manual/Test">Manual/Test</option>
                       </select>
                       <button
@@ -3099,6 +3133,14 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Verify
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => bulkUpdateImportedFarmers("founding")}
+                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
+                          className="rounded-md bg-earth-500 px-3 py-2 text-xs font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Founding Farmer
                         </button>
                         <button
                           type="button"
@@ -3608,7 +3650,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"} selected
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(["active", "pending-review", "under-review", "verified", "archive"] as FarmerBulkAction[]).map((action) => (
+                    {(["active", "pending-review", "under-review", "verified", "founding", "archive"] as FarmerBulkAction[]).map((action) => (
                       <button
                         key={action}
                         type="button"
@@ -3616,7 +3658,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         className={`rounded-md px-3 py-2 text-xs font-black ring-1 ring-leaf-900/10 transition ${
                           action === "archive"
                             ? "bg-white text-tomato hover:ring-tomato/30"
-                            : action === "verified"
+                            : action === "verified" || action === "founding"
                               ? "bg-leaf-700 text-white hover:bg-leaf-800"
                               : "bg-white text-ink/65 hover:text-leaf-800"
                         }`}
@@ -3678,7 +3720,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
                       {activeSection === "farmers" ? (
-                        <td className="px-5 py-4 text-ink/65">{row.source === "Tally Import" ? "Tally Import" : "Manual/Test"}</td>
+                        <td className="px-5 py-4 text-ink/65">
+                          {row.source === "Tally Import" || row.source === "Founding Farmer" ? row.source : "Manual/Test"}
+                        </td>
                       ) : null}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${importStatusStyles[row.status]}`}>
