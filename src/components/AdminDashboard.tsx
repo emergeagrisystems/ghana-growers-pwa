@@ -966,6 +966,28 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
   };
 }
 
+function reviewDebugFields(farmer: ImportedFarmerRecord) {
+  return {
+    id: farmer.id,
+    slug: farmer.slug,
+    phone_number: farmer.phone_number ?? null,
+    whatsapp_number: farmer.whatsapp_number ?? null,
+    email: farmer.email ?? null,
+    farm_size: farmer.farm_size ?? null,
+    farm_type: farmer.farm_type ?? null,
+    products: farmer.products ?? [],
+    farming_experience: farmer.farming_experience ?? null,
+    supply_frequency: farmer.supply_frequency ?? null,
+    delivery_preference: farmer.delivery_preference ?? null,
+    payment_preference: farmer.payment_preference ?? null,
+    workshop_interest: farmer.workshop_interest ?? null,
+    referral_source: farmer.referral_source ?? null,
+    profile_image_url: farmer.profile_image_url ?? null,
+    tally_photo_url: farmer.tally_photo_url ?? null,
+    original_tally_data_keys: Object.keys(farmer.original_tally_data ?? {})
+  };
+}
+
 function verificationRowFromAdminRow(formId: AdminFormId, row: AdminRow): AdminRow | null {
   if (formId !== "farmers" && formId !== "suppliers" && formId !== "buyer-requests") {
     return null;
@@ -1439,6 +1461,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
+  const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
+  const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Not Started"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -2162,6 +2186,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   async function openImportedFarmerReview(farmer: ImportedFarmerRecord) {
     setReviewingImportedFarmerId(farmer.id);
     setVerificationReviewNotes(farmer.verification_notes ?? "");
+    setIsLoadingFarmerReview(true);
+    setFarmerReviewDebug(null);
 
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
@@ -2172,6 +2198,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       })
     }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
+    setIsLoadingFarmerReview(false);
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -2184,14 +2211,23 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }
 
     if (result?.farmer) {
-      setImportedFarmers((current) => current.map((item) => (item.id === result.farmer?.id ? result.farmer : item)));
+      setImportedFarmers((current) => {
+        const exists = current.some((item) => item.id === result.farmer?.id);
+        return exists
+          ? current.map((item) => (item.id === result.farmer?.id ? result.farmer : item))
+          : [result.farmer as ImportedFarmerRecord, ...current];
+      });
+      setReviewingImportedFarmerId(result.farmer.id);
       setVerificationReviewNotes(result.farmer.verification_notes ?? "");
+      setFarmerReviewDebug(reviewDebugFields(result.farmer));
     }
 
     void loadActivity();
   }
 
   async function openImportedFarmerReviewById(recordId: string) {
+    setIsLoadingFarmerReview(true);
+    setFarmerReviewDebug(null);
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -2201,6 +2237,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       })
     }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
+    setIsLoadingFarmerReview(false);
 
     if (!response?.ok || !result?.farmer) {
       if (response?.status === 401) {
@@ -2220,6 +2257,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     });
     setReviewingImportedFarmerId(result.farmer.id);
     setVerificationReviewNotes(result.farmer.verification_notes ?? "");
+    setFarmerReviewDebug(reviewDebugFields(result.farmer));
     void loadActivity();
   }
 
@@ -2227,6 +2265,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setReviewingImportedFarmerId(null);
     setVerificationReviewNotes("");
     setIsUpdatingFarmerReview(false);
+    setIsLoadingFarmerReview(false);
+    setFarmerReviewDebug(null);
   }
 
   async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "reject" | "archive" | "notes") {
@@ -4258,6 +4298,11 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     <p className="mt-1 text-sm font-semibold text-ink/58">
                       {reviewingImportedFarmer.farmer_name || "Name not provided"} - {reviewingImportedFarmer.source || "Tally Import"}
                     </p>
+                    {isLoadingFarmerReview ? (
+                      <p className="mt-2 rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">
+                        Loading full application details from Supabase...
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -4406,6 +4451,15 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         </div>
                       </details>
                     ) : null}
+
+                    <details open className="rounded-md border border-earth-500/30 bg-earth-50 p-4">
+                      <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">
+                        Debug: Supabase Fields Returned
+                      </summary>
+                      <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-4 text-xs font-semibold leading-5 text-ink/70 ring-1 ring-earth-500/20">
+                        {JSON.stringify(farmerReviewDebug ?? reviewDebugFields(reviewingImportedFarmer), null, 2)}
+                      </pre>
+                    </details>
 
                     <div className="flex flex-col gap-3 rounded-md bg-leaf-50 p-4 sm:flex-row sm:flex-wrap">
                       <button
