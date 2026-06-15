@@ -20,6 +20,12 @@ type ExistingFarmer = {
   whatsapp_number: string | null;
   status: string | null;
   verification_status: string | null;
+  verification_date?: string | null;
+  verified_by?: string | null;
+  verification_notes?: string | null;
+  profile_image_url?: string | null;
+  description?: string | null;
+  created_at?: string | null;
   source: string | null;
 };
 
@@ -326,8 +332,52 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     whatsapp_number: record.whatsapp_number ?? "",
     status: record.status ?? "Pending Review",
     verification_status: record.verification_status ?? "Pending",
+    verification_date: record.verification_date ?? null,
+    verified_by: record.verified_by ?? null,
+    verification_notes: record.verification_notes ?? "",
+    profile_image_url: record.profile_image_url ?? null,
+    description: record.description ?? "",
+    created_at: record.created_at ?? null,
     source: record.source ?? "Tally Import"
   };
+}
+
+async function getImportedFarmerById(id: string) {
+  const farmers = await selectSupabaseRecords<ExistingFarmer>(
+    "farmers",
+    `select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source&id=eq.${encodeURIComponent(id)}&limit=1`
+  );
+
+  if (farmers.error) {
+    return { error: farmers.error, status: farmers.status };
+  }
+
+  const farmer = farmers.data?.[0];
+
+  if (!farmer) {
+    return { error: "Imported farmer could not be found.", status: 404 };
+  }
+
+  return { farmer };
+}
+
+export async function GET(request: Request) {
+  const adminUser = await requireAdminUser(request);
+
+  if (!adminUser) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 401 });
+  }
+
+  const farmers = await selectSupabaseRecords<ExistingFarmer>(
+    "farmers",
+    "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source&or=(source.eq.Tally%20Import,source.eq.Founding%20Farmer)&order=created_at.desc&limit=5000"
+  );
+
+  if (farmers.error) {
+    return NextResponse.json({ error: "Could not load imported farmers." }, { status: farmers.status });
+  }
+
+  return NextResponse.json({ farmers: (farmers.data ?? []).map(friendlyImportedFarmer) });
 }
 
 export async function POST(request: Request) {
@@ -528,11 +578,33 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { action?: "approve" | "verify" | "founding" | "archive"; ids?: string[] };
+  const body = (await request.json().catch(() => ({}))) as {
+    action?: "approve" | "under-review" | "verify" | "founding" | "reject" | "archive" | "view";
+    ids?: string[];
+    notes?: string;
+  };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "verify", "founding", "archive"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "verify", "founding", "reject", "archive", "view"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
+  }
+
+  if (body.action === "view") {
+    const target = await getImportedFarmerById(ids[0]);
+
+    if (target.error || !target.farmer) {
+      return NextResponse.json({ error: target.error ?? "Imported farmer could not be found." }, { status: target.status ?? 404 });
+    }
+
+    await logAdminActivity({
+      adminEmail: adminUser.email,
+      actionType: "View",
+      entityType: "Farmer",
+      entityId: target.farmer.slug ?? target.farmer.id,
+      entityName: target.farmer.farm_name
+    });
+
+    return NextResponse.json({ ok: true, farmer: friendlyImportedFarmer(target.farmer) });
   }
 
   const filter = `id=in.(${ids.map(encodeURIComponent).join(",")})`;
@@ -540,10 +612,14 @@ export async function PATCH(request: Request) {
   const payload =
     body.action === "archive"
       ? { status: "Archived" }
+      : body.action === "reject"
+        ? { status: "Pending Review", verification_status: "Rejected", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
+      : body.action === "under-review"
+        ? { status: "Pending Review", verification_status: "Under Review", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
       : body.action === "founding"
-        ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email, source: "Founding Farmer" }
+        ? { status: "Active", source: "Founding Farmer" }
       : body.action === "verify"
-        ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email }
+        ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email, verification_notes: body.notes ?? "" }
         : { status: "Active", verification_status: "Pending", verification_date: null, verified_by: null };
   const update = await updateSupabaseRecord("farmers", filter, payload);
 
@@ -551,9 +627,22 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Could not update imported farmers." }, { status: update.status });
   }
 
+  const actionType =
+    body.action === "archive"
+      ? "Archive"
+      : body.action === "verify"
+        ? "Verify"
+      : body.action === "reject"
+        ? "Reject"
+      : body.action === "under-review"
+        ? "Review"
+      : body.action === "founding"
+        ? "Edit"
+        : "Approve";
+
   await logAdminActivity({
     adminEmail: adminUser.email,
-    actionType: body.action === "archive" ? "Archive" : body.action === "verify" || body.action === "founding" ? "Verify" : "Approve",
+    actionType,
     entityType: "Farmer",
     entityId: ids.join(","),
     entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}${body.action === "founding" ? " assigned Founding Farmer" : ""}`

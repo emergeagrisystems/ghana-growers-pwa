@@ -42,7 +42,7 @@ function payloadForAction(action: FarmerBulkAction, adminEmail: string) {
   }
 
   if (action === "founding") {
-    return { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminEmail, source: "Founding Farmer" };
+    return { status: "Active", source: "Founding Farmer" };
   }
 
   return { status: "Archived" };
@@ -53,7 +53,7 @@ function activityAction(action: FarmerBulkAction) {
     return "Archive" as const;
   }
 
-  if (action === "verified" || action === "founding") {
+  if (action === "verified") {
     return "Verify" as const;
   }
 

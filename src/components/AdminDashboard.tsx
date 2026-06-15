@@ -185,6 +185,12 @@ type ImportedFarmerRecord = {
   whatsapp_number: string;
   status: ImportAdminStatus;
   verification_status: string;
+  verification_date?: string | null;
+  verified_by?: string | null;
+  verification_notes?: string | null;
+  profile_image_url?: string | null;
+  description?: string | null;
+  created_at?: string | null;
   source: string;
 };
 type FarmerImportReport = {
@@ -1378,6 +1384,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [farmerImportError, setFarmerImportError] = useState("");
   const [isImportingFarmers, setIsImportingFarmers] = useState(false);
   const [isUpdatingImportedFarmers, setIsUpdatingImportedFarmers] = useState(false);
+  const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
+  const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
+  const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Not Started"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -1538,6 +1547,39 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadSubmissions();
   }, [loadSubmissions]);
 
+  const loadImportedFarmers = useCallback(async () => {
+    const response = await fetch("/api/admin/farmer-import").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { farmers?: ImportedFarmerRecord[]; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerImportError(result?.error ?? "Imported farmers could not be loaded.");
+      return;
+    }
+
+    const farmers = result?.farmers ?? [];
+    setImportedFarmers(farmers);
+    setRowsBySection((current) => {
+      const importedIds = new Set(farmers.flatMap((farmer) => [farmer.id, farmer.slug].filter(Boolean)));
+      const nonImportedRows = current.farmers.filter((row) => !importedIds.has(row.id));
+
+      return {
+        ...current,
+        farmers: [...farmers.map(rowFromImportedFarmer), ...nonImportedRows]
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "farmer-import") {
+      void loadImportedFarmers();
+    }
+  }, [activeSection, loadImportedFarmers]);
+
   const newApplicationCounts = useMemo(() => ({
     farmers: applications.farmer.filter((application) => application.status === "New").length,
     buyers: applications.buyer.filter((application) => application.status === "New").length,
@@ -1673,6 +1715,13 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const visibleFarmerRowIds = activeSection === "farmers" ? filteredRows.map((row) => row.id) : [];
   const selectedVisibleFarmerCount = visibleFarmerRowIds.filter((id) => selectedFarmerRowIds.includes(id)).length;
   const allVisibleFarmersSelected = visibleFarmerRowIds.length > 0 && selectedVisibleFarmerCount === visibleFarmerRowIds.length;
+  const reviewingImportedFarmerIndex = importedFarmers.findIndex((farmer) => farmer.id === reviewingImportedFarmerId);
+  const reviewingImportedFarmer = reviewingImportedFarmerIndex === -1 ? null : importedFarmers[reviewingImportedFarmerIndex];
+  const previousImportedFarmer = reviewingImportedFarmerIndex > 0 ? importedFarmers[reviewingImportedFarmerIndex - 1] : null;
+  const nextImportedFarmer =
+    reviewingImportedFarmerIndex !== -1 && reviewingImportedFarmerIndex < importedFarmers.length - 1
+      ? importedFarmers[reviewingImportedFarmerIndex + 1]
+      : null;
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
@@ -1973,7 +2022,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadAnalytics();
   }
 
-  async function bulkUpdateImportedFarmers(action: "approve" | "verify" | "founding" | "archive") {
+  async function bulkUpdateImportedFarmers(action: "approve" | "founding" | "archive") {
     if (selectedImportedFarmerIds.length === 0) {
       setFarmerImportError("Select at least one imported farmer.");
       return;
@@ -2003,12 +2052,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }
 
     const nextStatus: ImportAdminStatus = action === "archive" ? "Archived" : "Active";
-    const nextVerification = action === "verify" || action === "founding" ? "Verified" : "Pending";
+    const nextVerification = action === "founding" ? undefined : "Pending";
     const nextSource = action === "founding" ? "Founding Farmer" : undefined;
     setImportedFarmers((current) =>
       current.map((farmer) =>
         selectedImportedFarmerIds.includes(farmer.id)
-          ? { ...farmer, status: nextStatus, verification_status: nextVerification, source: nextSource ?? farmer.source }
+          ? { ...farmer, status: nextStatus, verification_status: nextVerification ?? farmer.verification_status, source: nextSource ?? farmer.source }
           : farmer
       )
     );
@@ -2030,6 +2079,100 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       })
     }));
     setNotice(`${result?.updated ?? selectedImportedFarmerIds.length} imported farmer${selectedImportedFarmerIds.length === 1 ? "" : "s"} updated.`);
+    void loadActivity();
+    void loadAnalytics();
+  }
+
+  async function openImportedFarmerReview(farmer: ImportedFarmerRecord) {
+    setReviewingImportedFarmerId(farmer.id);
+    setVerificationReviewNotes(farmer.verification_notes ?? "");
+
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "view",
+        ids: [farmer.id]
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerImportError(result?.error ?? "Could not open farmer review.");
+      return;
+    }
+
+    if (result?.farmer) {
+      setImportedFarmers((current) => current.map((item) => (item.id === result.farmer?.id ? result.farmer : item)));
+      setVerificationReviewNotes(result.farmer.verification_notes ?? "");
+    }
+
+    void loadActivity();
+  }
+
+  function closeImportedFarmerReview() {
+    setReviewingImportedFarmerId(null);
+    setVerificationReviewNotes("");
+    setIsUpdatingFarmerReview(false);
+  }
+
+  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "reject" | "archive") {
+    if (!reviewingImportedFarmer) {
+      return;
+    }
+
+    setIsUpdatingFarmerReview(true);
+    setFarmerImportError("");
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        ids: [reviewingImportedFarmer.id],
+        notes: verificationReviewNotes
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+    setIsUpdatingFarmerReview(false);
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerImportError(result?.error ?? "Could not update this farmer review.");
+      return;
+    }
+
+    const nextStatus: ImportAdminStatus = action === "archive" ? "Archived" : action === "verify" ? "Active" : "Pending Review";
+    const nextVerification =
+      action === "verify" ? "Verified" : action === "reject" ? "Rejected" : action === "under-review" ? "Under Review" : reviewingImportedFarmer.verification_status;
+    const today = new Date().toISOString().slice(0, 10);
+    const updatedFarmer: ImportedFarmerRecord = {
+      ...reviewingImportedFarmer,
+      status: nextStatus,
+      verification_status: nextVerification,
+      verification_date: action === "verify" ? today : action === "archive" ? reviewingImportedFarmer.verification_date : null,
+      verified_by: action === "verify" ? currentAdmin.email : action === "archive" ? reviewingImportedFarmer.verified_by : null,
+      verification_notes: verificationReviewNotes
+    };
+
+    setImportedFarmers((current) => current.map((farmer) => (farmer.id === updatedFarmer.id ? updatedFarmer : farmer)));
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: current.farmers.map((row) =>
+        row.id === updatedFarmer.slug || row.id === updatedFarmer.id
+          ? { ...row, status: updatedFarmer.status, href: updatedFarmer.status === "Active" ? `/farmer-directory/${updatedFarmer.slug || updatedFarmer.id}` : undefined }
+          : row
+      )
+    }));
+    setNotice(`${updatedFarmer.farm_name} review updated.`);
     void loadActivity();
     void loadAnalytics();
   }
@@ -3128,14 +3271,6 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         </button>
                         <button
                           type="button"
-                          onClick={() => bulkUpdateImportedFarmers("verify")}
-                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
-                          className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Verify
-                        </button>
-                        <button
-                          type="button"
                           onClick={() => bulkUpdateImportedFarmers("founding")}
                           disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
                           className="rounded-md bg-earth-500 px-3 py-2 text-xs font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-50"
@@ -3164,6 +3299,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           <th className="px-5 py-4">Products</th>
                           <th className="px-5 py-4">Status</th>
                           <th className="px-5 py-4">Source</th>
+                          <th className="px-5 py-4">Review</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-leaf-900/10">
@@ -3195,6 +3331,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                               <p className="mt-2 text-xs font-semibold text-ink/45">Verification: {farmer.verification_status}</p>
                             </td>
                             <td className="px-5 py-4 text-ink/65">{farmer.source}</td>
+                            <td className="px-5 py-4">
+                              <button
+                                type="button"
+                                onClick={() => void openImportedFarmerReview(farmer)}
+                                className="inline-flex items-center gap-2 rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800"
+                              >
+                                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                                View
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -3650,7 +3796,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"} selected
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(["active", "pending-review", "under-review", "verified", "founding", "archive"] as FarmerBulkAction[]).map((action) => (
+                    {(["active", "pending-review", "under-review", "founding", "archive"] as FarmerBulkAction[]).map((action) => (
                       <button
                         key={action}
                         type="button"
@@ -3859,6 +4005,154 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   >
                     {isUpdatingFarmersBulk ? "Updating..." : "Confirm Update"}
                   </button>
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {reviewingImportedFarmer ? (
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/40 px-4 py-6 backdrop-blur-sm">
+              <section className="mx-auto max-w-5xl rounded-md bg-white shadow-2xl">
+                <div className="flex flex-col gap-4 border-b border-leaf-900/10 p-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-leaf-700">Farmer Verification Review</p>
+                    <h2 className="mt-2 text-2xl font-black text-ink">{reviewingImportedFarmer.farm_name}</h2>
+                    <p className="mt-1 text-sm font-semibold text-ink/58">
+                      {reviewingImportedFarmer.farmer_name || "Name not provided"} - {reviewingImportedFarmer.source || "Tally Import"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => previousImportedFarmer && void openImportedFarmerReview(previousImportedFarmer)}
+                      disabled={!previousImportedFarmer || isUpdatingFarmerReview}
+                      className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => nextImportedFarmer && void openImportedFarmerReview(nextImportedFarmer)}
+                      disabled={!nextImportedFarmer || isUpdatingFarmerReview}
+                      className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeImportedFarmerReview}
+                      className="rounded-md border border-leaf-900/10 px-3 py-2 text-xs font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr]">
+                  <div>
+                    <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                      {reviewingImportedFarmer.profile_image_url ? (
+                        <div
+                          role="img"
+                          aria-label={`${reviewingImportedFarmer.farm_name} photo`}
+                          className="h-full w-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${reviewingImportedFarmer.profile_image_url})` }}
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
+                          No farmer photo provided
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 rounded-md bg-leaf-50 p-4">
+                      <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current Status</p>
+                      <p className="mt-2 text-sm font-black text-ink">{reviewingImportedFarmer.status}</p>
+                      <p className="mt-1 text-sm font-semibold text-ink/60">Verification: {reviewingImportedFarmer.verification_status}</p>
+                      {reviewingImportedFarmer.verification_date ? (
+                        <p className="mt-1 text-xs font-semibold text-ink/50">Verified on {reviewingImportedFarmer.verification_date}</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {[
+                        ["Full Name", reviewingImportedFarmer.farmer_name],
+                        ["Farm Name", reviewingImportedFarmer.farm_name],
+                        ["Phone Number", reviewingImportedFarmer.whatsapp_number],
+                        ["WhatsApp Number", reviewingImportedFarmer.whatsapp_number],
+                        ["Email", "Not provided"],
+                        ["Farm Location", `${reviewingImportedFarmer.district}, ${reviewingImportedFarmer.region}`],
+                        ["Farm Size", reviewingImportedFarmer.farm_size],
+                        ["Crops/Livestock", reviewingImportedFarmer.products.join(", ")],
+                        ["Farming Experience", "Not provided"],
+                        ["Supply Frequency", "Not provided"],
+                        ["Delivery Preference", "Not provided"],
+                        ["Payment Preference", "Not provided"],
+                        ["Submission Date", reviewingImportedFarmer.created_at ? new Date(reviewingImportedFarmer.created_at).toLocaleDateString() : "Not provided"],
+                        ["Source", reviewingImportedFarmer.source || "Tally Import"]
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-md border border-leaf-900/10 bg-white p-4">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                          <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {reviewingImportedFarmer.description ? (
+                      <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Application Notes</p>
+                        <p className="mt-2 text-sm font-semibold leading-6 text-ink/70">{reviewingImportedFarmer.description}</p>
+                      </div>
+                    ) : null}
+
+                    <label htmlFor="farmer-verification-notes" className="grid gap-2 text-sm font-black text-ink">
+                      Verification Notes
+                      <textarea
+                        id="farmer-verification-notes"
+                        value={verificationReviewNotes}
+                        onChange={(event) => setVerificationReviewNotes(event.target.value)}
+                        rows={4}
+                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        placeholder="Add notes from the review before changing verification status."
+                      />
+                    </label>
+
+                    <div className="flex flex-col gap-3 rounded-md bg-leaf-50 p-4 sm:flex-row sm:flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("under-review")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Mark Under Review
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("verify")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Verify Farmer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("reject")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Reject Farmer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("archive")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Archive
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>
