@@ -17,7 +17,19 @@ type ExistingFarmer = {
   farm_type: string;
   products: string[] | null;
   farm_size: string | null;
+  phone_number?: string | null;
   whatsapp_number: string | null;
+  email?: string | null;
+  farm_location?: string | null;
+  farming_experience?: string | null;
+  currently_harvesting?: string | null;
+  supply_frequency?: string | null;
+  delivery_preference?: string | null;
+  payment_preference?: string | null;
+  workshop_interest?: string | null;
+  referral_source?: string | null;
+  tally_photo_url?: string | null;
+  original_tally_data?: Record<string, string> | null;
   status: string | null;
   verification_status: string | null;
   verification_date?: string | null;
@@ -37,7 +49,19 @@ type ImportableFarmer = {
   farm_type: string;
   products: string[];
   farm_size: string;
+  phone_number: string;
   whatsapp_number: string;
+  email: string;
+  farm_location: string;
+  farming_experience: string;
+  currently_harvesting: string;
+  supply_frequency: string;
+  delivery_preference: string;
+  payment_preference: string;
+  workshop_interest: string;
+  referral_source: string;
+  tally_photo_url: string;
+  original_tally_data: Record<string, string>;
   status: "Pending Review";
   verification_status: "Pending";
   source: "Tally Import";
@@ -51,11 +75,24 @@ const fieldLabels = {
   farmType: "Farm Type",
   products: "Products",
   farmSize: "Farm Size",
-  whatsappNumber: "Phone / WhatsApp Number"
+  phoneNumber: "Phone Number",
+  whatsappNumber: "WhatsApp Number",
+  email: "Email",
+  farmLocation: "Farm Location",
+  farmingExperience: "Farming Experience",
+  currentlyHarvesting: "Currently Harvesting",
+  supplyFrequency: "Supply Frequency",
+  deliveryPreference: "Delivery Preference",
+  paymentPreference: "Payment Preference",
+  workshopInterest: "Workshop/Event Interest",
+  referralSource: "How They Heard About Ghana Growers",
+  tallyPhotoUrl: "Tally Photo"
 } as const;
 type ImportFieldKey = keyof typeof fieldLabels;
 
-const requiredImportFields: ImportFieldKey[] = ["farmerName", "whatsappNumber"];
+const requiredImportFields: ImportFieldKey[] = ["farmerName"];
+const farmerReviewSelect =
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 
 const headerAliases: Record<ImportFieldKey, string[]> = {
   farmerName: [
@@ -98,9 +135,7 @@ const headerAliases: Record<ImportFieldKey, string[]> = {
     "farm produce"
   ],
   farmSize: ["farm size", "farm size acres", "acreage", "size of farm", "how large is your farm", "number of acres"],
-  whatsappNumber: [
-    "whatsapp",
-    "whatsapp number",
+  phoneNumber: [
     "phone",
     "phone number",
     "mobile number",
@@ -109,11 +144,25 @@ const headerAliases: Record<ImportFieldKey, string[]> = {
     "tel",
     "contact",
     "your phone number",
+    "mobile"
+  ],
+  whatsappNumber: [
+    "whatsapp",
+    "whatsapp number",
     "your whatsapp number",
-    "mobile",
     "phone whatsapp",
     "whatsapp phone number"
-  ]
+  ],
+  email: ["email", "email address", "e mail", "your email", "mail"],
+  farmLocation: ["farm location", "location", "community", "town village", "where is your farm", "farm address", "gps address"],
+  farmingExperience: ["farming experience", "years farming", "years of farming", "how long have you been farming", "experience"],
+  currentlyHarvesting: ["currently harvesting", "harvesting now", "what are you currently harvesting", "current harvest", "available now"],
+  supplyFrequency: ["supply frequency", "how often can you supply", "frequency", "supply capacity", "available frequency"],
+  deliveryPreference: ["delivery preference", "collection point", "delivery", "pickup", "collection point delivery", "delivery pickup"],
+  paymentPreference: ["payment preference", "preferred payment", "payment method", "how do you prefer to be paid"],
+  workshopInterest: ["workshop", "event interest", "training interest", "interested in workshop", "interested in events"],
+  referralSource: ["how did you hear", "heard about", "referral", "source", "how did you hear about ghana growers"],
+  tallyPhotoUrl: ["photo", "upload photo", "farmer photo", "farm photo", "image", "picture", "file upload"]
 };
 
 function parseCsv(text: string) {
@@ -182,6 +231,10 @@ function normalizePhone(value: string) {
   return digits;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function resolveFieldIndex(headers: string[], key: ImportFieldKey) {
   const aliases = headerAliases[key].map(normalizeHeader);
   const exactIndex = headers.findIndex((header) => aliases.includes(header));
@@ -204,6 +257,10 @@ function resolveFieldIndex(headers: string[], key: ImportFieldKey) {
 
   if (key === "whatsappNumber") {
     return headers.findIndex((header) => header.includes("phone") || header.includes("whatsapp") || header.includes("mobile") || header.includes("contact"));
+  }
+
+  if (key === "phoneNumber") {
+    return headers.findIndex((header) => header.includes("phone") || header.includes("mobile") || header.includes("contact") || header.includes("tel"));
   }
 
   if (key === "products") {
@@ -232,9 +289,13 @@ function csvHeaderInfo(rawHeaders: string[]) {
       ];
     })
   ) as Record<ImportFieldKey, { index: number; label: string; detectedHeader: string; normalizedHeader: string } | null>;
-  const missingRequiredFields = requiredImportFields
+  const missingRequiredFields: string[] = requiredImportFields
     .filter((key) => !mappings[key])
     .map((key) => fieldLabels[key]);
+
+  if (!mappings.phoneNumber && !mappings.whatsappNumber) {
+    missingRequiredFields.push("Phone Number or WhatsApp Number");
+  }
 
   return {
     rawHeaders,
@@ -275,6 +336,13 @@ function firstMissingRequiredValue(values: string[], headerInfo: ReturnType<type
     }
   }
 
+  const phone = valueFromRow(values, headerInfo, "phoneNumber");
+  const whatsapp = valueFromRow(values, headerInfo, "whatsappNumber");
+
+  if (!phone.trim() && !whatsapp.trim()) {
+    return "Phone Number or WhatsApp Number";
+  }
+
   return null;
 }
 
@@ -302,6 +370,8 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
   const farmerName = valueFromRow(values, headerInfo, "farmerName");
   const farmName = valueFromRow(values, headerInfo, "farmName") || (farmerName ? `${farmerName} Farm` : "");
   const products = normalizeProducts(valueFromRow(values, headerInfo, "products"));
+  const phoneNumber = normalizePhone(valueFromRow(values, headerInfo, "phoneNumber"));
+  const whatsappNumber = normalizePhone(valueFromRow(values, headerInfo, "whatsappNumber")) || phoneNumber;
 
   return {
     farmer_name: farmerName,
@@ -311,10 +381,30 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
     farm_type: valueFromRow(values, headerInfo, "farmType") || "Mixed",
     products,
     farm_size: valueFromRow(values, headerInfo, "farmSize") || "Not provided",
-    whatsapp_number: normalizePhone(valueFromRow(values, headerInfo, "whatsappNumber")),
+    phone_number: phoneNumber || whatsappNumber,
+    whatsapp_number: whatsappNumber,
+    email: valueFromRow(values, headerInfo, "email"),
+    farm_location: valueFromRow(values, headerInfo, "farmLocation"),
+    farming_experience: valueFromRow(values, headerInfo, "farmingExperience"),
+    currently_harvesting: valueFromRow(values, headerInfo, "currentlyHarvesting"),
+    supply_frequency: valueFromRow(values, headerInfo, "supplyFrequency"),
+    delivery_preference: valueFromRow(values, headerInfo, "deliveryPreference"),
+    payment_preference: valueFromRow(values, headerInfo, "paymentPreference"),
+    workshop_interest: valueFromRow(values, headerInfo, "workshopInterest"),
+    referral_source: valueFromRow(values, headerInfo, "referralSource"),
+    tally_photo_url: valueFromRow(values, headerInfo, "tallyPhotoUrl"),
+    original_tally_data: Object.fromEntries(headerInfo.rawHeaders.map((header, index) => [header, values[index]?.trim() ?? ""])),
     status: "Pending Review",
     verification_status: "Pending",
     source: "Tally Import"
+  };
+}
+
+function tallyDetailPayload(mapped: ImportableFarmer) {
+  return {
+    ...mapped,
+    profile_image_url: mapped.tally_photo_url || null,
+    description: null
   };
 }
 
@@ -329,7 +419,19 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     farm_type: record.farm_type,
     products: record.products ?? [],
     farm_size: record.farm_size ?? "",
+    phone_number: record.phone_number ?? record.whatsapp_number ?? "",
     whatsapp_number: record.whatsapp_number ?? "",
+    email: record.email ?? "",
+    farm_location: record.farm_location ?? "",
+    farming_experience: record.farming_experience ?? "",
+    currently_harvesting: record.currently_harvesting ?? "",
+    supply_frequency: record.supply_frequency ?? "",
+    delivery_preference: record.delivery_preference ?? "",
+    payment_preference: record.payment_preference ?? "",
+    workshop_interest: record.workshop_interest ?? "",
+    referral_source: record.referral_source ?? "",
+    tally_photo_url: record.tally_photo_url ?? "",
+    original_tally_data: record.original_tally_data ?? {},
     status: record.status ?? "Pending Review",
     verification_status: record.verification_status ?? "Pending",
     verification_date: record.verification_date ?? null,
@@ -343,9 +445,10 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
 }
 
 async function getImportedFarmerById(id: string) {
+  const filter = isUuid(id) ? `id=eq.${encodeURIComponent(id)}` : `slug=eq.${encodeURIComponent(id)}`;
   const farmers = await selectSupabaseRecords<ExistingFarmer>(
     "farmers",
-    `select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source&id=eq.${encodeURIComponent(id)}&limit=1`
+    `${farmerReviewSelect}&${filter}&limit=1`
   );
 
   if (farmers.error) {
@@ -370,7 +473,7 @@ export async function GET(request: Request) {
 
   const farmers = await selectSupabaseRecords<ExistingFarmer>(
     "farmers",
-    "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source&or=(source.eq.Tally%20Import,source.eq.Founding%20Farmer)&order=created_at.desc&limit=5000"
+    `${farmerReviewSelect}&or=(source.eq.Tally%20Import,source.eq.Founding%20Farmer)&order=created_at.desc&limit=5000`
   );
 
   if (farmers.error) {
@@ -481,7 +584,7 @@ export async function POST(request: Request) {
 
     const existingSamePhone = existingByPhone.get(mapped.whatsapp_number) ?? [];
     const signature = farmerSignature(mapped);
-    const exactExisting = existingSamePhone.some((farmer) => farmerSignature({
+    const exactExisting = existingSamePhone.find((farmer) => farmerSignature({
       farmer_name: farmer.farmer_name ?? "",
       farm_name: farmer.farm_name,
       region: farmer.region,
@@ -493,7 +596,17 @@ export async function POST(request: Request) {
     }) === signature);
 
     if (exactExisting) {
-      duplicates.push({ row: rowNumber, phone: mapped.whatsapp_number, reason: "Exact duplicate already exists." });
+      const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(exactExisting.id)}`, tallyDetailPayload(mapped));
+
+      if (update.error) {
+        errors.push({ row: rowNumber, message: "Existing farmer found, but full Tally details could not be updated." });
+      } else {
+        const record = update.data as ExistingFarmer | undefined;
+        if (record) {
+          imported.push(record);
+        }
+        duplicates.push({ row: rowNumber, phone: mapped.whatsapp_number, reason: "Existing farmer updated with full Tally details." });
+      }
       continue;
     }
 
@@ -521,13 +634,11 @@ export async function POST(request: Request) {
     }
 
     const insert = await insertSupabaseRecord("farmers", {
-      ...mapped,
+      ...tallyDetailPayload(mapped),
       slug: uniqueSlug.slug,
       verification_date: null,
       verified_by: null,
-      verification_notes: null,
-      profile_image_url: null,
-      description: null
+      verification_notes: null
     });
 
     if (insert.error) {
@@ -579,13 +690,13 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "verify" | "founding" | "reject" | "archive" | "view";
+    action?: "approve" | "under-review" | "verify" | "founding" | "reject" | "archive" | "notes" | "view";
     ids?: string[];
     notes?: string;
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "verify", "founding", "reject", "archive", "view"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "verify", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -612,6 +723,8 @@ export async function PATCH(request: Request) {
   const payload =
     body.action === "archive"
       ? { status: "Archived" }
+      : body.action === "notes"
+        ? { verification_notes: body.notes ?? "" }
       : body.action === "reject"
         ? { status: "Pending Review", verification_status: "Rejected", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
       : body.action === "under-review"
@@ -637,6 +750,8 @@ export async function PATCH(request: Request) {
       : body.action === "under-review"
         ? "Review"
       : body.action === "founding"
+        ? "Edit"
+      : body.action === "notes"
         ? "Edit"
         : "Approve";
 

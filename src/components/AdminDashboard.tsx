@@ -67,6 +67,8 @@ type AdminRow = {
   status: ImportAdminStatus;
   dateAdded: string;
   source?: string | null;
+  phone?: string;
+  products?: string;
   href?: string;
   verificationTarget?: {
     subject: VerificationSubject;
@@ -202,7 +204,19 @@ type ImportedFarmerRecord = {
   farm_type: string;
   products: string[];
   farm_size: string;
+  phone_number?: string;
   whatsapp_number: string;
+  email?: string;
+  farm_location?: string;
+  farming_experience?: string;
+  currently_harvesting?: string;
+  supply_frequency?: string;
+  delivery_preference?: string;
+  payment_preference?: string;
+  workshop_interest?: string;
+  referral_source?: string;
+  tally_photo_url?: string;
+  original_tally_data?: Record<string, string>;
   status: ImportAdminStatus;
   verification_status: string;
   verification_date?: string | null;
@@ -375,6 +389,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: farmer.region,
       status: statusFromTrust(farmer.trust?.status),
       dateAdded: "2026-06-07",
+      products: farmer.products.slice(0, 3).join(", "),
       href: `/farmer-directory/${farmer.slug}`,
       verificationTarget: { subject: "farmer" as const, recordId: farmer.slug }
     })),
@@ -944,6 +959,8 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     status: farmer.status,
     dateAdded: new Date().toISOString().slice(0, 10),
     source: farmer.source,
+    phone: farmer.phone_number || farmer.whatsapp_number,
+    products: farmer.products.slice(0, 3).join(", "),
     href: farmer.status === "Active" ? `/farmer-directory/${farmer.slug || farmer.id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: farmer.slug || farmer.id }
   };
@@ -1263,6 +1280,8 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     status,
     dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
     source: textValue(record, "source") || null,
+    phone: textValue(record, "phone_number") || textValue(record, "whatsapp_number"),
+    products: arrayValue(record, "products").slice(0, 3).join(", "),
     href: status === "Active" ? `/farmer-directory/${id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: id }
   };
@@ -2172,13 +2191,45 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     void loadActivity();
   }
 
+  async function openImportedFarmerReviewById(recordId: string) {
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "view",
+        ids: [recordId]
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
+
+    if (!response?.ok || !result?.farmer) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? "Could not open the full farmer application.");
+      return;
+    }
+
+    setImportedFarmers((current) => {
+      const exists = current.some((farmer) => farmer.id === result.farmer?.id);
+      return exists
+        ? current.map((farmer) => (farmer.id === result.farmer?.id ? result.farmer : farmer))
+        : [result.farmer as ImportedFarmerRecord, ...current];
+    });
+    setReviewingImportedFarmerId(result.farmer.id);
+    setVerificationReviewNotes(result.farmer.verification_notes ?? "");
+    void loadActivity();
+  }
+
   function closeImportedFarmerReview() {
     setReviewingImportedFarmerId(null);
     setVerificationReviewNotes("");
     setIsUpdatingFarmerReview(false);
   }
 
-  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "reject" | "archive") {
+  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "reject" | "archive" | "notes") {
     if (!reviewingImportedFarmer) {
       return;
     }
@@ -2207,16 +2258,23 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       return;
     }
 
-    const nextStatus: ImportAdminStatus = action === "archive" ? "Archived" : action === "verify" ? "Active" : "Pending Review";
+    const nextStatus: ImportAdminStatus =
+      action === "archive" ? "Archived" : action === "verify" ? "Active" : action === "notes" ? reviewingImportedFarmer.status : "Pending Review";
     const nextVerification =
-      action === "verify" ? "Verified" : action === "reject" ? "Rejected" : action === "under-review" ? "Under Review" : reviewingImportedFarmer.verification_status;
+      action === "verify"
+        ? "Verified"
+        : action === "reject"
+          ? "Rejected"
+          : action === "under-review"
+            ? "Under Review"
+            : reviewingImportedFarmer.verification_status;
     const today = new Date().toISOString().slice(0, 10);
     const updatedFarmer: ImportedFarmerRecord = {
       ...reviewingImportedFarmer,
       status: nextStatus,
       verification_status: nextVerification,
-      verification_date: action === "verify" ? today : action === "archive" ? reviewingImportedFarmer.verification_date : null,
-      verified_by: action === "verify" ? currentAdmin.email : action === "archive" ? reviewingImportedFarmer.verified_by : null,
+      verification_date: action === "verify" ? today : action === "archive" || action === "notes" ? reviewingImportedFarmer.verification_date : null,
+      verified_by: action === "verify" ? currentAdmin.email : action === "archive" || action === "notes" ? reviewingImportedFarmer.verified_by : null,
       verification_notes: verificationReviewNotes
     };
 
@@ -3994,6 +4052,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     ) : null}
                     <th className="px-5 py-4">Name/title</th>
                     <th className="px-5 py-4">Type/category</th>
+                    {activeSection === "farmers" ? <th className="px-5 py-4">Phone</th> : null}
+                    {activeSection === "farmers" ? <th className="px-5 py-4">Products</th> : null}
                     <th className="px-5 py-4">Region</th>
                     {activeSection === "farmers" ? <th className="px-5 py-4">Source</th> : null}
                     <th className="px-5 py-4">Status</th>
@@ -4017,6 +4077,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       ) : null}
                       <td className="px-5 py-4 font-black text-ink">{row.name}</td>
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
+                      {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.phone || "Not provided"}</td> : null}
+                      {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.products || "Not provided"}</td> : null}
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
                       {activeSection === "farmers" ? (
                         <td className="px-5 py-4 text-ink/65">
@@ -4031,7 +4093,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 text-ink/65">{row.dateAdded}</td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
-                          {row.href ? (
+                          {activeSection === "farmers" && row.source === "Tally Import" ? (
+                            <button
+                              type="button"
+                              onClick={() => void openImportedFarmerReviewById(row.id)}
+                              className="inline-flex items-center gap-1 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700 transition hover:bg-leaf-100"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                          ) : row.href ? (
                             <Link href={row.href} className="inline-flex items-center gap-1 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700 transition hover:bg-leaf-100">
                               <Eye className="h-3.5 w-3.5" />
                               {activeSection === "verifications" ? "Review" : "View"}
@@ -4042,7 +4113,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                               View
                             </button>
                           )}
-                          {row.verificationTarget ? (
+                          {row.verificationTarget && !(activeSection === "farmers" && row.source === "Tally Import") ? (
                             <>
                               <label className="grid min-w-[220px] flex-1 gap-1 text-xs font-black text-ink/60">
                                 Verification notes
@@ -4076,6 +4147,20 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                               >
                                 <Archive className="h-3.5 w-3.5" />
                                 Reject
+                              </button>
+                            </>
+                          ) : activeSection === "farmers" && row.source === "Tally Import" ? (
+                            <>
+                              <span className="inline-flex items-center rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">
+                                Verify in review
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => archiveAdminRow(row)}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                                Archive
                               </button>
                             </>
                           ) : (
@@ -4204,16 +4289,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr]">
                   <div>
                     <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
-                      {reviewingImportedFarmer.profile_image_url ? (
+                      {reviewingImportedFarmer.profile_image_url || reviewingImportedFarmer.tally_photo_url ? (
                         <div
                           role="img"
                           aria-label={`${reviewingImportedFarmer.farm_name} photo`}
                           className="h-full w-full bg-cover bg-center"
-                          style={{ backgroundImage: `url(${reviewingImportedFarmer.profile_image_url})` }}
+                          style={{ backgroundImage: `url(${reviewingImportedFarmer.profile_image_url || reviewingImportedFarmer.tally_photo_url})` }}
                         />
                       ) : (
                         <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
-                          No farmer photo provided
+                          No photo submitted.
                         </div>
                       )}
                     </div>
@@ -4228,29 +4313,64 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   </div>
 
                   <div className="grid gap-5">
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {[
-                        ["Full Name", reviewingImportedFarmer.farmer_name],
-                        ["Farm Name", reviewingImportedFarmer.farm_name],
-                        ["Phone Number", reviewingImportedFarmer.whatsapp_number],
-                        ["WhatsApp Number", reviewingImportedFarmer.whatsapp_number],
-                        ["Email", "Not provided"],
-                        ["Farm Location", `${reviewingImportedFarmer.district}, ${reviewingImportedFarmer.region}`],
-                        ["Farm Size", reviewingImportedFarmer.farm_size],
-                        ["Crops/Livestock", reviewingImportedFarmer.products.join(", ")],
-                        ["Farming Experience", "Not provided"],
-                        ["Supply Frequency", "Not provided"],
-                        ["Delivery Preference", "Not provided"],
-                        ["Payment Preference", "Not provided"],
-                        ["Submission Date", reviewingImportedFarmer.created_at ? new Date(reviewingImportedFarmer.created_at).toLocaleDateString() : "Not provided"],
-                        ["Source", reviewingImportedFarmer.source || "Tally Import"]
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-md border border-leaf-900/10 bg-white p-4">
-                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
-                          <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
-                        </div>
-                      ))}
-                    </div>
+                    <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Identity</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          ["Farmer Name", reviewingImportedFarmer.farmer_name],
+                          ["Farm Name", reviewingImportedFarmer.farm_name],
+                          ["Phone Number", reviewingImportedFarmer.phone_number || reviewingImportedFarmer.whatsapp_number],
+                          ["WhatsApp Number", reviewingImportedFarmer.whatsapp_number],
+                          ["Email", reviewingImportedFarmer.email],
+                          ["Source", reviewingImportedFarmer.source || "Tally Import"],
+                          ["Submission Date", reviewingImportedFarmer.created_at ? new Date(reviewingImportedFarmer.created_at).toLocaleDateString() : ""]
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-md bg-leaf-50 p-3">
+                            <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                            <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-earth-700">Farm Details</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          ["Farm Location", reviewingImportedFarmer.farm_location || `${reviewingImportedFarmer.district}, ${reviewingImportedFarmer.region}`],
+                          ["Region", reviewingImportedFarmer.region],
+                          ["District", reviewingImportedFarmer.district],
+                          ["Farm Size", reviewingImportedFarmer.farm_size],
+                          ["Farm Type", reviewingImportedFarmer.farm_type],
+                          ["Crops Grown / Livestock", reviewingImportedFarmer.products.join(", ")],
+                          ["Farming Experience", reviewingImportedFarmer.farming_experience],
+                          ["Currently Harvesting", reviewingImportedFarmer.currently_harvesting],
+                          ["Supply Frequency", reviewingImportedFarmer.supply_frequency]
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-md bg-leaf-50 p-3">
+                            <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                            <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                      <h3 className="text-sm font-black uppercase tracking-wide text-earth-700">Logistics & Preferences</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                          ["Collection Point / Delivery Preference", reviewingImportedFarmer.delivery_preference],
+                          ["Preferred Payment Method", reviewingImportedFarmer.payment_preference],
+                          ["Workshop/Event Interest", reviewingImportedFarmer.workshop_interest],
+                          ["How They Heard About Ghana Growers", reviewingImportedFarmer.referral_source]
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-md bg-leaf-50 p-3">
+                            <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                            <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
 
                     {reviewingImportedFarmer.description ? (
                       <div className="rounded-md border border-leaf-900/10 bg-white p-4">
@@ -4271,7 +4391,31 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       />
                     </label>
 
+                    {reviewingImportedFarmer.original_tally_data && Object.keys(reviewingImportedFarmer.original_tally_data).length > 0 ? (
+                      <details className="rounded-md border border-leaf-900/10 bg-white p-4">
+                        <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">
+                          Original Tally Submission Data
+                        </summary>
+                        <div className="mt-4 grid gap-2">
+                          {Object.entries(reviewingImportedFarmer.original_tally_data).map(([label, value]) => (
+                            <div key={label} className="rounded-md bg-leaf-50 px-3 py-2 text-sm">
+                              <p className="font-black text-ink">{label}</p>
+                              <p className="mt-1 break-words text-ink/65">{value || "Not provided"}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+
                     <div className="flex flex-col gap-3 rounded-md bg-leaf-50 p-4 sm:flex-row sm:flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("notes")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-ink/70 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Save Notes
+                      </button>
                       <button
                         type="button"
                         onClick={() => void applyImportedFarmerReviewAction("under-review")}
