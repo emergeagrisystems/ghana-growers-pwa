@@ -20,6 +20,7 @@ type SupabaseFarmer = {
   delivery_preference: string | null;
   payment_preference: string | null;
   tally_photo_url: string | null;
+  imported_photo_url: string | null;
   original_tally_data: Record<string, string> | null;
   verification_status: string | null;
   verification_date: string | null;
@@ -208,15 +209,44 @@ function firstUsableTallyPhoto(originalData?: Record<string, string> | null) {
   return photoEntry?.[1]?.trim() ?? "";
 }
 
+function allowDemoPublicData() {
+  return process.env.ENABLE_DEMO_PUBLIC_DATA === "true";
+}
+
+function isPublicDisplayableImageUrl(url?: string | null) {
+  if (!url?.trim()) {
+    return false;
+  }
+
+  if (url.startsWith("/")) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    if (host === "storage.tally.so" && path.includes("/private/")) {
+      return false;
+    }
+
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 function farmerPhotoUrls(row: SupabaseFarmer) {
   const urls = [
     row.profile_image_url,
-    row.tally_photo_url,
+    row.imported_photo_url,
+    isPublicDisplayableImageUrl(row.tally_photo_url) ? row.tally_photo_url : "",
     firstUsableTallyPhoto(row.original_tally_data),
     "/images/farmers/farmer-1.jpg"
   ];
 
-  return Array.from(new Set(urls.filter((url): url is string => Boolean(url?.trim()))));
+  return Array.from(new Set(urls.filter((url): url is string => isPublicDisplayableImageUrl(url))));
 }
 
 function locationLabel(district?: string | null, region?: string | null) {
@@ -228,8 +258,14 @@ function locationLabel(district?: string | null, region?: string | null) {
 }
 
 function farmerDescription(row: SupabaseFarmer, products: string[]) {
-  if (row.description?.trim()) {
-    return row.description;
+  const existingDescription = row.description?.trim();
+
+  if (
+    existingDescription &&
+    !/supplies\s+.+\s+from\s+.+\s+through the Ghana Growers network/i.test(existingDescription) &&
+    !/,\s*([^,.]+),\s*\1/i.test(existingDescription)
+  ) {
+    return existingDescription;
   }
 
   const name = row.farm_name || row.farmer_name || "This farmer";
@@ -385,7 +421,12 @@ function mapMarketPrice(row: SupabaseMarketPrice): MarketPrice {
 export async function getFarmersData() {
   const rows = await fetchRows<SupabaseFarmer>("farmers");
   const publicRows = rows.filter((row) => row.status === "Active");
-  return rows.length > 0 ? publicRows.map(mapFarmer) : fallbackFarmers;
+
+  if (rows.length > 0) {
+    return publicRows.map(mapFarmer);
+  }
+
+  return allowDemoPublicData() ? fallbackFarmers : [];
 }
 
 export async function getSuppliersData() {
@@ -395,7 +436,7 @@ export async function getSuppliersData() {
 
 export async function getMarketplaceListingsData() {
   const rows = await fetchRows<SupabaseListing>("marketplace_listings");
-  return rows.length > 0 ? rows.map(mapListing) : fallbackProducts;
+  return rows.length > 0 ? rows.map(mapListing) : allowDemoPublicData() ? fallbackProducts : [];
 }
 
 export async function getBuyerRequestsData() {

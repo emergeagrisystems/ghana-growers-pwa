@@ -24,6 +24,7 @@ create table if not exists public.farmers (
   whatsapp_number text,
   verification_status text not null default 'Pending Verification',
   profile_image_url text,
+  imported_photo_url text,
   description text,
   status text not null default 'Pending',
   created_at timestamptz not null default now(),

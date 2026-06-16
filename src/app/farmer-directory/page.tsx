@@ -14,6 +14,7 @@ export const metadata = {
 
 export default async function FarmerDirectoryPage() {
   const farmers = await getFarmersData();
+  const featuredFarmers = farmers.filter((farmer) => farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer").slice(0, 3);
 
   return (
     <>
@@ -31,8 +32,9 @@ export default async function FarmerDirectoryPage() {
       <FeaturedListings
         kinds={["farmers"]}
         title="Featured farmers"
-        description="Priority farmer profiles selected from the editable featured listings configuration."
+        description="Priority farmer profiles selected from active Ghana Growers farmers."
         background="leaf"
+        farmers={featuredFarmers}
       />
       <FarmerDirectory farmers={farmers} />
     </>

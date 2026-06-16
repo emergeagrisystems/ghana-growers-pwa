@@ -91,6 +91,12 @@ Marketplace listing ownership uses this migration:
 supabase/migrations/014_marketplace_listing_ownership.sql
 ```
 
+Imported Tally farmer photos use this migration:
+
+```text
+supabase/migrations/015_imported_farmer_photos.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -118,6 +124,12 @@ The marketplace listing ownership migration adds:
 - indexes for owner filtering and profile-linked listings
 
 Use `owner_type = 'Farmer'` and `owner_id = farmers.id` for farmer-owned marketplace listings. Supplier-owned records should use `owner_type = 'Supplier'`; Ghana Growers/admin-created records should use `owner_type = 'Admin'`.
+
+The imported farmer photos migration adds:
+
+- `farmers.imported_photo_url`
+
+During Tally CSV re-import, Ghana Growers tries to fetch the submitted Tally photo server-side and copy it into the Supabase Storage `farmers` bucket. If the Tally URL is private or unavailable, the original `tally_photo_url` remains available for admin review, while public pages safely use the normal fallback image.
 
 The verification workflow migration adds:
 

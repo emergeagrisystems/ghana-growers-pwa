@@ -1,7 +1,7 @@
 import { generateUniqueSlug, splitList } from "@/app/api/admin/records";
 import { requireAdminUser } from "@/lib/adminAuth";
 import { logAdminActivity } from "@/lib/adminActivity";
-import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
+import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord, uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -29,6 +29,7 @@ type ExistingFarmer = {
   workshop_interest?: string | null;
   referral_source?: string | null;
   tally_photo_url?: string | null;
+  imported_photo_url?: string | null;
   original_tally_data?: Record<string, string> | null;
   status: string | null;
   verification_status: string | null;
@@ -61,6 +62,7 @@ type ImportableFarmer = {
   workshop_interest: string;
   referral_source: string;
   tally_photo_url: string;
+  imported_photo_url?: string;
   original_tally_data: Record<string, string>;
   status: "Pending Review";
   verification_status: "Pending";
@@ -92,7 +94,7 @@ type ImportFieldKey = keyof typeof fieldLabels;
 
 const requiredImportFields: ImportFieldKey[] = ["farmerName"];
 const farmerReviewSelect =
-  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 
 const headerAliases: Record<ImportFieldKey, string[]> = {
   farmerName: [
@@ -400,10 +402,80 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
   };
 }
 
-function tallyDetailPayload(mapped: ImportableFarmer) {
+function publicTallyPhotoCandidate(url: string) {
+  if (!url.trim()) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    if (host === "storage.tally.so" && path.includes("/private/")) {
+      return "";
+    }
+
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? url : "";
+  } catch {
+    return "";
+  }
+}
+
+function safeStorageName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90) || "tally-farmer-photo";
+}
+
+async function importTallyPhoto(mapped: ImportableFarmer) {
+  if (!mapped.tally_photo_url) {
+    return "";
+  }
+
+  const response = await fetch(mapped.tally_photo_url, {
+    cache: "no-store"
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    return "";
+  }
+
+  const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "";
+
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
+    return "";
+  }
+
+  const body = await response.arrayBuffer().catch(() => null);
+
+  if (!body || body.byteLength === 0 || body.byteLength > 5 * 1024 * 1024) {
+    return "";
+  }
+
+  const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
+  const path = `tally-import/${new Date().toISOString().slice(0, 10)}/${Date.now()}-${safeStorageName(mapped.farm_name || mapped.farmer_name)}.${extension}`;
+  const upload = await uploadSupabaseStorageObject({
+    bucket: "farmers",
+    path,
+    contentType,
+    body
+  });
+
+  return upload.publicUrl ?? "";
+}
+
+async function tallyDetailPayload(mapped: ImportableFarmer) {
+  const importedPhotoUrl = await importTallyPhoto(mapped);
+  const publicTallyPhotoUrl = publicTallyPhotoCandidate(mapped.tally_photo_url);
+
   return {
     ...mapped,
-    profile_image_url: mapped.tally_photo_url || null,
+    imported_photo_url: importedPhotoUrl || null,
+    ...(importedPhotoUrl || publicTallyPhotoUrl ? { profile_image_url: importedPhotoUrl || publicTallyPhotoUrl } : {}),
     description: null
   };
 }
@@ -431,6 +503,7 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     workshop_interest: record.workshop_interest ?? "",
     referral_source: record.referral_source ?? "",
     tally_photo_url: record.tally_photo_url ?? "",
+    imported_photo_url: record.imported_photo_url ?? "",
     original_tally_data: record.original_tally_data ?? {},
     status: record.status ?? "Pending Review",
     verification_status: record.verification_status ?? "Pending",
@@ -596,7 +669,7 @@ export async function POST(request: Request) {
     }) === signature);
 
     if (exactExisting) {
-      const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(exactExisting.id)}`, tallyDetailPayload(mapped));
+      const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(exactExisting.id)}`, await tallyDetailPayload(mapped));
 
       if (update.error) {
         errors.push({ row: rowNumber, message: "Existing farmer found, but full Tally details could not be updated." });
@@ -634,7 +707,7 @@ export async function POST(request: Request) {
     }
 
     const insert = await insertSupabaseRecord("farmers", {
-      ...tallyDetailPayload(mapped),
+      ...(await tallyDetailPayload(mapped)),
       slug: uniqueSlug.slug,
       verification_date: null,
       verified_by: null,

@@ -223,6 +223,7 @@ type ImportedFarmerRecord = {
   workshop_interest?: string;
   referral_source?: string;
   tally_photo_url?: string;
+  imported_photo_url?: string;
   original_tally_data?: Record<string, string>;
   status: ImportAdminStatus;
   verification_status: string;
@@ -1010,9 +1011,35 @@ function reviewDebugFields(farmer: ImportedFarmerRecord) {
     workshop_interest: farmer.workshop_interest ?? null,
     referral_source: farmer.referral_source ?? null,
     profile_image_url: farmer.profile_image_url ?? null,
+    imported_photo_url: farmer.imported_photo_url ?? null,
     tally_photo_url: farmer.tally_photo_url ?? null,
     original_tally_data_keys: Object.keys(farmer.original_tally_data ?? {})
   };
+}
+
+function publicReviewPhotoUrl(farmer: ImportedFarmerRecord) {
+  const candidates = [farmer.profile_image_url, farmer.imported_photo_url, farmer.tally_photo_url];
+
+  return candidates.find((url) => {
+    if (!url?.trim()) {
+      return false;
+    }
+
+    if (url.startsWith("/")) {
+      return true;
+    }
+
+    try {
+      const parsed = new URL(url);
+      return !(parsed.hostname.toLowerCase() === "storage.tally.so" && parsed.pathname.toLowerCase().includes("/private/"));
+    } catch {
+      return false;
+    }
+  });
+}
+
+function photoSubmittedButNotImported(farmer: ImportedFarmerRecord) {
+  return Boolean(farmer.tally_photo_url && !farmer.profile_image_url && !farmer.imported_photo_url);
 }
 
 function verificationRowFromAdminRow(formId: AdminFormId, row: AdminRow): AdminRow | null {
@@ -4526,16 +4553,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr]">
                   <div>
                     <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
-                      {reviewingImportedFarmer.profile_image_url || reviewingImportedFarmer.tally_photo_url ? (
+                      {publicReviewPhotoUrl(reviewingImportedFarmer) ? (
                         <div
                           role="img"
                           aria-label={`${reviewingImportedFarmer.farm_name} photo`}
                           className="h-full w-full bg-cover bg-center"
-                          style={{ backgroundImage: `url(${reviewingImportedFarmer.profile_image_url || reviewingImportedFarmer.tally_photo_url})` }}
+                          style={{ backgroundImage: `url(${publicReviewPhotoUrl(reviewingImportedFarmer)})` }}
                         />
                       ) : (
                         <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
-                          No photo submitted.
+                          {photoSubmittedButNotImported(reviewingImportedFarmer) ? "Photo submitted but not imported." : "No photo submitted."}
                         </div>
                       )}
                     </div>
@@ -4660,14 +4687,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       </details>
                     ) : null}
 
-                    <details open className="rounded-md border border-earth-500/30 bg-earth-50 p-4">
-                      <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">
-                        Debug: Supabase Fields Returned
-                      </summary>
-                      <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-4 text-xs font-semibold leading-5 text-ink/70 ring-1 ring-earth-500/20">
-                        {JSON.stringify(farmerReviewDebug ?? reviewDebugFields(reviewingImportedFarmer), null, 2)}
-                      </pre>
-                    </details>
+                    {process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_ADMIN_DEBUG === "true" ? (
+                      <details className="rounded-md border border-earth-500/30 bg-earth-50 p-4">
+                        <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">
+                          Debug: Supabase Fields Returned
+                        </summary>
+                        <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-md bg-white p-4 text-xs font-semibold leading-5 text-ink/70 ring-1 ring-earth-500/20">
+                          {JSON.stringify(farmerReviewDebug ?? reviewDebugFields(reviewingImportedFarmer), null, 2)}
+                        </pre>
+                      </details>
+                    ) : null}
 
                     <div className="flex flex-col gap-3 rounded-md bg-leaf-50 p-4 sm:flex-row sm:flex-wrap">
                       <button
