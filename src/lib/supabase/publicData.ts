@@ -16,6 +16,10 @@ type SupabaseFarmer = {
   products: string[] | null;
   farm_size: string | null;
   whatsapp_number: string | null;
+  delivery_preference: string | null;
+  payment_preference: string | null;
+  tally_photo_url: string | null;
+  original_tally_data: Record<string, string> | null;
   verification_status: string | null;
   verification_date: string | null;
   verified_by: string | null;
@@ -187,6 +191,30 @@ function dateOnly(value?: string | null) {
   return value ? value.slice(0, 10) : new Date().toISOString().slice(0, 10);
 }
 
+function firstUsableTallyPhoto(originalData?: Record<string, string> | null) {
+  if (!originalData) {
+    return "";
+  }
+
+  const photoEntry = Object.entries(originalData).find(([label, value]) => {
+    const normalizedLabel = label.toLowerCase();
+    return Boolean(value?.trim()) && /(photo|image|picture|upload|file)/.test(normalizedLabel) && /^https?:\/\//i.test(value.trim());
+  });
+
+  return photoEntry?.[1]?.trim() ?? "";
+}
+
+function farmerPhotoUrls(row: SupabaseFarmer) {
+  const urls = [
+    row.profile_image_url,
+    row.tally_photo_url,
+    firstUsableTallyPhoto(row.original_tally_data),
+    "/images/farmers/farmer-1.jpg"
+  ];
+
+  return Array.from(new Set(urls.filter((url): url is string => Boolean(url?.trim()))));
+}
+
 function mapFarmer(row: SupabaseFarmer): FarmerProfile {
   const slug = row.slug ?? slugify(row.farm_name);
   const products = row.products?.length ? row.products : ["Produce"];
@@ -209,8 +237,9 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     harvestSeason: "Confirm current harvest timing with Ghana Growers.",
     capacityVolume: "Capacity available on request",
     availableQuantities: "Available quantities confirmed during inquiry",
-    deliveryOptions: ["Buyer pickup or delivery arranged through Ghana Growers"],
-    photos: [row.profile_image_url || "/images/farmers/farmer-1.jpg"],
+    deliveryOptions: [row.delivery_preference || "Not provided"],
+    paymentPreference: row.payment_preference || "Not provided",
+    photos: farmerPhotoUrls(row),
     verificationStatus,
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,

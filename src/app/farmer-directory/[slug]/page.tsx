@@ -92,7 +92,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
   const activeMarketplaceListings = marketplaceProducts.filter((listing) => listing.farmerSlug === farmer.slug);
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
-  const deliveryOption = farmer.deliveryOptions?.[0] ?? "Buyer pickup from farm or aggregation point";
+  const deliveryOption = farmer.deliveryOptions?.[0] ?? "Not provided";
+  const paymentPreference = farmer.paymentPreference ?? "Not provided";
   const productListings = farmer.products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => {
       const listingName = listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", "");
@@ -113,8 +114,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     { icon: CalendarDays, label: "Years Farming", value: farmer.yearsFarming ?? "Available on request" },
     { icon: Ruler, label: "Farm Size", value: farmer.farmSize },
     { icon: Clock3, label: "Supply Frequency", value: farmer.availabilityStatus },
-    { icon: Truck, label: "Collection Point Delivery", value: deliveryOption },
-    { icon: CreditCard, label: "Preferred Payment Method", value: "Confirm with farmer" }
+    { icon: Truck, label: "Delivery / Collection", value: deliveryOption },
+    { icon: CreditCard, label: "Payment Preference", value: paymentPreference }
   ];
 
   return (
@@ -291,6 +292,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                     <LocationRow label="District" value={farmer.district} />
                     <LocationRow label="Service area" value={`${farmer.district} and nearby buyer routes`} />
                     <LocationRow label="Delivery / pickup" value={deliveryOption} />
+                    <LocationRow label="Payment preference" value={paymentPreference} />
                   </div>
                 </div>
               </section>

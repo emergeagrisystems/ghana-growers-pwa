@@ -77,6 +77,7 @@ export type FarmerProfile = {
   capacityVolume: string;
   availableQuantities?: string;
   deliveryOptions?: string[];
+  paymentPreference?: string;
   photos: string[];
   verificationStatus: string;
   verificationDate?: string;
