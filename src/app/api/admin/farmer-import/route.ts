@@ -690,13 +690,13 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "verify" | "founding" | "reject" | "archive" | "notes" | "view";
+    action?: "approve" | "under-review" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view";
     ids?: string[];
     notes?: string;
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "verify", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "verify", "verify-only", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -733,6 +733,8 @@ export async function PATCH(request: Request) {
         ? { status: "Active", source: "Founding Farmer" }
       : body.action === "verify"
         ? { status: "Active", verification_status: "Verified", verification_date: now, verified_by: adminUser.email, verification_notes: body.notes ?? "" }
+      : body.action === "verify-only"
+        ? { verification_status: "Verified", verification_date: now, verified_by: adminUser.email, verification_notes: body.notes ?? "" }
         : { status: "Active", verification_status: "Pending", verification_date: null, verified_by: null };
   const update = await updateSupabaseRecord("farmers", filter, payload);
 
@@ -748,6 +750,8 @@ export async function PATCH(request: Request) {
     body.action === "archive"
       ? "Archive"
       : body.action === "verify"
+        ? "Verify"
+      : body.action === "verify-only"
         ? "Verify"
       : body.action === "reject"
         ? "Reject"
@@ -771,7 +775,9 @@ export async function PATCH(request: Request) {
   const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
   const message =
     body.action === "verify"
-      ? "Farmer verified successfully."
+      ? "Farmer verified and published successfully."
+      : body.action === "verify-only"
+        ? "Farmer verified successfully. Public visibility was not changed."
       : body.action === "under-review"
         ? "Farmer marked under review."
         : body.action === "reject"

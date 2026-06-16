@@ -314,7 +314,7 @@ function mapMarketPrice(row: SupabaseMarketPrice): MarketPrice {
 export async function getFarmersData() {
   const rows = await fetchRows<SupabaseFarmer>("farmers");
   const publicRows = rows.filter((row) => row.status === "Active");
-  return publicRows.length > 0 ? publicRows.map(mapFarmer) : fallbackFarmers;
+  return rows.length > 0 ? publicRows.map(mapFarmer) : fallbackFarmers;
 }
 
 export async function getSuppliersData() {

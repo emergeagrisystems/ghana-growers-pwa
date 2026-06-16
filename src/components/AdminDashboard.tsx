@@ -1470,7 +1470,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
-  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "verify" | "reject" | "archive" | "notes" | null>(null);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "verify" | "verify-only" | "reject" | "archive" | "notes" | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
@@ -2291,7 +2291,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setFarmerReviewDebug(null);
   }
 
-  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "reject" | "archive" | "notes") {
+  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "verify-only" | "reject" | "archive" | "notes") {
     if (!reviewingImportedFarmer) {
       return;
     }
@@ -2328,7 +2328,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     const updatedFarmer = result?.farmer ?? reviewingImportedFarmer;
     const successMessage =
       action === "verify"
-        ? "Farmer verified successfully."
+        ? "Farmer verified and published successfully."
+        : action === "verify-only"
+          ? "Farmer verified successfully. Public visibility was not changed."
         : action === "under-review"
           ? "Farmer marked under review."
           : action === "reject"
@@ -4472,8 +4474,24 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     </div>
                     <div className="mt-4 rounded-md bg-leaf-50 p-4">
                       <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current Status</p>
-                      <p className="mt-2 text-sm font-black text-ink">{reviewingImportedFarmer.status}</p>
-                      <p className="mt-1 text-sm font-semibold text-ink/60">Verification: {reviewingImportedFarmer.verification_status}</p>
+                      <div className="mt-3 grid gap-3">
+                        <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                          <p className="text-[11px] font-black uppercase tracking-wide text-ink/45">Public visibility</p>
+                          <p className="mt-1 text-sm font-black text-ink">
+                            {reviewingImportedFarmer.status === "Active" ? "Active" : "Not Public"}
+                          </p>
+                          <p className="mt-1 text-xs font-semibold text-ink/50">
+                            Only Active farmers appear in the public Farmer Directory.
+                          </p>
+                        </div>
+                        <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                          <p className="text-[11px] font-black uppercase tracking-wide text-ink/45">Verification</p>
+                          <p className="mt-1 text-sm font-black text-ink">{reviewingImportedFarmer.verification_status}</p>
+                          <p className="mt-1 text-xs font-semibold text-ink/50">
+                            Verification controls the public trust badge only.
+                          </p>
+                        </div>
+                      </div>
                       {reviewingImportedFarmer.verification_date ? (
                         <p className="mt-1 text-xs font-semibold text-ink/50">Verified on {reviewingImportedFarmer.verification_date}</p>
                       ) : null}
@@ -4603,11 +4621,19 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       </button>
                       <button
                         type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("verify-only")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingFarmerReviewAction === "verify-only" ? "Verifying..." : "Verify Only"}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => void applyImportedFarmerReviewAction("verify")}
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {pendingFarmerReviewAction === "verify" ? "Verifying..." : "Verify Farmer"}
+                        {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Verify & Publish"}
                       </button>
                       <button
                         type="button"
