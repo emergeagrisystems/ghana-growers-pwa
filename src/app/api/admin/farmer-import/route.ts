@@ -719,7 +719,7 @@ export async function PATCH(request: Request) {
   }
 
   const filter = `id=in.(${ids.map(encodeURIComponent).join(",")})`;
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
   const payload =
     body.action === "archive"
       ? { status: "Archived" }
@@ -732,12 +732,16 @@ export async function PATCH(request: Request) {
       : body.action === "founding"
         ? { status: "Active", source: "Founding Farmer" }
       : body.action === "verify"
-        ? { status: "Active", verification_status: "Verified", verification_date: today, verified_by: adminUser.email, verification_notes: body.notes ?? "" }
+        ? { status: "Active", verification_status: "Verified", verification_date: now, verified_by: adminUser.email, verification_notes: body.notes ?? "" }
         : { status: "Active", verification_status: "Pending", verification_date: null, verified_by: null };
   const update = await updateSupabaseRecord("farmers", filter, payload);
 
   if (update.error) {
     return NextResponse.json({ error: "Could not update imported farmers." }, { status: update.status });
+  }
+
+  if (!update.data) {
+    return NextResponse.json({ error: "No matching farmer record was updated." }, { status: 404 });
   }
 
   const actionType =
@@ -763,5 +767,20 @@ export async function PATCH(request: Request) {
     entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}${body.action === "founding" ? " assigned Founding Farmer" : ""}`
   });
 
-  return NextResponse.json({ ok: true, updated: ids.length });
+  const refreshedTarget = ids.length === 1 ? await getImportedFarmerById(ids[0]) : null;
+  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+  const message =
+    body.action === "verify"
+      ? "Farmer verified successfully."
+      : body.action === "under-review"
+        ? "Farmer marked under review."
+        : body.action === "reject"
+          ? "Farmer rejected."
+          : body.action === "archive"
+            ? "Farmer archived."
+            : body.action === "notes"
+              ? "Verification notes saved."
+              : "Farmer review updated.";
+
+  return NextResponse.json({ ok: true, updated: ids.length, farmer, message });
 }

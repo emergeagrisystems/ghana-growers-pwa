@@ -1470,6 +1470,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "verify" | "reject" | "archive" | "notes" | null>(null);
+  const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
@@ -2202,6 +2204,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setReviewingImportedFarmerId(farmer.id);
     setVerificationReviewNotes(farmer.verification_notes ?? "");
     setIsLoadingFarmerReview(true);
+    setFarmerReviewMessage(null);
     setFarmerReviewDebug(null);
 
     const response = await fetch("/api/admin/farmer-import", {
@@ -2242,6 +2245,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
   async function openImportedFarmerReviewById(recordId: string) {
     setIsLoadingFarmerReview(true);
+    setFarmerReviewMessage(null);
     setFarmerReviewDebug(null);
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
@@ -2261,6 +2265,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       }
 
       setNotice(result?.error ?? "Could not open the full farmer application.");
+      setFarmerReviewMessage({ type: "error", text: result?.error ?? "Could not open the full farmer application." });
       return;
     }
 
@@ -2280,6 +2285,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setReviewingImportedFarmerId(null);
     setVerificationReviewNotes("");
     setIsUpdatingFarmerReview(false);
+    setPendingFarmerReviewAction(null);
+    setFarmerReviewMessage(null);
     setIsLoadingFarmerReview(false);
     setFarmerReviewDebug(null);
   }
@@ -2290,6 +2297,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }
 
     setIsUpdatingFarmerReview(true);
+    setPendingFarmerReviewAction(action);
+    setFarmerReviewMessage(null);
     setFarmerImportError("");
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
@@ -2300,8 +2309,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
         notes: verificationReviewNotes
       })
     }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+    const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string; message?: string } | null;
     setIsUpdatingFarmerReview(false);
+    setPendingFarmerReviewAction(null);
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -2309,40 +2319,47 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
         return;
       }
 
-      setFarmerImportError(result?.error ?? "Could not update this farmer review.");
+      const errorMessage = result?.error ?? "Could not update this farmer review.";
+      setFarmerImportError(errorMessage);
+      setFarmerReviewMessage({ type: "error", text: errorMessage });
       return;
     }
 
-    const nextStatus: ImportAdminStatus =
-      action === "archive" ? "Archived" : action === "verify" ? "Active" : action === "notes" ? reviewingImportedFarmer.status : "Pending Review";
-    const nextVerification =
+    const updatedFarmer = result?.farmer ?? reviewingImportedFarmer;
+    const successMessage =
       action === "verify"
-        ? "Verified"
-        : action === "reject"
-          ? "Rejected"
-          : action === "under-review"
-            ? "Under Review"
-            : reviewingImportedFarmer.verification_status;
-    const today = new Date().toISOString().slice(0, 10);
-    const updatedFarmer: ImportedFarmerRecord = {
-      ...reviewingImportedFarmer,
-      status: nextStatus,
-      verification_status: nextVerification,
-      verification_date: action === "verify" ? today : action === "archive" || action === "notes" ? reviewingImportedFarmer.verification_date : null,
-      verified_by: action === "verify" ? currentAdmin.email : action === "archive" || action === "notes" ? reviewingImportedFarmer.verified_by : null,
-      verification_notes: verificationReviewNotes
-    };
+        ? "Farmer verified successfully."
+        : action === "under-review"
+          ? "Farmer marked under review."
+          : action === "reject"
+            ? "Farmer rejected."
+            : action === "archive"
+              ? "Farmer archived."
+              : "Verification notes saved.";
 
     setImportedFarmers((current) => current.map((farmer) => (farmer.id === updatedFarmer.id ? updatedFarmer : farmer)));
+    setReviewingImportedFarmerId(updatedFarmer.id);
+    setVerificationReviewNotes(updatedFarmer.verification_notes ?? "");
+    setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
     setRowsBySection((current) => ({
       ...current,
       farmers: current.farmers.map((row) =>
         row.id === updatedFarmer.slug || row.id === updatedFarmer.id
-          ? { ...row, status: updatedFarmer.status, href: updatedFarmer.status === "Active" ? `/farmer-directory/${updatedFarmer.slug || updatedFarmer.id}` : undefined }
+          ? {
+              ...row,
+              status: updatedFarmer.status,
+              phone: updatedFarmer.phone_number || updatedFarmer.whatsapp_number,
+              whatsapp: updatedFarmer.whatsapp_number,
+              farmSize: updatedFarmer.farm_size,
+              products: updatedFarmer.products.slice(0, 3).join(", "),
+              source: updatedFarmer.source,
+              href: updatedFarmer.status === "Active" ? `/farmer-directory/${updatedFarmer.slug || updatedFarmer.id}` : undefined
+            }
           : row
       )
     }));
-    setNotice(`${updatedFarmer.farm_name} review updated.`);
+    setFarmerReviewMessage({ type: "success", text: successMessage });
+    setNotice(successMessage);
     void loadActivity();
     void loadAnalytics();
   }
@@ -4424,6 +4441,19 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   </div>
                 </div>
 
+                {farmerReviewMessage ? (
+                  <div
+                    className={`mx-5 mt-5 rounded-md px-4 py-3 text-sm font-black ${
+                      farmerReviewMessage.type === "success"
+                        ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
+                        : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+                    }`}
+                    role={farmerReviewMessage.type === "error" ? "alert" : "status"}
+                  >
+                    {farmerReviewMessage.text}
+                  </div>
+                ) : null}
+
                 <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr]">
                   <div>
                     <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
@@ -4561,7 +4591,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-white px-4 py-3 text-sm font-black text-ink/70 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Save Notes
+                        {pendingFarmerReviewAction === "notes" ? "Saving..." : "Save Notes"}
                       </button>
                       <button
                         type="button"
@@ -4569,7 +4599,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Mark Under Review
+                        {pendingFarmerReviewAction === "under-review" ? "Updating..." : "Mark Under Review"}
                       </button>
                       <button
                         type="button"
@@ -4577,7 +4607,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Verify Farmer
+                        {pendingFarmerReviewAction === "verify" ? "Verifying..." : "Verify Farmer"}
                       </button>
                       <button
                         type="button"
@@ -4585,7 +4615,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Reject Farmer
+                        {pendingFarmerReviewAction === "reject" ? "Rejecting..." : "Reject Farmer"}
                       </button>
                       <button
                         type="button"
@@ -4593,7 +4623,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         disabled={isUpdatingFarmerReview}
                         className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Archive
+                        {pendingFarmerReviewAction === "archive" ? "Archiving..." : "Archive"}
                       </button>
                     </div>
                   </div>
