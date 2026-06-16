@@ -55,11 +55,37 @@ const PRODUCT_IMAGE_MAP: Record<string, string> = {
   fertilizer: "/images/marketplace/farm-inputs.jpg",
   fertilizers: "/images/marketplace/farm-inputs.jpg",
   "agro chemicals": "/images/marketplace/farm-inputs.jpg",
+  agrochemicals: "/images/marketplace/farm-inputs.jpg",
+  pesticide: "/images/marketplace/farm-inputs.jpg",
+  pesticides: "/images/marketplace/farm-inputs.jpg",
+  herbicide: "/images/marketplace/farm-inputs.jpg",
+  herbicides: "/images/marketplace/farm-inputs.jpg",
+  "organic compost": "/images/marketplace/farm-inputs.jpg",
+  compost: "/images/marketplace/farm-inputs.jpg",
+  "soil conditioner": "/images/marketplace/farm-inputs.jpg",
+  "animal feed": "/images/marketplace/farm-inputs.jpg",
+  "veterinary products": "/images/marketplace/farm-inputs.jpg",
+  "farm equipment": "/images/marketplace/farm-activity-2.jpg",
   "farm tools": "/images/marketplace/farm-inputs.jpg",
+  tools: "/images/marketplace/farm-inputs.jpg",
+  tractor: "/images/marketplace/farm-activity-2.jpg",
+  "tractor services": "/images/marketplace/farm-activity-2.jpg",
+  irrigation: "/images/marketplace/river-supply-chain.jpg",
+  "irrigation supplies": "/images/marketplace/river-supply-chain.jpg",
   crates: "/images/marketplace/produce-packaging.jpg",
+  packaging: "/images/marketplace/produce-packaging.jpg",
   sacks: "/images/marketplace/produce-packaging.jpg",
+  labels: "/images/marketplace/produce-packaging.jpg",
+  "storage bags": "/images/marketplace/produce-packaging.jpg",
   transport: "/images/marketplace/logistics-truck.jpg",
-  logistics: "/images/marketplace/logistics-truck.jpg"
+  logistics: "/images/marketplace/logistics-truck.jpg",
+  delivery: "/images/marketplace/logistics-truck.jpg",
+  "cold storage": "/images/marketplace/logistics-truck.jpg",
+  storage: "/images/marketplace/logistics-truck.jpg",
+  consulting: "/images/marketplace/farm-activity-2.jpg",
+  advisory: "/images/marketplace/farm-activity-2.jpg",
+  finance: "/images/suppliers/supplier-10.jpg",
+  credit: "/images/suppliers/supplier-10.jpg"
 };
 
 const CATEGORY_IMAGE_MAP: Record<string, string> = {
@@ -118,6 +144,19 @@ const DISPLAY_NAME_MAP: Record<string, string> = {
   vegetables: "Vegetables",
   fruits: "Fruits",
   livestock: "Livestock"
+};
+
+const SUPPLIER_CATEGORY_IMAGE_MAP: Record<string, string> = {
+  seeds: "/images/marketplace/farm-inputs.jpg",
+  fertilizers: "/images/marketplace/farm-inputs.jpg",
+  agrochemicals: "/images/marketplace/farm-inputs.jpg",
+  "farm equipment": "/images/marketplace/farm-activity-2.jpg",
+  "irrigation systems": "/images/marketplace/river-supply-chain.jpg",
+  packaging: "/images/marketplace/produce-packaging.jpg",
+  logistics: "/images/marketplace/logistics-truck.jpg",
+  storage: "/images/marketplace/logistics-truck.jpg",
+  "financial services": "/images/suppliers/supplier-10.jpg",
+  "agricultural consulting": "/images/marketplace/farm-activity-2.jpg"
 };
 
 function normalizeProductKey(value: string) {
@@ -188,4 +227,20 @@ export function productImageForListing(product: string, category?: string, exist
   }
 
   return productImageForName(product, category);
+}
+
+export function supplierServiceImageForName(service: string, category?: string, existingImage?: string | null) {
+  const categoryKey = normalizeProductKey(category ?? "");
+
+  if (existingImage && !existingImage.includes("/images/suppliers/supplier-")) {
+    return existingImage;
+  }
+
+  const serviceImage = productImageForName(service, category);
+
+  if (serviceImage !== "/images/marketplace/farm-activity-1.jpg") {
+    return serviceImage;
+  }
+
+  return SUPPLIER_CATEGORY_IMAGE_MAP[categoryKey] ?? existingImage ?? "/images/suppliers/supplier-1.jpg";
 }

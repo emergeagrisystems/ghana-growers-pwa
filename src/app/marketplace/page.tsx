@@ -3,7 +3,7 @@ import { MarketplaceListings } from "@/components/MarketplaceListings";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { productCategories } from "@/data/products";
-import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
+import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +14,10 @@ export const metadata = {
 };
 
 export default async function MarketplacePage() {
-  const [products, farmers, buyerRequests] = await Promise.all([
+  const [products, farmers, suppliers, buyerRequests] = await Promise.all([
     getMarketplaceListingsData(),
     getFarmersData(),
+    getSuppliersData(),
     getBuyerRequestsData()
   ]);
 
@@ -41,7 +42,7 @@ export default async function MarketplacePage() {
         </div>
       </section>
 
-      <MarketplaceListings products={products} farmers={farmers} buyerRequests={buyerRequests} />
+      <MarketplaceListings products={products} farmers={farmers} suppliers={suppliers} buyerRequests={buyerRequests} />
 
       <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

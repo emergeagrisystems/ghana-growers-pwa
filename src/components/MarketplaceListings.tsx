@@ -17,11 +17,12 @@ import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import { productImageForListing } from "@/lib/productDisplay";
-import type { FarmerProfile, Product } from "@/types";
+import type { FarmerProfile, Product, SupplierProfile } from "@/types";
 
 type MarketplaceListingsProps = {
   products: Product[];
   farmers?: FarmerProfile[];
+  suppliers?: SupplierProfile[];
   buyerRequests?: BuyerRequest[];
 };
 
@@ -122,21 +123,30 @@ function ListingCard({
   product,
   farmerBySlug,
   farmerById,
+  supplierById,
+  supplierBySlug,
   onViewDetails
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
   farmerById: Map<string, FarmerProfile>;
+  supplierById: Map<string, SupplierProfile>;
+  supplierBySlug: Map<string, SupplierProfile>;
   onViewDetails: (product: Product) => void;
 }) {
   const farmer = (product.ownerId ? farmerById.get(product.ownerId) : undefined) ?? (product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined);
+  const supplier = product.ownerType === "Supplier"
+    ? (product.ownerId ? supplierById.get(product.ownerId) : undefined) ?? supplierBySlug.get(product.ownerName?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ?? "")
+    : undefined;
   const productImage = productImageForListing(product.name, product.category, product.image);
+  const profileHref = farmer ? `/farmer-directory/${farmer.slug}` : supplier ? `/supplier-directory/${supplier.slug}` : "";
+  const sellerName = farmer?.farmName ?? supplier?.companyName ?? product.seller;
 
   return (
     <article className="group overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft">
       <div className="relative">
-        {farmer ? (
-          <Link href={`/farmer-directory/${farmer.slug}`} aria-label={`View ${farmer.farmName} profile`}>
+        {profileHref ? (
+          <Link href={profileHref} aria-label={`View ${sellerName} profile`}>
             <SafeImage
               src={productImage}
               alt={`${product.name} available in ${product.region}`}
@@ -170,9 +180,9 @@ function ListingCard({
         <div className="mt-3 grid gap-1.5 text-sm leading-6 text-ink/62">
           <p>{product.region}</p>
           <p>
-            {farmer ? (
-              <Link href={`/farmer-directory/${farmer.slug}`} className="font-black text-leaf-700 hover:text-leaf-800">
-                {farmer.farmName}
+            {profileHref ? (
+              <Link href={profileHref} className="font-black text-leaf-700 hover:text-leaf-800">
+                {sellerName}
               </Link>
             ) : (
               <span className="font-black text-ink/72">{product.seller}</span>
@@ -207,16 +217,23 @@ function ProductDetailsModal({
   product,
   farmerBySlug,
   farmerById,
+  supplierById,
+  supplierBySlug,
   products,
   onClose
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
   farmerById: Map<string, FarmerProfile>;
+  supplierById: Map<string, SupplierProfile>;
+  supplierBySlug: Map<string, SupplierProfile>;
   products: Product[];
   onClose: () => void;
 }) {
   const farmer = (product.ownerId ? farmerById.get(product.ownerId) : undefined) ?? (product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined);
+  const supplier = product.ownerType === "Supplier"
+    ? (product.ownerId ? supplierById.get(product.ownerId) : undefined) ?? supplierBySlug.get(product.ownerName?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ?? "")
+    : undefined;
   const productImage = productImageForListing(product.name, product.category, product.image);
   const relatedProducts = products
     .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
@@ -249,10 +266,15 @@ function ProductDetailsModal({
           <div>
             <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
             <div className="mt-5 grid gap-3 text-sm text-ink/68">
-              <Detail label="Seller" value={farmer?.farmName ?? product.seller} />
+              <Detail label="Seller" value={farmer?.farmName ?? supplier?.companyName ?? product.seller} />
               {farmer ? (
                 <Link href={`/farmer-directory/${farmer.slug}`} className="inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
                   View Farmer Profile
+                </Link>
+              ) : null}
+              {supplier ? (
+                <Link href={`/supplier-directory/${supplier.slug}`} className="inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
+                  View Supplier Profile
                 </Link>
               ) : null}
               <Detail label="Region" value={product.region} />
@@ -266,7 +288,7 @@ function ProductDetailsModal({
             <div className="mt-5">
               <RequestConnectionButton
                 label="Request Connection"
-                sourceType="Marketplace Listing"
+                sourceType={supplier ? "Supplier Listing" : "Marketplace Listing"}
                 sourceId={product.id}
                 sourceName={product.name}
                 productInterest={product.name}
@@ -318,7 +340,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MarketplaceListings({ products, farmers = farmerDirectory }: MarketplaceListingsProps) {
+export function MarketplaceListings({ products, farmers = farmerDirectory, suppliers = [] }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
@@ -365,6 +387,11 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
   const farmerById = useMemo(
     () => new Map(farmers.filter((farmer) => farmer.id).map((farmer) => [farmer.id as string, farmer])),
     [farmers]
+  );
+  const supplierBySlug = useMemo(() => new Map(suppliers.map((supplier) => [supplier.slug, supplier])), [suppliers]);
+  const supplierById = useMemo(
+    () => new Map(suppliers.filter((supplier) => supplier.id).map((supplier) => [supplier.id as string, supplier])),
+    [suppliers]
   );
 
   return (
@@ -432,7 +459,15 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
               {filteredProducts.length > 0 ? (
                 <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredProducts.map((product) => (
-                    <ListingCard key={product.id} product={product} farmerBySlug={farmerBySlug} farmerById={farmerById} onViewDetails={setSelectedProduct} />
+                    <ListingCard
+                      key={product.id}
+                      product={product}
+                      farmerBySlug={farmerBySlug}
+                      farmerById={farmerById}
+                      supplierBySlug={supplierBySlug}
+                      supplierById={supplierById}
+                      onViewDetails={setSelectedProduct}
+                    />
                   ))}
                 </div>
               ) : (
@@ -492,6 +527,8 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
           product={selectedProduct}
           farmerBySlug={farmerBySlug}
           farmerById={farmerById}
+          supplierBySlug={supplierBySlug}
+          supplierById={supplierById}
           products={products}
           onClose={() => setSelectedProduct(null)}
         />

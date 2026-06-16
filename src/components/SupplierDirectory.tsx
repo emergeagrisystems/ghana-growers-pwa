@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
-import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
-import { featuredListingLabels, isFeaturedSupplier } from "@/data/featuredListings";
 import { productCategories } from "@/data/products";
 import type { SupplierProfile } from "@/types";
 
@@ -143,9 +141,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
           {filteredSuppliers.map((supplier) => (
             <article
               key={supplier.slug}
-              className={`rounded-md bg-white p-5 shadow-soft ${
-                isFeaturedSupplier(supplier.slug) ? "border-2 border-earth-500" : "border border-leaf-900/10"
-              }`}
+              className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft"
             >
               {(() => {
                 const trust = normalizeTrust(supplier.trust);
@@ -153,11 +149,6 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
 
                 return (
                   <>
-              {isFeaturedSupplier(supplier.slug) ? (
-                <div className="mb-4">
-                  <FeaturedRibbon label={featuredListingLabels.suppliers} />
-                </div>
-              ) : null}
               <SafeImage
                 src={supplier.photos[0] ?? "/images/suppliers/supplier-1.jpg"}
                 alt={`${supplier.companyName} supplier photo`}

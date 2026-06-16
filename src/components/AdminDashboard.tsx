@@ -126,7 +126,7 @@ type LeadRequestRecord = {
   product_interest: string;
   quantity_needed: string | null;
   message: string | null;
-  source_type: "Farmer" | "Supplier" | "Marketplace Listing";
+  source_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Supplier Listing";
   source_id: string;
   source_name: string;
   source_page: string | null;

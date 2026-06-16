@@ -93,6 +93,7 @@ export type FarmerProfile = {
 };
 
 export type SupplierProfile = {
+  id?: string;
   slug: string;
   companyName: string;
   contactPerson: string;

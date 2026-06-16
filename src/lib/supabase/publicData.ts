@@ -3,7 +3,7 @@ import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
-import { cleanProductList, productDisplayName, productImageForName } from "@/lib/productDisplay";
+import { cleanProductList, productDisplayName, productImageForName, supplierServiceImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 type SupabaseFarmer = {
@@ -51,6 +51,8 @@ type SupabaseSupplier = {
   verified_by: string | null;
   verification_notes: string | null;
   logo_url: string | null;
+  profile_image_url?: string | null;
+  application_image_url?: string | null;
   status: string | null;
   created_at: string;
 };
@@ -287,6 +289,39 @@ function farmerDescription(row: SupabaseFarmer, products: string[]) {
   return `${name} is listed in the Ghana Growers farmer network. Buyers can request availability and quantity details through Ghana Growers.`;
 }
 
+function supplierImageUrls(row: SupabaseSupplier, services: string[]) {
+  const urls = [
+    row.logo_url,
+    row.profile_image_url,
+    row.application_image_url,
+    supplierServiceImageForName(services[0] ?? row.category, row.category),
+    "/images/suppliers/supplier-1.jpg"
+  ];
+
+  return Array.from(new Set(urls.filter((url): url is string => isPublicDisplayableImageUrl(url))));
+}
+
+function supplierDescription(row: SupabaseSupplier, services: string[]) {
+  const name = row.company_name || "This supplier";
+  const location = locationLabel(row.district, row.region);
+  const serviceText = services.length > 0 ? services.slice(0, 4).join(", ") : row.category;
+  const coverage = row.service_coverage_area?.trim();
+
+  if (serviceText && location) {
+    return `${name} is a Ghana Growers supplier based in ${location}, providing ${serviceText}. Farmers and buyers can request availability, delivery coverage, and service details through Ghana Growers.`;
+  }
+
+  if (serviceText) {
+    return `${name} provides ${serviceText} through the Ghana Growers network. Farmers and buyers can request availability and service details through Ghana Growers.`;
+  }
+
+  if (coverage) {
+    return `${name} supports farmers and buyers across ${coverage} through the Ghana Growers supplier network.`;
+  }
+
+  return `${name} is listed in the Ghana Growers supplier network. Farmers and buyers can request service details through Ghana Growers.`;
+}
+
 function mapFarmer(row: SupabaseFarmer): FarmerProfile {
   const slug = row.slug ?? slugify(row.farm_name);
   const products = cleanProductList(row.products?.length ? row.products : ["Produce"]);
@@ -325,8 +360,10 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
   const slug = row.slug ?? slugify(row.company_name);
   const services = row.products_services?.length ? row.products_services : [row.category];
   const verificationStatus = trustStatus(row.verification_status);
+  const overview = supplierDescription(row, services);
 
   return {
+    id: row.id,
     slug,
     companyName: row.company_name,
     contactPerson: row.contact_person,
@@ -334,10 +371,10 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     region: row.region,
     district: row.district,
     productsServices: services,
-    shortDescription: `${row.company_name} provides ${services.slice(0, 3).join(", ")} in ${row.region}.`,
-    companyOverview: `${row.company_name} supports Ghana Growers farmers and buyers with ${services.join(", ")} across ${row.service_coverage_area ?? row.region}.`,
+    shortDescription: `${row.company_name} provides ${services.slice(0, 3).join(", ")} for farmers and buyers in ${row.region}.`,
+    companyOverview: overview,
     serviceCoverageArea: row.service_coverage_area ?? `${row.district} and surrounding districts`,
-    photos: [row.logo_url || "/images/suppliers/supplier-1.jpg"],
+    photos: supplierImageUrls(row, services),
     website: row.website ?? undefined,
     phone: row.phone ?? row.whatsapp_number ?? "",
     verificationStatus,
@@ -431,7 +468,7 @@ export async function getFarmersData() {
 
 export async function getSuppliersData() {
   const rows = await fetchRows<SupabaseSupplier>("suppliers");
-  return rows.length > 0 ? rows.map(mapSupplier) : fallbackSuppliers;
+  return rows.length > 0 ? rows.map(mapSupplier) : allowDemoPublicData() ? fallbackSuppliers : [];
 }
 
 export async function getMarketplaceListingsData() {

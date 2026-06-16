@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
+import { supplierServiceImageForName } from "@/lib/productDisplay";
 import { getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 import type { Product, SupplierProfile } from "@/types";
 
@@ -54,40 +55,6 @@ function SupplierVerificationBadge({ status }: { status: string }) {
   );
 }
 
-function serviceImageFor(service: string, fallback: string) {
-  const lower = service.toLowerCase();
-
-  if (lower.includes("seed") || lower.includes("fertilizer") || lower.includes("agro") || lower.includes("input")) {
-    return "/images/marketplace/farm-inputs.jpg";
-  }
-
-  if (lower.includes("equipment") || lower.includes("tool") || lower.includes("machinery")) {
-    return "/images/marketplace/farm-activity-2.jpg";
-  }
-
-  if (lower.includes("irrigation")) {
-    return "/images/marketplace/river-supply-chain.jpg";
-  }
-
-  if (lower.includes("packaging") || lower.includes("crate") || lower.includes("sack") || lower.includes("bag")) {
-    return "/images/marketplace/produce-packaging.jpg";
-  }
-
-  if (lower.includes("logistics") || lower.includes("transport") || lower.includes("delivery") || lower.includes("storage")) {
-    return "/images/marketplace/logistics-truck.jpg";
-  }
-
-  if (lower.includes("finance") || lower.includes("credit")) {
-    return "/images/suppliers/supplier-10.jpg";
-  }
-
-  if (lower.includes("consult")) {
-    return "/images/farmers/farmer-5.jpg";
-  }
-
-  return fallback;
-}
-
 function websiteLabel(url?: string) {
   if (!url) {
     return "Available on request";
@@ -119,6 +86,18 @@ function deliverySupportFor(supplier: SupplierProfile) {
 }
 
 function listingMatchesSupplier(listing: Product, supplier: SupplierProfile) {
+  if (listing.ownerType === "Supplier") {
+    return Boolean(
+      (supplier.id && listing.ownerId === supplier.id) ||
+      listing.ownerName?.toLowerCase() === supplier.companyName.toLowerCase() ||
+      listing.seller.toLowerCase() === supplier.companyName.toLowerCase()
+    );
+  }
+
+  if (listing.ownerType) {
+    return false;
+  }
+
   const listingSeller = listing.seller.toLowerCase();
   const listingCategory = listing.category.toLowerCase();
   const supplierCategory = supplier.supplierCategory.toLowerCase();
@@ -151,15 +130,18 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
 
   const profileImage = supplier.photos[0] ?? "/images/suppliers/supplier-1.jpg";
   const deliverySupport = deliverySupportFor(supplier);
-  const relatedListings = marketplaceProducts.filter((listing) => listingMatchesSupplier(listing, supplier)).slice(0, 4);
+  const supplierListings = marketplaceProducts
+    .filter((listing) => listing.available !== "Sold Out" && listingMatchesSupplier(listing, supplier))
+    .slice(0, 6);
   const serviceCards = supplier.productsServices.slice(0, 8).map((service) => ({
     name: service,
-    image: serviceImageFor(service, profileImage)
+    image: supplierServiceImageForName(service, supplier.supplierCategory, profileImage)
   }));
 
   const snapshotItems = [
     { icon: Building2, label: "Supplier Category", value: supplier.supplierCategory },
     { icon: PackageCheck, label: "Main Products / Services", value: supplier.productsServices.slice(0, 3).join(", ") },
+    { icon: PackageCheck, label: "Active Listings", value: `${supplierListings.length}` },
     { icon: MapPin, label: "Service Area", value: supplier.serviceCoverageArea },
     { icon: Truck, label: "Delivery / Support", value: deliverySupport },
     { icon: ShieldCheck, label: "Verification Status", value: supplier.verificationStatus },
@@ -302,45 +284,63 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 <p className="mt-4 text-sm leading-7 text-ink/68">{supplier.companyOverview}</p>
               </section>
 
-              {relatedListings.length > 0 ? (
-                <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
-                      <h2 className="mt-2 text-2xl font-black text-ink">Related Marketplace Listings</h2>
+                      <h2 className="mt-2 text-2xl font-black text-ink">Products & Services Listed</h2>
                     </div>
                     <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
                       View Marketplace
                     </Link>
                   </div>
-                  <div className="mt-6 grid gap-4 md:grid-cols-2">
-                    {relatedListings.map((listing) => (
-                      <Link
-                        key={listing.id}
-                        href={`/marketplace/${listing.id}`}
-                        className="overflow-hidden rounded-md border border-leaf-900/10 bg-leaf-50 transition hover:border-leaf-700 hover:bg-white"
-                      >
-                        <SafeImage
-                          src={listing.image}
-                          alt={`${listing.name} marketplace listing`}
-                          width={420}
-                          height={240}
-                          fallbackKind="marketplace"
-                          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
-                          className="h-32 w-full object-cover"
-                        />
-                        <div className="p-4">
-                          <h3 className="font-black text-ink">{listing.name}</h3>
-                          <p className="mt-2 text-sm font-black text-leaf-700">
-                            {listing.quantity} {listing.unit}
-                          </p>
-                          <p className="mt-1 text-sm text-ink/58">{listing.region}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  {supplierListings.length > 0 ? (
+                    <div className="mt-6 grid gap-4 md:grid-cols-2">
+                      {supplierListings.map((listing) => (
+                        <article
+                          key={listing.id}
+                          className="overflow-hidden rounded-md border border-leaf-900/10 bg-leaf-50 transition hover:border-leaf-700 hover:bg-white"
+                        >
+                          <SafeImage
+                            src={listing.image}
+                            alt={`${listing.name} marketplace listing from ${supplier.companyName}`}
+                            width={420}
+                            height={240}
+                            fallbackKind="marketplace"
+                            sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
+                            className="h-32 w-full object-cover"
+                          />
+                          <div className="p-4">
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">{listing.category}</p>
+                            <h3 className="mt-1 font-black text-ink">{listing.name}</h3>
+                            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-xs font-black uppercase tracking-wide text-ink/40">Availability</p>
+                                <p className="mt-1 font-black text-leaf-700">{listing.available}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-black uppercase tracking-wide text-ink/40">Quantity</p>
+                                <p className="mt-1 font-black text-ink">{listing.quantity} {listing.unit}</p>
+                              </div>
+                            </div>
+                            <RequestConnectionButton
+                              label="Request Connection"
+                              sourceType="Supplier Listing"
+                              sourceId={listing.id}
+                              sourceName={`${supplier.companyName} - ${listing.name}`}
+                              productInterest={listing.name}
+                              className="mt-4 w-full"
+                            />
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-6 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-5 text-sm font-bold text-ink/62">
+                      No active marketplace listings yet.
+                    </div>
+                  )}
                 </section>
-              ) : null}
             </div>
 
             <aside className="grid content-start gap-5">

@@ -2,7 +2,7 @@ import { logAdminActivity } from "@/lib/adminActivity";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Closed";
-export type LeadRequestSourceType = "Farmer" | "Supplier" | "Marketplace Listing";
+export type LeadRequestSourceType = "Farmer" | "Supplier" | "Marketplace Listing" | "Supplier Listing";
 
 export type LeadRequestRecord = {
   id: string;
@@ -21,7 +21,7 @@ export type LeadRequestRecord = {
   status: LeadRequestStatus;
 };
 
-const allowedSourceTypes = new Set<LeadRequestSourceType>(["Farmer", "Supplier", "Marketplace Listing"]);
+const allowedSourceTypes = new Set<LeadRequestSourceType>(["Farmer", "Supplier", "Marketplace Listing", "Supplier Listing"]);
 const allowedStatuses = new Set<LeadRequestStatus>(["New", "Contacted", "Negotiating", "Closed"]);
 
 function clean(value: unknown, limit = 300) {
