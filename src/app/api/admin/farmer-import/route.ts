@@ -763,13 +763,13 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view";
+    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view";
     ids?: string[];
     notes?: string;
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "verify", "verify-only", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -802,6 +802,8 @@ export async function PATCH(request: Request) {
         ? { status: "Pending Review", verification_status: "Rejected", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
       : body.action === "under-review"
         ? { status: "Pending Review", verification_status: "Under Review", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
+      : body.action === "needs-follow-up"
+        ? { verification_status: "Needs Follow-up", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
       : body.action === "founding"
         ? { status: "Active", source: "Founding Farmer" }
       : body.action === "verify"
@@ -826,6 +828,8 @@ export async function PATCH(request: Request) {
         ? "Verify"
       : body.action === "verify-only"
         ? "Verify"
+      : body.action === "needs-follow-up"
+        ? "Review"
       : body.action === "reject"
         ? "Reject"
       : body.action === "under-review"
@@ -853,6 +857,8 @@ export async function PATCH(request: Request) {
         ? "Farmer verified successfully. Public visibility was not changed."
       : body.action === "under-review"
         ? "Farmer marked under review."
+        : body.action === "needs-follow-up"
+          ? "Farmer marked as needs follow-up."
         : body.action === "reject"
           ? "Farmer rejected."
           : body.action === "archive"

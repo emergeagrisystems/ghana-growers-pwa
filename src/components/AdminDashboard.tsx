@@ -37,7 +37,7 @@ import { supplierDirectory } from "@/data/suppliers";
 import type { AdminUser } from "@/lib/adminAuth";
 import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matching";
 
-type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived";
+type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up";
 type ImportAdminStatus = AdminStatus | "Pending Review";
 type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
@@ -66,12 +66,16 @@ type AdminRow = {
   type: string;
   region: string;
   status: ImportAdminStatus;
+  verificationStatus?: string;
   dateAdded: string;
   source?: string | null;
   phone?: string;
   whatsapp?: string;
   farmSize?: string;
   products?: string;
+  completenessPercent?: number;
+  completenessStatus?: string;
+  completenessTone?: string;
   ownerType?: "Farmer" | "Supplier" | "Admin" | string;
   ownerId?: string;
   ownerName?: string;
@@ -152,6 +156,7 @@ type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Conv
 type LaunchStatus = "Not Started" | "In Progress" | "Complete";
 type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
 type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
+type ProfileCompletenessFilter = "All" | "Ready to Publish" | "Needs Follow-up" | "Incomplete";
 type MarketplaceOwnerFilter = "All" | "Farmer" | "Supplier" | "Admin";
 type ApplicationRecord = {
   id: string;
@@ -296,6 +301,7 @@ const farmerBulkActionLabels: Record<FarmerBulkAction, string> = {
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
   "Under Review": "bg-leaf-50 text-leaf-700",
+  "Needs Follow-up": "bg-earth-50 text-earth-700",
   Verified: "bg-leaf-50 text-leaf-700",
   Rejected: "bg-tomato/10 text-tomato",
   Active: "bg-white text-leaf-700 ring-1 ring-leaf-900/10",
@@ -311,7 +317,7 @@ function statusFromTrust(status?: string): AdminStatus {
     return "Verified";
   }
 
-  if (status === "Under Review" || status === "Rejected" || status === "Pending") {
+  if (status === "Under Review" || status === "Rejected" || status === "Pending" || status === "Needs Follow-up") {
     return status;
   }
 
@@ -977,18 +983,24 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
 }
 
 function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
+  const completeness = farmerCompleteness(farmer);
+
   return {
     id: farmer.slug || farmer.id,
     name: farmer.farm_name || farmer.farmer_name,
     type: farmer.farm_type,
     region: farmer.region,
     status: farmer.status,
+    verificationStatus: farmer.verification_status,
     dateAdded: new Date().toISOString().slice(0, 10),
     source: farmer.source,
     phone: farmer.phone_number || farmer.whatsapp_number,
     whatsapp: farmer.whatsapp_number,
     farmSize: farmer.farm_size,
     products: farmer.products.slice(0, 3).join(", "),
+    completenessPercent: completeness.percent,
+    completenessStatus: completeness.status,
+    completenessTone: completeness.tone,
     href: farmer.status === "Active" ? `/farmer-directory/${farmer.slug || farmer.id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: farmer.slug || farmer.id }
   };
@@ -1040,6 +1052,62 @@ function publicReviewPhotoUrl(farmer: ImportedFarmerRecord) {
 
 function photoSubmittedButNotImported(farmer: ImportedFarmerRecord) {
   return Boolean(farmer.tally_photo_url && !farmer.profile_image_url && !farmer.imported_photo_url);
+}
+
+function hasReviewValue(value?: string | null) {
+  const normalized = value?.trim().toLowerCase();
+  return Boolean(normalized && !["not provided", "n/a", "na", "none", "ghana"].includes(normalized));
+}
+
+function farmerCompleteness(farmer: ImportedFarmerRecord) {
+  const checks = [
+    { label: "Farmer name", complete: hasReviewValue(farmer.farmer_name) },
+    { label: "Phone number", complete: hasReviewValue(farmer.phone_number) },
+    { label: "WhatsApp number", complete: hasReviewValue(farmer.whatsapp_number) },
+    { label: "Products/crops/livestock", complete: farmer.products.length > 0 },
+    { label: "Region", complete: hasReviewValue(farmer.region) },
+    { label: "District", complete: hasReviewValue(farmer.district) },
+    { label: "Farm size", complete: hasReviewValue(farmer.farm_size) },
+    { label: "Farm type", complete: hasReviewValue(farmer.farm_type) },
+    { label: "Farming experience", complete: hasReviewValue(farmer.farming_experience) },
+    { label: "Supply frequency", complete: hasReviewValue(farmer.supply_frequency) },
+    { label: "Delivery preference", complete: hasReviewValue(farmer.delivery_preference) },
+    { label: "Payment preference", complete: hasReviewValue(farmer.payment_preference) },
+    { label: "Farm photo", complete: Boolean(publicReviewPhotoUrl(farmer) || farmer.tally_photo_url) }
+  ];
+  const completeCount = checks.filter((check) => check.complete).length;
+  const percent = Math.round((completeCount / checks.length) * 100);
+  const status = percent >= 80 ? "Ready to Publish" : percent >= 50 ? "Needs Follow-up" : "Incomplete";
+  const tone = percent >= 80 ? "ready" : percent >= 50 ? "follow-up" : "incomplete";
+
+  return {
+    percent,
+    status,
+    tone,
+    missing: checks.filter((check) => !check.complete).map((check) => check.label)
+  };
+}
+
+function followUpMessageForFarmer(farmer: ImportedFarmerRecord) {
+  const completeness = farmerCompleteness(farmer);
+  const missingList = completeness.missing.length
+    ? completeness.missing.map((item) => `- ${item}`).join("\n")
+    : "- Any updated farm profile details";
+  const name = farmer.farmer_name || farmer.farm_name || "Farmer";
+
+  return `Hello ${name}, thank you for registering with Ghana Growers. We are reviewing your farmer profile and need a few details before publishing it.\n\nPlease send:\n${missingList}\n\nThank you.`;
+}
+
+function completenessBadgeClasses(tone: string) {
+  if (tone === "ready") {
+    return "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15";
+  }
+
+  if (tone === "follow-up") {
+    return "bg-earth-50 text-earth-700 ring-1 ring-earth-500/20";
+  }
+
+  return "bg-tomato/10 text-tomato ring-1 ring-tomato/20";
 }
 
 function verificationRowFromAdminRow(formId: AdminFormId, row: AdminRow): AdminRow | null {
@@ -1490,6 +1558,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
+  const [profileCompletenessFilter, setProfileCompletenessFilter] = useState<ProfileCompletenessFilter>("All");
   const [marketplaceOwnerFilter, setMarketplaceOwnerFilter] = useState<MarketplaceOwnerFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
   const [expandedFarmerRowIds, setExpandedFarmerRowIds] = useState<string[]>([]);
@@ -1541,7 +1610,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
-  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "verify" | "verify-only" | "reject" | "archive" | "notes" | null>(null);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
@@ -1883,23 +1952,27 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     const query = searchTerm.trim().toLowerCase();
     const matchesSearch =
       !query ||
-      [row.name, row.type, row.region, row.status, row.source ?? "", row.ownerType ?? "", row.ownerName ?? "", row.dateAdded]
+      [row.name, row.type, row.region, row.status, row.verificationStatus ?? "", row.source ?? "", row.ownerType ?? "", row.ownerName ?? "", row.dateAdded]
         .join(" ")
         .toLowerCase()
         .includes(query);
-    const matchesStatus = statusFilter === "All" || row.status === statusFilter;
+    const matchesStatus = statusFilter === "All" || row.status === statusFilter || row.verificationStatus === statusFilter;
     const matchesFarmerSource =
       activeSection !== "farmers" ||
       farmerSourceFilter === "All" ||
       (farmerSourceFilter === "Tally Import" && row.source === "Tally Import") ||
       (farmerSourceFilter === "Founding Farmer" && row.source === "Founding Farmer") ||
       (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import" && row.source !== "Founding Farmer");
+    const matchesCompleteness =
+      activeSection !== "farmers" ||
+      profileCompletenessFilter === "All" ||
+      row.completenessStatus === profileCompletenessFilter;
     const matchesMarketplaceOwner =
       activeSection !== "marketplace" ||
       marketplaceOwnerFilter === "All" ||
       row.ownerType === marketplaceOwnerFilter;
 
-    return matchesSearch && matchesStatus && matchesFarmerSource && matchesMarketplaceOwner;
+    return matchesSearch && matchesStatus && matchesFarmerSource && matchesCompleteness && matchesMarketplaceOwner;
   });
   const visibleFarmerRowIds = activeSection === "farmers" ? filteredRows.map((row) => row.id) : [];
   const selectedVisibleFarmerCount = visibleFarmerRowIds.filter((id) => selectedFarmerRowIds.includes(id)).length;
@@ -1911,6 +1984,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     reviewingImportedFarmerIndex !== -1 && reviewingImportedFarmerIndex < importedFarmers.length - 1
       ? importedFarmers[reviewingImportedFarmerIndex + 1]
       : null;
+  const reviewingCompleteness = reviewingImportedFarmer ? farmerCompleteness(reviewingImportedFarmer) : null;
+  const reviewingFollowUpMessage = reviewingImportedFarmer ? followUpMessageForFarmer(reviewingImportedFarmer) : "";
+  const reviewingWhatsappUrl =
+    reviewingImportedFarmer?.whatsapp_number
+      ? `https://wa.me/${reviewingImportedFarmer.whatsapp_number.replace(/\D+/g, "")}?text=${encodeURIComponent(reviewingFollowUpMessage)}`
+      : "";
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
@@ -2369,7 +2448,18 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setFarmerReviewDebug(null);
   }
 
-  async function applyImportedFarmerReviewAction(action: "under-review" | "verify" | "verify-only" | "reject" | "archive" | "notes") {
+  async function copyFollowUpMessage() {
+    if (!reviewingFollowUpMessage) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(reviewingFollowUpMessage).then(
+      () => setFarmerReviewMessage({ type: "success", text: "Follow-up message copied." }),
+      () => setFarmerReviewMessage({ type: "error", text: "Could not copy the follow-up message." })
+    );
+  }
+
+  async function applyImportedFarmerReviewAction(action: "under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes") {
     if (!reviewingImportedFarmer) {
       return;
     }
@@ -2411,6 +2501,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
           ? "Farmer verified successfully. Public visibility was not changed."
         : action === "under-review"
           ? "Farmer marked under review."
+          : action === "needs-follow-up"
+            ? "Farmer marked as needs follow-up."
           : action === "reject"
             ? "Farmer rejected."
             : action === "archive"
@@ -2425,16 +2517,24 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       ...current,
       farmers: current.farmers.map((row) =>
         row.id === updatedFarmer.slug || row.id === updatedFarmer.id
-          ? {
-              ...row,
-              status: updatedFarmer.status,
-              phone: updatedFarmer.phone_number || updatedFarmer.whatsapp_number,
-              whatsapp: updatedFarmer.whatsapp_number,
-              farmSize: updatedFarmer.farm_size,
-              products: updatedFarmer.products.slice(0, 3).join(", "),
-              source: updatedFarmer.source,
-              href: updatedFarmer.status === "Active" ? `/farmer-directory/${updatedFarmer.slug || updatedFarmer.id}` : undefined
-            }
+          ? (() => {
+              const completeness = farmerCompleteness(updatedFarmer);
+
+              return {
+                ...row,
+                status: updatedFarmer.status,
+                verificationStatus: updatedFarmer.verification_status,
+                phone: updatedFarmer.phone_number || updatedFarmer.whatsapp_number,
+                whatsapp: updatedFarmer.whatsapp_number,
+                farmSize: updatedFarmer.farm_size,
+                products: updatedFarmer.products.slice(0, 3).join(", "),
+                source: updatedFarmer.source,
+                completenessPercent: completeness.percent,
+                completenessStatus: completeness.status,
+                completenessTone: completeness.tone,
+                href: updatedFarmer.status === "Active" ? `/farmer-directory/${updatedFarmer.slug || updatedFarmer.id}` : undefined
+              };
+            })()
           : row
       )
     }));
@@ -3136,6 +3236,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     <option value="Pending">Pending</option>
                     <option value="Pending Review">Pending Review</option>
                     <option value="Under Review">Under Review</option>
+                    <option value="Needs Follow-up">Needs Follow-up</option>
                     <option value="Verified">Verified</option>
                     <option value="Rejected">Rejected</option>
                     <option value="Active">Active</option>
@@ -3152,6 +3253,16 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         <option value="Tally Import">Tally Import</option>
                         <option value="Founding Farmer">Founding Farmers</option>
                         <option value="Manual/Test">Manual/Test</option>
+                      </select>
+                      <select
+                        value={profileCompletenessFilter}
+                        onChange={(event) => setProfileCompletenessFilter(event.target.value as ProfileCompletenessFilter)}
+                        className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        <option value="All">All completeness</option>
+                        <option value="Ready to Publish">Ready to Publish</option>
+                        <option value="Needs Follow-up">Needs Follow-up</option>
+                        <option value="Incomplete">Incomplete</option>
                       </select>
                       <button
                         type="button"
@@ -3608,7 +3719,10 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-leaf-900/10">
-                        {importedFarmers.map((farmer) => (
+                        {importedFarmers.map((farmer) => {
+                          const completeness = farmerCompleteness(farmer);
+
+                          return (
                           <tr key={farmer.id} className="align-top">
                             <td className="px-5 py-4">
                               <input
@@ -3625,6 +3739,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                             <td className="px-5 py-4">
                               <p className="font-black text-ink">{farmer.farm_name}</p>
                               <p className="mt-1 text-xs font-semibold text-ink/50">{farmer.farmer_name}</p>
+                              <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${completenessBadgeClasses(completeness.tone)}`}>
+                                {completeness.percent}% {completeness.status === "Ready to Publish" ? "Ready" : completeness.status === "Needs Follow-up" ? "Follow-up" : "Incomplete"}
+                              </span>
                             </td>
                             <td className="px-5 py-4 text-ink/65">{farmer.whatsapp_number}</td>
                             <td className="px-5 py-4 text-ink/65">{farmer.district}, {farmer.region}</td>
@@ -3647,7 +3764,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -4280,7 +4398,14 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           </div>
                         </td>
                       ) : null}
-                      <td className="px-5 py-4 font-black text-ink">{row.name}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-black text-ink">{row.name}</p>
+                        {activeSection === "farmers" && typeof row.completenessPercent === "number" ? (
+                          <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${completenessBadgeClasses(row.completenessTone ?? "incomplete")}`}>
+                            {row.completenessPercent}% {row.completenessStatus === "Ready to Publish" ? "Ready" : row.completenessStatus === "Needs Follow-up" ? "Follow-up" : "Incomplete"}
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.phone || "Not provided"}</td> : null}
                       {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.products || "Not provided"}</td> : null}
@@ -4590,6 +4715,35 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         <p className="mt-1 text-xs font-semibold text-ink/50">Verified on {reviewingImportedFarmer.verification_date}</p>
                       ) : null}
                     </div>
+                    {reviewingCompleteness ? (
+                      <div className="mt-4 rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Profile Completeness</p>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-3xl font-black text-ink">{reviewingCompleteness.percent}%</p>
+                          <span className={`rounded-full px-3 py-1 text-xs font-black ${completenessBadgeClasses(reviewingCompleteness.tone)}`}>
+                            {reviewingCompleteness.status}
+                          </span>
+                        </div>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-leaf-50">
+                          <div
+                            className={`h-full rounded-full ${reviewingCompleteness.tone === "ready" ? "bg-leaf-700" : reviewingCompleteness.tone === "follow-up" ? "bg-earth-500" : "bg-tomato"}`}
+                            style={{ width: `${reviewingCompleteness.percent}%` }}
+                          />
+                        </div>
+                        {reviewingCompleteness.missing.length > 0 ? (
+                          <div className="mt-4">
+                            <p className="text-xs font-black uppercase tracking-wide text-ink/45">Missing</p>
+                            <ul className="mt-2 grid gap-1 text-sm font-semibold text-ink/65">
+                              {reviewingCompleteness.missing.map((item) => (
+                                <li key={item}>- {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <p className="mt-4 text-sm font-semibold text-leaf-800">No major profile gaps found.</p>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-5">
@@ -4671,6 +4825,41 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       />
                     </label>
 
+                    {reviewingCompleteness && reviewingCompleteness.missing.length > 0 ? (
+                      <section className="rounded-md border border-earth-500/20 bg-earth-50 p-4">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <h3 className="text-sm font-black uppercase tracking-wide text-earth-700">Follow-up Message</h3>
+                            <p className="mt-2 text-sm font-semibold leading-6 text-ink/65">
+                              Use this when a profile needs missing details before publishing.
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <button
+                              type="button"
+                              onClick={() => void copyFollowUpMessage()}
+                              className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/70 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                            >
+                              Copy Follow-up Message
+                            </button>
+                            {reviewingWhatsappUrl ? (
+                              <a
+                                href={reviewingWhatsappUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-md bg-leaf-700 px-3 py-2 text-center text-xs font-black text-white transition hover:bg-leaf-800"
+                              >
+                                Open WhatsApp
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                        <pre className="mt-4 whitespace-pre-wrap rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70 ring-1 ring-earth-500/20">
+                          {reviewingFollowUpMessage}
+                        </pre>
+                      </section>
+                    ) : null}
+
                     {reviewingImportedFarmer.original_tally_data && Object.keys(reviewingImportedFarmer.original_tally_data).length > 0 ? (
                       <details className="rounded-md border border-leaf-900/10 bg-white p-4">
                         <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">
@@ -4714,6 +4903,14 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {pendingFarmerReviewAction === "under-review" ? "Updating..." : "Mark Under Review"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-500 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingFarmerReviewAction === "needs-follow-up" ? "Updating..." : "Needs Follow-up"}
                       </button>
                       <button
                         type="button"
