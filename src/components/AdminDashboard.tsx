@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   BookOpen,
   ChartLine,
+  ChevronDown,
   CircleDashed,
   ClipboardCheck,
   Clock3,
@@ -25,7 +26,7 @@ import {
   UploadCloud,
   UsersRound
 } from "lucide-react";
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import learnArticles from "@/data/learnArticles.json";
@@ -68,6 +69,8 @@ type AdminRow = {
   dateAdded: string;
   source?: string | null;
   phone?: string;
+  whatsapp?: string;
+  farmSize?: string;
   products?: string;
   href?: string;
   verificationTarget?: {
@@ -390,6 +393,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       status: statusFromTrust(farmer.trust?.status),
       dateAdded: "2026-06-07",
       products: farmer.products.slice(0, 3).join(", "),
+      farmSize: farmer.farmSize,
       href: `/farmer-directory/${farmer.slug}`,
       verificationTarget: { subject: "farmer" as const, recordId: farmer.slug }
     })),
@@ -960,6 +964,8 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     dateAdded: new Date().toISOString().slice(0, 10),
     source: farmer.source,
     phone: farmer.phone_number || farmer.whatsapp_number,
+    whatsapp: farmer.whatsapp_number,
+    farmSize: farmer.farm_size,
     products: farmer.products.slice(0, 3).join(", "),
     href: farmer.status === "Active" ? `/farmer-directory/${farmer.slug || farmer.id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: farmer.slug || farmer.id }
@@ -1303,6 +1309,8 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
     source: textValue(record, "source") || null,
     phone: textValue(record, "phone_number") || textValue(record, "whatsapp_number"),
+    whatsapp: textValue(record, "whatsapp_number"),
+    farmSize: textValue(record, "farm_size"),
     products: arrayValue(record, "products").slice(0, 3).join(", "),
     href: status === "Active" ? `/farmer-directory/${id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: id }
@@ -1413,6 +1421,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
+  const [expandedFarmerRowIds, setExpandedFarmerRowIds] = useState<string[]>([]);
   const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
   const [isUpdatingFarmersBulk, setIsUpdatingFarmersBulk] = useState(false);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ImportAdminStatus>>({});
@@ -1956,6 +1965,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   function toggleFarmerSelection(rowId: string, checked: boolean) {
     setSelectedFarmerRowIds((current) =>
       checked ? Array.from(new Set([...current, rowId])) : current.filter((id) => id !== rowId)
+    );
+  }
+
+  function toggleExpandedFarmerRow(rowId: string) {
+    setExpandedFarmerRowIds((current) =>
+      current.includes(rowId) ? current.filter((id) => id !== rowId) : [...current, rowId]
     );
   }
 
@@ -4074,6 +4089,11 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 </div>
               </div>
             ) : null}
+            {activeSection === "farmers" ? (
+              <p className="border-b border-leaf-900/10 bg-white px-5 py-3 text-xs font-bold text-ink/55">
+                Use Review beside the farmer name to open the full Tally application. Scroll sideways only for secondary actions.
+              </p>
+            ) : null}
             <div className="overflow-x-auto">
               <table className="min-w-[900px] w-full border-collapse text-left text-sm">
                 <thead className="bg-leaf-50 text-xs font-black uppercase tracking-wide text-ink/50">
@@ -4090,6 +4110,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         />
                       </th>
                     ) : null}
+                    {activeSection === "farmers" ? <th className="px-5 py-4">Review</th> : null}
                     <th className="px-5 py-4">Name/title</th>
                     <th className="px-5 py-4">Type/category</th>
                     {activeSection === "farmers" ? <th className="px-5 py-4">Phone</th> : null}
@@ -4102,8 +4123,14 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-leaf-900/10">
-                  {filteredRows.map((row) => (
-                    <tr key={row.id} className="align-top">
+                  {filteredRows.map((row) => {
+                    const isExpandedFarmerRow = expandedFarmerRowIds.includes(row.id);
+                    const isTallyFarmerRow = activeSection === "farmers" && row.source === "Tally Import";
+                    const farmerRowSource = row.source === "Tally Import" || row.source === "Founding Farmer" ? row.source : "Manual/Test";
+
+                    return (
+                    <Fragment key={row.id}>
+                    <tr className="align-top">
                       {activeSection === "farmers" ? (
                         <td className="px-5 py-4">
                           <input
@@ -4115,6 +4142,33 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           />
                         </td>
                       ) : null}
+                      {activeSection === "farmers" ? (
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandedFarmerRow(row.id)}
+                              aria-label={`${isExpandedFarmerRow ? "Collapse" : "Expand"} ${row.name}`}
+                              aria-expanded={isExpandedFarmerRow}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-ink/60 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
+                            >
+                              <ChevronDown className={`h-4 w-4 transition ${isExpandedFarmerRow ? "rotate-180" : ""}`} />
+                            </button>
+                            {isTallyFarmerRow ? (
+                              <button
+                                type="button"
+                                onClick={() => void openImportedFarmerReviewById(row.id)}
+                                className="inline-flex items-center gap-1 rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-leaf-800"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Review
+                              </button>
+                            ) : (
+                              <span className="text-xs font-bold text-ink/35">-</span>
+                            )}
+                          </div>
+                        </td>
+                      ) : null}
                       <td className="px-5 py-4 font-black text-ink">{row.name}</td>
                       <td className="px-5 py-4 text-ink/65">{row.type}</td>
                       {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.phone || "Not provided"}</td> : null}
@@ -4122,7 +4176,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
                       {activeSection === "farmers" ? (
                         <td className="px-5 py-4 text-ink/65">
-                          {row.source === "Tally Import" || row.source === "Founding Farmer" ? row.source : "Manual/Test"}
+                          {farmerRowSource}
                         </td>
                       ) : null}
                       <td className="px-5 py-4">
@@ -4243,7 +4297,46 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    {activeSection === "farmers" && isExpandedFarmerRow ? (
+                      <tr className="bg-leaf-50/55">
+                        <td colSpan={11} className="px-5 py-4">
+                          <div className="grid gap-3 rounded-md border border-leaf-900/10 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+                            {[
+                              ["Phone", row.phone || "Not provided"],
+                              ["WhatsApp", row.whatsapp || row.phone || "Not provided"],
+                              ["Products", row.products || "Not provided"],
+                              ["Region", row.region || "Not provided"],
+                              ["Farm size", row.farmSize || "Not provided"],
+                              ["Source", farmerRowSource],
+                              ["Status", row.status]
+                            ].map(([label, value]) => (
+                              <div key={label}>
+                                <p className="text-[11px] font-black uppercase tracking-wide text-ink/40">{label}</p>
+                                <p className="mt-1 text-sm font-bold text-ink/75">{value}</p>
+                              </div>
+                            ))}
+                            <div className="sm:col-span-2 lg:col-span-1">
+                              <p className="text-[11px] font-black uppercase tracking-wide text-ink/40">Full application</p>
+                              {isTallyFarmerRow ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void openImportedFarmerReviewById(row.id)}
+                                  className="mt-2 inline-flex items-center gap-2 rounded-md bg-leaf-700 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-leaf-800"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  Open Full Review
+                                </button>
+                              ) : (
+                                <p className="mt-1 text-sm font-semibold text-ink/55">Full Tally review is available for Tally Import rows.</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                    </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
