@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
+import { productImageForName } from "@/lib/productDisplay";
 
 type ShowcaseItem = {
   name: string;
@@ -207,7 +208,7 @@ export function MarketplaceCategoryShowcase() {
                   className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
                 >
                   <SafeImage
-                    src={item.image}
+                    src={productImageForName(item.name, activeCategory.name)}
                     alt={`${item.name} available through Ghana Growers`}
                     width={420}
                     height={300}

@@ -16,6 +16,7 @@ import {
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
+import { productImageForName } from "@/lib/productDisplay";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -55,28 +56,6 @@ function FarmerVerificationBadge({ status }: { status: string }) {
   );
 }
 
-function imageForProduct(product: string) {
-  const lower = product.toLowerCase();
-
-  if (lower.includes("tomato") || lower.includes("pepper") || lower.includes("okra") || lower.includes("onion")) {
-    return "/images/crops/tomatoes.jpg";
-  }
-
-  if (lower.includes("pineapple") || lower.includes("mango") || lower.includes("pawpaw") || lower.includes("plantain")) {
-    return "/images/crops/pineapple.jpg";
-  }
-
-  if (lower.includes("yam") || lower.includes("cassava") || lower.includes("cocoyam") || lower.includes("potato")) {
-    return "/images/crops/yam.jpg";
-  }
-
-  if (lower.includes("egg") || lower.includes("broiler") || lower.includes("poultry") || lower.includes("layer")) {
-    return "/images/crops/poultry.jpg";
-  }
-
-  return "/images/marketplace/farm-activity-1.jpg";
-}
-
 export default async function FarmerProfilePage({ params }: FarmerProfilePageProps) {
   const [farmers, marketplaceProducts, buyerRequests] = await Promise.all([
     getFarmersData(),
@@ -103,7 +82,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
     return {
       product,
-      image: marketplaceMatch?.image ?? imageForProduct(product),
+      image: productImageForName(product),
       quantity: marketplaceMatch?.seller === farmer.farmName ? `${marketplaceMatch.quantity} ${marketplaceMatch.unit}` : farmer.availableQuantities ?? farmer.capacityVolume,
       status: marketplaceMatch?.seller === farmer.farmName ? marketplaceMatch.available : farmer.availabilityStatus
     };

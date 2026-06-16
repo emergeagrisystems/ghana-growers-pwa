@@ -3,6 +3,7 @@ import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
+import { cleanProductList, productDisplayName, productImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 type SupabaseFarmer = {
@@ -215,9 +216,41 @@ function farmerPhotoUrls(row: SupabaseFarmer) {
   return Array.from(new Set(urls.filter((url): url is string => Boolean(url?.trim()))));
 }
 
+function locationLabel(district?: string | null, region?: string | null) {
+  const parts = [district, region]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part && part.toLowerCase() !== "not provided" && part.toLowerCase() !== "ghana"));
+
+  return Array.from(new Set(parts)).join(", ");
+}
+
+function farmerDescription(row: SupabaseFarmer, products: string[]) {
+  if (row.description?.trim()) {
+    return row.description;
+  }
+
+  const name = row.farm_name || row.farmer_name || "This farmer";
+  const location = locationLabel(row.district, row.region);
+  const productText = products.length > 0 ? products.join(", ") : "";
+
+  if (productText && location) {
+    return `${name} is a Ghana Growers farmer based in ${location}, supplying ${productText}. Buyers can request availability, quantity, and collection or delivery details through Ghana Growers.`;
+  }
+
+  if (productText) {
+    return `${name} supplies ${productText} through the Ghana Growers network. Buyers can request availability and quantity details through Ghana Growers.`;
+  }
+
+  if (location) {
+    return `${name} is listed in the Ghana Growers farmer network and operates from ${location}.`;
+  }
+
+  return `${name} is listed in the Ghana Growers farmer network. Buyers can request availability and quantity details through Ghana Growers.`;
+}
+
 function mapFarmer(row: SupabaseFarmer): FarmerProfile {
   const slug = row.slug ?? slugify(row.farm_name);
-  const products = row.products?.length ? row.products : ["Produce"];
+  const products = cleanProductList(row.products?.length ? row.products : ["Produce"]);
   const verificationStatus = trustStatus(row.verification_status);
 
   return {
@@ -231,9 +264,7 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     farmSize: row.farm_size ?? "Available on request",
     yearsFarming: "Available on request",
     availabilityStatus: row.status === "Archived" ? "Currently unavailable" : "Available on request",
-    description:
-      row.description ??
-      `${row.farm_name} supplies ${products.join(", ")} from ${row.district}, ${row.region} through the Ghana Growers network.`,
+    description: farmerDescription(row, products),
     harvestSeason: "Confirm current harvest timing with Ghana Growers.",
     capacityVolume: "Capacity available on request",
     availableQuantities: "Available quantities confirmed during inquiry",
@@ -279,17 +310,19 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
 }
 
 function mapListing(row: SupabaseListing): Product {
+  const productName = productDisplayName(row.product_name);
+
   return {
     id: row.slug ?? row.id,
-    name: row.product_name,
+    name: productName,
     category: row.category,
     location: row.district,
     region: row.region,
     seller: row.seller_name,
-    description: `${row.product_name} listed by ${row.seller_name} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
+    description: `${productName} listed by ${row.seller_name} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
-    image: row.image_url || "/images/marketplace/farm-activity-1.jpg",
+    image: row.image_url || productImageForName(productName, row.category),
     available: row.availability,
     datePosted: dateOnly(row.created_at),
     verified: trustStatus(row.verification_status) === "Verified",

@@ -16,6 +16,7 @@ import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
+import { productImageForListing } from "@/lib/productDisplay";
 import type { FarmerProfile, Product } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -127,6 +128,7 @@ function ListingCard({
   onViewDetails: (product: Product) => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+  const productImage = productImageForListing(product.name, product.category, product.image);
 
   return (
     <article className="group overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft">
@@ -134,7 +136,7 @@ function ListingCard({
         {farmer ? (
           <Link href={`/farmer-directory/${farmer.slug}`} aria-label={`View ${farmer.farmName} profile`}>
             <SafeImage
-              src={product.image}
+              src={productImage}
               alt={`${product.name} available in ${product.region}`}
               width={420}
               height={260}
@@ -145,7 +147,7 @@ function ListingCard({
           </Link>
         ) : (
           <SafeImage
-            src={product.image}
+            src={productImage}
             alt={`${product.name} available in ${product.region}`}
             width={420}
             height={260}
@@ -211,6 +213,7 @@ function ProductDetailsModal({
   onClose: () => void;
 }) {
   const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+  const productImage = productImageForListing(product.name, product.category, product.image);
   const relatedProducts = products
     .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
     .slice(0, 4);
@@ -231,7 +234,7 @@ function ProductDetailsModal({
         </div>
         <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_1fr] lg:gap-7">
           <SafeImage
-            src={product.image}
+            src={productImage}
             alt={`${product.name} listing photo`}
             width={560}
             height={420}
@@ -275,7 +278,7 @@ function ProductDetailsModal({
               {relatedProducts.map((listing) => (
                 <article key={listing.id} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
                   <SafeImage
-                    src={listing.image}
+                    src={productImageForListing(listing.name, listing.category, listing.image)}
                     alt={`${listing.name} related listing`}
                     width={280}
                     height={180}
@@ -443,7 +446,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
             {featuredProducts.map((product) => (
               <article key={product.id} className="overflow-hidden rounded-md border border-white/70 bg-white shadow-sm">
                 <SafeImage
-                  src={product.image}
+                  src={productImageForListing(product.name, product.category, product.image)}
                   alt={`${product.name} featured marketplace listing`}
                   width={360}
                   height={220}
