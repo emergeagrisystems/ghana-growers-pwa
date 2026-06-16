@@ -85,6 +85,12 @@ Tally farmer CSV imports use this migration:
 supabase/migrations/010_tally_farmer_import.sql
 ```
 
+Marketplace listing ownership uses this migration:
+
+```text
+supabase/migrations/014_marketplace_listing_ownership.sql
+```
+
 It creates these tables:
 
 - `farmers`
@@ -103,6 +109,15 @@ The Tally import migration adds:
 
 - `farmers.source`
 - indexes for farmer phone-number duplicate checks and import source reporting
+
+The marketplace listing ownership migration adds:
+
+- `marketplace_listings.owner_type`
+- `marketplace_listings.owner_id`
+- `marketplace_listings.owner_name`
+- indexes for owner filtering and profile-linked listings
+
+Use `owner_type = 'Farmer'` and `owner_id = farmers.id` for farmer-owned marketplace listings. Supplier-owned records should use `owner_type = 'Supplier'`; Ghana Growers/admin-created records should use `owner_type = 'Admin'`.
 
 The verification workflow migration adds:
 

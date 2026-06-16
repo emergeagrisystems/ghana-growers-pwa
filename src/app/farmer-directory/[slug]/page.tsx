@@ -69,7 +69,22 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   }
 
   const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
-  const activeMarketplaceListings = marketplaceProducts.filter((listing) => listing.farmerSlug === farmer.slug);
+  const activeMarketplaceListings = marketplaceProducts.filter((listing) => {
+    if (listing.available === "Sold Out") {
+      return false;
+    }
+
+    if (listing.ownerType && listing.ownerType !== "Farmer") {
+      return false;
+    }
+
+    return (
+      (farmer.id && listing.ownerId === farmer.id) ||
+      listing.farmerSlug === farmer.slug ||
+      listing.seller === farmer.farmName ||
+      listing.ownerName === farmer.farmName
+    );
+  });
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
   const deliveryOption = farmer.deliveryOptions?.[0] ?? "Not provided";
   const paymentPreference = farmer.paymentPreference ?? "Not provided";
@@ -94,7 +109,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     { icon: Ruler, label: "Farm Size", value: farmer.farmSize },
     { icon: Clock3, label: "Supply Frequency", value: farmer.availabilityStatus },
     { icon: Truck, label: "Delivery / Collection", value: deliveryOption },
-    { icon: CreditCard, label: "Payment Preference", value: paymentPreference }
+    { icon: CreditCard, label: "Payment Preference", value: paymentPreference },
+    { icon: PackageCheck, label: "Active Listings", value: String(activeMarketplaceListings.length) }
   ];
 
   return (
@@ -213,6 +229,47 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1.35fr_0.75fr]">
             <div className="grid gap-8">
+              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace Listings</p>
+                    <h2 className="mt-2 text-2xl font-black text-ink">Listings by this Farmer</h2>
+                  </div>
+                  <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                    Browse Marketplace
+                  </Link>
+                </div>
+                {activeMarketplaceListings.length > 0 ? (
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {activeMarketplaceListings.slice(0, 6).map((listing) => (
+                      <article key={listing.id} className="overflow-hidden rounded-md border border-leaf-900/10 bg-leaf-50">
+                        <SafeImage
+                          src={listing.image}
+                          alt={`${listing.name} marketplace listing`}
+                          width={360}
+                          height={220}
+                          fallbackKind="marketplace"
+                          sizes="(min-width: 1280px) 22vw, (min-width: 640px) 50vw, 100vw"
+                          className="h-32 w-full object-cover"
+                        />
+                        <div className="p-4">
+                          <h3 className="font-black text-ink">{listing.name}</h3>
+                          <p className="mt-2 text-sm font-black text-leaf-700">{listing.available}</p>
+                          <p className="mt-1 text-sm text-ink/58">{listing.quantity} {listing.unit}</p>
+                          <p className="mt-2 inline-flex rounded-md bg-white px-2.5 py-1 text-xs font-black text-ink/55 ring-1 ring-leaf-900/10">
+                            {listing.available === "Sold Out" ? "Inactive" : "Active"}
+                          </p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-5 rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/62">
+                    No active marketplace listings yet.
+                  </p>
+                )}
+              </section>
+
               <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">About the farmer</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">About {farmer.contactName}</h2>

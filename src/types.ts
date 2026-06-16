@@ -28,6 +28,9 @@ export type Product = {
   featured?: boolean;
   whatsappNumber?: string;
   farmerSlug?: string;
+  ownerType?: "Farmer" | "Supplier" | "Admin";
+  ownerId?: string;
+  ownerName?: string;
 };
 
 export type BlogPost = {
@@ -62,6 +65,7 @@ export type TrustProfile = {
 };
 
 export type FarmerProfile = {
+  id?: string;
   slug: string;
   farmName: string;
   contactName: string;

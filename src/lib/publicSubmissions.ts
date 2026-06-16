@@ -229,6 +229,7 @@ export async function updateSubmissionStatus({
 
 export async function convertListingSubmission(submission: ListingSubmission, adminEmail: string) {
   const uniqueSlug = await generateUniqueSlug("marketplace_listings", `${submission.product_name}-${submission.seller_name}`);
+  const ownerType = submission.seller_type === "Supplier" ? "Supplier" : "Farmer";
   const insert = await insertSupabaseRecord("marketplace_listings", {
     slug: uniqueSlug.slug,
     product_name: submission.product_name,
@@ -237,6 +238,9 @@ export async function convertListingSubmission(submission: ListingSubmission, ad
     district: submission.district,
     seller_name: submission.seller_name,
     seller_type: submission.seller_type,
+    owner_type: ownerType,
+    owner_id: null,
+    owner_name: submission.seller_name,
     quantity: submission.quantity,
     unit: submission.unit,
     availability: "Available",

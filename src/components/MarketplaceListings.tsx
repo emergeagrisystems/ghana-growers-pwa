@@ -121,13 +121,15 @@ function MarketplaceStats({
 function ListingCard({
   product,
   farmerBySlug,
+  farmerById,
   onViewDetails
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
+  farmerById: Map<string, FarmerProfile>;
   onViewDetails: (product: Product) => void;
 }) {
-  const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+  const farmer = (product.ownerId ? farmerById.get(product.ownerId) : undefined) ?? (product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined);
   const productImage = productImageForListing(product.name, product.category, product.image);
 
   return (
@@ -204,15 +206,17 @@ function ListingCard({
 function ProductDetailsModal({
   product,
   farmerBySlug,
+  farmerById,
   products,
   onClose
 }: {
   product: Product;
   farmerBySlug: Map<string, FarmerProfile>;
+  farmerById: Map<string, FarmerProfile>;
   products: Product[];
   onClose: () => void;
 }) {
-  const farmer = product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined;
+  const farmer = (product.ownerId ? farmerById.get(product.ownerId) : undefined) ?? (product.farmerSlug ? farmerBySlug.get(product.farmerSlug) : undefined);
   const productImage = productImageForListing(product.name, product.category, product.image);
   const relatedProducts = products
     .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
@@ -246,6 +250,11 @@ function ProductDetailsModal({
             <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
             <div className="mt-5 grid gap-3 text-sm text-ink/68">
               <Detail label="Seller" value={farmer?.farmName ?? product.seller} />
+              {farmer ? (
+                <Link href={`/farmer-directory/${farmer.slug}`} className="inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
+                  View Farmer Profile
+                </Link>
+              ) : null}
               <Detail label="Region" value={product.region} />
               <Detail label="Quantity" value={`${product.quantity} ${product.unit}`} />
               <Detail label="Availability" value={product.available} />
@@ -353,6 +362,10 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
   const productsAvailable = products.filter((product) => product.available !== "Sold Out").length;
   const verifiedSellers = products.filter((product) => product.verified).length;
   const farmerBySlug = useMemo(() => new Map(farmers.map((farmer) => [farmer.slug, farmer])), [farmers]);
+  const farmerById = useMemo(
+    () => new Map(farmers.filter((farmer) => farmer.id).map((farmer) => [farmer.id as string, farmer])),
+    [farmers]
+  );
 
   return (
     <>
@@ -419,7 +432,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
               {filteredProducts.length > 0 ? (
                 <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredProducts.map((product) => (
-                    <ListingCard key={product.id} product={product} farmerBySlug={farmerBySlug} onViewDetails={setSelectedProduct} />
+                    <ListingCard key={product.id} product={product} farmerBySlug={farmerBySlug} farmerById={farmerById} onViewDetails={setSelectedProduct} />
                   ))}
                 </div>
               ) : (
@@ -478,6 +491,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory }: Mar
         <ProductDetailsModal
           product={selectedProduct}
           farmerBySlug={farmerBySlug}
+          farmerById={farmerById}
           products={products}
           onClose={() => setSelectedProduct(null)}
         />

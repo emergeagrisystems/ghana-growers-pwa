@@ -72,6 +72,9 @@ type AdminRow = {
   whatsapp?: string;
   farmSize?: string;
   products?: string;
+  ownerType?: "Farmer" | "Supplier" | "Admin" | string;
+  ownerId?: string;
+  ownerName?: string;
   href?: string;
   verificationTarget?: {
     subject: VerificationSubject;
@@ -149,6 +152,7 @@ type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Conv
 type LaunchStatus = "Not Started" | "In Progress" | "Complete";
 type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
 type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
+type MarketplaceOwnerFilter = "All" | "Farmer" | "Supplier" | "Admin";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -415,6 +419,9 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: product.region,
       status: product.available === "Sold Out" ? "Archived" : "Active",
       dateAdded: product.datePosted,
+      ownerType: product.ownerType ?? (product.farmerSlug ? "Farmer" : "Admin"),
+      ownerId: product.ownerId,
+      ownerName: product.ownerName ?? product.seller,
       href: "/marketplace#marketplace-listings"
     })),
     "buyer-requests": buyerRequests.map((request) => ({
@@ -536,6 +543,9 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "region", label: "Region", required: true },
     { name: "district", label: "District", required: true },
     { name: "sellerFarmer", label: "Seller/Farmer", required: true },
+    { name: "ownerType", label: "Owner Type", type: "select", required: true, options: ["Farmer", "Supplier", "Admin"] },
+    { name: "ownerId", label: "Owner ID", helper: "For farmer-owned listings, paste the farmer Supabase id. Leave blank for Admin-owned records." },
+    { name: "ownerName", label: "Owner Name", required: true, helper: "Use the farmer, supplier, or Ghana Growers owner name shown publicly." },
     { name: "quantity", label: "Quantity", required: true },
     { name: "unit", label: "Unit", required: true },
     { name: "availability", label: "Availability", required: true },
@@ -711,6 +721,11 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       values.trend = "Stable";
     }
 
+    if (formId === "marketplace") {
+      values.ownerType = "Admin";
+      values.ownerName = "Ghana Growers";
+    }
+
     return values;
   }
 
@@ -756,7 +771,10 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       category: product?.category ?? row.type,
       region: product?.region ?? row.region,
       district: districtFromLocation(product?.location),
-      sellerFarmer: product?.seller ?? "",
+      sellerFarmer: product?.seller ?? row.ownerName ?? "",
+      ownerType: product?.ownerType ?? row.ownerType ?? (product?.farmerSlug ? "Farmer" : "Admin"),
+      ownerId: product?.ownerId ?? row.ownerId ?? "",
+      ownerName: product?.ownerName ?? row.ownerName ?? product?.seller ?? "",
       quantity: product?.quantity ?? "",
       unit: product?.unit ?? "",
       availability: product?.available ?? "",
@@ -908,6 +926,9 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
       region: values.region || "Ghana",
       status: "Active",
       dateAdded: today,
+      ownerType: values.ownerType || "Admin",
+      ownerId: values.ownerId,
+      ownerName: values.ownerName || values.sellerFarmer || "Ghana Growers",
       href: "/marketplace#marketplace-listings"
     };
   }
@@ -1317,6 +1338,25 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
   };
 }
 
+function adminMarketplaceRowFromAnalytics(record: AnalyticsRecord): AdminRow {
+  const id = textValue(record, "slug") || textValue(record, "id");
+  const ownerType = textValue(record, "owner_type") || (textValue(record, "seller_type") === "Supplier" ? "Supplier" : "Admin");
+  const ownerName = textValue(record, "owner_name") || textValue(record, "seller_name") || "Ghana Growers";
+
+  return {
+    id,
+    name: textValue(record, "product_name") || "Marketplace listing",
+    type: textValue(record, "category") || "Marketplace Listing",
+    region: textValue(record, "region") || "Ghana",
+    status: textValue(record, "status") === "Archived" ? "Archived" : "Active",
+    dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
+    ownerType,
+    ownerId: textValue(record, "owner_id"),
+    ownerName,
+    href: "/marketplace#marketplace-listings"
+  };
+}
+
 function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequestRows: LeadRequestRecord[]): AnalyticsData {
   return {
     farmers: farmerDirectory.map((farmer) => ({
@@ -1346,6 +1386,9 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       region: product.region,
       district: product.location,
       seller_name: product.seller,
+      owner_type: product.ownerType ?? (product.farmerSlug ? "Farmer" : "Admin"),
+      owner_id: product.ownerId ?? null,
+      owner_name: product.ownerName ?? product.seller,
       whatsapp_number: product.whatsappNumber ?? WHATSAPP_NUMBER,
       status: product.available === "Sold Out" ? "Archived" : "Active",
       availability: product.available
@@ -1420,6 +1463,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
+  const [marketplaceOwnerFilter, setMarketplaceOwnerFilter] = useState<MarketplaceOwnerFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
   const [expandedFarmerRowIds, setExpandedFarmerRowIds] = useState<string[]>([]);
   const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
@@ -1710,15 +1754,18 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
   const analytics = useMemo(() => mergeAnalyticsWithFallback(analyticsData, analyticsFallback), [analyticsData, analyticsFallback]);
   useEffect(() => {
-    if (!analyticsData?.farmers.length) {
+    if (!analyticsData?.farmers.length && !analyticsData?.marketplaceListings.length) {
       return;
     }
 
     setRowsBySection((current) => ({
       ...current,
-      farmers: analyticsData.farmers.map(adminFarmerRowFromAnalytics)
+      farmers: analyticsData.farmers.length ? analyticsData.farmers.map(adminFarmerRowFromAnalytics) : current.farmers,
+      marketplace: analyticsData.marketplaceListings.length
+        ? analyticsData.marketplaceListings.map(adminMarketplaceRowFromAnalytics)
+        : current.marketplace
     }));
-  }, [analyticsData?.farmers]);
+  }, [analyticsData?.farmers, analyticsData?.marketplaceListings]);
   const analyticsCards = useMemo(() => [
     { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
     { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
@@ -1809,7 +1856,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     const query = searchTerm.trim().toLowerCase();
     const matchesSearch =
       !query ||
-      [row.name, row.type, row.region, row.status, row.source ?? "", row.dateAdded]
+      [row.name, row.type, row.region, row.status, row.source ?? "", row.ownerType ?? "", row.ownerName ?? "", row.dateAdded]
         .join(" ")
         .toLowerCase()
         .includes(query);
@@ -1820,8 +1867,12 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       (farmerSourceFilter === "Tally Import" && row.source === "Tally Import") ||
       (farmerSourceFilter === "Founding Farmer" && row.source === "Founding Farmer") ||
       (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import" && row.source !== "Founding Farmer");
+    const matchesMarketplaceOwner =
+      activeSection !== "marketplace" ||
+      marketplaceOwnerFilter === "All" ||
+      row.ownerType === marketplaceOwnerFilter;
 
-    return matchesSearch && matchesStatus && matchesFarmerSource;
+    return matchesSearch && matchesStatus && matchesFarmerSource && matchesMarketplaceOwner;
   });
   const visibleFarmerRowIds = activeSection === "farmers" ? filteredRows.map((row) => row.id) : [];
   const selectedVisibleFarmerCount = visibleFarmerRowIds.filter((id) => selectedFarmerRowIds.includes(id)).length;
@@ -3084,6 +3135,18 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       </button>
                     </>
                   ) : null}
+                  {activeSection === "marketplace" ? (
+                    <select
+                      value={marketplaceOwnerFilter}
+                      onChange={(event) => setMarketplaceOwnerFilter(event.target.value as MarketplaceOwnerFilter)}
+                      className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                    >
+                      <option value="All">All owners</option>
+                      <option value="Farmer">Farmer-owned</option>
+                      <option value="Supplier">Supplier-owned</option>
+                      <option value="Admin">Admin-owned</option>
+                    </select>
+                  ) : null}
                 </div>
                 ) : null}
               </div>
@@ -4135,6 +4198,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     {activeSection === "farmers" ? <th className="px-5 py-4">Phone</th> : null}
                     {activeSection === "farmers" ? <th className="px-5 py-4">Products</th> : null}
                     <th className="px-5 py-4">Region</th>
+                    {activeSection === "marketplace" ? <th className="px-5 py-4">Owner Type</th> : null}
+                    {activeSection === "marketplace" ? <th className="px-5 py-4">Owner Name</th> : null}
                     {activeSection === "farmers" ? <th className="px-5 py-4">Source</th> : null}
                     <th className="px-5 py-4">Status</th>
                     <th className="px-5 py-4">Date added</th>
@@ -4193,6 +4258,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.phone || "Not provided"}</td> : null}
                       {activeSection === "farmers" ? <td className="px-5 py-4 text-ink/65">{row.products || "Not provided"}</td> : null}
                       <td className="px-5 py-4 text-ink/65">{row.region}</td>
+                      {activeSection === "marketplace" ? <td className="px-5 py-4 text-ink/65">{row.ownerType || "Admin"}</td> : null}
+                      {activeSection === "marketplace" ? <td className="px-5 py-4 text-ink/65">{row.ownerName || "Ghana Growers"}</td> : null}
                       {activeSection === "farmers" ? (
                         <td className="px-5 py-4 text-ink/65">
                           {farmerRowSource}

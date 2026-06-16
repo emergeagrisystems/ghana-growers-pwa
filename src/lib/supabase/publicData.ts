@@ -63,6 +63,9 @@ type SupabaseListing = {
   district: string;
   seller_name: string;
   seller_type: string | null;
+  owner_type: "Farmer" | "Supplier" | "Admin" | string | null;
+  owner_id: string | null;
+  owner_name: string | null;
   quantity: string;
   unit: string;
   availability: string;
@@ -254,6 +257,7 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
   const verificationStatus = trustStatus(row.verification_status);
 
   return {
+    id: row.id,
     slug,
     farmName: row.farm_name,
     contactName: row.farmer_name ?? row.farm_name,
@@ -311,6 +315,8 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
 
 function mapListing(row: SupabaseListing): Product {
   const productName = productDisplayName(row.product_name);
+  const ownerType = row.owner_type === "Supplier" || row.owner_type === "Admin" ? row.owner_type : "Farmer";
+  const ownerName = row.owner_name || row.seller_name;
 
   return {
     id: row.slug ?? row.id,
@@ -318,8 +324,8 @@ function mapListing(row: SupabaseListing): Product {
     category: row.category,
     location: row.district,
     region: row.region,
-    seller: row.seller_name,
-    description: `${productName} listed by ${row.seller_name} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
+    seller: ownerName,
+    description: `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
     image: row.image_url || productImageForName(productName, row.category),
@@ -328,7 +334,10 @@ function mapListing(row: SupabaseListing): Product {
     verified: trustStatus(row.verification_status) === "Verified",
     featured: Boolean(row.featured),
     whatsappNumber: row.whatsapp_number ?? "233000000000",
-    farmerSlug: slugify(row.seller_name)
+    farmerSlug: ownerType === "Farmer" ? slugify(ownerName) : undefined,
+    ownerType,
+    ownerId: row.owner_id ?? undefined,
+    ownerName
   };
 }
 

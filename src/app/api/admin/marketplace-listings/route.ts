@@ -3,7 +3,23 @@ import { createRecord, generateUniqueSlug, uniqueSlugAdminMessage, updateRecord 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const requiredFields = ["productName", "category", "region", "district", "sellerFarmer", "quantity", "unit", "availability", "whatsappNumber"];
+const requiredFields = [
+  "productName",
+  "category",
+  "region",
+  "district",
+  "sellerFarmer",
+  "ownerType",
+  "ownerName",
+  "quantity",
+  "unit",
+  "availability",
+  "whatsappNumber"
+];
+
+function normalizeOwnerType(value: string | undefined) {
+  return value === "Supplier" || value === "Admin" ? value : "Farmer";
+}
 
 export async function POST(request: Request) {
   return createRecord({
@@ -15,7 +31,9 @@ export async function POST(request: Request) {
       entityName: (payload) => payload.productName
     },
     mapPayload: async (payload) => {
-      const slugSource = `${payload.productName}-${payload.sellerFarmer}`;
+      const ownerType = normalizeOwnerType(payload.ownerType);
+      const ownerName = payload.ownerName || payload.sellerFarmer || "Ghana Growers";
+      const slugSource = `${payload.productName}-${ownerName}`;
       const uniqueSlug = await generateUniqueSlug("marketplace_listings", slugSource);
 
       return {
@@ -28,8 +46,11 @@ export async function POST(request: Request) {
         category: payload.category,
         region: payload.region,
         district: payload.district,
-        seller_name: payload.sellerFarmer,
-        seller_type: "Farmer",
+        seller_name: payload.sellerFarmer || ownerName,
+        seller_type: ownerType === "Admin" ? "Admin" : ownerType,
+        owner_type: ownerType,
+        owner_id: payload.ownerId || null,
+        owner_name: ownerName,
         quantity: payload.quantity,
         unit: payload.unit,
         availability: payload.availability,
@@ -53,19 +74,27 @@ export async function PATCH(request: Request) {
       entityType: "Marketplace Listing",
       entityName: (payload) => payload.productName
     },
-    mapPayload: (payload) => ({
-      product_name: payload.productName,
-      category: payload.category,
-      region: payload.region,
-      district: payload.district,
-      seller_name: payload.sellerFarmer,
-      seller_type: "Farmer",
-      quantity: payload.quantity,
-      unit: payload.unit,
-      availability: payload.availability,
-      image_url: payload.imageUrl || null,
-      whatsapp_number: payload.whatsappNumber,
-      status: "Active"
-    })
+    mapPayload: (payload) => {
+      const ownerType = normalizeOwnerType(payload.ownerType);
+      const ownerName = payload.ownerName || payload.sellerFarmer || "Ghana Growers";
+
+      return {
+        product_name: payload.productName,
+        category: payload.category,
+        region: payload.region,
+        district: payload.district,
+        seller_name: payload.sellerFarmer || ownerName,
+        seller_type: ownerType === "Admin" ? "Admin" : ownerType,
+        owner_type: ownerType,
+        owner_id: payload.ownerId || null,
+        owner_name: ownerName,
+        quantity: payload.quantity,
+        unit: payload.unit,
+        availability: payload.availability,
+        image_url: payload.imageUrl || null,
+        whatsapp_number: payload.whatsappNumber,
+        status: "Active"
+      };
+    }
   });
 }
