@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { BadgeCheck, Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
@@ -199,6 +200,8 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
             No farmer profiles match these filters. Try another region, district, product, or farm type.
           </p>
         ) : null}
+
+        <FeaturedPlacementCTA defaultRole="Farmer" className="mt-10" />
       </div>
     </section>
   );

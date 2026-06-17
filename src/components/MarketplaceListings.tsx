@@ -13,6 +13,7 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
@@ -485,6 +486,7 @@ export function MarketplaceListings({ products, farmers = farmerDirectory, suppl
               )}
             </div>
           </div>
+          <FeaturedPlacementCTA defaultRole="Listing Owner" className="mt-10" />
         </div>
       </section>
 

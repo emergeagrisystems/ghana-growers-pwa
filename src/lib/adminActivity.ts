@@ -29,7 +29,8 @@ export type AdminEntityType =
   | "Listing Submission"
   | "Buyer Request Submission"
   | "Match Opportunity"
-  | "Lead Request";
+  | "Lead Request"
+  | "Featured Enquiry";
 
 export type AdminActivityLog = {
   id: string;

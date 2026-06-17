@@ -47,6 +47,7 @@ type AdminSectionId =
   | "analytics"
   | "launch-checklist"
   | "lead-queue"
+  | "featured-enquiries"
   | "farmer-import"
   | "farmers"
   | "buyers"
@@ -122,7 +123,8 @@ type AdminActivityRecord = {
     | "Listing Submission"
     | "Buyer Request Submission"
     | "Match Opportunity"
-    | "Lead Request";
+    | "Lead Request"
+    | "Featured Enquiry";
   entity_id: string | null;
   entity_name: string;
   created_at: string;
@@ -138,6 +140,7 @@ type WhatsAppLeadRecord = {
   created_at: string;
 };
 type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
+type FeaturedEnquiryStatus = "New" | "Contacted" | "Approved" | "Rejected" | "Closed";
 type LeadRequestRecord = {
   id: string;
   created_at: string;
@@ -153,6 +156,19 @@ type LeadRequestRecord = {
   source_name: string;
   source_page: string | null;
   status: LeadRequestStatus | "Closed";
+};
+type FeaturedEnquiryRecord = {
+  id: string;
+  created_at: string;
+  name: string;
+  phone: string;
+  whatsapp: string;
+  email: string | null;
+  role: "Farmer" | "Supplier" | "Listing Owner";
+  profile_or_listing_name: string;
+  feature_request: string;
+  message: string | null;
+  status: FeaturedEnquiryStatus;
 };
 type AnalyticsRecord = Record<string, unknown>;
 type AnalyticsData = {
@@ -418,6 +434,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
     analytics: [],
     "launch-checklist": [],
     "lead-queue": [],
+    "featured-enquiries": [],
     "farmer-import": [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
@@ -503,6 +520,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "analytics", label: "Analytics", icon: ChartLine },
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
   { id: "lead-queue", label: "Leads", icon: MessageCircle },
+  { id: "featured-enquiries", label: "Featured Enquiries", icon: Star },
   { id: "farmer-import", label: "Farmer Import", icon: UploadCloud },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
@@ -1209,6 +1227,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
     return "lead-queue";
   }
 
+  if (entityType === "Featured Enquiry") {
+    return "featured-enquiries";
+  }
+
   if (entityType === "Farmer") {
     return "farmers";
   }
@@ -1239,6 +1261,10 @@ function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
 
   if (entityType === "Lead Request") {
     return MessageCircle;
+  }
+
+  if (entityType === "Featured Enquiry") {
+    return Star;
   }
 
   if (entityType === "Farmer") {
@@ -1355,6 +1381,30 @@ function leadStatusClass(status: LeadRequestStatus) {
   }
 
   return "bg-ink/10 text-ink/60";
+}
+
+function featuredEnquiryStatusClass(status: FeaturedEnquiryStatus) {
+  if (status === "New") {
+    return "bg-earth-50 text-earth-700";
+  }
+
+  if (status === "Contacted") {
+    return "bg-leaf-50 text-leaf-800";
+  }
+
+  if (status === "Approved") {
+    return "bg-leaf-700 text-white";
+  }
+
+  if (status === "Rejected") {
+    return "bg-tomato/10 text-tomato";
+  }
+
+  return "bg-ink/10 text-ink/60";
+}
+
+function featuredFollowUpMessage(enquiry: FeaturedEnquiryRecord) {
+  return `Hello ${enquiry.name}, thank you for your interest in featured placement on Ghana Growers. We will review your profile/listing (${enquiry.profile_or_listing_name}) and follow up with next steps.`;
 }
 
 function leadStatusCount(leads: LeadRequestRecord[], status: LeadRequestStatus) {
@@ -1764,6 +1814,9 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [featuredEnquiries, setFeaturedEnquiries] = useState<FeaturedEnquiryRecord[]>([]);
+  const [featuredEnquiryError, setFeaturedEnquiryError] = useState("");
+  const [selectedFeaturedEnquiryId, setSelectedFeaturedEnquiryId] = useState<string | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
   const [closedMatchIds, setClosedMatchIds] = useState<string[]>([]);
@@ -1894,6 +1947,30 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   useEffect(() => {
     void loadLeadRequests();
   }, [loadLeadRequests]);
+
+  const loadFeaturedEnquiries = useCallback(async () => {
+    const response = await fetch("/api/admin/featured-enquiries").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { enquiries?: FeaturedEnquiryRecord[]; error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFeaturedEnquiryError(result?.error ?? "Featured enquiries are unavailable.");
+      return;
+    }
+
+    const enquiries = result?.enquiries ?? [];
+    setFeaturedEnquiries(enquiries);
+    setSelectedFeaturedEnquiryId((current) => current ?? enquiries[0]?.id ?? null);
+    setFeaturedEnquiryError("");
+  }, []);
+
+  useEffect(() => {
+    void loadFeaturedEnquiries();
+  }, [loadFeaturedEnquiries]);
 
   const loadAnalytics = useCallback(async () => {
     const response = await fetch("/api/admin/analytics").catch(() => null);
@@ -2067,6 +2144,10 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
   const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
   const selectedLead = useMemo(() => leadRequests.find((lead) => lead.id === selectedLeadId) ?? leadRequests[0] ?? null, [leadRequests, selectedLeadId]);
+  const selectedFeaturedEnquiry = useMemo(
+    () => featuredEnquiries.find((enquiry) => enquiry.id === selectedFeaturedEnquiryId) ?? featuredEnquiries[0] ?? null,
+    [featuredEnquiries, selectedFeaturedEnquiryId]
+  );
   const leadMetricCards = useMemo(
     () => [
       { label: "Total Leads", value: leadRequests.length, icon: MessageCircle },
@@ -3035,6 +3116,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
   const isLeadQueueSection = activeSection === "lead-queue";
+  const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
 
   async function updateLeadRequestStatus(lead: LeadRequestRecord, status: LeadRequestStatus) {
@@ -3060,6 +3142,30 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     setNotice(`${lead.requester_name} lead marked ${status}.`);
     void loadActivity();
     void loadAnalytics();
+  }
+
+  async function updateFeaturedEnquiryStatus(enquiry: FeaturedEnquiryRecord, status: FeaturedEnquiryStatus) {
+    const response = await fetch("/api/admin/featured-enquiries", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: enquiry.id, status })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFeaturedEnquiryError(result?.error ?? "Could not update this featured enquiry.");
+      return;
+    }
+
+    setFeaturedEnquiries((current) => current.map((item) => (item.id === enquiry.id ? { ...item, status } : item)));
+    setFeaturedEnquiryError("");
+    setNotice(`${enquiry.name} featured enquiry marked ${status}.`);
+    void loadActivity();
   }
 
   async function updateApplication(application: ApplicationRecord, status: ApplicationStatus) {
@@ -3483,7 +3589,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{activeSectionLabel}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -4488,6 +4594,147 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       </>
                     ) : (
                       <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select a lead to view buyer details and pipeline actions.</p>
+                    )}
+                  </div>
+                </section>
+              </div>
+            ) : isFeaturedEnquiriesSection ? (
+              <div className="grid gap-6 p-5">
+                {featuredEnquiryError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{featuredEnquiryError}</div>
+                ) : null}
+
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {(["New", "Contacted", "Approved", "Rejected", "Closed"] as FeaturedEnquiryStatus[]).map((status) => (
+                    <div key={status} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                      <p className="text-sm font-black text-ink/60">{status}</p>
+                      <p className="mt-3 text-3xl font-black text-ink">{featuredEnquiries.filter((enquiry) => enquiry.status === status).length}</p>
+                    </div>
+                  ))}
+                </section>
+
+                <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-earth-700">Featured Enquiries</p>
+                        <h3 className="mt-2 text-xl font-black text-ink">Visibility interest queue</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void loadFeaturedEnquiries()}
+                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+
+                    <div className="mt-5 grid gap-3">
+                      {featuredEnquiries.map((enquiry) => {
+                        const isSelected = selectedFeaturedEnquiry?.id === enquiry.id;
+
+                        return (
+                          <button
+                            key={enquiry.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedFeaturedEnquiryId(enquiry.id);
+                              setNotice(`Viewing featured enquiry from ${enquiry.name}.`);
+                            }}
+                            className={`rounded-md border p-4 text-left transition ${
+                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <h4 className="font-black text-ink">{enquiry.name}</h4>
+                                <p className="mt-1 text-sm font-semibold text-ink/60">{enquiry.feature_request}</p>
+                              </div>
+                              <span className={`rounded-full px-3 py-1 text-xs font-black ${featuredEnquiryStatusClass(enquiry.status)}`}>{enquiry.status}</span>
+                            </div>
+                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                              <p className="font-semibold text-ink/58">Role: {enquiry.role}</p>
+                              <p className="font-semibold text-ink/58">Date: {relativeActivityTime(enquiry.created_at)}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {featuredEnquiries.length === 0 && !featuredEnquiryError ? (
+                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No featured placement enquiries have been submitted yet.</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    {selectedFeaturedEnquiry ? (
+                      <>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Enquiry Detail</p>
+                            <h3 className="mt-2 text-2xl font-black text-ink">{selectedFeaturedEnquiry.name}</h3>
+                            <p className="mt-1 text-sm font-semibold text-ink/58">{relativeActivityTime(selectedFeaturedEnquiry.created_at)}</p>
+                          </div>
+                          <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${featuredEnquiryStatusClass(selectedFeaturedEnquiry.status)}`}>
+                            {selectedFeaturedEnquiry.status}
+                          </span>
+                        </div>
+
+                        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                          <LeadDetailItem label="Phone" value={selectedFeaturedEnquiry.phone} />
+                          <LeadDetailItem label="WhatsApp" value={selectedFeaturedEnquiry.whatsapp} />
+                          <LeadDetailItem label="Email" value={selectedFeaturedEnquiry.email ?? "Not provided"} />
+                          <LeadDetailItem label="Role" value={selectedFeaturedEnquiry.role} />
+                          <LeadDetailItem label="Profile / Listing" value={selectedFeaturedEnquiry.profile_or_listing_name} />
+                          <LeadDetailItem label="Request" value={selectedFeaturedEnquiry.feature_request} />
+                        </dl>
+
+                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Message</p>
+                          <p className="mt-2 text-sm leading-6 text-ink/68">{selectedFeaturedEnquiry.message || "No additional message was provided."}</p>
+                        </div>
+
+                        <div className="mt-5 rounded-md border border-leaf-900/10 bg-white p-4">
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">WhatsApp follow-up</p>
+                          <p className="mt-2 text-sm leading-6 text-ink/68">{featuredFollowUpMessage(selectedFeaturedEnquiry)}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(featuredFollowUpMessage(selectedFeaturedEnquiry));
+                                setNotice("Featured placement follow-up message copied.");
+                              }}
+                              className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                            >
+                              Copy Message
+                            </button>
+                            <a
+                              href={whatsappUrl(selectedFeaturedEnquiry.whatsapp, featuredFollowUpMessage(selectedFeaturedEnquiry))}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800"
+                            >
+                              Open WhatsApp
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                            Mark Contacted
+                          </button>
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Approved")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                            Approve
+                          </button>
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato/10">
+                            Reject
+                          </button>
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Closed")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                            Close
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select an enquiry to view details and follow-up actions.</p>
                     )}
                   </div>
                 </section>

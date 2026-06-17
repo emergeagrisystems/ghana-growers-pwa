@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
@@ -237,6 +238,8 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
             No supplier profiles match these filters. Try another region, district, category, or service coverage area.
           </p>
         ) : null}
+
+        <FeaturedPlacementCTA defaultRole="Supplier" className="mt-10" />
       </div>
     </section>
   );
