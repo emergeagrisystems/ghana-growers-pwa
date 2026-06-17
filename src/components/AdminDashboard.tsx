@@ -191,7 +191,7 @@ type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
-type LaunchStatus = "Not Started" | "In Progress" | "Complete";
+type LaunchStatus = "Incomplete" | "Complete";
 type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
 type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
 type ProfileCompletenessFilter = "All" | "Ready to Publish" | "Needs Follow-up" | "Incomplete";
@@ -318,13 +318,10 @@ type ActiveForm = {
 };
 
 const manualLaunchChecklistItems = [
-  "Verify all WhatsApp links",
-  "Confirm admin login works",
-  "Confirm public forms work",
-  "Confirm image uploads work",
-  "Confirm Crop Health Check works",
-  "Confirm mobile navigation works",
-  "Confirm domain and SSL work"
+  "Homepage reviewed",
+  "Mobile reviewed",
+  "Legal/disclaimer reviewed",
+  "Contact flow tested"
 ] as const;
 type ManualLaunchChecklistItem = (typeof manualLaunchChecklistItems)[number];
 
@@ -718,15 +715,7 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCoun
 }
 
 function launchStatusFromCount(count: number, target: number): LaunchStatus {
-  if (count >= target) {
-    return "Complete";
-  }
-
-  if (count > 0) {
-    return "In Progress";
-  }
-
-  return "Not Started";
+  return count >= target ? "Complete" : "Incomplete";
 }
 
 function launchStatusClass(status: LaunchStatus) {
@@ -734,23 +723,11 @@ function launchStatusClass(status: LaunchStatus) {
     return "bg-leaf-50 text-leaf-700";
   }
 
-  if (status === "In Progress") {
-    return "bg-earth-50 text-earth-700";
-  }
-
-  return "bg-ink/10 text-ink/55";
+  return "bg-earth-50 text-earth-700";
 }
 
 function statusProgress(status: LaunchStatus) {
-  if (status === "Complete") {
-    return 1;
-  }
-
-  if (status === "In Progress") {
-    return 0.5;
-  }
-
-  return 0;
+  return status === "Complete" ? 1 : 0;
 }
 
 function emptyFormValues(formId: AdminFormId) {
@@ -1583,6 +1560,10 @@ function activeBuyerRequestCount(records: AnalyticsRecord[]) {
   }).length;
 }
 
+function activeRecordCount(records: AnalyticsRecord[]) {
+  return records.filter((record) => textValue(record, "status") === "Active").length;
+}
+
 function importAdminStatusFromRecord(record: AnalyticsRecord): ImportAdminStatus {
   const status = textValue(record, "status");
 
@@ -1784,7 +1765,15 @@ function LeadDetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: { currentAdmin: AdminUser; initialSection?: AdminSectionId }) {
+export function AdminDashboard({
+  currentAdmin,
+  initialSection = "analytics",
+  sitePrelaunchActive = false
+}: {
+  currentAdmin: AdminUser;
+  initialSection?: AdminSectionId;
+  sitePrelaunchActive?: boolean;
+}) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
@@ -1851,7 +1840,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
-    Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Not Started"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
+    Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
 
   useEffect(() => {
@@ -1862,13 +1851,13 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }
 
     try {
-      const parsed = JSON.parse(saved) as Partial<Record<ManualLaunchChecklistItem, LaunchStatus>>;
+      const parsed = JSON.parse(saved) as Partial<Record<ManualLaunchChecklistItem, LaunchStatus | "Not Started" | "In Progress">>;
       setManualLaunchStatuses((current) => ({
         ...current,
         ...Object.fromEntries(
           manualLaunchChecklistItems
-            .filter((item) => parsed[item] === "Not Started" || parsed[item] === "In Progress" || parsed[item] === "Complete")
-            .map((item) => [item, parsed[item] as LaunchStatus])
+            .filter((item) => Boolean(parsed[item]))
+            .map((item) => [item, parsed[item] === "Complete" ? "Complete" : "Incomplete"])
         )
       }));
     } catch {
@@ -2184,33 +2173,45 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const closedMatches = useMemo(() => matchOpportunities.filter((opportunity) => closedMatchIdSet.has(opportunity.id)).length, [closedMatchIdSet, matchOpportunities]);
   const openMatches = Math.max(totalMatches - closedMatches, 0);
   const launchChecklistItems = useMemo(() => {
+    const activeFarmers = activeRecordCount(analytics.farmers);
+    const verifiedFarmers = verifiedCount(analytics.farmers);
+    const activeSuppliers = activeRecordCount(analytics.suppliers);
+    const marketplaceListingCount = analytics.marketplaceListings.length;
+    const buyerRequestCount = activeBuyerRequestCount(analytics.buyerRequests);
     const dataItems = [
       {
-        id: "farmers",
-        label: "Add at least 20 farmers",
-        status: launchStatusFromCount(analytics.farmers.length, 20),
-        detail: `${analytics.farmers.length} of 20 farmers added`,
+        id: "active-farmers",
+        label: "At least 30 active farmers",
+        status: launchStatusFromCount(activeFarmers, 30),
+        detail: `${activeFarmers} of 30 active farmers`,
         section: "farmers" as AdminSectionId
       },
       {
-        id: "suppliers",
-        label: "Add at least 10 suppliers",
-        status: launchStatusFromCount(analytics.suppliers.length, 10),
-        detail: `${analytics.suppliers.length} of 10 suppliers added`,
+        id: "verified-farmers",
+        label: "At least 10 verified farmers",
+        status: launchStatusFromCount(verifiedFarmers, 10),
+        detail: `${verifiedFarmers} of 10 verified farmers`,
+        section: "farmers" as AdminSectionId
+      },
+      {
+        id: "active-suppliers",
+        label: "At least 5 active suppliers",
+        status: launchStatusFromCount(activeSuppliers, 5),
+        detail: `${activeSuppliers} of 5 active suppliers`,
         section: "suppliers" as AdminSectionId
       },
       {
         id: "marketplace",
-        label: "Add at least 20 marketplace listings",
-        status: launchStatusFromCount(analytics.marketplaceListings.length, 20),
-        detail: `${analytics.marketplaceListings.length} of 20 listings added`,
+        label: "At least 10 marketplace listings",
+        status: launchStatusFromCount(marketplaceListingCount, 10),
+        detail: `${marketplaceListingCount} of 10 marketplace listings`,
         section: "marketplace" as AdminSectionId
       },
       {
         id: "buyer-requests",
-        label: "Add at least 10 buyer requests",
-        status: launchStatusFromCount(analytics.buyerRequests.length, 10),
-        detail: `${analytics.buyerRequests.length} of 10 buyer requests added`,
+        label: "At least 5 buyer requests",
+        status: launchStatusFromCount(buyerRequestCount, 5),
+        detail: `${buyerRequestCount} of 5 active buyer requests`,
         section: "buyer-requests" as AdminSectionId
       }
     ];
@@ -2230,6 +2231,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
 
     return Math.round((score / total) * 100);
   }, [launchChecklistItems]);
+  const missingLaunchItems = useMemo(() => launchChecklistItems.filter((item) => item.status !== "Complete"), [launchChecklistItems]);
+  const isLaunchReady = missingLaunchItems.length === 0;
   const currentRows = rowsBySection[activeSection].map((row) => ({
     ...row,
     status: statusOverrides[row.id] ?? row.status
@@ -3806,7 +3809,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
             ) : isLaunchChecklistSection ? (
               <div className="grid gap-6 p-5">
                 <section className="rounded-md border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5">
-                  <div className="grid gap-5 lg:grid-cols-[1fr_220px] lg:items-center">
+                  <div className="grid gap-5 xl:grid-cols-[1fr_220px_320px] xl:items-stretch">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Launch Readiness</p>
                       <h3 className="mt-2 text-2xl font-black text-ink">Prepare Ghana Growers for onboarding</h3>
@@ -3821,6 +3824,57 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                         <div className="h-full rounded-full bg-leaf-700 transition-all" style={{ width: `${launchProgress}%` }} />
                       </div>
                     </div>
+                    <div className="rounded-md bg-white p-4 shadow-sm ring-1 ring-leaf-900/10">
+                      <p className="text-sm font-black uppercase tracking-wide text-ink/45">Launch Status</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-black ${sitePrelaunchActive ? "bg-earth-50 text-earth-700" : "bg-leaf-50 text-leaf-700"}`}>
+                          Pre-launch {sitePrelaunchActive ? "active" : "off"}
+                        </span>
+                        <span className={`rounded-full px-3 py-1 text-xs font-black ${isLaunchReady ? "bg-leaf-50 text-leaf-700" : "bg-tomato/10 text-tomato"}`}>
+                          {isLaunchReady ? "Ready for launch" : "Not ready"}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold leading-6 text-ink/62">
+                        {isLaunchReady
+                          ? "All checklist items are complete. Confirm Vercel configuration before going public."
+                          : `${missingLaunchItems.length} item${missingLaunchItems.length === 1 ? "" : "s"} still need attention before launch.`}
+                      </p>
+                      {missingLaunchItems.length ? (
+                        <ul className="mt-3 grid gap-1.5 text-sm font-semibold text-ink/62">
+                          {missingLaunchItems.slice(0, 4).map((item) => (
+                            <li key={item.id}>- {item.label}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-4 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm lg:grid-cols-[1fr_320px] lg:items-center">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Public Launch Control</p>
+                    <h3 className="mt-2 text-xl font-black text-ink">Pre-launch Mode</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink/65">
+                      This dashboard cannot safely change Vercel environment variables. Use the status below to confirm the current build setting,
+                      then update Vercel when the team is ready.
+                    </p>
+                    <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-bold leading-6 text-leaf-900">
+                      Set <span className="font-black">SITE_PRELAUNCH=false</span> in Vercel to make the site public.
+                    </p>
+                  </div>
+                  <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current setting</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-white p-1 ring-1 ring-leaf-900/10">
+                      <span className={`rounded px-3 py-2 text-center text-sm font-black ${sitePrelaunchActive ? "bg-earth-600 text-white" : "text-ink/45"}`}>
+                        ON
+                      </span>
+                      <span className={`rounded px-3 py-2 text-center text-sm font-black ${!sitePrelaunchActive ? "bg-leaf-700 text-white" : "text-ink/45"}`}>
+                        OFF
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm font-semibold leading-6 text-ink/60">
+                      {sitePrelaunchActive ? "Visitors see the Launching Soon page." : "The public website is accessible."}
+                    </p>
                   </div>
                 </section>
 
@@ -3845,8 +3899,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                                 onChange={(event) => updateManualLaunchStatus(item.label as ManualLaunchChecklistItem, event.target.value as LaunchStatus)}
                                 className="rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                               >
-                                <option value="Not Started">Not Started</option>
-                                <option value="In Progress">In Progress</option>
+                                <option value="Incomplete">Incomplete</option>
                                 <option value="Complete">Complete</option>
                               </select>
                             ) : item.section ? (
@@ -3868,8 +3921,8 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 <section className="rounded-md border border-earth-500/30 bg-earth-50 p-5">
                   <h3 className="text-lg font-black text-ink">Launch Notes</h3>
                   <p className="mt-2 text-sm leading-6 text-ink/65">
-                    Record-count items update from platform data. Operational checks are saved in this admin browser for quick internal readiness tracking.
-                    Before launch, review these checks with the Ghana Growers operations team and confirm the production domain directly.
+                    Record-count items update from platform data. Manual checks are saved in this admin browser for quick internal readiness tracking.
+                    Before launch, review these checks with the Ghana Growers operations team and confirm the production domain, SSL, and Vercel pre-launch setting directly.
                   </p>
                 </section>
               </div>

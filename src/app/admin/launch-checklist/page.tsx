@@ -15,5 +15,11 @@ export default async function AdminLaunchChecklistPage() {
     redirect("/admin/login");
   }
 
-  return <AdminDashboard currentAdmin={currentAdmin} initialSection="launch-checklist" />;
+  return (
+    <AdminDashboard
+      currentAdmin={currentAdmin}
+      initialSection="launch-checklist"
+      sitePrelaunchActive={process.env.SITE_PRELAUNCH === "true"}
+    />
+  );
 }

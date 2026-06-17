@@ -15,5 +15,11 @@ export default async function FarmerImportPage() {
     redirect("/admin/login");
   }
 
-  return <AdminDashboard currentAdmin={currentAdmin} initialSection="farmer-import" />;
+  return (
+    <AdminDashboard
+      currentAdmin={currentAdmin}
+      initialSection="farmer-import"
+      sitePrelaunchActive={process.env.SITE_PRELAUNCH === "true"}
+    />
+  );
 }

@@ -15,5 +15,5 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  return <AdminDashboard currentAdmin={currentAdmin} />;
+  return <AdminDashboard currentAdmin={currentAdmin} sitePrelaunchActive={process.env.SITE_PRELAUNCH === "true"} />;
 }
