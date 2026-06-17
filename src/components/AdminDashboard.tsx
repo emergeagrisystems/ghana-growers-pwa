@@ -194,6 +194,7 @@ type AdminFarmerDiagnostics = {
   sourceValues: string[];
   fallbackUsed?: boolean;
   error?: string;
+  migrationWarning?: string;
 };
 type AdminMatchOpportunity = {
   id: string;
@@ -5256,6 +5257,9 @@ export function AdminDashboard({
                   </div>
                   {farmerLoadError ? (
                     <p className="mt-3 rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">{farmerLoadError}</p>
+                  ) : null}
+                  {farmerDiagnostics?.migrationWarning ? (
+                    <p className="mt-3 rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">{farmerDiagnostics.migrationWarning}</p>
                   ) : null}
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     {[

@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 const requiredFields = ["farmerName", "farmName", "region", "district", "farmType", "products", "farmSize", "whatsappNumber", "verificationStatus"];
 const adminFarmerSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,verification_status,status,source,is_featured,featured_until,featured_note,created_at&order=created_at.desc&limit=5000";
+const adminFarmerBaseSelect =
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,verification_status,status,source,created_at&order=created_at.desc&limit=5000";
 
 type AdminFarmerRecord = {
   id: string;
@@ -92,7 +94,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const farmers = await selectSupabaseRecords<AdminFarmerRecord>("farmers", adminFarmerSelect);
+  let migrationWarning = "";
+  let farmers = await selectSupabaseRecords<AdminFarmerRecord>("farmers", adminFarmerSelect);
+
+  if (farmers.error && farmers.error.includes("is_featured")) {
+    migrationWarning =
+      "Featured Membership migration is missing on the farmers table. Run migration 018 to enable featured controls. Farmers are loaded without featured fields for now.";
+    farmers = await selectSupabaseRecords<AdminFarmerRecord>("farmers", adminFarmerBaseSelect);
+  }
 
   if (farmers.error) {
     return NextResponse.json(
@@ -118,7 +127,10 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     farmers: records.map(adminFarmerRecord),
-    diagnostics: farmerDiagnostics(records)
+    diagnostics: {
+      ...farmerDiagnostics(records),
+      migrationWarning
+    }
   });
 }
 
