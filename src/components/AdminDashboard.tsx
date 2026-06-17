@@ -1087,6 +1087,26 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
   };
 }
 
+function importedFarmerPlaceholderFromRow(row: AdminRow): ImportedFarmerRecord {
+  return {
+    id: row.id,
+    slug: row.id,
+    farmer_name: row.name,
+    farm_name: row.name,
+    region: row.region,
+    district: "",
+    farm_type: row.type,
+    products: row.products?.split(",").map((product) => product.trim()).filter(Boolean) ?? [],
+    farm_size: row.farmSize ?? "",
+    phone_number: row.phone ?? "",
+    whatsapp_number: row.whatsapp ?? row.phone ?? "",
+    status: row.status,
+    verification_status: row.verificationStatus ?? "Pending",
+    verification_notes: null,
+    source: normalizedFarmerSource(row.source)
+  };
+}
+
 function reviewDebugFields(farmer: ImportedFarmerRecord) {
   return {
     id: farmer.id,
@@ -2945,10 +2965,22 @@ export function AdminDashboard({
     void loadActivity();
   }
 
-  async function openImportedFarmerReviewById(recordId: string) {
+  async function openImportedFarmerReviewById(recordId: string, row?: AdminRow) {
+    if (row) {
+      const placeholder = importedFarmerPlaceholderFromRow(row);
+      setImportedFarmers((current) => {
+        const exists = current.some((farmer) => farmer.id === placeholder.id || farmer.slug === placeholder.slug);
+        return exists
+          ? current.map((farmer) => (farmer.id === placeholder.id || farmer.slug === placeholder.slug ? { ...placeholder, ...farmer } : farmer))
+          : [placeholder, ...current];
+      });
+      setReviewingImportedFarmerId(placeholder.id);
+    }
+
     setIsLoadingFarmerReview(true);
     setFarmerReviewMessage(null);
     setFarmerReviewDebug(null);
+    setFarmerImportError("");
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -2972,9 +3004,13 @@ export function AdminDashboard({
     }
 
     setImportedFarmers((current) => {
-      const exists = current.some((farmer) => farmer.id === result.farmer?.id);
+      const exists = current.some((farmer) => farmer.id === result.farmer?.id || farmer.slug === result.farmer?.slug || farmer.id === recordId || farmer.slug === recordId);
       return exists
-        ? current.map((farmer) => (farmer.id === result.farmer?.id ? result.farmer : farmer))
+        ? current.map((farmer) =>
+            farmer.id === result.farmer?.id || farmer.slug === result.farmer?.slug || farmer.id === recordId || farmer.slug === recordId
+              ? result.farmer as ImportedFarmerRecord
+              : farmer
+          )
         : [result.farmer as ImportedFarmerRecord, ...current];
     });
     setReviewingImportedFarmerId(result.farmer.id);
@@ -5351,7 +5387,11 @@ export function AdminDashboard({
                             {isTallyFarmerRow ? (
                               <button
                                 type="button"
-                                onClick={() => void openImportedFarmerReviewById(row.id)}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  void openImportedFarmerReviewById(row.id, row);
+                                }}
                                 className="inline-flex items-center gap-1 rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-leaf-800"
                               >
                                 <Eye className="h-3.5 w-3.5" />
@@ -5432,7 +5472,11 @@ export function AdminDashboard({
                           {activeSection === "farmers" && normalizedRowSource === "Tally Import" ? (
                             <button
                               type="button"
-                              onClick={() => void openImportedFarmerReviewById(row.id)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                void openImportedFarmerReviewById(row.id, row);
+                              }}
                               className="inline-flex items-center gap-1 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-700 transition hover:bg-leaf-100"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -5562,7 +5606,11 @@ export function AdminDashboard({
                               {isTallyFarmerRow ? (
                                 <button
                                   type="button"
-                                  onClick={() => void openImportedFarmerReviewById(row.id)}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void openImportedFarmerReviewById(row.id, row);
+                                  }}
                                   className="mt-2 inline-flex items-center gap-2 rounded-md bg-leaf-700 px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-leaf-800"
                                 >
                                   <Eye className="h-3.5 w-3.5" />
