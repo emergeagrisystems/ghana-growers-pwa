@@ -1,7 +1,7 @@
 import { logAdminActivity } from "@/lib/adminActivity";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
-export type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Closed";
+export type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
 export type LeadRequestSourceType = "Farmer" | "Supplier" | "Marketplace Listing" | "Supplier Listing";
 
 export type LeadRequestRecord = {
@@ -22,7 +22,7 @@ export type LeadRequestRecord = {
 };
 
 const allowedSourceTypes = new Set<LeadRequestSourceType>(["Farmer", "Supplier", "Marketplace Listing", "Supplier Listing"]);
-const allowedStatuses = new Set<LeadRequestStatus>(["New", "Contacted", "Negotiating", "Closed"]);
+const allowedStatuses = new Set<LeadRequestStatus>(["New", "Contacted", "Negotiating", "Completed", "Lost"]);
 
 function clean(value: unknown, limit = 300) {
   return typeof value === "string" ? value.trim().slice(0, limit) : "";
@@ -84,7 +84,7 @@ export async function insertLeadRequest(payload: Record<string, unknown>) {
   if (!insert.error) {
     await logAdminActivity({
       adminEmail: "Public submission",
-      actionType: "Submit",
+      actionType: "Create",
       entityType: "Lead Request",
       entityId: (insert.data as { id?: string } | undefined)?.id ?? null,
       entityName: `${normalized.data.requester_name} requested ${normalized.data.source_name}`
@@ -119,9 +119,11 @@ export async function updateLeadRequestStatus({
   const update = await updateSupabaseRecord("lead_requests", `id=eq.${encodeURIComponent(id)}`, { status });
 
   if (!update.error) {
+    const actionType = status === "Contacted" ? "Contact" : status === "Completed" ? "Complete" : status === "Lost" ? "Close" : "Edit";
+
     await logAdminActivity({
       adminEmail,
-      actionType: status === "Contacted" ? "Contact" : status === "Closed" ? "Close" : "Edit",
+      actionType,
       entityType: "Lead Request",
       entityId: id,
       entityName: `lead marked ${status}`

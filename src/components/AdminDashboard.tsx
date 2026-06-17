@@ -24,7 +24,8 @@ import {
   Trash2,
   Truck,
   UploadCloud,
-  UsersRound
+  UsersRound,
+  X
 } from "lucide-react";
 import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
@@ -88,7 +89,7 @@ type AdminRow = {
 type AdminActivityRecord = {
   id: string;
   admin_email: string;
-  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Close" | "Submit";
+  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Complete" | "Close" | "Submit";
   entity_type:
     | "Farmer"
     | "Supplier"
@@ -115,7 +116,7 @@ type WhatsAppLeadRecord = {
   user_agent: string | null;
   created_at: string;
 };
-type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Closed";
+type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
 type LeadRequestRecord = {
   id: string;
   created_at: string;
@@ -130,7 +131,7 @@ type LeadRequestRecord = {
   source_id: string;
   source_name: string;
   source_page: string | null;
-  status: LeadRequestStatus;
+  status: LeadRequestStatus | "Closed";
 };
 type AnalyticsRecord = Record<string, unknown>;
 type AnalyticsData = {
@@ -470,7 +471,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
   { id: "analytics", label: "Analytics", icon: ChartLine },
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
-  { id: "lead-queue", label: "Lead Queue", icon: MessageCircle },
+  { id: "lead-queue", label: "Leads", icon: MessageCircle },
   { id: "farmer-import", label: "Farmer Import", icon: UploadCloud },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
@@ -1141,6 +1142,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
     return "match-opportunities";
   }
 
+  if (entityType === "Lead Request") {
+    return "lead-queue";
+  }
+
   if (entityType === "Farmer") {
     return "farmers";
   }
@@ -1214,6 +1219,7 @@ function activitySentence(activity: AdminActivityRecord) {
     Convert: "converted",
     View: "viewed",
     Contact: "contacted",
+    Complete: "completed",
     Close: "closed",
     Submit: "submitted"
   };
@@ -1255,6 +1261,72 @@ function relativeActivityTime(value: string) {
 
 function sourceLabel(sourceType: WhatsAppLeadRecord["source_type"]) {
   return sourceType === "Floating WhatsApp" ? "Floating Button" : sourceType;
+}
+
+const leadPipelineStatuses: LeadRequestStatus[] = ["New", "Contacted", "Negotiating", "Completed", "Lost"];
+const leadFunnelStatuses: LeadRequestStatus[] = ["New", "Contacted", "Negotiating", "Completed"];
+
+function normalizeLeadStatus(status: LeadRequestRecord["status"]): LeadRequestStatus {
+  return status === "Closed" ? "Completed" : status;
+}
+
+function leadStatusClass(status: LeadRequestStatus) {
+  if (status === "New") {
+    return "bg-earth-50 text-earth-700";
+  }
+
+  if (status === "Contacted") {
+    return "bg-leaf-50 text-leaf-800";
+  }
+
+  if (status === "Negotiating") {
+    return "bg-white text-leaf-700 ring-1 ring-leaf-900/10";
+  }
+
+  if (status === "Completed") {
+    return "bg-leaf-700 text-white";
+  }
+
+  return "bg-ink/10 text-ink/60";
+}
+
+function leadStatusCount(leads: LeadRequestRecord[], status: LeadRequestStatus) {
+  return leads.filter((lead) => normalizeLeadStatus(lead.status) === status).length;
+}
+
+function topLeadSourcesByKind(leads: LeadRequestRecord[], sourceTypes: LeadRequestRecord["source_type"][]) {
+  const allowed = new Set(sourceTypes);
+  const counts = new Map<string, { label: string; value: number }>();
+
+  leads.forEach((lead) => {
+    if (!allowed.has(lead.source_type)) {
+      return;
+    }
+
+    const key = `${lead.source_type}:${lead.source_id}`;
+    const current = counts.get(key);
+    counts.set(key, {
+      label: lead.source_name,
+      value: (current?.value ?? 0) + 1
+    });
+  });
+
+  return Array.from(counts.values())
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+}
+
+function mostRequestedLeadProducts(leads: LeadRequestRecord[]) {
+  const counts = new Map<string, number>();
+
+  leads.forEach((lead) => {
+    counts.set(lead.product_interest, (counts.get(lead.product_interest) ?? 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
 }
 
 function sourceTypeTotals(leads: WhatsAppLeadRecord[]) {
@@ -1553,6 +1625,15 @@ function SimpleBarList({ items, emptyLabel }: { items: Array<{ label: string; va
   );
 }
 
+function LeadDetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+      <dt className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</dt>
+      <dd className="mt-1 break-words text-sm font-semibold leading-6 text-ink/72">{value}</dd>
+    </div>
+  );
+}
+
 export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: { currentAdmin: AdminUser; initialSection?: AdminSectionId }) {
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1581,6 +1662,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
   const [closedMatchIds, setClosedMatchIds] = useState<string[]>([]);
@@ -1698,7 +1780,13 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       return;
     }
 
-    setLeadRequests(result?.leads ?? []);
+    const leads = (result?.leads ?? []).map((lead) => ({
+      ...lead,
+      status: normalizeLeadStatus(lead.status)
+    }));
+
+    setLeadRequests(leads);
+    setSelectedLeadId((current) => current ?? leads[0]?.id ?? null);
     setLeadRequestError("");
   }, []);
 
@@ -1876,6 +1964,21 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   ], [analytics]);
   const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
   const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
+  const selectedLead = useMemo(() => leadRequests.find((lead) => lead.id === selectedLeadId) ?? leadRequests[0] ?? null, [leadRequests, selectedLeadId]);
+  const leadMetricCards = useMemo(
+    () => [
+      { label: "Total Leads", value: leadRequests.length, icon: MessageCircle },
+      { label: "New Leads", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed },
+      { label: "Negotiating", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle },
+      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck },
+      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X }
+    ],
+    [leadRequests]
+  );
+  const topFarmersByLeads = useMemo(() => topLeadSourcesByKind(leadRequests, ["Farmer"]), [leadRequests]);
+  const topSuppliersByLeads = useMemo(() => topLeadSourcesByKind(leadRequests, ["Supplier", "Supplier Listing"]), [leadRequests]);
+  const mostRequestedListings = useMemo(() => topLeadSourcesByKind(leadRequests, ["Marketplace Listing", "Supplier Listing"]), [leadRequests]);
+  const mostRequestedProducts = useMemo(() => mostRequestedLeadProducts(leadRequests), [leadRequests]);
   const listingsByCategory = useMemo(() => countBy(analytics.marketplaceListings, "category"), [analytics.marketplaceListings]);
   const buyerRequestsByProduct = useMemo(() => countBy(analytics.buyerRequests, "product_needed"), [analytics.buyerRequests]);
   const farmersByRegion = useMemo(() => countBy(analytics.farmers, "region"), [analytics.farmers]);
@@ -4014,68 +4117,192 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                 {leadRequestError ? (
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
                 ) : null}
-                <section className="grid gap-4 md:grid-cols-4">
-                  {(["New", "Contacted", "Negotiating", "Closed"] as LeadRequestStatus[]).map((status) => (
-                    <div key={status} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
-                      <p className="text-sm font-black uppercase tracking-wide text-ink/45">{status}</p>
-                      <p className="mt-3 text-3xl font-black text-ink">{leadRequests.filter((lead) => lead.status === status).length}</p>
+
+                <section className="rounded-md border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Pipeline</p>
+                      <h2 className="mt-2 text-2xl font-black text-ink">Manage buyer connection requests</h2>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
+                        Track each request from new lead through contact, negotiation, completion, or loss.
+                      </p>
                     </div>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void loadLeadRequests();
+                        void loadAnalytics();
+                      }}
+                      className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                    >
+                      Refresh Leads
+                    </button>
+                  </div>
                 </section>
 
-                <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Queue</p>
-                      <h2 className="mt-2 text-2xl font-black text-ink">Connection requests</h2>
-                    </div>
-                    <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{leadRequests.length} total leads</p>
-                  </div>
-                  <div className="mt-5 grid gap-4">
-                    {leadRequests.slice(0, 100).map((lead) => (
-                      <article key={lead.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-lg font-black text-ink">{lead.requester_name}</h3>
-                              <span className={`rounded-full px-3 py-1 text-xs font-black ${lead.status === "Closed" ? "bg-ink text-white" : lead.status === "New" ? "bg-earth-50 text-earth-700" : "bg-white text-leaf-700"}`}>
-                                {lead.status}
-                              </span>
-                            </div>
-                            <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
-                              {lead.product_interest} {lead.quantity_needed ? `- ${lead.quantity_needed}` : ""} - {lead.location}
-                            </p>
-                            <p className="mt-1 text-sm leading-6 text-ink/58">
-                              Source: {lead.source_type} - {lead.source_name} - {relativeActivityTime(lead.created_at)}
-                            </p>
-                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                              <p className="rounded-md bg-white px-3 py-2 font-semibold text-ink/65">Phone: {lead.phone}</p>
-                              <p className="rounded-md bg-white px-3 py-2 font-semibold text-ink/65">WhatsApp: {lead.whatsapp}</p>
-                            </div>
-                            {lead.message ? (
-                              <p className="mt-3 rounded-md bg-white p-3 text-sm leading-6 text-ink/65">{lead.message}</p>
-                            ) : null}
-                          </div>
-                          <div className="flex flex-wrap gap-2 lg:max-w-[260px] lg:justify-end">
-                            <button type="button" onClick={() => setNotice(`Viewing lead from ${lead.requester_name}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
-                              View
-                            </button>
-                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
-                              Mark Contacted
-                            </button>
-                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
-                              Mark Negotiating
-                            </button>
-                            <button type="button" onClick={() => updateLeadRequestStatus(lead, "Closed")} className="rounded-md bg-ink px-3 py-2 text-xs font-black text-white transition hover:bg-ink/80">
-                              Mark Closed
-                            </button>
-                          </div>
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {leadMetricCards.map((card) => {
+                    const Icon = card.icon;
+
+                    return (
+                      <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-black text-ink/60">{card.label}</p>
+                          <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                          </span>
                         </div>
-                      </article>
-                    ))}
-                    {leadRequests.length === 0 && !leadRequestError ? (
-                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No connection requests have been submitted yet.</p>
-                    ) : null}
+                        <p className="mt-3 text-3xl font-black text-ink">{card.value}</p>
+                      </div>
+                    );
+                  })}
+                </section>
+
+                <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Conversion Funnel</p>
+                    <div className="mt-5 grid gap-3">
+                      {leadFunnelStatuses.map((status, index) => {
+                        const value = leadStatusCount(leadRequests, status);
+                        const maxValue = Math.max(...leadFunnelStatuses.map((item) => leadStatusCount(leadRequests, item)), 1);
+
+                        return (
+                          <div key={status}>
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span className="font-black text-ink">{index + 1}. {status}</span>
+                              <span className="font-black text-leaf-700">{value}</span>
+                            </div>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-leaf-50">
+                              <div className="h-full rounded-full bg-leaf-600" style={{ width: `${Math.max(8, (value / maxValue) * 100)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Most Requested Products</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={mostRequestedProducts} emptyLabel="No product requests have been captured yet." />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-4 xl:grid-cols-3">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Farmers by Leads</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={topFarmersByLeads} emptyLabel="No farmer lead data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Suppliers by Leads</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={topSuppliersByLeads} emptyLabel="No supplier lead data yet." />
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Most Requested Listings</p>
+                    <div className="mt-5">
+                      <SimpleBarList items={mostRequestedListings} emptyLabel="No listing lead data yet." />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads</p>
+                        <h3 className="mt-2 text-xl font-black text-ink">Connection pipeline</h3>
+                      </div>
+                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{leadRequests.length} total</p>
+                    </div>
+                    <div className="mt-5 grid gap-3">
+                      {leadRequests.slice(0, 100).map((lead) => {
+                        const status = normalizeLeadStatus(lead.status);
+                        const isSelected = selectedLead?.id === lead.id;
+
+                        return (
+                          <button
+                            key={lead.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedLeadId(lead.id);
+                              setNotice(`Viewing lead from ${lead.requester_name}.`);
+                            }}
+                            className={`rounded-md border p-4 text-left transition ${
+                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <h4 className="font-black text-ink">{lead.requester_name}</h4>
+                                <p className="mt-1 text-sm font-semibold text-ink/60">{lead.product_interest}</p>
+                              </div>
+                              <span className={`rounded-full px-3 py-1 text-xs font-black ${leadStatusClass(status)}`}>{status}</span>
+                            </div>
+                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                              <p className="font-semibold text-ink/58">Source: {lead.source_name}</p>
+                              <p className="font-semibold text-ink/58">Date: {relativeActivityTime(lead.created_at)}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {leadRequests.length === 0 && !leadRequestError ? (
+                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No connection requests have been submitted yet.</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    {selectedLead ? (
+                      <>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Detail</p>
+                            <h3 className="mt-2 text-2xl font-black text-ink">{selectedLead.requester_name}</h3>
+                            <p className="mt-1 text-sm font-semibold text-ink/58">{relativeActivityTime(selectedLead.created_at)}</p>
+                          </div>
+                          <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${leadStatusClass(normalizeLeadStatus(selectedLead.status))}`}>
+                            {normalizeLeadStatus(selectedLead.status)}
+                          </span>
+                        </div>
+
+                        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                          <LeadDetailItem label="Phone" value={selectedLead.phone} />
+                          <LeadDetailItem label="WhatsApp" value={selectedLead.whatsapp} />
+                          <LeadDetailItem label="Location" value={selectedLead.location} />
+                          <LeadDetailItem label="Quantity" value={selectedLead.quantity_needed ?? "Not specified"} />
+                          <LeadDetailItem label="Product / Service" value={selectedLead.product_interest} />
+                          <LeadDetailItem label="Source Type" value={selectedLead.source_type} />
+                          <LeadDetailItem label="Assigned Farmer / Supplier" value={selectedLead.source_name} />
+                          <LeadDetailItem label="Source Page" value={selectedLead.source_page ?? "Not captured"} />
+                        </dl>
+
+                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Message</p>
+                          <p className="mt-2 text-sm leading-6 text-ink/68">{selectedLead.message || "No message was provided with this lead."}</p>
+                        </div>
+
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                            Mark Contacted
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
+                            Mark Negotiating
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Completed")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                            Mark Completed
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Lost")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                            Mark Lost
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select a lead to view buyer details and pipeline actions.</p>
+                    )}
                   </div>
                 </section>
               </div>
