@@ -427,6 +427,24 @@ function publicTallyPhotoCandidate(url: string) {
   }
 }
 
+function normalizedFarmerSource(value?: string | null) {
+  const source = value?.trim();
+
+  if (!source) {
+    return "Manual/Test";
+  }
+
+  if (/tally/i.test(source)) {
+    return "Tally Import";
+  }
+
+  if (/founding/i.test(source)) {
+    return "Founding Farmer";
+  }
+
+  return source;
+}
+
 function safeStorageName(value: string) {
   return value
     .toLowerCase()
@@ -520,7 +538,7 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     profile_image_url: record.profile_image_url ?? null,
     description: record.description ?? "",
     created_at: record.created_at ?? null,
-    source: record.source ?? "Tally Import"
+    source: normalizedFarmerSource(record.source)
   };
 }
 
@@ -581,16 +599,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const farmers = await selectSupabaseRecords<ExistingFarmer>(
-    "farmers",
-    `${farmerReviewSelect}&or=(source.eq.Tally%20Import,source.eq.Founding%20Farmer)&order=created_at.desc&limit=5000`
-  );
+  const farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&order=created_at.desc&limit=5000`);
 
   if (farmers.error) {
     return NextResponse.json({ error: "Could not load imported farmers." }, { status: farmers.status });
   }
 
-  return NextResponse.json({ farmers: (farmers.data ?? []).map(friendlyImportedFarmer) });
+  const importedFarmers = (farmers.data ?? []).filter((farmer) => {
+    const source = normalizedFarmerSource(farmer.source);
+    return source === "Tally Import" || source === "Founding Farmer";
+  });
+
+  return NextResponse.json({
+    farmers: importedFarmers.map(friendlyImportedFarmer),
+    diagnostics: {
+      totalSupabaseFarmers: farmers.data?.length ?? 0,
+      importedFarmers: importedFarmers.length,
+      tallyImportFarmers: importedFarmers.filter((farmer) => normalizedFarmerSource(farmer.source) === "Tally Import").length,
+      foundingFarmers: importedFarmers.filter((farmer) => normalizedFarmerSource(farmer.source) === "Founding Farmer").length,
+      sourceValues: Array.from(new Set((farmers.data ?? []).map((farmer) => farmer.source?.trim() || "(empty)"))).sort()
+    }
+  });
 }
 
 export async function POST(request: Request) {

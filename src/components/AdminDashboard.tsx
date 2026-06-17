@@ -183,6 +183,18 @@ type AnalyticsData = {
   cropHealthReports: AnalyticsRecord[];
   marketPrices: AnalyticsRecord[];
 };
+type AdminFarmerDiagnostics = {
+  totalSupabaseFarmers: number;
+  tallyImportFarmers: number;
+  foundingFarmers?: number;
+  manualTestFarmers: number;
+  activeFarmers: number;
+  pendingReviewFarmers: number;
+  archivedFarmers: number;
+  sourceValues: string[];
+  fallbackUsed?: boolean;
+  error?: string;
+};
 type AdminMatchOpportunity = {
   id: string;
   request: AnalyticsRecord;
@@ -1060,7 +1072,7 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     status: farmer.status,
     verificationStatus: farmer.verification_status,
     dateAdded: new Date().toISOString().slice(0, 10),
-    source: farmer.source,
+    source: normalizedFarmerSource(farmer.source),
     phone: farmer.phone_number || farmer.whatsapp_number,
     whatsapp: farmer.whatsapp_number,
     farmSize: farmer.farm_size,
@@ -1642,6 +1654,24 @@ function importAdminStatusFromRecord(record: AnalyticsRecord): ImportAdminStatus
   return statusFromTrust(textValue(record, "verification_status") || status);
 }
 
+function normalizedFarmerSource(value?: string | null) {
+  const source = value?.trim();
+
+  if (!source) {
+    return "Manual/Test";
+  }
+
+  if (/tally/i.test(source)) {
+    return "Tally Import";
+  }
+
+  if (/founding/i.test(source)) {
+    return "Founding Farmer";
+  }
+
+  return source;
+}
+
 function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
   const id = textValue(record, "slug") || textValue(record, "id");
   const status = importAdminStatusFromRecord(record);
@@ -1653,7 +1683,7 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     region: textValue(record, "region") || "Ghana",
     status,
     dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
-    source: textValue(record, "source") || null,
+    source: normalizedFarmerSource(textValue(record, "source")),
     phone: textValue(record, "phone_number") || textValue(record, "whatsapp_number"),
     whatsapp: textValue(record, "whatsapp_number"),
     farmSize: textValue(record, "farm_size"),
@@ -1875,6 +1905,8 @@ export function AdminDashboard({
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [verificationNotes, setVerificationNotes] = useState<Record<string, string>>({});
   const [rowsBySection, setRowsBySection] = useState<Record<AdminSectionId, AdminRow[]>>(() => sectionRows());
+  const [farmerDiagnostics, setFarmerDiagnostics] = useState<AdminFarmerDiagnostics | null>(null);
+  const [farmerLoadError, setFarmerLoadError] = useState("");
   const [activityRows, setActivityRows] = useState<AdminActivityRecord[]>([]);
   const [activityError, setActivityError] = useState("");
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
@@ -2071,6 +2103,56 @@ export function AdminDashboard({
     void loadAnalytics();
   }, [loadAnalytics]);
 
+  const loadAdminFarmers = useCallback(async () => {
+    const response = await fetch("/api/admin/farmers").catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      farmers?: AnalyticsRecord[];
+      diagnostics?: AdminFarmerDiagnostics;
+      error?: string;
+    } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      const error = result?.error ?? "Supabase farmers could not be loaded.";
+      const useDevelopmentFallback = process.env.NODE_ENV !== "production" && error.includes("Supabase is not configured");
+
+      setRowsBySection((current) => ({
+        ...current,
+        farmers: useDevelopmentFallback ? sectionRows().farmers : []
+      }));
+      setFarmerDiagnostics({
+        totalSupabaseFarmers: 0,
+        tallyImportFarmers: 0,
+        foundingFarmers: 0,
+        manualTestFarmers: useDevelopmentFallback ? sectionRows().farmers.length : 0,
+        activeFarmers: 0,
+        pendingReviewFarmers: 0,
+        archivedFarmers: 0,
+        sourceValues: [],
+        fallbackUsed: useDevelopmentFallback,
+        error
+      });
+      setFarmerLoadError(useDevelopmentFallback ? "Supabase is not configured locally. Development fallback farmers are shown." : error);
+      return;
+    }
+
+    const farmers = result?.farmers ?? [];
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: farmers.map(adminFarmerRowFromAnalytics)
+    }));
+    setFarmerDiagnostics(result?.diagnostics ?? null);
+    setFarmerLoadError("");
+  }, []);
+
+  useEffect(() => {
+    void loadAdminFarmers();
+  }, [loadAdminFarmers]);
+
   const loadApplications = useCallback(async () => {
     const response = await fetch("/api/admin/applications").catch(() => null);
     const result = (await response?.json().catch(() => null)) as {
@@ -2190,7 +2272,6 @@ export function AdminDashboard({
 
     setRowsBySection((current) => ({
       ...current,
-      farmers: analyticsData.farmers.length ? analyticsData.farmers.map(adminFarmerRowFromAnalytics) : current.farmers,
       suppliers: analyticsData.suppliers.length ? analyticsData.suppliers.map(adminSupplierRowFromAnalytics) : current.suppliers,
       marketplace: analyticsData.marketplaceListings.length
         ? analyticsData.marketplaceListings.map(adminMarketplaceRowFromAnalytics)
@@ -2333,9 +2414,10 @@ export function AdminDashboard({
   }));
   const filteredRows = currentRows.filter((row) => {
     const query = searchTerm.trim().toLowerCase();
+    const rowSource = normalizedFarmerSource(row.source);
     const matchesSearch =
       !query ||
-      [row.name, row.type, row.region, row.status, row.verificationStatus ?? "", row.source ?? "", row.ownerType ?? "", row.ownerName ?? "", row.dateAdded]
+      [row.name, row.type, row.region, row.status, row.verificationStatus ?? "", rowSource, row.ownerType ?? "", row.ownerName ?? "", row.dateAdded]
         .join(" ")
         .toLowerCase()
         .includes(query);
@@ -2343,9 +2425,9 @@ export function AdminDashboard({
     const matchesFarmerSource =
       activeSection !== "farmers" ||
       farmerSourceFilter === "All" ||
-      (farmerSourceFilter === "Tally Import" && row.source === "Tally Import") ||
-      (farmerSourceFilter === "Founding Farmer" && row.source === "Founding Farmer") ||
-      (farmerSourceFilter === "Manual/Test" && row.source !== "Tally Import" && row.source !== "Founding Farmer");
+      (farmerSourceFilter === "Tally Import" && rowSource === "Tally Import") ||
+      (farmerSourceFilter === "Founding Farmer" && rowSource === "Founding Farmer") ||
+      (farmerSourceFilter === "Manual/Test" && rowSource !== "Tally Import" && rowSource !== "Founding Farmer");
     const matchesCompleteness =
       activeSection !== "farmers" ||
       profileCompletenessFilter === "All" ||
@@ -2567,7 +2649,9 @@ export function AdminDashboard({
     setRowsBySection((current) => ({
       ...current,
       farmers: current.farmers.map((row) =>
-        row.source === "Tally Import" || row.source === "Founding Farmer" ? row : { ...row, status: "Archived", href: undefined }
+        normalizedFarmerSource(row.source) === "Tally Import" || normalizedFarmerSource(row.source) === "Founding Farmer"
+          ? row
+          : { ...row, status: "Archived", href: undefined }
       )
     }));
     setStatusFilter("Archived");
@@ -2575,6 +2659,7 @@ export function AdminDashboard({
     setNotice(`${result?.archived ?? 0} manual/test farmer${result?.archived === 1 ? "" : "s"} archived. Tally-imported farmers were left unchanged.`);
     void loadActivity();
     void loadAnalytics();
+    void loadAdminFarmers();
   }
 
   function toggleFarmerSelection(rowId: string, checked: boolean) {
@@ -2659,6 +2744,7 @@ export function AdminDashboard({
     setNotice(`${result?.updated ?? 0} farmer${result?.updated === 1 ? "" : "s"} updated to ${result?.status ?? farmerBulkActionLabels[pendingFarmerBulkAction]}.`);
     void loadActivity();
     void loadAnalytics();
+    void loadAdminFarmers();
   }
 
   async function importTallyFarmers(event: FormEvent<HTMLFormElement>) {
@@ -2750,6 +2836,7 @@ export function AdminDashboard({
     form.reset();
     void loadActivity();
     void loadAnalytics();
+    void loadAdminFarmers();
   }
 
   async function bulkUpdateImportedFarmers(action: "approve" | "founding" | "archive") {
@@ -2811,6 +2898,7 @@ export function AdminDashboard({
     setNotice(`${result?.updated ?? selectedImportedFarmerIds.length} imported farmer${selectedImportedFarmerIds.length === 1 ? "" : "s"} updated.`);
     void loadActivity();
     void loadAnalytics();
+    void loadAdminFarmers();
   }
 
   async function openImportedFarmerReview(farmer: ImportedFarmerRecord) {
@@ -3000,6 +3088,7 @@ export function AdminDashboard({
     setNotice(successMessage);
     void loadActivity();
     void loadAnalytics();
+    void loadAdminFarmers();
   }
 
   function runQuickAction(section: AdminSectionId, intent: string) {
@@ -5145,9 +5234,51 @@ export function AdminDashboard({
               </div>
             ) : null}
             {activeSection === "farmers" ? (
-              <p className="border-b border-leaf-900/10 bg-white px-5 py-3 text-xs font-bold text-ink/55">
-                Use Review beside the farmer name to open the full Tally application. Scroll sideways only for secondary actions.
-              </p>
+              <div className="border-b border-leaf-900/10 bg-white px-5 py-4">
+                <p className="text-xs font-bold text-ink/55">
+                  Use Review beside the farmer name to open the full Tally application. Scroll sideways only for secondary actions.
+                </p>
+                <div className="mt-4 rounded-md border border-leaf-900/10 bg-leaf-50/70 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-leaf-700">Supabase Farmer Diagnostics</p>
+                      <p className="mt-1 text-sm font-semibold leading-6 text-ink/60">
+                        Admin Farmers now loads from Supabase first. Demo rows are hidden in production when Supabase is unavailable.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void loadAdminFarmers()}
+                      className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-100"
+                    >
+                      Refresh Farmers
+                    </button>
+                  </div>
+                  {farmerLoadError ? (
+                    <p className="mt-3 rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">{farmerLoadError}</p>
+                  ) : null}
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                    {[
+                      ["Total Supabase farmers", farmerDiagnostics?.totalSupabaseFarmers ?? rowsBySection.farmers.length],
+                      ["Tally Import farmers", farmerDiagnostics?.tallyImportFarmers ?? 0],
+                      ["Manual/Test farmers", farmerDiagnostics?.manualTestFarmers ?? 0],
+                      ["Active farmers", farmerDiagnostics?.activeFarmers ?? rowsBySection.farmers.filter((row) => row.status === "Active").length],
+                      ["Pending Review", farmerDiagnostics?.pendingReviewFarmers ?? rowsBySection.farmers.filter((row) => row.status === "Pending Review").length],
+                      ["Archived farmers", farmerDiagnostics?.archivedFarmers ?? rowsBySection.farmers.filter((row) => row.status === "Archived").length]
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-ink/45">{label}</p>
+                        <p className="mt-2 text-2xl font-black text-ink">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {farmerDiagnostics?.sourceValues.length ? (
+                    <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+                      Source values found: {farmerDiagnostics.sourceValues.join(", ")}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             ) : null}
             <div className="overflow-x-auto">
               <table className="min-w-[900px] w-full border-collapse text-left text-sm">
@@ -5183,8 +5314,9 @@ export function AdminDashboard({
                 <tbody className="divide-y divide-leaf-900/10">
                   {filteredRows.map((row) => {
                     const isExpandedFarmerRow = expandedFarmerRowIds.includes(row.id);
-                    const isTallyFarmerRow = activeSection === "farmers" && row.source === "Tally Import";
-                    const farmerRowSource = row.source === "Tally Import" || row.source === "Founding Farmer" ? row.source : "Manual/Test";
+                    const normalizedRowSource = normalizedFarmerSource(row.source);
+                    const isTallyFarmerRow = activeSection === "farmers" && normalizedRowSource === "Tally Import";
+                    const farmerRowSource = normalizedRowSource === "Tally Import" || normalizedRowSource === "Founding Farmer" ? normalizedRowSource : "Manual/Test";
 
                     return (
                     <Fragment key={row.id}>
@@ -5293,7 +5425,7 @@ export function AdminDashboard({
                               ) : null}
                             </>
                           ) : null}
-                          {activeSection === "farmers" && row.source === "Tally Import" ? (
+                          {activeSection === "farmers" && normalizedRowSource === "Tally Import" ? (
                             <button
                               type="button"
                               onClick={() => void openImportedFarmerReviewById(row.id)}
@@ -5313,7 +5445,7 @@ export function AdminDashboard({
                               View
                             </button>
                           )}
-                          {row.verificationTarget && !(activeSection === "farmers" && row.source === "Tally Import") ? (
+                          {row.verificationTarget && !(activeSection === "farmers" && normalizedRowSource === "Tally Import") ? (
                             <>
                               <label className="grid min-w-[220px] flex-1 gap-1 text-xs font-black text-ink/60">
                                 Verification notes
@@ -5349,7 +5481,7 @@ export function AdminDashboard({
                                 Reject
                               </button>
                             </>
-                          ) : activeSection === "farmers" && row.source === "Tally Import" ? (
+                          ) : activeSection === "farmers" && normalizedRowSource === "Tally Import" ? (
                             <>
                               <span className="inline-flex items-center rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">
                                 Verify in review
