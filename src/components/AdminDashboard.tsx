@@ -20,6 +20,7 @@ import {
   Search,
   ShieldCheck,
   Sprout,
+  Star,
   Store,
   Trash2,
   Truck,
@@ -80,6 +81,9 @@ type AdminRow = {
   ownerType?: "Farmer" | "Supplier" | "Admin" | string;
   ownerId?: string;
   ownerName?: string;
+  isFeatured?: boolean;
+  featuredUntil?: string;
+  featuredNote?: string;
   href?: string;
   verificationTarget?: {
     subject: VerificationSubject;
@@ -89,7 +93,24 @@ type AdminRow = {
 type AdminActivityRecord = {
   id: string;
   admin_email: string;
-  action_type: "Create" | "Edit" | "Verify" | "Archive" | "Review" | "Approve" | "Reject" | "Convert" | "View" | "Contact" | "Complete" | "Close" | "Submit";
+  action_type:
+    | "Create"
+    | "Edit"
+    | "Verify"
+    | "Archive"
+    | "Review"
+    | "Approve"
+    | "Reject"
+    | "Convert"
+    | "View"
+    | "Contact"
+    | "Complete"
+    | "Close"
+    | "Submit"
+    | "Marked Featured"
+    | "Removed Featured"
+    | "Featured Expired"
+    | "Featured Note Updated";
   entity_type:
     | "Farmer"
     | "Supplier"
@@ -159,6 +180,7 @@ type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified
 type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
 type ProfileCompletenessFilter = "All" | "Ready to Publish" | "Needs Follow-up" | "Incomplete";
 type MarketplaceOwnerFilter = "All" | "Farmer" | "Supplier" | "Admin";
+type FeaturedFilter = "All" | "Featured" | "Not Featured" | "Expired Featured";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -406,6 +428,9 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       dateAdded: "2026-06-07",
       products: farmer.products.slice(0, 3).join(", "),
       farmSize: farmer.farmSize,
+      isFeatured: farmer.isFeatured,
+      featuredUntil: farmer.featuredUntil,
+      featuredNote: farmer.featuredNote,
       href: `/farmer-directory/${farmer.slug}`,
       verificationTarget: { subject: "farmer" as const, recordId: farmer.slug }
     })),
@@ -417,6 +442,9 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       region: supplier.region,
       status: statusFromTrust(supplier.trust?.status),
       dateAdded: "2026-06-07",
+      isFeatured: supplier.isFeatured,
+      featuredUntil: supplier.featuredUntil,
+      featuredNote: supplier.featuredNote,
       href: `/supplier-directory/${supplier.slug}`,
       verificationTarget: { subject: "supplier" as const, recordId: supplier.slug }
     })),
@@ -430,6 +458,9 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       ownerType: product.ownerType ?? (product.farmerSlug ? "Farmer" : "Admin"),
       ownerId: product.ownerId,
       ownerName: product.ownerName ?? product.seller,
+      isFeatured: product.featured,
+      featuredUntil: product.featuredUntil,
+      featuredNote: product.featuredNote,
       href: "/marketplace#marketplace-listings"
     })),
     "buyer-requests": buyerRequests.map((request) => ({
@@ -871,6 +902,37 @@ function recordString(record: unknown, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function recordBoolean(record: unknown, key: string) {
+  if (!record || typeof record !== "object") {
+    return false;
+  }
+
+  const value = (record as Record<string, unknown>)[key];
+  return value === true;
+}
+
+function isAdminFeaturedActive(row: Pick<AdminRow, "isFeatured" | "featuredUntil">) {
+  if (!row.isFeatured) {
+    return false;
+  }
+
+  if (!row.featuredUntil) {
+    return true;
+  }
+
+  const expiresAt = new Date(`${row.featuredUntil}T23:59:59`);
+  return Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() >= Date.now();
+}
+
+function isAdminFeaturedExpired(row: Pick<AdminRow, "isFeatured" | "featuredUntil">) {
+  if (!row.isFeatured || !row.featuredUntil) {
+    return false;
+  }
+
+  const expiresAt = new Date(`${row.featuredUntil}T23:59:59`);
+  return !Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() < Date.now();
+}
+
 function rowIdFromRecord(record: unknown, fallback: string) {
   return recordString(record, "slug") || recordString(record, "id") || fallback;
 }
@@ -999,6 +1061,7 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     whatsapp: farmer.whatsapp_number,
     farmSize: farmer.farm_size,
     products: farmer.products.slice(0, 3).join(", "),
+    isFeatured: false,
     completenessPercent: completeness.percent,
     completenessStatus: completeness.status,
     completenessTone: completeness.tone,
@@ -1221,7 +1284,11 @@ function activitySentence(activity: AdminActivityRecord) {
     Contact: "contacted",
     Complete: "completed",
     Close: "closed",
-    Submit: "submitted"
+    Submit: "submitted",
+    "Marked Featured": "marked featured",
+    "Removed Featured": "removed featured from",
+    "Featured Expired": "marked featured expired for",
+    "Featured Note Updated": "updated featured note for"
   };
   const verb = verbs[activity.action_type];
   const entity = activity.entity_type.toLowerCase();
@@ -1500,8 +1567,29 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     whatsapp: textValue(record, "whatsapp_number"),
     farmSize: textValue(record, "farm_size"),
     products: arrayValue(record, "products").slice(0, 3).join(", "),
+    isFeatured: recordBoolean(record, "is_featured"),
+    featuredUntil: textValue(record, "featured_until"),
+    featuredNote: textValue(record, "featured_note"),
     href: status === "Active" ? `/farmer-directory/${id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: id }
+  };
+}
+
+function adminSupplierRowFromAnalytics(record: AnalyticsRecord): AdminRow {
+  const id = textValue(record, "slug") || textValue(record, "id");
+
+  return {
+    id,
+    name: textValue(record, "company_name") || "Supplier record",
+    type: textValue(record, "category") || "Supplier",
+    region: textValue(record, "region") || "Ghana",
+    status: textValue(record, "status") === "Archived" ? "Archived" : statusFromTrust(textValue(record, "verification_status")),
+    dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
+    isFeatured: recordBoolean(record, "is_featured"),
+    featuredUntil: textValue(record, "featured_until"),
+    featuredNote: textValue(record, "featured_note"),
+    href: `/supplier-directory/${id}`,
+    verificationTarget: { subject: "supplier", recordId: id }
   };
 }
 
@@ -1520,6 +1608,9 @@ function adminMarketplaceRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     ownerType,
     ownerId: textValue(record, "owner_id"),
     ownerName,
+    isFeatured: recordBoolean(record, "is_featured"),
+    featuredUntil: textValue(record, "featured_until"),
+    featuredNote: textValue(record, "featured_note"),
     href: "/marketplace#marketplace-listings"
   };
 }
@@ -1537,6 +1628,9 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       verification_status: farmer.verificationStatus,
       status: farmer.availabilityStatus,
       source: null,
+      is_featured: Boolean(farmer.isFeatured),
+      featured_until: farmer.featuredUntil ?? null,
+      featured_note: farmer.featuredNote ?? null,
       created_at: "2026-06-07"
     })),
     suppliers: supplierDirectory.map((supplier) => ({
@@ -1544,7 +1638,10 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       company_name: supplier.companyName,
       category: supplier.supplierCategory,
       verification_status: supplier.verificationStatus,
-      status: "Active"
+      status: "Active",
+      is_featured: Boolean(supplier.isFeatured),
+      featured_until: supplier.featuredUntil ?? null,
+      featured_note: supplier.featuredNote ?? null
     })),
     marketplaceListings: products.map((product) => ({
       id: product.id,
@@ -1558,7 +1655,10 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       owner_name: product.ownerName ?? product.seller,
       whatsapp_number: product.whatsappNumber ?? WHATSAPP_NUMBER,
       status: product.available === "Sold Out" ? "Archived" : "Active",
-      availability: product.available
+      availability: product.available,
+      is_featured: Boolean(product.featured),
+      featured_until: product.featuredUntil ?? null,
+      featured_note: product.featuredNote ?? null
     })),
     buyerRequests: buyerRequests.map((request) => ({
       id: request.id,
@@ -1641,6 +1741,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
   const [profileCompletenessFilter, setProfileCompletenessFilter] = useState<ProfileCompletenessFilter>("All");
   const [marketplaceOwnerFilter, setMarketplaceOwnerFilter] = useState<MarketplaceOwnerFilter>("All");
+  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
   const [expandedFarmerRowIds, setExpandedFarmerRowIds] = useState<string[]>([]);
   const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
@@ -1938,18 +2039,19 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
   const analytics = useMemo(() => mergeAnalyticsWithFallback(analyticsData, analyticsFallback), [analyticsData, analyticsFallback]);
   useEffect(() => {
-    if (!analyticsData?.farmers.length && !analyticsData?.marketplaceListings.length) {
+    if (!analyticsData?.farmers.length && !analyticsData?.suppliers.length && !analyticsData?.marketplaceListings.length) {
       return;
     }
 
     setRowsBySection((current) => ({
       ...current,
       farmers: analyticsData.farmers.length ? analyticsData.farmers.map(adminFarmerRowFromAnalytics) : current.farmers,
+      suppliers: analyticsData.suppliers.length ? analyticsData.suppliers.map(adminSupplierRowFromAnalytics) : current.suppliers,
       marketplace: analyticsData.marketplaceListings.length
         ? analyticsData.marketplaceListings.map(adminMarketplaceRowFromAnalytics)
         : current.marketplace
     }));
-  }, [analyticsData?.farmers, analyticsData?.marketplaceListings]);
+  }, [analyticsData?.farmers, analyticsData?.marketplaceListings, analyticsData?.suppliers]);
   const analyticsCards = useMemo(() => [
     { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
     { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
@@ -2074,8 +2176,15 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
       activeSection !== "marketplace" ||
       marketplaceOwnerFilter === "All" ||
       row.ownerType === marketplaceOwnerFilter;
+    const supportsFeaturedFilter = activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace";
+    const matchesFeatured =
+      !supportsFeaturedFilter ||
+      featuredFilter === "All" ||
+      (featuredFilter === "Featured" && isAdminFeaturedActive(row)) ||
+      (featuredFilter === "Not Featured" && !row.isFeatured) ||
+      (featuredFilter === "Expired Featured" && isAdminFeaturedExpired(row));
 
-    return matchesSearch && matchesStatus && matchesFarmerSource && matchesCompleteness && matchesMarketplaceOwner;
+    return matchesSearch && matchesStatus && matchesFarmerSource && matchesCompleteness && matchesMarketplaceOwner && matchesFeatured;
   });
   const visibleFarmerRowIds = activeSection === "farmers" ? filteredRows.map((row) => row.id) : [];
   const selectedVisibleFarmerCount = visibleFarmerRowIds.filter((id) => selectedFarmerRowIds.includes(id)).length;
@@ -2185,6 +2294,71 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
     }));
     setNotice(`${row.name} archived successfully.`);
     void loadActivity();
+  }
+
+  async function updateFeaturedRow(row: AdminRow, action: "mark" | "remove" | "note") {
+    if (activeSection !== "farmers" && activeSection !== "suppliers" && activeSection !== "marketplace") {
+      return;
+    }
+
+    const featuredUntil =
+      action === "remove"
+        ? ""
+        : window.prompt("Set featured until date (YYYY-MM-DD). Leave blank for no expiry.", row.featuredUntil ?? "") ?? row.featuredUntil ?? "";
+
+    if (action !== "remove" && featuredUntil === null) {
+      return;
+    }
+
+    const featuredNote =
+      action === "remove"
+        ? row.featuredNote ?? ""
+        : window.prompt("Internal featured note. Leave blank if not needed.", row.featuredNote ?? "") ?? row.featuredNote ?? "";
+
+    const response = await fetch("/api/admin/featured", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        section: activeSection,
+        recordId: row.id,
+        entityName: row.name,
+        action,
+        featuredUntil,
+        featuredNote
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? `Could not update featured settings for ${row.name}.`);
+      return;
+    }
+
+    setRowsBySection((current) => ({
+      ...current,
+      [activeSection]: current[activeSection].map((record) =>
+        record.id === row.id
+          ? {
+              ...record,
+              isFeatured: action !== "remove",
+              featuredUntil: action === "remove" ? undefined : featuredUntil || undefined,
+              featuredNote: featuredNote || undefined
+            }
+          : record
+      )
+    }));
+    setNotice(
+      action === "remove"
+        ? `${row.name} removed from featured visibility.`
+        : `${row.name} marked featured${featuredUntil ? ` until ${featuredUntil}` : ""}.`
+    );
+    void loadActivity();
+    void loadAnalytics();
   }
 
   async function archiveNonTallyFarmers() {
@@ -3388,6 +3562,18 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <option value="Admin">Admin-owned</option>
                     </select>
                   ) : null}
+                  {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? (
+                    <select
+                      value={featuredFilter}
+                      onChange={(event) => setFeaturedFilter(event.target.value as FeaturedFilter)}
+                      className="rounded-md border border-leaf-900/10 bg-white px-3 py-3 text-sm font-black text-ink/70 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                    >
+                      <option value="All">All featured states</option>
+                      <option value="Featured">Featured</option>
+                      <option value="Not Featured">Not Featured</option>
+                      <option value="Expired Featured">Expired Featured</option>
+                    </select>
+                  ) : null}
                 </div>
                 ) : null}
               </div>
@@ -4573,6 +4759,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     {activeSection === "marketplace" ? <th className="px-5 py-4">Owner Type</th> : null}
                     {activeSection === "marketplace" ? <th className="px-5 py-4">Owner Name</th> : null}
                     {activeSection === "farmers" ? <th className="px-5 py-4">Source</th> : null}
+                    {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? <th className="px-5 py-4">Featured</th> : null}
                     <th className="px-5 py-4">Status</th>
                     <th className="px-5 py-4">Date added</th>
                     <th className="px-5 py-4">Actions</th>
@@ -4644,6 +4831,23 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                           {farmerRowSource}
                         </td>
                       ) : null}
+                      {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? (
+                        <td className="px-5 py-4">
+                          {isAdminFeaturedActive(row) ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                              <Star className="h-3.5 w-3.5 fill-current" />
+                              Featured
+                            </span>
+                          ) : isAdminFeaturedExpired(row) ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-ink/10 px-3 py-1 text-xs font-black text-ink/55">
+                              Expired
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-ink/35">Not featured</span>
+                          )}
+                          {row.featuredUntil ? <p className="mt-1 text-xs font-semibold text-ink/45">Until {row.featuredUntil}</p> : null}
+                        </td>
+                      ) : null}
                       <td className="px-5 py-4">
                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${importStatusStyles[row.status]}`}>
                           {row.status}
@@ -4652,6 +4856,28 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                       <td className="px-5 py-4 text-ink/65">{row.dateAdded}</td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
+                          {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => void updateFeaturedRow(row, isAdminFeaturedActive(row) ? "note" : "mark")}
+                                className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-earth-700"
+                              >
+                                <Star className="h-3.5 w-3.5" />
+                                {row.isFeatured ? "Update Featured" : "Mark Featured"}
+                              </button>
+                              {row.isFeatured ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void updateFeaturedRow(row, "remove")}
+                                  className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  Remove Featured
+                                </button>
+                              ) : null}
+                            </>
+                          ) : null}
                           {activeSection === "farmers" && row.source === "Tally Import" ? (
                             <button
                               type="button"
@@ -4764,7 +4990,7 @@ export function AdminDashboard({ currentAdmin, initialSection = "analytics" }: {
                     </tr>
                     {activeSection === "farmers" && isExpandedFarmerRow ? (
                       <tr className="bg-leaf-50/55">
-                        <td colSpan={11} className="px-5 py-4">
+                        <td colSpan={12} className="px-5 py-4">
                           <div className="grid gap-3 rounded-md border border-leaf-900/10 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
                             {[
                               ["Phone", row.phone || "Not provided"],

@@ -2,6 +2,7 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
+import { isFeaturedActive } from "@/lib/featured";
 import { getSuppliersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export const metadata = {
 
 export default async function SupplierDirectoryPage() {
   const suppliers = await getSuppliersData();
+  const featuredSuppliers = suppliers.filter((supplier) => isFeaturedActive(supplier) || supplier.verificationStatus === "Verified").slice(0, 3);
 
   return (
     <>
@@ -33,6 +35,7 @@ export default async function SupplierDirectoryPage() {
         title="Featured suppliers"
         description="Priority agricultural suppliers selected from the editable featured listings configuration."
         background="leaf"
+        suppliers={featuredSuppliers}
       />
       <SupplierDirectory suppliers={suppliers} />
     </>

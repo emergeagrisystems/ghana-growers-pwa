@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Search, SlidersHorizontal } from "lucide-react";
+import { BadgeCheck, Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
+import { isFeaturedActive } from "@/lib/featured";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -148,7 +149,15 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">{farmer.region}</p>
                           <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">{farmer.farmName}</h3>
                         </div>
-                        <FarmerBadge status={trust.status} />
+                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                          {isFeaturedActive(farmer) ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                              <Star className="h-3.5 w-3.5 fill-current" />
+                              Featured
+                            </span>
+                          ) : null}
+                          <FarmerBadge status={trust.status} />
+                        </div>
                       </div>
 
                       <p className="mt-3 text-sm font-semibold text-ink/58">{farmer.district}</p>

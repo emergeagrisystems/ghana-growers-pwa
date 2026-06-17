@@ -26,6 +26,8 @@ export type Product = {
   datePosted: string;
   verified?: boolean;
   featured?: boolean;
+  featuredUntil?: string;
+  featuredNote?: string;
   whatsappNumber?: string;
   farmerSlug?: string;
   ownerType?: "Farmer" | "Supplier" | "Admin";
@@ -88,6 +90,9 @@ export type FarmerProfile = {
   verifiedBy?: string;
   verificationNotes?: string;
   source?: string;
+  isFeatured?: boolean;
+  featuredUntil?: string;
+  featuredNote?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };
@@ -122,6 +127,9 @@ export type SupplierProfile = {
   verificationDate?: string;
   verifiedBy?: string;
   verificationNotes?: string;
+  isFeatured?: boolean;
+  featuredUntil?: string;
+  featuredNote?: string;
   trust?: TrustProfile;
   whatsappMessage: string;
 };

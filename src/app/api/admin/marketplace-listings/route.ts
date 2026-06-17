@@ -58,7 +58,10 @@ export async function POST(request: Request) {
         whatsapp_number: payload.whatsappNumber,
         status: "Active",
         verification_status: "Pending Verification",
-        featured: false
+        featured: false,
+        is_featured: false,
+        featured_until: null,
+        featured_note: null
       };
     }
   });

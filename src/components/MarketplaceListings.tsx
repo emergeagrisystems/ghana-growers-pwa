@@ -7,6 +7,7 @@ import {
   PackageCheck,
   Search,
   SlidersHorizontal,
+  Star,
   Tag,
   UsersRound,
   X
@@ -172,6 +173,12 @@ function ListingCard({
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
             <BadgeCheck className="h-3.5 w-3.5" />
             Verified
+          </span>
+        ) : null}
+        {product.featured ? (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2.5 py-1 text-xs font-black text-earth-700 shadow-sm">
+            <Star className="h-3.5 w-3.5 fill-current" />
+            Featured
           </span>
         ) : null}
       </div>

@@ -2,6 +2,7 @@ import { FarmerDirectory } from "@/components/FarmerDirectory";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
+import { isFeaturedActive } from "@/lib/featured";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const metadata = {
 
 export default async function FarmerDirectoryPage() {
   const farmers = await getFarmersData();
-  const featuredFarmers = farmers.filter((farmer) => farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer").slice(0, 3);
+  const featuredFarmers = farmers.filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer").slice(0, 3);
 
   return (
     <>

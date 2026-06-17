@@ -3,6 +3,7 @@ import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
+import { featuredSort, isFeaturedActive } from "@/lib/featured";
 import { cleanProductList, productDisplayName, productImageForName, supplierServiceImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
@@ -30,6 +31,9 @@ type SupabaseFarmer = {
   description: string | null;
   status: string | null;
   source: string | null;
+  is_featured: boolean | null;
+  featured_until: string | null;
+  featured_note: string | null;
   created_at: string;
 };
 
@@ -54,6 +58,9 @@ type SupabaseSupplier = {
   profile_image_url?: string | null;
   application_image_url?: string | null;
   status: string | null;
+  is_featured: boolean | null;
+  featured_until: string | null;
+  featured_note: string | null;
   created_at: string;
 };
 
@@ -78,6 +85,9 @@ type SupabaseListing = {
   verification_status: string | null;
   status: string | null;
   featured: boolean | null;
+  is_featured: boolean | null;
+  featured_until: string | null;
+  featured_note: string | null;
   created_at: string;
 };
 
@@ -377,6 +387,9 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
     source: row.source ?? undefined,
+    isFeatured: Boolean(row.is_featured),
+    featuredUntil: row.featured_until ?? undefined,
+    featuredNote: row.featured_note ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I am interested in contacting ${row.farm_name} in ${row.district}, ${row.region}.`
   };
@@ -407,6 +420,9 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
+    isFeatured: Boolean(row.is_featured),
+    featuredUntil: row.featured_until ?? undefined,
+    featuredNote: row.featured_note ?? undefined,
     trust: trustProfile(row.verification_status),
     whatsappMessage: `Hello Ghana Growers, I want to contact ${row.company_name} about ${services.slice(0, 2).join(" and ")}.`
   };
@@ -431,7 +447,12 @@ function mapListing(row: SupabaseListing): Product {
     available: row.availability,
     datePosted: dateOnly(row.created_at),
     verified: trustStatus(row.verification_status) === "Verified",
-    featured: Boolean(row.featured),
+    featured: isFeaturedActive({
+      isFeatured: Boolean(row.is_featured ?? row.featured),
+      featuredUntil: row.featured_until ?? undefined
+    }),
+    featuredUntil: row.featured_until ?? undefined,
+    featuredNote: row.featured_note ?? undefined,
     whatsappNumber: row.whatsapp_number ?? "233000000000",
     farmerSlug: ownerType === "Farmer" ? slugify(ownerName) : undefined,
     ownerType,
@@ -486,7 +507,7 @@ export async function getFarmersData() {
   const publicRows = rows.filter((row) => row.status === "Active");
 
   if (rows.length > 0) {
-    return publicRows.map(mapFarmer);
+    return featuredSort(publicRows.map(mapFarmer));
   }
 
   return allowDemoPublicData() ? fallbackFarmers : [];
@@ -494,12 +515,12 @@ export async function getFarmersData() {
 
 export async function getSuppliersData() {
   const rows = await fetchRows<SupabaseSupplier>("suppliers");
-  return rows.length > 0 ? rows.map(mapSupplier) : allowDemoPublicData() ? fallbackSuppliers : [];
+  return rows.length > 0 ? featuredSort(rows.map(mapSupplier)) : allowDemoPublicData() ? fallbackSuppliers : [];
 }
 
 export async function getMarketplaceListingsData() {
   const rows = await fetchRows<SupabaseListing>("marketplace_listings");
-  return rows.length > 0 ? rows.map(mapListing) : allowDemoPublicData() ? fallbackProducts : [];
+  return rows.length > 0 ? featuredSort(rows.map(mapListing)) : allowDemoPublicData() ? fallbackProducts : [];
 }
 
 export async function getBuyerRequestsData() {

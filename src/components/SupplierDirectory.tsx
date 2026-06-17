@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
 import { productCategories } from "@/data/products";
+import { isFeaturedActive } from "@/lib/featured";
 import type { SupplierProfile } from "@/types";
 
 type SupplierDirectoryProps = {
@@ -166,7 +167,15 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                 </div>
               </div>
               <div className="mt-4">
-                <VerificationBadge kind="supplier" status={trust.status} />
+                <div className="flex flex-wrap gap-2">
+                  {isFeaturedActive(supplier) ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                      Featured
+                    </span>
+                  ) : null}
+                  <VerificationBadge kind="supplier" status={trust.status} />
+                </div>
               </div>
 
               <p className="mt-4 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>

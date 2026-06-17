@@ -11,6 +11,7 @@ import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategorySho
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SafeImage } from "@/components/SafeImage";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { isFeaturedActive } from "@/lib/featured";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
 export const metadata = {
@@ -27,7 +28,7 @@ export const metadata = {
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
-  const homepageFeaturedFarmers = farmers.filter((farmer) => farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer");
+  const homepageFeaturedFarmers = farmers.filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer");
 
   return (
     <>

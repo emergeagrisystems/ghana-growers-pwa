@@ -1,17 +1,18 @@
 import Link from "next/link";
-import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout } from "lucide-react";
+import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout, Star } from "lucide-react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { normalizeTrust, VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { isFeaturedActive } from "@/lib/featured";
 import {
   featuredBuyerRequests,
   featuredFarmers,
   featuredListingLabels,
   featuredSuppliers
 } from "@/data/featuredListings";
-import type { FarmerProfile } from "@/types";
+import type { FarmerProfile, SupplierProfile } from "@/types";
 
 type FeaturedListingKind = "farmers" | "suppliers" | "buyerRequests" | "all";
 
@@ -23,6 +24,7 @@ type FeaturedListingsProps = {
   limit?: number;
   compact?: boolean;
   farmers?: FarmerProfile[];
+  suppliers?: SupplierProfile[];
 };
 
 const backgrounds = {
@@ -38,13 +40,15 @@ export function FeaturedListings({
   background = "white",
   limit,
   compact = false,
-  farmers
+  farmers,
+  suppliers
 }: FeaturedListingsProps) {
   const showAll = kinds.includes("all");
   const showFarmers = showAll || kinds.includes("farmers");
   const showSuppliers = showAll || kinds.includes("suppliers");
   const showBuyerRequests = showAll || kinds.includes("buyerRequests");
   const selectedFarmers = farmers ?? featuredFarmers;
+  const selectedSuppliers = suppliers ?? featuredSuppliers;
 
   return (
     <section className={`${backgrounds[background]} py-16`}>
@@ -84,6 +88,12 @@ export function FeaturedListings({
                       <VerificationBadge kind="farmer" status={trust.status} />
                     </div>
                   ) : null}
+                  {isFeaturedActive(farmer) ? (
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                      Featured
+                    </span>
+                  ) : null}
                   {compact ? null : <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {farmer.products.slice(0, 3).map((product) => (
@@ -106,7 +116,7 @@ export function FeaturedListings({
             : null}
 
           {showSuppliers
-            ? featuredSuppliers.slice(0, limit).map((supplier) => {
+            ? selectedSuppliers.slice(0, limit).map((supplier) => {
                 const trust = normalizeTrust(supplier.trust);
 
                 return (
@@ -136,6 +146,12 @@ export function FeaturedListings({
                     <div className="mt-3">
                       <VerificationBadge kind="supplier" status={trust.status} />
                     </div>
+                  ) : null}
+                  {isFeaturedActive(supplier) ? (
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                      Featured
+                    </span>
                   ) : null}
                   <p className="mt-3 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
