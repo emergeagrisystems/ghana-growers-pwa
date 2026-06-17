@@ -5,7 +5,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  CreditCard,
   MapPin,
   PackageCheck,
   Ruler,
@@ -16,7 +15,7 @@ import {
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
-import { productImageForName } from "@/lib/productDisplay";
+import { productDisplayName, productImageForListing, productImageForName } from "@/lib/productDisplay";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -86,18 +85,19 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     );
   });
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
-  const deliveryOption = farmer.deliveryOptions?.[0] ?? "Not provided";
-  const paymentPreference = farmer.paymentPreference ?? "Not provided";
+  const deliveryOption = "Upon arrangement";
+  const paymentPreference = farmer.paymentPreference && farmer.paymentPreference !== "Not provided" ? farmer.paymentPreference : "Payment to be confirmed";
   const productListings = farmer.products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => {
       const listingName = listing.name.toLowerCase().replace("fresh ", "").replace("red ", "").replace("yellow ", "").replace("mature ", "");
       const productName = product.toLowerCase();
       return listingName.includes(productName) || productName.includes(listingName);
     });
+    const displayName = productDisplayName(product);
 
     return {
-      product,
-      image: productImageForName(product),
+      product: displayName,
+      image: productImageForName(displayName),
       quantity: marketplaceMatch?.seller === farmer.farmName ? `${marketplaceMatch.quantity} ${marketplaceMatch.unit}` : farmer.availableQuantities ?? farmer.capacityVolume,
       status: marketplaceMatch?.seller === farmer.farmName ? marketplaceMatch.available : farmer.availabilityStatus
     };
@@ -108,8 +108,6 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     { icon: CalendarDays, label: "Years Farming", value: farmer.yearsFarming ?? "Available on request" },
     { icon: Ruler, label: "Farm Size", value: farmer.farmSize },
     { icon: Clock3, label: "Supply Frequency", value: farmer.availabilityStatus },
-    { icon: Truck, label: "Delivery / Collection", value: deliveryOption },
-    { icon: CreditCard, label: "Payment Preference", value: paymentPreference },
     { icon: PackageCheck, label: "Active Listings", value: String(activeMarketplaceListings.length) }
   ];
 
@@ -244,7 +242,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                     {activeMarketplaceListings.slice(0, 6).map((listing) => (
                       <article key={listing.id} className="overflow-hidden rounded-md border border-leaf-900/10 bg-leaf-50">
                         <SafeImage
-                          src={listing.image}
+                          src={productImageForListing(listing.name, listing.category, listing.image)}
                           alt={`${listing.name} marketplace listing`}
                           width={360}
                           height={220}
@@ -327,6 +325,17 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                     <LocationRow label="Region" value={farmer.region} />
                     <LocationRow label="District" value={farmer.district} />
                     <LocationRow label="Service area" value={`${farmer.district} and nearby buyer routes`} />
+                  </div>
+                </div>
+              </section>
+
+              <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
+                <div className="p-5">
+                  <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
+                    <Truck className="h-4 w-4" aria-hidden="true" />
+                    Trade Details
+                  </p>
+                  <div className="mt-4 grid gap-3 text-sm">
                     <LocationRow label="Delivery / pickup" value={deliveryOption} />
                     <LocationRow label="Payment preference" value={paymentPreference} />
                   </div>

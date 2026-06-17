@@ -289,6 +289,32 @@ function farmerDescription(row: SupabaseFarmer, products: string[]) {
   return `${name} is listed in the Ghana Growers farmer network. Buyers can request availability and quantity details through Ghana Growers.`;
 }
 
+function publicDeliveryPreference() {
+  return "Upon arrangement";
+}
+
+function publicPaymentPreference(value?: string | null) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+
+  if (!normalized || ["not provided", "n/a", "na", "none"].includes(normalized)) {
+    return "Payment to be confirmed";
+  }
+
+  if (normalized.includes("mobile money") || normalized.includes("momo")) {
+    return "Mobile Money";
+  }
+
+  if (normalized.includes("bank")) {
+    return "Bank Transfer";
+  }
+
+  if (normalized.includes("cash")) {
+    return "Cash";
+  }
+
+  return "Payment to be confirmed";
+}
+
 function supplierImageUrls(row: SupabaseSupplier, services: string[]) {
   const urls = [
     row.logo_url,
@@ -343,8 +369,8 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     harvestSeason: "Confirm current harvest timing with Ghana Growers.",
     capacityVolume: "Capacity available on request",
     availableQuantities: "Available quantities confirmed during inquiry",
-    deliveryOptions: [row.delivery_preference || "Not provided"],
-    paymentPreference: row.payment_preference || "Not provided",
+    deliveryOptions: [publicDeliveryPreference()],
+    paymentPreference: publicPaymentPreference(row.payment_preference),
     photos: farmerPhotoUrls(row),
     verificationStatus,
     verificationDate: row.verification_date ?? undefined,
