@@ -2,7 +2,7 @@ import { generateUniqueSlug } from "@/app/api/admin/records";
 import { logAdminActivity, type AdminActionType, type AdminEntityType } from "@/lib/adminActivity";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord, uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 
-export type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+export type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted" | "Published";
 export type SubmissionKind = "listing" | "buyer-request";
 
 export type ListingSubmission = {
@@ -27,11 +27,14 @@ export type BuyerRequestSubmission = {
   id: string;
   product_needed: string;
   quantity: string;
+  company_name: string | null;
+  phone_number: string;
   region: string;
   district: string;
   buyer_name: string;
   buyer_type: string;
   whatsapp_number: string;
+  preferred_delivery: string | null;
   deadline: string;
   notes: string | null;
   status: SubmissionStatus;
@@ -44,14 +47,15 @@ const statusAction: Record<SubmissionStatus, AdminActionType> = {
   "Under Review": "Review",
   Approved: "Approve",
   Rejected: "Reject",
-  Converted: "Convert"
+  Converted: "Convert",
+  Published: "Publish"
 };
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim().slice(0, 500) : "";
 }
 
-function isSpam(payload: Record<string, string>, fields: string[]) {
+function isSpam(payload: Record<string, string | null>, fields: string[]) {
   return fields.every((field) => !payload[field]);
 }
 
@@ -138,16 +142,19 @@ export async function createBuyerRequestSubmission(body: Record<string, unknown>
 
   const payload = {
     product_needed: clean(body.productNeeded),
-    quantity: clean(body.quantity),
+    quantity: clean(body.quantityNeeded || body.quantity),
+    company_name: clean(body.companyName) || null,
+    phone_number: clean(body.phoneNumber),
     region: clean(body.region),
     district: clean(body.district),
     buyer_name: clean(body.buyerName),
-    buyer_type: clean(body.buyerType),
+    buyer_type: clean(body.buyerType) || "Buyer",
     whatsapp_number: clean(body.whatsappNumber),
+    preferred_delivery: clean(body.preferredDelivery) || null,
     deadline: clean(body.deadline),
-    notes: clean(body.notes)
+    notes: clean(body.additionalNotes || body.notes)
   };
-  const required = ["product_needed", "quantity", "region", "district", "buyer_name", "buyer_type", "whatsapp_number", "deadline"];
+  const required = ["product_needed", "quantity", "phone_number", "region", "district", "buyer_name", "whatsapp_number", "deadline"];
 
   if (isSpam(payload, required)) {
     return { status: 400, error: "Submission cannot be empty." };
@@ -159,7 +166,7 @@ export async function createBuyerRequestSubmission(body: Record<string, unknown>
     return { status: 400, error: "Please complete all required buyer request fields." };
   }
 
-  const insert = await insertSupabaseRecord("buyer_request_submissions", {
+  const insert = await insertSupabaseRecord("buyer_request_applications", {
     ...payload,
     status: "New"
   });
@@ -169,7 +176,7 @@ export async function createBuyerRequestSubmission(body: Record<string, unknown>
     await logAdminActivity({
       adminEmail: "public-submission@ghana-growers",
       actionType: "Create",
-      entityType: "Buyer Request Submission",
+      entityType: "Buyer Request Application",
       entityId: insertedRecord?.id,
       entityName: payload.product_needed
     });
@@ -182,10 +189,10 @@ export async function getPublicSubmissions() {
   const listingQuery =
     "select=id,product_name,category,quantity,unit,region,district,seller_name,seller_type,whatsapp_number,description,image_url,status,created_at,updated_at&order=created_at.desc&limit=500";
   const buyerQuery =
-    "select=id,product_needed,quantity,region,district,buyer_name,buyer_type,whatsapp_number,deadline,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
+    "select=id,product_needed,quantity,company_name,phone_number,region,district,buyer_name,buyer_type,whatsapp_number,preferred_delivery,deadline,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
   const [listings, buyerRequests] = await Promise.all([
     selectSupabaseRecords<ListingSubmission>("listing_submissions", listingQuery),
-    selectSupabaseRecords<BuyerRequestSubmission>("buyer_request_submissions", buyerQuery)
+    selectSupabaseRecords<BuyerRequestSubmission>("buyer_request_applications", buyerQuery)
   ]);
 
   return {
@@ -208,7 +215,7 @@ export async function updateSubmissionStatus({
   adminEmail: string;
   entityName: string;
 }) {
-  const table = kind === "listing" ? "listing_submissions" : "buyer_request_submissions";
+  const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications";
   const update = await updateSupabaseRecord(table, `id=eq.${encodeURIComponent(id)}`, {
     status,
     updated_at: new Date().toISOString()
@@ -218,7 +225,7 @@ export async function updateSubmissionStatus({
     await logAdminActivity({
       adminEmail,
       actionType: statusAction[status],
-      entityType: kind === "listing" ? "Listing Submission" : "Buyer Request Submission",
+      entityType: kind === "listing" ? "Listing Submission" : "Buyer Request Application",
       entityId: id,
       entityName
     });
@@ -268,6 +275,7 @@ export async function convertBuyerRequestSubmission(submission: BuyerRequestSubm
     buyer_type: submission.buyer_type,
     whatsapp_number: submission.whatsapp_number,
     deadline: submission.deadline,
+    delivery_preference: submission.preferred_delivery,
     notes: submission.notes,
     status: "Open",
     verification_status: "Pending",
@@ -277,7 +285,7 @@ export async function convertBuyerRequestSubmission(submission: BuyerRequestSubm
   });
 
   if (!insert.error) {
-    await updateSubmissionStatus({ kind: "buyer-request", id: submission.id, status: "Converted", adminEmail, entityName: submission.product_needed });
+    await updateSubmissionStatus({ kind: "buyer-request", id: submission.id, status: "Published", adminEmail, entityName: submission.product_needed });
   }
 
   return insert;

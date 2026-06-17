@@ -111,7 +111,8 @@ type AdminActivityRecord = {
     | "Marked Featured"
     | "Removed Featured"
     | "Featured Expired"
-    | "Featured Note Updated";
+    | "Featured Note Updated"
+    | "Publish";
   entity_type:
     | "Farmer"
     | "Supplier"
@@ -122,6 +123,7 @@ type AdminActivityRecord = {
     | "Supplier Application"
     | "Listing Submission"
     | "Buyer Request Submission"
+    | "Buyer Request Application"
     | "Match Opportunity"
     | "Lead Request"
     | "Featured Enquiry";
@@ -190,7 +192,7 @@ type AdminMatchOpportunity = {
 type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type SubmissionKind = "listing" | "buyer-request";
-type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted" | "Published";
 type LaunchStatus = "Incomplete" | "Complete";
 type FarmerBulkAction = "active" | "pending-review" | "under-review" | "verified" | "founding" | "archive";
 type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/Test";
@@ -234,11 +236,14 @@ type BuyerRequestSubmissionRecord = {
   id: string;
   product_needed: string;
   quantity: string;
+  company_name: string | null;
+  phone_number: string;
   region: string;
   district: string;
   buyer_name: string;
   buyer_type: string;
   whatsapp_number: string;
+  preferred_delivery: string | null;
   deadline: string;
   notes: string | null;
   status: SubmissionStatus;
@@ -360,7 +365,7 @@ function statusFromTrust(status?: string): AdminStatus {
   return "Pending";
 }
 
-function applicationStatusClass(status: ApplicationStatus) {
+function applicationStatusClass(status: ApplicationStatus | SubmissionStatus) {
   if (status === "New") {
     return statusStyles.Pending;
   }
@@ -371,6 +376,10 @@ function applicationStatusClass(status: ApplicationStatus) {
 
   if (status === "Approved" || status === "Converted") {
     return statusStyles.Active;
+  }
+
+  if (status === "Published") {
+    return statusStyles.Verified;
   }
 
   return statusStyles.Rejected;
@@ -1288,6 +1297,7 @@ function activitySentence(activity: AdminActivityRecord) {
     Complete: "completed",
     Close: "closed",
     Submit: "submitted",
+    Publish: "published",
     "Marked Featured": "marked featured",
     "Removed Featured": "removed featured from",
     "Featured Expired": "marked featured expired for",
@@ -1503,6 +1513,47 @@ function listingMatchScore(request: AnalyticsRecord, listing: AnalyticsRecord) {
   );
 
   return productScore + adminLocationScore(request, listing);
+}
+
+function supplierMatchScore(request: AnalyticsRecord, supplier: AnalyticsRecord) {
+  const requestProduct = textValue(request, "product_needed");
+  const serviceProducts = arrayValue(supplier, "products_services");
+  const productScore = Math.max(
+    productMatchScore(requestProduct, textValue(supplier, "category")),
+    ...serviceProducts.map((service) => productMatchScore(requestProduct, service)),
+    0
+  );
+
+  return productScore + adminLocationScore(request, supplier);
+}
+
+function buyerApplicationMatchSummary(application: BuyerRequestSubmissionRecord, analytics: AnalyticsData) {
+  const request = {
+    id: application.id,
+    product_needed: application.product_needed,
+    region: application.region,
+    district: application.district
+  };
+  const farmers = analytics.farmers
+    .map((farmer) => ({ farmer, score: farmerMatchScore(request, farmer) }))
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((match) => match.farmer);
+  const listings = analytics.marketplaceListings
+    .map((listing) => ({ listing, score: listingMatchScore(request, listing) }))
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((match) => match.listing);
+  const suppliers = analytics.suppliers
+    .map((supplier) => ({ supplier, score: supplierMatchScore(request, supplier) }))
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((match) => match.supplier);
+
+  return { farmers, listings, suppliers };
 }
 
 function buildAdminMatchOpportunities(analytics: AnalyticsData): AdminMatchOpportunity[] {
@@ -1761,6 +1812,25 @@ function LeadDetailItem({ label, value }: { label: string; value: string }) {
     <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
       <dt className="text-xs font-black uppercase tracking-wide text-ink/40">{label}</dt>
       <dd className="mt-1 break-words text-sm font-semibold leading-6 text-ink/72">{value}</dd>
+    </div>
+  );
+}
+
+function MatchPreview({ title, records, nameKeys }: { title: string; records: AnalyticsRecord[]; nameKeys: string[] }) {
+  return (
+    <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-black text-ink">{title}</p>
+        <span className="rounded-full bg-leaf-50 px-2 py-0.5 text-xs font-black text-leaf-700">{records.length}</span>
+      </div>
+      <div className="mt-3 grid gap-2">
+        {records.map((record) => (
+          <div key={textValue(record, "id") || recordName(record, ...nameKeys)} className="rounded bg-leaf-50 px-3 py-2 text-xs font-bold text-ink/65">
+            {recordName(record, ...nameKeys)}
+          </div>
+        ))}
+        {records.length === 0 ? <p className="text-xs font-semibold text-ink/45">No close match yet.</p> : null}
+      </div>
     </div>
   );
 }
@@ -2118,18 +2188,33 @@ export function AdminDashboard({
         : current.marketplace
     }));
   }, [analyticsData?.farmers, analyticsData?.marketplaceListings, analyticsData?.suppliers]);
-  const analyticsCards = useMemo(() => [
-    { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
-    { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
-    { label: "Total suppliers", value: analytics.suppliers.length, icon: Truck },
-    { label: "Verified suppliers", value: verifiedCount(analytics.suppliers), icon: ShieldCheck },
-    { label: "Marketplace listings", value: analytics.marketplaceListings.length, icon: Store },
-    { label: "Active buyer requests", value: activeBuyerRequestCount(analytics.buyerRequests), icon: PackageCheck },
-    { label: "WhatsApp leads", value: analytics.whatsappLeads.length, icon: MessageCircle },
-    { label: "Total leads", value: analytics.leadRequests.length, icon: MessageCircle },
-    { label: "Crop health checks", value: analytics.cropHealthReports.length, icon: ClipboardCheck },
-    { label: "Market price records", value: analytics.marketPrices.length, icon: ChartLine }
-  ], [analytics]);
+  const buyerApplicationProducts = useMemo(
+    () =>
+      countBy(
+        submissions.buyerRequests.map((request) => ({ product_needed: request.product_needed })),
+        "product_needed"
+      ),
+    [submissions.buyerRequests]
+  );
+  const analyticsCards = useMemo(() => {
+    const mostRequestedProduct = buyerApplicationProducts[0]?.label || countBy(analytics.buyerRequests, "product_needed")[0]?.label || "No requests yet";
+
+    return [
+      { label: "Total farmers", value: analytics.farmers.length, icon: Sprout },
+      { label: "Verified farmers", value: verifiedCount(analytics.farmers), icon: BadgeCheck },
+      { label: "Total suppliers", value: analytics.suppliers.length, icon: Truck },
+      { label: "Verified suppliers", value: verifiedCount(analytics.suppliers), icon: ShieldCheck },
+      { label: "Marketplace listings", value: analytics.marketplaceListings.length, icon: Store },
+      { label: "Active buyer requests", value: activeBuyerRequestCount(analytics.buyerRequests), icon: PackageCheck },
+      { label: "New Buyer Requests", value: submissions.buyerRequests.filter((request) => request.status === "New").length, icon: CircleDashed },
+      { label: "Published Buyer Requests", value: submissions.buyerRequests.filter((request) => request.status === "Published").length, icon: PackageCheck },
+      { label: "Most Requested Products", value: mostRequestedProduct, icon: ChartLine },
+      { label: "WhatsApp leads", value: analytics.whatsappLeads.length, icon: MessageCircle },
+      { label: "Total leads", value: analytics.leadRequests.length, icon: MessageCircle },
+      { label: "Crop health checks", value: analytics.cropHealthReports.length, icon: ClipboardCheck },
+      { label: "Market price records", value: analytics.marketPrices.length, icon: ChartLine }
+    ];
+  }, [analytics, buyerApplicationProducts, submissions.buyerRequests]);
   const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
   const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
   const selectedLead = useMemo(() => leadRequests.find((lead) => lead.id === selectedLeadId) ?? leadRequests[0] ?? null, [leadRequests, selectedLeadId]);
@@ -3296,7 +3381,7 @@ export function AdminDashboard({
     } else {
       setSubmissions((current) => ({
         ...current,
-        buyerRequests: current.buyerRequests.map((item) => (item.id === submission.id ? { ...item, status: "Converted", updated_at: new Date().toISOString() } : item))
+        buyerRequests: current.buyerRequests.map((item) => (item.id === submission.id ? { ...item, status: "Published", updated_at: new Date().toISOString() } : item))
       }));
       setRowsBySection((current) => ({
         ...current,
@@ -3316,7 +3401,7 @@ export function AdminDashboard({
     }
 
     setSubmissionError("");
-    setNotice(`${entityName} converted to a live ${submissionTab === "listing" ? "marketplace listing" : "buyer request"}.`);
+    setNotice(`${entityName} ${submissionTab === "listing" ? "converted to a live marketplace listing" : "published as a live buyer request"}.`);
     void loadActivity();
   }
 
@@ -4304,7 +4389,7 @@ export function AdminDashboard({
                 <div className="flex flex-wrap gap-2">
                   {([
                     ["listing", "Listing Submissions", submissions.listings.filter((submission) => submission.status === "New").length],
-                    ["buyer-request", "Buyer Request Submissions", submissions.buyerRequests.filter((submission) => submission.status === "New").length]
+                    ["buyer-request", "Buyer Request Applications", submissions.buyerRequests.filter((submission) => submission.status === "New").length]
                   ] as Array<[SubmissionKind, string, number]>).map(([kind, label, count]) => (
                     <button
                       key={kind}
@@ -4397,62 +4482,80 @@ export function AdminDashboard({
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {submissions.buyerRequests.map((submission) => (
-                      <article key={submission.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Request Submission</p>
-                            <h3 className="mt-1 text-2xl font-black text-ink">{submission.product_needed}</h3>
-                            <p className="mt-2 text-sm font-semibold text-ink/60">
-                              {submission.quantity} - {submission.district}, {submission.region} - Deadline {submission.deadline}
-                            </p>
+                    {submissions.buyerRequests.map((submission) => {
+                      const matches = buyerApplicationMatchSummary(submission, analytics);
+
+                      return (
+                        <article key={submission.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Request Application</p>
+                              <h3 className="mt-1 text-2xl font-black text-ink">{submission.product_needed}</h3>
+                              <p className="mt-2 text-sm font-semibold text-ink/60">
+                                {submission.quantity} - {submission.district}, {submission.region} - Deadline {submission.deadline}
+                              </p>
+                            </div>
+                            <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(submission.status)}`}>
+                              {submission.status}
+                            </span>
                           </div>
-                          <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${applicationStatusClass(submission.status)}`}>
-                            {submission.status}
-                          </span>
-                        </div>
-                        <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-                          <div className="rounded-md bg-leaf-50 p-3">
-                            <dt className="font-black text-ink">Buyer</dt>
-                            <dd className="mt-1 text-ink/65">{submission.buyer_name}</dd>
+                          <dl className="mt-5 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-md bg-leaf-50 p-3">
+                              <dt className="font-black text-ink">Buyer</dt>
+                              <dd className="mt-1 text-ink/65">{submission.buyer_name}</dd>
+                            </div>
+                            <div className="rounded-md bg-leaf-50 p-3">
+                              <dt className="font-black text-ink">Company</dt>
+                              <dd className="mt-1 text-ink/65">{submission.company_name || "Not provided"}</dd>
+                            </div>
+                            <div className="rounded-md bg-leaf-50 p-3">
+                              <dt className="font-black text-ink">Phone / WhatsApp</dt>
+                              <dd className="mt-1 text-ink/65">{submission.phone_number} / {submission.whatsapp_number}</dd>
+                            </div>
+                            <div className="rounded-md bg-leaf-50 p-3">
+                              <dt className="font-black text-ink">Preferred Delivery</dt>
+                              <dd className="mt-1 text-ink/65">{submission.preferred_delivery || "To be confirmed"}</dd>
+                            </div>
+                            <div className="rounded-md bg-leaf-50 p-3">
+                              <dt className="font-black text-ink">Submitted</dt>
+                              <dd className="mt-1 text-ink/65">{new Date(submission.created_at).toLocaleDateString()}</dd>
+                            </div>
+                          </dl>
+                          {submission.notes ? (
+                            <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-ink/65 ring-1 ring-leaf-900/10">{submission.notes}</p>
+                          ) : null}
+                          {(submission.status === "Approved" || submission.status === "Published") ? (
+                            <div className="mt-4 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Potential Matches</p>
+                              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                <MatchPreview title="Farmers" records={matches.farmers} nameKeys={["farm_name", "farmer_name"]} />
+                                <MatchPreview title="Listings" records={matches.listings} nameKeys={["product_name"]} />
+                                <MatchPreview title="Suppliers" records={matches.suppliers} nameKeys={["company_name", "category"]} />
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setNotice(`Viewing buyer request application: ${submission.product_needed}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                              View
+                            </button>
+                            <button type="button" onClick={() => updateSubmissionStatus(submission, "Under Review")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
+                              Mark Under Review
+                            </button>
+                            <button type="button" onClick={() => updateSubmissionStatus(submission, "Approved")} className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
+                              Approve
+                            </button>
+                            <button type="button" onClick={() => updateSubmissionStatus(submission, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato">
+                              Reject
+                            </button>
+                            <button type="button" onClick={() => convertSubmission(submission)} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                              Publish Buyer Request
+                            </button>
                           </div>
-                          <div className="rounded-md bg-leaf-50 p-3">
-                            <dt className="font-black text-ink">Buyer Type</dt>
-                            <dd className="mt-1 text-ink/65">{submission.buyer_type}</dd>
-                          </div>
-                          <div className="rounded-md bg-leaf-50 p-3">
-                            <dt className="font-black text-ink">WhatsApp</dt>
-                            <dd className="mt-1 text-ink/65">{submission.whatsapp_number}</dd>
-                          </div>
-                          <div className="rounded-md bg-leaf-50 p-3">
-                            <dt className="font-black text-ink">Submitted</dt>
-                            <dd className="mt-1 text-ink/65">{new Date(submission.created_at).toLocaleDateString()}</dd>
-                          </div>
-                        </dl>
-                        {submission.notes ? (
-                          <p className="mt-4 rounded-md bg-white p-4 text-sm leading-6 text-ink/65 ring-1 ring-leaf-900/10">{submission.notes}</p>
-                        ) : null}
-                        <div className="mt-5 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => setNotice(`Viewing buyer request submission: ${submission.product_needed}.`)} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
-                            View
-                          </button>
-                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Under Review")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800">
-                            Mark Under Review
-                          </button>
-                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Approved")} className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
-                            Approve
-                          </button>
-                          <button type="button" onClick={() => updateSubmissionStatus(submission, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato">
-                            Reject
-                          </button>
-                          <button type="button" onClick={() => convertSubmission(submission)} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
-                            Convert to Live Buyer Request
-                          </button>
-                        </div>
-                      </article>
-                    ))}
+                        </article>
+                      );
+                    })}
                     {submissions.buyerRequests.length === 0 ? (
-                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No buyer request submissions in this queue yet.</p>
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No buyer request applications in this queue yet.</p>
                     ) : null}
                   </div>
                 )}

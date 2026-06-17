@@ -70,6 +70,18 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
+      <section className="bg-white py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Need Produce?</p>
+              <h2 className="mt-1 text-xl font-black text-ink">Tell Ghana Growers what you want to buy.</h2>
+            </div>
+            <ButtonLink href="/submit-buyer-request">Submit Buyer Request</ButtonLink>
+          </div>
+        </div>
+      </section>
+
       <ChooseYourPath />
 
       <FeaturedListings

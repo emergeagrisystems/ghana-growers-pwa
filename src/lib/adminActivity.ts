@@ -17,7 +17,8 @@ export type AdminActionType =
   | "Marked Featured"
   | "Removed Featured"
   | "Featured Expired"
-  | "Featured Note Updated";
+  | "Featured Note Updated"
+  | "Publish";
 export type AdminEntityType =
   | "Farmer"
   | "Supplier"
@@ -28,6 +29,7 @@ export type AdminEntityType =
   | "Supplier Application"
   | "Listing Submission"
   | "Buyer Request Submission"
+  | "Buyer Request Application"
   | "Match Opportunity"
   | "Lead Request"
   | "Featured Enquiry";

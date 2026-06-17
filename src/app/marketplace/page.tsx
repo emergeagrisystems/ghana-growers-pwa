@@ -44,6 +44,18 @@ export default async function MarketplacePage() {
 
       <MarketplaceListings products={products} farmers={farmers} suppliers={suppliers} buyerRequests={buyerRequests} />
 
+      <section className="bg-white py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 rounded-md border border-earth-500/25 bg-earth-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Can&apos;t find what you need?</p>
+              <h2 className="mt-1 text-xl font-black text-ink">Submit buyer demand and Ghana Growers will review it for matching.</h2>
+            </div>
+            <ButtonLink href="/submit-buyer-request">Submit Buyer Request</ButtonLink>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">

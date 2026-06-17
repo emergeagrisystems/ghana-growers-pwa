@@ -15,10 +15,10 @@ export default function SubmitBuyerRequestPage() {
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Public Submission</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">Submit Buyer Request</h1>
             <p className="mt-4 text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-              Tell Ghana Growers what produce, livestock, or farm supply you need. Reviewed requests can appear on the Buyer Demand Board.
+              Tell Ghana Growers what produce, livestock, or farm supply you need. Approved requests can be published and matched with farmers, listings, and suppliers.
             </p>
             <div className="mt-6 rounded-md border border-leaf-900/10 bg-white p-4 text-sm leading-6 text-ink/65 shadow-sm">
-              Buyer requests are reviewed to help farmers respond to clear and useful demand opportunities.
+              Buyer request applications are reviewed before they appear publicly, helping Ghana Growers create useful demand opportunities.
             </div>
           </div>
           <SubmitBuyerRequestForm />

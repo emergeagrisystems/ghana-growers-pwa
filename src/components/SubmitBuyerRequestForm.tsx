@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
 
 const fieldClass = "focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal";
-const buyerTypes = ["Trader", "Market Woman", "Restaurant", "Processor", "Exporter", "Institution", "Wholesaler", "Retailer"];
+const deliveryOptions = ["Buyer Pickup", "Deliver to buyer", "Collection point", "Flexible / discuss with Ghana Growers"];
 
 export function SubmitBuyerRequestForm() {
   const [success, setSuccess] = useState("");
@@ -42,8 +42,10 @@ export function SubmitBuyerRequestForm() {
     <form onSubmit={handleSubmit} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <input type="text" name="companyWebsite" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <div className="grid gap-4 md:grid-cols-2">
-        <TextField label="Product Needed" name="productNeeded" required />
-        <TextField label="Quantity" name="quantity" required />
+        <TextField label="Buyer Name" name="buyerName" required />
+        <TextField label="Company Name (optional)" name="companyName" />
+        <TextField label="Phone Number" name="phoneNumber" type="tel" required />
+        <TextField label="WhatsApp Number" name="whatsappNumber" type="tel" required />
         <label className="grid gap-2 text-sm font-bold text-ink/75">
           Region
           <select required name="region" className={fieldClass}>
@@ -52,19 +54,19 @@ export function SubmitBuyerRequestForm() {
           </select>
         </label>
         <TextField label="District" name="district" required />
-        <TextField label="Buyer Name" name="buyerName" required />
+        <TextField label="Product Needed" name="productNeeded" required />
+        <TextField label="Quantity Needed" name="quantityNeeded" required />
         <label className="grid gap-2 text-sm font-bold text-ink/75">
-          Buyer Type
-          <select required name="buyerType" className={fieldClass}>
-            <option value="">Select buyer type</option>
-            {buyerTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          Preferred Delivery
+          <select required name="preferredDelivery" className={fieldClass}>
+            <option value="">Select preferred delivery</option>
+            {deliveryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
         </label>
-        <TextField label="WhatsApp Number" name="whatsappNumber" type="tel" required />
         <TextField label="Deadline" name="deadline" type="date" required />
         <label className="grid gap-2 text-sm font-bold text-ink/75 md:col-span-2">
-          Notes
-          <textarea name="notes" className={`${fieldClass} min-h-28`} placeholder="Add preferred delivery location, budget range, quality needs, or pickup details." />
+          Additional Notes
+          <textarea name="additionalNotes" className={`${fieldClass} min-h-28`} placeholder="Add budget range, quality needs, delivery address, or preferred contact time." />
         </label>
       </div>
 
