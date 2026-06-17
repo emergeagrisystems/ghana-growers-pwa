@@ -22,7 +22,7 @@ type SupabaseFarmer = {
   payment_preference: string | null;
   tally_photo_url: string | null;
   imported_photo_url: string | null;
-  original_tally_data: Record<string, string> | null;
+  original_tally_data: Record<string, unknown> | null;
   verification_status: string | null;
   verification_date: string | null;
   verified_by: string | null;
@@ -208,22 +208,65 @@ function dateOnly(value?: string | null) {
   return value ? value.slice(0, 10) : new Date().toISOString().slice(0, 10);
 }
 
-function firstUrlFromText(value?: string | null) {
-  const match = value?.match(/https?:\/\/[^\s"',\])}]+/i);
-  return match?.[0]?.trim() ?? "";
+const photoKeyPattern = /(photo|image|picture|upload|file)/i;
+
+function urlsFromText(value?: string | null) {
+  return Array.from(value?.matchAll(/https?:\/\/[^\s"',\])}]+/gi) ?? [])
+    .map((match) => match[0]?.trim())
+    .filter(Boolean);
 }
 
-function firstUsableTallyPhoto(originalData?: Record<string, string> | null) {
+function firstUrlFromText(value?: string | null) {
+  return urlsFromText(value)[0] ?? "";
+}
+
+function urlsFromUnknown(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const directUrls = urlsFromText(value);
+
+    if (directUrls.length > 0) {
+      return directUrls;
+    }
+
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return urlsFromUnknown(JSON.parse(trimmed) as unknown);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(urlsFromUnknown);
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(urlsFromUnknown);
+  }
+
+  return [];
+}
+
+function firstUsableTallyPhoto(originalData?: Record<string, unknown> | null) {
   if (!originalData) {
     return "";
   }
 
   const photoEntry = Object.entries(originalData).find(([label, value]) => {
-    const normalizedLabel = label.toLowerCase();
-    return Boolean(firstUrlFromText(value)) && /(photo|image|picture|upload|file)/.test(normalizedLabel);
+    return photoKeyPattern.test(label) && urlsFromUnknown(value).length > 0;
   });
+  const fallbackEntry = Object.entries(originalData).find(([, value]) => urlsFromUnknown(value).length > 0);
+  const entry = photoEntry ?? fallbackEntry;
 
-  return firstUrlFromText(photoEntry?.[1]) ?? "";
+  return entry ? urlsFromUnknown(entry[1])[0] ?? "" : "";
 }
 
 function farmerHasRealPublicPhoto(row: SupabaseFarmer) {

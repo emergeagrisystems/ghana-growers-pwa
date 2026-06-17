@@ -286,7 +286,7 @@ type ImportedFarmerRecord = {
   referral_source?: string;
   tally_photo_url?: string;
   imported_photo_url?: string;
-  original_tally_data?: Record<string, string>;
+  original_tally_data?: Record<string, unknown>;
   status: ImportAdminStatus;
   verification_status: string;
   verification_date?: string | null;
@@ -1108,6 +1108,8 @@ function importedFarmerPlaceholderFromRow(row: AdminRow): ImportedFarmerRecord {
 }
 
 function reviewDebugFields(farmer: ImportedFarmerRecord) {
+  const diagnostics = farmerPhotoDiagnostics(farmer);
+
   return {
     id: farmer.id,
     slug: farmer.slug,
@@ -1126,38 +1128,175 @@ function reviewDebugFields(farmer: ImportedFarmerRecord) {
     profile_image_url: farmer.profile_image_url ?? null,
     imported_photo_url: farmer.imported_photo_url ?? null,
     tally_photo_url: farmer.tally_photo_url ?? null,
-    original_tally_data_keys: Object.keys(farmer.original_tally_data ?? {})
+    original_tally_data_keys: Object.keys(farmer.original_tally_data ?? {}),
+    photo_diagnostics: diagnostics
   };
 }
 
+const photoKeyPattern = /(photo|image|picture|upload|file)/i;
+
+function urlsFromText(value?: string | null) {
+  return Array.from(value?.matchAll(/https?:\/\/[^\s"',\])}]+/gi) ?? [])
+    .map((match) => match[0]?.trim())
+    .filter(Boolean);
+}
+
+function firstUrlFromText(value?: string | null) {
+  return urlsFromText(value)[0] ?? "";
+}
+
+function urlsFromUnknown(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const directUrls = urlsFromText(value);
+
+    if (directUrls.length > 0) {
+      return directUrls;
+    }
+
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return urlsFromUnknown(JSON.parse(trimmed) as unknown);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(urlsFromUnknown);
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(urlsFromUnknown);
+  }
+
+  return [];
+}
+
+function filenameFromUnknown(value: unknown): string {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value.match(/[\w .()_-]+\.(?:jpe?g|png|webp)/i)?.[0]?.trim() ?? "";
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(filenameFromUnknown).find(Boolean) ?? "";
+  }
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const directName = ["name", "filename", "fileName", "title"].map((key) => record[key]).find((entry) => typeof entry === "string") as string | undefined;
+    return directName || Object.values(record).map(filenameFromUnknown).find(Boolean) || "";
+  }
+
+  return "";
+}
+
+function originalTallyPhotoCandidate(originalData?: Record<string, unknown> | null) {
+  const entries = Object.entries(originalData ?? {});
+  const photoEntry = entries.find(([label, value]) => photoKeyPattern.test(label) && urlsFromUnknown(value).length > 0);
+  const fallbackEntry = entries.find(([, value]) => urlsFromUnknown(value).length > 0);
+  const entry = photoEntry ?? fallbackEntry;
+
+  return {
+    key: entry?.[0] ?? "",
+    url: entry ? urlsFromUnknown(entry[1])[0] ?? "" : "",
+    filename: entry ? filenameFromUnknown(entry[1]) : ""
+  };
+}
+
+function isPublicReviewPhotoUrl(url?: string | null) {
+  if (!url?.trim()) {
+    return false;
+  }
+
+  if (url.startsWith("/")) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return !(parsed.hostname.toLowerCase() === "storage.tally.so" && parsed.pathname.toLowerCase().includes("/private/"));
+  } catch {
+    return false;
+  }
+}
+
 function publicReviewPhotoUrl(farmer: ImportedFarmerRecord) {
-  const candidates = [farmer.profile_image_url, farmer.imported_photo_url, farmer.tally_photo_url];
+  const originalPhoto = originalTallyPhotoCandidate(farmer.original_tally_data);
+  const candidates = [farmer.profile_image_url, farmer.imported_photo_url, firstUrlFromText(farmer.tally_photo_url), originalPhoto.url];
 
-  return candidates.find((url) => {
-    if (!url?.trim()) {
-      return false;
-    }
+  return candidates.find(isPublicReviewPhotoUrl);
+}
 
-    if (url.startsWith("/")) {
-      return true;
-    }
+function farmerSubmittedPhotoCandidate(farmer: ImportedFarmerRecord) {
+  const originalPhoto = originalTallyPhotoCandidate(farmer.original_tally_data);
+  const tallyPhotoUrl = firstUrlFromText(farmer.tally_photo_url);
+  const url = tallyPhotoUrl || originalPhoto.url;
 
-    try {
-      const parsed = new URL(url);
-      return !(parsed.hostname.toLowerCase() === "storage.tally.so" && parsed.pathname.toLowerCase().includes("/private/"));
-    } catch {
-      return false;
-    }
-  });
+  return {
+    url,
+    key: tallyPhotoUrl ? "tally_photo_url" : originalPhoto.key,
+    filename: originalPhoto.filename
+  };
 }
 
 function photoSubmittedButNotImported(farmer: ImportedFarmerRecord) {
-  return Boolean(farmer.tally_photo_url && !farmer.profile_image_url && !farmer.imported_photo_url);
+  return Boolean(farmerSubmittedPhotoCandidate(farmer).url && !farmer.profile_image_url && !farmer.imported_photo_url);
+}
+
+function farmerPhotoDiagnostics(farmer: ImportedFarmerRecord) {
+  const originalPhoto = originalTallyPhotoCandidate(farmer.original_tally_data);
+  const tallyPhotoUrl = firstUrlFromText(farmer.tally_photo_url);
+  const submitted = farmerSubmittedPhotoCandidate(farmer);
+  const publicPhoto = publicReviewPhotoUrl(farmer);
+  const submittedUrlIsPublic = isPublicReviewPhotoUrl(submitted.url);
+  const status = farmer.profile_image_url
+    ? "Public profile photo exists"
+    : farmer.imported_photo_url
+      ? "Imported photo exists"
+      : submitted.url && submittedUrlIsPublic
+        ? "Tally submitted photo found but not imported"
+      : submitted.url
+        ? "Tally photo URL found but private/expired"
+        : "No submitted photo found";
+
+  return {
+    status,
+    profileImage: Boolean(farmer.profile_image_url),
+    importedPhoto: Boolean(farmer.imported_photo_url),
+    tallyPhoto: Boolean(tallyPhotoUrl),
+    originalPhotoKeyFound: Boolean(originalPhoto.key),
+    originalPhotoKey: originalPhoto.key,
+    extractedPhotoUrl: submitted.url,
+    extractedPhotoUrlPreview: submitted.url ? `${submitted.url.slice(0, 60)}${submitted.url.length > 60 ? "..." : ""}` : "",
+    filename: submitted.filename,
+    publicDisplayable: Boolean(publicPhoto),
+    submittedUrlIsPublic
+  };
+}
+
+function displayTallyValue(value: unknown) {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return "Not provided";
+  }
+
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
 }
 
 function farmerReviewReadiness(farmer: ImportedFarmerRecord) {
   return [
-    { label: "Photo", complete: Boolean(publicReviewPhotoUrl(farmer)), note: photoSubmittedButNotImported(farmer) ? "Submitted, needs import" : "No public photo" },
+    { label: "Photo", complete: Boolean(publicReviewPhotoUrl(farmer)), note: farmerPhotoDiagnostics(farmer).status },
     { label: "Products", complete: farmer.products.length > 0, note: "No products listed" },
     { label: "Location", complete: hasReviewValue(farmer.region) && hasReviewValue(farmer.district), note: "Location incomplete" },
     { label: "Contact", complete: hasReviewValue(farmer.phone_number) || hasReviewValue(farmer.whatsapp_number), note: "No phone or WhatsApp" }
@@ -1183,7 +1322,7 @@ function farmerCompleteness(farmer: ImportedFarmerRecord) {
     { label: "Supply frequency", complete: hasReviewValue(farmer.supply_frequency) },
     { label: "Delivery preference", complete: hasReviewValue(farmer.delivery_preference) },
     { label: "Payment preference", complete: hasReviewValue(farmer.payment_preference) },
-    { label: "Farm photo", complete: Boolean(publicReviewPhotoUrl(farmer) || farmer.tally_photo_url) }
+    { label: "Farm photo", complete: Boolean(publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).url) }
   ];
   const completeCount = checks.filter((check) => check.complete).length;
   const percent = Math.round((completeCount / checks.length) * 100);
@@ -5753,6 +5892,34 @@ export function AdminDashboard({
                         {pendingFarmerReviewAction === "import-photo" ? "Importing photo..." : "Import Submitted Photo"}
                       </button>
                     ) : null}
+                    <div className="mt-4 rounded-md bg-earth-50 p-4 ring-1 ring-earth-500/20">
+                      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Photo Status</p>
+                      <p className="mt-2 text-sm font-black text-ink">{farmerPhotoDiagnostics(reviewingImportedFarmer).status}</p>
+                      {farmerPhotoDiagnostics(reviewingImportedFarmer).filename ? (
+                        <p className="mt-1 text-xs font-semibold text-ink/55">File: {farmerPhotoDiagnostics(reviewingImportedFarmer).filename}</p>
+                      ) : null}
+                    </div>
+                    <details className="mt-4 rounded-md border border-leaf-900/10 bg-white p-4">
+                      <summary className="cursor-pointer text-xs font-black uppercase tracking-wide text-earth-700">
+                        Photo diagnostics
+                      </summary>
+                      <div className="mt-3 grid gap-2 text-xs font-semibold text-ink/65">
+                        {[
+                          ["profile_image_url", farmerPhotoDiagnostics(reviewingImportedFarmer).profileImage ? "yes" : "no"],
+                          ["imported_photo_url", farmerPhotoDiagnostics(reviewingImportedFarmer).importedPhoto ? "yes" : "no"],
+                          ["tally_photo_url", farmerPhotoDiagnostics(reviewingImportedFarmer).tallyPhoto ? "yes" : "no"],
+                          ["original_tally_data photo key found", farmerPhotoDiagnostics(reviewingImportedFarmer).originalPhotoKeyFound ? "yes" : "no"],
+                          ["photo key", farmerPhotoDiagnostics(reviewingImportedFarmer).originalPhotoKey || "none"],
+                          ["extracted photo url", farmerPhotoDiagnostics(reviewingImportedFarmer).extractedPhotoUrlPreview || "none"],
+                          ["public/displayable", farmerPhotoDiagnostics(reviewingImportedFarmer).publicDisplayable ? "yes" : "no"]
+                        ].map(([label, value]) => (
+                          <div key={label} className="flex items-start justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2">
+                            <span className="font-black text-ink">{label}</span>
+                            <span className="break-all text-right">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                     <div className="mt-4 rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
                       <p className="text-xs font-black uppercase tracking-wide text-ink/45">Review Visibility</p>
                       <div className="mt-3 grid gap-2">
@@ -5944,7 +6111,7 @@ export function AdminDashboard({
                           {Object.entries(reviewingImportedFarmer.original_tally_data).map(([label, value]) => (
                             <div key={label} className="rounded-md bg-leaf-50 px-3 py-2 text-sm">
                               <p className="font-black text-ink">{label}</p>
-                              <p className="mt-1 break-words text-ink/65">{value || "Not provided"}</p>
+                              <p className="mt-1 whitespace-pre-wrap break-words text-ink/65">{displayTallyValue(value)}</p>
                             </div>
                           ))}
                         </div>

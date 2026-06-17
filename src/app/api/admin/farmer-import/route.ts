@@ -30,7 +30,7 @@ type ExistingFarmer = {
   referral_source?: string | null;
   tally_photo_url?: string | null;
   imported_photo_url?: string | null;
-  original_tally_data?: Record<string, string> | null;
+  original_tally_data?: Record<string, unknown> | null;
   status: string | null;
   verification_status: string | null;
   verification_date?: string | null;
@@ -63,7 +63,7 @@ type ImportableFarmer = {
   referral_source: string;
   tally_photo_url: string;
   imported_photo_url?: string;
-  original_tally_data: Record<string, string>;
+  original_tally_data: Record<string, unknown>;
   status: "Pending Review";
   verification_status: "Pending";
   source: "Tally Import";
@@ -233,9 +233,87 @@ function normalizePhone(value: string) {
   return digits;
 }
 
+const photoKeyPattern = /(photo|image|picture|upload|file)/i;
+
+function urlsFromText(value?: string | null) {
+  return Array.from(value?.matchAll(/https?:\/\/[^\s"',\])}]+/gi) ?? [])
+    .map((match) => match[0]?.trim())
+    .filter(Boolean);
+}
+
 function firstUrlFromText(value?: string | null) {
-  const match = value?.match(/https?:\/\/[^\s"',\])}]+/i);
-  return match?.[0]?.trim() ?? "";
+  return urlsFromText(value)[0] ?? "";
+}
+
+function urlsFromUnknown(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const directUrls = urlsFromText(value);
+
+    if (directUrls.length > 0) {
+      return directUrls;
+    }
+
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return urlsFromUnknown(JSON.parse(trimmed) as unknown);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(urlsFromUnknown);
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(urlsFromUnknown);
+  }
+
+  return [];
+}
+
+function filenameFromUnknown(value: unknown): string {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    const filenameMatch = value.match(/[\w .()_-]+\.(?:jpe?g|png|webp)/i);
+    return filenameMatch?.[0]?.trim() ?? "";
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(filenameFromUnknown).find(Boolean) ?? "";
+  }
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const directName = ["name", "filename", "fileName", "title"].map((key) => record[key]).find((entry) => typeof entry === "string") as string | undefined;
+    return directName || Object.values(record).map(filenameFromUnknown).find(Boolean) || "";
+  }
+
+  return "";
+}
+
+function tallyPhotoCandidate(originalData?: Record<string, unknown> | null) {
+  const entries = Object.entries(originalData ?? {});
+  const photoEntry = entries.find(([label, value]) => photoKeyPattern.test(label) && urlsFromUnknown(value).length > 0);
+  const fallbackEntry = entries.find(([, value]) => urlsFromUnknown(value).length > 0);
+  const entry = photoEntry ?? fallbackEntry;
+
+  return {
+    key: entry?.[0] ?? "",
+    url: entry ? urlsFromUnknown(entry[1])[0] ?? "" : "",
+    filename: entry ? filenameFromUnknown(entry[1]) : ""
+  };
 }
 
 function isUuid(value: string) {
@@ -455,30 +533,43 @@ function safeStorageName(value: string) {
 }
 
 async function importTallyPhoto(mapped: ImportableFarmer) {
-  const photoUrl = firstUrlFromText(mapped.tally_photo_url) || firstUrlFromText(Object.values(mapped.original_tally_data).join(" "));
+  const photoCandidate = tallyPhotoCandidate(mapped.original_tally_data);
+  const photoUrl = firstUrlFromText(mapped.tally_photo_url) || photoCandidate.url;
 
   if (!photoUrl) {
-    return "";
+    return { error: "No submitted photo URL was found in tally_photo_url or original Tally photo/file fields." };
   }
 
   const response = await fetch(photoUrl, {
     cache: "no-store"
   }).catch(() => null);
 
-  if (!response?.ok) {
-    return "";
+  if (!response) {
+    return { error: "Could not reach the submitted Tally photo URL. The link may be invalid or expired.", sourceUrl: photoUrl };
+  }
+
+  if (!response.ok) {
+    const reason =
+      response.status === 401 || response.status === 403
+        ? "The submitted Tally photo link is private, expired, or requires authorization."
+        : `The submitted Tally photo could not be fetched. Tally returned HTTP ${response.status}.`;
+    return { error: reason, sourceUrl: photoUrl };
   }
 
   const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "";
 
   if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
-    return "";
+    return { error: `Unsupported submitted photo format: ${contentType || "unknown"}. Use JPG, PNG, or WEBP.`, sourceUrl: photoUrl };
   }
 
   const body = await response.arrayBuffer().catch(() => null);
 
-  if (!body || body.byteLength === 0 || body.byteLength > 5 * 1024 * 1024) {
-    return "";
+  if (!body || body.byteLength === 0) {
+    return { error: "The submitted Tally photo downloaded as an empty file.", sourceUrl: photoUrl };
+  }
+
+  if (body.byteLength > 5 * 1024 * 1024) {
+    return { error: "The submitted Tally photo is larger than 5MB.", sourceUrl: photoUrl };
   }
 
   const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
@@ -490,12 +581,17 @@ async function importTallyPhoto(mapped: ImportableFarmer) {
     body
   });
 
-  return upload.publicUrl ?? "";
+  if (upload.error || !upload.publicUrl) {
+    return { error: upload.error || "Supabase Storage did not return a public URL for the uploaded photo.", sourceUrl: photoUrl };
+  }
+
+  return { publicUrl: upload.publicUrl, sourceUrl: photoUrl, filename: photoCandidate.filename };
 }
 
 async function tallyDetailPayload(mapped: ImportableFarmer) {
-  const importedPhotoUrl = await importTallyPhoto(mapped);
+  const importedPhoto = await importTallyPhoto(mapped);
   const publicTallyPhotoUrl = publicTallyPhotoCandidate(mapped.tally_photo_url);
+  const importedPhotoUrl = importedPhoto.publicUrl ?? "";
 
   return {
     ...mapped,
@@ -543,6 +639,8 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
 }
 
 async function importExistingFarmerPhoto(record: ExistingFarmer) {
+  const originalTallyData = record.original_tally_data ?? {};
+  const photoCandidate = tallyPhotoCandidate(originalTallyData);
   const mapped: ImportableFarmer = {
     farmer_name: record.farmer_name ?? record.farm_name,
     farm_name: record.farm_name,
@@ -562,8 +660,8 @@ async function importExistingFarmerPhoto(record: ExistingFarmer) {
     payment_preference: record.payment_preference ?? "",
     workshop_interest: record.workshop_interest ?? "",
     referral_source: record.referral_source ?? "",
-    tally_photo_url: firstUrlFromText(record.tally_photo_url) || firstUrlFromText(Object.values(record.original_tally_data ?? {}).join(" ")),
-    original_tally_data: record.original_tally_data ?? {},
+    tally_photo_url: firstUrlFromText(record.tally_photo_url) || photoCandidate.url,
+    original_tally_data: originalTallyData,
     status: "Pending Review",
     verification_status: "Pending",
     source: "Tally Import"
@@ -868,10 +966,17 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: target.error ?? "Imported farmer could not be found." }, { status: target.status ?? 404 });
     }
 
-    const importedPhotoUrl = await importExistingFarmerPhoto(target.farmer);
+    const importedPhoto = await importExistingFarmerPhoto(target.farmer);
+    const importedPhotoUrl = importedPhoto.publicUrl ?? "";
 
     if (!importedPhotoUrl) {
-      return NextResponse.json({ error: "Could not import this Tally photo. The source may be private, expired, missing, or unsupported." }, { status: 422 });
+      return NextResponse.json(
+        {
+          error: importedPhoto.error ?? "Could not import this Tally photo. The source may be private, expired, missing, or unsupported.",
+          sourceUrl: importedPhoto.sourceUrl ?? null
+        },
+        { status: 422 }
+      );
     }
 
     const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(target.farmer.id)}`, {
