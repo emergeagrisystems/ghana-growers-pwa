@@ -85,6 +85,8 @@ export type FarmerProfile = {
   deliveryOptions?: string[];
   paymentPreference?: string;
   photos: string[];
+  hasRealPhoto?: boolean;
+  photoNeedsImport?: boolean;
   verificationStatus: string;
   verificationDate?: string;
   verifiedBy?: string;

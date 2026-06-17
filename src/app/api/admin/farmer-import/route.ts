@@ -233,6 +233,11 @@ function normalizePhone(value: string) {
   return digits;
 }
 
+function firstUrlFromText(value?: string | null) {
+  const match = value?.match(/https?:\/\/[^\s"',\])}]+/i);
+  return match?.[0]?.trim() ?? "";
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -394,7 +399,7 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
     payment_preference: valueFromRow(values, headerInfo, "paymentPreference"),
     workshop_interest: valueFromRow(values, headerInfo, "workshopInterest"),
     referral_source: valueFromRow(values, headerInfo, "referralSource"),
-    tally_photo_url: valueFromRow(values, headerInfo, "tallyPhotoUrl"),
+    tally_photo_url: firstUrlFromText(valueFromRow(values, headerInfo, "tallyPhotoUrl")),
     original_tally_data: Object.fromEntries(headerInfo.rawHeaders.map((header, index) => [header, values[index]?.trim() ?? ""])),
     status: "Pending Review",
     verification_status: "Pending",
@@ -432,11 +437,13 @@ function safeStorageName(value: string) {
 }
 
 async function importTallyPhoto(mapped: ImportableFarmer) {
-  if (!mapped.tally_photo_url) {
+  const photoUrl = firstUrlFromText(mapped.tally_photo_url) || firstUrlFromText(Object.values(mapped.original_tally_data).join(" "));
+
+  if (!photoUrl) {
     return "";
   }
 
-  const response = await fetch(mapped.tally_photo_url, {
+  const response = await fetch(photoUrl, {
     cache: "no-store"
   }).catch(() => null);
 
@@ -515,6 +522,36 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     created_at: record.created_at ?? null,
     source: record.source ?? "Tally Import"
   };
+}
+
+async function importExistingFarmerPhoto(record: ExistingFarmer) {
+  const mapped: ImportableFarmer = {
+    farmer_name: record.farmer_name ?? record.farm_name,
+    farm_name: record.farm_name,
+    region: record.region,
+    district: record.district,
+    farm_type: record.farm_type,
+    products: record.products ?? [],
+    farm_size: record.farm_size ?? "",
+    phone_number: record.phone_number ?? record.whatsapp_number ?? "",
+    whatsapp_number: record.whatsapp_number ?? "",
+    email: record.email ?? "",
+    farm_location: record.farm_location ?? "",
+    farming_experience: record.farming_experience ?? "",
+    currently_harvesting: record.currently_harvesting ?? "",
+    supply_frequency: record.supply_frequency ?? "",
+    delivery_preference: record.delivery_preference ?? "",
+    payment_preference: record.payment_preference ?? "",
+    workshop_interest: record.workshop_interest ?? "",
+    referral_source: record.referral_source ?? "",
+    tally_photo_url: firstUrlFromText(record.tally_photo_url) || firstUrlFromText(Object.values(record.original_tally_data ?? {}).join(" ")),
+    original_tally_data: record.original_tally_data ?? {},
+    status: "Pending Review",
+    verification_status: "Pending",
+    source: "Tally Import"
+  };
+
+  return importTallyPhoto(mapped);
 }
 
 async function getImportedFarmerById(id: string) {
@@ -763,13 +800,13 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view";
+    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view" | "import-photo";
     ids?: string[];
     notes?: string;
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view", "import-photo"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -789,6 +826,46 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ ok: true, farmer: friendlyImportedFarmer(target.farmer) });
+  }
+
+  if (body.action === "import-photo") {
+    if (ids.length !== 1) {
+      return NextResponse.json({ error: "Import one farmer photo at a time." }, { status: 400 });
+    }
+
+    const target = await getImportedFarmerById(ids[0]);
+
+    if (target.error || !target.farmer) {
+      return NextResponse.json({ error: target.error ?? "Imported farmer could not be found." }, { status: target.status ?? 404 });
+    }
+
+    const importedPhotoUrl = await importExistingFarmerPhoto(target.farmer);
+
+    if (!importedPhotoUrl) {
+      return NextResponse.json({ error: "Could not import this Tally photo. The source may be private, expired, missing, or unsupported." }, { status: 422 });
+    }
+
+    const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(target.farmer.id)}`, {
+      imported_photo_url: importedPhotoUrl,
+      profile_image_url: importedPhotoUrl
+    });
+
+    if (update.error) {
+      return NextResponse.json({ error: "Photo was uploaded but could not be saved to the farmer record." }, { status: update.status });
+    }
+
+    await logAdminActivity({
+      adminEmail: adminUser.email,
+      actionType: "Edit",
+      entityType: "Farmer",
+      entityId: target.farmer.slug ?? target.farmer.id,
+      entityName: target.farmer.farm_name
+    });
+
+    const refreshedTarget = await getImportedFarmerById(target.farmer.id);
+    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+
+    return NextResponse.json({ ok: true, farmer, message: "Farmer photo imported successfully." });
   }
 
   const filter = `id=in.(${ids.map(encodeURIComponent).join(",")})`;

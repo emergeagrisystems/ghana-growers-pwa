@@ -4,7 +4,7 @@ import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice
 import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
-import { cleanProductList, productDisplayName, productImageForName, supplierServiceImageForName } from "@/lib/productDisplay";
+import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 type SupabaseFarmer = {
@@ -208,6 +208,11 @@ function dateOnly(value?: string | null) {
   return value ? value.slice(0, 10) : new Date().toISOString().slice(0, 10);
 }
 
+function firstUrlFromText(value?: string | null) {
+  const match = value?.match(/https?:\/\/[^\s"',\])}]+/i);
+  return match?.[0]?.trim() ?? "";
+}
+
 function firstUsableTallyPhoto(originalData?: Record<string, string> | null) {
   if (!originalData) {
     return "";
@@ -215,10 +220,22 @@ function firstUsableTallyPhoto(originalData?: Record<string, string> | null) {
 
   const photoEntry = Object.entries(originalData).find(([label, value]) => {
     const normalizedLabel = label.toLowerCase();
-    return Boolean(value?.trim()) && /(photo|image|picture|upload|file)/.test(normalizedLabel) && /^https?:\/\//i.test(value.trim());
+    return Boolean(firstUrlFromText(value)) && /(photo|image|picture|upload|file)/.test(normalizedLabel);
   });
 
-  return photoEntry?.[1]?.trim() ?? "";
+  return firstUrlFromText(photoEntry?.[1]) ?? "";
+}
+
+function farmerHasRealPublicPhoto(row: SupabaseFarmer) {
+  return [row.profile_image_url, row.imported_photo_url, firstUrlFromText(row.tally_photo_url), firstUsableTallyPhoto(row.original_tally_data)]
+    .some((url) => Boolean(url && isPublicDisplayableImageUrl(url)));
+}
+
+function farmerPhotoNeedsImport(row: SupabaseFarmer) {
+  return Boolean(
+    !farmerHasRealPublicPhoto(row) &&
+      (firstUrlFromText(row.tally_photo_url) || firstUsableTallyPhoto(row.original_tally_data))
+  );
 }
 
 function allowDemoPublicData() {
@@ -253,7 +270,7 @@ function farmerPhotoUrls(row: SupabaseFarmer) {
   const urls = [
     row.profile_image_url,
     row.imported_photo_url,
-    isPublicDisplayableImageUrl(row.tally_photo_url) ? row.tally_photo_url : "",
+    isPublicDisplayableImageUrl(firstUrlFromText(row.tally_photo_url)) ? firstUrlFromText(row.tally_photo_url) : "",
     firstUsableTallyPhoto(row.original_tally_data),
     "/images/farmers/farmer-1.jpg"
   ];
@@ -382,6 +399,8 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     deliveryOptions: [publicDeliveryPreference()],
     paymentPreference: publicPaymentPreference(row.payment_preference),
     photos: farmerPhotoUrls(row),
+    hasRealPhoto: farmerHasRealPublicPhoto(row),
+    photoNeedsImport: farmerPhotoNeedsImport(row),
     verificationStatus,
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
@@ -443,7 +462,7 @@ function mapListing(row: SupabaseListing): Product {
     description: `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
-    image: row.image_url || productImageForName(productName, row.category),
+    image: productImageForListing(productName, row.category, row.image_url),
     available: row.availability,
     datePosted: dateOnly(row.created_at),
     verified: trustStatus(row.verification_status) === "Verified",

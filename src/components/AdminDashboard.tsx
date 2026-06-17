@@ -1122,6 +1122,15 @@ function photoSubmittedButNotImported(farmer: ImportedFarmerRecord) {
   return Boolean(farmer.tally_photo_url && !farmer.profile_image_url && !farmer.imported_photo_url);
 }
 
+function farmerReviewReadiness(farmer: ImportedFarmerRecord) {
+  return [
+    { label: "Photo", complete: Boolean(publicReviewPhotoUrl(farmer)), note: photoSubmittedButNotImported(farmer) ? "Submitted, needs import" : "No public photo" },
+    { label: "Products", complete: farmer.products.length > 0, note: "No products listed" },
+    { label: "Location", complete: hasReviewValue(farmer.region) && hasReviewValue(farmer.district), note: "Location incomplete" },
+    { label: "Contact", complete: hasReviewValue(farmer.phone_number) || hasReviewValue(farmer.whatsapp_number), note: "No phone or WhatsApp" }
+  ];
+}
+
 function hasReviewValue(value?: string | null) {
   const normalized = value?.trim().toLowerCase();
   return Boolean(normalized && !["not provided", "n/a", "na", "none", "ghana"].includes(normalized));
@@ -1905,7 +1914,7 @@ export function AdminDashboard({
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
-  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | null>(null);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
@@ -2366,6 +2375,7 @@ export function AdminDashboard({
       ? importedFarmers[reviewingImportedFarmerIndex + 1]
       : null;
   const reviewingCompleteness = reviewingImportedFarmer ? farmerCompleteness(reviewingImportedFarmer) : null;
+  const reviewingReadiness = reviewingImportedFarmer ? farmerReviewReadiness(reviewingImportedFarmer) : [];
   const reviewingFollowUpMessage = reviewingImportedFarmer ? followUpMessageForFarmer(reviewingImportedFarmer) : "";
   const reviewingWhatsappUrl =
     reviewingImportedFarmer?.whatsapp_number
@@ -2905,7 +2915,7 @@ export function AdminDashboard({
     );
   }
 
-  async function applyImportedFarmerReviewAction(action: "under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes") {
+  async function applyImportedFarmerReviewAction(action: "under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo") {
     if (!reviewingImportedFarmer) {
       return;
     }
@@ -2943,10 +2953,12 @@ export function AdminDashboard({
     const successMessage =
       action === "verify"
         ? "Farmer verified and published successfully."
-        : action === "verify-only"
-          ? "Farmer verified successfully. Public visibility was not changed."
-        : action === "under-review"
-          ? "Farmer marked under review."
+      : action === "verify-only"
+        ? "Farmer verified successfully. Public visibility was not changed."
+      : action === "import-photo"
+        ? "Farmer photo imported successfully."
+      : action === "under-review"
+        ? "Farmer marked under review."
           : action === "needs-follow-up"
             ? "Farmer marked as needs follow-up."
           : action === "reject"
@@ -5546,6 +5558,29 @@ export function AdminDashboard({
                           {photoSubmittedButNotImported(reviewingImportedFarmer) ? "Photo submitted but not imported." : "No photo submitted."}
                         </div>
                       )}
+                    </div>
+                    {photoSubmittedButNotImported(reviewingImportedFarmer) ? (
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("import-photo")}
+                        disabled={isUpdatingFarmerReview}
+                        className="mt-3 w-full rounded-md bg-leaf-700 px-3 py-2.5 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                      >
+                        {pendingFarmerReviewAction === "import-photo" ? "Importing photo..." : "Import Submitted Photo"}
+                      </button>
+                    ) : null}
+                    <div className="mt-4 rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                      <p className="text-xs font-black uppercase tracking-wide text-ink/45">Review Visibility</p>
+                      <div className="mt-3 grid gap-2">
+                        {reviewingReadiness.map((item) => (
+                          <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2">
+                            <span className="text-sm font-black text-ink">{item.label}</span>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${item.complete ? "bg-leaf-100 text-leaf-800" : "bg-earth-50 text-earth-700"}`}>
+                              {item.complete ? "Available" : item.note}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div className="mt-4 rounded-md bg-leaf-50 p-4">
                       <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current Status</p>
