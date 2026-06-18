@@ -17,7 +17,6 @@ import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
-import { farmerDirectory } from "@/data/farmers";
 import { productImageForListing } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile } from "@/types";
 
@@ -348,7 +347,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MarketplaceListings({ products, farmers = farmerDirectory, suppliers = [] }: MarketplaceListingsProps) {
+export function MarketplaceListings({ products, farmers = [], suppliers = [] }: MarketplaceListingsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
@@ -464,7 +463,20 @@ export function MarketplaceListings({ products, farmers = farmerDirectory, suppl
                 </p>
               </div>
 
-              {filteredProducts.length > 0 ? (
+              {products.length === 0 ? (
+                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                  <h3 className="text-xl font-black text-ink">No public listings are available yet.</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
+                    Ghana Growers is currently onboarding farmers and suppliers before public marketplace listings go live.
+                  </p>
+                  <Link
+                    href="/join"
+                    className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                  >
+                    Join Ghana Growers
+                  </Link>
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredProducts.map((product) => (
                     <ListingCard

@@ -32,7 +32,7 @@ const pathCards: PathCard[] = [
     description: "Promote agricultural products and services.",
     icon: Tractor,
     primaryLabel: "Join as Supplier",
-    primaryHref: "/join/supplier",
+    primaryHref: "/supplier-registration",
     tone: "cream"
   }
 ];

@@ -24,14 +24,11 @@ function isAllowedPrelaunchRoute(pathname: string) {
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/api") ||
     pathname === "/launching-soon" ||
-    pathname === "/dev-preview" ||
-    pathname === "/preview" ||
     pathname === "/supplier-registration" ||
     pathname === "/join" ||
-    pathname === "/join/supplier" ||
     pathname === "/join/farmer" ||
     pathname === "/join/buyer" ||
-    pathname === "/waitlist" ||
+    pathname === "/submit-buyer-request" ||
     isPublicAsset(pathname)
   );
 }
@@ -49,6 +46,10 @@ export function middleware(request: NextRequest) {
 
   if (pathname === "/") {
     return NextResponse.rewrite(new URL("/launching-soon", request.url));
+  }
+
+  if (pathname === "/join/supplier") {
+    return NextResponse.redirect(new URL("/supplier-registration", request.url));
   }
 
   if (isAllowedPrelaunchRoute(pathname)) {

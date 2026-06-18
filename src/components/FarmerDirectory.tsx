@@ -126,9 +126,23 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredFarmers.map((farmer) => (
-            <article key={farmer.slug} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+        {farmers.length === 0 ? (
+          <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+            <h3 className="text-xl font-black text-ink">No public farmer profiles are available yet.</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
+              Ghana Growers is currently onboarding and reviewing farmer profiles before public launch.
+            </p>
+            <Link
+              href="/join"
+              className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+            >
+              Join Ghana Growers
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredFarmers.map((farmer) => (
+              <article key={farmer.slug} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
               {(() => {
                 const trust = normalizeTrust(farmer.trust);
                 const mainProducts = farmer.products.slice(0, 3);
@@ -191,17 +205,18 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                   </>
                 );
               })()}
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
 
-        {filteredFarmers.length === 0 ? (
+        {farmers.length > 0 && filteredFarmers.length === 0 ? (
           <p className="mt-8 rounded-md bg-leaf-50 p-5 text-sm font-bold text-ink/70">
             No farmer profiles match these filters. Try another region, district, product, or farm type.
           </p>
         ) : null}
 
-        <FeaturedPlacementCTA defaultRole="Farmer" className="mt-10" />
+        {farmers.length > 0 ? <FeaturedPlacementCTA defaultRole="Farmer" className="mt-10" /> : null}
       </div>
     </section>
   );

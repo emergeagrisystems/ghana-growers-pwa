@@ -587,12 +587,12 @@ export async function getMarketplaceListingsData() {
 
 export async function getBuyerRequestsData() {
   const rows = await fetchRows<SupabaseBuyerRequest>("buyer_requests");
-  return rows.length > 0 ? rows.map(mapBuyerRequest) : fallbackBuyerRequests;
+  return rows.length > 0 ? rows.map(mapBuyerRequest) : allowDemoPublicData() ? fallbackBuyerRequests : [];
 }
 
 export async function getMarketPricesData() {
   const rows = await fetchRows<SupabaseMarketPrice>("market_prices", "*", "date_updated.desc");
-  return rows.length > 0 ? rows.map(mapMarketPrice) : fallbackMarketPrices;
+  return rows.length > 0 ? rows.map(mapMarketPrice) : allowDemoPublicData() ? fallbackMarketPrices : [];
 }
 
 export function getBuyerRequestsMeta() {

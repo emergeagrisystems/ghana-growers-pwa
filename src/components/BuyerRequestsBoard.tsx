@@ -11,9 +11,7 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
-import { farmerDirectory } from "@/data/farmers";
-import { products as fallbackMarketplaceProducts } from "@/data/products";
+import { buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { buildBuyerRequestMatches, findMatchingFarmersForRequest, findMatchingListingsForRequest } from "@/lib/matching";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
@@ -298,9 +296,9 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 export function BuyerRequestsBoard({
-  requests = fallbackBuyerRequests,
-  marketplaceProducts = fallbackMarketplaceProducts,
-  farmers = farmerDirectory
+  requests = [],
+  marketplaceProducts = [],
+  farmers = []
 }: BuyerRequestsBoardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [product, setProduct] = useState("All");
@@ -452,7 +450,21 @@ export function BuyerRequestsBoard({
                 </p>
               </div>
 
-              {filteredRequests.length > 0 ? (
+              {requests.length === 0 ? (
+                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                  <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
+                  <h3 className="mt-4 text-xl font-black text-ink">No public buyer requests are available yet.</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
+                    Ghana Growers is currently collecting and reviewing buyer demand before publishing requests.
+                  </p>
+                  <Link
+                    href="/submit-buyer-request"
+                    className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                  >
+                    Submit Buyer Request
+                  </Link>
+                </div>
+              ) : filteredRequests.length > 0 ? (
                 <div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {filteredRequests.map((request) => (
                     <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />

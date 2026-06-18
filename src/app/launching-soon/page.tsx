@@ -36,6 +36,12 @@ const registrationCards = [
     description: "List farm inputs, equipment, logistics, packaging, finance, or agricultural services.",
     href: "/supplier-registration",
     icon: Store
+  },
+  {
+    title: "Submit Buyer Request",
+    description: "Tell Ghana Growers what produce you need so demand can be reviewed before launch.",
+    href: "/submit-buyer-request",
+    icon: ShoppingBasket
   }
 ];
 
@@ -69,7 +75,7 @@ export default function LaunchingSoonPage() {
               <p className="mt-4 max-w-2xl text-sm leading-7 text-ink/62">
                 We are currently onboarding farmers, buyers, and agricultural suppliers before opening the full platform to the public.
               </p>
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {registrationCards.map((card) => {
                   const Icon = card.icon;
                   return (

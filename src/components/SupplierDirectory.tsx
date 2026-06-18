@@ -139,9 +139,23 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredSuppliers.map((supplier) => (
-            <article
+        {suppliers.length === 0 ? (
+          <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+            <h3 className="text-xl font-black text-ink">No public supplier profiles are available yet.</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
+              Ghana Growers is currently onboarding agricultural suppliers before public launch.
+            </p>
+            <Link
+              href="/join"
+              className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+            >
+              Join Ghana Growers
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredSuppliers.map((supplier) => (
+              <article
               key={supplier.slug}
               className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft"
             >
@@ -229,17 +243,18 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                   </>
                 );
               })()}
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
 
-        {filteredSuppliers.length === 0 ? (
+        {suppliers.length > 0 && filteredSuppliers.length === 0 ? (
           <p className="mt-8 rounded-md bg-leaf-50 p-5 text-sm font-bold text-ink/70">
             No supplier profiles match these filters. Try another region, district, category, or service coverage area.
           </p>
         ) : null}
 
-        <FeaturedPlacementCTA defaultRole="Supplier" className="mt-10" />
+        {suppliers.length > 0 ? <FeaturedPlacementCTA defaultRole="Supplier" className="mt-10" /> : null}
       </div>
     </section>
   );
