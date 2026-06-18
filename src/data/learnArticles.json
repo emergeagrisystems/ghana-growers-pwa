@@ -1,98 +1,209 @@
 [
   {
-    "slug": "improving-maize-yields-in-northern-ghana",
-    "title": "Improving Maize Yields in Northern Ghana",
-    "category": "Crop Production",
-    "excerpt": "Practical guidance on seed choice, spacing, fertilizer timing, and moisture management for maize farmers.",
-    "readTime": "5 min read",
-    "date": "2026-06-07"
-  },
-  {
-    "slug": "tomato-harvest-handling-for-market-buyers",
-    "title": "Tomato Harvest Handling for Market Buyers",
-    "category": "Crop Production",
-    "excerpt": "How tomato growers can reduce bruising, sort crates, and communicate quality before market delivery.",
+    "slug": "how-ghana-growers-works",
+    "title": "How Ghana Growers Works",
+    "category": "Ghana Growers Guides",
+    "excerpt": "A simple guide to how farmers, buyers, and suppliers connect through Ghana Growers.",
+    "audience": "Farmers, buyers, suppliers, and partners",
     "readTime": "4 min read",
-    "date": "2026-06-06"
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Farmers create profiles and share what they can supply.",
+      "Buyers browse listings or submit demand for produce.",
+      "Suppliers register services that support Ghana's agriculture network.",
+      "Ghana Growers reviews submissions and helps create trusted connections."
+    ],
+    "sections": [
+      {
+        "heading": "A network for agricultural connection",
+        "body": "Ghana Growers is being built to help farmers, buyers, and suppliers find each other more easily. The platform brings farmer profiles, marketplace listings, buyer demand, suppliers, and digital farm tools into one organized place."
+      },
+      {
+        "heading": "What happens after someone joins",
+        "body": "Submitted profiles and requests are reviewed before they are published. This helps Ghana Growers reduce low-quality listings and keep the platform useful for serious farmers, buyers, and agricultural service providers."
+      },
+      {
+        "heading": "Why WhatsApp still matters",
+        "body": "Many agricultural conversations in Ghana already happen through WhatsApp. Ghana Growers uses structured forms and lead requests first, then supports practical follow-up through familiar communication channels."
+      }
+    ]
   },
   {
-    "slug": "cassava-planting-calendar-for-forest-zones",
-    "title": "Cassava Planting Calendar for Forest Zones",
-    "category": "Crop Production",
-    "excerpt": "A simple seasonal guide for cassava establishment, weed control, and harvest planning in Ghana's forest belt.",
-    "readTime": "6 min read",
-    "date": "2026-06-05"
-  },
-  {
-    "slug": "keeping-layers-productive-in-hot-weather",
-    "title": "Keeping Layers Productive in Hot Weather",
-    "category": "Livestock",
-    "excerpt": "Water, feed, ventilation, and sanitation checks for poultry farms during hot and humid periods.",
-    "readTime": "5 min read",
-    "date": "2026-06-04"
-  },
-  {
-    "slug": "basic-biosecurity-for-small-ruminants",
-    "title": "Basic Biosecurity for Small Ruminants",
-    "category": "Livestock",
-    "excerpt": "Simple routines to help goat and sheep keepers reduce disease spread when animals move between farms and markets.",
-    "readTime": "4 min read",
-    "date": "2026-06-03"
-  },
-  {
-    "slug": "how-farmers-can-prepare-for-bulk-buyers",
-    "title": "How Farmers Can Prepare for Bulk Buyers",
-    "category": "Agribusiness",
-    "excerpt": "What to prepare before negotiating with restaurants, processors, exporters, hotels, and market traders.",
-    "readTime": "5 min read",
-    "date": "2026-06-02"
-  },
-  {
-    "slug": "record-keeping-for-farmer-groups",
-    "title": "Record Keeping for Farmer Groups",
-    "category": "Agribusiness",
-    "excerpt": "Why farmer groups should track acreage, expected harvest, buyer contacts, expenses, and delivery commitments.",
-    "readTime": "6 min read",
-    "date": "2026-06-01"
-  },
-  {
-    "slug": "reading-market-price-signals",
-    "title": "Reading Market Price Signals Before Harvest",
-    "category": "Market Prices",
-    "excerpt": "How farmers and buyers can use price direction, demand signals, and regional supply notes before making decisions.",
-    "readTime": "4 min read",
-    "date": "2026-05-31"
-  },
-  {
-    "slug": "why-demand-boards-help-farm-planning",
-    "title": "Why Demand Boards Help Farm Planning",
-    "category": "Market Prices",
-    "excerpt": "How active buyer requests can help farmers estimate demand, plan transport, and reduce unsold produce.",
-    "readTime": "4 min read",
-    "date": "2026-05-30"
-  },
-  {
-    "slug": "akumadan-vegetable-group-finds-steady-buyers",
-    "title": "Akumadan Vegetable Group Finds Steady Buyers",
-    "category": "Success Stories",
-    "excerpt": "A realistic example of how a farmer group can organize supply information and communicate weekly availability.",
+    "slug": "verification-process",
+    "title": "Verification Process",
+    "category": "Ghana Growers Guides",
+    "excerpt": "How Ghana Growers reviews farmer, buyer, and supplier profiles before showing trusted status.",
+    "audience": "Members preparing for review",
     "readTime": "3 min read",
-    "date": "2026-05-29"
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Verification checks contact details, profile completeness, and basic business information.",
+      "Verified status is shown publicly only after review.",
+      "Some profiles may need follow-up before publishing.",
+      "Verification helps buyers and suppliers make better contact decisions."
+    ],
+    "sections": [
+      {
+        "heading": "What Ghana Growers checks",
+        "body": "The review process looks at contact information, location, products or services, profile photos where available, and whether the submission looks complete enough for public use."
+      },
+      {
+        "heading": "What verified means",
+        "body": "A verified profile has been reviewed by Ghana Growers. It does not guarantee supply, price, delivery, or product quality. Buyers should still confirm availability, quantity, grade, and delivery arrangements before making commitments."
+      },
+      {
+        "heading": "How to improve your chances",
+        "body": "Submit a working phone number, WhatsApp number, clear location, main products or services, and a real photo or logo where possible. Complete profiles are easier to review and publish."
+      }
+    ]
   },
   {
-    "slug": "market-women-use-whatsapp-to-confirm-supply",
-    "title": "Market Women Use WhatsApp to Confirm Supply",
-    "category": "Success Stories",
-    "excerpt": "How clear WhatsApp communication can help buyers check volume, quality, and transport before market day.",
-    "readTime": "3 min read",
-    "date": "2026-05-28"
+    "slug": "how-to-sell-produce-through-ghana-growers",
+    "title": "How to Sell Produce Through Ghana Growers",
+    "category": "Market Access",
+    "excerpt": "Steps farmers can take to make produce easier for buyers to discover and request.",
+    "audience": "Farmers and farmer groups",
+    "readTime": "5 min read",
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Register your farmer profile with accurate location and contact details.",
+      "List crops, livestock, harvest periods, and available quantities clearly.",
+      "Respond quickly when Ghana Growers follows up on buyer demand.",
+      "Keep produce information practical and current."
+    ],
+    "sections": [
+      {
+        "heading": "Start with a clear farmer profile",
+        "body": "Buyers need to understand who you are, where you farm, what you produce, and when you can supply. A clear profile helps Ghana Growers match your farm with relevant buyer requests."
+      },
+      {
+        "heading": "Share supply details buyers can act on",
+        "body": "Useful information includes product name, expected quantity, harvest period, pickup or delivery arrangement, and whether supply is one-time, weekly, seasonal, or on request."
+      },
+      {
+        "heading": "Keep communication simple",
+        "body": "When a buyer is interested, confirm the product, quantity, location, timing, and expected quality before discussing price or transport. Clear communication builds trust."
+      }
+    ]
   },
   {
-    "slug": "packaging-supplier-supports-reduced-losses",
-    "title": "Packaging Supplier Supports Reduced Losses",
-    "category": "Success Stories",
-    "excerpt": "How reusable crates, labels, and better handling can improve fresh produce trade between farms and cities.",
+    "slug": "how-buyers-source-produce",
+    "title": "How Buyers Source Produce",
+    "category": "Buyer Guides",
+    "excerpt": "How buyers can use Ghana Growers to find produce, submit demand, and request connections.",
+    "audience": "Market traders, processors, restaurants, wholesalers, and institutions",
     "readTime": "4 min read",
-    "date": "2026-05-27"
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Search farmer profiles and marketplace listings by product and region.",
+      "Submit buyer requests when you cannot find the supply you need.",
+      "Use clear quantities, timelines, and location details.",
+      "Confirm product quality and logistics before purchasing."
+    ],
+    "sections": [
+      {
+        "heading": "Browse first, request when needed",
+        "body": "Buyers can browse farmer profiles, supplier profiles, and marketplace listings. If the right product is not available yet, a buyer request helps Ghana Growers understand demand and look for matching supply."
+      },
+      {
+        "heading": "Make your demand specific",
+        "body": "Strong buyer requests include product, quantity, region, district, deadline, delivery preference, and any quality requirements. This makes it easier to match demand with farmers and listings."
+      },
+      {
+        "heading": "Confirm before committing",
+        "body": "Always confirm availability, grade, packaging, pickup or delivery, and payment terms before making a buying decision. Ghana Growers helps with connections, but practical details still need confirmation."
+      }
+    ]
+  },
+  {
+    "slug": "supplier-registration-guide",
+    "title": "Supplier Registration Guide",
+    "category": "Supplier Guides",
+    "excerpt": "What agricultural suppliers should prepare before joining Ghana Growers.",
+    "audience": "Input dealers, logistics providers, packaging companies, consultants, and service providers",
+    "readTime": "4 min read",
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Share your supplier category and main products or services.",
+      "List the regions or districts you can serve.",
+      "Add a WhatsApp number and website if available.",
+      "Use clear service descriptions so farmers and buyers understand your offer."
+    ],
+    "sections": [
+      {
+        "heading": "Who should register",
+        "body": "Suppliers can include seed companies, fertilizer dealers, agrochemical shops, farm equipment providers, irrigation installers, packaging suppliers, logistics operators, storage providers, finance providers, and agricultural consultants."
+      },
+      {
+        "heading": "What to include",
+        "body": "A useful supplier profile includes company name, contact person, category, products or services, coverage area, WhatsApp number, and a logo or service image when available."
+      },
+      {
+        "heading": "How Ghana Growers uses supplier profiles",
+        "body": "Supplier profiles help farmers and buyers discover services that support production, packaging, transport, storage, and market access."
+      }
+    ]
+  },
+  {
+    "slug": "market-prices-explained",
+    "title": "Market Prices Explained",
+    "category": "Farm Business",
+    "excerpt": "How farmers and buyers should interpret market price information on Ghana Growers.",
+    "audience": "Farmers, buyers, and agribusiness teams",
+    "readTime": "5 min read",
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Prices are market intelligence, not guaranteed transaction prices.",
+      "Location, quality, packaging, and transport can change final price.",
+      "Trend direction can be as useful as the price itself.",
+      "Use price information alongside buyer demand and harvest timing."
+    ],
+    "sections": [
+      {
+        "heading": "Market prices are a guide",
+        "body": "Market prices help users understand direction and compare opportunities, but actual prices depend on quality, quantity, timing, packaging, transport, and buyer relationship."
+      },
+      {
+        "heading": "How farmers can use price signals",
+        "body": "Farmers can use price signals to plan harvest timing, compare markets, and prepare for buyer conversations. Price data should not be the only factor in deciding where to sell."
+      },
+      {
+        "heading": "How buyers can use price signals",
+        "body": "Buyers can use market prices to estimate budgets and compare regional supply conditions before submitting requests or contacting Ghana Growers for matching support."
+      }
+    ]
+  },
+  {
+    "slug": "frequently-asked-questions",
+    "title": "Frequently Asked Questions",
+    "category": "Ghana Growers Guides",
+    "excerpt": "Answers to common questions about joining, listings, verification, buyer requests, and platform access.",
+    "audience": "New visitors and members",
+    "readTime": "6 min read",
+    "date": "2026-06-18",
+    "keyPoints": [
+      "Registration does not automatically publish a profile.",
+      "Ghana Growers reviews submissions before public display.",
+      "Buyers can submit demand even before full public launch.",
+      "Direct connections are handled through Ghana Growers during the early launch phase."
+    ],
+    "sections": [
+      {
+        "heading": "Is Ghana Growers fully launched?",
+        "body": "Ghana Growers is preparing for public launch and is currently onboarding farmers, buyers, and suppliers. Some public sections may remain limited while records are reviewed."
+      },
+      {
+        "heading": "Can I register now?",
+        "body": "Yes. Farmers, buyers, and suppliers can submit registration details. Buyer demand can also be submitted for review."
+      },
+      {
+        "heading": "Will my profile appear immediately?",
+        "body": "No. Submitted profiles and requests are reviewed before they are published. This keeps the platform cleaner and more trustworthy."
+      },
+      {
+        "heading": "Does Ghana Growers handle payments?",
+        "body": "Not at this stage. Ghana Growers focuses on trusted discovery, demand capture, and connection workflows. Payment and delivery terms should be confirmed between parties when appropriate."
+      }
+    ]
   }
 ]

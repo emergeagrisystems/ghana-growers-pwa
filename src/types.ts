@@ -38,10 +38,23 @@ export type Product = {
 export type BlogPost = {
   slug: string;
   title: string;
-  category: "Crop Production" | "Livestock" | "Agribusiness" | "Market Prices" | "Success Stories";
+  category:
+    | "Crop Production"
+    | "Livestock"
+    | "Market Access"
+    | "Farm Business"
+    | "Supplier Guides"
+    | "Buyer Guides"
+    | "Ghana Growers Guides";
   excerpt: string;
   readTime: string;
   date: string;
+  audience?: string;
+  keyPoints?: string[];
+  sections?: {
+    heading: string;
+    body: string;
+  }[];
 };
 
 export type VerificationWorkflowStatus = "Pending" | "Under Review" | "Verified" | "Rejected";

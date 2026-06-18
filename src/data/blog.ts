@@ -1,5 +1,18 @@
 import type { BlogPost } from "@/types";
 import learnArticles from "@/data/learnArticles.json";
 
-// Edit learning and blog previews in learnArticles.json. A future CMS/database can replace this JSON file.
 export const blogPosts = learnArticles as BlogPost[];
+
+export const learnCategories = [
+  "Crop Production",
+  "Livestock",
+  "Market Access",
+  "Farm Business",
+  "Supplier Guides",
+  "Buyer Guides",
+  "Ghana Growers Guides"
+] as const;
+
+export function getBlogPost(slug: string) {
+  return blogPosts.find((post) => post.slug === slug);
+}
