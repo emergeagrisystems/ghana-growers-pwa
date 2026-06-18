@@ -3,9 +3,10 @@ import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
+import fallbackSuccessStories from "@/data/successStories.json";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
-import type { FarmerProfile, Product, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
+import type { FarmerProfile, Product, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 type SupabaseFarmer = {
   id: string;
@@ -124,6 +125,21 @@ type SupabaseMarketPrice = {
   trend: MarketPrice["trend"] | string;
   source: string | null;
   status: string | null;
+};
+
+type SupabaseSuccessStory = {
+  id: string;
+  slug: string | null;
+  title: string;
+  category: SuccessStory["category"] | string;
+  person_business_name: string;
+  region: string;
+  summary: string;
+  outcome: string;
+  story_date: string | null;
+  image_url: string | null;
+  status: string | null;
+  created_at: string;
 };
 
 function supabaseConfig() {
@@ -564,6 +580,22 @@ function mapMarketPrice(row: SupabaseMarketPrice): MarketPrice {
   };
 }
 
+function mapSuccessStory(row: SupabaseSuccessStory): SuccessStory {
+  return {
+    id: row.id,
+    slug: row.slug || slugify(row.title),
+    title: row.title,
+    category: row.category === "Buyers" || row.category === "Suppliers" ? row.category : "Farmers",
+    personBusinessName: row.person_business_name,
+    region: row.region,
+    summary: row.summary,
+    outcome: row.outcome,
+    date: row.story_date || row.created_at?.slice(0, 10) || "",
+    image: row.image_url || undefined,
+    status: row.status === "Published" || row.status === "Archived" ? row.status : "Draft"
+  };
+}
+
 export async function getFarmersData() {
   const rows = await fetchRows<SupabaseFarmer>("farmers");
   const publicRows = rows.filter((row) => row.status === "Active");
@@ -593,6 +625,13 @@ export async function getBuyerRequestsData() {
 export async function getMarketPricesData() {
   const rows = await fetchRows<SupabaseMarketPrice>("market_prices", "*", "date_updated.desc");
   return rows.length > 0 ? rows.map(mapMarketPrice) : allowDemoPublicData() ? fallbackMarketPrices : [];
+}
+
+export async function getSuccessStoriesData() {
+  const rows = await fetchRows<SupabaseSuccessStory>("success_stories", "*", "story_date.desc");
+  const stories = rows.length > 0 ? rows.map(mapSuccessStory) : (fallbackSuccessStories as SuccessStory[]);
+
+  return stories.filter((story) => story.status === "Published");
 }
 
 export function getBuyerRequestsMeta() {

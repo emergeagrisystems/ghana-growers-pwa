@@ -10,9 +10,10 @@ import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SafeImage } from "@/components/SafeImage";
+import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
-import { getFarmersData } from "@/lib/supabase/publicData";
+import { getFarmersData, getSuccessStoriesData } from "@/lib/supabase/publicData";
 
 export const metadata = {
   title: "Trusted Agriculture Platform for Ghana",
@@ -28,6 +29,7 @@ export const metadata = {
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
+  const successStories = await getSuccessStoriesData();
   const homepageFeaturedFarmers = farmers.filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer");
 
   return (
@@ -101,6 +103,8 @@ export default async function HomePage() {
         background="earth"
         limit={3}
       />
+
+      <SuccessStoriesSection stories={successStories} preview />
 
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">

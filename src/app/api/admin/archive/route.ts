@@ -3,7 +3,7 @@ import { requireAdminUser } from "@/lib/adminAuth";
 import { logAdminActivity, type AdminEntityType } from "@/lib/adminActivity";
 import { updateSupabaseRecord } from "@/lib/supabase/admin";
 
-type ArchiveSection = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
+type ArchiveSection = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn" | "success-stories";
 
 const archiveTargets: Record<ArchiveSection, { table: string; filterColumn: "id" | "slug"; entityType?: AdminEntityType }> = {
   farmers: { table: "farmers", filterColumn: "slug", entityType: "Farmer" },
@@ -11,7 +11,8 @@ const archiveTargets: Record<ArchiveSection, { table: string; filterColumn: "id"
   marketplace: { table: "marketplace_listings", filterColumn: "slug", entityType: "Marketplace Listing" },
   "buyer-requests": { table: "buyer_requests", filterColumn: "id", entityType: "Buyer Request" },
   "market-prices": { table: "market_prices", filterColumn: "id" },
-  learn: { table: "learn_articles", filterColumn: "slug" }
+  learn: { table: "learn_articles", filterColumn: "slug" },
+  "success-stories": { table: "success_stories", filterColumn: "slug", entityType: "Success Story" }
 };
 
 function isUuid(value: string) {

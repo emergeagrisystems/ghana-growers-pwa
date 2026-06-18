@@ -57,6 +57,20 @@ export type BlogPost = {
   }[];
 };
 
+export type SuccessStory = {
+  id: string;
+  slug: string;
+  title: string;
+  category: "Farmers" | "Buyers" | "Suppliers";
+  personBusinessName: string;
+  region: string;
+  summary: string;
+  outcome: string;
+  date: string;
+  image?: string;
+  status: "Draft" | "Published" | "Archived";
+};
+
 export type VerificationWorkflowStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 export type TrustStatus = VerificationWorkflowStatus | "Pending Verification" | "Premium Member";
 

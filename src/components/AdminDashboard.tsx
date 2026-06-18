@@ -35,11 +35,12 @@ import learnArticles from "@/data/learnArticles.json";
 import { marketPrices } from "@/data/marketPrices";
 import { products } from "@/data/products";
 import { WHATSAPP_NUMBER } from "@/data/site";
+import successStories from "@/data/successStories.json";
 import { supplierDirectory } from "@/data/suppliers";
 import type { AdminUser } from "@/lib/adminAuth";
 import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matching";
 
-type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up";
+type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up" | "Published";
 type ImportAdminStatus = AdminStatus | "Pending Review";
 type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
@@ -60,8 +61,9 @@ type AdminSectionId =
   | "whatsapp-leads"
   | "match-opportunities"
   | "learn"
+  | "success-stories"
   | "market-prices";
-type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn";
+type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn" | "success-stories";
 
 type AdminRow = {
   id: string;
@@ -118,6 +120,7 @@ type AdminActivityRecord = {
     | "Supplier"
     | "Marketplace Listing"
     | "Buyer Request"
+    | "Success Story"
     | "Farmer Application"
     | "Buyer Application"
     | "Supplier Application"
@@ -359,6 +362,7 @@ const statusStyles: Record<AdminStatus, string> = {
   Verified: "bg-leaf-50 text-leaf-700",
   Rejected: "bg-tomato/10 text-tomato",
   Active: "bg-white text-leaf-700 ring-1 ring-leaf-900/10",
+  Published: "bg-leaf-50 text-leaf-700",
   Archived: "bg-ink/10 text-ink/55"
 };
 const importStatusStyles: Record<ImportAdminStatus, string> = {
@@ -523,6 +527,23 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
       dateAdded: article.date,
       href: "/learn"
     })),
+    "success-stories": (successStories as Array<{
+      slug: string;
+      title: string;
+      category: string;
+      personBusinessName: string;
+      region: string;
+      date: string;
+      status: AdminStatus;
+    }>).map((story) => ({
+      id: story.slug,
+      name: story.title,
+      type: story.category,
+      region: story.region,
+      status: story.status,
+      dateAdded: story.date,
+      href: "/success-stories"
+    })),
     "market-prices": marketPrices.map((price) => ({
       id: `${price.crop}-${price.market}`,
       name: price.crop,
@@ -552,6 +573,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
   { id: "match-opportunities", label: "Match Opportunities", icon: PackageCheck },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
+  { id: "success-stories", label: "Success Stories", icon: Star },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
 
@@ -567,6 +589,7 @@ const quickActions: Array<{
   { label: "Add Marketplace Listing", section: "marketplace", intent: "New marketplace listing form ready for database connection.", icon: Store, form: "marketplace" },
   { label: "Add Buyer Request", section: "buyer-requests", intent: "New buyer request form ready for database connection.", icon: PackageCheck, form: "buyer-requests" },
   { label: "Add Market Price", section: "market-prices", intent: "New market price entry form ready for database connection.", icon: ChartLine, form: "market-prices" },
+  { label: "Add Success Story", section: "success-stories", intent: "New success story form ready for review and publishing.", icon: Star, form: "success-stories" },
   { label: "Review Verifications", section: "verifications", intent: "Verification queue opened for review.", icon: ShieldCheck }
 ];
 
@@ -576,7 +599,8 @@ const formTitles: Record<AdminFormId, string> = {
   marketplace: "Marketplace Listing",
   "buyer-requests": "Buyer Request",
   "market-prices": "Market Price",
-  learn: "Learn Article"
+  learn: "Learn Article",
+  "success-stories": "Success Story"
 };
 
 const createEndpoints: Partial<Record<AdminFormId, string>> = {
@@ -585,7 +609,8 @@ const createEndpoints: Partial<Record<AdminFormId, string>> = {
   marketplace: "/api/admin/marketplace-listings",
   "buyer-requests": "/api/admin/buyer-requests",
   "market-prices": "/api/admin/market-prices",
-  learn: "/api/admin/learn-articles"
+  learn: "/api/admin/learn-articles",
+  "success-stories": "/api/admin/success-stories"
 };
 
 const formConfigs: Record<AdminFormId, FormField[]> = {
@@ -655,6 +680,17 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "author", label: "Author", required: true },
     { name: "publishDate", label: "Publish Date", type: "date", required: true },
     { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Active", "Archived"] }
+  ],
+  "success-stories": [
+    { name: "title", label: "Title", required: true },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Farmers", "Buyers", "Suppliers"] },
+    { name: "personBusinessName", label: "Person/Business Name", required: true },
+    { name: "region", label: "Region", required: true },
+    { name: "summary", label: "Summary", type: "textarea", required: true },
+    { name: "outcome", label: "Outcome", type: "textarea", required: true },
+    { name: "date", label: "Story Date", type: "date", required: true },
+    { name: "imageUrl", label: "Image URL", helper: "Optional. Use a public image URL or leave blank." },
+    { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Published", "Archived"] }
   ]
 };
 
@@ -769,6 +805,10 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       values.status = "Draft";
     }
 
+    if (formId === "success-stories") {
+      values.status = "Draft";
+    }
+
     if (formId === "buyer-requests") {
       values.status = "Open";
     }
@@ -869,6 +909,34 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
     };
   }
 
+  if (formId === "success-stories") {
+    const story = (successStories as Array<{
+      slug: string;
+      title: string;
+      category: string;
+      personBusinessName: string;
+      region: string;
+      summary: string;
+      outcome: string;
+      date: string;
+      image?: string;
+      status: AdminStatus;
+    }>).find((record) => record.slug === row.id);
+
+    return {
+      ...values,
+      title: story?.title ?? row.name,
+      category: story?.category ?? row.type,
+      personBusinessName: story?.personBusinessName ?? "",
+      region: story?.region ?? row.region,
+      summary: story?.summary ?? "",
+      outcome: story?.outcome ?? "",
+      date: story?.date ?? row.dateAdded,
+      imageUrl: story?.image ?? "",
+      status: row.status
+    };
+  }
+
   const article = learnArticles.find((record) => record.slug === row.id);
   return {
     ...values,
@@ -888,7 +956,8 @@ function formIdForSection(section: AdminSectionId): AdminFormId | null {
     section === "marketplace" ||
     section === "buyer-requests" ||
     section === "market-prices" ||
-    section === "learn"
+    section === "learn" ||
+    section === "success-stories"
   ) {
     return section;
   }
@@ -965,6 +1034,10 @@ function statusFromForm(formId: AdminFormId, values: Record<string, string>): Ad
 
   if (formId === "learn") {
     return values.status === "Archived" ? "Archived" : values.status === "Active" ? "Active" : "Pending";
+  }
+
+  if (formId === "success-stories") {
+    return values.status === "Published" ? "Published" : values.status === "Archived" ? "Archived" : "Pending";
   }
 
   return "Active";
@@ -1046,6 +1119,20 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
       status: "Active",
       dateAdded: values.dateUpdated || today,
       href: "/market-intelligence"
+    };
+  }
+
+  if (formId === "success-stories") {
+    const fallbackId = localAdminId("success-story", values.title);
+    const id = existingId ?? rowIdFromRecord(record, fallbackId);
+    return {
+      id,
+      name: values.title,
+      type: values.category || "Success Story",
+      region: values.region || "Ghana",
+      status: statusFromForm(formId, values),
+      dateAdded: values.date || today,
+      href: "/success-stories"
     };
   }
 
@@ -1398,6 +1485,10 @@ function activitySection(entityType: AdminActivityRecord["entity_type"]): AdminS
     return "featured-enquiries";
   }
 
+  if (entityType === "Success Story") {
+    return "success-stories";
+  }
+
   if (entityType === "Farmer") {
     return "farmers";
   }
@@ -1431,6 +1522,10 @@ function activityIcon(entityType: AdminActivityRecord["entity_type"]) {
   }
 
   if (entityType === "Featured Enquiry") {
+    return Star;
+  }
+
+  if (entityType === "Success Story") {
     return Star;
   }
 
@@ -2714,6 +2809,39 @@ export function AdminDashboard({
       [activeSection]: current[activeSection].map((record) => (record.id === row.id ? { ...record, status: "Archived" } : record))
     }));
     setNotice(`${row.name} archived successfully.`);
+    void loadActivity();
+  }
+
+  async function publishSuccessStory(row: AdminRow) {
+    setStatusOverrides((current) => ({ ...current, [row.id]: "Published" }));
+
+    const response = await fetch("/api/admin/success-stories/status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recordId: row.id,
+        entityName: row.name,
+        status: "Published"
+      })
+    }).catch(() => null);
+
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setNotice(result?.error ?? `Could not publish ${row.name}.`);
+      return;
+    }
+
+    setRowsBySection((current) => ({
+      ...current,
+      "success-stories": current["success-stories"].map((record) => (record.id === row.id ? { ...record, status: "Published" } : record))
+    }));
+    setNotice(`${row.name} published successfully.`);
     void loadActivity();
   }
 
@@ -5607,6 +5735,16 @@ export function AdminDashboard({
                                 </button>
                               ) : null}
                             </>
+                          ) : null}
+                          {activeSection === "success-stories" && row.status !== "Published" ? (
+                            <button
+                              type="button"
+                              onClick={() => void publishSuccessStory(row)}
+                              className="inline-flex items-center gap-1 rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800"
+                            >
+                              <BadgeCheck className="h-3.5 w-3.5" />
+                              Publish Story
+                            </button>
                           ) : null}
                           {activeSection === "farmers" && normalizedRowSource === "Tally Import" ? (
                             <button
