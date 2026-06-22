@@ -43,7 +43,6 @@ function farmingAdvice(weather?: WeatherState) {
 export function WeatherUpdates() {
   const [selected, setSelected] = useState(weatherLocations[0].name);
   const [weather, setWeather] = useState<WeatherState | undefined>();
-  const [status, setStatus] = useState("Loading weather...");
   const [showFullWeather, setShowFullWeather] = useState(false);
 
   const location = useMemo(
@@ -53,7 +52,6 @@ export function WeatherUpdates() {
 
   useEffect(() => {
     let active = true;
-    setStatus("Loading weather...");
 
     const params = new URLSearchParams({
       latitude: String(location.latitude),
@@ -87,14 +85,12 @@ export function WeatherUpdates() {
             Number(data.daily?.temperature_2m_max?.[0] ?? 0)
           )}C today`
         });
-        setStatus("Live weather loaded from Open-Meteo.");
       })
       .catch(() => {
         if (!active) {
           return;
         }
         setWeather(undefined);
-        setStatus("Weather is temporarily unavailable. Try again when internet access is available.");
       });
 
     return () => {
@@ -107,7 +103,6 @@ export function WeatherUpdates() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-2xl font-black text-ink">Live Weather Updates</h2>
-          <p className="mt-1 text-xs font-bold text-ink/50">{status}</p>
         </div>
         <label className="grid gap-2 text-sm font-bold text-ink/75 lg:min-w-72">
           Nearest city or region
@@ -129,7 +124,7 @@ export function WeatherUpdates() {
         <div className="rounded-md bg-leaf-50 p-4">
           <ThermometerSun className="text-leaf-600" size={22} aria-hidden="true" />
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Current Temperature</p>
-          <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.temperature}°C` : "--"}</p>
+          <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.temperature}C` : "--"}</p>
         </div>
         <div className="rounded-md bg-leaf-50 p-4">
           <CloudRain className="text-leaf-600" size={22} aria-hidden="true" />

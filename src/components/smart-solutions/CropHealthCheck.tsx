@@ -204,22 +204,22 @@ export function CropHealthCheck() {
       <p className="mt-2 text-base leading-7 text-ink/65">Upload a crop photo and get farming advice.</p>
 
       <div className="mt-5 grid gap-4">
-        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-4 text-center sm:p-6">
+        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-4 text-center sm:p-5">
           {previewUrl ? (
             <Image
               src={previewUrl}
               alt="Selected crop preview"
               width={960}
               height={520}
-              className="h-52 w-full rounded-md object-cover sm:h-80"
+              className="h-40 w-full rounded-md object-cover sm:h-60"
               unoptimized
             />
           ) : (
-            <div className="grid h-44 w-full place-items-center rounded-md bg-white sm:h-72">
+            <div className="grid h-32 w-full place-items-center rounded-md bg-white sm:h-52">
               <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
             </div>
           )}
-          <span className="mt-4 rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white">
+          <span className="mt-4 rounded-md bg-leaf-700 px-6 py-4 text-base font-black text-white">
             {fileName || "Upload Crop Photo"}
           </span>
           <span className="mt-2 text-xs leading-5 text-ink/60">JPG, PNG, or WEBP. Maximum 5MB.</span>

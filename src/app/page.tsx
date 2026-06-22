@@ -1,6 +1,10 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Bot,
+  CloudSun,
+  LineChart,
+  ScanSearch,
   ShieldCheck,
   UsersRound
 } from "lucide-react";
@@ -67,6 +71,39 @@ export default async function HomePage() {
       </section>
 
       <MarketplaceCategoryShowcase />
+
+      <section className="bg-white py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="gg-eyebrow">Free Digital Farm Tools</p>
+                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Practical tools farmers can use every week</h2>
+              </div>
+              <ButtonLink href="/smart-solutions">Open Digital Farm</ButtonLink>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { title: "Weather", icon: CloudSun },
+                { title: "Crop Health", icon: ScanSearch },
+                { title: "Market Prices", icon: LineChart },
+                { title: "Farm Assistant", icon: Bot }
+              ].map((tool) => {
+                const Icon = tool.icon;
+
+                return (
+                  <div key={tool.title} className="flex items-center gap-3 rounded-md bg-white p-4 shadow-sm">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                      <Icon size={20} aria-hidden="true" />
+                    </span>
+                    <p className="font-black text-ink">{tool.title}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
