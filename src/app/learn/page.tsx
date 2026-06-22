@@ -1,11 +1,13 @@
 import { LearnHub } from "@/components/LearnHub";
 import { PageHero } from "@/components/PageHero";
 import { blogPosts, learnCategories } from "@/data/blog";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Learn & Resources | Ghana Growers",
-  description: "Practical Ghana Growers guides for farmers, buyers, suppliers, market access, verification, and agricultural business decisions."
-};
+export const metadata = createPageMetadata({
+  title: "Learn & Resources",
+  description: "Practical Ghana Growers guides for farmers, buyers, suppliers, market access, verification, and agricultural business decisions.",
+  path: "/learn"
+});
 
 export default function LearnPage() {
   return (

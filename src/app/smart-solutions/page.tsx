@@ -3,15 +3,17 @@ import { FarmerAssistant } from "@/components/smart-solutions/FarmerAssistant";
 import { MarketPricesDashboard } from "@/components/smart-solutions/MarketPricesDashboard";
 import { WeatherUpdates } from "@/components/smart-solutions/WeatherUpdates";
 import { smartTools } from "@/data/smartTools";
+import { createPageMetadata } from "@/lib/seo";
 import { getMarketPricesData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Digital Farm",
   description:
-    "Weather updates, market prices, crop health checks, and farming advice for Ghanaian farmers."
-};
+    "Weather updates, market prices, crop health checks, and farming advice for Ghanaian farmers.",
+  path: "/smart-solutions"
+});
 
 export default async function SmartSolutionsPage() {
   const marketPrices = await getMarketPricesData();

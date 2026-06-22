@@ -15,6 +15,7 @@ import {
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { supplierServiceImageForName } from "@/lib/productDisplay";
+import { createPageMetadata } from "@/lib/seo";
 import { getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 import type { Product, SupplierProfile } from "@/types";
 
@@ -31,15 +32,20 @@ export async function generateMetadata({ params }: SupplierProfilePageProps) {
   const supplier = suppliers.find((record) => record.slug === params.slug);
 
   if (!supplier) {
-    return {
-      title: "Supplier Profile"
-    };
+    return createPageMetadata({
+      title: "Supplier Profile",
+      description: "Ghana Growers supplier profile.",
+      path: `/supplier-directory/${params.slug}`,
+      noIndex: true
+    });
   }
 
-  return {
-    title: `${supplier.companyName} | Ghana Growers`,
-    description: `${supplier.companyName} provides ${supplier.productsServices.join(", ")} in ${supplier.district}, ${supplier.region}.`
-  };
+  return createPageMetadata({
+    title: supplier.companyName,
+    description: `${supplier.companyName} provides ${supplier.productsServices.join(", ")} in ${supplier.district}, ${supplier.region} through Ghana Growers.`,
+    path: `/supplier-directory/${params.slug}`,
+    image: supplier.photos[0]
+  });
 }
 
 function SupplierVerificationBadge({ status }: { status: string }) {

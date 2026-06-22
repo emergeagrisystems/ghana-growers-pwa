@@ -2,11 +2,13 @@ import { ArrowRight, Store, Tractor, Truck } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Join Ghana Growers",
-  description: "Join Ghana Growers as a farmer, buyer, or agricultural supplier in Ghana."
-};
+  description: "Join Ghana Growers as a farmer, buyer, or agricultural supplier in Ghana.",
+  path: "/join"
+});
 
 const joinOptions = [
   {

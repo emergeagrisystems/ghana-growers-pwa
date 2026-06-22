@@ -2,6 +2,7 @@ import { Activity, BarChart3, CalendarDays, MapPinned, SignalHigh, TrendingDown,
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
+import { createPageMetadata } from "@/lib/seo";
 import {
   demandSignals,
   marketIntelligenceMeta,
@@ -12,11 +13,12 @@ import {
   type PriceTrendRecord
 } from "@/data/marketIntelligence";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Market Intelligence",
   description:
-    "Use Ghana Growers market intelligence to compare price trends, demand signals, seasonal calendars, and regional opportunities."
-};
+    "Use Ghana Growers market intelligence to compare price trends, demand signals, seasonal calendars, and regional opportunities.",
+  path: "/market-intelligence"
+});
 
 function formatMoney(value: number) {
   return `${marketIntelligenceMeta.currency} ${value.toLocaleString("en-US")}`;

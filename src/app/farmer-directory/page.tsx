@@ -3,15 +3,17 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { isFeaturedActive } from "@/lib/featured";
+import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Farmer Directory",
   description:
-    "Discover Ghanaian farmers by region, district, product, and farm type through the Ghana Growers Farmer Directory."
-};
+    "Discover Ghanaian farmers by region, district, product, and farm type through the Ghana Growers Farmer Directory.",
+  path: "/farmer-directory"
+});
 
 export default async function FarmerDirectoryPage() {
   const farmers = await getFarmersData();

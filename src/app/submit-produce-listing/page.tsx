@@ -1,10 +1,12 @@
 import { SubmitProduceListingForm } from "@/components/SubmitProduceListingForm";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Submit Produce Listing | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Submit Produce Listing",
   description:
-    "Submit farm produce, livestock, or agricultural supply listings for Ghana Growers admin review."
-};
+    "Submit farm produce, livestock, or agricultural supply listings for Ghana Growers admin review.",
+  path: "/submit-produce-listing"
+});
 
 export default function SubmitProduceListingPage() {
   return (

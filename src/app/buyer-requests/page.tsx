@@ -1,14 +1,16 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { BuyerRequestsBoard } from "@/components/BuyerRequestsBoard";
+import { createPageMetadata } from "@/lib/seo";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Buyer Demand Board | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Buyer Demand Board",
   description:
-    "Find active buyer requests for produce, livestock, and agricultural supply across Ghana."
-};
+    "Find active buyer requests for produce, livestock, and agricultural supply across Ghana.",
+  path: "/buyer-requests"
+});
 
 export default async function BuyerRequestsPage() {
   const [requests, marketplaceProducts, farmers] = await Promise.all([

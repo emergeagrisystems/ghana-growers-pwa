@@ -1,11 +1,13 @@
 import { SubmitBuyerRequestForm } from "@/components/SubmitBuyerRequestForm";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Submit Buyer Request | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Submit Buyer Request",
   description:
-    "Submit buyer demand for produce, livestock, and agricultural supplies for Ghana Growers admin review."
-};
+    "Submit buyer demand for produce, livestock, and agricultural supplies for Ghana Growers admin review.",
+  path: "/submit-buyer-request"
+});
 
 export default function SubmitBuyerRequestPage() {
   return (

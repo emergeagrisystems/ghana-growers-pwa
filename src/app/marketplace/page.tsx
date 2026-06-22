@@ -3,15 +3,17 @@ import { MarketplaceListings } from "@/components/MarketplaceListings";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { productCategories } from "@/data/products";
+import { createPageMetadata } from "@/lib/seo";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Marketplace | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Marketplace",
   description:
-    "Browse Ghana Growers marketplace listings for tomatoes, onions, maize, cassava, yam, plantain, pepper, rice, eggs, poultry, farm supply, and verified seller leads across Ghana."
-};
+    "Browse Ghana Growers marketplace listings for tomatoes, onions, maize, cassava, yam, plantain, pepper, rice, eggs, poultry, farm supply, and verified seller leads across Ghana.",
+  path: "/marketplace"
+});
 
 export default async function MarketplacePage() {
   const [products, farmers, suppliers, buyerRequests] = await Promise.all([

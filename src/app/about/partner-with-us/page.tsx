@@ -2,11 +2,13 @@ import { Building2, Handshake, Sprout, Store, Truck, UsersRound } from "lucide-r
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Partner With Us",
-  description: "Partnership opportunities with Ghana Growers for NGOs, agribusinesses, logistics firms, agencies, investors, and suppliers."
-};
+  description: "Partnership opportunities with Ghana Growers for NGOs, agribusinesses, logistics firms, agencies, investors, and suppliers.",
+  path: "/partner-with-us"
+});
 
 const partners = [
   {

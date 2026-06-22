@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
 import { siteConfig } from "@/data/site";
+import { defaultOgImage, organizationJsonLd } from "@/lib/seo";
 
 const PREVIEW_COOKIE = "ghana_growers_dev_preview";
 
@@ -18,20 +19,31 @@ export const metadata: Metadata = {
   description: siteConfig.description,
   applicationName: siteConfig.name,
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon.svg"
+  },
   openGraph: {
-    title: siteConfig.name,
+    title: `${siteConfig.name} | Trusted Agriculture Platform for Ghana`,
     description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
-    images: ["/images/marketplace/ghana-market-1.jpg"],
+    images: [
+      {
+        url: defaultOgImage,
+        width: 1778,
+        height: 885,
+        alt: "Ghana Growers agricultural marketplace platform"
+      }
+    ],
     locale: "en_GH",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.name,
+    title: `${siteConfig.name} | Trusted Agriculture Platform for Ghana`,
     description: siteConfig.description,
-    images: ["/images/marketplace/ghana-market-1.jpg"]
+    images: [defaultOgImage]
   }
 };
 
@@ -49,6 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GH">
       <body className="min-h-screen antialiased">
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
         <PwaRegister />
         {showPublicShell ? <Header /> : null}
         <main>{children}</main>

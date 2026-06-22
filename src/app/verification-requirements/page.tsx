@@ -1,12 +1,14 @@
 import { BadgeCheck, Building2, MessageCircle, Phone, ShieldCheck, UserCheck } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { SectionHeader } from "@/components/SectionHeader";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Verification Requirements",
   description:
-    "Learn how Ghana Growers uses phone, WhatsApp, identity, and optional business verification to build trust across farmers, buyers, and suppliers."
-};
+    "Learn how Ghana Growers uses phone, WhatsApp, identity, and optional business verification to build trust across farmers, buyers, and suppliers.",
+  path: "/verification-requirements"
+});
 
 const requirements = [
   {

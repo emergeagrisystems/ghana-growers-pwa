@@ -16,6 +16,7 @@ import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { productDisplayName, productImageForListing, productImageForName } from "@/lib/productDisplay";
+import { createPageMetadata } from "@/lib/seo";
 import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
@@ -31,15 +32,20 @@ export async function generateMetadata({ params }: FarmerProfilePageProps) {
   const farmer = farmers.find((record) => record.slug === params.slug);
 
   if (!farmer) {
-    return {
-      title: "Farmer Profile"
-    };
+    return createPageMetadata({
+      title: "Farmer Profile",
+      description: "Ghana Growers farmer profile.",
+      path: `/farmer-directory/${params.slug}`,
+      noIndex: true
+    });
   }
 
-  return {
-    title: `${farmer.farmName} | Ghana Growers`,
-    description: `${farmer.farmName} in ${farmer.district}, ${farmer.region} supplies ${farmer.products.join(", ")}.`
-  };
+  return createPageMetadata({
+    title: farmer.farmName,
+    description: `${farmer.farmName} in ${farmer.district}, ${farmer.region} supplies ${farmer.products.join(", ")} through Ghana Growers.`,
+    path: `/farmer-directory/${params.slug}`,
+    image: farmer.photos[0]
+  });
 }
 
 function FarmerVerificationBadge({ status }: { status: string }) {

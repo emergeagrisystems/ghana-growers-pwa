@@ -3,12 +3,14 @@ import { BuyerRegistrationForm } from "@/components/BuyerRegistrationForm";
 import { PageHero } from "@/components/PageHero";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { buyerTypes } from "@/data/buyerTypes";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Join as a Buyer",
   description:
-    "Register as a buyer with Ghana Growers to source fresh produce from farmers and agricultural suppliers in Ghana."
-};
+    "Register as a buyer with Ghana Growers to source fresh produce from farmers and agricultural suppliers in Ghana.",
+  path: "/join/buyer"
+});
 
 export default function JoinBuyerPage() {
   return (

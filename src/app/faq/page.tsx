@@ -3,12 +3,14 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FaqExplorer } from "@/components/FaqExplorer";
 import { PageHero } from "@/components/PageHero";
 import { faqItems } from "@/data/trustCenter";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "FAQ & Trust Center | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "FAQ & Trust Center",
   description:
-    "Answers for farmers, buyers, suppliers, and partners about joining Ghana Growers, verification, buyer requests, lead handling, and trust and safety."
-};
+    "Answers for farmers, buyers, suppliers, and partners about joining Ghana Growers, verification, buyer requests, lead handling, and trust and safety.",
+  path: "/faq"
+});
 
 const sections = [
   {

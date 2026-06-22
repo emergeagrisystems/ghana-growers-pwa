@@ -2,11 +2,13 @@ import { Facebook, Linkedin, Mail, MapPin, Phone, Sprout } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
 import { PageHero } from "@/components/PageHero";
 import { siteConfig, WHATSAPP_NUMBER } from "@/data/site";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Contact Us",
-  description: "Contact Ghana Growers about farmer, buyer, supplier, and partnership enquiries."
-};
+  description: "Contact Ghana Growers about farmer, buyer, supplier, and partnership enquiries.",
+  path: "/contact"
+});
 
 const contactItems = [
   {

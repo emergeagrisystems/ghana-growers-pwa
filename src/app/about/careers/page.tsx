@@ -1,11 +1,13 @@
 import { BriefcaseBusiness, Mail } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
 import { siteConfig } from "@/data/site";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Careers",
-  description: "Career opportunities and CV submissions at Ghana Growers."
-};
+  description: "Career opportunities and CV submissions at Ghana Growers.",
+  path: "/about/careers"
+});
 
 const jobs = [
   "Field Community Coordinator",

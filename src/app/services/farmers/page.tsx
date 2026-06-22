@@ -1,9 +1,11 @@
 import { ServicePage } from "@/components/ServicePage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "For Farmers",
-  description: "Sell produce, join the farmer network, and access buyers through Ghana Growers."
-};
+  description: "Sell produce, join the farmer network, and access buyers through Ghana Growers.",
+  path: "/services/farmers"
+});
 
 export default function FarmersServicePage() {
   return (

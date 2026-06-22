@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { blogPosts, getBlogPost } from "@/data/blog";
+import { createPageMetadata } from "@/lib/seo";
 
 type ArticlePageProps = {
   params: {
@@ -28,20 +29,20 @@ export function generateMetadata({ params }: ArticlePageProps) {
   const post = getBlogPost(params.slug);
 
   if (!post) {
-    return {
-      title: "Resource Not Found | Ghana Growers"
-    };
+    return createPageMetadata({
+      title: "Resource Not Found",
+      description: "This Ghana Growers resource could not be found.",
+      path: `/learn/${params.slug}`,
+      noIndex: true
+    });
   }
 
-  return {
-    title: `${post.title} | Ghana Growers Resources`,
+  return createPageMetadata({
+    title: post.title,
     description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: [categoryImages[post.category]]
-    }
-  };
+    path: `/learn/${params.slug}`,
+    image: categoryImages[post.category]
+  });
 }
 
 export default function LearnArticlePage({ params }: ArticlePageProps) {

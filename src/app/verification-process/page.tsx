@@ -2,12 +2,14 @@ import { AlertTriangle, BadgeCheck, CheckCircle2, Clock3, ShieldCheck } from "lu
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { verificationSteps } from "@/data/trustCenter";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Verification Process | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Verification Process",
   description:
-    "How Ghana Growers reviews farmers, buyers, suppliers, listings, and buyer requests before showing public verification signals."
-};
+    "How Ghana Growers reviews farmers, buyers, suppliers, listings, and buyer requests before showing public verification signals.",
+  path: "/verification-process"
+});
 
 const statuses = [
   {

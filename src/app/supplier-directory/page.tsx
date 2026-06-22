@@ -3,15 +3,17 @@ import { FeaturedListings } from "@/components/FeaturedListings";
 import { PageHero } from "@/components/PageHero";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
 import { isFeaturedActive } from "@/lib/featured";
+import { createPageMetadata } from "@/lib/seo";
 import { getSuppliersData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Supplier Directory",
   description:
-    "Discover agricultural suppliers and service providers across Ghana by region, district, category, and service coverage area."
-};
+    "Discover agricultural suppliers and service providers across Ghana by region, district, category, and service coverage area.",
+  path: "/supplier-directory"
+});
 
 export default async function SupplierDirectoryPage() {
   const suppliers = await getSuppliersData();

@@ -5,11 +5,13 @@ import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { SectionHeader } from "@/components/SectionHeader";
 import { serviceAudiences } from "@/data/services";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Services",
-  description: "Services for farmers, buyers, and agricultural suppliers on Ghana Growers."
-};
+  description: "Services for farmers, buyers, and agricultural suppliers on Ghana Growers.",
+  path: "/services"
+});
 
 export default function ServicesPage() {
   return (

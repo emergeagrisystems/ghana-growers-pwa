@@ -1,14 +1,16 @@
 import { PageHero } from "@/components/PageHero";
 import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
+import { createPageMetadata } from "@/lib/seo";
 import { getSuccessStoriesData } from "@/lib/supabase/publicData";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Success Stories | Ghana Growers",
+export const metadata = createPageMetadata({
+  title: "Success Stories",
   description:
-    "Published Ghana Growers success stories from farmers, buyers, and suppliers as the agricultural network grows."
-};
+    "Published Ghana Growers success stories from farmers, buyers, and suppliers as the agricultural network grows.",
+  path: "/success-stories"
+});
 
 export default async function SuccessStoriesPage() {
   const stories = await getSuccessStoriesData();

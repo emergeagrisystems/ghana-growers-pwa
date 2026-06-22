@@ -13,19 +13,15 @@ import { SafeImage } from "@/components/SafeImage";
 import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
+import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData, getSuccessStoriesData } from "@/lib/supabase/publicData";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
   description:
     "Ghana Growers connects Ghanaian farmers, buyers, suppliers, market women, processors, and agribusiness partners through directories, buyer requests, smart tools, and trusted WhatsApp follow-up.",
-  openGraph: {
-    title: "Ghana Growers | Trusted Agriculture Platform for Ghana",
-    description:
-      "Discover farmers, suppliers, buyer requests, market intelligence, and smart agricultural tools built for Ghana.",
-    images: ["/images/hero/ghana-growers-trade-hero.png"]
-  }
-};
+  path: "/"
+});
 
 export default async function HomePage() {
   const farmers = await getFarmersData();

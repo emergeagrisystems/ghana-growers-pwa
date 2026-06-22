@@ -2,12 +2,14 @@ import { ShieldCheck, Sprout, UsersRound } from "lucide-react";
 import { FarmerRegistrationForm } from "@/components/FarmerRegistrationForm";
 import { PageHero } from "@/components/PageHero";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Join as a Farmer",
   description:
-    "Register your farm with Ghana Growers to access buyers, supplier support, learning resources, and digital agricultural tools."
-};
+    "Register your farm with Ghana Growers to access buyers, supplier support, learning resources, and digital agricultural tools.",
+  path: "/join/farmer"
+});
 
 export default function JoinFarmerPage() {
   return (

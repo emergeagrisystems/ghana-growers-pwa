@@ -1,11 +1,13 @@
 import { Building2, Handshake, Sprout, Store, UsersRound } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "About",
-  description: "Learn about the Ghana Growers mission, vision, and purpose."
-};
+  description: "Learn about the Ghana Growers mission, vision, and purpose.",
+  path: "/about"
+});
 
 const values = [
   ["Mission", "To connect Ghana's farmers, buyers, and agricultural suppliers through a trusted digital platform that makes agricultural opportunities easier to discover and follow up."],

@@ -2,12 +2,14 @@ import { BadgeCheck, Eye, Handshake, Store, Users } from "lucide-react";
 import { SupplierRegistrationForm } from "@/components/SupplierRegistrationForm";
 import { PageHero } from "@/components/PageHero";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = createPageMetadata({
   title: "Supplier Registration",
   description:
-    "Register as a Ghana Growers supplier to reach farmers, buyers, and agricultural businesses across Ghana."
-};
+    "Register as a Ghana Growers supplier to reach farmers, buyers, and agricultural businesses across Ghana.",
+  path: "/join/supplier"
+});
 
 export default function JoinSupplierPage() {
   const benefits = [
