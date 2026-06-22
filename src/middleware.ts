@@ -24,6 +24,7 @@ function isAllowedPrelaunchRoute(pathname: string) {
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/api") ||
     pathname === "/launching-soon" ||
+    pathname === "/dev-preview" ||
     pathname === "/supplier-registration" ||
     pathname === "/join" ||
     pathname === "/join/farmer" ||
