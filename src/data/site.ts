@@ -27,9 +27,8 @@ export const navigation: NavigationItem[] = [
     title: "Services",
     href: "/services",
     children: [
-      { title: "For Farmers", href: "/services/farmers" },
-      { title: "For Buyers", href: "/services/buyers" },
-      { title: "For Suppliers", href: "/services/suppliers" }
+      { title: "Sell", href: "/services" },
+      { title: "Buy", href: "/services/buy" }
     ]
   },
   {
@@ -44,7 +43,7 @@ export const navigation: NavigationItem[] = [
       { title: "Partner with us", href: "/about/partner-with-us" },
       { title: "Job listing", href: "/about/careers" },
       { title: "Verification process", href: "/verification-requirements" },
-      { title: "Contact Us", href: "/contact" }
+      { title: "Contact us", href: "/contact" }
     ]
   }
 ];
