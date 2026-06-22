@@ -39,17 +39,14 @@ const pathCards: PathCard[] = [
 
 const toneClasses = {
   leaf: {
-    shell: "from-white via-leaf-50 to-white",
     icon: "bg-leaf-600 text-white",
     ring: "group-hover:border-leaf-600/35 group-hover:shadow-[0_22px_60px_rgba(53,96,27,0.14)]"
   },
   earth: {
-    shell: "from-white via-earth-50 to-white",
     icon: "bg-earth-500 text-ink",
-    ring: "group-hover:border-earth-500/45 group-hover:shadow-[0_22px_60px_rgba(216,153,50,0.16)]"
+    ring: "group-hover:border-earth-500/45 group-hover:shadow-[0_22px_60px_rgba(223,174,74,0.18)]"
   },
   cream: {
-    shell: "from-white via-leaf-50/50 to-white",
     icon: "bg-ink text-white",
     ring: "group-hover:border-leaf-900/20 group-hover:shadow-[0_22px_60px_rgba(19,32,19,0.12)]"
   }
@@ -57,10 +54,10 @@ const toneClasses = {
 
 export function ChooseYourPath() {
   return (
-    <section className="bg-gradient-to-br from-ink via-leaf-900 to-leaf-700 py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
+    <section className="bg-[#143A1F] py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
-          <p className="text-sm font-black uppercase tracking-wide text-earth-400">Start here</p>
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-earth-100/85">Start here</p>
           <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-white sm:text-4xl">
             Choose Your Path
           </h2>
@@ -77,7 +74,7 @@ export function ChooseYourPath() {
             return (
               <article
                 key={card.title}
-                className={`choose-path-card group flex h-full flex-col rounded-lg border border-white/70 bg-gradient-to-br ${tone.shell} p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
+                className={`choose-path-card group flex h-full flex-col rounded-lg border border-white/70 bg-white p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
                 style={{ animation: `choosePathFadeUp 560ms ease-out ${index * 90}ms both` }}
               >
                 <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-md ${tone.icon}`}>

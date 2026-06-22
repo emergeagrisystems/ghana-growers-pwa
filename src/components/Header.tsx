@@ -11,7 +11,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(19,32,19,0.08)]">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="focus-ring flex min-w-0 items-center gap-2 rounded-md text-sm font-black text-leaf-700 sm:text-lg">
+        <Link href="/" className="focus-ring flex min-w-0 items-center gap-2 rounded-md text-sm font-black text-[#143A1F] sm:text-lg">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-600 text-white sm:h-10 sm:w-10">
             <Sprout size={21} aria-hidden="true" />
           </span>

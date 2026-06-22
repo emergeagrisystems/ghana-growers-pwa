@@ -89,7 +89,7 @@ export function FeaturedListings({
                     </div>
                   ) : null}
                   {isFeaturedActive(farmer) ? (
-                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-bold text-earth-700/85">
                       <Star className="h-3.5 w-3.5 fill-current" />
                       Featured
                     </span>
@@ -148,7 +148,7 @@ export function FeaturedListings({
                     </div>
                   ) : null}
                   {isFeaturedActive(supplier) ? (
-                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-bold text-earth-700/85">
                       <Star className="h-3.5 w-3.5 fill-current" />
                       Featured
                     </span>

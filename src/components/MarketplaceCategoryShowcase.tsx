@@ -153,7 +153,7 @@ export function MarketplaceCategoryShowcase() {
     <section className="bg-gradient-to-b from-white via-leaf-50/55 to-white py-12 sm:py-14" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-[18rem] sm:max-w-4xl">
-          <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
+          <p className="gg-eyebrow">Marketplace</p>
           <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-4xl">
             Shop @ Farmer&apos;s Market
           </h2>
@@ -197,7 +197,7 @@ export function MarketplaceCategoryShowcase() {
             className="rounded-lg border border-leaf-900/10 bg-white p-4 shadow-soft"
           >
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Featured Products</p>
+              <p className="gg-eyebrow">Featured Products</p>
               <h3 className="mt-1 text-2xl font-black text-ink">{activeCategory.name}</h3>
             </div>
 

@@ -20,9 +20,9 @@ const config: Config = {
         },
         earth: {
           50: "#fff8ed",
-          100: "#fce8bf",
-          500: "#d89932",
-          700: "#8d5c13"
+          100: "#f7e8bd",
+          500: "#DFAE4A",
+          700: "#8a641c"
         },
         tomato: "#d94b35",
         ink: "#132013"

@@ -6,7 +6,7 @@
   color-scheme: light;
   --gg-primary-green: #477d22;
   --gg-secondary-green: #35601b;
-  --gg-accent-gold: #d89932;
+  --gg-accent-gold: #DFAE4A;
   --gg-cream-bg: #fff8ed;
   --gg-dark-text: #132013;
   --gg-white-card: #ffffff;
@@ -46,7 +46,7 @@ h3 {
 }
 
 ::selection {
-  background: #d89932;
+  background: #DFAE4A;
   color: #132013;
 }
 
@@ -124,6 +124,10 @@ h3 {
 
   .gg-card-title {
     @apply text-xl font-black text-ink;
+  }
+
+  .gg-eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80;
   }
 
   .gg-field {

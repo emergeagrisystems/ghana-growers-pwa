@@ -14,7 +14,7 @@ export function SectionHeader({
   return (
     <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
       {eyebrow ? (
-        <p className="mb-3 text-sm font-bold uppercase text-earth-700">{eyebrow}</p>
+        <p className="gg-eyebrow mb-3">{eyebrow}</p>
       ) : null}
       <h2 className="gg-section-title">{title}</h2>
       {description ? <p className="mt-4 text-base leading-7 text-ink/70">{description}</p> : null}
