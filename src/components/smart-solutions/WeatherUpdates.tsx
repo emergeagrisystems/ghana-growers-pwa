@@ -106,7 +106,7 @@ export function WeatherUpdates() {
     <section id="weather" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-2xl font-black text-ink">Weather</h2>
+          <h2 className="text-2xl font-black text-ink">Live Weather Updates</h2>
           <p className="mt-1 text-xs font-bold text-ink/50">{status}</p>
         </div>
         <label className="grid gap-2 text-sm font-bold text-ink/75 lg:min-w-72">

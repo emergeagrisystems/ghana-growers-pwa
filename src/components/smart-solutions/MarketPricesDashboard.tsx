@@ -55,7 +55,7 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
 
   return (
     <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-2xl font-black text-ink">Market Prices</h2>
+      <h2 className="text-2xl font-black text-ink">Current Market Prices</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
         Quick market snapshot for common crops. {marketPriceMeta.note}
       </p>
