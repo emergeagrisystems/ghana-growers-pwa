@@ -145,7 +145,7 @@ export function WeatherUpdates() {
           onClick={() => setShowFullWeather((value) => !value)}
           className="gg-text-link h-full"
         >
-          {showFullWeather ? "Hide Full Weather" : "View Full Weather"}
+          {showFullWeather ? "Hide Full Forecast" : "View Full Forecast"}
         </button>
       </div>
 

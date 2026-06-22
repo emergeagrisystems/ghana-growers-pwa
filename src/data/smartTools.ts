@@ -33,10 +33,11 @@ export const smartTools = [
 
 export const assistantSuggestions = [
   "How do I improve tomato yield?",
+  "Why are my maize leaves yellow?",
   "How do I store onions?",
   "How can I find buyers?",
-  "When should I plant cassava?",
-  "How do I choose fertilizer?"
+  "When should I plant cassava in Ashanti Region?",
+  "What should I check before buying fertilizer?"
 ];
 
 export function getSampleAssistantResponse(question: string) {
