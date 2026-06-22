@@ -5,7 +5,7 @@ import { type FormEvent, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
 import { productCategories } from "@/data/products";
 
-const fieldClass = "focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal";
+const fieldClass = "gg-field";
 const units = ["bags", "crates", "tonnes", "kg", "bunches", "trays", "units"];
 
 export function SubmitProduceListingForm() {
@@ -103,7 +103,7 @@ function TextField({ label, name, type = "text", required = false }: { label: st
 
 function SubmitButton({ isSubmitting, label }: { isSubmitting: boolean; label: string }) {
   return (
-    <button type="submit" disabled={isSubmitting} className="focus-ring mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25">
+    <button type="submit" disabled={isSubmitting} className="gg-button-primary mt-6 gap-2">
       <Send size={17} aria-hidden="true" />
       {isSubmitting ? "Submitting..." : label}
     </button>

@@ -89,8 +89,8 @@ export function FaqExplorer({ items }: FaqExplorerProps) {
         </div>
 
         {filteredItems.length === 0 ? (
-          <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-            <h3 className="text-xl font-black text-ink">No FAQ answers found.</h3>
+          <div className="gg-empty-state mt-8">
+            <h3 className="gg-card-title">No records available yet</h3>
             <p className="mt-2 text-sm leading-6 text-ink/62">Try another keyword or category.</p>
           </div>
         ) : null}

@@ -278,7 +278,7 @@ export function CropHealthCheck() {
             type="button"
             disabled={!selectedFile || isLoading}
             onClick={analyzePhoto}
-            className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25 sm:w-auto"
+            className="gg-button-primary w-full gap-2 sm:w-auto"
           >
             <ScanSearch size={17} aria-hidden="true" />
             {isLoading ? "Checking Photo..." : "Get Advisory Result"}
@@ -405,7 +405,7 @@ export function CropHealthCheck() {
                   type="button"
                   onClick={saveDiagnosis}
                   disabled={isSaving || !sessionId}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25 sm:w-auto"
+                  className="gg-button-primary w-full gap-2 sm:w-auto"
                 >
                   <Save size={16} aria-hidden="true" />
                   {isSaving ? "Saving Diagnosis..." : "Save Diagnosis"}

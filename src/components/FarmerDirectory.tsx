@@ -127,14 +127,14 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
         </div>
 
         {farmers.length === 0 ? (
-          <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-            <h3 className="text-xl font-black text-ink">No public farmer profiles are available yet.</h3>
+          <div className="gg-empty-state mt-8">
+            <h3 className="gg-card-title">No records available yet</h3>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
               Ghana Growers is currently onboarding and reviewing farmer profiles before public launch.
             </p>
             <Link
               href="/join"
-              className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+              className="gg-button-primary mt-5"
             >
               Join Ghana Growers
             </Link>
@@ -188,7 +188,7 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                       <div className="mt-5 grid gap-3 sm:grid-cols-2">
                         <Link
                           href={`/farmer-directory/${farmer.slug}`}
-                          className="inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                          className="gg-button-primary w-full"
                         >
                           View Profile
                         </Link>

@@ -161,7 +161,7 @@ export function FarmerAssistant() {
         <button
           type="submit"
           disabled={isLoading || !question.trim()}
-          className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25"
+          className="gg-button-primary gap-2"
         >
           <Send size={17} aria-hidden="true" />
           {isLoading ? "Thinking..." : "Ask Farm Help"}

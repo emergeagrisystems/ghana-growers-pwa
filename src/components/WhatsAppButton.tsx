@@ -38,7 +38,7 @@ export function WhatsAppButton({
           });
         }
       }}
-      className={`focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-4 py-3 text-sm font-bold text-white shadow-soft transition hover:bg-leaf-700 ${className}`}
+      className={`gg-button-primary gap-2 ${className}`}
     >
       <MessageCircle size={18} aria-hidden="true" />
       {label}

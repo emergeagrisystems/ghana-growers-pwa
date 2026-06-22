@@ -53,25 +53,25 @@ export function PrelaunchWaitlistForm() {
       <div className="mt-5 grid gap-4">
         <label className="grid gap-2 text-sm font-bold text-ink/75">
           Name
-          <input required name="name" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" placeholder="Your full name" />
+          <input required name="name" className="gg-field" placeholder="Your full name" />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-ink/75">
             Phone
-            <input required name="phone" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" placeholder="+233..." />
+            <input required name="phone" className="gg-field" placeholder="+233..." />
           </label>
           <label className="grid gap-2 text-sm font-bold text-ink/75">
             WhatsApp Number
-            <input required name="whatsapp" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" placeholder="+233..." />
+            <input required name="whatsapp" className="gg-field" placeholder="+233..." />
           </label>
         </div>
         <label className="grid gap-2 text-sm font-bold text-ink/75">
           Email
-          <input required type="email" name="email" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" placeholder="name@example.com" />
+          <input required type="email" name="email" className="gg-field" placeholder="name@example.com" />
         </label>
         <label className="grid gap-2 text-sm font-bold text-ink/75">
           User Type
-          <select required name="userType" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal">
+          <select required name="userType" className="gg-field">
             {userTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -84,7 +84,7 @@ export function PrelaunchWaitlistForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="focus-ring mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-700"
+        className="gg-button-primary mt-5 w-full gap-2"
       >
         <Send size={17} aria-hidden="true" />
         {isSubmitting ? "Submitting..." : "Join Waiting List"}

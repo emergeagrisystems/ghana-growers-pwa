@@ -210,7 +210,7 @@ function ListingCard({
           <button
             type="button"
             onClick={() => onViewDetails(product)}
-            className="w-full rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
+            className="gg-button-primary w-full"
           >
             View Listing
           </button>
@@ -464,14 +464,14 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
               </div>
 
               {products.length === 0 ? (
-                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-                  <h3 className="text-xl font-black text-ink">No public listings are available yet.</h3>
+                <div className="gg-empty-state mt-8">
+                  <h3 className="gg-card-title">No records available yet</h3>
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
                     Ghana Growers is currently onboarding farmers and suppliers before public marketplace listings go live.
                   </p>
                   <Link
                     href="/join"
-                    className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                    className="gg-button-primary mt-5"
                   >
                     Join Ghana Growers
                   </Link>
@@ -491,8 +491,8 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
                   ))}
                 </div>
               ) : (
-                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-                  <h3 className="text-xl font-black text-ink">No listings found.</h3>
+                <div className="gg-empty-state mt-8">
+                  <h3 className="gg-card-title">No records available yet</h3>
                   <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, category, availability, or region.</p>
                 </div>
               )}

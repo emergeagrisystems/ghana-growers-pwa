@@ -70,8 +70,8 @@ export function SuccessStoriesSection({ stories, preview = false }: SuccessStori
             ))}
           </div>
         ) : (
-          <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
-            <h3 className="text-xl font-black text-ink">Success stories coming soon as Ghana Growers grows.</h3>
+          <div className="gg-empty-state mt-8">
+            <h3 className="gg-card-title">No records available yet</h3>
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-ink/62">
               Ghana Growers will publish real farmer, buyer, and supplier stories after verified outcomes are available.
             </p>

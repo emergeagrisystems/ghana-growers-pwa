@@ -24,7 +24,7 @@ const initialFormState: FormState = {
   privacyAccepted: false
 };
 
-const fieldClass = "focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal";
+const fieldClass = "gg-field";
 
 export function FarmerRegistrationForm() {
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -164,7 +164,7 @@ export function FarmerRegistrationForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-ink/25"
+          className="gg-button-primary gap-2"
         >
           <Send size={17} aria-hidden="true" />
           {isSubmitting ? "Submitting..." : "Submit Farmer Registration"}

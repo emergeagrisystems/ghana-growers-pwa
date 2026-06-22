@@ -75,7 +75,7 @@ export function FeaturedPlacementCTA({ defaultRole = "Farmer", defaultProfileNam
               setError("");
               setSuccess("");
             }}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-leaf-800"
+            className="gg-button-primary shrink-0 gap-2"
           >
             <Star className="h-4 w-4" aria-hidden="true" />
             Request Featured Placement
@@ -153,7 +153,7 @@ export function FeaturedPlacementCTA({ defaultRole = "Farmer", defaultProfileNam
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="gg-button-primary"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Enquiry"}
                 </button>
@@ -192,4 +192,3 @@ function FeaturedField({
     </label>
   );
 }
-

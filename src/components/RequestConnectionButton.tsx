@@ -76,7 +76,7 @@ export function RequestConnectionButton({
           setError("");
           setSuccess("");
         }}
-        className={`inline-flex items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2 ${className}`}
+        className={`gg-button-primary gap-2 ${className}`}
       >
         <MessageCircle className="h-4 w-4" aria-hidden="true" />
         {label}
@@ -137,7 +137,7 @@ export function RequestConnectionButton({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="gg-button-primary"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Request"}
                 </button>

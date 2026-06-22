@@ -91,7 +91,7 @@ export function ChooseYourPath() {
                   <div className="mt-6">
                     <Link
                       href={card.primaryHref}
-                      className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-leaf-700"
+                      className="gg-button-primary"
                     >
                       {card.primaryLabel}
                     </Link>

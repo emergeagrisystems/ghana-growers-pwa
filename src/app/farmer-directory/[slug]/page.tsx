@@ -48,7 +48,7 @@ function FarmerVerificationBadge({ status }: { status: string }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-leaf-600 px-3 py-2 text-xs font-black text-white shadow-sm">
+    <span className="gg-badge gg-badge-verified">
       <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
       Verified by Ghana Growers
     </span>

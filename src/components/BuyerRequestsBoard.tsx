@@ -161,7 +161,7 @@ function RequestCard({
         <button
           type="button"
           onClick={() => onViewDetails(request)}
-          className="w-full rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600 focus:ring-offset-2"
+          className="gg-button-primary w-full"
         >
           View Request
         </button>
@@ -237,7 +237,7 @@ function RequestDetailsModal({
                   phoneNumber: request.whatsappNumber
                 })
               }
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+              className="gg-button-primary mt-5 w-full gap-2"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
               WhatsApp Buyer
@@ -451,15 +451,15 @@ export function BuyerRequestsBoard({
               </div>
 
               {requests.length === 0 ? (
-                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                <div className="gg-empty-state mt-8">
                   <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-                  <h3 className="mt-4 text-xl font-black text-ink">No public buyer requests are available yet.</h3>
+                  <h3 className="mt-4 gg-card-title">No records available yet</h3>
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
                     Ghana Growers is currently collecting and reviewing buyer demand before publishing requests.
                   </p>
                   <Link
                     href="/submit-buyer-request"
-                    className="mt-5 inline-flex rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                    className="gg-button-primary mt-5"
                   >
                     Submit Buyer Request
                   </Link>
@@ -471,9 +471,9 @@ export function BuyerRequestsBoard({
                   ))}
                 </div>
               ) : (
-                <div className="mt-8 rounded-md border border-dashed border-leaf-900/20 bg-leaf-50 p-8 text-center">
+                <div className="gg-empty-state mt-8">
                   <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-                  <h3 className="mt-4 text-xl font-black text-ink">No buyer requests found.</h3>
+                  <h3 className="mt-4 gg-card-title">No records available yet</h3>
                   <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
                 </div>
               )}

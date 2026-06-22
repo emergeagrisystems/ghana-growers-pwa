@@ -30,7 +30,7 @@ export default async function SmartSolutionsPage() {
             <a
               key={tool.href}
               href={tool.href}
-              className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-leaf-700"
+              className="gg-button-primary"
             >
               {tool.cta}
             </a>

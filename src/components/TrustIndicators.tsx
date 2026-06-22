@@ -46,7 +46,7 @@ export function VerificationBadge({ kind, status }: TrustBadgeProps) {
   const Icon = BadgeCheck;
 
   return (
-    <span className="inline-flex items-center gap-2 rounded-md bg-leaf-600 px-3 py-2 text-xs font-black text-white">
+    <span className="gg-badge gg-badge-verified">
       <Icon size={15} aria-hidden="true" />
       {label}
     </span>
@@ -56,13 +56,13 @@ export function VerificationBadge({ kind, status }: TrustBadgeProps) {
 export function ProfileStatusBadge({ status }: { status: TrustStatus }) {
   const Icon = status === "Verified" ? ShieldCheck : CircleDashed;
   const className = status === "Verified"
-      ? "bg-leaf-50 text-leaf-700"
+      ? "gg-badge-verified"
       : status === "Rejected"
-        ? "bg-tomato/10 text-tomato"
-      : "bg-ink/10 text-ink/70";
+        ? "gg-badge-rejected"
+      : "gg-badge-pending";
 
   return (
-    <span className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-black ${className}`}>
+    <span className={`gg-badge ${className}`}>
       <Icon size={15} aria-hidden="true" />
       {status}
     </span>
@@ -78,7 +78,7 @@ export function VerificationRequirementsList({ requirements }: { requirements: V
   ] as const;
 
   return (
-    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+    <div className="gg-card p-4">
       <h3 className="text-sm font-black uppercase text-earth-700">Verification requirements</h3>
       <div className="mt-3 grid gap-2">
         {items.map(([label, complete]) => {
@@ -117,10 +117,10 @@ export function TrustScoreCard({ score }: { score: TrustScore }) {
   const total = trustScoreTotal(score);
 
   return (
-    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+    <div className="gg-card p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-black uppercase text-earth-700">Trust score</h3>
-        <span className="inline-flex items-center gap-1 rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-ink">
+        <span className="gg-badge gg-badge-featured">
           <Star size={14} aria-hidden="true" />
           {total}%
         </span>

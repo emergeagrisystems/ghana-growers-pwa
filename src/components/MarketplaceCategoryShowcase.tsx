@@ -222,7 +222,7 @@ export function MarketplaceCategoryShowcase() {
             </div>
 
             <div className="mt-6 flex justify-center">
-              <Link href="/marketplace" className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+              <Link href="/marketplace" className="gg-button-primary">
                 Browse Full Marketplace
               </Link>
             </div>

@@ -24,19 +24,19 @@ export function ContactForm() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-black text-ink/75">
           Full Name
-          <input required name="name" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" />
+          <input required name="name" className="gg-field" />
         </label>
         <label className="grid gap-2 text-sm font-black text-ink/75">
           Email
-          <input required type="email" name="email" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" />
+          <input required type="email" name="email" className="gg-field" />
         </label>
         <label className="grid gap-2 text-sm font-black text-ink/75">
           Phone / WhatsApp
-          <input name="phone" inputMode="tel" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal" />
+          <input name="phone" inputMode="tel" className="gg-field" />
         </label>
         <label className="grid gap-2 text-sm font-black text-ink/75">
           Enquiry Type
-          <select name="type" className="focus-ring rounded-md border border-leaf-900/15 px-3 py-3 font-normal">
+          <select name="type" className="gg-field">
             <option>Farmer onboarding</option>
             <option>Buyer request</option>
             <option>Supplier registration</option>
@@ -47,13 +47,13 @@ export function ContactForm() {
         </label>
         <label className="grid gap-2 text-sm font-black text-ink/75 sm:col-span-2">
           Message
-          <textarea required name="message" className="focus-ring min-h-32 rounded-md border border-leaf-900/15 px-3 py-3 font-normal" />
+          <textarea required name="message" className="gg-field min-h-32" />
         </label>
       </div>
 
       <button
         type="submit"
-        className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800 sm:w-auto"
+        className="gg-button-primary mt-5 w-full sm:w-auto"
       >
         Send Message
       </button>
