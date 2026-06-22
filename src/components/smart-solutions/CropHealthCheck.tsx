@@ -199,15 +199,12 @@ export function CropHealthCheck() {
   }
 
   return (
-    <section id="crop-health" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      <p className="text-sm font-black uppercase text-earth-700">Crop Health Check</p>
-      <h2 className="mt-2 text-2xl font-black text-ink">Upload Crop Photo</h2>
-      <p className="mt-2 text-sm leading-6 text-ink/65">
-        Take a clear photo of the affected leaf, stem, fruit, or whole plant. Ghana Growers checks the image through a secure server route and returns advisory next steps.
-      </p>
+    <section id="crop-health" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-2xl font-black text-ink">Crop Health Check</h2>
+      <p className="mt-2 text-base leading-7 text-ink/65">Upload a crop photo and get farming advice.</p>
 
       <div className="mt-5 grid gap-4">
-        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-leaf-600 bg-leaf-50 p-4 text-center sm:p-5">
+        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-4 text-center sm:p-6">
           {previewUrl ? (
             <Image
               src={previewUrl}
@@ -222,7 +219,7 @@ export function CropHealthCheck() {
               <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
             </div>
           )}
-          <span className="mt-3 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white">
+          <span className="mt-4 rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white">
             {fileName || "Upload Crop Photo"}
           </span>
           <span className="mt-2 text-xs leading-5 text-ink/60">JPG, PNG, or WEBP. Maximum 5MB.</span>
@@ -273,7 +270,7 @@ export function CropHealthCheck() {
           />
         </label>
 
-        <div className="rounded-md bg-earth-50 p-4 sm:p-5">
+        <div className="rounded-md bg-[#ECE7D1] p-4 sm:p-5">
           <button
             type="button"
             disabled={!selectedFile || isLoading}
@@ -295,7 +292,7 @@ export function CropHealthCheck() {
                 const source =
                   result.provider === "crop.health"
                     ? "Crop.health API"
-                    : `Mock fallback${result.diagnostics?.fallbackReason === "api_key_missing" ? " - API key missing on server" : ""}`;
+                    : "Crop advisory fallback";
                 const summary =
                   result.noDiseaseDetected
                     ? "No serious problem was clearly detected. Keep monitoring the plant and take another clear photo if symptoms continue."
@@ -427,12 +424,13 @@ export function CropHealthCheck() {
             </p>
           ) : (
             <p className="mt-5 text-sm leading-6 text-ink/65">
-              Upload a clear crop photo first. This tool provides advisory guidance only. Please confirm serious crop problems with an agricultural extension officer.
+              Upload a clear crop photo first. This tool provides advisory guidance only. Confirm serious crop problems with an agricultural extension officer.
             </p>
           )}
         </div>
       </div>
 
+      {reports.length > 0 ? (
       <div id="crop-health-reports" className="mt-8 scroll-mt-28 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -442,7 +440,6 @@ export function CropHealthCheck() {
           <p className="text-sm font-bold text-ink/55">{reports.length} saved</p>
         </div>
 
-        {reports.length > 0 ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {reports.map((report) => {
               const attention = attentionLevel(report.severity ?? undefined);
@@ -480,11 +477,6 @@ export function CropHealthCheck() {
               );
             })}
           </div>
-        ) : (
-          <p className="mt-4 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/60">
-            No crop health reports saved yet.
-          </p>
-        )}
 
         {selectedReport ? (
           <div className="mt-4 rounded-md border border-leaf-900/10 bg-white p-4">
@@ -534,6 +526,7 @@ export function CropHealthCheck() {
           </div>
         ) : null}
       </div>
+      ) : null}
     </section>
   );
 }

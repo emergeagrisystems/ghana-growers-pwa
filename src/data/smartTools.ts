@@ -18,7 +18,7 @@ export const smartTools = [
   {
     title: "Farm Help Assistant",
     description: "Ask practical questions about crop care, storage, fertilizer, buyers, and market access.",
-    cta: "Ask Farm Help",
+    cta: "Ask Farm Question",
     href: "#assistant",
     icon: Bot
   },
@@ -33,11 +33,10 @@ export const smartTools = [
 
 export const assistantSuggestions = [
   "How do I improve tomato yield?",
-  "My maize leaves are turning yellow. What could be wrong?",
-  "When should I plant cassava in Ashanti Region?",
-  "How can I find buyers for plantain?",
-  "What should I check before buying fertilizer?",
-  "How can I store onions after harvest?"
+  "How do I store onions?",
+  "How can I find buyers?",
+  "When should I plant cassava?",
+  "How do I choose fertilizer?"
 ];
 
 export function getSampleAssistantResponse(question: string) {

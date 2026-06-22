@@ -48,13 +48,12 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
   ];
 
   return (
-    <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      <p className="text-sm font-black uppercase text-earth-700">Ghana Market Prices</p>
-      <h2 className="mt-2 text-2xl font-black text-ink">View Market Prices</h2>
+    <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-2xl font-black text-ink">Market Prices</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
         Compare indicative wholesale and retail prices before calling buyers, suppliers, or transporters. {marketPriceMeta.note}
       </p>
-      <p className="mt-2 text-xs font-black uppercase text-earth-700">
+      <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80">
         Last updated: {marketPriceMeta.lastUpdated}
       </p>
 
@@ -63,7 +62,7 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
           <label key={filter.label} className="grid gap-2 text-sm font-bold text-ink/75">
             {filter.label}
             <select
-              className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
+              className="gg-field"
               value={filter.value}
               onChange={(event) => filter.setValue(event.target.value)}
             >

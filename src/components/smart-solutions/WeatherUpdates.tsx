@@ -1,6 +1,6 @@
 "use client";
 
-import { CloudRain, Droplets, ThermometerSun, Wind } from "lucide-react";
+import { CloudRain, ThermometerSun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { weatherLocations } from "@/data/weatherLocations";
 
@@ -44,6 +44,7 @@ export function WeatherUpdates() {
   const [selected, setSelected] = useState(weatherLocations[0].name);
   const [weather, setWeather] = useState<WeatherState | undefined>();
   const [status, setStatus] = useState("Loading weather...");
+  const [showFullWeather, setShowFullWeather] = useState(false);
 
   const location = useMemo(
     () => weatherLocations.find((item) => item.name === selected) ?? weatherLocations[0],
@@ -101,29 +102,17 @@ export function WeatherUpdates() {
     };
   }, [location]);
 
-  const metrics = [
-    { label: "Temperature", value: weather ? `${weather.temperature}C` : "--", icon: ThermometerSun },
-    { label: "Rainfall chance", value: weather ? `${weather.rainfallChance}%` : "--", icon: CloudRain },
-    { label: "Humidity", value: weather ? `${weather.humidity}%` : "--", icon: Droplets },
-    { label: "Wind", value: weather ? `${weather.wind} km/h` : "--", icon: Wind }
-  ];
-
   return (
-    <section id="weather" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section id="weather" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-black uppercase text-earth-700">Live Weather Updates</p>
-          <h2 className="mt-2 text-2xl font-black text-ink">Check Weather</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
-            Choose the nearest farming area before spraying, drying maize, irrigating, or moving produce to market.
-            Weather data is loaded live from Open-Meteo.
-          </p>
-          <p className="mt-2 text-xs font-bold text-ink/55">{status}</p>
+          <h2 className="text-2xl font-black text-ink">Weather</h2>
+          <p className="mt-1 text-xs font-bold text-ink/50">{status}</p>
         </div>
-        <label className="grid gap-2 text-sm font-bold text-ink/75 sm:min-w-64">
+        <label className="grid gap-2 text-sm font-bold text-ink/75 lg:min-w-72">
           Nearest city or region
           <select
-            className="focus-ring w-full rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
+            className="gg-field w-full"
             value={selected}
             onChange={(event) => setSelected(event.target.value)}
           >
@@ -136,29 +125,46 @@ export function WeatherUpdates() {
         </label>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div key={metric.label} className="rounded-md bg-leaf-50 p-4">
-              <Icon className="text-leaf-600" size={22} aria-hidden="true" />
-              <p className="mt-3 text-xs font-black uppercase text-ink/55">{metric.label}</p>
-              <p className="mt-1 text-2xl font-black text-ink">{metric.value}</p>
-            </div>
-          );
-        })}
+      <div className="mt-5 grid gap-3 md:grid-cols-[0.8fr_0.8fr_1.4fr_auto] md:items-stretch">
+        <div className="rounded-md bg-leaf-50 p-4">
+          <ThermometerSun className="text-leaf-600" size={22} aria-hidden="true" />
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Current Temperature</p>
+          <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.temperature}°C` : "--"}</p>
+        </div>
+        <div className="rounded-md bg-leaf-50 p-4">
+          <CloudRain className="text-leaf-600" size={22} aria-hidden="true" />
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Rain Chance</p>
+          <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.rainfallChance}%` : "--"}</p>
+        </div>
+        <div className="rounded-md bg-earth-50 p-4">
+          <p className="text-sm font-black text-ink">Farm advice</p>
+          <p className="mt-2 text-sm leading-6 text-ink/70">{farmingAdvice(weather)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowFullWeather((value) => !value)}
+          className="gg-text-link h-full"
+        >
+          {showFullWeather ? "Hide Full Weather" : "View Full Weather"}
+        </button>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <div className="rounded-md bg-earth-50 p-4">
-          <p className="text-sm font-black text-ink">Today&apos;s forecast</p>
-          <p className="mt-2 text-sm leading-6 text-ink/70">{weather?.forecast ?? "Forecast loading..."}</p>
+      {showFullWeather ? (
+        <div className="mt-4 grid gap-3 rounded-md bg-leaf-50 p-4 text-sm sm:grid-cols-3">
+          <div>
+            <p className="font-black text-ink">Humidity</p>
+            <p className="mt-1 text-ink/65">{weather ? `${weather.humidity}%` : "--"}</p>
+          </div>
+          <div>
+            <p className="font-black text-ink">Wind</p>
+            <p className="mt-1 text-ink/65">{weather ? `${weather.wind} km/h` : "--"}</p>
+          </div>
+          <div>
+            <p className="font-black text-ink">Forecast</p>
+            <p className="mt-1 text-ink/65">{weather?.forecast ?? "Forecast loading..."}</p>
+          </div>
         </div>
-        <div className="rounded-md bg-leaf-600 p-4 text-white">
-          <p className="text-sm font-black">What this means on the farm</p>
-          <p className="mt-2 text-sm leading-6 text-white/85">{farmingAdvice(weather)}</p>
-        </div>
-      </div>
+      ) : null}
     </section>
   );
 }
