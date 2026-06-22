@@ -37,7 +37,7 @@ export default async function HomePage() {
       <section className="overflow-hidden bg-[#ECE7D1]">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:py-16 xl:gap-14">
           <div className="relative z-10">
-            <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80 shadow-sm">
+            <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
@@ -53,7 +53,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="relative">
-            <div className="relative overflow-hidden rounded-md border border-white/60 bg-white p-1 shadow-soft">
+            <div className="relative overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft">
               <SafeImage
                 src="/images/hero/ghana-growers-trade-hero.png"
                 alt="Ghanaian farmer, buyer, and supplier exchanging fresh produce at a farm marketplace"
@@ -142,7 +142,7 @@ export default async function HomePage() {
       <section className="bg-ink py-16 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-earth-500">
+            <p className="flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-500">
               <UsersRound size={18} aria-hidden="true" />
               Join the network
             </p>

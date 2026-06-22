@@ -65,7 +65,7 @@ export function AdminLoginForm() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-white via-leaf-50/70 to-white px-4 py-16">
+    <main className="min-h-screen bg-[#ECE7D1] px-4 py-16">
       <section className="mx-auto max-w-md rounded-md border border-leaf-900/10 bg-white p-6 shadow-soft">
         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Admin</p>
         <h1 className="mt-3 text-3xl font-black text-ink">Admin Login</h1>

@@ -56,13 +56,13 @@ const benefitCards = [
 
 export default function LaunchingSoonPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-leaf-50/70 to-earth-50/70">
+    <div className="min-h-screen bg-[#ECE7D1]">
       <PrelaunchHeader />
       <main>
         <section>
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-16">
             <div>
-              <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black uppercase text-earth-700 shadow-sm ring-1 ring-leaf-900/10">
+              <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm ring-1 ring-leaf-900/10">
                 <LockKeyhole size={16} aria-hidden="true" />
                 Launching Soon
               </p>

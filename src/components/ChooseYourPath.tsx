@@ -48,7 +48,7 @@ const toneClasses = {
   },
   cream: {
     icon: "bg-ink text-white",
-    ring: "group-hover:border-leaf-900/20 group-hover:shadow-[0_22px_60px_rgba(19,32,19,0.12)]"
+    ring: "group-hover:border-leaf-900/20 group-hover:shadow-[0_22px_60px_rgba(20,58,31,0.12)]"
   }
 };
 
@@ -57,7 +57,7 @@ export function ChooseYourPath() {
     <section className="bg-[#143A1F] py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-earth-100/85">Start here</p>
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-500">Start here</p>
           <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-white sm:text-4xl">
             Choose Your Path
           </h2>
@@ -74,7 +74,7 @@ export function ChooseYourPath() {
             return (
               <article
                 key={card.title}
-                className={`choose-path-card group flex h-full flex-col rounded-lg border border-white/70 bg-white p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
+                className={`choose-path-card group flex h-full flex-col rounded-md border border-white/70 bg-white p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
                 style={{ animation: `choosePathFadeUp 560ms ease-out ${index * 90}ms both` }}
               >
                 <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-md ${tone.icon}`}>

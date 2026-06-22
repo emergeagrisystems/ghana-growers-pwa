@@ -54,10 +54,10 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
 
   return (
     <article className="bg-white">
-      <section className="bg-gradient-to-br from-leaf-50 via-white to-earth-50 py-10 sm:py-14">
+      <section className="bg-[#ECE7D1] py-10 sm:py-14">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">{post.category}</p>
+            <p className="gg-eyebrow">{post.category}</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-black leading-tight text-ink sm:text-5xl">{post.title}</h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">{post.excerpt}</p>
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-bold text-ink/55">

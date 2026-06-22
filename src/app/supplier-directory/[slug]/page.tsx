@@ -161,7 +161,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
 
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/60 to-earth-50/35">
+      <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.56fr_1.38fr_0.66fr] lg:items-center lg:px-8 lg:py-12">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
@@ -184,7 +184,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
           </div>
 
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Supplier Profile</p>
+            <p className="gg-eyebrow">Supplier Profile</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{supplier.companyName}</h1>
             <p className="mt-2 text-xl font-black text-leaf-700">{supplier.supplierCategory}</p>
             <div className="mt-5 grid gap-3 text-sm font-bold text-ink/68 sm:grid-cols-2">

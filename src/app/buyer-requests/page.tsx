@@ -21,10 +21,10 @@ export default async function BuyerRequestsPage() {
 
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
+      <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="max-w-4xl">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Demand Board</p>
+            <p className="gg-eyebrow">Demand Board</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
               Buyer Demand Board
             </h1>

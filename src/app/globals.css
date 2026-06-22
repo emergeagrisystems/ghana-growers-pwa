@@ -4,14 +4,14 @@
 
 :root {
   color-scheme: light;
-  --gg-primary-green: #477d22;
-  --gg-secondary-green: #35601b;
+  --gg-primary-green: #143A1F;
+  --gg-secondary-green: #4E7A3D;
   --gg-accent-gold: #DFAE4A;
-  --gg-cream-bg: #fff8ed;
-  --gg-dark-text: #132013;
+  --gg-cream-bg: #ECE7D1;
+  --gg-dark-text: #162016;
   --gg-white-card: #ffffff;
-  --gg-border: rgba(19, 32, 19, 0.1);
-  --gg-shadow: 0 16px 45px rgba(19, 32, 19, 0.12);
+  --gg-border: rgba(20, 58, 31, 0.1);
+  --gg-shadow: 0 18px 48px rgba(20, 58, 31, 0.12);
 }
 
 html {
@@ -21,8 +21,8 @@ html {
 }
 
 body {
-  background: #fffaf0;
-  color: #132013;
+  background: #ECE7D1;
+  color: #162016;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   max-width: 100%;
   overflow-x: hidden;
@@ -47,14 +47,11 @@ h3 {
 
 ::selection {
   background: #DFAE4A;
-  color: #132013;
+  color: #162016;
 }
 
 .ghana-grid {
-  background-image:
-    linear-gradient(rgba(19, 32, 19, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(19, 32, 19, 0.06) 1px, transparent 1px);
-  background-size: 34px 34px;
+  background: #ECE7D1;
 }
 
 .focus-ring {
@@ -79,7 +76,7 @@ h3 {
   }
 
   .gg-button-primary {
-    @apply focus-ring inline-flex items-center justify-center rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25;
+    @apply focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25;
   }
 
   .gg-button-secondary {
@@ -127,7 +124,7 @@ h3 {
   }
 
   .gg-eyebrow {
-    @apply text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80;
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75;
   }
 
   .gg-field {

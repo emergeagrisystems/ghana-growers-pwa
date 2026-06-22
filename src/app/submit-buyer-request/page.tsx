@@ -11,13 +11,13 @@ export const metadata = createPageMetadata({
 
 export default function SubmitBuyerRequestPage() {
   return (
-    <div className="bg-gradient-to-b from-leaf-50/60 via-white to-white">
+    <div className="bg-white">
       <PrelaunchHeader />
       <main>
         <section className="border-b border-leaf-900/10">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Public Submission</p>
+              <p className="gg-eyebrow">Public Submission</p>
               <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">Submit Buyer Request</h1>
               <p className="mt-4 text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
                 Tell Ghana Growers what produce, livestock, or farm supply you need. Approved requests can be published and matched with farmers, listings, and suppliers.

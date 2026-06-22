@@ -25,10 +25,10 @@ export default async function MarketplacePage() {
 
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-gradient-to-br from-white via-leaf-50/40 to-white">
+      <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="max-w-4xl">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace</p>
+            <p className="gg-eyebrow">Marketplace</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
               Farm Produce Marketplace
             </h1>
@@ -50,7 +50,7 @@ export default async function MarketplacePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 rounded-md border border-earth-500/25 bg-earth-50 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Can&apos;t find what you need?</p>
+              <p className="gg-eyebrow">Can&apos;t find what you need?</p>
               <h2 className="mt-1 text-xl font-black text-ink">Submit buyer demand and Ghana Growers will review it for matching.</h2>
             </div>
             <ButtonLink href="/submit-buyer-request">Submit Buyer Request</ButtonLink>

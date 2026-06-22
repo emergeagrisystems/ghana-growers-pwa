@@ -4298,7 +4298,7 @@ export function AdminDashboard({
               </div>
             ) : isLaunchChecklistSection ? (
               <div className="grid gap-6 p-5">
-                <section className="rounded-md border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5">
+                <section className="rounded-md border border-leaf-900/10 bg-white p-5">
                   <div className="grid gap-5 xl:grid-cols-[1fr_220px_320px] xl:items-stretch">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Launch Readiness</p>
@@ -4971,7 +4971,7 @@ export function AdminDashboard({
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
                 ) : null}
 
-                <section className="rounded-md border border-leaf-900/10 bg-gradient-to-br from-leaf-50 via-white to-earth-50 p-5">
+                <section className="rounded-md border border-leaf-900/10 bg-white p-5">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Pipeline</p>

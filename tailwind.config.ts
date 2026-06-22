@@ -11,24 +11,24 @@ const config: Config = {
     extend: {
       colors: {
         leaf: {
-          50: "#f1f8ea",
-          100: "#dff0cf",
-          500: "#5f9f2f",
-          600: "#477d22",
-          700: "#35601b",
-          900: "#19330e"
+          50: "#f3f6ee",
+          100: "#dde8d2",
+          500: "#4E7A3D",
+          600: "#143A1F",
+          700: "#143A1F",
+          900: "#143A1F"
         },
         earth: {
-          50: "#fff8ed",
-          100: "#f7e8bd",
+          50: "#ECE7D1",
+          100: "#f4dfaa",
           500: "#DFAE4A",
-          700: "#8a641c"
+          700: "#9A6D1F"
         },
         tomato: "#d94b35",
-        ink: "#132013"
+        ink: "#162016"
       },
       boxShadow: {
-        soft: "0 16px 45px rgba(19, 32, 19, 0.12)"
+        soft: "0 18px 48px rgba(20, 58, 31, 0.12)"
       }
     }
   },
