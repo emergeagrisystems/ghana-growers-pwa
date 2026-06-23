@@ -17,6 +17,8 @@ const publicRoutes = [
   "/partner-with-us",
   "/verification-process",
   "/verification-requirements",
+  "/privacy-policy",
+  "/terms-of-use",
   "/services",
   "/services/buy",
   "/join",

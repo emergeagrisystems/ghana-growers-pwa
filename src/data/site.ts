@@ -42,7 +42,7 @@ export const navigation: NavigationItem[] = [
       { title: "Who we are", href: "/about" },
       { title: "Partner with us", href: "/about/partner-with-us" },
       { title: "Job listing", href: "/about/careers" },
-      { title: "Verification process", href: "/verification-requirements" },
+      { title: "Verification process", href: "/verification-process" },
       { title: "Contact us", href: "/contact" }
     ]
   }

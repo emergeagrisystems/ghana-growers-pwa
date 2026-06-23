@@ -26,8 +26,10 @@ const footerGroups = [
       { title: "Who we are", href: "/about" },
       { title: "Partner with us", href: "/about/partner-with-us" },
       { title: "Job listing", href: "/about/careers" },
-      { title: "Verification process", href: "/verification-requirements" },
-      { title: "Contact us", href: "/contact" }
+      { title: "Verification process", href: "/verification-process" },
+      { title: "Contact us", href: "/contact" },
+      { title: "Privacy Policy", href: "/privacy-policy" },
+      { title: "Terms of Use", href: "/terms-of-use" }
     ]
   }
 ];

@@ -1,4 +1,4 @@
-import { Building2, Handshake, Sprout, Store, Truck, UsersRound } from "lucide-react";
+import { Building2, Handshake, PackageCheck, Sprout, Store, Truck, UsersRound } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
@@ -6,63 +6,72 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Partner With Us",
-  description: "Partnership opportunities with Ghana Growers for NGOs, agribusinesses, logistics firms, agencies, investors, and suppliers.",
+  description: "Partner with Ghana Growers on farmer onboarding, buyer demand, supplier visibility, logistics, market access, and agricultural support in Ghana.",
   path: "/partner-with-us"
 });
 
 const partners = [
   {
-    title: "Farmer groups",
-    description: "Bring organized farmers into a reviewed network with clearer products, location, and supply information.",
+    title: "Farmer groups and cooperatives",
+    description: "Work with Ghana Growers to organize farmer records, products, locations, photos, and public profiles for groups that are ready for market visibility.",
     icon: Sprout
   },
   {
-    title: "NGOs",
-    description: "Support farmer onboarding, training, market access, data quality, and responsible agricultural programs.",
+    title: "NGOs and development organizations",
+    description: "Support farmer onboarding, training follow-up, verification, data quality, and practical market access work without building a separate directory from scratch.",
     icon: Handshake
   },
   {
-    title: "Agribusinesses",
-    description: "Connect with farmers, suppliers, buyers, logistics partners, and regional market opportunities.",
+    title: "Agribusinesses and aggregators",
+    description: "Share real demand, identify farmer supply, coordinate produce sourcing, and help Ghana Growers understand volumes, regions, and quality requirements.",
     icon: Building2
   },
   {
-    title: "Suppliers",
-    description: "Reach farmers and buyers with inputs, equipment, packaging, transport, storage, finance, and advisory services.",
+    title: "Input suppliers",
+    description: "List seeds, fertilizer, agrochemicals, irrigation, farm tools, packaging, storage, finance, and advisory services where farmers and buyers can find them.",
     icon: Store
   },
   {
-    title: "Buyers",
-    description: "Share demand, source produce, and help Ghana Growers understand real market needs.",
+    title: "Buyers and processors",
+    description: "Submit buyer requests, explain product specifications, and help connect demand to farmers, farmer groups, and available marketplace listings.",
     icon: UsersRound
   },
   {
-    title: "Logistics partners",
-    description: "Support movement of produce, aggregation, cold chain, packaging, and delivery coordination.",
+    title: "Logistics and storage partners",
+    description: "Support aggregation, transport, cold storage, warehousing, packaging, route planning, and delivery conversations linked to real produce demand.",
     icon: Truck
   }
+];
+
+const ways = [
+  "Onboard farmers, suppliers, or buyer groups into Ghana Growers.",
+  "Share buyer demand so Ghana Growers can match it with farmers or listings.",
+  "Support verification, farmer photos, profile completeness, or field follow-up.",
+  "Provide services such as transport, packaging, storage, inputs, or advisory support.",
+  "Sponsor practical content, training, or Digital Farm resources for farmers."
 ];
 
 export default function PartnerPage() {
   return (
     <>
       <PageHero
-        eyebrow="Partner with us"
-        title="Partner with Ghana Growers to strengthen agricultural trade"
-        description="We welcome partners who can support farmers, buyers, suppliers, logistics, training, investment, market access, and agricultural innovation."
+        eyebrow="Partner With Us"
+        title="Work with Ghana Growers where farmers, buyers, and suppliers meet"
+        description="Ghana Growers welcomes partners who can help organize farmer information, source produce, support suppliers, improve logistics, or strengthen practical market access in Ghana."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>
           <ButtonLink href="/supplier-registration" variant="secondary">Register as Supplier</ButtonLink>
         </div>
       </PageHero>
-      <section className="bg-white py-16">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+
+      <section className="bg-white py-12 sm:py-16">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
           <div>
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Partnership focus</p>
-            <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Work with Ghana Growers where trust and market access meet</h2>
+            <p className="gg-eyebrow">Who We Partner With</p>
+            <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Partners that work close to Ghanaian agriculture</h2>
             <p className="mt-3 text-sm leading-7 text-ink/65">
-              Ghana Growers is suited for organizations that want to improve farmer visibility, buyer demand, supplier access, market information, and agricultural coordination across Ghana.
+              The best Ghana Growers partnerships are practical. They help farmers become easier to find, help buyers explain what they need, or help suppliers and service providers support agricultural trade.
             </p>
             <div className="mt-6 grid gap-4">
               {partners.map((partner) => {
@@ -83,7 +92,32 @@ export default function PartnerPage() {
               })}
             </div>
           </div>
-          <RegistrationForm title="Start a partnership conversation" audience="partner" />
+
+          <div className="grid gap-6">
+            <section className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+              <PackageCheck className="text-leaf-700" size={26} aria-hidden="true" />
+              <p className="gg-eyebrow mt-4">Ways To Partner</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Make the platform more useful with real records and real demand.</h2>
+              <ul className="mt-5 grid gap-3 text-sm leading-6 text-ink/70">
+                {ways.map((way) => (
+                  <li key={way} className="flex gap-3">
+                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-earth-500" aria-hidden="true" />
+                    <span>{way}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <p className="gg-eyebrow">Benefits Of Partnership</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Better agricultural follow-up starts with better information.</h2>
+              <p className="mt-3 text-sm leading-7 text-ink/66">
+                Partners can help Ghana Growers keep records accurate, improve farmer visibility, organize buyer demand, and connect services such as inputs, transport, packaging, and storage to the people who need them.
+              </p>
+            </section>
+
+            <RegistrationForm title="Start a partnership conversation" audience="partner" />
+          </div>
         </div>
       </section>
     </>

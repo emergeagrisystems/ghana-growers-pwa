@@ -34,7 +34,7 @@ export function FaqExplorer({ items }: FaqExplorerProps) {
         <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm sm:p-5">
           <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <div>
-              <p className="text-sm font-black uppercase tracking-wide text-earth-700">FAQ search</p>
+              <p className="gg-eyebrow">FAQ search</p>
               <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Find answers quickly</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/62">
                 Search by topic or filter questions for farmers, buyers, suppliers, and trust and safety.

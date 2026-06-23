@@ -6,7 +6,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Contact Us",
-  description: "Contact Ghana Growers about farmer, buyer, supplier, and partnership enquiries.",
+  description: "Contact Ghana Growers about farmer registration, buyer requests, supplier registration, verification, partnerships, and platform support.",
   path: "/contact"
 });
 
@@ -47,12 +47,18 @@ export default function ContactPage() {
     <>
       <PageHero
         eyebrow="Contact Us"
-        title="Talk to Ghana Growers"
-        description="Reach the Ghana Growers team about onboarding, partnerships, supplier registration, buyer interest, or farmer support."
+        title="Contact Ghana Growers"
+        description="Send Ghana Growers a message about farmer onboarding, buyer demand, supplier registration, verification, partnerships, or a listing that needs review."
       />
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <aside className="grid gap-5">
+            <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+              <h2 className="text-lg font-black text-ink">Response expectation</h2>
+              <p className="mt-2 text-sm leading-7 text-ink/66">
+                We normally respond within 1-2 business days. If your enquiry is about a buyer request, farmer profile, supplier registration, or trust issue, include the name, product, region, and phone or WhatsApp number where possible.
+              </p>
+            </div>
             {contactItems.map((item) => {
               const Icon = item.icon;
               const content = (
@@ -75,7 +81,7 @@ export default function ContactPage() {
             })}
             <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5">
               <h2 className="text-lg font-black text-ink">Social links</h2>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Follow Ghana Growers updates as public onboarding expands.</p>
+              <p className="mt-2 text-sm leading-6 text-ink/62">Official Ghana Growers social channels will be connected as public onboarding expands.</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 {socialLinks.map((item) => {
                   const Icon = item.icon;
