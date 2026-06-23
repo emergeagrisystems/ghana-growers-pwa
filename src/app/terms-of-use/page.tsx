@@ -68,6 +68,7 @@ export default function TermsOfUsePage() {
         eyebrow="Terms of Use"
         title="Using Ghana Growers responsibly"
         description="These terms explain how Ghana Growers should be used by farmers, buyers, suppliers, partners, and visitors during pre-launch and public launch."
+        variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>

@@ -1,11 +1,34 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { WHATSAPP_NUMBER } from "@/data/site";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 
+const quietRoutes = [
+  "/about",
+  "/about/partner-with-us",
+  "/partner-with-us",
+  "/faq",
+  "/verification-process",
+  "/verification-requirements",
+  "/privacy-policy",
+  "/terms-of-use",
+  "/learn",
+  "/success-stories",
+  "/launching-soon",
+  "/dev-preview"
+];
+
 export function FloatingWhatsAppButton() {
+  const pathname = usePathname();
+  const shouldHide = quietRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+
+  if (shouldHide) {
+    return null;
+  }
+
   return (
     <a
       href={whatsappUrl("Hello Ghana Growers, I would like to connect with your team.")}
@@ -20,10 +43,9 @@ export function FloatingWhatsAppButton() {
           phoneNumber: WHATSAPP_NUMBER
         })
       }
-      className="focus-ring fixed bottom-4 right-4 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-leaf-600 text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-leaf-700 sm:bottom-6 sm:right-6 sm:w-auto sm:gap-2 sm:rounded-md sm:px-5"
+      className="focus-ring fixed bottom-4 right-4 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-leaf-700 shadow-sm ring-1 ring-leaf-900/15 transition hover:-translate-y-0.5 hover:bg-leaf-50 sm:bottom-6 sm:right-6"
     >
-      <MessageCircle size={23} aria-hidden="true" />
-      <span className="hidden text-sm font-black sm:inline">WhatsApp</span>
+      <MessageCircle size={20} aria-hidden="true" />
     </a>
   );
 }

@@ -49,6 +49,7 @@ export default function ContactPage() {
         eyebrow="Contact Us"
         title="Contact Ghana Growers"
         description="Send Ghana Growers a message about farmer onboarding, buyer demand, supplier registration, verification, partnerships, or a listing that needs review."
+        variant="compact"
       />
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">

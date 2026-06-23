@@ -51,6 +51,7 @@ export default function VerificationRequirementsPage() {
         eyebrow="Trust & Verification"
         title="Clear verification signals for safer agricultural trade"
         description="Ghana Growers uses simple verification steps to help farmers, buyers, and suppliers understand who they are contacting before arranging supply, payment, logistics, or services."
+        variant="compact"
       />
 
       <section className="bg-white py-16">

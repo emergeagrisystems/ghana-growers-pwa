@@ -24,7 +24,7 @@ export default async function FarmerDirectoryPage() {
       <PageHero
         eyebrow="Farmer Directory"
         title="Discover farmers and farm supply across Ghana"
-        description="Search farmer profiles by region, district, product, and farm type, then contact Ghana Growers on WhatsApp to start a trusted buying conversation."
+        description="Search farmer profiles by region, district, product, and farm type, then request a reviewed connection through Ghana Growers."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/buyer-requests">View Buyer Requests</ButtonLink>

@@ -64,7 +64,7 @@ export default async function MarketplacePage() {
             <SectionHeader
               eyebrow="Marketplace Resources"
               title="Helpful ways to source, compare, and connect"
-              description="Use these supporting tools when you need directories, buyer demand, market intelligence, or WhatsApp communities."
+              description="Use these supporting tools when you need directories, buyer demand, market information, or a reviewed connection request."
             />
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <ButtonLink href="/farmer-directory" variant="light">Farmer Directory</ButtonLink>

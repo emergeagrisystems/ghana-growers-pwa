@@ -11,7 +11,7 @@ export const serviceAudiences = [
     title: "For Buyers",
     href: "/services/buyers",
     icon: ShoppingBasket,
-    description: "Find trusted farmers, buy fresh produce, request bulk support, and send WhatsApp inquiries."
+    description: "Find trusted farmers, browse produce, submit buyer demand, and request reviewed connections."
   },
   {
     title: "For Suppliers",
@@ -34,7 +34,7 @@ export const howItWorks = [
   },
   {
     title: "Connect directly",
-    description: "Use WhatsApp inquiries for orders, introductions, supplier conversations, and next steps.",
+    description: "Request a connection so Ghana Growers can help route serious enquiries to the right farmer, buyer, or supplier.",
     icon: Truck
   }
 ];

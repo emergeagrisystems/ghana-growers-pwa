@@ -25,7 +25,7 @@ export default function SuppliersServicePage() {
         "Reach farmers who need inputs, tools, equipment, and advisory support.",
         "Reach buyers who need packaging, logistics, cold storage, and handling services.",
         "Promote seeds, fertilizer, tools, crates, cartons, transport, cold storage, and more.",
-        "Use direct WhatsApp inquiries while advanced supplier accounts are added later."
+        "Receive reviewed connection requests from people looking for agricultural products and services."
       ]}
     />
   );

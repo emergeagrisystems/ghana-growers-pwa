@@ -68,6 +68,7 @@ export default function PrivacyPolicyPage() {
         eyebrow="Privacy Policy"
         title="How Ghana Growers handles submitted information"
         description="Ghana Growers collects information so farmers can be reviewed, buyers can submit demand, suppliers can be listed, and the team can follow up on real agricultural enquiries."
+        variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/contact">Ask a Privacy Question</ButtonLink>

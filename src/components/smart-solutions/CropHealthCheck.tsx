@@ -291,8 +291,8 @@ export function CropHealthCheck() {
                 const attention = attentionLevel(result.severity);
                 const source =
                   result.provider === "crop.health"
-                    ? "Crop.health API"
-                    : "Crop advisory fallback";
+                    ? "Crop Health Advisory"
+                    : "Crop Advisory";
                 const summary =
                   result.noDiseaseDetected
                     ? "No serious problem was clearly detected. Keep monitoring the plant and take another clear photo if symptoms continue."
@@ -463,7 +463,7 @@ export function CropHealthCheck() {
                     </div>
                     <h4 className="mt-2 font-black leading-tight text-ink">{report.diagnosis}</h4>
                     <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/45">
-                      {new Date(report.report_date).toLocaleDateString()} · {report.provider === "crop.health" ? "Crop.health API" : "Mock fallback"}
+                      {new Date(report.report_date).toLocaleDateString()} - Crop Health Advisory
                     </p>
                     <button
                       type="button"

@@ -42,6 +42,7 @@ export default function FaqPage() {
         eyebrow="FAQ & Trust Center"
         title="Clear answers for Ghana Growers members"
         description="Learn how Ghana Growers handles registration, verification, buyer demand, lead requests, supplier visibility, and safer agricultural connections."
+        variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/verification-process">View Verification Process</ButtonLink>

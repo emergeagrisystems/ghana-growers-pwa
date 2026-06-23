@@ -67,6 +67,7 @@ export default function VerificationProcessPage() {
         eyebrow="Verification Process"
         title="How Ghana Growers reviews profiles and requests"
         description="Verification means Ghana Growers has reviewed a profile or request before showing a public trust signal. It helps people start with better information, but every transaction still needs careful confirmation."
+        variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/faq">Read FAQ</ButtonLink>

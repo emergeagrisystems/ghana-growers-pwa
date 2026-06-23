@@ -72,7 +72,7 @@ export function RegistrationForm({ title, audience }: RegistrationFormProps) {
       </button>
       {submitted ? (
         <p className="mt-4 rounded-md bg-leaf-50 px-4 py-3 text-sm font-bold text-leaf-700">
-          Thanks. This demo form is working locally and ready to connect to a real endpoint.
+          Thank you. Ghana Growers has received your interest and will review the details for follow-up.
         </p>
       ) : null}
     </form>

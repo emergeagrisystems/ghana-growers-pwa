@@ -2,7 +2,6 @@ import { CheckCircle2 } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { RegistrationForm } from "@/components/RegistrationForm";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 type ServicePageCta = {
   href: string;
@@ -28,7 +27,6 @@ export function ServicePage({
   description,
   points,
   formAudience,
-  whatsappMessage,
   ctaHref,
   ctaLabel,
   extraCtas = []
@@ -43,7 +41,6 @@ export function ServicePage({
               {cta.label}
             </ButtonLink>
           ))}
-          <WhatsAppButton message={whatsappMessage} />
         </div>
       </PageHero>
       <section className="bg-white py-16">
