@@ -143,7 +143,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
           <div className="gg-empty-state mt-8">
             <h3 className="gg-card-title">No records available yet</h3>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
-              Ghana Growers is currently onboarding agricultural suppliers before public launch.
+              Ghana Growers is reviewing supplier profiles before they appear publicly.
             </p>
             <Link
               href="/join"

@@ -218,6 +218,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
               sourceName={supplier.companyName}
               productInterest={supplier.productsServices.slice(0, 3).join(", ")}
               className="mt-5 w-full"
+              helperText="Ghana Growers reviews your request before helping route the connection."
             />
             {supplier.website ? (
               <a

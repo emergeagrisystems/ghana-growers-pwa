@@ -48,7 +48,7 @@ const sections = [
   {
     title: "Contact information",
     body: [
-      "Phone, WhatsApp, and email details are used for review and follow-up. Ghana Growers may choose not to expose direct contact details publicly during pre-launch or early launch.",
+      "Phone, WhatsApp, and email details are used for review and follow-up. Ghana Growers may choose not to expose direct contact details publicly when a reviewed connection request is safer.",
       "Users should not submit another person's contact details unless they have permission to do so."
     ]
   },
@@ -82,7 +82,7 @@ export default function PrivacyPolicyPage() {
             <LockKeyhole className="text-leaf-700" size={28} aria-hidden="true" />
             <h2 className="mt-4 text-xl font-black text-ink">Plain-language privacy note</h2>
             <p className="mt-3 text-sm leading-7 text-ink/68">
-              This page explains the current Ghana Growers privacy approach in simple terms. It is written for farmers, buyers, suppliers, and partners using the platform during pre-launch and early launch.
+              This page explains the Ghana Growers privacy approach in simple terms. It is written for farmers, buyers, suppliers, and partners using the platform.
             </p>
           </aside>
 

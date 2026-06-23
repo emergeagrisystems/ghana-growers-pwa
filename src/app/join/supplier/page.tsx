@@ -56,6 +56,14 @@ export default function JoinSupplierPage() {
               <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier benefits</p>
               <h2 className="mt-2 text-xl font-black text-ink">Reach farmers, buyers, and agribusiness partners</h2>
             </div>
+            <div className="rounded-md border border-earth-500/25 bg-[#ECE7D1] p-4">
+              <h2 className="text-lg font-black text-ink">What happens after you register?</h2>
+              <ol className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-ink/68">
+                <li>1. Ghana Growers reviews your supplier category, coverage, and services.</li>
+                <li>2. Complete suppliers can be published in the Supplier Directory.</li>
+                <li>3. Featured placement requests are reviewed separately before extra visibility is offered.</li>
+              </ol>
+            </div>
             {benefits.map((benefit) => {
               const Icon = benefit.icon;
               return (

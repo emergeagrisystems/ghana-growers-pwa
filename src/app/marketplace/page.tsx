@@ -37,8 +37,7 @@ export default async function MarketplacePage() {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
-              <ButtonLink href="/submit-produce-listing" variant="secondary">Submit Produce Listing</ButtonLink>
-              <ButtonLink href="/submit-buyer-request" variant="light">Post Buyer Request</ButtonLink>
+              <ButtonLink href="/submit-buyer-request" variant="secondary">Submit Buyer Request</ButtonLink>
             </div>
           </div>
         </div>
@@ -52,6 +51,7 @@ export default async function MarketplacePage() {
             <div>
               <p className="gg-eyebrow">Can&apos;t find what you need?</p>
               <h2 className="mt-1 text-xl font-black text-ink">Submit buyer demand and Ghana Growers will review it for matching.</h2>
+              <p className="mt-2 text-sm leading-6 text-ink/62">Share the product, quantity, location, and deadline. Ghana Growers reviews requests before matching them with farmers, suppliers, or listings.</p>
             </div>
             <ButtonLink href="/submit-buyer-request">Submit Buyer Request</ButtonLink>
           </div>

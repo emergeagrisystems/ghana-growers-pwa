@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    message: "Thank you. Your farmer registration has been submitted.",
+    message: "Thank you. Ghana Growers has received your farmer registration. The team will review your details before publishing or matching your profile.",
     integrations
   });
 }

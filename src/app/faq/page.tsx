@@ -74,11 +74,11 @@ export default function FaqPage() {
           <HelpCircle className="mx-auto text-leaf-700" size={34} aria-hidden="true" />
           <h2 className="mt-4 text-2xl font-black text-ink sm:text-3xl">Still have a question?</h2>
           <p className="mt-3 text-sm leading-7 text-ink/65">
-            Ghana Growers is still onboarding members. If your question is not answered here, submit the relevant registration or request form so the team can follow up.
+            If your question is not answered here, contact Ghana Growers with your role, product or service, region, and the support you need.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/join">Join the Network</ButtonLink>
-            <ButtonLink href="/submit-buyer-request" variant="secondary">Submit Buyer Request</ButtonLink>
+            <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>
+            <ButtonLink href="/join" variant="secondary">Join the Network</ButtonLink>
           </div>
         </div>
       </section>

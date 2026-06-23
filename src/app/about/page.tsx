@@ -122,7 +122,7 @@ export default function AboutPage() {
           <div className="rounded-md border border-white/10 bg-white/10 p-5">
             <Building2 className="text-earth-500" size={28} aria-hidden="true" />
             <p className="mt-4 text-sm leading-7 text-white/72">
-              Ghana Growers is preparing for public launch while farmers, buyers, and suppliers are being onboarded and reviewed.
+              New farmer, buyer, and supplier records are reviewed before they are published or matched through Ghana Growers.
             </p>
           </div>
         </div>

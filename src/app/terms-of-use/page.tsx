@@ -55,7 +55,7 @@ const sections = [
   {
     title: "Platform changes",
     body: [
-      "Ghana Growers may update pages, forms, listings, verification rules, public visibility, features, or these terms as the platform moves from pre-launch into public launch.",
+      "Ghana Growers may update pages, forms, listings, verification rules, public visibility, features, or these terms as the platform grows.",
       "If a record is inaccurate or should no longer be public, contact Ghana Growers so it can be reviewed."
     ]
   }
@@ -67,7 +67,7 @@ export default function TermsOfUsePage() {
       <PageHero
         eyebrow="Terms of Use"
         title="Using Ghana Growers responsibly"
-        description="These terms explain how Ghana Growers should be used by farmers, buyers, suppliers, partners, and visitors during pre-launch and public launch."
+        description="These terms explain how Ghana Growers should be used by farmers, buyers, suppliers, partners, and visitors."
         variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">

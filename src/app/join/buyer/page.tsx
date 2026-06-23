@@ -29,6 +29,14 @@ export default function JoinBuyerPage() {
               <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer benefits</p>
               <h2 className="mt-2 text-xl font-black text-ink">Source produce with clearer demand</h2>
             </div>
+            <div className="rounded-md border border-earth-500/25 bg-[#ECE7D1] p-4">
+              <h2 className="text-lg font-black text-ink">What happens after you register?</h2>
+              <ol className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-ink/68">
+                <li>1. Ghana Growers reviews your buying needs and contact details.</li>
+                <li>2. The team can match serious demand with suitable farmers, suppliers, or listings.</li>
+                <li>3. You can also submit specific buyer requests when you need a product by a deadline.</li>
+              </ol>
+            </div>
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm">
               <div className="grid h-12 w-12 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
                 <ShoppingBasket size={22} aria-hidden="true" />

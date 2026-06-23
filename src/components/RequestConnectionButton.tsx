@@ -11,6 +11,7 @@ type RequestConnectionButtonProps = {
   productInterest?: string;
   label?: string;
   className?: string;
+  helperText?: string;
 };
 
 const successMessage = "Thank you. Ghana Growers has received your request and will connect you with the relevant farmer or supplier.";
@@ -21,7 +22,8 @@ export function RequestConnectionButton({
   sourceName,
   productInterest = "",
   label = "Request Connection",
-  className = ""
+  className = "",
+  helperText = ""
 }: RequestConnectionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,18 +71,21 @@ export function RequestConnectionButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(true);
-          setError("");
-          setSuccess("");
-        }}
-        className={`gg-button-primary gap-2 ${className}`}
-      >
-        <MessageCircle className="h-4 w-4" aria-hidden="true" />
-        {label}
-      </button>
+      <div className={helperText ? "grid gap-2" : ""}>
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+            setError("");
+            setSuccess("");
+          }}
+          className={`gg-button-primary gap-2 ${className}`}
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          {label}
+        </button>
+        {helperText ? <p className="text-xs font-semibold leading-5 text-ink/55">{helperText}</p> : null}
+      </div>
 
       {isOpen ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">

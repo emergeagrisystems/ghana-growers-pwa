@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    message: "Thank you. Your buyer registration has been submitted.",
+    message: "Thank you. Ghana Growers has received your buyer registration. The team will review your buying needs and follow up where there is a suitable match.",
     integrations
   });
 }

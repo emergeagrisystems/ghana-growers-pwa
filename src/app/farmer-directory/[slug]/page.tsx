@@ -176,6 +176,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               sourceName={farmer.farmName}
               productInterest={farmer.products.slice(0, 3).join(", ")}
               className="mt-5 w-full"
+              helperText="Ghana Growers reviews your request before helping route the connection."
             />
           </div>
         </div>

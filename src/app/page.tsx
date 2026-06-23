@@ -1,6 +1,4 @@
-import Link from "next/link";
 import {
-  ArrowRight,
   Bot,
   CloudSun,
   LineChart,
@@ -44,10 +42,10 @@ export default async function HomePage() {
               Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-[18rem] text-base leading-7 text-ink/70 sm:max-w-2xl sm:text-lg sm:leading-8">
-              Connect with trusted farmers, buyers, and suppliers. Discover produce, buyer demand, market intelligence, and digital farm tools across Ghana.
+              Find farm produce, submit buyer demand, register your farm or supplier business, and use practical Digital Farm tools across Ghana.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/farmer-directory">Browse Directory</ButtonLink>
+              <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
               <ButtonLink href="/join" variant="secondary">Join Ghana Growers</ButtonLink>
             </div>
           </div>
@@ -147,21 +145,11 @@ export default async function HomePage() {
             </p>
             <h2 className="mt-4 text-2xl font-black sm:text-4xl">Grow trusted agricultural connections across Ghana</h2>
             <p className="mt-4 leading-7 text-white/70">
-              Register interest, browse marketplace opportunities, and use Digital Farm tools to make better decisions before buying, selling, supplying, or transporting agricultural products.
+              Choose your role, submit your details, and Ghana Growers will review the information before helping with publication, matching, or follow-up.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/verification-requirements" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
-                Understand verification <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              <Link href="/join" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
-                Join Ghana Growers <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              <Link href="/market-intelligence" className="inline-flex items-center gap-2 font-black text-earth-500 hover:text-white">
-                View market intelligence <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="mt-8">
-              <ButtonLink href="/contact" variant="light">Contact Ghana Growers</ButtonLink>
+              <ButtonLink href="/join" variant="light">Join Ghana Growers</ButtonLink>
+              <ButtonLink href="/contact" variant="secondary">Contact Ghana Growers</ButtonLink>
             </div>
           </div>
           <RegistrationForm title="Register your interest" audience="farmer" />

@@ -1,4 +1,4 @@
-import { Facebook, Linkedin, Mail, MapPin, Phone, Sprout } from "lucide-react";
+import { Mail, MapPin, Phone, type LucideIcon } from "lucide-react";
 import { ContactForm } from "@/components/ContactForm";
 import { PageHero } from "@/components/PageHero";
 import { siteConfig, WHATSAPP_NUMBER } from "@/data/site";
@@ -10,7 +10,14 @@ export const metadata = createPageMetadata({
   path: "/contact"
 });
 
-const contactItems = [
+type ContactItem = {
+  title: string;
+  value: string;
+  href: string | null;
+  icon: LucideIcon;
+};
+
+const contactItems: ContactItem[] = [
   {
     title: "Email",
     value: siteConfig.email,
@@ -22,25 +29,19 @@ const contactItems = [
     value: siteConfig.location,
     href: null,
     icon: MapPin
-  },
+  }
+];
+
+if (WHATSAPP_NUMBER !== "233000000000") {
+  contactItems.push(
   {
     title: "Phone / WhatsApp",
     value: `+${WHATSAPP_NUMBER}`,
     href: `https://wa.me/${WHATSAPP_NUMBER}`,
     icon: Phone
-  },
-  {
-    title: "Platform status",
-    value: "Launching Soon",
-    href: null,
-    icon: Sprout
   }
-];
-
-const socialLinks = [
-  { title: "Facebook", href: "#", icon: Facebook },
-  { title: "LinkedIn", href: "#", icon: Linkedin }
-];
+  );
+}
 
 export default function ContactPage() {
   return (
@@ -81,19 +82,10 @@ export default function ContactPage() {
               );
             })}
             <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5">
-              <h2 className="text-lg font-black text-ink">Social links</h2>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Official Ghana Growers social channels will be connected as public onboarding expands.</p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {socialLinks.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <a key={item.title} href={item.href} className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
-                      <Icon size={16} aria-hidden="true" />
-                      {item.title}
-                    </a>
-                  );
-                })}
-              </div>
+              <h2 className="text-lg font-black text-ink">Best way to get a useful reply</h2>
+              <p className="mt-2 text-sm leading-6 text-ink/62">
+                Include your role, product or service, region, district, quantity if relevant, and the best phone number for follow-up.
+              </p>
             </div>
           </aside>
           <ContactForm />

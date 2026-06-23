@@ -99,7 +99,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>&copy; {new Date().getFullYear()} Ghana Growers. Built for trusted agricultural trade in Ghana.</p>
-          <p>Official social media channels will be connected before public launch.</p>
+          <p>Farmers, buyers, and suppliers are reviewed before public visibility.</p>
         </div>
       </div>
     </footer>

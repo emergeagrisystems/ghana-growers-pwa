@@ -300,6 +300,7 @@ function ProductDetailsModal({
                 sourceName={product.name}
                 productInterest={product.name}
                 className="w-full"
+                helperText="Ghana Growers reviews your request before helping route the connection."
               />
             </div>
           </div>

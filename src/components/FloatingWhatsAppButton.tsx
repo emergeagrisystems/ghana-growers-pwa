@@ -24,8 +24,9 @@ const quietRoutes = [
 export function FloatingWhatsAppButton() {
   const pathname = usePathname();
   const shouldHide = quietRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  const hasOfficialWhatsApp = WHATSAPP_NUMBER !== "233000000000";
 
-  if (shouldHide) {
+  if (shouldHide || !hasOfficialWhatsApp) {
     return null;
   }
 

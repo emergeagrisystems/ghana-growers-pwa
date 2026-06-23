@@ -28,6 +28,14 @@ export default function JoinFarmerPage() {
               <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer benefits</p>
               <h2 className="mt-2 text-xl font-black text-ink">Get ready to sell with confidence</h2>
             </div>
+            <div className="rounded-md border border-earth-500/25 bg-[#ECE7D1] p-4">
+              <h2 className="text-lg font-black text-ink">What happens after you register?</h2>
+              <ol className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-ink/68">
+                <li>1. Ghana Growers reviews your farm details and contact information.</li>
+                <li>2. The team may follow up if product, location, or photo details are missing.</li>
+                <li>3. Approved farmers can be published, verified, and matched with buyer demand.</li>
+              </ol>
+            </div>
             {[
               {
                 title: "Buyer access",
