@@ -51,6 +51,9 @@ export function Footer() {
             </span>
             Ghana Growers
           </Link>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-earth-500">
+            A product of Emerge Agri Systems (E.A.Sy)
+          </p>
           <p className="mt-3 max-w-md text-sm leading-6 text-white/70">{siteConfig.description}</p>
 
           <div className="mt-4 grid gap-2 text-sm text-white/75">

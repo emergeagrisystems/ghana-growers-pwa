@@ -55,6 +55,12 @@ export default function ContactPage() {
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
           <aside className="grid gap-5">
+            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-black text-ink">Operated by Emerge Agri Systems (E.A.Sy)</h2>
+              <p className="mt-2 text-sm leading-7 text-ink/66">
+                Ghana Growers is the public agricultural platform operated by Emerge Agri Systems. Use this contact page for farmer, buyer, supplier, verification, and partnership enquiries.
+              </p>
+            </div>
             <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
               <h2 className="text-lg font-black text-ink">Response expectation</h2>
               <p className="mt-2 text-sm leading-7 text-ink/66">

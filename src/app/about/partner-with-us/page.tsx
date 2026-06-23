@@ -57,7 +57,7 @@ export default function PartnerPage() {
       <PageHero
         eyebrow="Partner With Us"
         title="Work with Ghana Growers where farmers, buyers, and suppliers meet"
-        description="Ghana Growers welcomes partners who can help organize farmer information, source produce, support suppliers, improve logistics, or strengthen practical market access in Ghana."
+        description="Partnership opportunities with Ghana Growers are handled through Emerge Agri Systems (E.A.Sy), the parent organization behind the platform. We welcome partners who can help organize farmer information, source produce, support suppliers, improve logistics, or strengthen practical market access in Ghana."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>
@@ -72,6 +72,9 @@ export default function PartnerPage() {
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Partners that work close to Ghanaian agriculture</h2>
             <p className="mt-3 text-sm leading-7 text-ink/65">
               The best Ghana Growers partnerships are practical. They help farmers become easier to find, help buyers explain what they need, or help suppliers and service providers support agricultural trade.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-ink/65">
+              Emerge Agri Systems coordinates partnership conversations so Ghana Growers can stay focused on being the public platform farmers, buyers, and suppliers use.
             </p>
             <div className="mt-6 grid gap-4">
               {partners.map((partner) => {

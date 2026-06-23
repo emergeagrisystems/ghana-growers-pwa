@@ -75,6 +75,24 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <section className="bg-leaf-50 py-12 sm:py-16">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.32fr_0.68fr] lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+            <Building2 className="text-leaf-700" size={30} aria-hidden="true" />
+            <p className="gg-eyebrow mt-4">Parent Organization</p>
+            <h2 className="mt-2 text-2xl font-black text-ink">About Emerge Agri Systems</h2>
+          </div>
+          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
+            <p className="text-base leading-8 text-ink/70">
+              Emerge Agri Systems (E.A.Sy) is the parent organization behind Ghana Growers. E.A.Sy builds practical agricultural systems that help organize farmer records, supplier visibility, buyer demand, market information, and digital support tools.
+            </p>
+            <p className="mt-4 text-base leading-8 text-ink/70">
+              Ghana Growers remains the public-facing platform. It is where farmers, buyers, suppliers, and partners can register, review opportunities, and request connections through a Ghana-focused agricultural network.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-[#ECE7D1] py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="gg-eyebrow">Why Ghana Growers Was Created</p>
