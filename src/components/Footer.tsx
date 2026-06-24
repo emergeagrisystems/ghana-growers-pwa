@@ -8,8 +8,8 @@ const footerGroups = [
     links: [
       { title: "Marketplace Listing", href: "/marketplace" },
       { title: "Buyer Request", href: "/buyer-requests" },
-      { title: "View our Farmers", href: "/farmer-directory" },
-      { title: "View our Suppliers", href: "/supplier-directory" }
+      { title: "Find Farmers", href: "/farmer-directory" },
+      { title: "Find Suppliers", href: "/supplier-directory" }
     ]
   },
   {
