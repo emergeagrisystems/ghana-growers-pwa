@@ -4,13 +4,12 @@ import learnArticles from "@/data/learnArticles.json";
 export const blogPosts = learnArticles as BlogPost[];
 
 export const learnCategories = [
-  "Crop Production",
+  "Crops",
   "Livestock",
-  "Market Access",
-  "Farm Business",
-  "Supplier Guides",
-  "Buyer Guides",
-  "Ghana Growers Guides"
+  "Home Gardening",
+  "Agribusiness",
+  "Seasonal Farming",
+  "Video Library"
 ] as const;
 
 export function getBlogPost(slug: string) {

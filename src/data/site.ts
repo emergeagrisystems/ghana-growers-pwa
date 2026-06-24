@@ -35,6 +35,7 @@ export const navigation: NavigationItem[] = [
     title: "Digital Farm",
     href: "/smart-solutions"
   },
+  { title: "Learn", href: "/learn" },
   {
     title: "About",
     href: "/about",

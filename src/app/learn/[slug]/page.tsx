@@ -12,13 +12,12 @@ type ArticlePageProps = {
 };
 
 const categoryImages = {
-  "Crop Production": "/images/marketplace/farm-activity-1.jpg",
+  Crops: "/images/products/tomatoes.jpg",
   Livestock: "/images/crops/poultry.jpg",
-  "Market Access": "/images/marketplace/ghana-market-1.jpg",
-  "Farm Business": "/images/marketplace/ghana-market-2.jpg",
-  "Supplier Guides": "/images/suppliers/supplier-1.jpg",
-  "Buyer Guides": "/images/marketplace/ghana-market-3.jpg",
-  "Ghana Growers Guides": "/images/hero/ghana-growers-hero.jpg"
+  "Home Gardening": "/images/products/vegetables.jpg",
+  Agribusiness: "/images/marketplace/ghana-market-1.jpg",
+  "Seasonal Farming": "/images/marketplace/farm-activity-1.jpg",
+  "Video Library": "/images/hero/ghana-growers-trade-hero.png"
 };
 
 export function generateStaticParams() {

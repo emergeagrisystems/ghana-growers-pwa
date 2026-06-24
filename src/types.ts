@@ -39,13 +39,12 @@ export type BlogPost = {
   slug: string;
   title: string;
   category:
-    | "Crop Production"
+    | "Crops"
     | "Livestock"
-    | "Market Access"
-    | "Farm Business"
-    | "Supplier Guides"
-    | "Buyer Guides"
-    | "Ghana Growers Guides";
+    | "Home Gardening"
+    | "Agribusiness"
+    | "Seasonal Farming"
+    | "Video Library";
   excerpt: string;
   readTime: string;
   date: string;

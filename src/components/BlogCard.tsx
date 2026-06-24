@@ -4,13 +4,12 @@ import { SafeImage } from "@/components/SafeImage";
 import type { BlogPost } from "@/types";
 
 const categoryImages: Record<BlogPost["category"], string> = {
-  "Crop Production": "/images/marketplace/farm-activity-1.jpg",
+  Crops: "/images/products/tomatoes.jpg",
   Livestock: "/images/crops/poultry.jpg",
-  "Market Access": "/images/marketplace/ghana-market-1.jpg",
-  "Farm Business": "/images/marketplace/ghana-market-2.jpg",
-  "Supplier Guides": "/images/suppliers/supplier-1.jpg",
-  "Buyer Guides": "/images/marketplace/ghana-market-3.jpg",
-  "Ghana Growers Guides": "/images/hero/ghana-growers-hero.jpg"
+  "Home Gardening": "/images/products/vegetables.jpg",
+  Agribusiness: "/images/marketplace/ghana-market-1.jpg",
+  "Seasonal Farming": "/images/marketplace/farm-activity-1.jpg",
+  "Video Library": "/images/hero/ghana-growers-trade-hero.png"
 };
 
 export function BlogCard({ post }: { post: BlogPost }) {
@@ -26,7 +25,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
         sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
       />
       <div className="flex flex-1 flex-col p-5">
-        <p className="text-xs font-black uppercase text-earth-700">{post.category}</p>
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
         <h2 className="mt-3 text-xl font-black leading-snug text-ink">{post.title}</h2>
         <p className="mt-3 flex-1 text-sm leading-6 text-ink/65">{post.excerpt}</p>
         <div className="mt-4 flex items-center justify-between gap-3 text-xs font-bold text-ink/55">

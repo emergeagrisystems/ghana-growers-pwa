@@ -2,37 +2,37 @@
   {
     "slug": "how-ghana-growers-works",
     "title": "How Ghana Growers Works",
-    "category": "Ghana Growers Guides",
-    "excerpt": "A simple guide to how farmers, buyers, and suppliers connect through Ghana Growers.",
+    "category": "Agribusiness",
+    "excerpt": "A simple guide to how farmers, buyers, suppliers, and partners use Ghana Growers.",
     "audience": "Farmers, buyers, suppliers, and partners",
     "readTime": "4 min read",
     "date": "2026-06-18",
     "keyPoints": [
-      "Farmers create profiles and share what they can supply.",
-      "Buyers browse listings or submit demand for produce.",
-      "Suppliers register services that support Ghana's agriculture network.",
-      "Ghana Growers reviews submissions and helps create trusted connections."
+      "Farmers register their farm details and products.",
+      "Buyers browse supply or submit demand.",
+      "Suppliers register inputs, logistics, packaging, and services.",
+      "Ghana Growers reviews records before public visibility."
     ],
     "sections": [
       {
-        "heading": "A network for agricultural connection",
-        "body": "Ghana Growers is being built to help farmers, buyers, and suppliers find each other more easily. The platform brings farmer profiles, marketplace listings, buyer demand, suppliers, and digital farm tools into one organized place."
+        "heading": "A practical network for agriculture",
+        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and Digital Farm tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
       },
       {
-        "heading": "What happens after someone joins",
-        "body": "Submitted profiles and requests are reviewed before they are published. This helps Ghana Growers reduce low-quality listings and keep the platform useful for serious farmers, buyers, and agricultural service providers."
+        "heading": "What happens after registration",
+        "body": "Submitted farmer, buyer, and supplier records are reviewed before they are published. Complete records with clear products, location, contact details, and photos are easier to approve."
       },
       {
-        "heading": "Why WhatsApp still matters",
-        "body": "Many agricultural conversations in Ghana already happen through WhatsApp. Ghana Growers uses structured forms and lead requests first, then supports practical follow-up through familiar communication channels."
+        "heading": "How connections happen",
+        "body": "Buyers and partners can request connections through Ghana Growers. This helps the platform track demand, follow up on serious enquiries, and reduce random contact that does not lead to useful trade."
       }
     ]
   },
   {
     "slug": "verification-process",
     "title": "Verification Process",
-    "category": "Ghana Growers Guides",
-    "excerpt": "How Ghana Growers reviews farmer, buyer, and supplier profiles before showing trusted status.",
+    "category": "Agribusiness",
+    "excerpt": "What Ghana Growers checks before showing verified status on farmers, suppliers, and buyer requests.",
     "audience": "Members preparing for review",
     "readTime": "3 min read",
     "date": "2026-06-18",
@@ -40,63 +40,63 @@
       "Verification checks contact details, profile completeness, and basic business information.",
       "Verified status is shown publicly only after review.",
       "Some profiles may need follow-up before publishing.",
-      "Verification helps buyers and suppliers make better contact decisions."
+      "Verification does not guarantee price, quality, delivery, or payment."
     ],
     "sections": [
       {
-        "heading": "What Ghana Growers checks",
-        "body": "The review process looks at contact information, location, products or services, profile photos where available, and whether the submission looks complete enough for public use."
+        "heading": "What Ghana Growers reviews",
+        "body": "The review process looks at name, phone number, WhatsApp number, location, products or services, photos where available, and whether the record is complete enough for public use."
       },
       {
         "heading": "What verified means",
-        "body": "A verified profile has been reviewed by Ghana Growers. It does not guarantee supply, price, delivery, or product quality. Buyers should still confirm availability, quantity, grade, and delivery arrangements before making commitments."
+        "body": "A verified profile has been reviewed by Ghana Growers. Buyers should still confirm availability, quality, quantity, delivery, and payment terms before making commitments."
       },
       {
-        "heading": "How to improve your chances",
-        "body": "Submit a working phone number, WhatsApp number, clear location, main products or services, and a real photo or logo where possible. Complete profiles are easier to review and publish."
+        "heading": "How to prepare",
+        "body": "Submit a working phone number, WhatsApp number, region, district, main products or services, and a real photo or logo where possible."
       }
     ]
   },
   {
     "slug": "how-to-sell-produce-through-ghana-growers",
     "title": "How to Sell Produce Through Ghana Growers",
-    "category": "Market Access",
+    "category": "Agribusiness",
     "excerpt": "Steps farmers can take to make produce easier for buyers to discover and request.",
     "audience": "Farmers and farmer groups",
     "readTime": "5 min read",
     "date": "2026-06-18",
     "keyPoints": [
-      "Register your farmer profile with accurate location and contact details.",
-      "List crops, livestock, harvest periods, and available quantities clearly.",
-      "Respond quickly when Ghana Growers follows up on buyer demand.",
-      "Keep produce information practical and current."
+      "Register with accurate location and contact details.",
+      "List crops, livestock, harvest periods, and quantities clearly.",
+      "Keep produce information practical and current.",
+      "Respond quickly when Ghana Growers follows up on buyer demand."
     ],
     "sections": [
       {
         "heading": "Start with a clear farmer profile",
-        "body": "Buyers need to understand who you are, where you farm, what you produce, and when you can supply. A clear profile helps Ghana Growers match your farm with relevant buyer requests."
+        "body": "Buyers need to understand who you are, where you farm, what you produce, and when you may be able to supply. A clear profile helps Ghana Growers match your farm with relevant buyer requests."
       },
       {
-        "heading": "Share supply details buyers can act on",
+        "heading": "Share details buyers can use",
         "body": "Useful information includes product name, expected quantity, harvest period, pickup or delivery arrangement, and whether supply is one-time, weekly, seasonal, or on request."
       },
       {
         "heading": "Keep communication simple",
-        "body": "When a buyer is interested, confirm the product, quantity, location, timing, and expected quality before discussing price or transport. Clear communication builds trust."
+        "body": "When a buyer is interested, confirm the product, quantity, location, timing, and expected quality before discussing price or transport."
       }
     ]
   },
   {
     "slug": "how-buyers-source-produce",
     "title": "How Buyers Source Produce",
-    "category": "Buyer Guides",
-    "excerpt": "How buyers can use Ghana Growers to find produce, submit demand, and request connections.",
+    "category": "Agribusiness",
+    "excerpt": "How buyers can find farmers, browse listings, submit demand, and request connections.",
     "audience": "Market traders, processors, restaurants, wholesalers, and institutions",
     "readTime": "4 min read",
     "date": "2026-06-18",
     "keyPoints": [
       "Search farmer profiles and marketplace listings by product and region.",
-      "Submit buyer requests when you cannot find the supply you need.",
+      "Submit buyer requests when supply is not listed.",
       "Use clear quantities, timelines, and location details.",
       "Confirm product quality and logistics before purchasing."
     ],
@@ -106,19 +106,19 @@
         "body": "Buyers can browse farmer profiles, supplier profiles, and marketplace listings. If the right product is not available yet, a buyer request helps Ghana Growers understand demand and look for matching supply."
       },
       {
-        "heading": "Make your demand specific",
-        "body": "Strong buyer requests include product, quantity, region, district, deadline, delivery preference, and any quality requirements. This makes it easier to match demand with farmers and listings."
+        "heading": "Make your request specific",
+        "body": "Strong buyer requests include product, quantity, region, district, deadline, delivery preference, and any quality requirements."
       },
       {
         "heading": "Confirm before committing",
-        "body": "Always confirm availability, grade, packaging, pickup or delivery, and payment terms before making a buying decision. Ghana Growers helps with connections, but practical details still need confirmation."
+        "body": "Always confirm availability, grade, packaging, pickup or delivery, and payment terms before making a buying decision."
       }
     ]
   },
   {
     "slug": "supplier-registration-guide",
     "title": "Supplier Registration Guide",
-    "category": "Supplier Guides",
+    "category": "Agribusiness",
     "excerpt": "What agricultural suppliers should prepare before joining Ghana Growers.",
     "audience": "Input dealers, logistics providers, packaging companies, consultants, and service providers",
     "readTime": "4 min read",
@@ -139,7 +139,7 @@
         "body": "A useful supplier profile includes company name, contact person, category, products or services, coverage area, WhatsApp number, and a logo or service image when available."
       },
       {
-        "heading": "How Ghana Growers uses supplier profiles",
+        "heading": "How profiles help",
         "body": "Supplier profiles help farmers and buyers discover services that support production, packaging, transport, storage, and market access."
       }
     ]
@@ -147,7 +147,7 @@
   {
     "slug": "market-prices-explained",
     "title": "Market Prices Explained",
-    "category": "Farm Business",
+    "category": "Agribusiness",
     "excerpt": "How farmers and buyers should interpret market price information on Ghana Growers.",
     "audience": "Farmers, buyers, and agribusiness teams",
     "readTime": "5 min read",
@@ -165,44 +165,181 @@
       },
       {
         "heading": "How farmers can use price signals",
-        "body": "Farmers can use price signals to plan harvest timing, compare markets, and prepare for buyer conversations. Price data should not be the only factor in deciding where to sell."
+        "body": "Farmers can use price signals to plan harvest timing, compare markets, and prepare for buyer conversations."
       },
       {
         "heading": "How buyers can use price signals",
-        "body": "Buyers can use market prices to estimate budgets and compare regional supply conditions before submitting requests or contacting Ghana Growers for matching support."
+        "body": "Buyers can use market prices to estimate budgets and compare regional supply conditions before submitting requests."
       }
     ]
   },
   {
-    "slug": "frequently-asked-questions",
-    "title": "Frequently Asked Questions",
-    "category": "Ghana Growers Guides",
-    "excerpt": "Answers to common questions about joining, listings, verification, buyer requests, and platform access.",
-    "audience": "New visitors and members",
-    "readTime": "6 min read",
-    "date": "2026-06-18",
+    "slug": "tomato-production-in-southern-ghana",
+    "title": "Tomato Production: Field Checks Before Flowering",
+    "category": "Crops",
+    "excerpt": "Practical checks for tomato farmers before flowering and fruiting begin.",
+    "audience": "Tomato farmers and gardeners",
+    "readTime": "5 min read",
+    "date": "2026-06-20",
     "keyPoints": [
-      "Registration does not automatically publish a profile.",
-      "Ghana Growers reviews submissions before public display.",
-      "Buyers can submit demand for Ghana Growers review.",
-      "Connection requests are routed through Ghana Growers so serious enquiries can be followed up."
+      "Check drainage after rain.",
+      "Look for early pest pressure under leaves.",
+      "Stake or support plants before heavy fruiting.",
+      "Avoid applying chemicals without confirming the issue."
     ],
     "sections": [
       {
-        "heading": "Can I use Ghana Growers now?",
-        "body": "Yes. Farmers, buyers, and suppliers can register or submit requests. Ghana Growers reviews records before publishing profiles, listings, or buyer demand."
+        "heading": "Check the field after rain",
+        "body": "Tomatoes do not perform well in waterlogged soil. After heavy rain, check low areas of the field, clear blocked drains, and avoid leaving standing water around plant roots."
       },
       {
-        "heading": "Can I register now?",
-        "body": "Yes. Farmers, buyers, and suppliers can submit registration details. Buyer demand can also be submitted for review."
+        "heading": "Inspect leaves early",
+        "body": "Look under leaves for small insects, yellowing, curling, spots, or chewing damage. Early checks help farmers act before a problem spreads across the field."
       },
       {
-        "heading": "Will my profile appear immediately?",
-        "body": "No. Submitted profiles and requests are reviewed before they are published. This keeps the platform cleaner and more trustworthy."
+        "heading": "Prepare for fruiting",
+        "body": "Staking, pruning, and steady watering before fruiting can reduce losses. Farmers should confirm fertilizer and spray decisions with an extension officer or trusted agronomist when unsure."
+      }
+    ]
+  },
+  {
+    "slug": "maize-yellow-leaves-field-guide",
+    "title": "Maize Leaves Turning Yellow: What to Check First",
+    "category": "Crops",
+    "excerpt": "A simple field guide for farmers who notice yellowing maize leaves.",
+    "audience": "Maize farmers",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Check whether yellowing starts on old or new leaves.",
+      "Look at soil moisture and drainage.",
+      "Check for pest damage or poor spacing.",
+      "Ask for expert confirmation before treating disease."
+    ],
+    "sections": [
+      {
+        "heading": "Start with the pattern",
+        "body": "If older leaves yellow first, the issue may be linked to nutrient stress. If newer leaves yellow, check for other stress signs. The pattern gives a useful clue, but it is not a final diagnosis."
       },
       {
-        "heading": "Does Ghana Growers handle payments?",
-        "body": "Not at this stage. Ghana Growers focuses on trusted discovery, demand capture, and connection workflows. Payment and delivery terms should be confirmed between parties when appropriate."
+        "heading": "Check water and roots",
+        "body": "Too much water, dry soil, poor drainage, or compacted soil can all affect maize growth. Farmers should check whether roots are healthy and whether water is sitting in the field."
+      },
+      {
+        "heading": "Use Crop Health when unsure",
+        "body": "A clear photo can help Ghana Growers provide advisory guidance, but serious crop problems should be confirmed with an agricultural extension officer."
+      }
+    ]
+  },
+  {
+    "slug": "small-poultry-flock-records",
+    "title": "Simple Records for Small Poultry Flocks",
+    "category": "Livestock",
+    "excerpt": "Record keeping that helps poultry keepers track feed, mortality, eggs, and sales.",
+    "audience": "Small poultry farmers",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Track feed purchases and daily use.",
+      "Record egg collection and bird losses.",
+      "Watch changes in water intake and behaviour.",
+      "Use records before making buying or selling decisions."
+    ],
+    "sections": [
+      {
+        "heading": "Why records matter",
+        "body": "Small poultry farmers can lose money without noticing where costs are rising. Simple records help track feed, eggs, mortality, medicine, and sales."
+      },
+      {
+        "heading": "What to write down",
+        "body": "Record date, feed quantity, eggs collected, birds lost, medicine used, and sales. Even a notebook can help farmers see patterns."
+      },
+      {
+        "heading": "Use records for buyer conversations",
+        "body": "If a buyer asks for regular supply, records help the farmer know what quantity can be supplied and how often."
+      }
+    ]
+  },
+  {
+    "slug": "backyard-vegetable-garden-ghana",
+    "title": "Starting a Backyard Vegetable Garden",
+    "category": "Home Gardening",
+    "excerpt": "A practical guide for growing vegetables at home with limited space.",
+    "audience": "Home gardeners and families",
+    "readTime": "5 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Choose a sunny place with access to water.",
+      "Start with vegetables you cook often.",
+      "Use compost or well-prepared soil.",
+      "Water in the morning or late afternoon."
+    ],
+    "sections": [
+      {
+        "heading": "Start small",
+        "body": "A small garden is easier to manage than a large one. Begin with crops such as pepper, tomato, okra, kontomire, spring onion, or garden eggs depending on your space."
+      },
+      {
+        "heading": "Prepare the soil",
+        "body": "Mix soil with compost or well-rotted organic matter. Avoid planting in soil that holds too much water or dries out too quickly."
+      },
+      {
+        "heading": "Keep checking the plants",
+        "body": "Home gardens need regular observation. Check leaves, soil moisture, weeds, and pest signs before problems become serious."
+      }
+    ]
+  },
+  {
+    "slug": "seasonal-farming-rainy-season-checklist",
+    "title": "Rainy Season Farm Checklist",
+    "category": "Seasonal Farming",
+    "excerpt": "A short checklist for preparing fields, drainage, seed, and labour before the rains.",
+    "audience": "Farmers planning seasonal work",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Prepare drainage before heavy rain.",
+      "Check seed quality before planting.",
+      "Plan labour early.",
+      "Watch weather updates before spraying."
+    ],
+    "sections": [
+      {
+        "heading": "Prepare before the field gets busy",
+        "body": "Before the main rains, farmers should check drainage, seed availability, tools, labour, and field access. Waiting until the rains are heavy can delay planting."
+      },
+      {
+        "heading": "Protect soil and young crops",
+        "body": "Heavy rain can wash away soil or damage young plants. Good spacing, drainage, and mulching where suitable can help reduce stress."
+      },
+      {
+        "heading": "Use weather before field work",
+        "body": "Check rain chance before spraying, fertilizer application, or harvest work. Digital Farm weather guidance can help farmers plan daily tasks."
+      }
+    ]
+  },
+  {
+    "slug": "video-how-to-use-crop-health-check",
+    "title": "Video Guide: How to Use Crop Health Check",
+    "category": "Video Library",
+    "excerpt": "A short video guide placeholder for farmers learning how to upload crop photos for advisory guidance.",
+    "audience": "Farmers using Digital Farm",
+    "readTime": "Video guide",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Take a clear photo of the affected leaf or plant.",
+      "Use good light and avoid blurry photos.",
+      "Read results as guidance, not final diagnosis.",
+      "Confirm serious problems with an extension officer."
+    ],
+    "sections": [
+      {
+        "heading": "What the video will cover",
+        "body": "This guide will show farmers how to take a clear crop photo, upload it to Crop Health Check, read the result, and decide when to ask for expert confirmation."
+      },
+      {
+        "heading": "Important reminder",
+        "body": "Crop Health Check provides advisory guidance only. Farmers should confirm serious disease, pest, or chemical decisions with a qualified agricultural extension officer."
       }
     ]
   }

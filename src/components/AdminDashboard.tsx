@@ -675,7 +675,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ],
   learn: [
     { name: "title", label: "Title", required: true },
-    { name: "category", label: "Category", type: "select", required: true, options: ["Crop Production", "Livestock", "Market Access", "Farm Business", "Supplier Guides", "Buyer Guides", "Ghana Growers Guides"] },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Crops", "Livestock", "Home Gardening", "Agribusiness", "Seasonal Farming", "Video Library"] },
     { name: "summary", label: "Summary", type: "textarea", required: true },
     { name: "author", label: "Author", required: true },
     { name: "publishDate", label: "Publish Date", type: "date", required: true },
