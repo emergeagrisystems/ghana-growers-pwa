@@ -14,9 +14,18 @@ export default function LearnPage() {
     <>
       <PageHero
         eyebrow="Learn Hub"
-        title="Practical agricultural education for Ghana"
-        description="Browse guides for crop production, livestock, home gardening, agribusiness, seasonal farming, and short farmer training videos."
-      />
+        title="Learn Better Farming"
+        description="Practical guides, videos, and agricultural knowledge for Ghana."
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <a href="#browse-guides" className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+            Browse Guides
+          </a>
+          <a href="#watch-videos" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
+            Watch Videos
+          </a>
+        </div>
+      </PageHero>
       <LearnHub posts={blogPosts} />
     </>
   );
