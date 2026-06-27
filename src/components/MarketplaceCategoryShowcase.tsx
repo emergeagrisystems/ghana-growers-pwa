@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowRight, PackageCheck } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
-import { productImageForListing } from "@/lib/productDisplay";
 import type { Product } from "@/types";
 
 type MarketplaceCategoryShowcaseProps = {
@@ -74,20 +73,11 @@ function categoryListingCount(category: HomepageMarketplaceCategory, listings: P
   }).length;
 }
 
-function recentListings(listings: Product[]) {
-  return [...listings]
-    .sort((a, b) => new Date(b.datePosted || 0).getTime() - new Date(a.datePosted || 0).getTime())
-    .slice(0, 4);
-}
-
 export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCategoryShowcaseProps) {
-  const latestListings = recentListings(listings);
-
   return (
-    <section className="bg-[#ECE7D1] py-12 sm:py-16" aria-labelledby="marketplace-category-showcase-title">
+    <section className="bg-white py-16 sm:py-20" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-[19rem] sm:max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
             <p className="gg-eyebrow">Marketplace</p>
             <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-4xl">
               Explore the Marketplace
@@ -95,13 +85,9 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
             <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg">
               Browse produce, inputs, livestock, logistics, packaging, storage, and agricultural services from Ghana Growers members.
             </p>
-          </div>
-          <Link href="/marketplace" className="gg-text-link w-full sm:w-auto">
-            Browse Marketplace <ArrowRight size={17} aria-hidden="true" />
-          </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {marketplaceCategories.map((category) => {
             const listingCount = categoryListingCount(category, listings);
 
@@ -135,56 +121,10 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
           })}
         </div>
 
-        <div className="mt-10 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="gg-eyebrow">Recently Added</p>
-              <h3 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Latest marketplace listings</h3>
-            </div>
-            <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-900">
-              Browse Marketplace
-            </Link>
-          </div>
-
-          {latestListings.length > 0 ? (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {latestListings.map((listing) => (
-                <Link
-                  key={listing.id}
-                  href="/marketplace"
-                  className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
-                >
-                  <SafeImage
-                    src={productImageForListing(listing.name, listing.category, listing.image)}
-                    alt={`${listing.name} marketplace listing`}
-                    width={420}
-                    height={300}
-                    fallbackKind="marketplace"
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    className="h-40 w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                  <div className="p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">{listing.category}</p>
-                    <h4 className="mt-1 text-lg font-black text-ink">{listing.name}</h4>
-                    <p className="mt-2 text-sm font-semibold text-ink/58">{listing.region}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="gg-empty-state mt-6">
-              <h4 className="gg-card-title">No records available yet</h4>
-              <p className="mt-2 text-sm leading-6 text-ink/62">
-                Ghana Growers is currently onboarding farmers, suppliers, and marketplace listings.
-              </p>
-            </div>
-          )}
-
-          <div className="mt-6 flex justify-center">
-            <Link href="/marketplace" className="gg-button-primary">
-              Browse Marketplace
-            </Link>
-          </div>
+        <div className="mt-10 flex justify-center">
+          <Link href="/marketplace" className="gg-button-primary">
+            Browse Marketplace <ArrowRight size={17} aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </section>
