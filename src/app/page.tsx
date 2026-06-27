@@ -1,11 +1,13 @@
 import {
   Bot,
   CloudSun,
+  CheckCircle2,
   LineChart,
   ScanSearch,
   ShieldCheck,
   UsersRound
 } from "lucide-react";
+import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { ChooseYourPath } from "@/components/ChooseYourPath";
 import { FeaturedListings } from "@/components/FeaturedListings";
@@ -70,6 +72,83 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase listings={marketplaceListings} />
 
+      <section id="farmer-hub-teaser" className="bg-[#ECE7D1] py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="gg-eyebrow">Farmer Hub</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{"\uD83C\uDF31"} Farmer Hub</h2>
+            <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
+              Everything you need before you step onto your farm.
+            </p>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg">
+              Check weather, diagnose crop problems, compare market prices and get practical farming advice — all in one place.
+            </p>
+          </div>
+
+          <div className="mt-9 grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+            <Link
+              href="/smart-solutions"
+              className="group rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft lg:p-7"
+            >
+              <span className="grid h-16 w-16 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
+                <ScanSearch size={30} aria-hidden="true" />
+              </span>
+              <h3 className="mt-6 text-2xl font-black text-ink group-hover:text-leaf-700">Crop Health</h3>
+              <p className="mt-3 text-sm leading-6 text-ink/66">Upload a crop photo and receive farming advice.</p>
+              <span className="mt-5 inline-flex rounded-md bg-earth-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-earth-700">
+                Flagship tool
+              </span>
+            </Link>
+
+            {[
+              {
+                title: "Live Weather",
+                description: "Check today's farming conditions before heading to the field.",
+                icon: CloudSun
+              },
+              {
+                title: "Current Market Prices",
+                description: "See today's crop prices before you negotiate.",
+                icon: LineChart
+              },
+              {
+                title: "Farm Assistant",
+                description: "Ask practical farming questions anytime.",
+                icon: Bot
+              }
+            ].map((tool) => {
+              const Icon = tool.icon;
+
+              return (
+                <Link
+                  key={tool.title}
+                  href="/smart-solutions"
+                  className="group rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                >
+                  <span className="grid h-14 w-14 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
+                    <Icon size={26} aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-xl font-black text-ink group-hover:text-leaf-700">{tool.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-ink/66">{tool.description}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center gap-5 text-center">
+            <p className="inline-flex flex-col items-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70 shadow-sm sm:flex-row">
+              <span className="inline-flex items-center gap-2 text-leaf-700">
+                <CheckCircle2 size={18} aria-hidden="true" />
+                Free for Ghanaian farmers
+              </span>
+              <span className="hidden h-4 w-px bg-leaf-900/15 sm:block" aria-hidden="true" />
+              <span>No registration required to explore Farmer Hub.</span>
+            </p>
+            <ButtonLink href="/smart-solutions">{"\uD83C\uDF31"} Open Farmer Hub</ButtonLink>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-5 rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between">
@@ -84,48 +163,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      <section className="bg-white py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:p-7">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-              <p className="gg-eyebrow">Farmer Hub</p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Free digital tools helping Ghanaian farmers make better decisions every day.</h2>
-              </div>
-              <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
-            </div>
-            <div className="mt-6 rounded-md bg-white p-4 shadow-sm">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-earth-700">Today&apos;s Farm Brief</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {["Good fieldwork conditions", "Check rain before spraying", "Market prices updated", "Crop Health ready"].map((item) => (
-                  <p key={item} className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-bold text-ink/70">{item}</p>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { title: "Weather", icon: CloudSun },
-                { title: "Crop Health", icon: ScanSearch },
-                { title: "Market Prices", icon: LineChart },
-                { title: "Farm Assistant", icon: Bot }
-              ].map((tool) => {
-                const Icon = tool.icon;
-
-                return (
-                  <div key={tool.title} className="flex items-center gap-3 rounded-md bg-white p-4 shadow-sm">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                      <Icon size={20} aria-hidden="true" />
-                    </span>
-                    <p className="font-black text-ink">{tool.title}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
