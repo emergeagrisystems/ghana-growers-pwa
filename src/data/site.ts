@@ -31,7 +31,7 @@ export const navigation: NavigationItem[] = [
     title: "Services",
     href: "/services",
     children: [
-      { title: "Sell", href: "/services" },
+      { title: "Sell", href: "/services/farmers" },
       { title: "Buy", href: "/services/buy" }
     ]
   },

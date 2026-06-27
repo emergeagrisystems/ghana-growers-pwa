@@ -20,42 +20,42 @@ type HomepageMarketplaceCategory = {
 const marketplaceCategories: HomepageMarketplaceCategory[] = [
   {
     title: "Fresh Produce",
-    description: "Vegetables, fruits, tubers, cereals, and fresh crops from Ghanaian farms.",
+    description: "Fresh fruits, vegetables, cereals, root crops, and more.",
     image: "/images/marketplace/ghana-market-1.jpg",
     href: "/marketplace?category=fresh-produce",
     matches: ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "dairy"]
   },
   {
     title: "Farm Inputs",
-    description: "Seeds, fertilizer, tools, agrochemicals, irrigation items, and farm supplies.",
+    description: "Seeds, fertilizer, irrigation, agrochemicals, and more.",
     image: "/images/marketplace/farm-inputs.jpg",
     href: "/marketplace?category=farm-inputs",
     matches: ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation"]
   },
   {
     title: "Farm Services",
-    description: "Advisory, mechanization, land preparation, field support, and farm operations.",
+    description: "Mechanization, advisory, labour support, and more.",
     image: "/images/marketplace/farm-activity-2.jpg",
     href: "/marketplace?category=farm-services",
     matches: ["service", "advisory", "consulting", "mechanization", "land", "support"]
   },
   {
     title: "Livestock",
-    description: "Poultry, eggs, goats, sheep, cattle, fish, and animal production opportunities.",
+    description: "Poultry, goats, cattle, fish, and more.",
     image: "/images/crops/poultry.jpg",
     href: "/marketplace?category=livestock",
     matches: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal"]
   },
   {
     title: "Logistics & Transport",
-    description: "Transport, aggregation, delivery support, cold chain, and produce movement.",
+    description: "Transport, aggregation, cold chain, delivery, and more.",
     image: "/images/marketplace/logistics-truck.jpg",
     href: "/marketplace?category=logistics",
     matches: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"]
   },
   {
     title: "Packaging & Storage",
-    description: "Crates, sacks, cartons, labels, storage bags, warehousing, and handling support.",
+    description: "Packaging, storage solutions, warehouse services, and more.",
     image: "/images/marketplace/produce-packaging.jpg",
     href: "/marketplace?category=packaging-storage",
     matches: ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
@@ -75,7 +75,7 @@ function categoryListingCount(category: HomepageMarketplaceCategory, listings: P
 
 export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCategoryShowcaseProps) {
   return (
-    <section className="bg-white py-16 sm:py-20" aria-labelledby="marketplace-category-showcase-title">
+    <section className="bg-white py-20 sm:py-24" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
             <p className="gg-eyebrow">Marketplace</p>

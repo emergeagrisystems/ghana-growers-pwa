@@ -38,8 +38,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="overflow-hidden bg-[#ECE7D1]">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-20 xl:gap-16">
+      <section className="overflow-hidden bg-[#F7F6EF]">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-24 xl:gap-16">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
@@ -79,15 +79,15 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase listings={marketplaceListings} />
 
-      <section id="farmer-hub-teaser" className="bg-[#ECE7D1] py-16 sm:py-20">
+      <section id="farmer-hub-teaser" className="bg-[#143A1F] py-20 text-white sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="gg-eyebrow">Farmer Hub</p>
-            <h2 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">Farmer Hub</h2>
-            <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
+            <p className="gg-eyebrow text-earth-500">Farmer Hub</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Farmer Hub</h2>
+            <p className="mt-3 text-xl font-black text-white/90 sm:text-2xl">
               Everything you need before you step onto your farm.
             </p>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg">
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/68 sm:text-lg">
               Check weather, diagnose crop problems, compare market prices and get practical farming advice - all in one place.
             </p>
           </div>
@@ -95,7 +95,7 @@ export default async function HomePage() {
           <div className="mt-10 grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
             <Link
               href="/smart-solutions"
-              className="group rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft lg:p-8"
+              className="group rounded-md border border-white/10 bg-white p-6 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft lg:p-8"
             >
               <span className="grid h-16 w-16 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
                 <ScanSearch size={30} aria-hidden="true" />
@@ -130,7 +130,7 @@ export default async function HomePage() {
                 <Link
                   key={tool.title}
                   href="/smart-solutions"
-                  className="group rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                  className="group rounded-md border border-white/10 bg-white p-5 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
                 >
                   <span className="grid h-14 w-14 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
                     <Icon size={26} aria-hidden="true" />
@@ -151,14 +151,14 @@ export default async function HomePage() {
               <span className="hidden h-4 w-px bg-leaf-900/15 sm:block" aria-hidden="true" />
               <span>No registration required to explore Farmer Hub.</span>
             </p>
-            <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
+            <ButtonLink href="/smart-solutions" variant="light">Open Farmer Hub</ButtonLink>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-6">
+      <section className="bg-white py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#ECE7D1] px-5 py-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#F7F6EF] px-5 py-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="gg-eyebrow">Quality Standard</p>
               <h2 className="mt-2 text-xl font-black text-ink sm:text-2xl">Ghana Growers Quality Standard</h2>
@@ -182,13 +182,13 @@ export default async function HomePage() {
         kinds={["farmers"]}
         title="Featured farmers"
         description="Three trusted farmers from the Ghana Growers network."
-        background="white"
+        background="earth"
         limit={3}
         compact
         farmers={homepageFeaturedFarmers}
       />
 
-      <section className="bg-ink py-20 text-white">
+      <section className="bg-[#143A1F] py-24 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
           <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">Build trusted agricultural connections across Ghana.</h2>
@@ -203,7 +203,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-leaf-900/10 bg-earth-50 py-6" aria-label="End of homepage content">
+      <section className="border-y border-leaf-900/10 bg-[#F7F6EF] py-8" aria-label="End of homepage content">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="h-px bg-leaf-900/10" />
         </div>

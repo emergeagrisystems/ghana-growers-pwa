@@ -1,30 +1,35 @@
-import { Sprout, Store } from "lucide-react";
+import { BriefcaseBusiness, ShoppingBasket, Sprout } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
-import { RegistrationForm } from "@/components/RegistrationForm";
-import { SectionHeader } from "@/components/SectionHeader";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Sell Through Ghana Growers",
-  description: "Register as a farmer or supplier to sell products and agricultural services through Ghana Growers.",
+  title: "Ghana Growers Services",
+  description: "Use Ghana Growers to sell farm products and services, buy produce, or partner with Ghanaian agricultural businesses.",
   path: "/services"
 });
 
-const sellOptions = [
+const serviceCards = [
   {
-    title: "Register as Farmer",
-    description: "Create a farmer profile, list products, and connect with buyers.",
-    href: "/join/farmer",
-    cta: "Register as Farmer",
+    title: "Sell Through Ghana Growers",
+    description: "Create a farmer or supplier profile so buyers can find what you produce or provide.",
+    href: "/services/farmers",
+    cta: "Start Selling",
     icon: Sprout
   },
   {
-    title: "Register as Supplier",
-    description: "Promote farm inputs, equipment, logistics, packaging, and agricultural services.",
-    href: "/supplier-registration",
-    cta: "Register as Supplier",
-    icon: Store
+    title: "Buy Through Ghana Growers",
+    description: "Browse marketplace categories, find farmers, and submit produce demand for Ghana Growers to review.",
+    href: "/services/buy",
+    cta: "Start Buying",
+    icon: ShoppingBasket
+  },
+  {
+    title: "Business Services",
+    description: "Work with Ghana Growers on farmer groups, supplier visibility, buyer sourcing, and agricultural partnerships.",
+    href: "/partner-with-us",
+    cta: "Partner With Us",
+    icon: BriefcaseBusiness
   }
 ];
 
@@ -32,40 +37,38 @@ export default function ServicesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Sell"
-        title="Sell Through Ghana Growers"
-        description="For farmers, suppliers, and agricultural service providers who want to reach buyers and grow visibility through Ghana Growers."
+        eyebrow="Services"
+        title="How Ghana Growers can help"
+        description="Choose the path that matches what you want to do: sell, buy, or build agricultural partnerships across Ghana."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/join/farmer">Register as Farmer</ButtonLink>
-          <ButtonLink href="/supplier-registration" variant="secondary">Register as Supplier</ButtonLink>
+          <ButtonLink href="/services/farmers">Sell</ButtonLink>
+          <ButtonLink href="/services/buy" variant="secondary">
+            Buy
+          </ButtonLink>
         </div>
       </PageHero>
-      <section className="bg-white py-16">
+
+      <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader title="Choose how you want to sell" description="Register the right profile so Ghana Growers can review your details and connect you with the right opportunities." />
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {sellOptions.map((option) => {
-              const Icon = option.icon;
+          <div className="grid gap-5 lg:grid-cols-3">
+            {serviceCards.map((card) => {
+              const Icon = card.icon;
+
               return (
-                <article key={option.href} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-6 shadow-sm">
-                  <div className="grid h-12 w-12 place-items-center rounded-md bg-leaf-600 text-white">
+                <article key={card.title} className="rounded-md border border-leaf-900/10 bg-[#F7F6EF] p-6 shadow-sm">
+                  <div className="grid h-12 w-12 place-items-center rounded-md bg-leaf-700 text-white">
                     <Icon size={23} aria-hidden="true" />
                   </div>
-                  <h2 className="mt-5 text-xl font-black text-ink">{option.title}</h2>
-                  <p className="mt-3 text-sm leading-6 text-ink/65">{option.description}</p>
-                  <div className="mt-5">
-                    <ButtonLink href={option.href}>{option.cta}</ButtonLink>
+                  <h2 className="mt-6 text-2xl font-black text-ink">{card.title}</h2>
+                  <p className="mt-3 text-sm leading-6 text-ink/66">{card.description}</p>
+                  <div className="mt-6">
+                    <ButtonLink href={card.href}>{card.cta}</ButtonLink>
                   </div>
                 </article>
               );
             })}
           </div>
-        </div>
-      </section>
-      <section className="bg-leaf-50 py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <RegistrationForm title="Tell us how Ghana Growers can help" audience="partner" />
         </div>
       </section>
     </>
