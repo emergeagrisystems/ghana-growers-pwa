@@ -46,7 +46,7 @@ export default function FaqPage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/verification-process">View Verification Process</ButtonLink>
-          <ButtonLink href="/join" variant="light">Join Ghana Growers</ButtonLink>
+          <ButtonLink href="/join" variant="light">Join the Network</ButtonLink>
         </div>
       </PageHero>
 

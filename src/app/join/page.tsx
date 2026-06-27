@@ -5,8 +5,8 @@ import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Join Ghana Growers",
-  description: "Join Ghana Growers as a farmer, buyer, or agricultural supplier in Ghana.",
+  title: "Join the Network",
+  description: "Join the Ghana Growers network as a farmer, buyer, or agricultural supplier in Ghana.",
   path: "/join"
 });
 
@@ -39,8 +39,8 @@ export default function JoinPage() {
     <>
       <PrelaunchHeader />
       <PageHero
-        eyebrow="Join Ghana Growers"
-        title="Join Ghana Growers"
+        eyebrow="Join the Network"
+        title="Join the Network"
         description="Choose how you want to be part of Ghana's agricultural network."
       />
 

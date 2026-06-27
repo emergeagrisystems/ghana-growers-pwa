@@ -137,7 +137,7 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
               href="/join"
               className="gg-button-primary mt-5"
             >
-              Join Ghana Growers
+              Join the Network
             </Link>
           </div>
         ) : (

@@ -10,8 +10,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(20,58,31,0.08)]">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="focus-ring flex min-w-0 items-center gap-2 rounded-md text-sm font-black text-[#143A1F] sm:text-lg">
+      <nav className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 py-3 pr-16 sm:px-6 sm:pr-20 lg:px-8">
+        <Link href="/" className="focus-ring flex max-w-[calc(100vw-5rem)] min-w-0 items-center gap-2 rounded-md text-sm font-black text-[#143A1F] sm:text-lg">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-600 text-white sm:h-10 sm:w-10">
             <Sprout size={21} aria-hidden="true" />
           </span>
@@ -50,7 +50,7 @@ export function Header() {
             href="/join"
             className="focus-ring rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-700"
           >
-            Join Ghana Growers
+            Join the Network
           </Link>
         </div>
 
@@ -58,7 +58,7 @@ export function Header() {
           type="button"
           aria-label="Open navigation menu"
           onClick={() => setOpen((value) => !value)}
-          className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-md border border-leaf-900/10 bg-white text-ink sm:h-11 sm:w-11 lg:hidden"
+          className="focus-ring absolute right-3 top-1/2 grid h-10 w-10 shrink-0 -translate-y-1/2 place-items-center rounded-md border border-leaf-900/10 bg-white text-ink sm:right-6 sm:h-11 sm:w-11 lg:hidden"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -97,7 +97,7 @@ export function Header() {
               onClick={() => setOpen(false)}
               className="focus-ring mt-2 block rounded-md bg-leaf-600 px-3 py-3 text-center font-black text-white hover:bg-leaf-700"
             >
-              Join Ghana Growers
+              Join the Network
             </Link>
           </div>
         </div>

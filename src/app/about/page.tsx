@@ -48,7 +48,7 @@ export default function AboutPage() {
         description="Ghana Growers helps farmers show what they produce, buyers find supply, and suppliers present useful agricultural products and services across Ghana."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/join">Join Ghana Growers</ButtonLink>
+          <ButtonLink href="/join">Join the Network</ButtonLink>
           <ButtonLink href="/partner-with-us" variant="secondary">Partner With Us</ButtonLink>
         </div>
       </PageHero>
@@ -59,7 +59,7 @@ export default function AboutPage() {
             <p className="gg-eyebrow">Who We Are</p>
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Ghana Growers organizes farmer, buyer, and supplier information in one place.</h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
-              Ghana Growers is being built as a trusted agricultural platform for Ghana. It brings together farmer profiles, marketplace listings, buyer demand, supplier services, verification information, and Digital Farm tools.
+              Ghana Growers is being built as a trusted agricultural platform for Ghana. It brings together farmer profiles, marketplace listings, buyer demand, supplier services, verification information, and Farmer Hub tools.
             </p>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
               The platform is not a shortcut around good judgement. It gives farmers, buyers, suppliers, and partners a clearer starting point before they discuss quantity, price, quality, delivery, and payment.
@@ -148,12 +148,12 @@ export default function AboutPage() {
 
       <section className="bg-white py-12">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-black text-ink sm:text-3xl">Join Ghana Growers</h2>
+          <h2 className="text-2xl font-black text-ink sm:text-3xl">Join the Network</h2>
           <p className="mt-3 text-sm leading-7 text-ink/66">
             Register as a farmer, buyer, or supplier so Ghana Growers can review your details and prepare the right public profile, request, or connection workflow.
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/join">Join Ghana Growers</ButtonLink>
+            <ButtonLink href="/join">Join the Network</ButtonLink>
             <ButtonLink href="/contact" variant="light">Contact Us</ButtonLink>
           </div>
         </div>

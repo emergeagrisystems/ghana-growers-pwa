@@ -87,7 +87,7 @@ export default function MarketIntelligencePage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
           <ButtonLink href="/buyer-requests" variant="secondary">View Buyer Requests</ButtonLink>
-          <ButtonLink href="/smart-solutions" variant="light">Open Digital Farm</ButtonLink>
+          <ButtonLink href="/smart-solutions" variant="light">Open Farmer Hub</ButtonLink>
         </div>
       </PageHero>
 

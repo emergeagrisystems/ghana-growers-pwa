@@ -41,7 +41,7 @@ export default function GGStandardPage() {
         variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/join">Join Ghana Growers</ButtonLink>
+          <ButtonLink href="/join">Join the Network</ButtonLink>
           <ButtonLink href="/verification-process" variant="light">View Verification Process</ButtonLink>
         </div>
       </PageHero>

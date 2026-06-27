@@ -20,7 +20,7 @@ import { getFarmersData, getSuccessStoriesData } from "@/lib/supabase/publicData
 export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
   description:
-    "Ghana Growers connects Ghanaian farmers, buyers, suppliers, market women, processors, and agribusiness partners through directories, buyer requests, Digital Farm tools, and reviewed lead requests.",
+    "Ghana Growers connects Ghanaian farmers, buyers, suppliers, market women, processors, and agribusiness partners through Farmer Hub tools, directories, buyer requests, and reviewed lead requests.",
   path: "/"
 });
 
@@ -42,11 +42,11 @@ export default async function HomePage() {
               Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
             <p className="mt-5 max-w-[18rem] text-base leading-7 text-ink/70 sm:max-w-2xl sm:text-lg sm:leading-8">
-              Find farm produce, submit buyer demand, register your farm or supplier business, and use practical Digital Farm tools across Ghana.
+              Connect with trusted farmers, buyers and suppliers, check market prices, diagnose crop problems and access practical farming tools, all in one place.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
-              <ButtonLink href="/join" variant="secondary">Join Ghana Growers</ButtonLink>
+              <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
+              <ButtonLink href="/marketplace" variant="secondary">Explore Marketplace</ButtonLink>
             </div>
           </div>
           <div className="relative">
@@ -89,8 +89,8 @@ export default async function HomePage() {
           <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="gg-eyebrow">Farmer Hub</p>
-                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Free digital tools helping Ghanaian farmers make better decisions every day.</h2>
+              <p className="gg-eyebrow">Farmer Hub</p>
+              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Free digital tools helping Ghanaian farmers make better decisions every day.</h2>
               </div>
               <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
             </div>
@@ -171,7 +171,7 @@ export default async function HomePage() {
               Choose your role, submit your details, and Ghana Growers will review the information before helping with publication, matching, or follow-up.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/join" variant="light">Join Ghana Growers</ButtonLink>
+              <ButtonLink href="/join" variant="light">Join the Network</ButtonLink>
               <ButtonLink href="/contact" variant="secondary">Contact Ghana Growers</ButtonLink>
             </div>
           </div>

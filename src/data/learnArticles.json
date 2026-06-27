@@ -16,7 +16,7 @@
     "sections": [
       {
         "heading": "A practical network for agriculture",
-        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and Digital Farm tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
+        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and Farmer Hub tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
       },
       {
         "heading": "What happens after registration",
@@ -314,7 +314,7 @@
       },
       {
         "heading": "Use weather before field work",
-        "body": "Check rain chance before spraying, fertilizer application, or harvest work. Digital Farm weather guidance can help farmers plan daily tasks."
+        "body": "Check rain chance before spraying, fertilizer application, or harvest work. Farmer Hub weather guidance can help farmers plan daily tasks."
       }
     ]
   },
@@ -323,7 +323,7 @@
     "title": "Video Guide: How to Use Crop Health Check",
     "category": "Video Library",
     "excerpt": "A short video guide placeholder for farmers learning how to upload crop photos for advisory guidance.",
-    "audience": "Farmers using Digital Farm",
+    "audience": "Farmers using Farmer Hub",
     "readTime": "Video guide",
     "date": "2026-06-20",
     "keyPoints": [

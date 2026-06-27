@@ -17,7 +17,7 @@ export default function JoinFarmerPage() {
       <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Farmer"
-        title="Join Ghana Growers as a Farmer"
+        title="Join the Network as a Farmer"
         description="Tell us what you grow or raise, where your farm is located, and when you expect harvest so we can help connect you with buyers and useful support."
         variant="compact"
       />

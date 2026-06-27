@@ -15,7 +15,7 @@ const footerGroups = [
   {
     title: "Services",
     links: [
-      { title: "Digital Farm", href: "/smart-solutions" },
+      { title: "Farmer Hub", href: "/smart-solutions" },
       { title: "Sell", href: "/services" },
       { title: "Buy", href: "/services/buy" }
     ]

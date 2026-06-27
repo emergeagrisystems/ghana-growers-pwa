@@ -45,8 +45,8 @@ export default function JoinSupplierPage() {
       <PrelaunchHeader />
       <PageHero
         eyebrow="Supplier Registration"
-        title="Join Ghana Growers as a Supplier"
-        description="Join Ghana Growers to become visible to farmers, buyers, and agricultural partners looking for trusted products and services across Ghana."
+        title="Join the Network as a Supplier"
+        description="Join the Ghana Growers network to become visible to farmers, buyers, and agricultural partners looking for trusted products and services across Ghana."
         variant="compact"
       />
       <section className="bg-white py-8 sm:py-10">

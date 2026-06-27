@@ -91,7 +91,7 @@ export function ServicePage({
               </div>
             </div>
           ) : (
-            <RegistrationForm title={`Join Ghana Growers as a ${formAudience}`} audience={formAudience} />
+            <RegistrationForm title={`Join the Network as a ${formAudience}`} audience={formAudience} />
           )}
         </div>
       </section>

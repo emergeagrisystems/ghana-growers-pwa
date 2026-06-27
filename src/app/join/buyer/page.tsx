@@ -18,7 +18,7 @@ export default function JoinBuyerPage() {
       <PrelaunchHeader />
       <PageHero
         eyebrow="Join as a Buyer"
-        title="Join Ghana Growers as a Buyer"
+        title="Join the Network as a Buyer"
         description="Tell Ghana Growers what you buy, how often you buy, and where you operate so we can help connect you with trusted farmers and supply support."
         variant="compact"
       />

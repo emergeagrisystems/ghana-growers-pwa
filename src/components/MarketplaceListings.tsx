@@ -474,7 +474,7 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
                     href="/join"
                     className="gg-button-primary mt-5"
                   >
-                    Join Ghana Growers
+                    Join the Network
                   </Link>
                 </div>
               ) : filteredProducts.length > 0 ? (
