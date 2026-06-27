@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, PackageCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
 import type { Product } from "@/types";
 
@@ -11,7 +11,7 @@ type MarketplaceCategoryShowcaseProps = {
 
 type HomepageMarketplaceCategory = {
   title: string;
-  description: string;
+  summary: string;
   image: string;
   href: string;
   matches: string[];
@@ -20,42 +20,42 @@ type HomepageMarketplaceCategory = {
 const marketplaceCategories: HomepageMarketplaceCategory[] = [
   {
     title: "Fresh Produce",
-    description: "Fresh fruits, vegetables, cereals, root crops, and more.",
+    summary: "Vegetables • Fruits • Cereals",
     image: "/images/marketplace/ghana-market-1.jpg",
     href: "/marketplace?category=fresh-produce",
     matches: ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "dairy"]
   },
   {
     title: "Farm Inputs",
-    description: "Seeds, fertilizer, irrigation, agrochemicals, and more.",
+    summary: "Seeds • Fertilizer • Irrigation",
     image: "/images/marketplace/farm-inputs.jpg",
     href: "/marketplace?category=farm-inputs",
     matches: ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation"]
   },
   {
     title: "Farm Services",
-    description: "Mechanization, advisory, labour support, and more.",
+    summary: "Mechanization • Advisory • Labour",
     image: "/images/marketplace/farm-activity-2.jpg",
     href: "/marketplace?category=farm-services",
     matches: ["service", "advisory", "consulting", "mechanization", "land", "support"]
   },
   {
     title: "Livestock",
-    description: "Poultry, goats, cattle, fish, and more.",
+    summary: "Poultry • Goats • Cattle",
     image: "/images/crops/poultry.jpg",
     href: "/marketplace?category=livestock",
     matches: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal"]
   },
   {
     title: "Logistics & Transport",
-    description: "Transport, aggregation, cold chain, delivery, and more.",
+    summary: "Transport • Aggregation • Cold Chain",
     image: "/images/marketplace/logistics-truck.jpg",
     href: "/marketplace?category=logistics",
     matches: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"]
   },
   {
     title: "Packaging & Storage",
-    description: "Packaging, storage solutions, warehouse services, and more.",
+    summary: "Packaging • Storage • Warehouse",
     image: "/images/marketplace/produce-packaging.jpg",
     href: "/marketplace?category=packaging-storage",
     matches: ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
@@ -87,8 +87,8 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
             </p>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {marketplaceCategories.map((category) => {
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {marketplaceCategories.slice(0, 4).map((category) => {
             const listingCount = categoryListingCount(category, listings);
 
             return (
@@ -104,17 +104,21 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
                     width={760}
                     height={460}
                     fallbackKind="marketplace"
-                    sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="h-56 w-full object-cover transition duration-300 group-hover:scale-105"
+                    sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+                    className="h-32 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-36"
                   />
-                  <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 shadow-sm">
-                    <PackageCheck size={15} aria-hidden="true" />
-                    {listingCount} {listingCount === 1 ? "listing" : "listings"}
-                  </span>
                 </div>
-                <div className="p-5">
-                  <h3 className="text-2xl font-black text-ink group-hover:text-leaf-700">{category.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-ink/66">{category.description}</p>
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-xl font-black text-ink group-hover:text-leaf-700">{category.title}</h3>
+                    <span className="shrink-0 rounded-md bg-leaf-50 px-2.5 py-1 text-xs font-black text-leaf-700">
+                      {listingCount} {listingCount === 1 ? "Listing" : "Listings"}
+                    </span>
+                  </div>
+                  <p className="mt-2 truncate text-sm font-semibold text-ink/58">{category.summary}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-black text-leaf-700">
+                    Explore <ArrowRight size={15} aria-hidden="true" />
+                  </span>
                 </div>
               </Link>
             );
@@ -123,7 +127,7 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
 
         <div className="mt-10 flex justify-center">
           <Link href="/marketplace" className="gg-button-primary">
-            Browse Marketplace <ArrowRight size={17} aria-hidden="true" />
+            Explore All Marketplace Categories <ArrowRight size={17} aria-hidden="true" />
           </Link>
         </div>
       </div>
