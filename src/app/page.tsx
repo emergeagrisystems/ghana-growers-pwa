@@ -74,10 +74,10 @@ export default async function HomePage() {
           <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:p-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="gg-eyebrow">Free Digital Farm Tools</p>
-                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Practical tools farmers can use every week</h2>
+                <p className="gg-eyebrow">Farmer Hub</p>
+                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Free digital tools helping Ghanaian farmers make better decisions every day.</h2>
               </div>
-              <ButtonLink href="/smart-solutions">Open Digital Farm</ButtonLink>
+              <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[

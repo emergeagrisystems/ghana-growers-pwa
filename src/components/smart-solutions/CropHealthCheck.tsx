@@ -200,8 +200,8 @@ export function CropHealthCheck() {
 
   return (
     <section id="crop-health" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-2xl font-black text-ink">Crop Health Check</h2>
-      <p className="mt-2 text-base leading-7 text-ink/65">Upload a crop photo and get farming advice.</p>
+      <h2 className="text-2xl font-black text-ink">Crop Health</h2>
+      <p className="mt-2 text-base leading-7 text-ink/65">Take or upload a crop photo.</p>
 
       <div className="mt-5 grid gap-4">
         <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-4 text-center sm:p-5">
@@ -211,15 +211,15 @@ export function CropHealthCheck() {
               alt="Selected crop preview"
               width={960}
               height={520}
-              className="h-40 w-full rounded-md object-cover sm:h-60"
+              className="h-36 w-full rounded-md object-cover sm:h-44"
               unoptimized
             />
           ) : (
-            <div className="grid h-32 w-full place-items-center rounded-md bg-white sm:h-52">
+            <div className="grid h-28 w-full place-items-center rounded-md bg-white sm:h-36">
               <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
             </div>
           )}
-          <span className="mt-4 rounded-md bg-leaf-700 px-6 py-4 text-base font-black text-white">
+          <span className="mt-4 rounded-md bg-leaf-700 px-6 py-4 text-base font-black text-white shadow-sm">
             {fileName || "Upload Crop Photo"}
           </span>
           <span className="mt-2 text-xs leading-5 text-ink/60">JPG, PNG, or WEBP. Maximum 5MB.</span>
@@ -424,7 +424,7 @@ export function CropHealthCheck() {
             </p>
           ) : (
             <p className="mt-5 text-sm leading-6 text-ink/65">
-              Upload a clear crop photo first. This tool provides advisory guidance only. Confirm serious crop problems with an agricultural extension officer.
+              Upload a clear crop photo first. Confirm serious crop problems with an agricultural extension officer.
             </p>
           )}
         </div>

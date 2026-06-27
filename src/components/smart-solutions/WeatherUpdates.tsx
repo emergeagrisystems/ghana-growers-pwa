@@ -60,7 +60,7 @@ export function WeatherUpdates() {
       hourly: "precipitation_probability",
       daily: "weather_code,temperature_2m_max,temperature_2m_min",
       timezone: "Africa/Accra",
-      forecast_days: "3"
+      forecast_days: "7"
     });
 
     fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`)
@@ -120,7 +120,7 @@ export function WeatherUpdates() {
         </label>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-[0.8fr_0.8fr_1.4fr_auto] md:items-stretch">
+      <div className="mt-5 grid gap-3 md:grid-cols-4">
         <div className="rounded-md bg-leaf-50 p-4">
           <ThermometerSun className="text-leaf-600" size={22} aria-hidden="true" />
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Current Temperature</p>
@@ -131,18 +131,24 @@ export function WeatherUpdates() {
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Rain Chance</p>
           <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.rainfallChance}%` : "--"}</p>
         </div>
+        <div className="rounded-md bg-leaf-50 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Humidity</p>
+          <p className="mt-1 text-3xl font-black text-ink">{weather ? `${weather.humidity}%` : "--"}</p>
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-ink/50">Wind</p>
+          <p className="mt-1 text-sm font-black text-ink">{weather ? `${weather.wind} km/h` : "--"}</p>
+        </div>
         <div className="rounded-md bg-earth-50 p-4">
           <p className="text-sm font-black text-ink">Farm advice</p>
           <p className="mt-2 text-sm leading-6 text-ink/70">{farmingAdvice(weather)}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowFullWeather((value) => !value)}
-          className="gg-text-link h-full"
-        >
-          {showFullWeather ? "Hide Full Forecast" : "View Full Forecast"}
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={() => setShowFullWeather((value) => !value)}
+        className="gg-button-secondary mt-5"
+      >
+        {showFullWeather ? "Hide 7-Day Forecast" : "View 7-Day Forecast"}
+      </button>
 
       {showFullWeather ? (
         <div className="mt-4 grid gap-3 rounded-md bg-leaf-50 p-4 text-sm sm:grid-cols-3">

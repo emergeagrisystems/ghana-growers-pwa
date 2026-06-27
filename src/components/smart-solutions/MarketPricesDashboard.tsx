@@ -57,13 +57,14 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
     <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-2xl font-black text-ink">Current Market Prices</h2>
       <p className="mt-2 text-sm leading-6 text-ink/65">
-        Quick market snapshot for common crops. {marketPriceMeta.note}
+        Today&apos;s market snapshot for top traded crops. {marketPriceMeta.note}
       </p>
       <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80">
         Last updated: {marketPriceMeta.lastUpdated}
       </p>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <h3 className="mt-5 text-lg font-black text-ink">Today&apos;s Market Snapshot</h3>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {(snapshot.length ? snapshot : prices.slice(0, 6)).map((item) => (
           <article key={`${item.crop}-${item.market}-snapshot`} className="rounded-md bg-leaf-50 p-4">
             <div className="flex items-start justify-between gap-3">

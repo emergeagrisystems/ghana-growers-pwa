@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Bot, Send, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { assistantSuggestions } from "@/data/smartTools";
 
 const messageLimit = 800;
@@ -35,6 +35,9 @@ export function FarmerAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const visibleSuggestions = useMemo(() => {
+    return [...assistantSuggestions].sort(() => Math.random() - 0.5).slice(0, 3);
+  }, []);
 
   async function ask(nextQuestion: string) {
     const trimmed = nextQuestion.trim();
@@ -78,7 +81,7 @@ export function FarmerAssistant() {
 
   return (
     <section id="assistant" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-2xl font-black text-ink">Ask Farm Assistant</h2>
+      <h2 className="text-2xl font-black text-ink">Farm Assistant</h2>
       <p className="mt-2 text-base leading-7 text-ink/65">Ask a farming question.</p>
 
       {messages.length > 0 || isLoading ? (
@@ -122,7 +125,7 @@ export function FarmerAssistant() {
       ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        {assistantSuggestions.map((suggestion) => (
+        {visibleSuggestions.map((suggestion) => (
           <button
             key={suggestion}
             type="button"

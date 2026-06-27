@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, CloudSun, LineChart, ScanSearch } from "lucide-react";
+import { Bot, CloudRain, CloudSun, LineChart, MapPin, ScanSearch, ThermometerSun } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { MarketPrice } from "@/data/marketPrices";
 import { CropHealthCheck } from "@/components/smart-solutions/CropHealthCheck";
@@ -18,13 +18,13 @@ const tools = [
     id: "crop-health",
     label: "Crop Health",
     icon: ScanSearch,
-    description: "Upload a crop photo for advisory guidance."
+    description: "Take or upload a crop photo."
   },
   {
     id: "weather",
     label: "Live Weather Updates",
     icon: CloudSun,
-    description: "Check today before spraying, harvesting, or drying."
+    description: "Plan spraying, harvesting, or drying."
   },
   {
     id: "assistant",
@@ -36,7 +36,7 @@ const tools = [
     id: "market-prices",
     label: "Current Market Prices",
     icon: LineChart,
-    description: "Compare quick crop price signals."
+    description: "Check crop price signals."
   }
 ] as const;
 
@@ -98,26 +98,25 @@ function TodayFarmSnapshot() {
   }, [accra.latitude, accra.longitude]);
 
   return (
-    <section className="mb-5 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="gg-eyebrow">Today&apos;s Farm Snapshot</p>
-          <h2 className="mt-1 text-2xl font-black text-ink">Accra</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-md bg-leaf-50 px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-wide text-ink/45">Temperature</p>
-            <p className="mt-1 text-2xl font-black text-ink">{weather ? `${weather.temperature}C` : "--"}</p>
-          </div>
-          <div className="rounded-md bg-leaf-50 px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-wide text-ink/45">Rain Chance</p>
-            <p className="mt-1 text-2xl font-black text-ink">{weather ? `${weather.rainfallChance}%` : "--"}</p>
-          </div>
-          <div className="rounded-md bg-earth-50 px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-wide text-ink/45">Advice</p>
-            <p className="mt-1 text-sm font-black leading-5 text-ink">{sprayAdvice(weather)}</p>
-          </div>
-        </div>
+    <section className="mb-3 rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-3">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-earth-700">Today</p>
+      <div className="mt-3 grid gap-2 text-sm font-bold text-ink/72">
+        <span className="flex items-center gap-2">
+          <MapPin size={15} aria-hidden="true" />
+          Accra
+        </span>
+        <span className="flex items-center gap-2">
+          <ThermometerSun size={15} aria-hidden="true" />
+          {weather ? `${weather.temperature}°C` : "--"}
+        </span>
+        <span className="flex items-center gap-2">
+          <CloudRain size={15} aria-hidden="true" />
+          {weather ? `${weather.rainfallChance}% Rain` : "-- Rain"}
+        </span>
+      </div>
+      <div className="mt-3 rounded-md bg-white p-3">
+        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Today&apos;s Advice</p>
+        <p className="mt-1 text-sm font-black leading-5 text-ink">{sprayAdvice(weather)}</p>
       </div>
     </section>
   );
@@ -128,11 +127,12 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
 
   return (
     <section className="bg-earth-50 py-8 sm:py-10">
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[minmax(280px,0.25fr)_minmax(0,0.75fr)] lg:px-8">
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-3 shadow-sm">
-            <p className="px-2 py-2 text-xs font-black uppercase tracking-[0.08em] text-earth-700/75">Digital Farm</p>
-            <div className="grid gap-2">
+            <p className="px-2 py-2 text-xs font-black uppercase tracking-[0.08em] text-earth-700/75">Farmer Hub</p>
+            <TodayFarmSnapshot />
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
               {tools.map((tool) => {
                 const Icon = tool.icon;
                 const isActive = tool.id === activeTool;
@@ -152,8 +152,8 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
                     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${isActive ? "bg-white/15" : "bg-leaf-50 text-leaf-700"}`}>
                       <Icon size={18} aria-hidden="true" />
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-black">{tool.label}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-black">{tool.label}</span>
                       <span className={`block text-xs leading-5 ${isActive ? "text-white/75" : "text-ink/50"}`}>
                         {tool.description}
                       </span>
@@ -166,7 +166,6 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
         </aside>
 
         <div className="min-w-0">
-          <TodayFarmSnapshot />
           {activeTool === "weather" ? <WeatherUpdates /> : null}
           {activeTool === "crop-health" ? <CropHealthCheck /> : null}
           {activeTool === "assistant" ? <FarmerAssistant /> : null}
