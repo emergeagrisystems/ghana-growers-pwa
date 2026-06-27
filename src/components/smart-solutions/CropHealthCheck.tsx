@@ -204,22 +204,22 @@ export function CropHealthCheck() {
       <p className="mt-2 text-base leading-7 text-ink/65">Take or upload a crop photo.</p>
 
       <div className="mt-5 grid gap-4">
-        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-4 text-center sm:p-5">
+        <label className="focus-ring flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-leaf-600/45 bg-leaf-50 p-3 text-center sm:p-4">
           {previewUrl ? (
             <Image
               src={previewUrl}
               alt="Selected crop preview"
               width={960}
               height={520}
-              className="h-36 w-full rounded-md object-cover sm:h-44"
+              className="h-28 w-full rounded-md object-cover sm:h-32"
               unoptimized
             />
           ) : (
-            <div className="grid h-28 w-full place-items-center rounded-md bg-white sm:h-36">
-              <ImagePlus className="text-leaf-600" size={42} aria-hidden="true" />
+            <div className="grid h-20 w-full place-items-center rounded-md bg-white sm:h-24">
+              <ImagePlus className="text-leaf-600" size={36} aria-hidden="true" />
             </div>
           )}
-          <span className="mt-4 rounded-md bg-leaf-700 px-6 py-4 text-base font-black text-white shadow-sm">
+          <span className="mt-3 rounded-md bg-leaf-700 px-6 py-3 text-base font-black text-white shadow-sm">
             {fileName || "Upload Crop Photo"}
           </span>
           <span className="mt-2 text-xs leading-5 text-ink/60">JPG, PNG, or WEBP. Maximum 5MB.</span>
@@ -289,34 +289,36 @@ export function CropHealthCheck() {
                 const actions = splitText(result.recommendedAction);
                 const actionPreview = actions.slice(0, 3);
                 const attention = attentionLevel(result.severity);
-                const source =
-                  result.provider === "crop.health"
-                    ? "Crop Health Advisory"
-                    : "Crop Advisory";
-                const summary =
-                  result.noDiseaseDetected
-                    ? "No serious problem was clearly detected. Keep monitoring the plant and take another clear photo if symptoms continue."
-                    : `${result.possibleIssue}. Check soil condition, water properly, remove badly affected leaves if needed, and avoid applying chemicals until confirmed.`;
+                const source = result.provider === "crop.health" ? "Crop Health Advisory" : "Crop Advisory";
+                const primaryAction = actionPreview[0] ?? result.recommendedAction;
+                const watchFor = symptomPreview[0] ?? "Watch for changes in leaf color, spots, wilting, or spread to nearby plants.";
 
                 return (
                   <>
-                    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis Summary</p>
-                      <div className="mt-3">
-                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Diagnosis</p>
-                        <h3 className="mt-1 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
-                      </div>
-                      <div className="mt-4">
-                        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Farmer Summary</p>
-                        <p className="mt-2 max-w-4xl text-sm font-semibold leading-6 text-ink/70">{summary}</p>
-                      </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
-                          {confidenceLabel(result.confidence)}
-                        </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-black ${attentionClass(attention)}`}>
-                          {attention}
-                        </span>
+                    <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Diagnosis</p>
+                      <h3 className="mt-1 text-xl font-black leading-tight text-ink">{result.possibleIssue}</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Confidence</p>
+                          <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black ${confidenceClass(result.confidence)}`}>
+                            {confidenceLabel(result.confidence)}
+                          </span>
+                        </div>
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Severity</p>
+                          <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black ${attentionClass(attention)}`}>
+                            {attention}
+                          </span>
+                        </div>
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
+                          <p className="mt-2 text-sm font-bold leading-6 text-ink/70">{primaryAction}</p>
+                        </div>
+                        <div className="rounded-md bg-leaf-50 p-3">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Watch For</p>
+                          <p className="mt-2 text-sm font-bold leading-6 text-ink/70">{watchFor}</p>
+                        </div>
                       </div>
                       <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/45">Source: {source}</p>
                       {result.noDiseaseDetected ? (

@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Bot,
   CloudRain,
-  CloudSun,
   LineChart,
   MapPin,
   ScanSearch,
@@ -31,12 +30,6 @@ const tools = [
     description: "Take or upload a crop photo."
   },
   {
-    id: "weather",
-    label: "Live Weather Updates",
-    icon: CloudSun,
-    description: "Plan spraying, harvesting, or drying."
-  },
-  {
     id: "assistant",
     label: "Farm Assistant",
     icon: Bot,
@@ -50,7 +43,7 @@ const tools = [
   }
 ] as const;
 
-type ToolId = (typeof tools)[number]["id"];
+type ToolId = (typeof tools)[number]["id"] | "weather";
 
 type SnapshotWeather = {
   temperature: number;
@@ -120,10 +113,17 @@ function useAccraSnapshot() {
   return weather;
 }
 
-function TodayFarmSnapshot({ weather }: { weather?: SnapshotWeather }) {
+function TodayFarmSnapshot({ weather, isActive, onOpenWeather }: { weather?: SnapshotWeather; isActive: boolean; onOpenWeather: () => void }) {
   return (
-    <section className="mb-3 rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-3">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-earth-700">Today</p>
+    <button
+      type="button"
+      onClick={onOpenWeather}
+      aria-pressed={isActive}
+      className={`focus-ring mb-3 block w-full rounded-md border p-3 text-left transition ${
+        isActive ? "border-leaf-700 bg-[#ECE7D1] shadow-sm" : "border-leaf-900/10 bg-[#ECE7D1] hover:border-leaf-700"
+      }`}
+    >
+      <p className="text-xs font-black uppercase tracking-[0.12em] text-earth-700">Today&apos;s Farm Snapshot</p>
       <div className="mt-3 grid gap-2 text-sm font-bold text-ink/72">
         <span className="flex items-center gap-2">
           <MapPin size={15} aria-hidden="true" />
@@ -139,48 +139,13 @@ function TodayFarmSnapshot({ weather }: { weather?: SnapshotWeather }) {
         </span>
       </div>
       <div className="mt-3 rounded-md bg-white p-3">
-        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Today&apos;s Advice</p>
+        <p className="text-xs font-black uppercase tracking-wide text-ink/45">Today&apos;s Recommendation</p>
         <p className="mt-1 text-sm font-black leading-5 text-ink">{sprayAdvice(weather)}</p>
       </div>
-    </section>
-  );
-}
-
-function TodayFarmBrief({ weather, marketPrices }: { weather?: SnapshotWeather; marketPrices: MarketPrice[] }) {
-  const markets = marketSignals(marketPrices);
-  const briefItems = [
-    "Greater Accra",
-    weather
-      ? weather.rainfallChance >= 50
-        ? "Rain likely today. Delay spraying."
-        : "Good fieldwork conditions."
-      : "Weather check active.",
-    weather && weather.rainfallChance > 0 ? `Rain chance: ${weather.rainfallChance}%` : "No major rain alert today.",
-    markets.rising ? `${markets.rising.crop} prices increasing.` : "No market gainers today.",
-    weather && weather.humidity >= 80
-      ? "Humidity may increase fungal disease risk."
-      : markets.stable
-        ? `${markets.stable.crop} prices stable.`
-        : "No crop alerts today."
-  ].slice(0, 5);
-
-  return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="gg-eyebrow">Today&apos;s Farm Brief</p>
-          <h2 className="mt-2 text-2xl font-black text-ink">What to know before fieldwork</h2>
-        </div>
-        <p className="text-sm font-bold text-ink/55">Weather and market signals</p>
-      </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {briefItems.map((item) => (
-          <p key={item} className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-bold leading-6 text-ink/72">
-            {item}
-          </p>
-        ))}
-      </div>
-    </section>
+      <span className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+        View 7-Day Forecast
+      </span>
+    </button>
   );
 }
 
@@ -189,8 +154,8 @@ function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeathe
   const allInsights = [
     {
       title: "Today's Weather Tip",
-      body: weather && weather.rainfallChance >= 40 ? "Rain may affect spraying. Finish early or wait." : "Good fieldwork window. Check local clouds first.",
-      icon: CloudSun
+      body: weather && weather.rainfallChance >= 40 ? "Delay spraying until tomorrow morning if clouds build up." : "Check the field early and keep harvested produce shaded.",
+      icon: CloudRain
     },
     {
       title: "Market Watch",
@@ -204,7 +169,7 @@ function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeathe
     },
     {
       title: "Selling Opportunity",
-      body: markets.stable ? `${markets.stable.crop} remains active in market snapshots.` : "No buyer opportunities yet.",
+      body: markets.stable ? `${markets.stable.crop} remains active in current market snapshots.` : "No buyer opportunities yet.",
       icon: Store
     }
   ];
@@ -240,9 +205,9 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
       <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[minmax(280px,0.25fr)_minmax(0,0.75fr)] lg:px-8">
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-3 shadow-sm">
-            <p className="px-2 py-2 text-xs font-black uppercase tracking-[0.08em] text-earth-700/75">Farmer Hub</p>
-            <TodayFarmSnapshot weather={weather} />
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+            <TodayFarmSnapshot weather={weather} isActive={activeTool === "weather"} onOpenWeather={() => setActiveTool("weather")} />
+            <div className="my-3 h-px bg-leaf-900/10" />
+            <div className="grid gap-2 lg:grid-cols-1">
               {tools.map((tool) => {
                 const Icon = tool.icon;
                 const isActive = tool.id === activeTool;
@@ -276,7 +241,6 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
         </aside>
 
         <div className="grid min-w-0 gap-5">
-          <TodayFarmBrief weather={weather} marketPrices={marketPrices} />
           <DailyInsightCards weather={weather} marketPrices={marketPrices} />
           {activeTool === "weather" ? <WeatherUpdates /> : null}
           {activeTool === "crop-health" ? <CropHealthCheck /> : null}
