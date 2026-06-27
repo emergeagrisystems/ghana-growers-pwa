@@ -79,7 +79,15 @@ export default async function HomePage() {
               </div>
               <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
             </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 rounded-md bg-white p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-earth-700">Today&apos;s Farm Brief</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {["Good fieldwork conditions", "Check rain before spraying", "Market prices updated", "Crop Health ready"].map((item) => (
+                  <p key={item} className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-bold text-ink/70">{item}</p>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { title: "Weather", icon: CloudSun },
                 { title: "Crop Health", icon: ScanSearch },

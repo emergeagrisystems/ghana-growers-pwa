@@ -52,6 +52,8 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
     .map((name) => prices.find((item) => item.crop.toLowerCase() === name.toLowerCase()))
     .filter((item): item is MarketPrice => Boolean(item))
     .slice(0, 6);
+  const topGainers = prices.filter((item) => item.trend === "Rising").slice(0, 3);
+  const topLosers = prices.filter((item) => item.trend === "Falling").slice(0, 3);
 
   return (
     <section id="market-prices" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
@@ -62,6 +64,37 @@ export function MarketPricesDashboard({ prices = fallbackMarketPrices }: MarketP
       <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-earth-700/80">
         Last updated: {marketPriceMeta.lastUpdated}
       </p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <article className="rounded-md bg-leaf-50 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Top gainers</p>
+          <div className="mt-3 grid gap-2">
+            {(topGainers.length ? topGainers : []).map((item) => (
+              <p key={`${item.crop}-gainer`} className="flex items-center justify-between gap-3 text-sm font-black text-ink">
+                <span>{item.crop}</span>
+                <TrendingUp className="text-tomato" size={16} aria-hidden="true" />
+              </p>
+            ))}
+            {topGainers.length === 0 ? <p className="text-sm font-semibold text-ink/60">No market alerts today.</p> : null}
+          </div>
+        </article>
+        <article className="rounded-md bg-leaf-50 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Top losers</p>
+          <div className="mt-3 grid gap-2">
+            {(topLosers.length ? topLosers : []).map((item) => (
+              <p key={`${item.crop}-loser`} className="flex items-center justify-between gap-3 text-sm font-black text-ink">
+                <span>{item.crop}</span>
+                <TrendingDown className="text-leaf-600" size={16} aria-hidden="true" />
+              </p>
+            ))}
+            {topLosers.length === 0 ? <p className="text-sm font-semibold text-ink/60">No market drops today.</p> : null}
+          </div>
+        </article>
+        <article className="rounded-md bg-earth-50 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Most requested crop</p>
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">No buyer demand signal yet.</p>
+        </article>
+      </div>
 
       <h3 className="mt-5 text-lg font-black text-ink">Today&apos;s Market Snapshot</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
