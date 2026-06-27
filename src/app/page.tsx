@@ -84,11 +84,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-leaf-900/10 bg-white py-5" aria-labelledby="marketplace-quick-search-title">
+      <section className="overflow-hidden border-y border-leaf-900/10 bg-white py-5" aria-labelledby="marketplace-quick-search-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-[#F7F6EF] p-4 shadow-sm">
-            <div className="grid gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
-              <div>
+            <div className="grid min-w-0 gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
+              <div className="min-w-0">
                 <h2 id="marketplace-quick-search-title" className="text-lg font-black text-ink">
                   What are you looking for today?
                 </h2>
@@ -107,12 +107,12 @@ export default async function HomePage() {
                   </button>
                 </form>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
                 {heroMarketplaceTiles.map((tile) => (
                   <Link
                     key={tile.href}
                     href={tile.href}
-                    className="group rounded-md border border-leaf-900/10 bg-white px-3 py-2.5 text-sm font-black text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700"
+                    className="group min-w-0 rounded-md border border-leaf-900/10 bg-white px-3 py-2.5 text-[0.8rem] font-black leading-tight text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700 sm:text-sm"
                   >
                     {tile.label}
                   </Link>
@@ -125,35 +125,26 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase listings={marketplaceListings} />
 
-      <section id="farmer-hub-teaser" className="bg-[#143A1F] py-20 text-white sm:py-24">
+      <section id="farmer-hub-teaser" className="bg-[#EEF3E8] py-24 text-ink sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="gg-eyebrow text-earth-500">Farmer Hub</p>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">Farmer Hub</h2>
-            <p className="mt-3 text-xl font-black text-white/90 sm:text-2xl">
-              Everything you need before you step onto your farm.
+            <p className="gg-eyebrow text-earth-700/70">Farmer Hub</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">🌱 Farmer Hub</h2>
+            <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
+              Your Daily Farming Companion
             </p>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/68 sm:text-lg">
-              Check weather, diagnose crop problems, compare market prices and get practical farming advice - all in one place.
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/66 sm:text-lg">
+              Check weather, diagnose crop problems, compare market prices and get practical farming advice—all in one place.
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
-            <Link
-              href="/smart-solutions"
-              className="group rounded-md border border-white/10 bg-white p-6 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft lg:p-8"
-            >
-              <span className="grid h-16 w-16 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
-                <ScanSearch size={30} aria-hidden="true" />
-              </span>
-              <h3 className="mt-6 text-2xl font-black text-ink group-hover:text-leaf-700">Crop Health</h3>
-              <p className="mt-3 text-sm leading-6 text-ink/66">Upload a crop photo and receive farming advice.</p>
-              <span className="mt-5 inline-flex rounded-md bg-earth-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-earth-700">
-                Flagship tool
-              </span>
-            </Link>
-
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
+              {
+                title: "Crop Health",
+                description: "Upload a crop photo and receive farming advice.",
+                icon: ScanSearch
+              },
               {
                 title: "Live Weather",
                 description: "Check today's farming conditions before heading to the field.",
@@ -176,7 +167,7 @@ export default async function HomePage() {
                 <Link
                   key={tool.title}
                   href="/smart-solutions"
-                  className="group rounded-md border border-white/10 bg-white p-5 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                  className="group flex h-full min-h-[13.5rem] flex-col rounded-md border border-leaf-900/10 bg-white p-5 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
                 >
                   <span className="grid h-14 w-14 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
                     <Icon size={26} aria-hidden="true" />
@@ -188,16 +179,8 @@ export default async function HomePage() {
             })}
           </div>
 
-          <div className="mt-9 flex flex-col items-center gap-5 text-center">
-            <p className="inline-flex flex-col items-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70 shadow-sm sm:flex-row">
-              <span className="inline-flex items-center gap-2 text-leaf-700">
-                <CheckCircle2 size={18} aria-hidden="true" />
-                Free for Ghanaian farmers
-              </span>
-              <span className="hidden h-4 w-px bg-leaf-900/15 sm:block" aria-hidden="true" />
-              <span>No registration required to explore Farmer Hub.</span>
-            </p>
-            <ButtonLink href="/smart-solutions" variant="light">
+          <div className="mt-10 flex justify-center">
+            <ButtonLink href="/smart-solutions">
               Open Farmer Hub
             </ButtonLink>
           </div>
