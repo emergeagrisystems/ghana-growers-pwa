@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   BadgeCheck,
   ChevronDown,
@@ -35,6 +36,14 @@ type FilterConfig = {
 };
 
 const availabilityOptions = ["All", "Available", "Limited", "Sold Out"];
+const categoryGroupTerms: Record<string, string[]> = {
+  "fresh-produce": ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "tomato", "onion", "maize", "cassava", "yam", "plantain", "rice"],
+  "farm-inputs": ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation", "feed"],
+  "farm-services": ["service", "advisory", "consulting", "mechanization", "labour", "labor", "land", "support"],
+  livestock: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal"],
+  logistics: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"],
+  "packaging-storage": ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
+};
 
 function SearchBox({
   searchTerm,
@@ -349,7 +358,10 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 export function MarketplaceListings({ products, farmers = [], suppliers = [] }: MarketplaceListingsProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") ?? "";
+  const initialCategoryGroup = searchParams.get("category") ?? "";
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [category, setCategory] = useState("All");
   const [region, setRegion] = useState("All");
   const [availability, setAvailability] = useState("All");
@@ -370,22 +382,27 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const categoryGroup = initialCategoryGroup.trim().toLowerCase();
+    const groupTerms = categoryGroupTerms[categoryGroup] ?? [];
 
     return products.filter((product) => {
+      const searchableText = [product.name, product.category, product.region, product.location, product.seller, product.description]
+        .join(" ")
+        .toLowerCase();
       const matchesSearch =
         !normalizedSearch ||
-        [product.name, product.category, product.region, product.location, product.seller, product.description]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
+        searchableText.includes(normalizedSearch);
+      const matchesCategoryGroup =
+        !groupTerms.length ||
+        groupTerms.some((term) => searchableText.includes(term));
       const matchesCategory = category === "All" || product.category === category;
       const matchesRegion = region === "All" || product.region === region;
       const matchesAvailability = availability === "All" || product.available === availability;
       const matchesProduct = productName === "All" || product.name === productName;
 
-      return matchesSearch && matchesCategory && matchesRegion && matchesAvailability && matchesProduct;
+      return matchesSearch && matchesCategoryGroup && matchesCategory && matchesRegion && matchesAvailability && matchesProduct;
     });
-  }, [availability, category, productName, products, region, searchTerm]);
+  }, [availability, category, initialCategoryGroup, productName, products, region, searchTerm]);
 
   const featuredProducts = products.filter((product) => product.featured).slice(0, 3);
   const activeListings = products.length;

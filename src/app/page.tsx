@@ -8,6 +8,15 @@ import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
+const heroMarketplaceTiles = [
+  { label: "Fresh Produce", icon: "🥬", href: "/marketplace?category=fresh-produce" },
+  { label: "Farm Inputs", icon: "🌱", href: "/marketplace?category=farm-inputs" },
+  { label: "Farm Services", icon: "🚜", href: "/marketplace?category=farm-services" },
+  { label: "Livestock", icon: "🐄", href: "/marketplace?category=livestock" },
+  { label: "Logistics & Transport", icon: "🚚", href: "/marketplace?category=logistics" },
+  { label: "Packaging & Storage", icon: "📦", href: "/marketplace?category=packaging-storage" }
+];
+
 export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
   description:
@@ -39,19 +48,19 @@ export default async function HomePage() {
   return (
     <>
       <section className="overflow-hidden bg-[#F7F6EF]">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-24 xl:gap-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-10 lg:px-8 lg:py-16 xl:gap-14">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
-            <h1 className="mt-6 max-w-[18rem] break-words text-[1.7rem] font-black leading-tight text-ink sm:max-w-3xl sm:text-5xl lg:text-[3.4rem] xl:text-[3.85rem]">
+            <h1 className="mt-5 max-w-[18rem] break-words text-[1.55rem] font-black leading-tight text-ink sm:max-w-3xl sm:text-5xl lg:text-[3.1rem] xl:text-[3.45rem]">
               Ghana&apos;s Network for Farmers, Buyers &amp; Suppliers
             </h1>
-            <p className="mt-5 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
-              Farmer Hub, marketplace access, and trusted agricultural connections across Ghana.
+            <p className="mt-4 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
+              Search the marketplace, open Farmer Hub, and connect with Ghana&apos;s agricultural network.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-6 flex flex-row gap-3">
               <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
               <ButtonLink href="/marketplace" variant="secondary">
                 Explore Marketplace
@@ -70,8 +79,39 @@ export default async function HomePage() {
                 fallbackKind="default"
                 priority
                 sizes="(min-width: 1024px) 54vw, 100vw"
-                className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10] lg:min-h-[500px]"
+                className="h-48 w-full rounded-md object-cover sm:h-80 lg:h-[430px]"
               />
+            </div>
+            <div className="relative z-10 mx-auto -mt-8 max-w-2xl rounded-md border border-leaf-900/10 bg-white p-3 shadow-soft sm:p-5 lg:absolute lg:bottom-5 lg:right-5 lg:mt-0 lg:w-[min(92%,600px)]">
+              <h2 className="text-lg font-black text-ink">What are you looking for today?</h2>
+              <form action="/marketplace" className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <label className="sr-only" htmlFor="hero-marketplace-search">
+                  Search produce, suppliers or services
+                </label>
+                <input
+                  id="hero-marketplace-search"
+                  name="search"
+                  placeholder="Search produce, suppliers or services..."
+                  className="min-h-11 flex-1 rounded-md border border-leaf-900/10 bg-[#F7F6EF] px-3 text-sm font-semibold text-ink outline-none transition placeholder:text-ink/42 focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
+                />
+                <button type="submit" className="gg-button-primary min-h-11 px-5">
+                  Search
+                </button>
+              </form>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {heroMarketplaceTiles.map((tile) => (
+                  <Link
+                    key={tile.href}
+                    href={tile.href}
+                    className="group rounded-md border border-leaf-900/10 bg-[#F7F6EF] px-3 py-3 text-sm font-black text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700"
+                  >
+                    <span className="mr-2" aria-hidden="true">
+                      {tile.icon}
+                    </span>
+                    {tile.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
