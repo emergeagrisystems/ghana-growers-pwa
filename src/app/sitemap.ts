@@ -15,6 +15,7 @@ const publicRoutes = [
   "/about",
   "/contact",
   "/partner-with-us",
+  "/gg-standard",
   "/verification-process",
   "/verification-requirements",
   "/privacy-policy",

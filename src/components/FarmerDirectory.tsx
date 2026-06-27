@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BadgeCheck, Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
+import { GGStandardBadge } from "@/components/GGStandard";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
@@ -172,6 +173,7 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                             </span>
                           ) : null}
                           <FarmerBadge status={trust.status} />
+                          <GGStandardBadge status={farmer.ggStandardStatus} />
                         </div>
                       </div>
 

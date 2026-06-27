@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
+import { GGStandardBadge } from "@/components/GGStandard";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
@@ -190,6 +191,7 @@ export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
                     </span>
                   ) : null}
                   <VerificationBadge kind="supplier" status={trust.status} />
+                  <GGStandardBadge status={supplier.ggStandardStatus} />
                 </div>
               </div>
 

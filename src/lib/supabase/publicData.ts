@@ -28,6 +28,7 @@ type SupabaseFarmer = {
   verification_date: string | null;
   verified_by: string | null;
   verification_notes: string | null;
+  gg_standard_status?: string | null;
   profile_image_url: string | null;
   description: string | null;
   status: string | null;
@@ -55,6 +56,7 @@ type SupabaseSupplier = {
   verification_date: string | null;
   verified_by: string | null;
   verification_notes: string | null;
+  gg_standard_status?: string | null;
   logo_url: string | null;
   profile_image_url?: string | null;
   application_image_url?: string | null;
@@ -464,6 +466,7 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
+    ggStandardStatus: row.gg_standard_status ?? "Pending",
     source: row.source ?? undefined,
     isFeatured: Boolean(row.is_featured),
     featuredUntil: row.featured_until ?? undefined,
@@ -498,6 +501,7 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     verificationDate: row.verification_date ?? undefined,
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
+    ggStandardStatus: row.gg_standard_status ?? "Pending",
     isFeatured: Boolean(row.is_featured),
     featuredUntil: row.featured_until ?? undefined,
     featuredNote: row.featured_note ?? undefined,

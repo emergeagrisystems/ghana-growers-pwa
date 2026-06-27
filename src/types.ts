@@ -92,6 +92,8 @@ export type TrustProfile = {
   score: TrustScore;
 };
 
+export type GGStandardStatus = "Pending" | "Member" | "Suspended";
+
 export type FarmerProfile = {
   id?: string;
   slug: string;
@@ -117,6 +119,7 @@ export type FarmerProfile = {
   verificationDate?: string;
   verifiedBy?: string;
   verificationNotes?: string;
+  ggStandardStatus?: GGStandardStatus | string;
   source?: string;
   isFeatured?: boolean;
   featuredUntil?: string;
@@ -155,6 +158,7 @@ export type SupplierProfile = {
   verificationDate?: string;
   verifiedBy?: string;
   verificationNotes?: string;
+  ggStandardStatus?: GGStandardStatus | string;
   isFeatured?: boolean;
   featuredUntil?: string;
   featuredNote?: string;

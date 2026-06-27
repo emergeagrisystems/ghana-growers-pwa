@@ -69,6 +69,21 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
+      <section className="bg-white py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-5 rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="gg-eyebrow">GG Standard</p>
+              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">What is the Ghana Growers Standard?</h2>
+              <p className="mt-2 text-sm leading-7 text-ink/66">
+                A practical commitment framework for members who want to show care for sustainable farming, reliable supply, and quality produce. It is separate from verification and is not a certification.
+              </p>
+            </div>
+            <ButtonLink href="/gg-standard" variant="secondary">Learn About GG Standard</ButtonLink>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm sm:p-6 lg:p-7">

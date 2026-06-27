@@ -42,6 +42,7 @@ import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matchi
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up" | "Published";
 type ImportAdminStatus = AdminStatus | "Pending Review";
+type GGStandardStatus = "Pending" | "Member" | "Suspended";
 type VerificationSubject = "farmer" | "supplier" | "buyer";
 type VerificationStatus = "Pending" | "Under Review" | "Verified" | "Rejected";
 type AdminSectionId =
@@ -87,6 +88,7 @@ type AdminRow = {
   isFeatured?: boolean;
   featuredUntil?: string;
   featuredNote?: string;
+  ggStandardStatus?: GGStandardStatus | string;
   href?: string;
   verificationTarget?: {
     subject: VerificationSubject;
@@ -295,6 +297,7 @@ type ImportedFarmerRecord = {
   verification_date?: string | null;
   verified_by?: string | null;
   verification_notes?: string | null;
+  gg_standard_status?: GGStandardStatus | string | null;
   profile_image_url?: string | null;
   description?: string | null;
   created_at?: string | null;
@@ -624,6 +627,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "farmSize", label: "Farm Size", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
+    { name: "ggStandardStatus", label: "GG Standard Status", type: "select", required: true, options: ["Pending", "Member", "Suspended"] },
     { name: "profileImageUrl", label: "Farmer Profile Image", type: "image", bucket: "farmers", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
   ],
   suppliers: [
@@ -635,6 +639,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "productsServices", label: "Products/Services", required: true, helper: "Separate multiple services with commas." },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
+    { name: "ggStandardStatus", label: "GG Standard Status", type: "select", required: true, options: ["Pending", "Member", "Suspended"] },
     { name: "logoUrl", label: "Supplier Image or Logo", type: "image", bucket: "suppliers", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." },
     { name: "website", label: "Website", type: "url" }
   ],
@@ -822,6 +827,11 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       values.ownerName = "Ghana Growers";
     }
 
+    if (formId === "farmers" || formId === "suppliers") {
+      values.verificationStatus = "Pending";
+      values.ggStandardStatus = "Pending";
+    }
+
     return values;
   }
 
@@ -838,6 +848,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       farmSize: farmer?.farmSize ?? "",
       whatsappNumber: "",
       verificationStatus: farmer?.verificationStatus ?? row.status,
+      ggStandardStatus: farmer?.ggStandardStatus ?? row.ggStandardStatus ?? "Pending",
       profileImageUrl: farmer?.photos[0] ?? ""
     };
   }
@@ -854,6 +865,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       productsServices: supplier?.productsServices.join(", ") ?? "",
       whatsappNumber: supplier?.phone ?? "",
       verificationStatus: supplier?.verificationStatus ?? row.status,
+      ggStandardStatus: supplier?.ggStandardStatus ?? row.ggStandardStatus ?? "Pending",
       logoUrl: supplier?.photos[0] ?? "",
       website: supplier?.website ?? ""
     };
@@ -1055,6 +1067,8 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
       type: values.farmType || "Farmer",
       region: values.region || "Ghana",
       status: statusFromForm(formId, values),
+      verificationStatus: values.verificationStatus,
+      ggStandardStatus: values.ggStandardStatus || "Pending",
       dateAdded: today,
       href: `/farmer-directory/${id}`,
       verificationTarget: { subject: "farmer", recordId: id }
@@ -1070,6 +1084,8 @@ function rowFromForm(formId: AdminFormId, values: Record<string, string>, record
       type: values.category || "Supplier",
       region: values.region || "Ghana",
       status: statusFromForm(formId, values),
+      verificationStatus: values.verificationStatus,
+      ggStandardStatus: values.ggStandardStatus || "Pending",
       dateAdded: today,
       href: `/supplier-directory/${id}`,
       verificationTarget: { subject: "supplier", recordId: id }
@@ -1159,6 +1175,7 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
     region: farmer.region,
     status: farmer.status,
     verificationStatus: farmer.verification_status,
+    ggStandardStatus: farmer.gg_standard_status ?? "Pending",
     dateAdded: new Date().toISOString().slice(0, 10),
     source: normalizedFarmerSource(farmer.source),
     phone: farmer.phone_number || farmer.whatsapp_number,
@@ -1189,6 +1206,7 @@ function importedFarmerPlaceholderFromRow(row: AdminRow): ImportedFarmerRecord {
     whatsapp_number: row.whatsapp ?? row.phone ?? "",
     status: row.status,
     verification_status: row.verificationStatus ?? "Pending",
+    gg_standard_status: row.ggStandardStatus ?? "Pending",
     verification_notes: null,
     source: normalizedFarmerSource(row.source)
   };
@@ -1210,6 +1228,7 @@ function reviewDebugFields(farmer: ImportedFarmerRecord) {
     supply_frequency: farmer.supply_frequency ?? null,
     delivery_preference: farmer.delivery_preference ?? null,
     payment_preference: farmer.payment_preference ?? null,
+    gg_standard_status: farmer.gg_standard_status ?? null,
     workshop_interest: farmer.workshop_interest ?? null,
     referral_source: farmer.referral_source ?? null,
     profile_image_url: farmer.profile_image_url ?? null,
@@ -1946,6 +1965,7 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     isFeatured: recordBoolean(record, "is_featured"),
     featuredUntil: textValue(record, "featured_until"),
     featuredNote: textValue(record, "featured_note"),
+    ggStandardStatus: textValue(record, "gg_standard_status") || "Pending",
     href: status === "Active" ? `/farmer-directory/${id}` : undefined,
     verificationTarget: { subject: "farmer", recordId: id }
   };
@@ -1964,6 +1984,7 @@ function adminSupplierRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     isFeatured: recordBoolean(record, "is_featured"),
     featuredUntil: textValue(record, "featured_until"),
     featuredNote: textValue(record, "featured_note"),
+    ggStandardStatus: textValue(record, "gg_standard_status") || "Pending",
     href: `/supplier-directory/${id}`,
     verificationTarget: { subject: "supplier", recordId: id }
   };
@@ -2002,6 +2023,7 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       products: farmer.products,
       whatsapp_number: WHATSAPP_NUMBER,
       verification_status: farmer.verificationStatus,
+      gg_standard_status: farmer.ggStandardStatus ?? "Pending",
       status: farmer.availabilityStatus,
       source: null,
       is_featured: Boolean(farmer.isFeatured),
@@ -2014,6 +2036,7 @@ function localAnalyticsFallback(whatsappLeadRows: WhatsAppLeadRecord[], leadRequ
       company_name: supplier.companyName,
       category: supplier.supplierCategory,
       verification_status: supplier.verificationStatus,
+      gg_standard_status: supplier.ggStandardStatus ?? "Pending",
       status: "Active",
       is_featured: Boolean(supplier.isFeatured),
       featured_until: supplier.featuredUntil ?? null,
@@ -2201,7 +2224,7 @@ export function AdminDashboard({
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
-  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | null>(null);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | "gg-standard" | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
@@ -3307,7 +3330,7 @@ export function AdminDashboard({
     );
   }
 
-  async function applyImportedFarmerReviewAction(action: "under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo") {
+  async function applyImportedFarmerReviewAction(action: "under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | "gg-standard") {
     if (!reviewingImportedFarmer) {
       return;
     }
@@ -3351,6 +3374,8 @@ export function AdminDashboard({
         ? "Farmer photo imported successfully."
       : action === "under-review"
         ? "Farmer marked under review."
+      : action === "gg-standard"
+        ? "GG Standard membership approved."
           : action === "needs-follow-up"
             ? "Farmer marked as needs follow-up."
           : action === "reject"
@@ -3374,6 +3399,7 @@ export function AdminDashboard({
                 ...row,
                 status: updatedFarmer.status,
                 verificationStatus: updatedFarmer.verification_status,
+                ggStandardStatus: updatedFarmer.gg_standard_status ?? "Pending",
                 phone: updatedFarmer.phone_number || updatedFarmer.whatsapp_number,
                 whatsapp: updatedFarmer.whatsapp_number,
                 farmSize: updatedFarmer.farm_size,
@@ -5613,6 +5639,7 @@ export function AdminDashboard({
                     {activeSection === "marketplace" ? <th className="px-5 py-4">Owner Name</th> : null}
                     {activeSection === "farmers" ? <th className="px-5 py-4">Source</th> : null}
                     {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? <th className="px-5 py-4">Featured</th> : null}
+                    {activeSection === "farmers" || activeSection === "suppliers" ? <th className="px-5 py-4">GG Standard</th> : null}
                     <th className="px-5 py-4">Status</th>
                     <th className="px-5 py-4">Date added</th>
                     <th className="px-5 py-4">Actions</th>
@@ -5704,6 +5731,19 @@ export function AdminDashboard({
                             <span className="text-xs font-bold text-ink/35">Not featured</span>
                           )}
                           {row.featuredUntil ? <p className="mt-1 text-xs font-semibold text-ink/45">Until {row.featuredUntil}</p> : null}
+                        </td>
+                      ) : null}
+                      {activeSection === "farmers" || activeSection === "suppliers" ? (
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
+                            row.ggStandardStatus === "Member"
+                              ? "bg-leaf-50 text-leaf-800"
+                              : row.ggStandardStatus === "Suspended"
+                                ? "bg-tomato/10 text-tomato"
+                                : "bg-ink/10 text-ink/55"
+                          }`}>
+                            {row.ggStandardStatus ?? "Pending"}
+                          </span>
                         </td>
                       ) : null}
                       <td className="px-5 py-4">
@@ -6090,6 +6130,13 @@ export function AdminDashboard({
                             Verification controls the public trust badge only.
                           </p>
                         </div>
+                        <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                          <p className="text-[11px] font-black uppercase tracking-wide text-ink/45">GG Standard Status</p>
+                          <p className="mt-1 text-sm font-black text-ink">{reviewingImportedFarmer.gg_standard_status ?? "Pending"}</p>
+                          <p className="mt-1 text-xs font-semibold text-ink/50">
+                            GG Standard is separate from verification and is not certification.
+                          </p>
+                        </div>
                       </div>
                       {reviewingImportedFarmer.verification_date ? (
                         <p className="mt-1 text-xs font-semibold text-ink/50">Verified on {reviewingImportedFarmer.verification_date}</p>
@@ -6307,6 +6354,14 @@ export function AdminDashboard({
                         className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Verify & Publish"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void applyImportedFarmerReviewAction("gg-standard")}
+                        disabled={isUpdatingFarmerReview}
+                        className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingFarmerReviewAction === "gg-standard" ? "Approving..." : "Approve GG Standard Membership"}
                       </button>
                       <button
                         type="button"

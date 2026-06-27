@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const requiredFields = ["farmerName", "farmName", "region", "district", "farmType", "products", "farmSize", "whatsappNumber", "verificationStatus"];
 const adminFarmerSelect =
-  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,verification_status,status,source,is_featured,featured_until,featured_note,created_at&order=created_at.desc&limit=5000";
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,verification_status,gg_standard_status,status,source,is_featured,featured_until,featured_note,created_at&order=created_at.desc&limit=5000";
 const adminFarmerBaseSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,verification_status,status,source,created_at&order=created_at.desc&limit=5000";
 
@@ -25,6 +25,7 @@ type AdminFarmerRecord = {
   phone_number: string | null;
   whatsapp_number: string | null;
   verification_status: string | null;
+  gg_standard_status?: string | null;
   status: string | null;
   source: string | null;
   is_featured?: boolean | null;
@@ -97,9 +98,9 @@ export async function GET(request: Request) {
   let migrationWarning = "";
   let farmers = await selectSupabaseRecords<AdminFarmerRecord>("farmers", adminFarmerSelect);
 
-  if (farmers.error && farmers.error.includes("is_featured")) {
+  if (farmers.error && (farmers.error.includes("is_featured") || farmers.error.includes("gg_standard_status"))) {
     migrationWarning =
-      "Featured Membership migration is missing on the farmers table. Run migration 018 to enable featured controls. Farmers are loaded without featured fields for now.";
+      "A farmers table migration is missing. Run the Featured Membership and GG Standard migrations to enable all controls. Farmers are loaded with basic fields for now.";
     farmers = await selectSupabaseRecords<AdminFarmerRecord>("farmers", adminFarmerBaseSelect);
   }
 
@@ -162,6 +163,7 @@ export async function POST(request: Request) {
         farm_size: payload.farmSize,
         whatsapp_number: payload.whatsappNumber,
         verification_status: payload.verificationStatus,
+        gg_standard_status: payload.ggStandardStatus || "Pending",
         verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
         verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
         verification_notes: null,
@@ -192,6 +194,7 @@ export async function PATCH(request: Request) {
       farm_size: payload.farmSize,
       whatsapp_number: payload.whatsappNumber,
       verification_status: payload.verificationStatus,
+      gg_standard_status: payload.ggStandardStatus || "Pending",
       verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
       verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
       profile_image_url: payload.profileImageUrl || null,

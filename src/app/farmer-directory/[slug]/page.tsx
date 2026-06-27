@@ -12,6 +12,7 @@ import {
   Truck,
   type LucideIcon
 } from "lucide-react";
+import { GGStandardBadge, GGStandardCommitment } from "@/components/GGStandard";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
@@ -133,9 +134,10 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 sizes="(min-width: 1024px) 25vw, 100vw"
                 className="aspect-[4/3] w-full rounded-md object-cover lg:aspect-square"
               />
-              {farmer.verificationStatus === "Verified" ? (
-                <div className="absolute bottom-5 left-5">
+              {farmer.verificationStatus === "Verified" || farmer.ggStandardStatus === "Member" ? (
+                <div className="absolute bottom-5 left-5 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-2">
                   <FarmerVerificationBadge status={farmer.verificationStatus} />
+                  <GGStandardBadge status={farmer.ggStandardStatus} />
                 </div>
               ) : null}
             </div>
@@ -200,6 +202,10 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               ))}
             </div>
           </section>
+
+          <div className="mt-8">
+            <GGStandardCommitment status={farmer.ggStandardStatus} />
+          </div>
 
           <section className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

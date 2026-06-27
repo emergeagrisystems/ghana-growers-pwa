@@ -36,6 +36,7 @@ type ExistingFarmer = {
   verification_date?: string | null;
   verified_by?: string | null;
   verification_notes?: string | null;
+  gg_standard_status?: string | null;
   profile_image_url?: string | null;
   description?: string | null;
   created_at?: string | null;
@@ -94,6 +95,8 @@ type ImportFieldKey = keyof typeof fieldLabels;
 
 const requiredImportFields: ImportFieldKey[] = ["farmerName"];
 const farmerReviewSelect =
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,gg_standard_status,profile_image_url,description,created_at,source";
+const farmerReviewBaseSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 
 const headerAliases: Record<ImportFieldKey, string[]> = {
@@ -631,6 +634,7 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     verification_date: record.verification_date ?? null,
     verified_by: record.verified_by ?? null,
     verification_notes: record.verification_notes ?? "",
+    gg_standard_status: record.gg_standard_status ?? "Pending",
     profile_image_url: record.profile_image_url ?? null,
     description: record.description ?? "",
     created_at: record.created_at ?? null,
@@ -672,10 +676,11 @@ async function importExistingFarmerPhoto(record: ExistingFarmer) {
 
 async function getImportedFarmerById(id: string) {
   const filter = isUuid(id) ? `id=eq.${encodeURIComponent(id)}` : `slug=eq.${encodeURIComponent(id)}`;
-  const farmers = await selectSupabaseRecords<ExistingFarmer>(
-    "farmers",
-    `${farmerReviewSelect}&${filter}&limit=1`
-  );
+  let farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&${filter}&limit=1`);
+
+  if (farmers.error?.includes("gg_standard_status")) {
+    farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewBaseSelect}&${filter}&limit=1`);
+  }
 
   if (farmers.error) {
     return { error: farmers.error, status: farmers.status };
@@ -697,7 +702,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&order=created_at.desc&limit=5000`);
+  let farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&order=created_at.desc&limit=5000`);
+
+  if (farmers.error?.includes("gg_standard_status")) {
+    farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewBaseSelect}&order=created_at.desc&limit=5000`);
+  }
 
   if (farmers.error) {
     return NextResponse.json({ error: "Could not load imported farmers." }, { status: farmers.status });
@@ -927,13 +936,13 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view" | "import-photo";
+    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view" | "import-photo" | "gg-standard";
     ids?: string[];
     notes?: string;
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view", "import-photo"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view", "import-photo", "gg-standard"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -1015,6 +1024,8 @@ export async function PATCH(request: Request) {
         ? { status: "Pending Review", verification_status: "Under Review", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
       : body.action === "needs-follow-up"
         ? { verification_status: "Needs Follow-up", verification_date: null, verified_by: null, verification_notes: body.notes ?? "" }
+      : body.action === "gg-standard"
+        ? { gg_standard_status: "Member", verification_notes: body.notes ?? "" }
       : body.action === "founding"
         ? { status: "Active", source: "Founding Farmer" }
       : body.action === "verify"
@@ -1041,6 +1052,8 @@ export async function PATCH(request: Request) {
         ? "Verify"
       : body.action === "needs-follow-up"
         ? "Review"
+      : body.action === "gg-standard"
+        ? "Approve"
       : body.action === "reject"
         ? "Reject"
       : body.action === "under-review"
@@ -1056,7 +1069,7 @@ export async function PATCH(request: Request) {
     actionType,
     entityType: "Farmer",
     entityId: ids.join(","),
-    entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}${body.action === "founding" ? " assigned Founding Farmer" : ""}`
+    entityName: `${ids.length} imported farmer${ids.length === 1 ? "" : "s"}${body.action === "founding" ? " assigned Founding Farmer" : body.action === "gg-standard" ? " approved for GG Standard" : ""}`
   });
 
   const refreshedTarget = ids.length === 1 ? await getImportedFarmerById(ids[0]) : null;
@@ -1068,6 +1081,8 @@ export async function PATCH(request: Request) {
         ? "Farmer verified successfully. Public visibility was not changed."
       : body.action === "under-review"
         ? "Farmer marked under review."
+        : body.action === "gg-standard"
+          ? "GG Standard membership approved."
         : body.action === "needs-follow-up"
           ? "Farmer marked as needs follow-up."
         : body.action === "reject"
