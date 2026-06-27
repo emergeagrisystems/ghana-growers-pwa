@@ -1,231 +1,189 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { ArrowRight, PackageCheck } from "lucide-react";
 import { SafeImage } from "@/components/SafeImage";
-import { productImageForName } from "@/lib/productDisplay";
+import { productImageForListing } from "@/lib/productDisplay";
+import type { Product } from "@/types";
 
-type ShowcaseItem = {
-  name: string;
+type MarketplaceCategoryShowcaseProps = {
+  listings?: Product[];
+};
+
+type HomepageMarketplaceCategory = {
+  title: string;
+  description: string;
   image: string;
+  href: string;
+  matches: string[];
 };
 
-type ShowcaseCategory = {
-  slug: string;
-  name: string;
-  items: ShowcaseItem[];
-};
-
-const marketplaceShowcaseData: ShowcaseCategory[] = [
+const marketplaceCategories: HomepageMarketplaceCategory[] = [
   {
-    slug: "vegetables",
-    name: "Vegetables",
-    items: [
-      { name: "Tomato", image: "/images/marketplace/fresh-tomatoes.jpg" },
-      { name: "Onion", image: "/images/marketplace/ghana-market-2.jpg" },
-      { name: "Pepper", image: "/images/crops/tomatoes.jpg" },
-      { name: "Okra", image: "/images/marketplace/ghana-market-1.jpg" },
-      { name: "Garden Eggs", image: "/images/marketplace/fresh-tomatoes.jpg" },
-      { name: "Cabbage", image: "/images/marketplace/ghana-market-2.jpg" },
-      { name: "Carrot", image: "/images/crops/tomatoes.jpg" },
-      { name: "Leafy Greens", image: "/images/marketplace/ghana-market-1.jpg" }
-    ]
+    title: "Fresh Produce",
+    description: "Vegetables, fruits, tubers, cereals, and fresh crops from Ghanaian farms.",
+    image: "/images/marketplace/ghana-market-1.jpg",
+    href: "/marketplace?category=fresh-produce",
+    matches: ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "dairy"]
   },
   {
-    slug: "fruits",
-    name: "Fruits",
-    items: [
-      { name: "Pineapple", image: "/images/crops/pineapple.jpg" },
-      { name: "Mango", image: "/images/marketplace/pineapple-field.jpg" },
-      { name: "Orange", image: "/images/marketplace/ghana-market-1.jpg" },
-      { name: "Watermelon", image: "/images/marketplace/ghana-market-2.jpg" },
-      { name: "Banana", image: "/images/crops/pineapple.jpg" },
-      { name: "Pawpaw", image: "/images/marketplace/pineapple-field.jpg" },
-      { name: "Coconut", image: "/images/marketplace/ghana-market-1.jpg" },
-      { name: "Avocado", image: "/images/marketplace/ghana-market-2.jpg" }
-    ]
+    title: "Farm Inputs",
+    description: "Seeds, fertilizer, tools, agrochemicals, irrigation items, and farm supplies.",
+    image: "/images/marketplace/farm-inputs.jpg",
+    href: "/marketplace?category=farm-inputs",
+    matches: ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation"]
   },
   {
-    slug: "tubers",
-    name: "Tubers",
-    items: [
-      { name: "Cassava", image: "/images/marketplace/yam-cassava.jpg" },
-      { name: "Yam", image: "/images/crops/yam.jpg" },
-      { name: "Cocoyam", image: "/images/marketplace/yam-cassava.jpg" },
-      { name: "Sweet Potato", image: "/images/crops/yam.jpg" },
-      { name: "Irish Potato", image: "/images/marketplace/yam-cassava.jpg" },
-      { name: "Plantain", image: "/images/crops/yam.jpg" },
-      { name: "Taro", image: "/images/marketplace/yam-cassava.jpg" },
-      { name: "Processed Cassava", image: "/images/crops/yam.jpg" }
-    ]
+    title: "Farm Services",
+    description: "Advisory, mechanization, land preparation, field support, and farm operations.",
+    image: "/images/marketplace/farm-activity-2.jpg",
+    href: "/marketplace?category=farm-services",
+    matches: ["service", "advisory", "consulting", "mechanization", "land", "support"]
   },
   {
-    slug: "cereals",
-    name: "Cereals",
-    items: [
-      { name: "Maize", image: "/images/marketplace/farm-activity-1.jpg" },
-      { name: "Rice", image: "/images/marketplace/river-supply-chain.jpg" },
-      { name: "Sorghum", image: "/images/marketplace/aggregation-cocoa.jpg" },
-      { name: "Millet", image: "/images/marketplace/farm-activity-2.jpg" },
-      { name: "Soybean", image: "/images/marketplace/farm-activity-1.jpg" },
-      { name: "Groundnut", image: "/images/marketplace/aggregation-cocoa.jpg" },
-      { name: "Cowpea", image: "/images/marketplace/river-supply-chain.jpg" },
-      { name: "Wheat", image: "/images/marketplace/farm-activity-2.jpg" }
-    ]
+    title: "Livestock",
+    description: "Poultry, eggs, goats, sheep, cattle, fish, and animal production opportunities.",
+    image: "/images/crops/poultry.jpg",
+    href: "/marketplace?category=livestock",
+    matches: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal"]
   },
   {
-    slug: "livestock",
-    name: "Livestock",
-    items: [
-      { name: "Poultry", image: "/images/crops/poultry.jpg" },
-      { name: "Goats", image: "/images/marketplace/farm-activity-2.jpg" },
-      { name: "Sheep", image: "/images/marketplace/farm-activity-1.jpg" },
-      { name: "Cattle", image: "/images/marketplace/aggregation-cocoa.jpg" },
-      { name: "Eggs", image: "/images/crops/eggs.jpg" },
-      { name: "Guinea Fowl", image: "/images/crops/poultry.jpg" },
-      { name: "Fish", image: "/images/marketplace/river-supply-chain.jpg" },
-      { name: "Animal Feed", image: "/images/crops/inputs.jpg" }
-    ]
+    title: "Logistics & Transport",
+    description: "Transport, aggregation, delivery support, cold chain, and produce movement.",
+    image: "/images/marketplace/logistics-truck.jpg",
+    href: "/marketplace?category=logistics",
+    matches: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"]
   },
   {
-    slug: "farm-inputs",
-    name: "Farm Inputs",
-    items: [
-      { name: "Seeds", image: "/images/crops/inputs.jpg" },
-      { name: "Fertilizer", image: "/images/marketplace/farm-inputs.jpg" },
-      { name: "Agro Chemicals", image: "/images/crops/inputs.jpg" },
-      { name: "Farm Tools", image: "/images/marketplace/farm-activity-2.jpg" },
-      { name: "Organic Compost", image: "/images/crops/inputs.jpg" },
-      { name: "Irrigation Supplies", image: "/images/marketplace/farm-inputs.jpg" },
-      { name: "Protective Gear", image: "/images/marketplace/farm-activity-2.jpg" },
-      { name: "Animal Feed", image: "/images/crops/inputs.jpg" }
-    ]
-  },
-  {
-    slug: "packaging",
-    name: "Packaging",
-    items: [
-      { name: "Crates", image: "/images/marketplace/produce-packaging.jpg" },
-      { name: "Sacks", image: "/images/crops/packaging.jpg" },
-      { name: "Labels", image: "/images/marketplace/produce-packaging.jpg" },
-      { name: "Storage Bags", image: "/images/crops/packaging.jpg" },
-      { name: "Cartons", image: "/images/marketplace/produce-packaging.jpg" },
-      { name: "Net Bags", image: "/images/crops/packaging.jpg" },
-      { name: "Cold Boxes", image: "/images/crops/logistics.jpg" },
-      { name: "Pallets", image: "/images/marketplace/produce-packaging.jpg" }
-    ]
-  },
-  {
-    slug: "logistics",
-    name: "Logistics",
-    items: [
-      { name: "Transport", image: "/images/marketplace/logistics-truck.jpg" },
-      { name: "Aggregation", image: "/images/marketplace/aggregation-cocoa.jpg" },
-      { name: "Cold Storage", image: "/images/crops/logistics.jpg" },
-      { name: "Delivery Services", image: "/images/marketplace/river-supply-chain.jpg" },
-      { name: "Farm Pickup", image: "/images/marketplace/logistics-truck.jpg" },
-      { name: "Bulk Haulage", image: "/images/marketplace/aggregation-cocoa.jpg" },
-      { name: "Warehousing", image: "/images/crops/logistics.jpg" },
-      { name: "Route Support", image: "/images/marketplace/river-supply-chain.jpg" }
-    ]
-  },
-  {
-    slug: "farm-services",
-    name: "Farm Services",
-    items: [
-      { name: "Advisory", image: "/images/marketplace/farm-activity-1.jpg" },
-      { name: "Land Preparation", image: "/images/marketplace/farm-activity-2.jpg" },
-      { name: "Mechanization", image: "/images/marketplace/farm-inputs.jpg" },
-      { name: "Farm Support", image: "/images/farmers/farmer-5.jpg" },
-      { name: "Harvest Labour", image: "/images/marketplace/farm-activity-1.jpg" },
-      { name: "Soil Testing", image: "/images/crops/inputs.jpg" },
-      { name: "Extension Support", image: "/images/farmers/farmer-5.jpg" },
-      { name: "Irrigation Setup", image: "/images/marketplace/farm-inputs.jpg" }
-    ]
+    title: "Packaging & Storage",
+    description: "Crates, sacks, cartons, labels, storage bags, warehousing, and handling support.",
+    image: "/images/marketplace/produce-packaging.jpg",
+    href: "/marketplace?category=packaging-storage",
+    matches: ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
   }
 ];
 
-export function MarketplaceCategoryShowcase() {
-  const [activeSlug, setActiveSlug] = useState(marketplaceShowcaseData[0].slug);
-  const activeCategory = marketplaceShowcaseData.find((category) => category.slug === activeSlug) ?? marketplaceShowcaseData[0];
+function normalized(value: string) {
+  return value.toLowerCase();
+}
+
+function categoryListingCount(category: HomepageMarketplaceCategory, listings: Product[]) {
+  return listings.filter((listing) => {
+    const searchable = normalized(`${listing.category} ${listing.name} ${listing.description}`);
+    return category.matches.some((match) => searchable.includes(match));
+  }).length;
+}
+
+function recentListings(listings: Product[]) {
+  return [...listings]
+    .sort((a, b) => new Date(b.datePosted || 0).getTime() - new Date(a.datePosted || 0).getTime())
+    .slice(0, 4);
+}
+
+export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCategoryShowcaseProps) {
+  const latestListings = recentListings(listings);
 
   return (
-    <section className="bg-white py-12 sm:py-14" aria-labelledby="marketplace-category-showcase-title">
+    <section className="bg-[#ECE7D1] py-12 sm:py-16" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-[18rem] sm:max-w-4xl">
-          <p className="gg-eyebrow">Marketplace</p>
-          <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-4xl">
-            Shop @ Farmer&apos;s Market
-          </h2>
-          <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg">
-            Browse fresh produce, farm inputs, livestock, packaging, logistics, and agricultural services from Ghana Growers members.
-          </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-[19rem] sm:max-w-3xl">
+            <p className="gg-eyebrow">Marketplace</p>
+            <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-4xl">
+              Explore the Marketplace
+            </h2>
+            <p className="mt-4 text-base leading-7 text-ink/68 sm:text-lg">
+              Browse produce, inputs, livestock, logistics, packaging, storage, and agricultural services from Ghana Growers members.
+            </p>
+          </div>
+          <Link href="/marketplace" className="gg-text-link w-full sm:w-auto">
+            Browse Marketplace <ArrowRight size={17} aria-hidden="true" />
+          </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 lg:grid-cols-[0.72fr_2.28fr] lg:items-start">
-          <aside className="rounded-md border border-leaf-900/10 bg-white/95 p-3 shadow-sm">
-            <h3 className="px-2 py-2 text-sm font-black uppercase tracking-wide text-ink/55">Marketplace Categories</h3>
-            <div className="mt-2 flex gap-2 overflow-x-auto pb-1 lg:grid lg:overflow-visible lg:pb-0" role="tablist" aria-label="Marketplace categories">
-              {marketplaceShowcaseData.map((category) => {
-                const isActive = category.slug === activeSlug;
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {marketplaceCategories.map((category) => {
+            const listingCount = categoryListingCount(category, listings);
 
-                return (
-                  <button
-                    key={category.slug}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-controls={`category-panel-${category.slug}`}
-                    className={`focus-ring flex shrink-0 items-center justify-between gap-4 rounded-md px-3 py-3 text-left text-sm font-black transition lg:w-full ${
-                      isActive
-                        ? "bg-leaf-600 text-white shadow-soft"
-                        : "bg-white text-ink/72 ring-1 ring-leaf-900/10 hover:bg-white hover:text-leaf-700 hover:shadow-sm"
-                    }`}
-                    onClick={() => setActiveSlug(category.slug)}
-                  >
-                    <span>{category.name}</span>
-                    <span className={`h-2 w-2 rounded-full ${isActive ? "bg-white" : "bg-leaf-600/35"}`} aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
+            return (
+              <Link
+                key={category.title}
+                href={category.href}
+                className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+              >
+                <div className="relative">
+                  <SafeImage
+                    src={category.image}
+                    alt={`${category.title} marketplace category`}
+                    width={760}
+                    height={460}
+                    fallbackKind="marketplace"
+                    sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    className="h-56 w-full object-cover transition duration-300 group-hover:scale-105"
+                  />
+                  <span className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 shadow-sm">
+                    <PackageCheck size={15} aria-hidden="true" />
+                    {listingCount} {listingCount === 1 ? "listing" : "listings"}
+                  </span>
+                </div>
+                <div className="p-5">
+                  <h3 className="text-2xl font-black text-ink group-hover:text-leaf-700">{category.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-ink/66">{category.description}</p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
 
-          <div
-            id={`category-panel-${activeCategory.slug}`}
-            role="tabpanel"
-            className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft"
-          >
+        <div className="mt-10 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="gg-eyebrow">Featured Products</p>
-              <h3 className="mt-1 text-2xl font-black text-ink">{activeCategory.name}</h3>
+              <p className="gg-eyebrow">Recently Added</p>
+              <h3 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Latest marketplace listings</h3>
             </div>
+            <Link href="/marketplace" className="text-sm font-black text-leaf-700 hover:text-leaf-900">
+              Browse Marketplace
+            </Link>
+          </div>
 
-            <div className="mt-5 grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {activeCategory.items.slice(0, 8).map((item) => (
-                <article
-                  key={`${activeCategory.slug}-${item.name}`}
+          {latestListings.length > 0 ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {latestListings.map((listing) => (
+                <Link
+                  key={listing.id}
+                  href="/marketplace"
                   className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
                 >
                   <SafeImage
-                    src={productImageForName(item.name, activeCategory.name)}
-                    alt={`${item.name} available through Ghana Growers`}
+                    src={productImageForListing(listing.name, listing.category, listing.image)}
+                    alt={`${listing.name} marketplace listing`}
                     width={420}
                     height={300}
                     fallbackKind="marketplace"
-                    sizes="(min-width: 1280px) 18vw, (min-width: 1024px) 25vw, (min-width: 480px) 50vw, 100vw"
-                    className="h-48 w-full object-cover transition duration-300 group-hover:scale-105"
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="h-40 w-full object-cover transition duration-300 group-hover:scale-105"
                   />
-                  <h4 className="px-4 py-3 text-base font-black text-ink">{item.name}</h4>
-                </article>
+                  <div className="p-4">
+                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">{listing.category}</p>
+                    <h4 className="mt-1 text-lg font-black text-ink">{listing.name}</h4>
+                    <p className="mt-2 text-sm font-semibold text-ink/58">{listing.region}</p>
+                  </div>
+                </Link>
               ))}
             </div>
-
-            <div className="mt-6 flex justify-center">
-              <Link href="/marketplace" className="gg-button-primary">
-                Browse Full Marketplace
-              </Link>
+          ) : (
+            <div className="gg-empty-state mt-6">
+              <h4 className="gg-card-title">No records available yet</h4>
+              <p className="mt-2 text-sm leading-6 text-ink/62">
+                Ghana Growers is currently onboarding farmers, suppliers, and marketplace listings.
+              </p>
             </div>
+          )}
+
+          <div className="mt-6 flex justify-center">
+            <Link href="/marketplace" className="gg-button-primary">
+              Browse Marketplace
+            </Link>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ import { SafeImage } from "@/components/SafeImage";
 import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
-import { getFarmersData, getSuccessStoriesData } from "@/lib/supabase/publicData";
+import { getFarmersData, getMarketplaceListingsData, getSuccessStoriesData } from "@/lib/supabase/publicData";
 
 export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
@@ -26,6 +26,7 @@ export const metadata = createPageMetadata({
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
+  const marketplaceListings = await getMarketplaceListingsData();
   const successStories = await getSuccessStoriesData();
   const homepageFeaturedFarmers = farmers.filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer");
 
@@ -67,7 +68,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <MarketplaceCategoryShowcase />
+      <MarketplaceCategoryShowcase listings={marketplaceListings} />
 
       <section className="bg-white py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
