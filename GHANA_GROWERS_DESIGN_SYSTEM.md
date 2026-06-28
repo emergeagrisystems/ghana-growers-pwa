@@ -1120,3 +1120,318 @@ Our typography should leave people feeling:
 - "I know what to do next."
 
 That is the purpose of our type system.
+
+---
+
+# Volume II: Interface
+
+## Chapter 4: Layout & Spacing
+
+Version 1.0
+
+## Introduction
+
+Good layouts are invisible.
+
+Users should never notice the spacing.
+
+They should simply feel that the platform is calm, organised, and easy to navigate.
+
+Whitespace is not empty space.
+
+Whitespace is structure.
+
+Whitespace creates trust.
+
+## Layout Philosophy
+
+Every page should breathe.
+
+Avoid filling every available space.
+
+Information should be grouped naturally.
+
+Every section should have one clear purpose.
+
+If a page feels crowded, remove elements before reducing spacing.
+
+## Grid System
+
+The platform uses a consistent responsive grid.
+
+Desktop:
+
+- 12-column grid
+
+Tablet:
+
+- 8-column grid
+
+Mobile:
+
+- 4-column grid
+
+Every page should follow the same grid principles.
+
+Avoid creating unique layouts for individual pages unless there is a strong reason.
+
+## Maximum Content Width
+
+Reading should remain comfortable.
+
+Maximum content width:
+
+- `1280px`
+
+Reading areas:
+
+- `720-800px`
+
+Forms:
+
+- `600-720px`
+
+Never stretch long paragraphs across the entire screen.
+
+## Section Rhythm
+
+Homepage sections:
+
+Desktop:
+
+- `120px` vertical spacing
+
+Tablet:
+
+- `88px`
+
+Mobile:
+
+- `64px`
+
+Every major section should feel separated without looking disconnected.
+
+## Internal Section Spacing
+
+Section heading to content:
+
+Desktop:
+
+- `48px`
+
+Tablet:
+
+- `40px`
+
+Mobile:
+
+- `32px`
+
+Cards should never touch headings.
+
+Whitespace improves comprehension.
+
+## Card Spacing
+
+Cards should feel generous.
+
+Padding:
+
+Large cards:
+
+- `32px`
+
+Standard cards:
+
+- `24px`
+
+Compact cards:
+
+- `20px`
+
+Never reduce padding simply to fit more content.
+
+## Grid Gaps
+
+Desktop:
+
+- `32px`
+
+Tablet:
+
+- `24px`
+
+Mobile:
+
+- `16px`
+
+Consistency creates rhythm.
+
+## Hero Layout
+
+The hero should always communicate one idea.
+
+Structure:
+
+1. Headline
+2. Supporting sentence
+3. Primary CTA
+4. Secondary CTA
+5. Visual
+
+Avoid:
+
+- Long paragraphs
+- Multiple competing messages
+- Large blocks of text
+
+The hero should inspire confidence within five seconds.
+
+## Card Layout
+
+Every card follows the same hierarchy.
+
+Structure:
+
+1. Image, optional
+2. Title
+3. Supporting sentence
+4. Metadata, optional
+5. Action, if needed
+
+Never place multiple competing actions inside one card.
+
+Entire cards should often be clickable.
+
+## Marketplace Cards
+
+Marketplace cards are navigation elements.
+
+Not advertisements.
+
+Each card should include:
+
+- Image
+- Category
+- Listing count
+- One short description
+
+No internal "Explore" links.
+
+The entire card is the action.
+
+## Farmer Hub Cards
+
+Farmer Hub cards represent tools.
+
+Every tool receives equal visual importance.
+
+Do not create oversized "featured" cards.
+
+Importance should come from content, not size.
+
+## Profile Pages
+
+Every profile should follow the same rhythm.
+
+Structure:
+
+1. Hero
+2. About
+3. Products or Services
+4. Trust Indicators
+5. Contact / Request Supply
+
+Users should always understand where they are.
+
+## Forms
+
+Forms should feel simple.
+
+Group related fields.
+
+Avoid overwhelming users.
+
+One column on mobile.
+
+Two columns only when it improves clarity.
+
+Every form should explain what happens after submission.
+
+## Buttons
+
+Buttons should have breathing room.
+
+Never place buttons too close together.
+
+Recommended spacing:
+
+- `16px` between primary and secondary actions
+
+Never place more than one primary button in a section.
+
+## Empty Space
+
+Empty space is intentional.
+
+Do not fill gaps with decorative graphics.
+
+Do not add unnecessary cards simply because space exists.
+
+Premium design often says less.
+
+## Responsive Behaviour
+
+Layouts should adapt naturally.
+
+Never rely on horizontal scrolling.
+
+Content should stack logically.
+
+Users should never need to zoom to understand a page.
+
+## Alignment
+
+Default alignment:
+
+- Left
+
+Center alignment should be reserved for:
+
+- Hero sections
+- Celebration messages
+- Major introductions
+
+Everything else should prioritise readability.
+
+## Information Density
+
+Every page should answer:
+
+Is this the minimum amount of information needed?
+
+If not, simplify.
+
+Information should feel curated.
+
+Not crowded.
+
+## The Layout Test
+
+Before approving a page ask:
+
+- Does it breathe?
+- Can users scan it quickly?
+- Is the primary action obvious?
+- Is spacing consistent?
+- Does the page feel calm?
+
+If the answer is no, the layout is not finished.
+
+## Final Principle
+
+Great layouts do not draw attention to themselves.
+
+They quietly guide people through information.
+
+When users stop thinking about the interface and start thinking about farming, the layout has succeeded.
