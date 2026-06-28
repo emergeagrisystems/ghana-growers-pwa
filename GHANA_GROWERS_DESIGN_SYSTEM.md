@@ -679,3 +679,444 @@ It is:
 **"This feels trustworthy."**
 
 That feeling is the purpose of our color system.
+
+---
+
+## Chapter 3: Typography
+
+Version 1.0
+
+## Introduction
+
+Typography is the voice of Ghana Growers.
+
+Before a visitor reads our message, they experience how our words look.
+
+Typography should communicate:
+
+- Trust
+- Confidence
+- Warmth
+- Clarity
+- Professionalism
+
+We never use typography to impress.
+
+We use typography to communicate.
+
+## Typography Philosophy
+
+Good typography disappears.
+
+People should remember what they read.
+
+Not which font they read it in.
+
+Typography should always support understanding.
+
+Never compete with it.
+
+## The Ghana Growers Voice
+
+Our typography should feel:
+
+- Calm
+- Editorial
+- Professional
+- Modern
+- Natural
+- Grounded
+
+Never:
+
+- Corporate
+- Aggressive
+- Overly decorative
+- Technical
+
+## Font System
+
+The Ghana Growers Design System uses two complementary typefaces.
+
+### Editorial Typeface
+
+**Cormorant Garamond**
+
+Purpose:
+
+- Emotion
+- Identity
+- Brand
+- Storytelling
+
+Used only where emotion matters.
+
+Examples:
+
+- Homepage hero
+- Major landing page heroes
+- About page hero
+- GG Quality Standard page
+- Campaign pages
+- Major quotes
+- Large promotional headings
+
+This typeface should become part of Ghana Growers' visual identity.
+
+It is not used throughout the interface.
+
+### Interface Typeface
+
+**Inter**
+
+Purpose:
+
+- Clarity
+- Readability
+- Efficiency
+
+Used for:
+
+- Navigation
+- Body text
+- Cards
+- Marketplace
+- Farmer Hub
+- Buttons
+- Forms
+- Tables
+- Dashboard
+- Admin
+- Everything people interact with
+
+Inter keeps the experience clean and easy to use.
+
+## Typography Hierarchy
+
+Typography creates rhythm.
+
+Not every heading deserves equal attention.
+
+### H1
+
+Purpose:
+
+- Hero statements
+
+Desktop:
+
+- `56px`
+
+Tablet:
+
+- `44px`
+
+Mobile:
+
+- `34px`
+
+Weight:
+
+- `900`
+
+Line height:
+
+- `0.95-1.05`
+
+Use:
+
+- One H1 per page
+- Keep headlines short
+- Maximum two lines
+
+### H2
+
+Purpose:
+
+- Major section headings
+
+Desktop:
+
+- `38px`
+
+Tablet:
+
+- `32px`
+
+Mobile:
+
+- `26px`
+
+Weight:
+
+- `850`
+
+Use:
+
+- Marketplace
+- Farmer Hub
+- Featured Farmers
+- GG Quality Standard
+- About
+
+### H3
+
+Purpose:
+
+- Cards
+- Feature titles
+- Subsections
+
+Desktop:
+
+- `20px`
+
+Mobile:
+
+- `18px`
+
+Weight:
+
+- `800`
+
+Card titles should never compete with H2.
+
+### Body
+
+Desktop:
+
+- `17px`
+
+Mobile:
+
+- `16px`
+
+Weight:
+
+- `400-500`
+
+Line height:
+
+- `1.65`
+
+Body text should feel comfortable.
+
+Never cramped.
+
+### Small Text
+
+- `14px`
+- Weight: `400`
+
+Used for:
+
+- Descriptions
+- Metadata
+- Supporting information
+
+Never use tiny text simply to fit more content.
+
+### Labels
+
+- `12px`
+- Uppercase
+- Letter spacing: `0.12em`
+- Weight: `700`
+
+Used sparingly.
+
+Examples:
+
+- MARKETPLACE
+- FARMER HUB
+- FEATURED
+- NEW
+
+Never overuse labels.
+
+## Writing Rules
+
+Headlines should inspire.
+
+Body text should explain.
+
+Buttons should guide.
+
+Examples:
+
+- Find Buyers
+- Upload Crop Photo
+- Need Produce?
+- Check Market Prices
+
+Avoid:
+
+- Comprehensive Agricultural Ecosystem
+- Digital Agricultural Transformation Platform
+
+Short words build trust.
+
+## Hero Typography
+
+The homepage hero should always feel editorial.
+
+Example:
+
+Growing Agriculture Together.
+
+Followed by:
+
+Helping farmers, buyers, and suppliers build stronger agricultural relationships across Ghana.
+
+Emotion first.
+
+Explanation second.
+
+## Section Headings
+
+Every section should answer one question.
+
+Examples:
+
+- Explore the Marketplace
+- Farmer Hub
+- Meet Our Farmers
+- The Ghana Growers Quality Standard
+
+Avoid long explanatory headings.
+
+## Card Typography
+
+Cards should be easy to scan.
+
+Maximum:
+
+- One title
+- One supporting sentence
+
+Avoid:
+
+- Paragraphs inside cards
+
+Cards are invitations.
+
+Not articles.
+
+## Button Typography
+
+Buttons should always use verbs.
+
+Examples:
+
+- Open Farmer Hub
+- Explore Marketplace
+- Join the Network
+- Submit Buyer Request
+
+Avoid vague labels like:
+
+- Continue
+- Click Here
+- Learn More
+
+Unless absolutely necessary.
+
+Users should understand exactly what happens.
+
+## Paragraph Length
+
+Keep paragraphs short.
+
+Prefer:
+
+- One to three sentences
+
+Large blocks of text reduce confidence.
+
+Whitespace improves reading.
+
+## Emphasis
+
+Use bold text sparingly.
+
+If everything is bold, nothing is important.
+
+Emphasise only key ideas.
+
+## Alignment
+
+Most text should remain left aligned.
+
+Avoid centre-aligning long paragraphs.
+
+Centre alignment is reserved for:
+
+- Hero
+- Major section introductions
+- Celebration screens
+
+Everything else should favour readability.
+
+## Numbers
+
+Numbers should be easy to recognise.
+
+Examples:
+
+- 120 Farmers
+- 5 Regions
+- 3 Buyer Requests
+
+Avoid excessive decimals.
+
+Round where appropriate.
+
+## Mobile Typography
+
+Typography should scale naturally.
+
+Never reduce body text below comfortable reading size.
+
+Headlines should remain impactful without overwhelming the screen.
+
+Reading on mobile should feel effortless.
+
+## Accessibility
+
+Typography should support everyone.
+
+Maintain sufficient contrast.
+
+Avoid extremely light text.
+
+Avoid decorative fonts in the interface.
+
+Readable typography builds trust.
+
+## The Typography Test
+
+Before approving a page ask:
+
+- Can someone scan this in five seconds?
+- Are headings short?
+- Is the hierarchy obvious?
+- Does the page breathe?
+- Does the typography support trust?
+
+If not, rewrite.
+
+## Final Principle
+
+Typography is not decoration.
+
+Typography is conversation.
+
+The words should feel like Ghana Growers is speaking calmly, clearly, and confidently.
+
+Our typography should leave people feeling:
+
+- "I understand."
+- "I trust this."
+- "I know what to do next."
+
+That is the purpose of our type system.
