@@ -1,4 +1,4 @@
-import { Apple, Beef, Bot, Carrot, CheckCircle2, CloudSun, Droplets, LineChart, ScanSearch, ShieldCheck, ShoppingBasket, Sprout, Tractor, Wheat } from "lucide-react";
+import { Bot, CheckCircle2, CloudSun, LineChart, ScanSearch, ShieldCheck, ShoppingBasket, Sprout } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
@@ -6,18 +6,7 @@ import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategorySho
 import { SafeImage } from "@/components/SafeImage";
 import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
-import { getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
-
-const heroMarketplaceTiles = [
-  { label: "Vegetables", href: "/marketplace?search=vegetables", icon: Carrot },
-  { label: "Fruits", href: "/marketplace?search=fruits", icon: Apple },
-  { label: "Tubers", href: "/marketplace?search=tubers", icon: Sprout },
-  { label: "Cereals", href: "/marketplace?search=cereals", icon: Wheat },
-  { label: "Livestock", href: "/marketplace?category=livestock", icon: Beef },
-  { label: "Seeds", href: "/marketplace?search=seeds", icon: Sprout },
-  { label: "Machinery", href: "/marketplace?search=machinery", icon: Tractor },
-  { label: "Irrigation", href: "/marketplace?search=irrigation", icon: Droplets }
-];
+import { getFarmersData } from "@/lib/supabase/publicData";
 
 export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
@@ -28,7 +17,6 @@ export const metadata = createPageMetadata({
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
-  const marketplaceListings = await getMarketplaceListingsData();
   const realFarmers = farmers.filter((farmer) => {
     const source = (farmer.source ?? "").toLowerCase();
     const name = `${farmer.farmName} ${farmer.contactName}`.toLowerCase();
@@ -56,7 +44,7 @@ export default async function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               Built for Ghanaian Agriculture
             </p>
-            <h1 className="mt-5 max-w-[20rem] gg-hero-title sm:max-w-3xl lg:text-[4rem] xl:text-[4.55rem]">
+            <h1 className="mt-6 max-w-[20rem] gg-hero-title !text-[2.25rem] sm:max-w-3xl sm:!text-[3.35rem] lg:!text-[3.6rem] xl:!text-[4.1rem]">
               <span className="block">Buy.</span>
               <span className="block">Sell.</span>
               <span className="block">Grow.</span>
@@ -89,57 +77,13 @@ export default async function HomePage() {
               fallbackKind="default"
               priority
               sizes="(min-width: 1024px) 54vw, 100vw"
-              className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[2/1]"
+              className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/9]"
             />
           </div>
         </div>
       </section>
 
-      <section className="overflow-hidden bg-white pb-0 pt-8" aria-labelledby="marketplace-quick-search-title">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card">
-            <div className="grid min-w-0 gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
-              <div className="min-w-0">
-                <h2 id="marketplace-quick-search-title" className="text-lg font-black text-ink">
-                  Find what you need
-                </h2>
-                <form action="/marketplace" className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <label className="sr-only" htmlFor="homepage-marketplace-search">
-                    Search produce, suppliers or services
-                  </label>
-                  <input
-                    id="homepage-marketplace-search"
-                    name="search"
-                    placeholder="Search vegetables, seeds, livestock, suppliers..."
-                    className="min-h-11 flex-1 rounded-md border border-leaf-900/10 bg-white px-3 text-sm font-semibold text-ink outline-none transition placeholder:text-ink/42 focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
-                  />
-                  <button type="submit" className="gg-button-primary min-h-11 px-5">
-                    Search
-                  </button>
-                </form>
-              </div>
-              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
-                {heroMarketplaceTiles.map((tile) => {
-                  const Icon = tile.icon;
-
-                  return (
-                    <Link
-                      key={tile.href}
-                      href={tile.href}
-                      className="group inline-flex min-w-0 items-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-[0.78rem] font-black leading-tight text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700 sm:text-sm"
-                    >
-                      <Icon size={15} aria-hidden="true" className="shrink-0 text-leaf-700/70 transition group-hover:text-leaf-700" />
-                      {tile.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <MarketplaceCategoryShowcase listings={marketplaceListings} />
+      <MarketplaceCategoryShowcase />
 
       <section id="farmer-hub-teaser" className="bg-mist py-24 text-ink sm:py-28 lg:py-[120px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

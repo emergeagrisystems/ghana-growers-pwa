@@ -1,129 +1,97 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { SafeImage } from "@/components/SafeImage";
-import type { Product } from "@/types";
-
-type MarketplaceCategoryShowcaseProps = {
-  listings?: Product[];
-};
+import { Beef, Package, Sprout, Tractor, Truck, Wheat } from "lucide-react";
 
 type HomepageMarketplaceCategory = {
   title: string;
   summary: string;
-  image: string;
   href: string;
-  matches: string[];
+  icon: typeof Sprout;
+  iconClassName: string;
 };
 
 const marketplaceCategories: HomepageMarketplaceCategory[] = [
   {
     title: "Fresh Produce",
-    summary: "Vegetables / Fruits / Cereals",
-    image: "/images/marketplace/ghana-market-1.jpg",
+    summary: "Fruits, vegetables, cereals and root crops.",
     href: "/marketplace?category=fresh-produce",
-    matches: ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "dairy"]
+    icon: Wheat,
+    iconClassName: "bg-leaf-50 text-leaf-700 ring-leaf-900/10"
   },
   {
     title: "Farm Inputs",
-    summary: "Seeds / Fertilizer / Irrigation",
-    image: "/images/marketplace/farm-inputs.jpg",
+    summary: "Seeds, fertilizer and crop support.",
     href: "/marketplace?category=farm-inputs",
-    matches: ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation"]
+    icon: Sprout,
+    iconClassName: "bg-mist text-leaf-700 ring-leaf-900/10"
   },
   {
     title: "Farm Services",
-    summary: "Mechanization / Advisory / Labour",
-    image: "/images/marketplace/farm-activity-2.jpg",
+    summary: "Mechanization, advice and labour support.",
     href: "/marketplace?category=farm-services",
-    matches: ["service", "advisory", "consulting", "mechanization", "land", "support"]
+    icon: Tractor,
+    iconClassName: "bg-earth-500/25 text-earth-700 ring-earth-700/10"
   },
   {
     title: "Livestock",
-    summary: "Poultry / Goats / Cattle",
-    image: "/images/crops/poultry.jpg",
+    summary: "Poultry, goats, cattle and fish.",
     href: "/marketplace?category=livestock",
-    matches: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal"]
+    icon: Beef,
+    iconClassName: "bg-earth-50 text-earth-700 ring-earth-700/10"
   },
   {
     title: "Logistics & Transport",
-    summary: "Transport / Aggregation / Cold Chain",
-    image: "/images/marketplace/logistics-truck.jpg",
+    summary: "Transport, aggregation and delivery.",
     href: "/marketplace?category=logistics",
-    matches: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"]
+    icon: Truck,
+    iconClassName: "bg-leaf-600/10 text-leaf-700 ring-leaf-900/10"
   },
   {
     title: "Packaging & Storage",
-    summary: "Packaging / Storage / Warehouse",
-    image: "/images/marketplace/produce-packaging.jpg",
+    summary: "Packaging, storage and warehouse support.",
     href: "/marketplace?category=packaging-storage",
-    matches: ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
+    icon: Package,
+    iconClassName: "bg-earth-500/20 text-earth-700 ring-earth-700/10"
   }
 ];
 
-function normalized(value: string) {
-  return value.toLowerCase();
-}
-
-function categoryListingCount(category: HomepageMarketplaceCategory, listings: Product[]) {
-  return listings.filter((listing) => {
-    const searchable = normalized(`${listing.category} ${listing.name} ${listing.description}`);
-    return category.matches.some((match) => searchable.includes(match));
-  }).length;
-}
-
-export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCategoryShowcaseProps) {
+export function MarketplaceCategoryShowcase() {
   return (
-    <section className="overflow-hidden bg-white py-24 sm:py-28 lg:py-[120px]" aria-labelledby="marketplace-category-showcase-title">
+    <section className="overflow-hidden bg-white py-20 sm:py-24 lg:py-[104px]" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="max-w-3xl">
           <p className="gg-eyebrow text-earth-700/70">Marketplace</p>
           <h2 id="marketplace-category-showcase-title" className="mt-3 gg-section-title">
             Explore the Marketplace
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-ink/68 sm:text-lg">
-            Browse farm products and services across Ghana.
+          <p className="mt-4 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg">
+            Browse fresh produce, farm inputs, livestock and trusted agricultural services across Ghana.
           </p>
         </div>
 
-        <div className="mt-12 grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {marketplaceCategories.slice(0, 4).map((category) => {
-            const listingCount = categoryListingCount(category, listings);
+        <div className="mt-10 grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {marketplaceCategories.map((category) => {
+            const Icon = category.icon;
 
             return (
               <Link
                 key={category.title}
                 href={category.href}
-                className="group min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft"
+                className="group min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:shadow-soft"
               >
-                <SafeImage
-                  src={category.image}
-                  alt={`${category.title} marketplace category`}
-                  width={760}
-                  height={460}
-                  fallbackKind="marketplace"
-                  sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
-                  className="h-[6.75rem] w-full object-cover transition duration-200 ease-out group-hover:scale-[1.03] sm:h-28"
-                />
-                <div className="min-w-0 p-3.5">
-                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                    <h3 className="min-w-0 text-lg font-black leading-tight text-ink group-hover:text-leaf-700">{category.title}</h3>
-                    <span className="w-fit rounded-md bg-leaf-50 px-2.5 py-1 text-xs font-black text-leaf-700 sm:shrink-0">
-                      {listingCount} {listingCount === 1 ? "Listing" : "Listings"}
-                    </span>
-                  </div>
-                  <p className="mt-2 truncate text-sm font-semibold text-ink/58">{category.summary}</p>
-                </div>
+                <span className={`gg-icon h-11 w-11 ${category.iconClassName}`}>
+                  <Icon size={21} aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-lg font-black leading-tight text-ink transition group-hover:text-leaf-700">
+                  {category.title}
+                </h3>
+                <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
+                  {category.summary}
+                </p>
               </Link>
             );
           })}
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          <Link href="/marketplace" className="gg-button-primary">
-            Explore All Marketplace Categories <ArrowRight size={17} aria-hidden="true" />
-          </Link>
         </div>
       </div>
     </section>
