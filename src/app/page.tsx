@@ -48,16 +48,18 @@ export default async function HomePage() {
   return (
     <>
       <section className="overflow-hidden bg-earth-50">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-10 lg:px-8 lg:py-14 xl:gap-14">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 pb-6 pt-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-10 lg:px-8 lg:pb-8 lg:pt-14 xl:gap-14">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
-              Trusted Agriculture Platform
+              Built for Ghanaian Agriculture
             </p>
-            <h1 className="mt-5 max-w-[20rem] gg-hero-title sm:max-w-3xl lg:text-[4.6rem] xl:text-[5.2rem]">
-              Buy. Sell. Grow.
+            <h1 className="mt-5 max-w-[20rem] gg-hero-title sm:max-w-3xl lg:text-[4rem] xl:text-[4.55rem]">
+              <span className="block">Buy.</span>
+              <span className="block">Sell.</span>
+              <span className="block">Grow.</span>
             </h1>
-            <p className="mt-4 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
+            <p className="mt-6 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
               Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter—all in one place.
             </p>
             <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
@@ -79,15 +81,15 @@ export default async function HomePage() {
               fallbackKind="default"
               priority
               sizes="(min-width: 1024px) 54vw, 100vw"
-              className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/10]"
+              className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[2/1]"
             />
           </div>
         </div>
       </section>
 
-      <section className="overflow-hidden border-y border-leaf-900/10 bg-white py-5" aria-labelledby="marketplace-quick-search-title">
+      <section className="overflow-hidden border-b border-leaf-900/10 bg-earth-50 pb-8 pt-0" aria-labelledby="marketplace-quick-search-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card">
+          <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-card">
             <div className="grid min-w-0 gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
               <div className="min-w-0">
                 <h2 id="marketplace-quick-search-title" className="text-lg font-black text-ink">
