@@ -8,6 +8,7 @@ const publicRoutes = [
   "/buyer-requests",
   "/farmer-directory",
   "/supplier-directory",
+  "/farmer-hub",
   "/smart-solutions",
   "/learn",
   "/faq",

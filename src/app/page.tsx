@@ -55,17 +55,18 @@ export default async function HomePage() {
               Trusted Agriculture Platform
             </p>
             <h1 className="mt-5 max-w-[20rem] gg-hero-title sm:max-w-3xl lg:text-[4.6rem] xl:text-[5.2rem]">
-              Ghana&apos;s Agricultural Network
+              Buy. Sell. Grow.
             </h1>
             <p className="mt-4 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
-              For farmers, buyers and suppliers across Ghana.
+              Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter—all in one place.
             </p>
             <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
-              <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
-              <ButtonLink href="/marketplace" variant="secondary">
-                Explore Marketplace
-              </ButtonLink>
+              <ButtonLink href="/marketplace">Explore Marketplace</ButtonLink>
+              <ButtonLink href="/farmer-hub" variant="secondary">Open Farmer Hub</ButtonLink>
             </div>
+            <p className="mt-4 text-sm font-semibold text-leaf-800">
+              ✓ Building Ghana&apos;s trusted agricultural network.
+            </p>
           </div>
 
           <div className="relative overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft">
