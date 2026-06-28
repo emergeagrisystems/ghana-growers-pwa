@@ -1,4 +1,4 @@
-import { Bot, CheckCircle2, CloudSun, LineChart, ScanSearch, ShieldCheck } from "lucide-react";
+import { Apple, Beef, Bot, Carrot, CheckCircle2, CloudSun, Droplets, LineChart, ScanSearch, ShieldCheck, ShoppingBasket, Sprout, Tractor, Wheat } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
@@ -9,12 +9,14 @@ import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData, getMarketplaceListingsData } from "@/lib/supabase/publicData";
 
 const heroMarketplaceTiles = [
-  { label: "Fresh Produce", href: "/marketplace?category=fresh-produce" },
-  { label: "Farm Inputs", href: "/marketplace?category=farm-inputs" },
-  { label: "Farm Services", href: "/marketplace?category=farm-services" },
-  { label: "Livestock", href: "/marketplace?category=livestock" },
-  { label: "Logistics & Transport", href: "/marketplace?category=logistics" },
-  { label: "Packaging & Storage", href: "/marketplace?category=packaging-storage" }
+  { label: "Vegetables", href: "/marketplace?search=vegetables", icon: Carrot },
+  { label: "Fruits", href: "/marketplace?search=fruits", icon: Apple },
+  { label: "Tubers", href: "/marketplace?search=tubers", icon: Sprout },
+  { label: "Cereals", href: "/marketplace?search=cereals", icon: Wheat },
+  { label: "Livestock", href: "/marketplace?category=livestock", icon: Beef },
+  { label: "Seeds", href: "/marketplace?search=seeds", icon: Sprout },
+  { label: "Machinery", href: "/marketplace?search=machinery", icon: Tractor },
+  { label: "Irrigation", href: "/marketplace?search=irrigation", icon: Droplets }
 ];
 
 export const metadata = createPageMetadata({
@@ -62,9 +64,15 @@ export default async function HomePage() {
             <p className="mt-6 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
               Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter—all in one place.
             </p>
-            <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
-              <ButtonLink href="/marketplace">Explore Marketplace</ButtonLink>
-              <ButtonLink href="/farmer-hub" variant="secondary">Open Farmer Hub</ButtonLink>
+            <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <ButtonLink href="/marketplace">
+                <ShoppingBasket size={17} aria-hidden="true" className="mr-2" />
+                Explore Marketplace
+              </ButtonLink>
+              <ButtonLink href="/farmer-hub" variant="secondary">
+                <Sprout size={17} aria-hidden="true" className="mr-2" />
+                Open Farmer Hub
+              </ButtonLink>
             </div>
             <p className="mt-4 text-sm font-semibold text-leaf-800">
               ✓ Building Ghana&apos;s trusted agricultural network.
@@ -87,13 +95,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="overflow-hidden border-b border-leaf-900/10 bg-earth-50 pb-8 pt-0" aria-labelledby="marketplace-quick-search-title">
+      <section className="overflow-hidden bg-white pb-0 pt-8" aria-labelledby="marketplace-quick-search-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-card">
+          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card">
             <div className="grid min-w-0 gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
               <div className="min-w-0">
                 <h2 id="marketplace-quick-search-title" className="text-lg font-black text-ink">
-                  What are you looking for today?
+                  Find what you need
                 </h2>
                 <form action="/marketplace" className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <label className="sr-only" htmlFor="homepage-marketplace-search">
@@ -102,7 +110,7 @@ export default async function HomePage() {
                   <input
                     id="homepage-marketplace-search"
                     name="search"
-                    placeholder="Search produce, suppliers or services..."
+                    placeholder="Search vegetables, seeds, livestock, suppliers..."
                     className="min-h-11 flex-1 rounded-md border border-leaf-900/10 bg-white px-3 text-sm font-semibold text-ink outline-none transition placeholder:text-ink/42 focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
                   />
                   <button type="submit" className="gg-button-primary min-h-11 px-5">
@@ -110,16 +118,21 @@ export default async function HomePage() {
                   </button>
                 </form>
               </div>
-              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
-                {heroMarketplaceTiles.map((tile) => (
-                  <Link
-                    key={tile.href}
-                    href={tile.href}
-                    className="group min-w-0 rounded-md border border-leaf-900/10 bg-white px-3 py-2.5 text-[0.8rem] font-black leading-tight text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700 sm:text-sm"
-                  >
-                    {tile.label}
-                  </Link>
-                ))}
+              <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
+                {heroMarketplaceTiles.map((tile) => {
+                  const Icon = tile.icon;
+
+                  return (
+                    <Link
+                      key={tile.href}
+                      href={tile.href}
+                      className="group inline-flex min-w-0 items-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-[0.78rem] font-black leading-tight text-ink transition hover:-translate-y-0.5 hover:border-leaf-600/30 hover:bg-leaf-50 hover:text-leaf-700 sm:text-sm"
+                    >
+                      <Icon size={15} aria-hidden="true" className="shrink-0 text-leaf-700/70 transition group-hover:text-leaf-700" />
+                      {tile.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>
