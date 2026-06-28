@@ -10,7 +10,7 @@ export function GGStandardBadge({ status }: { status?: string | null }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ECE7D1] px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-earth-50 px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
       GG Standard Member
     </span>
@@ -25,7 +25,7 @@ export function GGStandardCommitment({ status }: { status?: string | null }) {
   ];
 
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+    <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-card">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">GG Standard</p>
@@ -40,7 +40,7 @@ export function GGStandardCommitment({ status }: { status?: string | null }) {
         {commitments.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="rounded-md bg-leaf-50 p-4">
+            <div key={item.label} className="rounded-md bg-mist p-4">
               <Icon className="h-5 w-5 text-leaf-700" aria-hidden="true" />
               <p className="mt-3 font-black text-ink">{item.label}</p>
             </div>

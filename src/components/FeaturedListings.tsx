@@ -51,7 +51,7 @@ export function FeaturedListings({
   const selectedSuppliers = suppliers ?? featuredSuppliers;
 
   return (
-    <section className={`${backgrounds[background]} py-16`}>
+    <section className={`${backgrounds[background]} py-20 sm:py-24 lg:py-[120px]`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Featured" title={title} description={description} />
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -62,12 +62,12 @@ export function FeaturedListings({
                 return (
                 <article
                   key={farmer.slug}
-                  className={`relative overflow-hidden rounded-md bg-white shadow-soft ${compact ? "border border-leaf-900/10 p-3.5" : "border-2 border-earth-500 p-5"}`}
+                  className={`relative overflow-hidden rounded-md bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft ${compact ? "border border-leaf-900/10 p-3.5" : "border border-earth-500/40 p-5"}`}
                 >
                   {compact ? null : (
                     <div className="flex items-start justify-between gap-4">
                       <FeaturedRibbon label={featuredListingLabels.farmers} />
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                      <div className="gg-icon gg-icon-marketplace h-10 w-10 shrink-0">
                         <Sprout size={20} aria-hidden="true" />
                       </div>
                     </div>
@@ -103,10 +103,7 @@ export function FeaturedListings({
                     ))}
                   </div>
                   {compact ? null : (
-                    <Link
-                      href={`/farmer-directory/${farmer.slug}`}
-                      className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
-                    >
+                    <Link href={`/farmer-directory/${farmer.slug}`} className="gg-button-primary mt-5 w-full">
                       View Farmer
                     </Link>
                   )}
@@ -120,10 +117,10 @@ export function FeaturedListings({
                 const trust = normalizeTrust(supplier.trust);
 
                 return (
-                <article key={supplier.slug} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
+                <article key={supplier.slug} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-white p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.suppliers} />
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                    <div className="gg-icon gg-icon-logistics h-10 w-10 shrink-0">
                       <Building2 size={20} aria-hidden="true" />
                     </div>
                   </div>
@@ -161,10 +158,7 @@ export function FeaturedListings({
                       </span>
                     ))}
                   </div>
-                  <Link
-                    href={`/supplier-directory/${supplier.slug}`}
-                    className="focus-ring mt-5 inline-flex w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
-                  >
+                  <Link href={`/supplier-directory/${supplier.slug}`} className="gg-button-primary mt-5 w-full">
                     View Supplier
                   </Link>
                 </article>
@@ -174,10 +168,10 @@ export function FeaturedListings({
 
           {showBuyerRequests
             ? featuredBuyerRequests.slice(0, limit).map((request) => (
-                <article key={request.id} className="relative overflow-hidden rounded-md border-2 border-earth-500 bg-white p-5 shadow-soft">
+                <article key={request.id} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-white p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                    <div className="gg-icon gg-icon-marketplace h-10 w-10 shrink-0">
                       <ShoppingBasket size={20} aria-hidden="true" />
                     </div>
                   </div>
@@ -208,10 +202,7 @@ export function FeaturedListings({
         </div>
         {compact && showFarmers && !showSuppliers && !showBuyerRequests ? (
           <div className="mt-8 flex justify-center">
-            <Link
-              href="/farmer-directory"
-              className="focus-ring inline-flex items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700"
-            >
+            <Link href="/farmer-directory" className="gg-button-primary">
               View all Farmers
             </Link>
           </div>

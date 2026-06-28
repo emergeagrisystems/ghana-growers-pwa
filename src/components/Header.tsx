@@ -9,7 +9,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(20,58,31,0.08)]">
+    <header className="sticky top-0 z-50 border-b border-leaf-900/10 bg-white shadow-[0_10px_35px_rgba(20,58,31,0.06)]">
       <nav className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-3 py-3 pr-16 sm:px-6 sm:pr-20 lg:px-8">
         <Link href="/" className="focus-ring flex max-w-[calc(100vw-5rem)] min-w-0 items-center gap-2 rounded-md text-sm font-black text-[#143A1F] sm:text-lg">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-600 text-white sm:h-10 sm:w-10">
@@ -23,13 +23,13 @@ export function Header() {
             <div key={item.href} className="group relative">
               <Link
                 href={item.href}
-                className="focus-ring inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold text-ink transition hover:bg-leaf-50 hover:text-leaf-700"
+                className="focus-ring inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold text-ink transition duration-200 hover:bg-leaf-50 hover:text-leaf-700"
               >
                 {item.title}
                 {item.children ? <ChevronDown size={15} aria-hidden="true" /> : null}
               </Link>
               {item.children ? (
-                <div className="invisible absolute left-0 top-full w-56 translate-y-2 rounded-md border border-leaf-900/10 bg-white p-2 opacity-0 shadow-soft transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <div className="invisible absolute left-0 top-full w-56 translate-y-2 rounded-md border border-leaf-900/10 bg-white p-2 opacity-0 shadow-soft transition duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                   {item.children.map((child) => (
                     <Link
                       key={child.href}
@@ -48,7 +48,7 @@ export function Header() {
         <div className="hidden items-center gap-2 lg:flex">
           <Link
             href="/join"
-            className="focus-ring rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-700"
+            className="gg-button-primary px-4 py-2"
           >
             Join the Network
           </Link>
@@ -95,7 +95,7 @@ export function Header() {
             <Link
               href="/join"
               onClick={() => setOpen(false)}
-              className="focus-ring mt-2 block rounded-md bg-leaf-600 px-3 py-3 text-center font-black text-white hover:bg-leaf-700"
+              className="gg-button-primary mt-2 block text-center"
             >
               Join the Network
             </Link>

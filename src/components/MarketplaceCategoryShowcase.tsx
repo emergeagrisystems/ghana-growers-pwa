@@ -75,11 +75,11 @@ function categoryListingCount(category: HomepageMarketplaceCategory, listings: P
 
 export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCategoryShowcaseProps) {
   return (
-    <section className="overflow-hidden bg-white py-24 sm:py-28" aria-labelledby="marketplace-category-showcase-title">
+    <section className="overflow-hidden bg-white py-24 sm:py-28 lg:py-[120px]" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <p className="gg-eyebrow text-earth-700/70">Marketplace</p>
-          <h2 id="marketplace-category-showcase-title" className="mt-3 break-words text-2xl font-black text-ink sm:text-3xl">
+          <h2 id="marketplace-category-showcase-title" className="mt-3 gg-section-title">
             Explore the Marketplace
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-ink/68 sm:text-lg">
@@ -95,7 +95,7 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
               <Link
                 key={category.title}
                 href={category.href}
-                className="group min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                className="group min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft"
               >
                 <SafeImage
                   src={category.image}
@@ -104,7 +104,7 @@ export function MarketplaceCategoryShowcase({ listings = [] }: MarketplaceCatego
                   height={460}
                   fallbackKind="marketplace"
                   sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
-                  className="h-[6.75rem] w-full object-cover transition duration-300 group-hover:scale-105 sm:h-28"
+                  className="h-[6.75rem] w-full object-cover transition duration-200 ease-out group-hover:scale-[1.03] sm:h-28"
                 />
                 <div className="min-w-0 p-3.5">
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">

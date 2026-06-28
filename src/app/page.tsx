@@ -47,20 +47,20 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="overflow-hidden bg-[#F7F6EF]">
+      <section className="overflow-hidden bg-earth-50">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-10 lg:px-8 lg:py-14 xl:gap-14">
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
               Trusted Agriculture Platform
             </p>
-            <h1 className="mt-5 max-w-[18rem] break-words text-[1.55rem] font-black leading-tight text-ink sm:max-w-3xl sm:text-5xl lg:text-[2.85rem] xl:text-[3.2rem]">
+            <h1 className="mt-5 max-w-[20rem] gg-hero-title sm:max-w-3xl lg:text-[4.6rem] xl:text-[5.2rem]">
               Ghana&apos;s Agricultural Network
             </h1>
             <p className="mt-4 max-w-[18rem] text-base leading-7 text-ink/68 sm:max-w-xl sm:text-lg sm:leading-8">
               For farmers, buyers and suppliers across Ghana.
             </p>
-            <div className="mt-6 flex flex-row gap-3">
+            <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
               <ButtonLink href="/smart-solutions">Open Farmer Hub</ButtonLink>
               <ButtonLink href="/marketplace" variant="secondary">
                 Explore Marketplace
@@ -86,7 +86,7 @@ export default async function HomePage() {
 
       <section className="overflow-hidden border-y border-leaf-900/10 bg-white py-5" aria-labelledby="marketplace-quick-search-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-[#F7F6EF] p-4 shadow-sm">
+          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card">
             <div className="grid min-w-0 gap-4 lg:grid-cols-[0.75fr_1.25fr] lg:items-center">
               <div className="min-w-0">
                 <h2 id="marketplace-quick-search-title" className="text-lg font-black text-ink">
@@ -125,16 +125,16 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase listings={marketplaceListings} />
 
-      <section id="farmer-hub-teaser" className="bg-[#EEF3E8] py-24 text-ink sm:py-28">
+      <section id="farmer-hub-teaser" className="bg-mist py-24 text-ink sm:py-28 lg:py-[120px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <p className="gg-eyebrow text-earth-700/70">Farmer Hub</p>
-            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">🌱 Farmer Hub</h2>
+            <h2 className="mt-3 gg-editorial-heading text-4xl leading-tight text-ink sm:text-5xl">Farmer Hub</h2>
             <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
               Your Daily Farming Companion
             </p>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/66 sm:text-lg">
-              Check weather, diagnose crop problems, compare market prices and get practical farming advice—all in one place.
+              Check weather, diagnose crop problems, compare market prices and get practical farming advice, all in one place.
             </p>
           </div>
 
@@ -167,9 +167,9 @@ export default async function HomePage() {
                 <Link
                   key={tool.title}
                   href="/smart-solutions"
-                  className="group flex h-full min-h-[13.5rem] flex-col rounded-md border border-leaf-900/10 bg-white p-5 text-ink shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                  className="group flex h-full min-h-[13.5rem] flex-col rounded-md border border-leaf-900/10 bg-white p-5 text-ink shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft"
                 >
-                  <span className="grid h-14 w-14 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
+                  <span className="gg-icon gg-icon-farmer-hub h-14 w-14">
                     <Icon size={26} aria-hidden="true" />
                   </span>
                   <h3 className="mt-5 text-xl font-black text-ink group-hover:text-leaf-700">{tool.title}</h3>
@@ -187,9 +187,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-12 sm:py-14">
+      <section className="bg-white py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#F7F6EF] px-5 py-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-earth-50 px-5 py-5 shadow-card lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="gg-eyebrow">Quality Standard</p>
               <h2 className="mt-2 text-xl font-black text-ink sm:text-2xl">Ghana Growers Quality Standard</h2>
