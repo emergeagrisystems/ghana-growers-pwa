@@ -2155,3 +2155,334 @@ Every photograph should quietly say:
 **"Agriculture in Ghana has a future."**
 
 That feeling is the purpose of our photography.
+
+---
+
+## Chapter 7: Iconography & Visual Language
+
+Version 1.0
+
+## Introduction
+
+Icons exist to improve understanding.
+
+They do not exist to decorate pages.
+
+Every icon should help users recognise actions, categories, and information more quickly.
+
+If an icon creates confusion, it should be removed.
+
+## Our Philosophy
+
+Icons support words.
+
+They never replace them.
+
+Users should understand an interface even without icons.
+
+Icons simply make recognition faster.
+
+The goal is clarity.
+
+Not decoration.
+
+## The Ghana Growers Style
+
+Icons should feel:
+
+- Simple
+- Clean
+- Modern
+- Professional
+- Friendly
+- Natural
+
+Never:
+
+- Overly detailed
+- Playful
+- Cartoon-like
+- 3D
+- Skeuomorphic
+- Mixed styles
+
+Consistency creates trust.
+
+## Icon Library
+
+Use one icon family throughout the platform.
+
+Recommended:
+
+- Lucide Icons
+- Heroicons
+
+Do not mix multiple icon libraries.
+
+Every icon should share:
+
+- Stroke width
+- Corner style
+- Visual weight
+- Perspective
+
+## Icon Sizes
+
+Small:
+
+- `16px`
+- Metadata
+- Labels
+- Tables
+
+Medium:
+
+- `20px`
+- Navigation
+- Buttons
+- Forms
+
+Large:
+
+- `24px`
+- Cards
+- Feature highlights
+- Marketplace categories
+
+Extra large:
+
+- `32-40px`
+- Homepage
+- Hero illustrations
+- Landing pages
+
+Never use oversized icons simply to fill space.
+
+## Icon Backgrounds
+
+Icons should not all use the same color.
+
+Use subtle category colors.
+
+Marketplace:
+
+- Icon: Forest Trust
+- Background: Very light Forest tint
+
+Farmer Hub:
+
+- Icon: Leaf Sage
+- Background: Morning Sage
+
+GG Quality Standard:
+
+- Icon: Morning Ivory
+- Background: Soft Harvest tint
+
+Community:
+
+- Icon: Moss Green
+- Background: Light Sage
+
+Marketplace Services:
+
+- Icon: Harvest Gold
+- Background: Very light Harvest tint
+
+Warnings:
+
+- Muted Gold
+
+Errors:
+
+- Muted Clay Red
+
+Success:
+
+- Soft Green
+
+These colors should remain subtle.
+
+Never loud.
+
+## Marketplace Icons
+
+Marketplace categories should each have one permanent icon.
+
+Examples:
+
+- Fresh Produce
+- Farm Inputs
+- Farm Services
+- Livestock
+- Logistics
+- Packaging
+
+These should never change.
+
+Consistency improves recognition.
+
+## Navigation Icons
+
+Navigation should use icons only where they improve scanning.
+
+Avoid icon overload.
+
+Desktop navigation should remain primarily text.
+
+Mobile navigation may rely more heavily on icons.
+
+## Action Icons
+
+Common actions should remain consistent.
+
+Examples:
+
+- Search
+- Filter
+- Edit
+- Delete
+- Share
+- Download
+- Upload
+- Verified
+- Featured
+- Notifications
+
+Never use different icons for the same action.
+
+## Status Icons
+
+Icons should reinforce meaning.
+
+Success:
+
+- Check
+
+Warning:
+
+- Warning
+
+Information:
+
+- Info
+
+Error:
+
+- Exclamation
+
+Quality Standard:
+
+- Shield
+
+Verified:
+
+- Check Badge
+
+Avoid decorative symbols.
+
+## Cards
+
+Icons should support card titles.
+
+Never dominate them.
+
+The title remains the primary visual element.
+
+Icons create recognition.
+
+Not hierarchy.
+
+## Buttons
+
+Icons should only appear when they improve understanding.
+
+Examples:
+
+- Upload Photo
+- Search
+- Download
+- Share
+
+Avoid adding icons simply for decoration.
+
+## Illustrations
+
+Illustrations should remain minimal.
+
+Use only where they explain an idea.
+
+Avoid cartoon-style artwork.
+
+Illustrations should feel modern, natural, and timeless.
+
+## Empty States
+
+Small illustrations may be used.
+
+Examples:
+
+- No Listings
+- No Buyer Requests
+- No Crop Diagnoses
+
+The illustration should encourage action.
+
+Not simply decorate empty space.
+
+## Icon Spacing
+
+Icons should always have breathing room.
+
+Never allow icons to touch text.
+
+Recommended spacing:
+
+- `8-12px`
+
+## Accessibility
+
+Icons should never communicate meaning alone.
+
+Always pair icons with:
+
+- Text
+- Labels
+- Tooltips where necessary
+
+Color alone is never enough.
+
+## The Icon Test
+
+Before adding an icon ask:
+
+- Does it improve understanding?
+- Is it consistent?
+- Is it necessary?
+- Would the interface still work without it?
+
+If the answer is yes, the icon is helping.
+
+If not, remove it.
+
+## Relationship to the Brand
+
+Typography creates voice.
+
+Colors create emotion.
+
+Photography creates trust.
+
+Icons create recognition.
+
+Together they form one visual language.
+
+## Final Principle
+
+Users should never remember our icons.
+
+They should remember how easy the interface felt.
+
+Icons exist to quietly guide people.
+
+When they disappear into the experience, they have done their job.
