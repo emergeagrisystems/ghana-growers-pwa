@@ -16,7 +16,7 @@ It should not feel corporate, loud, cheap, busy, or generic.
 | Leaf Sage | `#4E7A3D` | Secondary accents, supporting icons, softer green moments |
 | Morning Ivory | `#F7F6EF` | Hero and warm editorial backgrounds |
 | Morning Mist | `#EEF3E8` | Farmer Hub and soft feature backgrounds |
-| Harvest Gold | `#DFAE4A` | Small labels, accent icons, highlights |
+| Harvest Gold | `#E1B75A` | Small labels, accent icons, highlights |
 | Cocoa Earth | `#6B4A2F` | Warm agricultural support accents |
 | Forest Ink | `#162016` | Primary text |
 | Clay White | `#FFFFFF` | Cards, nav, forms |

@@ -21,7 +21,7 @@ const config: Config = {
         earth: {
           50: "#F7F6EF",
           100: "#F2E6C2",
-          500: "#DFAE4A",
+          500: "#E1B75A",
           700: "#9A6D1F"
         },
         cocoa: {

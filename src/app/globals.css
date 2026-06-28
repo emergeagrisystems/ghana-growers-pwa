@@ -6,7 +6,7 @@
   color-scheme: light;
   --gg-primary-green: #143A1F;
   --gg-secondary-green: #4E7A3D;
-  --gg-accent-gold: #DFAE4A;
+  --gg-accent-gold: #E1B75A;
   --gg-cream-bg: #F7F6EF;
   --gg-morning-mist: #EEF3E8;
   --gg-cocoa-earth: #6B4A2F;
@@ -52,7 +52,7 @@ h3 {
 }
 
 ::selection {
-  background: #DFAE4A;
+  background: #E1B75A;
   color: #162016;
 }
 
