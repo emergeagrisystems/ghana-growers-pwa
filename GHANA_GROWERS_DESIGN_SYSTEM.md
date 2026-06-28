@@ -3200,3 +3200,294 @@ Every sentence should quietly communicate:
 "We're here to help."
 
 That is the voice of Ghana Growers.
+
+---
+
+## Chapter 10: Accessibility & Inclusive Design
+
+Version 1.0
+
+## Introduction
+
+Accessibility is not a feature.
+
+It is a responsibility.
+
+Every person should be able to use Ghana Growers with confidence.
+
+Good accessibility creates better experiences for everyone, not only for people with disabilities.
+
+The goal is simple:
+
+No one should feel excluded.
+
+## Our Philosophy
+
+We believe technology should adapt to people.
+
+People should never have to adapt to technology.
+
+If a feature is difficult to use, the feature should change.
+
+Not the user.
+
+## Inclusive Design
+
+Ghana Growers serves people with different:
+
+- Ages
+- Education levels
+- Languages
+- Devices
+- Internet speeds
+- Digital experience
+- Visual abilities
+- Physical abilities
+
+Every design decision should respect this diversity.
+
+## Simplicity
+
+Simple interfaces are more accessible.
+
+Use:
+
+- Clear headings
+- Short paragraphs
+- Obvious buttons
+- Consistent layouts
+
+Avoid:
+
+- Complicated menus
+- Hidden actions
+- Overloaded pages
+
+Accessibility begins with clarity.
+
+## Readability
+
+Text should remain comfortable.
+
+Rules:
+
+- Minimum body text: `16px`
+- Comfortable line spacing
+- Strong contrast
+- Short paragraphs
+- Readable fonts
+
+Never reduce text size simply to fit more content.
+
+## Color
+
+Color should never communicate meaning by itself.
+
+Every important message should also include:
+
+- Text
+- Icons
+- Labels
+
+Examples:
+
+Success:
+
+- Profile Verified
+
+Warning:
+
+- Verification Pending
+
+Error:
+
+- Please review this field
+
+Never rely only on red, green, or gold.
+
+## Contrast
+
+Text should remain readable under different lighting conditions.
+
+High contrast improves usability for everyone.
+
+Avoid:
+
+- Light gray text on white
+- Gold text on cream
+- Green text on green
+
+Readability always comes first.
+
+## Forms
+
+Forms should guide users.
+
+Every field should include:
+
+- Clear label
+- Helpful placeholder where appropriate
+- Error explanation
+- Next step
+
+Users should never wonder what information is expected.
+
+## Error Recovery
+
+Mistakes should be easy to fix.
+
+Good examples:
+
+- Please enter your phone number.
+- Please upload at least one photo.
+- We couldn't complete your request.
+- Please try again.
+
+Never use technical language.
+
+Never blame users.
+
+## Touch Targets
+
+Buttons should be easy to tap.
+
+Minimum recommended size:
+
+- `48 x 48px`
+
+Spacing between buttons should prevent accidental taps.
+
+This is especially important for mobile users.
+
+## Keyboard Navigation
+
+Users should be able to navigate the platform using only a keyboard where applicable.
+
+Interactive elements should have clear focus states.
+
+Keyboard users deserve the same experience as mouse users.
+
+## Screen Readers
+
+Important interface elements should be understandable when read aloud.
+
+Buttons should describe actions.
+
+Images should include meaningful alternative text.
+
+Decorative images should remain hidden from screen readers.
+
+## Images
+
+Every meaningful image should answer:
+
+What would someone miss if they could not see this image?
+
+Alternative text should describe that information.
+
+Avoid:
+
+- Image 1
+- Photo
+- Farmer
+
+Instead:
+
+- Farmer harvesting fresh tomatoes in the Eastern Region.
+
+## Motion
+
+Respect reduced-motion preferences.
+
+Animations should never prevent users from completing tasks.
+
+People who disable motion should still enjoy the complete platform.
+
+## Internet Connectivity
+
+Many users experience unreliable internet.
+
+Design should support:
+
+- Fast loading
+- Offline-friendly behaviour where possible
+- Compressed images
+- Lightweight pages
+- Graceful loading states
+
+Technology should respect real-world conditions.
+
+## Language
+
+Write in plain English.
+
+Future support for Ghanaian languages should follow the same philosophy:
+
+- Simple
+- Respectful
+- Practical
+
+Avoid unnecessary technical vocabulary.
+
+## Mobile First
+
+Mobile is the primary experience.
+
+Every feature should be designed for mobile before desktop.
+
+If something only works well on desktop, it is not finished.
+
+## Older Devices
+
+The platform should remain usable on older smartphones.
+
+Avoid unnecessary:
+
+- Animations
+- Large downloads
+- Heavy graphics
+- Complex interactions
+
+Performance is part of accessibility.
+
+## Trust Through Accessibility
+
+Accessible products communicate respect.
+
+People trust products that feel easy to use.
+
+Reducing frustration strengthens trust.
+
+Accessibility is therefore part of the Ghana Growers brand, not just a technical requirement.
+
+## Accessibility Checklist
+
+Before approving a page ask:
+
+- Can someone read this easily?
+- Can someone understand this quickly?
+- Can someone use this on an older phone?
+- Can someone recover from mistakes?
+- Does every important action remain obvious?
+
+If not, the page is not ready.
+
+## Relationship to the Brand
+
+Brand creates recognition.
+
+Design creates confidence.
+
+Accessibility creates inclusion.
+
+Together they create trust.
+
+## Final Principle
+
+Accessibility is not about designing for a few people.
+
+It is about respecting everyone.
+
+The easier Ghana Growers is to use, the more people it can serve.
+
+Helping more people is the purpose of accessibility.
