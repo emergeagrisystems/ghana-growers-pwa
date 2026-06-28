@@ -1853,3 +1853,305 @@ When every component feels familiar, the platform feels trustworthy.
 Trust is built through consistency.
 
 Consistency is built through components.
+
+---
+
+## Chapter 6: Photography & Visual Storytelling
+
+Version 1.0
+
+## Introduction
+
+Photography is one of Ghana Growers' strongest trust signals.
+
+People trust people.
+
+Before visitors read our words, they see our images.
+
+Every photograph should strengthen confidence in the platform.
+
+Photography is not decoration.
+
+Photography tells our story.
+
+## Our Photography Philosophy
+
+Every image should answer one question:
+
+**Does this help people trust Ghana Growers?**
+
+If not, the image does not belong.
+
+Beautiful photography is not enough.
+
+It must feel authentic.
+
+## The Ghana Growers Look
+
+Every image should feel:
+
+- Natural
+- Warm
+- Honest
+- Hopeful
+- Human
+- Agricultural
+- Professional
+
+Never:
+
+- Artificial
+- Corporate
+- Over-edited
+- Staged
+- Cold
+
+## Storytelling
+
+Every photograph should tell a story.
+
+Not simply show an object.
+
+Examples:
+
+- A farmer harvesting tomatoes
+- A buyer inspecting produce
+- Workers loading vegetables
+- Fresh produce ready for transport
+- A supplier helping a farmer
+- Community training
+- Real work
+- Real people
+- Real agriculture
+
+## Our Visual Style
+
+Preferred style:
+
+- Documentary
+- Editorial
+- Natural light
+- Warm tones
+- Real environments
+- Human interaction
+
+Think:
+
+- National Geographic
+
+Not:
+
+- Generic stock photography
+
+## Preferred Subjects
+
+- Farmers
+- Fresh produce
+- Markets
+- Harvest
+- Loading produce
+- Packaging
+- Field work
+- Training
+- Community
+- Transport
+- Storage
+- Technology in use
+- Agricultural tools
+- Real smiles
+- Real work
+- Real life
+
+## Ghana First
+
+Whenever possible, photography should represent Ghana.
+
+People should recognise:
+
+- Local produce
+- Local clothing
+- Local farming practices
+- Local markets
+- Local landscapes
+
+The platform should feel rooted in Ghana.
+
+Not somewhere else.
+
+## Image Quality
+
+Images should always be:
+
+- High resolution
+- Sharp
+- Properly exposed
+- Natural colors
+- Professional cropping
+
+Avoid:
+
+- Blurry images
+- Heavy filters
+- Over-saturation
+- Low-quality uploads
+
+Every image represents the Ghana Growers brand.
+
+## Product Photography
+
+Marketplace products should be:
+
+- Clean
+- Natural
+- Real
+- Consistent
+
+Produce should look fresh.
+
+Not artificially enhanced.
+
+Whenever possible, real product photographs should replace AI-generated placeholders.
+
+## Farmer Photography
+
+Farmer photos should communicate:
+
+- Confidence
+- Professionalism
+- Authenticity
+
+Preferred:
+
+- Real portrait
+- Farm environment
+- Natural clothing
+- Natural expression
+
+Avoid:
+
+- Artificial studio portraits
+- Overly posed images
+- Unrealistic AI faces
+
+## Supplier Photography
+
+Supplier imagery should show:
+
+- Real products
+- Real facilities
+- Real teams
+- Real equipment
+- Professional environments
+
+Trust grows when businesses look genuine.
+
+## Hero Photography
+
+Homepage hero images should feel aspirational.
+
+Not luxurious.
+
+Not dramatic.
+
+Examples:
+
+- Farmer walking through healthy crops
+- Fresh harvest at sunrise
+- Farmer and buyer together
+- Loading produce
+- Modern Ghanaian agriculture
+
+The hero should communicate hope.
+
+## Color Temperature
+
+All photography should feel visually related.
+
+Preferred:
+
+- Warm daylight
+- Soft greens
+- Natural earth tones
+- Golden morning or afternoon light
+
+Avoid mixing:
+
+- Cold blue images
+- Dark moody photos
+- Highly saturated images
+
+Consistency creates trust.
+
+## AI Images
+
+AI-generated images may be used temporarily.
+
+However, they should gradually be replaced by real Ghana Growers photography.
+
+Long-term, our strongest asset will be authentic images from our own farmers and partners.
+
+## Community Photography
+
+As Ghana Growers grows, photography should increasingly feature:
+
+- Real members
+- Real training
+- Real events
+- Real partnerships
+
+The community should recognise itself in the platform.
+
+## Future Photography Library
+
+Build a Ghana Growers image library.
+
+Organise by:
+
+- Produce
+- Farmers
+- Suppliers
+- Training
+- Transport
+- Markets
+- Livestock
+- Technology
+- Community
+
+Every future designer should use this library before searching elsewhere.
+
+## Photography Rules
+
+Before approving any image ask:
+
+- Is it real?
+- Does it build trust?
+- Does it represent Ghana?
+- Does it feel warm?
+- Does it tell a story?
+- Does it belong to the Ghana Growers world?
+
+If not, choose another image.
+
+## Relationship to the Brand
+
+Colors create identity.
+
+Typography creates voice.
+
+Photography creates emotion.
+
+Together, they define the visual personality of Ghana Growers.
+
+## Final Principle
+
+People may forget our layouts.
+
+People may forget our buttons.
+
+But they will remember how our images made them feel.
+
+Every photograph should quietly say:
+
+**"Agriculture in Ghana has a future."**
+
+That feeling is the purpose of our photography.
