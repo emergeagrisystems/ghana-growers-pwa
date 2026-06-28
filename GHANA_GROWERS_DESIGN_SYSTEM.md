@@ -311,3 +311,371 @@ They should remember that Ghana Growers felt:
 That feeling is our visual identity.
 
 Everything else supports it.
+
+---
+
+## Chapter 2: Color System
+
+Version 1.0
+
+## Introduction
+
+Color is emotion.
+
+Before users read a sentence, they experience color.
+
+Before they click a button, they experience color.
+
+The Ghana Growers color system exists to create one feeling above all others:
+
+**Trust.**
+
+Every color should support that feeling.
+
+No color exists simply because it looks attractive.
+
+Every color has a purpose.
+
+## Color Philosophy
+
+Our palette is inspired by Ghanaian agriculture.
+
+Morning light.
+
+Healthy leaves.
+
+Rich soil.
+
+Harvest season.
+
+Fresh produce.
+
+Natural materials.
+
+The platform should feel connected to the land, not to Silicon Valley.
+
+## Brand Palette
+
+### Forest Trust
+
+Primary brand color
+
+HEX: `#143A1F`
+
+Meaning:
+
+- Trust
+- Growth
+- Reliability
+- Agriculture
+- Confidence
+
+Used for:
+
+- Primary buttons
+- Navigation
+- Footer
+- Main CTAs
+- Logo text
+- Trust indicators
+
+Never use it for:
+
+- Large body backgrounds
+- Large text blocks
+- Too many icons in one area
+
+Forest Trust should feel valuable.
+
+Not common.
+
+### Moss Green
+
+Secondary brand color
+
+HEX: `#708C5A`
+
+Meaning:
+
+- Healthy agriculture
+- Fresh growth
+- Progress
+
+Used for:
+
+- Icons
+- Illustrations
+- Feature highlights
+- Small cards
+- Category indicators
+
+This becomes the agricultural personality of Ghana Growers.
+
+### Morning Sage
+
+Feature background
+
+HEX: `#EEF3E8`
+
+Meaning:
+
+- Calm
+- Freshness
+- Clarity
+
+Used for:
+
+- Farmer Hub
+- Information panels
+- Highlights
+- Feature sections
+
+Never use for:
+
+- Navigation
+- Buttons
+- Large text blocks
+
+Morning Sage helps users breathe.
+
+### Morning Ivory
+
+Primary background
+
+HEX: `#F7F6EF`
+
+Meaning:
+
+- Warmth
+- Comfort
+- Premium quality
+- Natural paper
+
+Used for:
+
+- Homepage hero
+- Editorial sections
+- Landing pages
+- Premium content
+
+Morning Ivory should become one of Ghana Growers' signature colors.
+
+### Harvest Gold
+
+Accent color
+
+HEX: `#E1B75A`
+
+Meaning:
+
+- Harvest
+- Opportunity
+- Achievement
+- Prosperity
+
+Used for:
+
+- Labels
+- Small highlights
+- Icons
+- Active navigation
+- Badges
+
+Never use Harvest Gold for:
+
+- Large text
+- Large backgrounds
+- Entire sections
+
+Harvest Gold should attract attention quietly.
+
+### Cocoa Earth
+
+Natural accent
+
+HEX: `#6B4A2F`
+
+Meaning:
+
+- Ghanaian soil
+- Cocoa
+- Roots
+- Authenticity
+
+Used for:
+
+- Charts
+- Illustrations
+- Small accents
+- Educational graphics
+- Rare interface elements
+
+Never dominate the interface.
+
+### Forest Ink
+
+Primary text
+
+HEX: `#162016`
+
+Meaning:
+
+- Confidence
+- Readability
+- Professionalism
+
+We never use pure black.
+
+Forest Ink is softer, warmer, and easier to read.
+
+### Sage Gray
+
+Supporting text
+
+RGBA: `rgba(22, 32, 22, 0.68)`
+
+Purpose:
+
+- Descriptions
+- Supporting copy
+- Form help text
+- Body content
+
+It creates a calmer reading experience than black text.
+
+### Border Mist
+
+Borders and dividers
+
+RGBA: `rgba(20, 58, 31, 0.10)`
+
+Purpose:
+
+- Card borders
+- Dividers
+- Input borders
+- Subtle structure
+
+Borders should quietly organise content.
+
+Never become visible decoration.
+
+## Color Hierarchy
+
+Not every color has equal importance.
+
+| Priority | Color |
+| --- | --- |
+| 5/5 | Forest Trust |
+| 4/5 | Morning Ivory |
+| 4/5 | Forest Ink |
+| 3/5 | Morning Sage |
+| 3/5 | Moss Green |
+| 2/5 | Harvest Gold |
+| 1/5 | Cocoa Earth |
+
+The more important the color, the less often it should change.
+
+## Section Rhythm
+
+Every page should create visual rhythm.
+
+Recommended homepage flow:
+
+- Hero: Morning Ivory
+- Marketplace: White
+- Farmer Hub: Morning Sage
+- GG Quality Standard: White
+- Featured Farmers: Morning Ivory
+- Join the Network: Forest Trust
+
+Users should subconsciously feel movement through the page.
+
+## Buttons
+
+Primary:
+
+- Forest Trust
+
+Secondary:
+
+- White with Forest Trust border
+
+Accent:
+
+- Harvest Gold
+
+There should never be more than one primary button inside a section.
+
+## Icons
+
+Icons should support navigation.
+
+Not dominate it.
+
+Suggested colors:
+
+- Marketplace: Forest Trust
+- Farmer Hub: Morning Sage
+- Quality Standard: Morning Ivory
+- Community: Moss Green
+- Warnings: Harvest Gold
+- Success: Soft Green
+- Errors: Muted Clay Red
+
+Different functions deserve different visual cues.
+
+## Accessibility
+
+Color should never be the only way information is communicated.
+
+Pair color with:
+
+- Icons
+- Labels
+- Text
+- Patterns where appropriate
+
+Accessibility is part of trust.
+
+## What We Never Do
+
+We never:
+
+- Use neon colors
+- Use random accent colors
+- Use gradients without purpose
+- Use more than one accent color in a single component
+- Overuse Harvest Gold
+- Use bright technology blues
+- Use artificial greens
+
+Everything should feel grounded in agriculture.
+
+## The Ghana Growers Color Test
+
+Before introducing a new color ask:
+
+- Does it feel natural?
+- Does it build trust?
+- Does it belong in agriculture?
+- Does it support the existing palette?
+- Does it improve clarity?
+
+If not, do not introduce it.
+
+## Final Principle
+
+Our colors should not make people think about design.
+
+They should make people feel confident.
+
+The best compliment someone can give the Ghana Growers brand is not:
+
+"I like the colors."
+
+It is:
+
+**"This feels trustworthy."**
+
+That feeling is the purpose of our color system.
