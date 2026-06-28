@@ -3491,3 +3491,293 @@ It is about respecting everyone.
 The easier Ghana Growers is to use, the more people it can serve.
 
 Helping more people is the purpose of accessibility.
+
+---
+
+## Chapter 11: Responsive Design & Mobile Experience
+
+Version 1.0
+
+## Introduction
+
+Mobile is not a smaller desktop.
+
+It is the primary experience of Ghana Growers.
+
+Most farmers, buyers, and suppliers will first experience Ghana Growers on a mobile device.
+
+Every design decision should begin with one question:
+
+**How will this work on a phone?**
+
+Desktop is an enhancement.
+
+Mobile is the foundation.
+
+## Our Philosophy
+
+We design for real people.
+
+Real internet.
+
+Real devices.
+
+Real farming environments.
+
+Someone may use Ghana Growers:
+
+- In a field
+- In a market
+- On a roadside
+- Inside a truck
+- With one hand
+- Under bright sunlight
+
+Every interface should respect these realities.
+
+## Mobile First
+
+Every new page should be designed in this order:
+
+1. Mobile
+2. Tablet
+3. Desktop
+
+Never reverse this process.
+
+Desktop should inherit from mobile.
+
+Not the other way around.
+
+## Simplicity
+
+Mobile screens demand clarity.
+
+Every screen should answer one question.
+
+Avoid:
+
+- Large dashboards
+- Crowded layouts
+- Multiple competing actions
+- Long paragraphs
+- Too many cards
+
+The mobile experience should feel calm.
+
+## Navigation
+
+Navigation should always be obvious.
+
+Rules:
+
+- Large touch targets
+- Clear labels
+- Minimal menu depth
+- Avoid hidden actions
+
+Users should never search for important features.
+
+## Scrolling
+
+Scrolling is natural.
+
+Scrolling sideways is not.
+
+Rules:
+
+- Vertical scrolling only
+- No horizontal scrolling for primary content
+- Avoid carousels that hide important information
+
+Everything important should be discoverable naturally.
+
+## Touch Targets
+
+Minimum touch target:
+
+- `48 x 48px`
+
+Spacing between actions should prevent accidental taps.
+
+Every important action should be reachable with one thumb.
+
+## Forms
+
+Forms should feel effortless.
+
+Rules:
+
+- Single-column layout
+- Clear labels
+- Minimal fields
+- Logical grouping
+- Auto-complete where possible
+- Progress indicators for longer forms
+- Always explain what happens after submission
+
+## Farmer Hub
+
+Farmer Hub should feel native on mobile.
+
+Tool order:
+
+1. Crop Health
+2. Live Weather Updates
+3. Farm Assistant
+4. Current Market Prices
+
+Cards stack vertically.
+
+No horizontal scrolling.
+
+Upload actions should be immediate.
+
+Farmers should never struggle to find today's information.
+
+## Marketplace
+
+Marketplace should prioritise:
+
+- Search
+- Categories
+- Filters
+- Listings
+
+The experience should encourage discovery without overwhelming users.
+
+Cards should remain compact.
+
+Images should support, not dominate, the content.
+
+## Profiles
+
+Profiles should communicate trust immediately.
+
+Order:
+
+1. Hero
+2. About
+3. Products / Services
+4. Trust Indicators
+5. Primary Action
+6. Contact
+
+The most important information should appear before scrolling too far.
+
+## Performance
+
+Performance is part of the design.
+
+Pages should load quickly.
+
+Images should be optimized.
+
+Animations should remain subtle.
+
+Heavy downloads should be avoided.
+
+Fast experiences build trust.
+
+## Offline Awareness
+
+Where possible, the platform should continue functioning gracefully with poor connectivity.
+
+Loading states should reassure users.
+
+Error messages should explain what happened.
+
+Users should never feel abandoned because of network issues.
+
+## Orientation
+
+Design primarily for portrait orientation.
+
+Landscape should remain supported but not required.
+
+Most interactions should feel natural while holding the phone vertically.
+
+## Typography
+
+Typography should remain comfortable.
+
+Never reduce body text below:
+
+- `16px`
+
+Headlines should remain readable without dominating the screen.
+
+Whitespace becomes even more important on mobile.
+
+## Images
+
+Images should load progressively.
+
+Crop intelligently.
+
+Avoid cutting off important content.
+
+Photography should remain meaningful even on smaller screens.
+
+## Buttons
+
+Buttons should remain easy to tap.
+
+Primary actions should remain visible.
+
+Avoid placing multiple primary buttons next to one another.
+
+Spacing improves confidence.
+
+## Responsive Behaviour
+
+Layouts should adapt, not shrink.
+
+Desktop elements should reorganise naturally.
+
+Never simply scale everything down.
+
+Responsive design is redesign, not resizing.
+
+## Testing
+
+Every page should be tested on:
+
+- Small phones
+- Large phones
+- Tablets
+- Desktop
+
+Real devices should be prioritised over browser simulation whenever possible.
+
+## Mobile Checklist
+
+Before approving a page ask:
+
+- Can it be used with one hand?
+- Is every action obvious?
+- Does it load quickly?
+- Does it feel calm?
+- Can a first-time user complete the main task within seconds?
+
+If not, the mobile experience is not complete.
+
+## Relationship to the Brand
+
+Brand creates recognition.
+
+Design creates confidence.
+
+Accessibility creates inclusion.
+
+Responsive design creates everyday usability.
+
+The best mobile experience should feel invisible.
+
+## Final Principle
+
+Ghana Growers should never feel like a desktop website squeezed onto a phone.
+
+It should feel like it was built for mobile from the very beginning.
+
+Because for most people, that is exactly how they will experience Ghana Growers.
