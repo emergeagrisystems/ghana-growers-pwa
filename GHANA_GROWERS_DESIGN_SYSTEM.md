@@ -1435,3 +1435,421 @@ Great layouts do not draw attention to themselves.
 They quietly guide people through information.
 
 When users stop thinking about the interface and start thinking about farming, the layout has succeeded.
+
+---
+
+## Chapter 5: Component System
+
+Version 1.0
+
+## Introduction
+
+Components are the building blocks of Ghana Growers.
+
+Every button.
+
+Every card.
+
+Every badge.
+
+Every form.
+
+Every table.
+
+Every search field.
+
+Every modal.
+
+Should feel like they belong to the same family.
+
+Consistency builds trust.
+
+## Component Philosophy
+
+Components exist to help people complete tasks.
+
+They are not decoration.
+
+Every component should answer:
+
+"What problem does this solve?"
+
+If the answer is unclear, the component should be redesigned or removed.
+
+## The Ghana Growers Component Principles
+
+Every component should be:
+
+- Simple
+- Consistent
+- Predictable
+- Accessible
+- Calm
+- Professional
+
+Components should never surprise users.
+
+Users should always know how to interact with them.
+
+## Buttons
+
+Buttons guide action.
+
+Buttons do not decorate pages.
+
+### Primary Button
+
+Purpose:
+
+- The most important action
+
+Examples:
+
+- Open Farmer Hub
+- Request Supply
+- Submit Buyer Request
+- Join the Network
+
+Rules:
+
+- Only one primary button per section
+- `48px` height
+- `12px` radius
+- Forest Trust background
+- White text
+- Subtle hover
+
+### Secondary Button
+
+Purpose:
+
+- Supporting actions
+
+Examples:
+
+- Learn More
+- Cancel
+- View Details
+
+Rules:
+
+- White background
+- Forest Trust border
+- Forest Trust text
+- Never compete with the primary action
+
+### Accent Button
+
+Purpose:
+
+- Rare emphasis
+
+Examples:
+
+- Limited campaigns
+- Special announcements
+- Events
+
+Rules:
+
+- Harvest Gold
+- Use sparingly
+
+## Cards
+
+Cards group related information.
+
+One card.
+
+One purpose.
+
+One action.
+
+Cards should never become miniature webpages.
+
+### Standard Card
+
+Structure:
+
+1. Image, optional
+2. Title
+3. Supporting sentence
+4. Metadata
+5. Action
+
+Cards should feel clean and generous.
+
+## Marketplace Cards
+
+Marketplace cards are navigation tools.
+
+Not advertisements.
+
+Include:
+
+- Image
+- Category
+- Listing count
+- One short description
+
+Entire card clickable.
+
+Never include unnecessary "Explore" links.
+
+## Farmer Hub Cards
+
+Tool cards should remain equal.
+
+No oversized "featured" cards.
+
+Importance comes from the content, not the size.
+
+Each card includes:
+
+- Icon
+- Title
+- One supporting sentence
+
+Entire card clickable.
+
+## Profile Cards
+
+Profiles should immediately communicate:
+
+- Who
+- What
+- Where
+- Trust
+- One primary action
+
+Avoid excessive information.
+
+## Badges
+
+Badges communicate trust.
+
+Not decoration.
+
+Current badges:
+
+- Verified
+- GG Quality Standard
+- Featured
+- New
+- Coming Soon
+
+Rules:
+
+- Small
+- Consistent
+- Quiet
+
+Badges should support confidence.
+
+Never dominate the interface.
+
+## Search
+
+Search should always be easy to discover.
+
+Search fields should answer:
+
+What can I search here?
+
+Placeholder examples:
+
+- Search produce...
+- Search farmers...
+- Search suppliers...
+- Search services...
+
+Avoid generic placeholders like:
+
+- Search...
+
+## Filters
+
+Filters reduce effort.
+
+They should never overwhelm.
+
+Show only the filters users genuinely need.
+
+Hide advanced filters until necessary.
+
+## Forms
+
+Forms should feel conversational.
+
+Ask only for information that creates value.
+
+Group related fields.
+
+Explain why information is needed where appropriate.
+
+Always tell users what happens after submission.
+
+## Tables
+
+Tables should prioritise readability.
+
+Good spacing.
+
+Clear headings.
+
+Alternating row hover.
+
+Minimal borders.
+
+Avoid dense spreadsheets where cards communicate information more effectively.
+
+## Empty States
+
+Every empty state should encourage action.
+
+Examples:
+
+No listings found.
+
+Next step:
+
+- Try another search.
+
+Need Produce?
+
+Next step:
+
+- Submit a Buyer Request.
+
+No crop history yet.
+
+Next step:
+
+- Upload your first crop photo.
+
+Empty pages should never feel abandoned.
+
+## Loading States
+
+Loading should reassure users.
+
+Use skeleton placeholders.
+
+Avoid flashing content.
+
+Avoid unnecessary spinners.
+
+Loading should feel calm.
+
+## Error States
+
+Errors should remain human.
+
+Good:
+
+"We couldn't complete your request. Please try again."
+
+Avoid:
+
+- Error Code 503
+- Unexpected Exception
+- Internal Server Error
+
+Users need guidance.
+
+Not technical details.
+
+## Success States
+
+Celebrate progress.
+
+Examples:
+
+- Buyer Request submitted.
+- Farmer verified.
+- Listing published.
+- Crop photo uploaded.
+
+Celebrate quietly.
+
+Confidence matters more than excitement.
+
+## Notifications
+
+Notifications should be useful.
+
+Not noisy.
+
+Good examples:
+
+- Buyer interested.
+- Verification approved.
+- Market price updated.
+- Training available.
+
+Avoid excessive promotional notifications.
+
+## Modals
+
+Modals should only interrupt users when necessary.
+
+Every modal should answer:
+
+- Why am I seeing this?
+- What happens next?
+- How do I leave?
+
+Never trap users inside a modal.
+
+## Component Consistency
+
+Every component should share:
+
+- Spacing
+- Corners
+- Shadows
+- Typography
+- Motion
+- Colors
+
+Users should recognise components immediately.
+
+Consistency reduces learning.
+
+## Future Components
+
+Future additions should include:
+
+- Charts
+- Maps
+- Timeline
+- Business dashboard
+- Analytics
+- Calendar
+- Messaging
+
+Every new component must follow the same design language.
+
+## Component Test
+
+Before approving a component ask:
+
+- Does it solve one clear problem?
+- Does it match existing components?
+- Is the primary action obvious?
+- Is it accessible?
+- Can a first-time user understand it immediately?
+
+If not, simplify.
+
+## Final Principle
+
+Components are not individual designs.
+
+They are part of one visual language.
+
+When every component feels familiar, the platform feels trustworthy.
+
+Trust is built through consistency.
+
+Consistency is built through components.
