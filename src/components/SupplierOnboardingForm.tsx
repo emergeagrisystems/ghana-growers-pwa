@@ -53,13 +53,13 @@ export function SupplierOnboardingForm() {
 
       if (!response.ok || !data.ok) {
         setErrors(data.errors ?? {});
-        throw new Error("Supplier application could not be submitted.");
+        throw new Error(data.errors?.form || data.message || "Supplier application could not be submitted.");
       }
 
       form.reset();
       setSubmitted(true);
-    } catch {
-      setErrorMessage("We could not submit your supplier application. Please check the details and try again.");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "We could not submit your supplier application. Please check the details and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -230,7 +230,7 @@ function TextAreaField({
 
 function CheckboxPill({ name, value, label }: { name: string; value: string; label: string }) {
   return (
-    <label className="flex min-w-0 items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-ink/72 ring-1 ring-leaf-900/10 transition hover:ring-leaf-700/30">
+    <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold text-ink/72 ring-1 ring-leaf-900/10 transition hover:ring-leaf-700/30">
       <input name={name} value={value} type="checkbox" className="h-4 w-4 shrink-0 accent-leaf-700" />
       <span className="truncate">{label}</span>
     </label>

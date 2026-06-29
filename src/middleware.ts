@@ -51,7 +51,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL("/launching-soon", request.url));
   }
 
-  if (pathname === "/join/supplier") {
+  if (pathname === "/join/supplier" || pathname === "/supplier-registration") {
     return NextResponse.redirect(new URL("/become-a-supplier", request.url));
   }
 

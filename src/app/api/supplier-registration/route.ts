@@ -4,7 +4,7 @@ import {
   sendSupplierRegistrationEmail,
   validateSupplierRegistration
 } from "@/lib/supplierRegistration";
-import { uploadSupabaseStorageObject, insertSupabaseRecord } from "@/lib/supabase/admin";
+import { uploadSupabaseStorageObject, insertSupabaseRecord, hasSupabaseAdminConfig } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -12,6 +12,15 @@ const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const allowedCertificateTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 const maxImageSize = 5 * 1024 * 1024;
 const maxCertificateSize = 8 * 1024 * 1024;
+
+function supplierSubmissionError(message: string, status = 500) {
+  return NextResponse.json({
+    ok: false,
+    errors: {
+      form: message
+    }
+  }, { status });
+}
 
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -30,6 +39,13 @@ export async function POST(request: Request) {
     googleSheets: false,
     email: false
   };
+
+  if (!hasSupabaseAdminConfig()) {
+    return supplierSubmissionError(
+      "Supplier applications are not configured on this server. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then try again.",
+      503
+    );
+  }
 
   const contactSlug = slugify(validation.data.contactPerson);
 
@@ -120,7 +136,12 @@ export async function POST(request: Request) {
   });
 
   if (application.error) {
-    return NextResponse.json({ ok: false, errors: { companyName: "Could not save application. Please try again." } }, { status: application.status });
+    const isSchemaIssue = /column|schema|constraint|relation|table|violates|permission|policy|row-level|rls/i.test(application.error);
+    const message = isSchemaIssue
+      ? `Could not save supplier application. Check that migration 023_supplier_onboarding_fields.sql has been applied and that supplier_applications accepts service-role inserts. Supabase said: ${application.error}`
+      : `Could not save supplier application. Supabase said: ${application.error}`;
+
+    return supplierSubmissionError(message, application.status);
   }
 
   integrations.supabase = true;
@@ -225,8 +246,12 @@ async function uploadFile({
   });
 
   if (upload.error || !upload.publicUrl) {
+    const message = upload.error
+      ? `Could not upload file. Supabase Storage said: ${upload.error}`
+      : "Could not upload file. Please try again.";
+
     return {
-      error: NextResponse.json({ ok: false, errors: { [errorField]: "Could not upload file. Please try again." } }, { status: upload.status }),
+      error: NextResponse.json({ ok: false, errors: { [errorField]: message } }, { status: upload.status }),
       publicUrl: ""
     };
   }
