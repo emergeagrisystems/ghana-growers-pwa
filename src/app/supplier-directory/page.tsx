@@ -27,7 +27,7 @@ export default async function SupplierDirectoryPage() {
         description="Search suppliers and service providers for seeds, fertilizers, agrochemicals, equipment, irrigation, packaging, logistics, storage, finance, and agricultural consulting."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/supplier-registration">Become a Supplier</ButtonLink>
+          <ButtonLink href="/become-a-supplier">Become a Supplier</ButtonLink>
           <ButtonLink href="/farmer-directory" variant="secondary">Browse Farmer Directory</ButtonLink>
           <ButtonLink href="/marketplace" variant="light">Browse Marketplace</ButtonLink>
         </div>

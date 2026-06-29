@@ -25,6 +25,7 @@ function isAllowedPrelaunchRoute(pathname: string) {
     pathname.startsWith("/api") ||
     pathname === "/launching-soon" ||
     pathname === "/dev-preview" ||
+    pathname === "/become-a-supplier" ||
     pathname === "/supplier-registration" ||
     pathname === "/join" ||
     pathname === "/join/farmer" ||
@@ -50,7 +51,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname === "/join/supplier") {
-    return NextResponse.redirect(new URL("/supplier-registration", request.url));
+    return NextResponse.redirect(new URL("/become-a-supplier", request.url));
   }
 
   if (isAllowedPrelaunchRoute(pathname)) {

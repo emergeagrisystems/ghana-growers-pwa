@@ -28,8 +28,8 @@ const joinOptions = [
   {
     title: "Supplier",
     description: "Promote farm inputs, equipment, logistics, and agricultural services.",
-    buttonLabel: "Join as Supplier",
-    href: "/supplier-registration",
+    buttonLabel: "Become a Supplier",
+    href: "/become-a-supplier",
     icon: Truck
   }
 ];

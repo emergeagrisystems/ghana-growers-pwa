@@ -2,19 +2,29 @@ import { supplierRegistrationNotifications } from "@/data/notificationConfig";
 import { appendValuesToGoogleSheet } from "@/lib/googleSheets";
 
 export type SupplierRegistrationPayload = {
+  businessName: string;
   companyName: string;
   contactPerson: string;
   phone: string;
   whatsapp: string;
   email: string;
+  websiteUrl: string;
+  registrationNumber: string;
   region: string;
   district: string;
+  categories: string[];
+  regionsServed: string[];
   supplierCategory: string;
   productsServicesOffered: string;
   deliveryCoverage: string;
+  businessDescription: string;
+  yearsInBusiness: string;
   website: string;
   description: string;
   logoImageUrl: string;
+  photoUrls: string[];
+  certificateUrls: string[];
+  ggStandardAgreement: boolean;
   privacyAccepted: boolean;
 };
 
@@ -24,39 +34,57 @@ export type SupplierRegistrationResult = {
   data?: SupplierRegistrationPayload;
 };
 
-const requiredFields: Array<keyof SupplierRegistrationPayload> = [
-  "contactPerson",
-  "phone",
-  "whatsapp",
-  "region",
-  "district",
-  "supplierCategory",
-  "productsServicesOffered",
-  "deliveryCoverage"
-];
-
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function cleanArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map(clean).filter(Boolean);
+  }
+
+  const stringValue = clean(value);
+  return stringValue ? stringValue.split(",").map((item) => item.trim()).filter(Boolean) : [];
+}
+
 export function validateSupplierRegistration(input: Record<string, unknown>): SupplierRegistrationResult {
+  const isOnboardingFlow = input.onboardingFlow === "true";
+  const categories = cleanArray(input.categories ?? input.supplierCategory);
+  const regionsServed = cleanArray(input.regionsServed ?? input.region);
+  const businessName = clean(input.businessName) || clean(input.companyName);
+  const websiteUrl = clean(input.websiteUrl) || clean(input.website);
+  const businessDescription = clean(input.businessDescription) || clean(input.description);
+
   const data: SupplierRegistrationPayload = {
-    companyName: clean(input.companyName),
+    businessName,
+    companyName: clean(input.companyName) || businessName,
     contactPerson: clean(input.contactPerson),
     phone: clean(input.phone),
     whatsapp: clean(input.whatsapp),
     email: clean(input.email),
     region: clean(input.region),
     district: clean(input.district),
-    supplierCategory: clean(input.supplierCategory),
+    websiteUrl,
+    registrationNumber: clean(input.registrationNumber),
+    categories,
+    regionsServed,
+    supplierCategory: clean(input.supplierCategory) || categories.join(", "),
     productsServicesOffered: clean(input.productsServicesOffered),
-    deliveryCoverage: clean(input.deliveryCoverage),
-    website: clean(input.website),
-    description: clean(input.description),
+    deliveryCoverage: clean(input.deliveryCoverage) || regionsServed.join(", "),
+    businessDescription,
+    yearsInBusiness: clean(input.yearsInBusiness),
+    website: websiteUrl,
+    description: businessDescription,
     logoImageUrl: clean(input.logoImageUrl),
-    privacyAccepted: input.privacyAccepted === true
+    photoUrls: cleanArray(input.photoUrls),
+    certificateUrls: cleanArray(input.certificateUrls),
+    ggStandardAgreement: input.ggStandardAgreement === true,
+    privacyAccepted: input.privacyAccepted === true || input.ggStandardAgreement === true
   };
   const errors: SupplierRegistrationResult["errors"] = {};
+  const requiredFields: Array<keyof SupplierRegistrationPayload> = isOnboardingFlow
+    ? ["contactPerson", "phone", "email", "productsServicesOffered"]
+    : ["contactPerson", "phone", "whatsapp", "region", "district", "supplierCategory", "productsServicesOffered", "deliveryCoverage"];
 
   requiredFields.forEach((field) => {
     if (!data[field]) {
@@ -64,15 +92,34 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
     }
   });
 
+  if (isOnboardingFlow && !data.businessName) {
+    errors.businessName = "Business name is required.";
+    errors.companyName = "Business name is required.";
+  }
+
+  if (isOnboardingFlow && data.categories.length === 0) {
+    errors.categories = "Choose at least one supplier category.";
+    errors.supplierCategory = "Choose at least one supplier category.";
+  }
+
+  if (isOnboardingFlow && data.regionsServed.length === 0 && !data.region) {
+    errors.regionsServed = "Choose at least one region served.";
+    errors.region = "Choose at least one region served.";
+  }
+
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
     errors.email = "Enter a valid email address.";
   }
 
   if (data.website && !/^https?:\/\/.+\..+/.test(data.website)) {
     errors.website = "Enter a valid website URL starting with http:// or https://.";
+    errors.websiteUrl = "Enter a valid website URL starting with http:// or https://.";
   }
 
-  if (!data.privacyAccepted) {
+  if (isOnboardingFlow && !data.ggStandardAgreement) {
+    errors.ggStandardAgreement = "You must accept the Ghana Growers Quality Standard agreement.";
+    errors.privacyAccepted = "You must accept the Ghana Growers Quality Standard agreement.";
+  } else if (!isOnboardingFlow && !data.privacyAccepted) {
     errors.privacyAccepted = "You must accept the privacy notice.";
   }
 
@@ -87,7 +134,7 @@ export async function appendSupplierRegistrationToSheet(data: SupplierRegistrati
   const sheetName = process.env.GOOGLE_SHEETS_SUPPLIER_SHEET_NAME || supplierRegistrationNotifications.googleSheetName;
   const submittedAt = new Date().toISOString();
 
-  return appendValuesToGoogleSheet(sheetName, "A:N", [[
+  return appendValuesToGoogleSheet(sheetName, "A:S", [[
     submittedAt,
     data.companyName,
     data.contactPerson,
@@ -96,12 +143,17 @@ export async function appendSupplierRegistrationToSheet(data: SupplierRegistrati
     data.email,
     data.region,
     data.district,
-    data.supplierCategory,
+    data.categories.join(", ") || data.supplierCategory,
     data.productsServicesOffered,
-    data.deliveryCoverage,
-    data.website,
-    data.description,
-    data.logoImageUrl
+    data.regionsServed.join(", ") || data.deliveryCoverage,
+    data.websiteUrl,
+    data.businessDescription,
+    data.logoImageUrl,
+    data.registrationNumber,
+    data.yearsInBusiness,
+    data.photoUrls.join(", "),
+    data.certificateUrls.join(", "),
+    data.ggStandardAgreement ? "Yes" : "No"
   ]]);
 }
 
@@ -123,19 +175,24 @@ export async function sendSupplierRegistrationEmail(data: SupplierRegistrationPa
       to: supplierRegistrationNotifications.adminEmails,
       subject: `${supplierRegistrationNotifications.subjectPrefix}: ${data.companyName || data.contactPerson}`,
       text: [
-        `Company Name: ${data.companyName || "Not provided"}`,
+        `Business Name: ${data.businessName || data.companyName}`,
         `Contact Person: ${data.contactPerson}`,
         `Phone: ${data.phone}`,
         `WhatsApp: ${data.whatsapp}`,
         `Email: ${data.email || "Not provided"}`,
-        `Region: ${data.region}`,
+        `Region: ${data.region || "Not provided"}`,
         `District: ${data.district}`,
-        `Supplier Category: ${data.supplierCategory}`,
+        `Supplier Categories: ${data.categories.join(", ") || data.supplierCategory}`,
+        `Regions Served: ${data.regionsServed.join(", ") || data.deliveryCoverage}`,
         `Products/Services Offered: ${data.productsServicesOffered}`,
-        `Delivery Coverage: ${data.deliveryCoverage}`,
-        `Website: ${data.website || "None"}`,
+        `Website: ${data.websiteUrl || "None"}`,
+        `Registration Number: ${data.registrationNumber || "None"}`,
+        `Years in Business: ${data.yearsInBusiness || "Not provided"}`,
         `Logo/Image: ${data.logoImageUrl || "None"}`,
-        `Description: ${data.description || "None"}`
+        `Photos: ${data.photoUrls.join(", ") || "None"}`,
+        `Certificates: ${data.certificateUrls.join(", ") || "None"}`,
+        `Description: ${data.businessDescription || "None"}`,
+        `GG Standard Agreement: ${data.ggStandardAgreement ? "Yes" : "No"}`
       ].join("\n")
     })
   });

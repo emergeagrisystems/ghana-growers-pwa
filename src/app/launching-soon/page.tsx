@@ -32,9 +32,9 @@ const registrationCards = [
     icon: ShoppingBasket
   },
   {
-    title: "Register as Supplier",
+    title: "Become a Supplier",
     description: "List farm inputs, equipment, logistics, packaging, finance, or agricultural services.",
-    href: "/supplier-registration",
+    href: "/become-a-supplier",
     icon: Store
   },
   {

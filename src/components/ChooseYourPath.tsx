@@ -31,8 +31,8 @@ const pathCards: PathCard[] = [
     title: "Supply Farmers",
     description: "Promote agricultural products and services.",
     icon: Tractor,
-    primaryLabel: "Join as Supplier",
-    primaryHref: "/supplier-registration",
+    primaryLabel: "Become a Supplier",
+    primaryHref: "/become-a-supplier",
     tone: "cream"
   }
 ];

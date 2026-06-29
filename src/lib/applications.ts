@@ -2,7 +2,7 @@ import { logAdminActivity, type AdminActionType, type AdminEntityType } from "@/
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type ApplicationKind = "farmer" | "buyer" | "supplier";
-export type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+export type ApplicationStatus = "New" | "Pending" | "Under Review" | "Approved" | "Rejected" | "Converted";
 
 export type ApplicationRecord = {
   id: string;
@@ -35,6 +35,7 @@ const entityByKind: Record<ApplicationKind, AdminEntityType> = {
 
 const actionByStatus: Record<ApplicationStatus, AdminActionType> = {
   New: "Create",
+  Pending: "Create",
   "Under Review": "Review",
   Approved: "Approve",
   Rejected: "Reject",

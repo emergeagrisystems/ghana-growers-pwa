@@ -61,7 +61,7 @@ export default function PartnerPage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>
-          <ButtonLink href="/supplier-registration" variant="secondary">Register as Supplier</ButtonLink>
+          <ButtonLink href="/become-a-supplier" variant="secondary">Become a Supplier</ButtonLink>
         </div>
       </PageHero>
 

@@ -7,7 +7,23 @@ import { supplierCategories } from "@/data/supplierCategories";
 import type { SupplierRegistrationPayload } from "@/lib/supplierRegistration";
 
 type FormErrors = Partial<Record<keyof SupplierRegistrationPayload | "logoImage", string>>;
-type FormState = Omit<SupplierRegistrationPayload, "privacyAccepted"> & { privacyAccepted: boolean };
+type FormState = Pick<
+  SupplierRegistrationPayload,
+  | "companyName"
+  | "contactPerson"
+  | "phone"
+  | "whatsapp"
+  | "email"
+  | "region"
+  | "district"
+  | "supplierCategory"
+  | "productsServicesOffered"
+  | "deliveryCoverage"
+  | "website"
+  | "description"
+  | "logoImageUrl"
+  | "privacyAccepted"
+>;
 
 const initialFormState: FormState = {
   companyName: "",

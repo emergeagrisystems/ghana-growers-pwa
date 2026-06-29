@@ -79,7 +79,7 @@ export function ServicePage({
                       ? "/join/farmer"
                       : formAudience === "buyer"
                         ? "/join/buyer"
-                        : "/supplier-registration"
+                        : "/become-a-supplier"
                   }
                 >
                   {formAudience === "farmer"

@@ -15,7 +15,7 @@ export default function SuppliersServicePage() {
       description="Ghana Growers gives suppliers a practical channel to promote inputs, tools, equipment, packaging, transport, cold storage, and related services."
       formAudience="supplier"
       whatsappMessage="Hello Ghana Growers, I want to become a supplier."
-      ctaHref="/supplier-registration"
+      ctaHref="/become-a-supplier"
       ctaLabel="Become a Supplier"
       extraCtas={[
         { href: "/supplier-directory", label: "View Supplier Directory", variant: "secondary" }
