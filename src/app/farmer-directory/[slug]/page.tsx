@@ -303,10 +303,10 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer demand</p>
-                    <h2 className="mt-2 text-2xl font-black text-ink">Related Buyer Requests</h2>
+                    <h2 className="mt-2 text-2xl font-black text-ink">Related Produce Demand</h2>
                   </div>
                   <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-                    View Buyer Requests
+                    View Produce Demand
                   </Link>
                 </div>
                 {relevantBuyerRequests.length > 0 ? (
@@ -321,7 +321,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                   </div>
                 ) : (
                   <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm leading-6 text-ink/62">
-                    No matching buyer requests are listed yet. Buyers can post demand for these products on the Buyer Demand Board.
+                    No matching produce demand is listed yet. Buyers can request sourcing support for these products through Ghana Growers.
                   </p>
                 )}
               </section>

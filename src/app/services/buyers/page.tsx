@@ -24,7 +24,7 @@ export default function BuyersServicePage() {
         "Find trusted farmers and farmer groups by produce category and location.",
         "Buy fresh produce for markets, restaurants, shops, hotels, caterers, and households.",
         "Request support for bulk buying and recurring supply needs.",
-        "Submit clear buyer requests so Ghana Growers can review and route demand.",
+        "Request supply support so Ghana Growers can review and route demand.",
         "Access supplier and logistics support for packaging, transport, and cold storage."
       ]}
     />

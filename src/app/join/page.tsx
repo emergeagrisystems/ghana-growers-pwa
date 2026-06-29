@@ -20,7 +20,7 @@ const joinOptions = [
   },
   {
     title: "Buyer",
-    description: "Find produce, post buyer requests, and connect with farmers and suppliers.",
+    description: "Find produce, request sourcing support, and connect with farmers and suppliers.",
     buttonLabel: "Join as Buyer",
     href: "/join/buyer",
     icon: Store

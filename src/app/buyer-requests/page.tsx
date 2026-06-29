@@ -6,9 +6,9 @@ import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from
 export const dynamic = "force-dynamic";
 
 export const metadata = createPageMetadata({
-  title: "Buyer Demand Board",
+  title: "Produce Sourcing",
   description:
-    "Find active buyer requests for produce, livestock, and agricultural supply across Ghana.",
+    "Request produce, livestock, farm inputs, and agricultural supply sourcing support through Ghana Growers.",
   path: "/buyer-requests"
 });
 
@@ -24,15 +24,15 @@ export default async function BuyerRequestsPage() {
       <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="max-w-4xl">
-            <p className="gg-eyebrow">Demand Board</p>
+            <p className="gg-eyebrow">Produce Sourcing</p>
             <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
-              Buyer Demand Board
+              Need Produce?
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-              Find active buyer requests for produce, livestock, and agricultural supply across Ghana.
+              Tell Ghana Growers what you need, or view published demand opportunities already being reviewed for matching.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="/submit-buyer-request">Post Buyer Request</ButtonLink>
+              <ButtonLink href="/submit-buyer-request">Request Supply</ButtonLink>
             </div>
           </div>
         </div>

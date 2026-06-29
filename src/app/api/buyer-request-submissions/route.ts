@@ -13,6 +13,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    message: "Thank you. Your submission has been received and will be reviewed by Ghana Growers."
+    message: "We have received your sourcing request."
   });
 }

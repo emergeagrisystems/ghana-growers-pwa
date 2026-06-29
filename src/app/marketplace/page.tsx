@@ -37,7 +37,7 @@ export default async function MarketplacePage() {
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
-              <ButtonLink href="/submit-buyer-request" variant="secondary">Submit Buyer Request</ButtonLink>
+              <ButtonLink href="/submit-buyer-request" variant="secondary">Request Supply</ButtonLink>
             </div>
           </div>
         </div>
@@ -50,10 +50,10 @@ export default async function MarketplacePage() {
           <div className="flex flex-col gap-4 rounded-md border border-earth-500/25 bg-earth-50 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="gg-eyebrow">Can&apos;t find what you need?</p>
-              <h2 className="mt-1 text-xl font-black text-ink">Submit buyer demand and Ghana Growers will review it for matching.</h2>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Share the product, quantity, location, and deadline. Ghana Growers reviews requests before matching them with farmers, suppliers, or listings.</p>
+              <h2 className="mt-1 text-xl font-black text-ink">Ask Ghana Growers to help source it.</h2>
+              <p className="mt-2 text-sm leading-6 text-ink/62">Share the product, quantity, location, and deadline. Our team reviews your request and looks for suitable farmers, suppliers, or listings.</p>
             </div>
-            <ButtonLink href="/submit-buyer-request">Submit Buyer Request</ButtonLink>
+            <ButtonLink href="/submit-buyer-request">Request Supply</ButtonLink>
           </div>
         </div>
       </section>
@@ -64,14 +64,14 @@ export default async function MarketplacePage() {
             <SectionHeader
               eyebrow="Marketplace Resources"
               title="Helpful ways to source, compare, and connect"
-              description="Use these supporting tools when you need directories, buyer demand, market information, or a reviewed connection request."
+              description="Use these supporting tools when you need directories, produce sourcing, market information, or a reviewed connection request."
             />
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <ButtonLink href="/farmer-directory" variant="light">Farmer Directory</ButtonLink>
               <ButtonLink href="/supplier-directory" variant="light">Supplier Directory</ButtonLink>
-              <ButtonLink href="/buyer-requests" variant="light">Buyer Requests</ButtonLink>
+              <ButtonLink href="/buyer-requests" variant="light">Produce Sourcing</ButtonLink>
               <ButtonLink href="/submit-produce-listing" variant="light">Submit Listing</ButtonLink>
-              <ButtonLink href="/submit-buyer-request" variant="light">Submit Request</ButtonLink>
+              <ButtonLink href="/submit-buyer-request" variant="light">Request Supply</ButtonLink>
               <ButtonLink href="/market-intelligence" variant="light">Market Intelligence</ButtonLink>
             </div>
           </div>

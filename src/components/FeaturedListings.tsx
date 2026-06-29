@@ -36,7 +36,7 @@ const backgrounds = {
 export function FeaturedListings({
   kinds = ["all"],
   title = "Featured listings",
-  description = "Highlighted farmers, suppliers, and buyer requests that Ghana Growers wants visitors to notice first.",
+  description = "Highlighted farmers, suppliers, and produce demand that Ghana Growers wants visitors to notice first.",
   background = "white",
   limit,
   compact = false,
@@ -189,7 +189,7 @@ export function FeaturedListings({
                     {request.buyerType} in {request.district}, {request.region}. Deadline: {request.deadline}.
                   </p>
                   <WhatsAppButton
-                    message={`Hello Ghana Growers, I am interested in the featured buyer request for ${request.quantityNeeded} of ${request.productName}.`}
+                    message={`Hello Ghana Growers, I am interested in the featured sourcing request for ${request.quantityNeeded} of ${request.productName}.`}
                     sourceType="Buyer Request"
                     sourceId={request.id}
                     sourceName={request.productName}

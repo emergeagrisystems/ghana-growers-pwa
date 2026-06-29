@@ -29,7 +29,7 @@ function unique(values: string[]) {
 }
 
 function buyerWhatsAppUrl(request: BuyerRequest) {
-  const message = `Hello, I am responding to your Ghana Growers buyer request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`;
+  const message = `Hello, I am responding to your Ghana Growers sourcing request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`;
   return `https://wa.me/${request.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
@@ -54,7 +54,7 @@ function SearchBox({
         <input
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search buyer requests..."
+          placeholder="Search produce demand..."
           className="w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm outline-none transition focus:border-leaf-600 focus:ring-2 focus:ring-leaf-600/20"
         />
       </span>
@@ -189,7 +189,7 @@ function RequestDetailsModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="max-h-[92dvh] w-full max-w-5xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
         <div className="flex items-center justify-between border-b border-leaf-900/10 px-5 py-4">
-          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Request</p>
+          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Sourcing Request</p>
           <button
             type="button"
             onClick={onClose}
@@ -375,9 +375,9 @@ export function BuyerRequestsBoard({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Active demand</p>
-                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Buyer Demand Board</h2>
+                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Active Produce Demand</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
-                  Browse active requests from buyers across Ghana.
+                  Ghana Growers reviews sourcing requests before publishing demand for matching.
                 </p>
                 <p className="mt-2 text-xs font-black uppercase tracking-wide text-ink/45">
                   Last updated: {buyerRequestsMeta.lastUpdated}
@@ -393,7 +393,7 @@ export function BuyerRequestsBoard({
             <aside className="hidden lg:block">
               <div className="sticky top-24 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
                 <h2 className="text-lg font-black text-ink">Find demand</h2>
-                <p className="mt-2 text-sm leading-6 text-ink/58">Search and filter active buyer requests.</p>
+                <p className="mt-2 text-sm leading-6 text-ink/58">Search and filter produce sourcing needs.</p>
                 <div className="mt-5">
                   <SearchBox searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
                 </div>
@@ -442,26 +442,26 @@ export function BuyerRequestsBoard({
 
               <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between lg:mt-0">
                 <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand Board</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Buyer Requests</h2>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Sourcing Opportunities</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Published Produce Needs</h2>
                 </div>
                 <p className="text-sm font-semibold text-ink/55">
-                  Showing {filteredRequests.length} of {requests.length} requests
+                  Showing {filteredRequests.length} of {requests.length} sourcing needs
                 </p>
               </div>
 
               {requests.length === 0 ? (
                 <div className="gg-empty-state mt-8">
                   <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-                  <h3 className="mt-4 gg-card-title">No records available yet</h3>
+                  <h3 className="mt-4 gg-card-title">Need produce?</h3>
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
-                    Ghana Growers is currently collecting and reviewing buyer demand before publishing requests.
+                    Submit your sourcing request and we&apos;ll help connect you with suitable farmers and suppliers.
                   </p>
                   <Link
                     href="/submit-buyer-request"
                     className="gg-button-primary mt-5"
                   >
-                    Submit Buyer Request
+                    Request Supply
                   </Link>
                 </div>
               ) : filteredRequests.length > 0 ? (
@@ -473,7 +473,7 @@ export function BuyerRequestsBoard({
               ) : (
                 <div className="gg-empty-state mt-8">
                   <ShoppingBasket className="mx-auto text-leaf-600" size={34} aria-hidden="true" />
-                  <h3 className="mt-4 gg-card-title">No records available yet</h3>
+                  <h3 className="mt-4 gg-card-title">No matching sourcing needs</h3>
                   <p className="mt-2 text-sm leading-6 text-ink/62">Try another search, product, region, buyer type, status, or deadline.</p>
                 </div>
               )}

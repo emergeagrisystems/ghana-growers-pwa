@@ -34,7 +34,7 @@ export default function JoinBuyerPage() {
               <ol className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-ink/68">
                 <li>1. Ghana Growers reviews your buying needs and contact details.</li>
                 <li>2. The team can match serious demand with suitable farmers, suppliers, or listings.</li>
-                <li>3. You can also submit specific buyer requests when you need a product by a deadline.</li>
+                <li>3. You can also request sourcing support when you need a product by a deadline.</li>
               </ol>
             </div>
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm">

@@ -6,7 +6,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Buy Through Ghana Growers",
-  description: "Browse produce, view marketplace listings, and submit buyer requests through Ghana Growers.",
+  description: "Browse produce, view marketplace listings, and request sourcing support through Ghana Growers.",
   path: "/services/buy"
 });
 
@@ -26,10 +26,10 @@ const buyActions = [
     icon: PackageSearch
   },
   {
-    title: "Submit Buyer Request",
-    description: "Tell Ghana Growers what you need so matching opportunities can be reviewed.",
+    title: "Request Supply",
+    description: "Tell Ghana Growers what you need so our team can review and match suitable supply.",
     href: "/submit-buyer-request",
-    cta: "Submit Buyer Request",
+    cta: "Request Supply",
     icon: Send
   }
 ];
@@ -44,13 +44,13 @@ export default function BuyServicePage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/marketplace">Open Marketplace</ButtonLink>
-          <ButtonLink href="/submit-buyer-request" variant="secondary">Submit Buyer Request</ButtonLink>
+          <ButtonLink href="/submit-buyer-request" variant="secondary">Request Supply</ButtonLink>
         </div>
       </PageHero>
 
       <section className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader title="What do you want to buy?" description="Most buyers start in the Marketplace, then submit a request if they cannot find the exact product or volume." />
+          <SectionHeader title="What do you want to source?" description="Most buyers start in the Marketplace, then request sourcing support if they cannot find the exact product, volume, or supplier." />
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {buyActions.map((action) => {
               const Icon = action.icon;

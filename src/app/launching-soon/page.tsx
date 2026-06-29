@@ -38,8 +38,8 @@ const registrationCards = [
     icon: Store
   },
   {
-    title: "Submit Buyer Request",
-    description: "Tell Ghana Growers what produce you need so demand can be reviewed before launch.",
+    title: "Request Supply",
+    description: "Tell Ghana Growers what produce you need so our team can review demand before launch.",
     href: "/submit-buyer-request",
     icon: ShoppingBasket
   }
