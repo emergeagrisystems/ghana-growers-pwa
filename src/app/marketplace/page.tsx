@@ -68,6 +68,7 @@ export default async function MarketplacePage() {
             />
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <ButtonLink href="/farmer-directory" variant="light">Farmer Directory</ButtonLink>
+              <ButtonLink href="/join/farmer" variant="light">Join as a Farmer</ButtonLink>
               <ButtonLink href="/supplier-directory" variant="light">Supplier Directory</ButtonLink>
               <ButtonLink href="/buyer-requests" variant="light">Produce Sourcing</ButtonLink>
               <ButtonLink href="/submit-produce-listing" variant="light">Submit Listing</ButtonLink>

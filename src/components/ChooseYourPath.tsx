@@ -15,7 +15,7 @@ const pathCards: PathCard[] = [
     title: "Grow & Sell",
     description: "Sell produce and connect with buyers.",
     icon: Sprout,
-    primaryLabel: "Join as Farmer",
+    primaryLabel: "Join as a Farmer",
     primaryHref: "/join/farmer",
     tone: "leaf"
   },

@@ -18,6 +18,7 @@ const footerGroups = [
       { title: "Farmer Hub", href: "/smart-solutions" },
       { title: "Sell", href: "/services" },
       { title: "Buy", href: "/services/buy" },
+      { title: "Join as a Farmer", href: "/join/farmer" },
       { title: "Become a Supplier", href: "/become-a-supplier" }
     ]
   },

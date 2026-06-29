@@ -2,6 +2,7 @@ import { farmerRegistrationNotifications } from "@/data/notificationConfig";
 import { appendValuesToGoogleSheet } from "@/lib/googleSheets";
 
 export type FarmerRegistrationPayload = {
+  farmerName: string;
   fullName: string;
   farmName: string;
   phoneNumber: string;
@@ -9,55 +10,93 @@ export type FarmerRegistrationPayload = {
   emailAddress: string;
   region: string;
   district: string;
+  districtTown: string;
+  farmSize: string;
   farmSizeAcres: string;
   farmType: "Crop" | "Livestock" | "Mixed";
+  mainCrops: string;
   products: string;
+  otherProduce: string;
+  currentAvailability: string;
+  harvestSeason: string;
   expectedHarvestPeriod: string;
+  farmDescription: string;
   additionalNotes: string;
+  hasAvailableProduce: string;
+  farmerPhotoUrl: string;
+  farmPhotoUrls: string[];
+  producePhotoUrls: string[];
+  agreement: boolean;
   privacyAccepted: boolean;
 };
 
 export type FarmerRegistrationResult = {
   ok: boolean;
-  errors: Partial<Record<keyof FarmerRegistrationPayload, string>>;
+  errors: Partial<Record<keyof FarmerRegistrationPayload | "form", string>>;
   data?: FarmerRegistrationPayload;
 };
-
-const requiredFields: Array<keyof FarmerRegistrationPayload> = [
-  "fullName",
-  "farmName",
-  "phoneNumber",
-  "whatsappNumber",
-  "emailAddress",
-  "region",
-  "district",
-  "farmSizeAcres",
-  "farmType",
-  "products",
-  "expectedHarvestPeriod"
-];
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function cleanArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map(clean).filter(Boolean);
+  }
+
+  const stringValue = clean(value);
+  return stringValue ? stringValue.split(",").map((item) => item.trim()).filter(Boolean) : [];
+}
+
 export function validateFarmerRegistration(input: Record<string, unknown>): FarmerRegistrationResult {
+  const farmerName = clean(input.farmerName) || clean(input.fullName);
+  const districtTown = clean(input.districtTown) || clean(input.district);
+  const farmSize = clean(input.farmSize) || clean(input.farmSizeAcres);
+  const mainCrops = clean(input.mainCrops) || clean(input.products);
+  const harvestSeason = clean(input.harvestSeason) || clean(input.expectedHarvestPeriod);
+  const farmDescription = clean(input.farmDescription) || clean(input.additionalNotes);
+  const agreement = input.agreement === true || input.privacyAccepted === true;
+
   const data: FarmerRegistrationPayload = {
-    fullName: clean(input.fullName),
+    farmerName,
+    fullName: farmerName,
     farmName: clean(input.farmName),
-    phoneNumber: clean(input.phoneNumber),
-    whatsappNumber: clean(input.whatsappNumber),
-    emailAddress: clean(input.emailAddress),
+    phoneNumber: clean(input.phoneNumber) || clean(input.phone),
+    whatsappNumber: clean(input.whatsappNumber) || clean(input.whatsapp),
+    emailAddress: clean(input.emailAddress) || clean(input.email),
     region: clean(input.region),
-    district: clean(input.district),
-    farmSizeAcres: clean(input.farmSizeAcres),
-    farmType: clean(input.farmType) as FarmerRegistrationPayload["farmType"],
-    products: clean(input.products),
-    expectedHarvestPeriod: clean(input.expectedHarvestPeriod),
-    additionalNotes: clean(input.additionalNotes),
-    privacyAccepted: input.privacyAccepted === true
+    district: districtTown,
+    districtTown,
+    farmSize,
+    farmSizeAcres: farmSize,
+    farmType: (clean(input.farmType) || "Crop") as FarmerRegistrationPayload["farmType"],
+    mainCrops,
+    products: mainCrops,
+    otherProduce: clean(input.otherProduce),
+    currentAvailability: clean(input.currentAvailability),
+    harvestSeason,
+    expectedHarvestPeriod: harvestSeason,
+    farmDescription,
+    additionalNotes: farmDescription,
+    hasAvailableProduce: clean(input.hasAvailableProduce),
+    farmerPhotoUrl: clean(input.farmerPhotoUrl),
+    farmPhotoUrls: cleanArray(input.farmPhotoUrls),
+    producePhotoUrls: cleanArray(input.producePhotoUrls),
+    agreement,
+    privacyAccepted: agreement
   };
   const errors: FarmerRegistrationResult["errors"] = {};
+  const requiredFields: Array<keyof FarmerRegistrationPayload> = [
+    "farmerName",
+    "phoneNumber",
+    "region",
+    "districtTown",
+    "mainCrops",
+    "currentAvailability",
+    "farmDescription",
+    "hasAvailableProduce"
+  ];
 
   requiredFields.forEach((field) => {
     if (!data[field]) {
@@ -69,7 +108,8 @@ export function validateFarmerRegistration(input: Record<string, unknown>): Farm
     errors.emailAddress = "Enter a valid email address.";
   }
 
-  if (data.farmSizeAcres && Number(data.farmSizeAcres) <= 0) {
+  if (data.farmSize && Number(data.farmSize) <= 0) {
+    errors.farmSize = "Enter a farm size greater than zero.";
     errors.farmSizeAcres = "Enter a farm size greater than zero.";
   }
 
@@ -77,8 +117,9 @@ export function validateFarmerRegistration(input: Record<string, unknown>): Farm
     errors.farmType = "Select a valid farm type.";
   }
 
-  if (!data.privacyAccepted) {
-    errors.privacyAccepted = "You must accept the privacy notice.";
+  if (!data.agreement) {
+    errors.agreement = "You must accept the Ghana Growers marketplace and quality guidelines.";
+    errors.privacyAccepted = "You must accept the Ghana Growers marketplace and quality guidelines.";
   }
 
   return {
@@ -92,19 +133,27 @@ export async function appendFarmerRegistrationToSheet(data: FarmerRegistrationPa
   const sheetName = process.env.GOOGLE_SHEETS_FARMER_SHEET_NAME || farmerRegistrationNotifications.googleSheetName;
   const submittedAt = new Date().toISOString();
 
-  return appendValuesToGoogleSheet(sheetName, "A:M", [[
+  return appendValuesToGoogleSheet(sheetName, "A:U", [[
     submittedAt,
-    data.fullName,
+    data.farmerName,
     data.farmName,
     data.phoneNumber,
     data.whatsappNumber,
     data.emailAddress,
     data.region,
-    data.district,
-    data.farmSizeAcres,
+    data.districtTown,
+    data.farmSize,
     data.farmType,
-    data.products,
-    data.expectedHarvestPeriod,
+    data.mainCrops,
+    data.otherProduce,
+    data.currentAvailability,
+    data.harvestSeason,
+    data.hasAvailableProduce,
+    data.farmDescription,
+    data.farmerPhotoUrl,
+    data.farmPhotoUrls.join(", "),
+    data.producePhotoUrls.join(", "),
+    data.agreement ? "Yes" : "No",
     data.additionalNotes
   ]]);
 }
@@ -125,20 +174,27 @@ export async function sendFarmerRegistrationEmail(data: FarmerRegistrationPayloa
     body: JSON.stringify({
       from: process.env.FARMER_REGISTRATION_FROM_EMAIL || farmerRegistrationNotifications.fromEmail,
       to: farmerRegistrationNotifications.adminEmails,
-      subject: `${farmerRegistrationNotifications.subjectPrefix}: ${data.fullName}`,
+      subject: `${farmerRegistrationNotifications.subjectPrefix}: ${data.farmerName}`,
       text: [
-        `Full Name: ${data.fullName}`,
-        `Farm Name: ${data.farmName}`,
+        `Farmer Name: ${data.farmerName}`,
+        `Farm Name: ${data.farmName || "Not provided"}`,
         `Phone Number: ${data.phoneNumber}`,
-        `WhatsApp Number: ${data.whatsappNumber}`,
-        `Email Address: ${data.emailAddress}`,
+        `WhatsApp Number: ${data.whatsappNumber || "Not provided"}`,
+        `Email Address: ${data.emailAddress || "Not provided"}`,
         `Region: ${data.region}`,
-        `District: ${data.district}`,
-        `Farm Size (Acres): ${data.farmSizeAcres}`,
+        `District/Town: ${data.districtTown}`,
+        `Farm Size: ${data.farmSize || "Not provided"}`,
         `Farm Type: ${data.farmType}`,
-        `Products Grown/Raised: ${data.products}`,
-        `Expected Harvest Period: ${data.expectedHarvestPeriod}`,
-        `Additional Notes: ${data.additionalNotes || "None"}`
+        `Main Crops/Produce: ${data.mainCrops}`,
+        `Other Produce: ${data.otherProduce || "None"}`,
+        `Current Availability: ${data.currentAvailability}`,
+        `Harvest Season: ${data.harvestSeason || "Not provided"}`,
+        `Has Available Produce: ${data.hasAvailableProduce}`,
+        `Farm Description: ${data.farmDescription}`,
+        `Farmer Photo: ${data.farmerPhotoUrl || "None"}`,
+        `Farm Photos: ${data.farmPhotoUrls.join(", ") || "None"}`,
+        `Produce Photos: ${data.producePhotoUrls.join(", ") || "None"}`,
+        `Agreement: ${data.agreement ? "Yes" : "No"}`
       ].join("\n")
     })
   });

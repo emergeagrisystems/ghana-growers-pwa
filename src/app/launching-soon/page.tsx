@@ -20,7 +20,7 @@ export const metadata = {
 
 const registrationCards = [
   {
-    title: "Register as Farmer",
+    title: "Join as a Farmer",
     description: "Share your farm, products, location, and harvest information before the platform opens.",
     href: "/join/farmer",
     icon: Sprout

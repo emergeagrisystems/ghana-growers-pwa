@@ -28,7 +28,7 @@ export default async function FarmerDirectoryPage() {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/buyer-requests">View Produce Demand</ButtonLink>
-          <ButtonLink href="/join/farmer" variant="secondary">Register a Farm</ButtonLink>
+          <ButtonLink href="/join/farmer" variant="secondary">Join as a Farmer</ButtonLink>
           <ButtonLink href="/marketplace" variant="light">Browse Marketplace</ButtonLink>
         </div>
       </PageHero>

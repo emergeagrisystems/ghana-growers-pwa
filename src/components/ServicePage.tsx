@@ -67,7 +67,7 @@ export function ServicePage({
               </h3>
               <p className="mt-3 text-sm leading-6 text-ink/70">
                 {formAudience === "farmer"
-                  ? "Use the complete farmer registration form to share your farm details, products, harvest period, and contact information."
+                  ? "Use the farmer application to share your farm details, products, harvest period, and contact information."
                   : formAudience === "buyer"
                     ? "Use the complete buyer registration form to share what you buy, how much you need, and how often you purchase."
                     : "Use the complete supplier registration form to list your products, services, coverage area, and company details."}

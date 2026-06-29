@@ -14,7 +14,7 @@ const joinOptions = [
   {
     title: "Farmer",
     description: "Create a farmer profile, showcase your produce, and connect with buyers.",
-    buttonLabel: "Join as Farmer",
+    buttonLabel: "Join as a Farmer",
     href: "/join/farmer",
     icon: Tractor
   },
