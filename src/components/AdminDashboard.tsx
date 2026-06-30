@@ -1540,6 +1540,123 @@ function farmerCompleteness(farmer: ImportedFarmerRecord) {
   };
 }
 
+function daysSinceDate(value?: string | null) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = new Date(value).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((Date.now() - timestamp) / 86400000));
+}
+
+function farmerQueuePriority(farmer: ImportedFarmerRecord) {
+  const daysWaiting = daysSinceDate(farmer.created_at);
+
+  if (daysWaiting >= 3 || farmer.status === "Needs Follow-up") {
+    return {
+      label: "Overdue",
+      tone: "border-l-tomato bg-tomato/5 text-tomato",
+      dot: "bg-tomato"
+    };
+  }
+
+  if (daysWaiting >= 1 || farmer.status === "Under Review") {
+    return {
+      label: "Due Today",
+      tone: "border-l-earth-500 bg-earth-50 text-earth-700",
+      dot: "bg-earth-500"
+    };
+  }
+
+  return {
+    label: "New",
+    tone: "border-l-leaf-600 bg-leaf-50 text-leaf-700",
+    dot: "bg-leaf-600"
+  };
+}
+
+function farmerWaitingLabel(farmer: ImportedFarmerRecord) {
+  const daysWaiting = daysSinceDate(farmer.created_at);
+
+  if (daysWaiting === 0) {
+    return "Today";
+  }
+
+  if (daysWaiting === 1) {
+    return "1 day waiting";
+  }
+
+  return `${daysWaiting} days waiting`;
+}
+
+function farmerRecommendedAction(farmer: ImportedFarmerRecord) {
+  const readiness = farmerReviewReadiness(farmer);
+  const missing = readiness.filter((item) => !item.complete).map((item) => item.label);
+
+  if (!readiness.find((item) => item.label === "Contact")?.complete) {
+    return "Complete Contact Information";
+  }
+
+  if (missing.includes("Photo")) {
+    return "Request Farm Photos";
+  }
+
+  if (missing.includes("Products")) {
+    return "Complete Produce Information";
+  }
+
+  if (missing.includes("Location")) {
+    return "Call Farmer";
+  }
+
+  if (farmer.verification_status !== "Verified") {
+    return "Approve";
+  }
+
+  return farmer.status === "Active" ? "Review Complete" : "Approve & Publish";
+}
+
+function farmerReviewTimeline(farmer: ImportedFarmerRecord) {
+  return [
+    {
+      label: "Submitted",
+      detail: farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "Submission date not provided"
+    },
+    {
+      label: "Imported",
+      detail: farmer.source || "Tally Import"
+    },
+    {
+      label: "Photos Updated",
+      detail: publicReviewPhotoUrl(farmer) ? "Profile photo available" : farmerPhotoDiagnostics(farmer).status
+    },
+    {
+      label: "Previous Review",
+      detail: farmer.verification_date
+        ? `Verified on ${new Date(farmer.verification_date).toLocaleDateString()}`
+        : farmer.verification_notes
+          ? "Notes saved"
+          : "No previous review recorded"
+    }
+  ];
+}
+
+function farmerUploadedDocuments(farmer: ImportedFarmerRecord) {
+  const entries = Object.entries(farmer.original_tally_data ?? {});
+
+  return entries
+    .filter(([label, value]) => /(certificate|document|file|upload)/i.test(label) && (urlsFromUnknown(value).length > 0 || filenameFromUnknown(value)))
+    .map(([label, value]) => ({
+      label,
+      filename: filenameFromUnknown(value) || urlsFromUnknown(value)[0] || "Uploaded file"
+    }));
+}
+
 function followUpMessageForFarmer(farmer: ImportedFarmerRecord) {
   const completeness = farmerCompleteness(farmer);
   const missingList = completeness.missing.length
@@ -2270,7 +2387,7 @@ export function AdminDashboard({
   const [pendingFarmerBulkAction, setPendingFarmerBulkAction] = useState<FarmerBulkAction | null>(null);
   const [isUpdatingFarmersBulk, setIsUpdatingFarmersBulk] = useState(false);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ImportAdminStatus>>({});
-  const [notice, setNotice] = useState("Actions are mock controls for Phase 1 admin.");
+  const [notice, setNotice] = useState("Choose the next item in the queue and keep daily operations moving.");
   const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
@@ -2616,10 +2733,10 @@ export function AdminDashboard({
   }, []);
 
   useEffect(() => {
-    if (activeSection === "farmer-import") {
+    if (activeSection === "farmer-import" || (activeSection === "applications" && applicationTab === "farmer")) {
       void loadImportedFarmers();
     }
-  }, [activeSection, loadImportedFarmers]);
+  }, [activeSection, applicationTab, loadImportedFarmers]);
 
   const newApplicationCounts = useMemo(() => ({
     farmers: applications.farmer.filter((application) => application.status === "New").length,
@@ -2934,6 +3051,27 @@ export function AdminDashboard({
     reviewingImportedFarmer?.whatsapp_number
       ? `https://wa.me/${reviewingImportedFarmer.whatsapp_number.replace(/\D+/g, "")}?text=${encodeURIComponent(reviewingFollowUpMessage)}`
       : "";
+  const farmerReviewQueue = importedFarmers.filter((farmer) => farmer.status !== "Archived");
+  const farmerReviewRemaining = farmerReviewQueue.filter((farmer) => farmer.status !== "Active" && farmer.verification_status !== "Verified").length;
+  const oldestWaitingFarmer = farmerReviewQueue
+    .slice()
+    .sort((a, b) => daysSinceDate(b.created_at) - daysSinceDate(a.created_at))[0];
+  const oldestWaitingLabel = oldestWaitingFarmer ? farmerWaitingLabel(oldestWaitingFarmer) : "No waiting applications";
+  const farmerAverageReviewTime = farmerReviewRemaining > 0 ? "8 min" : "0 min";
+  const recommendedFarmerAction = reviewingImportedFarmer ? farmerRecommendedAction(reviewingImportedFarmer) : "Select Farmer";
+  const reviewingDocuments = reviewingImportedFarmer ? farmerUploadedDocuments(reviewingImportedFarmer) : [];
+
+  useEffect(() => {
+    if (activeSection !== "applications" || applicationTab !== "farmer" || reviewingImportedFarmerId || farmerReviewQueue.length === 0) {
+      return;
+    }
+
+    const firstFarmer = farmerReviewQueue[0];
+    setReviewingImportedFarmerId(firstFarmer.id);
+    setVerificationReviewNotes(firstFarmer.verification_notes ?? "");
+    setFarmerReviewDebug(reviewDebugFields(firstFarmer));
+    setFarmerReviewMessage(null);
+  }, [activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
@@ -3532,6 +3670,8 @@ export function AdminDashboard({
     setPendingFarmerReviewAction(action);
     setFarmerReviewMessage(null);
     setFarmerImportError("");
+    const shouldAdvanceAfterAction = ["under-review", "needs-follow-up", "verify", "verify-only", "reject", "archive"].includes(action);
+    const nextFarmerAfterDecision = shouldAdvanceAfterAction ? nextImportedFarmer : null;
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -3578,8 +3718,13 @@ export function AdminDashboard({
               : "Verification notes saved.";
 
     setImportedFarmers((current) => current.map((farmer) => (farmer.id === updatedFarmer.id ? updatedFarmer : farmer)));
-    setReviewingImportedFarmerId(updatedFarmer.id);
-    setVerificationReviewNotes(updatedFarmer.verification_notes ?? "");
+    if (nextFarmerAfterDecision) {
+      setReviewingImportedFarmerId(nextFarmerAfterDecision.id);
+      setVerificationReviewNotes(nextFarmerAfterDecision.verification_notes ?? "");
+    } else {
+      setReviewingImportedFarmerId(updatedFarmer.id);
+      setVerificationReviewNotes(updatedFarmer.verification_notes ?? "");
+    }
     setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
     setRowsBySection((current) => ({
       ...current,
@@ -3607,7 +3752,10 @@ export function AdminDashboard({
           : row
       )
     }));
-    setFarmerReviewMessage({ type: "success", text: successMessage });
+    setFarmerReviewMessage({
+      type: "success",
+      text: nextFarmerAfterDecision ? `${successMessage} Next farmer ready.` : successMessage
+    });
     setNotice(successMessage);
     void loadActivity();
     void loadAnalytics();
@@ -3830,6 +3978,12 @@ export function AdminDashboard({
   const isLeadQueueSection = activeSection === "lead-queue";
   const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
+  const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
+  const sectionEyebrow = isFarmerReviewWorkspace ? "Review Workspace" : "Manage Records";
+  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : activeSectionLabel;
+  const sectionNotice = isFarmerReviewWorkspace
+    ? "Review one farmer, make one decision, then continue to the next application."
+    : notice;
 
   async function updateLeadRequestStatus(lead: LeadRequestRecord, status: LeadRequestStatus) {
     const response = await fetch("/api/admin/lead-requests", {
@@ -4106,7 +4260,12 @@ export function AdminDashboard({
                 </p>
                 <div className="mt-2 grid gap-1.5">
                   {group.items.map((item) => {
-                    const isActive = item.id === activeSection;
+                    const isActive =
+                      item.id === activeSection &&
+                      (item.id !== "applications" ||
+                        (applicationTab === "farmer" && item.label === "Farmer Applications") ||
+                        (applicationTab === "supplier" && item.label === "Supplier Applications") ||
+                        (applicationTab === "buyer" && item.label === "Buyer Applications"));
 
                     return (
                       <button
@@ -4277,9 +4436,9 @@ export function AdminDashboard({
             <div className="border-b border-leaf-900/10 p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Manage Records</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{activeSectionLabel}</h2>
-                  <p className="mt-2 text-sm leading-6 text-ink/58">{notice}</p>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">{sectionEyebrow}</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{sectionTitle}</h2>
+                  <p className="mt-2 text-sm leading-6 text-ink/58">{sectionNotice}</p>
                 </div>
                 {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
@@ -4918,10 +5077,10 @@ export function AdminDashboard({
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   {([
-                    ["farmer", "Farmer Applications"],
-                    ["buyer", "Buyer Applications"],
-                    ["supplier", "Supplier Applications"]
-                  ] as Array<[ApplicationKind, string]>).map(([kind, label]) => (
+                    ["farmer", "Farmer Applications", farmerReviewQueue.length],
+                    ["buyer", "Buyer Applications", applications.buyer.filter((application) => application.status === "New").length],
+                    ["supplier", "Supplier Applications", applications.supplier.filter((application) => application.status === "New").length]
+                  ] as Array<[ApplicationKind, string, number]>).map(([kind, label, count]) => (
                     <button
                       key={kind}
                       type="button"
@@ -4930,10 +5089,416 @@ export function AdminDashboard({
                         applicationTab === kind ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-800 hover:bg-white"
                       }`}
                     >
-                      {label} ({applications[kind].filter((application) => application.status === "New").length})
+                      {label} ({count})
                     </button>
                   ))}
                 </div>
+                {applicationTab === "farmer" ? (
+                  <div className="grid gap-5">
+                    <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-3">
+                      {[
+                        ["Applications Remaining", farmerReviewRemaining],
+                        ["Average Review Time", farmerAverageReviewTime],
+                        ["Oldest Waiting Application", oldestWaitingLabel]
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                          <p className="mt-2 text-xl font-black text-ink">{value}</p>
+                        </div>
+                      ))}
+                    </section>
+
+                    <section className="grid min-h-[720px] gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+                      <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer Queue</p>
+                            <h3 className="mt-1 text-xl font-black text-ink">Review next</h3>
+                          </div>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                            {farmerReviewQueue.length}
+                          </span>
+                        </div>
+                        <div className="mt-4 grid gap-2">
+                          {farmerReviewQueue.map((farmer) => {
+                            const priority = farmerQueuePriority(farmer);
+                            const isSelected = reviewingImportedFarmer?.id === farmer.id;
+
+                            return (
+                              <button
+                                key={farmer.id}
+                                type="button"
+                                onClick={() => void openImportedFarmerReview(farmer)}
+                                className={`rounded-md border border-l-4 p-3 text-left transition ${
+                                  isSelected
+                                    ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
+                                    : `border-leaf-900/10 ${priority.tone} hover:bg-white`
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-black text-ink">{farmer.farm_name || farmer.farmer_name || "Unnamed farmer"}</p>
+                                    <p className="mt-1 text-xs font-semibold text-ink/55">{farmer.region || "Region not provided"}</p>
+                                  </div>
+                                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${priority.dot}`} aria-hidden="true" />
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {farmer.status}
+                                  </span>
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {farmerWaitingLabel(farmer)}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-[11px] font-black uppercase tracking-wide text-ink/40">
+                                  {farmer.created_at ? new Date(farmer.created_at).toLocaleDateString() : "No date"}
+                                </p>
+                              </button>
+                            );
+                          })}
+                          {farmerReviewQueue.length === 0 ? (
+                            <p className="rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/58 ring-1 ring-leaf-900/10">
+                              No imported farmer applications are waiting for review.
+                            </p>
+                          ) : null}
+                        </div>
+                      </aside>
+
+                      <div className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        {isLoadingFarmerReview ? (
+                          <p className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">
+                            Loading full farmer application...
+                          </p>
+                        ) : null}
+
+                        {reviewingImportedFarmer ? (
+                          <div className="grid gap-6">
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer Review</p>
+                              <h3 className="mt-2 text-3xl font-black text-ink">{reviewingImportedFarmer.farm_name || reviewingImportedFarmer.farmer_name}</h3>
+                              <p className="mt-2 text-sm font-semibold text-ink/60">
+                                Welcome this farmer into the Ghana Growers network with a complete, trusted profile.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(220px,0.9fr)]">
+                              <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                                {publicReviewPhotoUrl(reviewingImportedFarmer) ? (
+                                  <div
+                                    role="img"
+                                    aria-label={`${reviewingImportedFarmer.farm_name} photo`}
+                                    className="h-full w-full bg-cover bg-center"
+                                    style={{ backgroundImage: `url(${publicReviewPhotoUrl(reviewingImportedFarmer)})` }}
+                                  />
+                                ) : (
+                                  <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
+                                    {photoSubmittedButNotImported(reviewingImportedFarmer) ? "Photo submitted but not imported." : "No farmer photo submitted."}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="grid gap-3">
+                                <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Farm Photographs</p>
+                                  <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
+                                    {publicReviewPhotoUrl(reviewingImportedFarmer)
+                                      ? "Primary farmer photo is available for profile review."
+                                      : farmerPhotoDiagnostics(reviewingImportedFarmer).status}
+                                  </p>
+                                  {photoSubmittedButNotImported(reviewingImportedFarmer) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => void applyImportedFarmerReviewAction("import-photo")}
+                                      disabled={isUpdatingFarmerReview}
+                                      className="mt-3 w-full rounded-md bg-leaf-700 px-3 py-2.5 text-xs font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:bg-ink/25"
+                                    >
+                                      {pendingFarmerReviewAction === "import-photo" ? "Importing photo..." : "Import Submitted Photo"}
+                                    </button>
+                                  ) : null}
+                                </div>
+                                <div className="rounded-md bg-earth-50 p-4 ring-1 ring-earth-500/20">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">Photo Status</p>
+                                  <p className="mt-2 text-sm font-black text-ink">{farmerPhotoDiagnostics(reviewingImportedFarmer).status}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Information</h4>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                {[
+                                  ["Name", reviewingImportedFarmer.farmer_name],
+                                  ["Farm Name", reviewingImportedFarmer.farm_name],
+                                  ["Phone", reviewingImportedFarmer.phone_number || reviewingImportedFarmer.whatsapp_number],
+                                  ["WhatsApp", reviewingImportedFarmer.whatsapp_number],
+                                  ["Email", reviewingImportedFarmer.email],
+                                  ["Region", reviewingImportedFarmer.region],
+                                  ["District", reviewingImportedFarmer.district],
+                                  ["Farm Size", reviewingImportedFarmer.farm_size],
+                                  ["Years Farming", reviewingImportedFarmer.farming_experience]
+                                ].map(([label, value]) => (
+                                  <div key={label} className="rounded-md bg-leaf-50 p-3">
+                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                                    <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Produce</h4>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {reviewingImportedFarmer.products.length > 0 ? (
+                                  reviewingImportedFarmer.products.map((product) => (
+                                    <span key={product} className="rounded-full bg-leaf-50 px-3 py-1.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                      {product}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="rounded-full bg-earth-50 px-3 py-1.5 text-sm font-black text-earth-700">
+                                    Produce not provided
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div className="rounded-md bg-leaf-50 p-3">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current Availability</p>
+                                  <p className="mt-2 text-sm font-black text-ink">{reviewingImportedFarmer.currently_harvesting || "To be confirmed"}</p>
+                                </div>
+                                <div className="rounded-md bg-leaf-50 p-3">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Supply Frequency</p>
+                                  <p className="mt-2 text-sm font-black text-ink">{reviewingImportedFarmer.supply_frequency || "To be confirmed"}</p>
+                                </div>
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Farm Story</h4>
+                              <p className="mt-3 text-sm font-semibold leading-7 text-ink/68">
+                                {reviewingImportedFarmer.description || `${reviewingImportedFarmer.farm_name || reviewingImportedFarmer.farmer_name} is applying to join the Ghana Growers farmer network from ${[reviewingImportedFarmer.district, reviewingImportedFarmer.region].filter(Boolean).join(", ") || "Ghana"}.`}
+                              </p>
+                            </section>
+
+                            <section className="grid gap-4 lg:grid-cols-2">
+                              <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Uploaded Documents</h4>
+                                <div className="mt-3 grid gap-2">
+                                  {reviewingDocuments.length > 0 ? (
+                                    reviewingDocuments.map((document) => (
+                                      <div key={`${document.label}-${document.filename}`} className="rounded-md bg-leaf-50 p-3">
+                                        <p className="text-sm font-black text-ink">{document.label}</p>
+                                        <p className="mt-1 break-all text-xs font-semibold text-ink/55">{document.filename}</p>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No certificates or additional files submitted.</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Application Timeline</h4>
+                                <div className="mt-4 grid gap-3">
+                                  {farmerReviewTimeline(reviewingImportedFarmer).map((item) => (
+                                    <div key={item.label} className="flex gap-3">
+                                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-leaf-700" />
+                                      <div>
+                                        <p className="text-sm font-black text-ink">{item.label}</p>
+                                        <p className="mt-1 text-xs font-semibold text-ink/55">{item.detail}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Profile Readiness</h4>
+                              <div className="mt-4 grid gap-2">
+                                {reviewingReadiness.map((item) => (
+                                  <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
+                                    <span className="text-sm font-black text-ink">{item.label}</span>
+                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${item.complete ? "bg-leaf-100 text-leaf-800" : "bg-earth-50 text-earth-700"}`}>
+                                      {item.complete ? "Ready" : item.note}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+                          </div>
+                        ) : (
+                          <div className="grid min-h-[420px] place-items-center rounded-md bg-leaf-50 p-8 text-center">
+                            <div>
+                              <p className="text-sm font-black uppercase tracking-wide text-earth-700">No farmer selected</p>
+                              <h3 className="mt-2 text-2xl font-black text-ink">Choose a farmer from the queue</h3>
+                              <p className="mt-3 max-w-md text-sm font-semibold leading-6 text-ink/60">
+                                The review workspace keeps the queue, application, and decision controls visible for continuous review.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <aside className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">Decision Center</p>
+                        {reviewingImportedFarmer ? (
+                          <div className="mt-4 grid gap-4">
+                            {farmerReviewMessage ? (
+                              <div
+                                className={`rounded-md px-4 py-3 text-sm font-black ${
+                                  farmerReviewMessage.type === "success"
+                                    ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
+                                    : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+                                }`}
+                                role={farmerReviewMessage.type === "error" ? "alert" : "status"}
+                              >
+                                {farmerReviewMessage.text}
+                              </div>
+                            ) : null}
+
+                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
+                              <p className="mt-2 text-xl font-black text-ink">{recommendedFarmerAction}</p>
+                              <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
+                                Recommendations assist the reviewer. The final decision remains with Ghana Growers.
+                              </p>
+                            </div>
+
+                            <label htmlFor="farmer-verification-notes" className="grid gap-2 text-sm font-black text-ink">
+                              Internal Notes
+                              <textarea
+                                id="farmer-verification-notes"
+                                value={verificationReviewNotes}
+                                onChange={(event) => setVerificationReviewNotes(event.target.value)}
+                                rows={7}
+                                className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                placeholder="Record call notes, missing details, and decision context."
+                              />
+                            </label>
+
+                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Trust</p>
+                              <div className="mt-3 grid gap-2">
+                                {[
+                                  ["Verification", reviewingImportedFarmer.verification_status],
+                                  ["GG Standard", reviewingImportedFarmer.gg_standard_status ?? "Pending"],
+                                  ["Featured Farmer", "Not featured"],
+                                  ["Founding Farmer", normalizedFarmerSource(reviewingImportedFarmer.source) === "Founding Farmer" ? "Yes" : "No"]
+                                ].map(([label, value]) => (
+                                  <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
+                                    <span className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</span>
+                                    <span className="text-xs font-black text-ink">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Communication</p>
+                              <div className="mt-3 grid gap-2 text-sm font-semibold text-ink/65">
+                                <p>Phone: {reviewingImportedFarmer.phone_number || "Not provided"}</p>
+                                <p>WhatsApp: {reviewingImportedFarmer.whatsapp_number || "Not provided"}</p>
+                                <p>Email: {reviewingImportedFarmer.email || "Not provided"}</p>
+                              </div>
+                              <div className="mt-3 grid gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => reviewingImportedFarmer.phone_number && navigator.clipboard.writeText(reviewingImportedFarmer.phone_number)}
+                                  className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                                >
+                                  Copy Number
+                                </button>
+                                {reviewingWhatsappUrl ? (
+                                  <a
+                                    href={reviewingWhatsappUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-md bg-white px-3 py-2 text-center text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  >
+                                    Open WhatsApp
+                                  </a>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("verify")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Approve & Publish"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("verify-only")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "verify-only" ? "Approving..." : "Approve Only"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "needs-follow-up" ? "Requesting..." : "Request Changes"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("reject")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "reject" ? "Rejecting..." : "Reject"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("archive")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "archive" ? "Archiving..." : "Archive"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applyImportedFarmerReviewAction("gg-standard")}
+                                disabled={isUpdatingFarmerReview}
+                                className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingFarmerReviewAction === "gg-standard" ? "Approving..." : "Approve GG Standard"}
+                              </button>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => previousImportedFarmer && void openImportedFarmerReview(previousImportedFarmer)}
+                                disabled={!previousImportedFarmer || isUpdatingFarmerReview}
+                                className="flex-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Previous
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => nextImportedFarmer && void openImportedFarmerReview(nextImportedFarmer)}
+                                disabled={!nextImportedFarmer || isUpdatingFarmerReview}
+                                className="flex-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Next Farmer
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/58">
+                            Select a farmer from the queue to make a review decision.
+                          </p>
+                        )}
+                      </aside>
+                    </section>
+                  </div>
+                ) : (
                 <div className="grid gap-4">
                   {applications[applicationTab].map((application) => (
                     <article key={application.id} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
@@ -4984,6 +5549,7 @@ export function AdminDashboard({
                     <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No applications in this queue yet.</p>
                   ) : null}
                 </div>
+                )}
               </div>
             ) : isSubmissionsSection ? (
               <div className="grid gap-5 p-5">
@@ -6161,7 +6727,7 @@ export function AdminDashboard({
             </div>
           ) : null}
 
-          {reviewingImportedFarmer ? (
+          {reviewingImportedFarmer && !(isApplicationsSection && applicationTab === "farmer") ? (
             <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/40 px-4 py-6 backdrop-blur-sm">
               <section className="mx-auto max-w-5xl rounded-md bg-white shadow-2xl">
                 <div className="flex flex-col gap-4 border-b border-leaf-900/10 p-5 lg:flex-row lg:items-start lg:justify-between">
