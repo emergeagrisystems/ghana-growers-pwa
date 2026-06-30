@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ArrowRight,
   Archive,
   BadgeCheck,
   BookOpen,
@@ -560,7 +561,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
 }
 
 const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDashboard }> = [
-  { id: "analytics", label: "Analytics", icon: ChartLine },
+  { id: "analytics", label: "Operations Center", icon: LayoutDashboard },
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
   { id: "lead-queue", label: "Leads", icon: MessageCircle },
   { id: "featured-enquiries", label: "Featured Enquiries", icon: Star },
@@ -578,6 +579,90 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "success-stories", label: "Success Stories", icon: Star },
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
+];
+
+const operationsNavigation: Array<{
+  group: string;
+  icon: string;
+  items: Array<{ id: AdminSectionId; label: string }>;
+}> = [
+  {
+    group: "Today",
+    icon: "Home",
+    items: [
+      { id: "analytics", label: "Operations Center" },
+      { id: "whatsapp-leads", label: "Notifications" }
+    ]
+  },
+  {
+    group: "Sourcing",
+    icon: "Handshake",
+    items: [
+      { id: "buyer-requests", label: "Produce Requests" },
+      { id: "match-opportunities", label: "Matches" },
+      { id: "lead-queue", label: "Follow-ups" },
+      { id: "lead-queue", label: "Completed Requests" }
+    ]
+  },
+  {
+    group: "Network",
+    icon: "Sprout",
+    items: [
+      { id: "applications", label: "Farmer Applications" },
+      { id: "applications", label: "Supplier Applications" },
+      { id: "farmers", label: "Members" },
+      { id: "suppliers", label: "Directories" }
+    ]
+  },
+  {
+    group: "Marketplace",
+    icon: "Basket",
+    items: [
+      { id: "marketplace", label: "Listings" },
+      { id: "marketplace", label: "Categories" },
+      { id: "featured-enquiries", label: "Featured Listings" }
+    ]
+  },
+  {
+    group: "Trust",
+    icon: "Shield",
+    items: [
+      { id: "verifications", label: "Verification" },
+      { id: "verifications", label: "GG Standard" },
+      { id: "featured-enquiries", label: "Featured Members" },
+      { id: "farmers", label: "Founding Members" }
+    ]
+  },
+  {
+    group: "Content",
+    icon: "Story",
+    items: [
+      { id: "success-stories", label: "Stories" },
+      { id: "learn", label: "Homepage" },
+      { id: "submissions", label: "Photography" },
+      { id: "learn", label: "Learning" }
+    ]
+  },
+  {
+    group: "Business",
+    icon: "Reports",
+    items: [
+      { id: "analytics", label: "Reports" },
+      { id: "analytics", label: "Analytics" },
+      { id: "launch-checklist", label: "Launch Readiness" }
+    ]
+  },
+  {
+    group: "Settings",
+    icon: "Settings",
+    items: [
+      { id: "launch-checklist", label: "Users" },
+      { id: "launch-checklist", label: "Roles" },
+      { id: "launch-checklist", label: "Permissions" },
+      { id: "launch-checklist", label: "Integrations" },
+      { id: "launch-checklist", label: "Configuration" }
+    ]
+  }
 ];
 
 const quickActions: Array<{
@@ -775,6 +860,18 @@ function pendingTasks(rows: Record<AdminSectionId, AdminRow[]>, whatsappLeadCoun
       icon: MessageCircle
     }
   ];
+}
+
+function oldestOperationalItem(items: Array<{ name: string; date?: string | null }>) {
+  if (items.length === 0) {
+    return "No waiting items";
+  }
+
+  const sorted = [...items].sort((a, b) => new Date(a.date ?? 0).getTime() - new Date(b.date ?? 0).getTime());
+  const item = sorted[0];
+  const date = item.date ? relativeActivityTime(item.date) : "date unknown";
+
+  return `${item.name || "Unnamed item"} - ${date}`;
 }
 
 function launchStatusFromCount(count: number, target: number): LaunchStatus {
@@ -2539,6 +2636,102 @@ export function AdminDashboard({
   );
   const pendingItems = useMemo(() => pendingWork(rowsBySection), [rowsBySection]);
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
+  const operationsPriorityQueue = useMemo(() => {
+    const newLeads = leadStatusCount(leadRequests, "New");
+    const buyerRequestsWaiting = newSubmissionCounts.buyerRequests + newLeads;
+    const farmerApplicationsWaiting = newApplicationCounts.farmers;
+    const supplierApplicationsWaiting = newApplicationCounts.suppliers;
+    const listingsWaiting = newSubmissionCounts.listings + submissions.listings.filter((submission) => submission.status === "Approved").length;
+    const ggStandardWaiting = [...rowsBySection.farmers, ...rowsBySection.suppliers].filter((row) => row.ggStandardStatus === "Pending").length;
+
+    return [
+      {
+        label: "Produce Requests Awaiting Review",
+        value: buyerRequestsWaiting,
+        oldest: oldestOperationalItem([
+          ...leadRequests.filter((lead) => normalizeLeadStatus(lead.status) === "New").map((lead) => ({ name: lead.product_interest, date: lead.created_at })),
+          ...submissions.buyerRequests.filter((request) => request.status === "New").map((request) => ({ name: request.product_needed, date: request.created_at }))
+        ]),
+        target: "Respond within 1 business day",
+        tone: "border-l-tomato",
+        section: "lead-queue" as AdminSectionId,
+        action: "Review Queue",
+        icon: PackageCheck
+      },
+      {
+        label: "Farmer Applications",
+        value: farmerApplicationsWaiting,
+        oldest: oldestOperationalItem(applications.farmer.filter((application) => application.status === "New").map((application) => ({
+          name: application.business_or_farm_name || application.name,
+          date: application.created_at
+        }))),
+        target: "Review before publishing",
+        tone: "border-l-earth-500",
+        section: "applications" as AdminSectionId,
+        action: "Review Farmers",
+        icon: Sprout
+      },
+      {
+        label: "Supplier Applications",
+        value: supplierApplicationsWaiting,
+        oldest: oldestOperationalItem(applications.supplier.filter((application) => application.status === "New").map((application) => ({
+          name: application.business_or_farm_name || application.name,
+          date: application.created_at
+        }))),
+        target: "Review business details",
+        tone: "border-l-earth-500",
+        section: "applications" as AdminSectionId,
+        action: "Review Suppliers",
+        icon: Truck
+      },
+      {
+        label: "Listings Ready for Publishing",
+        value: listingsWaiting,
+        oldest: oldestOperationalItem(submissions.listings.filter((submission) => submission.status === "New" || submission.status === "Approved").map((submission) => ({
+          name: submission.product_name,
+          date: submission.created_at
+        }))),
+        target: "Check owner, image, availability",
+        tone: "border-l-harvest-500",
+        section: "submissions" as AdminSectionId,
+        action: "Publish Listings",
+        icon: Store
+      },
+      {
+        label: "GG Standard Reviews",
+        value: ggStandardWaiting,
+        oldest: ggStandardWaiting > 0 ? "Members awaiting status" : "No pending standard reviews",
+        target: "Confirm commitment framework",
+        tone: "border-l-leaf-700",
+        section: "verifications" as AdminSectionId,
+        action: "Review Trust",
+        icon: ShieldCheck
+      }
+    ];
+  }, [applications.farmer, applications.supplier, leadRequests, newApplicationCounts, newSubmissionCounts, rowsBySection.farmers, rowsBySection.suppliers, submissions.buyerRequests, submissions.listings]);
+  const operationsWaitingCount = operationsPriorityQueue.reduce((total, item) => total + item.value, 0);
+  const operationsEstimatedMinutes = Math.max(15, Math.min(120, operationsWaitingCount * 6 + leadStatusCount(leadRequests, "Negotiating") * 4));
+  const operationsQuickActions = useMemo(() => [
+    { label: "Add Listing", section: "marketplace" as AdminSectionId, form: "marketplace" as AdminFormId, icon: Store },
+    { label: "Add Farmer", section: "farmers" as AdminSectionId, form: "farmers" as AdminFormId, icon: Sprout },
+    { label: "Add Supplier", section: "suppliers" as AdminSectionId, form: "suppliers" as AdminFormId, icon: Truck },
+    { label: "Create Story", section: "success-stories" as AdminSectionId, form: "success-stories" as AdminFormId, icon: Star },
+    { label: "Upload Photos", section: "submissions" as AdminSectionId, icon: UploadCloud }
+  ], []);
+  const operationsProgress = useMemo(() => [
+    { label: "Farmers Approved", value: applications.farmer.filter((application) => application.status === "Approved" || application.status === "Converted").length, icon: Sprout },
+    { label: "Suppliers Approved", value: applications.supplier.filter((application) => application.status === "Approved" || application.status === "Converted").length, icon: Truck },
+    { label: "Listings Published", value: submissions.listings.filter((submission) => submission.status === "Converted").length, icon: Store },
+    { label: "Buyer Requests Completed", value: leadStatusCount(leadRequests, "Completed"), icon: PackageCheck },
+    { label: "Stories Published", value: rowsBySection["success-stories"].filter((story) => story.status === "Published" || story.status === "Active").length, icon: Star }
+  ], [applications.farmer, applications.supplier, leadRequests, rowsBySection, submissions.listings]);
+  const operationsHealth = useMemo(() => [
+    { label: "Average Response Time", value: leadStatusCount(leadRequests, "New") > 0 ? "Needs review" : "On track" },
+    { label: "Applications Waiting", value: newApplicationCounts.farmers + newApplicationCounts.suppliers + newApplicationCounts.buyers },
+    { label: "Verification Queue", value: rowsBySection.verifications.filter((row) => row.status === "Pending").length },
+    { label: "Listings Missing Photos", value: submissions.listings.filter((submission) => !submission.image_url).length },
+    { label: "Platform Status", value: sitePrelaunchActive ? "Pre-launch" : "Public" }
+  ], [leadRequests, newApplicationCounts, rowsBySection.verifications, sitePrelaunchActive, submissions.listings]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
@@ -3874,19 +4067,19 @@ export function AdminDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-white">
       <section className="border-b border-leaf-900/10 bg-leaf-50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <p className="text-sm font-black uppercase tracking-wide text-earth-700">Internal Admin</p>
-          <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-3xl font-black text-ink sm:text-4xl">Ghana Growers Admin Dashboard</h1>
+          <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Operations</p>
+          <div className="mt-3 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-black text-ink sm:text-4xl">Operations Center</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                Phase 1 dashboard for reviewing platform records, content, buyer demand, verifications, and operational leads.
+                Daily workspace for sourcing, onboarding, verification, marketplace publishing, and member support.
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
-              <p className="text-sm font-bold text-ink/60">Signed in as {currentAdmin.email}</p>
+              <p className="break-all text-sm font-bold text-ink/60">Signed in as {currentAdmin.email}</p>
               <button
                 type="button"
                 onClick={logoutAdmin}
@@ -3900,207 +4093,187 @@ export function AdminDashboard({
       </section>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr] lg:gap-8 lg:px-8 lg:py-8">
-        <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-2 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-            Admin Sections
+            Workspaces
           </div>
-          <nav className="mt-4 grid gap-2">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              const isActive = section.id === activeSection;
+          <nav className="mt-5 grid gap-5">
+            {operationsNavigation.map((group) => (
+              <div key={group.group}>
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-ink/40">
+                  {group.icon} {group.group}
+                </p>
+                <div className="mt-2 grid gap-1.5">
+                  {group.items.map((item) => {
+                    const isActive = item.id === activeSection;
 
-              return (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveSection(section.id);
-                    setSearchTerm("");
-                    setStatusFilter("All");
-                  }}
-                  className={`flex items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-black transition ${
-                    isActive ? "bg-leaf-700 text-white" : "bg-white text-ink/70 hover:text-leaf-800"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {section.label}
-                </button>
-              );
-            })}
+                    return (
+                      <button
+                        key={`${group.group}-${item.label}`}
+                        type="button"
+                        onClick={() => {
+                          setActiveSection(item.id);
+                          setSearchTerm("");
+                          setStatusFilter("All");
+                          if (item.label.includes("Supplier Application")) {
+                            setApplicationTab("supplier");
+                          } else if (item.label.includes("Farmer Application")) {
+                            setApplicationTab("farmer");
+                          }
+                        }}
+                        className={`rounded-md px-3 py-2.5 text-left text-sm font-black transition ${
+                          isActive ? "bg-leaf-700 text-white" : "bg-white text-ink/68 hover:text-leaf-800"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </aside>
 
-        <div>
-          <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
-            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Quick Actions</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink">Manage common admin tasks</h2>
-                </div>
-                <span className="hidden h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700 sm:grid">
-                  <PlusCircle className="h-5 w-5" aria-hidden="true" />
-                </span>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {quickActions.map((action) => {
-                  const Icon = action.icon;
-
-                  return (
-                    <button
-                      key={action.label}
-                      type="button"
-                      onClick={() => {
-                        if (action.form) {
-                          openAdminForm(action.form, "add");
-                          setNotice(`${action.intent} This Phase 1 form previews the workflow until database persistence is added.`);
-                          return;
-                        }
-
-                        runQuickAction(action.section, action.intent);
-                      }}
-                      className="flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50/70 px-4 py-3 text-left text-sm font-black text-ink transition hover:border-leaf-700 hover:bg-white hover:text-leaf-800"
-                    >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
-                        <Icon className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      {action.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <aside className="rounded-md border border-earth-500/25 bg-earth-50 p-5">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-earth-700 ring-1 ring-earth-500/20">
-                  <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Pending Work</p>
-                  <h2 className="text-xl font-black text-ink">Needs attention</h2>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {pendingItems.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => runQuickAction(item.section, `${item.label} opened for review.`)}
-                    className="rounded-md bg-white p-3 text-left ring-1 ring-earth-500/20 transition hover:ring-earth-600/40"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-black text-ink">{item.label}</p>
-                      <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{item.value}</span>
-                    </div>
-                    <p className="mt-1 text-xs font-semibold leading-5 text-ink/55">{item.note}</p>
-                  </button>
-                ))}
-              </div>
-            </aside>
-          </section>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {summaryCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-black text-ink/60">{card.label}</p>
-                    <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                      <Icon className="h-4 w-4" aria-hidden="true" />
-                    </span>
+        <div className="order-1 min-w-0 lg:order-none">
+          {isAnalyticsSection ? (
+            <section className="grid min-w-0 gap-6">
+              <div className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Operations Center</p>
+                <div className="mt-3 grid min-w-0 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                  <div className="min-w-0">
+                    <h2 className="text-3xl font-black text-ink sm:text-4xl">Good Morning.</h2>
+                    <p className="mt-2 text-xl font-black text-ink/72">Welcome back.</p>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/62">
+                      Today&apos;s work should take approximately {operationsEstimatedMinutes} minutes.
+                    </p>
                   </div>
-                  <p className="mt-3 text-3xl font-black text-ink">{card.value}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <section className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Recent Activity</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink">Latest platform updates</h2>
-                </div>
-                <span className="hidden h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700 sm:grid">
-                  <Clock3 className="h-5 w-5" aria-hidden="true" />
-                </span>
-              </div>
-              <div className="mt-5 divide-y divide-leaf-900/10">
-                {activityError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{activityError}</div>
-                ) : null}
-                {!activityError && activityRows.length === 0 ? (
-                  <div className="rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/60">
-                    No admin activity has been recorded yet.
+                  <div className="min-w-0 rounded-md bg-leaf-50 p-4 text-left ring-1 ring-leaf-900/10 lg:min-w-[260px]">
+                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current focus</p>
+                    <p className="mt-2 text-2xl font-black text-leaf-800">{operationsWaitingCount}</p>
+                    <p className="mt-1 text-sm font-semibold text-ink/60">items waiting for action</p>
                   </div>
-                ) : null}
-                {activityRows.map((activity) => {
-                  const Icon = activityIcon(activity.entity_type);
-                  const section = activitySection(activity.entity_type);
-
-                  return (
-                    <button
-                      key={activity.id}
-                      type="button"
-                      onClick={() => runQuickAction(section, `${activity.action_type} activity opened.`)}
-                      className="flex w-full items-start gap-3 py-3 text-left transition first:pt-0 last:pb-0 hover:text-leaf-800"
-                    >
-                      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                        <Icon className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-black text-ink">{activitySentence(activity)}</span>
-                        <span className="mt-1 block text-sm leading-5 text-ink/60">
-                          {activity.action_type} - {activity.entity_type} - {activity.admin_email} - {relativeActivityTime(activity.created_at)}
-                        </span>
-                      </span>
-                      <span className="hidden shrink-0 text-xs font-black text-ink/45 sm:block">{relativeActivityTime(activity.created_at)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-leaf-700 ring-1 ring-leaf-900/10">
-                  <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Pending Tasks</p>
-                  <h2 className="text-2xl font-black text-ink">Admin queue</h2>
                 </div>
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                {pendingTaskItems.map((task) => {
-                  const Icon = task.icon;
 
-                  return (
-                    <button
-                      key={task.label}
-                      type="button"
-                      onClick={() => runQuickAction(task.section, `${task.label} opened from pending tasks.`)}
-                      className="flex items-center justify-between gap-4 rounded-md bg-white p-4 text-left ring-1 ring-leaf-900/10 transition hover:ring-leaf-700/30"
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                          <Icon className="h-4 w-4" aria-hidden="true" />
+              <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Today&apos;s Priority Queue</p>
+                    <h3 className="mt-2 text-2xl font-black text-ink">Start here</h3>
+                  </div>
+                  <p className="text-sm font-semibold text-ink/55">Highest-impact work appears first.</p>
+                </div>
+                <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-2">
+                  {operationsPriorityQueue.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <article key={item.label} className={`min-w-0 overflow-hidden rounded-md border border-leaf-900/10 border-l-4 ${item.tone} bg-white p-5 shadow-sm`}>
+                        <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
+                          <div className="flex min-w-0 gap-3">
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                              <Icon className="h-5 w-5" aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="break-words text-base font-black leading-tight text-ink">{item.label}</h4>
+                              <p className="mt-2 text-sm font-semibold leading-5 text-ink/58">Oldest: {item.oldest}</p>
+                              <p className="mt-1 text-xs font-black uppercase tracking-wide text-earth-700">{item.target}</p>
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-leaf-50 px-3 py-1 text-sm font-black text-leaf-800 sm:shrink-0">{item.value}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => runQuickAction(item.section, `${item.label} opened from today's priority queue.`)}
+                          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 sm:w-auto"
+                        >
+                          {item.action} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Quick Actions</p>
+                    <h3 className="mt-2 text-2xl font-black text-ink">Common work</h3>
+                  </div>
+                  <PlusCircle className="hidden h-5 w-5 text-leaf-700 sm:block" aria-hidden="true" />
+                </div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  {operationsQuickActions.map((action) => {
+                    const Icon = action.icon;
+
+                    return (
+                      <button
+                        key={action.label}
+                        type="button"
+                        onClick={() => {
+                          if (action.form) {
+                            openAdminForm(action.form, "add");
+                            setNotice(`${action.label} opened from Operations Center.`);
+                            return;
+                          }
+
+                          runQuickAction(action.section, `${action.label} opened from Operations Center.`);
+                        }}
+                        className="flex min-h-24 flex-col items-start justify-between rounded-md bg-white p-4 text-left text-sm font-black text-ink shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-0.5 hover:ring-leaf-700/30"
+                      >
+                        <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                          <Icon className="h-5 w-5" aria-hidden="true" />
                         </span>
-                        <span className="truncate text-sm font-black text-ink">{task.label}</span>
-                      </span>
-                      <span className="rounded-full bg-earth-50 px-2.5 py-1 text-xs font-black text-earth-700">{task.value}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+                        {action.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
 
-          <section className="mt-8 rounded-md border border-leaf-900/10 bg-white shadow-sm">
+              <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
+                <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Today&apos;s Progress</p>
+                  <h3 className="mt-2 text-2xl font-black text-ink">Completed operational work</h3>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {operationsProgress.map((item) => {
+                      const Icon = item.icon;
+
+                      return (
+                        <div key={item.label} className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-ink/62">{item.label}</p>
+                            <Icon className="h-4 w-4 text-leaf-700" aria-hidden="true" />
+                          </div>
+                          <p className="mt-3 text-3xl font-black text-ink">{item.value}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Platform Health</p>
+                  <h3 className="mt-2 text-2xl font-black text-ink">Keep an eye on</h3>
+                  <div className="mt-5 grid gap-3">
+                    {operationsHealth.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-4 rounded-md bg-leaf-50 px-4 py-3 ring-1 ring-leaf-900/10">
+                        <p className="text-sm font-black text-ink/62">{item.label}</p>
+                        <p className="text-sm font-black text-ink">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            </section>
+          ) : null}
+
+          {!isAnalyticsSection ? (
+          <>
+          <section className="rounded-md border border-leaf-900/10 bg-white shadow-sm">
             <div className="border-b border-leaf-900/10 p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
@@ -6384,6 +6557,8 @@ export function AdminDashboard({
                 </div>
               </section>
             </div>
+          ) : null}
+          </>
           ) : null}
 
           {activeForm ? (
