@@ -1875,6 +1875,31 @@ function matchesLaunchEditorialFilter(filter: LaunchEditorialFilter, editorial: 
   return true;
 }
 
+function farmerMatchesQueueSearch(farmer: ImportedFarmerRecord, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [
+    farmer.farmer_name,
+    farmer.farm_name,
+    farmer.region,
+    farmer.district,
+    farmer.farm_location,
+    farmer.phone_number,
+    farmer.whatsapp_number,
+    farmer.email,
+    farmer.farm_type,
+    farmer.products.join(" ")
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .includes(normalizedQuery);
+}
+
 function applicationName(application: ApplicationRecord) {
   return application.business_name || application.business_or_farm_name || application.name || "Unnamed supplier";
 }
@@ -2958,6 +2983,7 @@ export function AdminDashboard({
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
   const [profileCompletenessFilter, setProfileCompletenessFilter] = useState<ProfileCompletenessFilter>("All");
   const [launchEditorialFilter, setLaunchEditorialFilter] = useState<LaunchEditorialFilter>("All");
+  const [farmerQueueSearch, setFarmerQueueSearch] = useState("");
   const [marketplaceOwnerFilter, setMarketplaceOwnerFilter] = useState<MarketplaceOwnerFilter>("All");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
@@ -3734,6 +3760,7 @@ export function AdminDashboard({
 
     return matchesLaunchEditorialFilter(launchEditorialFilter, editorialDecision);
   });
+  const visibleFarmerReviewQueue = farmerReviewQueue.filter((farmer) => farmerMatchesQueueSearch(farmer, farmerQueueSearch));
   const farmerReviewRemaining = farmerReviewQueue.filter((farmer) => farmer.status !== "Active" && farmer.verification_status !== "Verified").length;
   const oldestWaitingFarmer = farmerReviewQueue
     .slice()
@@ -6184,11 +6211,37 @@ export function AdminDashboard({
                             <h3 className="mt-1 text-xl font-black text-ink">Review next</h3>
                           </div>
                           <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
-                            {farmerReviewQueue.length}
+                            {visibleFarmerReviewQueue.length}
                           </span>
                         </div>
                         <div className="mt-4 grid gap-2">
-                          {farmerReviewQueue.map((farmer) => {
+                          <label className="grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45">
+                            Search farmers
+                            <div className="flex min-h-11 items-center gap-2 rounded-md bg-white px-3 ring-1 ring-leaf-900/10 transition focus-within:ring-2 focus-within:ring-leaf-600/20">
+                              <Search className="h-4 w-4 shrink-0 text-leaf-700" aria-hidden="true" />
+                              <input
+                                type="search"
+                                value={farmerQueueSearch}
+                                onChange={(event) => setFarmerQueueSearch(event.target.value)}
+                                placeholder="Search farmer, farm, region, town or phone..."
+                                className="min-w-0 flex-1 bg-transparent py-3 text-sm font-semibold normal-case tracking-normal text-ink outline-none placeholder:text-ink/38"
+                              />
+                              {farmerQueueSearch ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setFarmerQueueSearch("")}
+                                  className="grid min-h-8 min-w-8 place-items-center rounded-full text-ink/45 transition hover:bg-leaf-50 hover:text-leaf-800"
+                                  aria-label="Clear farmer search"
+                                >
+                                  <X className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                              ) : null}
+                            </div>
+                          </label>
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">
+                            {visibleFarmerReviewQueue.length} of {farmerReviewQueue.length} farmers shown
+                          </p>
+                          {visibleFarmerReviewQueue.map((farmer) => {
                             const priority = farmerQueuePriority(farmer);
                             const isSelected = reviewingImportedFarmer?.id === farmer.id;
 
@@ -6224,9 +6277,11 @@ export function AdminDashboard({
                               </button>
                             );
                           })}
-                          {farmerReviewQueue.length === 0 ? (
+                          {visibleFarmerReviewQueue.length === 0 ? (
                             <p className="rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/58 ring-1 ring-leaf-900/10">
-                              No imported farmer applications are waiting for review.
+                              {farmerQueueSearch
+                                ? "No farmer found. Try another name, farm, region or phone number."
+                                : "No imported farmer applications are waiting for review."}
                             </p>
                           ) : null}
                         </div>
