@@ -29,7 +29,7 @@ import {
   UsersRound,
   X
 } from "lucide-react";
-import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import learnArticles from "@/data/learnArticles.json";
@@ -219,7 +219,7 @@ type ProfileCompletenessFilter = "All" | "Ready to Publish" | "Needs Follow-up" 
 type MarketplaceOwnerFilter = "All" | "Farmer" | "Supplier" | "Admin";
 type FeaturedFilter = "All" | "Featured" | "Not Featured" | "Expired Featured";
 type LaunchEditorialStatus = "Public Farmer" | "Featured Farmer" | "Founding Farmer 2026" | "Needs Improvement" | "Hold";
-type LaunchEditorialFilter = "All" | "Founding Farmers" | "Homepage Candidates" | "Featured Farmers" | "Launch Ready" | "Needs Improvement";
+type LaunchEditorialFilter = "All" | "Founding Farmers" | "Homepage Candidates" | "Featured Farmers" | "Story Candidates" | "Launch Ready" | "Needs Improvement";
 type LaunchChecklistItem = "Profile photo" | "Farm photos" | "Produce photos" | "Farm story" | "Verified contact" | "Produce listing" | "Region confirmed";
 type EditorialDecisionState = {
   launchStatus: LaunchEditorialStatus;
@@ -312,6 +312,15 @@ type ImportedFarmerRecord = {
   gg_standard_status?: GGStandardStatus | string | null;
   profile_image_url?: string | null;
   description?: string | null;
+  launch_status?: LaunchEditorialStatus | string | null;
+  homepage_candidate?: boolean | null;
+  marketplace_featured?: boolean | null;
+  story_candidate?: boolean | null;
+  editorial_notes?: string | null;
+  launch_ready?: boolean | null;
+  launch_checklist?: Partial<Record<LaunchChecklistItem, boolean>> | null;
+  editorial_updated_at?: string | null;
+  editorial_updated_by?: string | null;
   created_at?: string | null;
   source: string;
 };
@@ -1697,21 +1706,28 @@ function launchChecklistFromFarmer(farmer: ImportedFarmerRecord): Record<LaunchC
 }
 
 function defaultEditorialDecision(farmer: ImportedFarmerRecord): EditorialDecisionState {
-  const checklist = launchChecklistFromFarmer(farmer);
+  const autoChecklist = launchChecklistFromFarmer(farmer);
+  const savedChecklist = farmer.launch_checklist && typeof farmer.launch_checklist === "object" ? farmer.launch_checklist : {};
+  const checklist = Object.fromEntries(
+    launchEditorialChecklistItems.map((item) => [item, savedChecklist[item] ?? autoChecklist[item]])
+  ) as Record<LaunchChecklistItem, boolean>;
   const checklistComplete = Object.values(checklist).filter(Boolean).length;
-  const launchStatus: LaunchEditorialStatus =
-    normalizedFarmerSource(farmer.source) === "Founding Farmer"
+  const persistedLaunchStatus = launchEditorialStatusOptions.includes(farmer.launch_status as LaunchEditorialStatus)
+    ? farmer.launch_status as LaunchEditorialStatus
+    : null;
+  const launchStatus: LaunchEditorialStatus = persistedLaunchStatus ??
+    (normalizedFarmerSource(farmer.source) === "Founding Farmer"
       ? "Founding Farmer 2026"
       : checklistComplete >= 5
         ? "Public Farmer"
-        : "Needs Improvement";
+        : "Needs Improvement");
 
   return {
     launchStatus,
-    homepageCandidate: false,
-    marketplaceFeatured: false,
-    storyCandidate: false,
-    editorialNotes: "",
+    homepageCandidate: farmer.homepage_candidate === true,
+    marketplaceFeatured: farmer.marketplace_featured === true,
+    storyCandidate: farmer.story_candidate === true,
+    editorialNotes: farmer.editorial_notes ?? "",
     checklist
   };
 }
@@ -1763,6 +1779,10 @@ function matchesLaunchEditorialFilter(filter: LaunchEditorialFilter, editorial: 
 
   if (filter === "Featured Farmers") {
     return editorial.launchStatus === "Featured Farmer" || editorial.marketplaceFeatured;
+  }
+
+  if (filter === "Story Candidates") {
+    return editorial.storyCandidate;
   }
 
   if (filter === "Launch Ready") {
@@ -2563,6 +2583,8 @@ export function AdminDashboard({
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
   const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
+  const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
+  const editorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -2842,6 +2864,9 @@ export function AdminDashboard({
 
     const farmers = result?.farmers ?? [];
     setImportedFarmers(farmers);
+    setEditorialDecisions(
+      Object.fromEntries(farmers.map((farmer) => [farmer.id, defaultEditorialDecision(farmer)]))
+    );
     setRowsBySection((current) => {
       const importedIds = new Set(farmers.flatMap((farmer) => [farmer.id, farmer.slug].filter(Boolean)));
       const nonImportedRows = current.farmers.filter((row) => !importedIds.has(row.id));
@@ -2858,6 +2883,10 @@ export function AdminDashboard({
       void loadImportedFarmers();
     }
   }, [activeSection, applicationTab, loadImportedFarmers]);
+
+  useEffect(() => () => {
+    Object.values(editorialSaveTimers.current).forEach((timer) => clearTimeout(timer));
+  }, []);
 
   const newApplicationCounts = useMemo(() => ({
     farmers: applications.farmer.filter((application) => application.status === "New").length,
@@ -3207,7 +3236,65 @@ export function AdminDashboard({
     setFarmerReviewMessage(null);
   }, [activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
 
-  function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState) {
+  async function saveEditorialDecision(recordId: string, decision: EditorialDecisionState) {
+    setEditorialSaveStates((current) => ({ ...current, [recordId]: "saving" }));
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "editorial",
+        ids: [recordId],
+        editorial: {
+          launchStatus: decision.launchStatus,
+          homepageCandidate: decision.homepageCandidate,
+          marketplaceFeatured: decision.marketplaceFeatured,
+          storyCandidate: decision.storyCandidate,
+          editorialNotes: decision.editorialNotes,
+          launchChecklist: decision.checklist
+        }
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string; message?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      const errorMessage = result?.error ?? "Could not save editorial decision.";
+      setEditorialSaveStates((current) => ({ ...current, [recordId]: "error" }));
+      setFarmerReviewMessage({ type: "error", text: errorMessage });
+      return;
+    }
+
+    if (result?.farmer) {
+      setImportedFarmers((current) => current.map((farmer) => (farmer.id === result.farmer?.id ? result.farmer : farmer)));
+      setEditorialDecisions((current) => ({
+        ...current,
+        [recordId]: defaultEditorialDecision(result.farmer as ImportedFarmerRecord)
+      }));
+      setFarmerReviewDebug(reviewDebugFields(result.farmer));
+    }
+
+    setEditorialSaveStates((current) => ({ ...current, [recordId]: "saved" }));
+    setFarmerReviewMessage({ type: "success", text: result?.message ?? "Editorial decision saved." });
+    void loadActivity();
+  }
+
+  function scheduleEditorialSave(recordId: string, decision: EditorialDecisionState, delay = 450) {
+    const existingTimer = editorialSaveTimers.current[recordId];
+
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    editorialSaveTimers.current[recordId] = setTimeout(() => {
+      void saveEditorialDecision(recordId, decision);
+    }, delay);
+  }
+
+  function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState, saveDelay = 450) {
     const farmer = importedFarmers.find((item) => item.id === recordId);
 
     if (!farmer) {
@@ -3216,10 +3303,12 @@ export function AdminDashboard({
 
     setEditorialDecisions((current) => {
       const existing = current[recordId] ?? defaultEditorialDecision(farmer);
+      const nextDecision = updater(existing);
 
+      scheduleEditorialSave(recordId, nextDecision, saveDelay);
       return {
         ...current,
-        [recordId]: updater(existing)
+        [recordId]: nextDecision
       };
     });
   }
@@ -4583,13 +4672,13 @@ export function AdminDashboard({
 
           {!isAnalyticsSection ? (
           <>
-          <section className="rounded-md border border-leaf-900/10 bg-white shadow-sm">
+          <section className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
             <div className="border-b border-leaf-900/10 p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
+              <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0">
                   <p className="text-sm font-black uppercase tracking-wide text-earth-700">{sectionEyebrow}</p>
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{sectionTitle}</h2>
-                  <p className="mt-2 text-sm leading-6 text-ink/58">{sectionNotice}</p>
+                  <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-ink/58">{sectionNotice}</p>
                 </div>
                 {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
@@ -5245,22 +5334,22 @@ export function AdminDashboard({
                   ))}
                 </div>
                 {applicationTab === "farmer" ? (
-                  <div className="grid gap-5">
-                    <section className="flex flex-col gap-3 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-                      <div>
+                  <div className="grid min-w-0 gap-5">
+                    <section className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Editorial Filter</p>
-                        <p className="mt-1 text-sm font-semibold text-ink/58">
+                        <p className="mt-1 break-words text-sm font-semibold text-ink/58">
                           Prepare launch collections without leaving the farmer review workspace.
                         </p>
                       </div>
-                      <label className="grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45 sm:min-w-64">
+                      <label className="grid min-w-0 gap-2 text-xs font-black uppercase tracking-wide text-ink/45 sm:min-w-64">
                         Show farmers
                         <select
                           value={launchEditorialFilter}
                           onChange={(event) => setLaunchEditorialFilter(event.target.value as LaunchEditorialFilter)}
                           className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                         >
-                          {(["All", "Founding Farmers", "Homepage Candidates", "Featured Farmers", "Launch Ready", "Needs Improvement"] as LaunchEditorialFilter[]).map((filter) => (
+                          {(["All", "Founding Farmers", "Homepage Candidates", "Featured Farmers", "Story Candidates", "Launch Ready", "Needs Improvement"] as LaunchEditorialFilter[]).map((filter) => (
                             <option key={filter} value={filter}>
                               {filter}
                             </option>
@@ -5282,7 +5371,7 @@ export function AdminDashboard({
                       ))}
                     </section>
 
-                    <section className="grid min-h-[720px] gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
                       <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -5575,9 +5664,22 @@ export function AdminDashboard({
                                       Internal curation for launch collections.
                                     </p>
                                   </div>
-                                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${reviewingLaunchReadiness.tone}`}>
-                                    {reviewingLaunchReadiness.label}
-                                  </span>
+                                  <div className="grid justify-items-end gap-1">
+                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${reviewingLaunchReadiness.tone}`}>
+                                      {reviewingLaunchReadiness.label}
+                                    </span>
+                                    <span className="text-[11px] font-black uppercase tracking-wide text-ink/35">
+                                      {editorialSaveStates[reviewingImportedFarmer.id] === "saving"
+                                        ? "Saving"
+                                        : editorialSaveStates[reviewingImportedFarmer.id] === "error"
+                                          ? "Save failed"
+                                          : editorialSaveStates[reviewingImportedFarmer.id] === "saved"
+                                            ? "Saved"
+                                            : reviewingImportedFarmer.editorial_updated_by
+                                              ? `Saved by ${reviewingImportedFarmer.editorial_updated_by}`
+                                              : "Not saved yet"}
+                                    </span>
+                                  </div>
                                 </div>
 
                                 <div className="mt-4 grid gap-2">
@@ -5591,7 +5693,7 @@ export function AdminDashboard({
                                           updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
                                             ...current,
                                             launchStatus: status
-                                          }))
+                                          }), 0)
                                         }
                                         className={`rounded-md px-3 py-2 text-left text-xs font-black transition ${
                                           reviewingEditorialDecision.launchStatus === status
@@ -5599,7 +5701,7 @@ export function AdminDashboard({
                                             : "bg-leaf-50 text-ink/65 ring-1 ring-leaf-900/10 hover:text-leaf-800"
                                         }`}
                                       >
-                                        {status === "Founding Farmer 2026" ? "🌱 Founding Farmer 2026" : status}
+                                        {status}
                                       </button>
                                     ))}
                                   </div>
@@ -5619,7 +5721,7 @@ export function AdminDashboard({
                                           updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
                                             ...current,
                                             [key]: !current[key]
-                                          }))
+                                          }), 0)
                                         }
                                         className={`rounded-full px-3 py-1 text-xs font-black transition ${
                                           reviewingEditorialDecision[key]
@@ -5641,7 +5743,7 @@ export function AdminDashboard({
                                       updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
                                         ...current,
                                         editorialNotes: event.target.value
-                                      }))
+                                      }), 800)
                                     }
                                     rows={4}
                                     className="resize-y rounded-md border border-leaf-900/10 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink/75 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
@@ -5675,7 +5777,7 @@ export function AdminDashboard({
                                                 ...current.checklist,
                                                 [item]: event.target.checked
                                               }
-                                            }))
+                                            }), 200)
                                           }
                                           className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
                                         />
