@@ -30,6 +30,12 @@ type ExistingFarmer = {
   referral_source?: string | null;
   tally_photo_url?: string | null;
   imported_photo_url?: string | null;
+  farm_photo_urls?: string[] | null;
+  produce_photo_urls?: string[] | null;
+  document_urls?: string[] | null;
+  tally_file_references?: Record<string, unknown> | null;
+  photo_import_status?: string | null;
+  photo_import_notes?: string | null;
   original_tally_data?: Record<string, unknown> | null;
   status: string | null;
   verification_status: string | null;
@@ -73,6 +79,12 @@ type ImportableFarmer = {
   referral_source: string;
   tally_photo_url: string;
   imported_photo_url?: string;
+  farm_photo_urls?: string[];
+  produce_photo_urls?: string[];
+  document_urls?: string[];
+  tally_file_references?: Record<string, unknown>;
+  photo_import_status?: string;
+  photo_import_notes?: string;
   original_tally_data: Record<string, unknown>;
   status: "Pending Review";
   verification_status: "Pending";
@@ -104,11 +116,12 @@ type ImportFieldKey = keyof typeof fieldLabels;
 
 const requiredImportFields: ImportFieldKey[] = ["farmerName"];
 const farmerReviewSelect =
-  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,gg_standard_status,profile_image_url,description,launch_status,homepage_candidate,marketplace_featured,story_candidate,editorial_notes,launch_ready,launch_checklist,editorial_updated_at,editorial_updated_by,created_at,source";
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,farm_photo_urls,produce_photo_urls,document_urls,tally_file_references,photo_import_status,photo_import_notes,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,gg_standard_status,profile_image_url,description,launch_status,homepage_candidate,marketplace_featured,story_candidate,editorial_notes,launch_ready,launch_checklist,editorial_updated_at,editorial_updated_by,created_at,source";
 const farmerReviewBaseSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 const farmerEditorialStatuses = ["Public Farmer", "Featured Farmer", "Founding Farmer 2026", "Needs Improvement", "Hold"] as const;
 const farmerEditorialChecklistItems = ["Profile photo", "Farm photos", "Produce photos", "Farm story", "Verified contact", "Produce listing", "Region confirmed"] as const;
+const farmerReviewOptionalColumnPattern = /(gg_standard_status|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|editorial_updated|farm_photo_urls|produce_photo_urls|document_urls|tally_file_references|photo_import_status|photo_import_notes)/;
 
 const headerAliases: Record<ImportFieldKey, string[]> = {
   farmerName: [
@@ -248,6 +261,8 @@ function normalizePhone(value: string) {
 }
 
 const photoKeyPattern = /(photo|image|picture|upload|file)/i;
+const imageFilePattern = /\.(?:jpe?g|png|webp)(?:\?|$)/i;
+const documentFilePattern = /\.(?:pdf|docx?|xlsx?|csv)(?:\?|$)/i;
 
 function urlsFromText(value?: string | null) {
   return Array.from(value?.matchAll(/https?:\/\/[^\s"',\])}]+/gi) ?? [])
@@ -317,16 +332,137 @@ function filenameFromUnknown(value: unknown): string {
   return "";
 }
 
-function tallyPhotoCandidate(originalData?: Record<string, unknown> | null) {
-  const entries = Object.entries(originalData ?? {});
-  const photoEntry = entries.find(([label, value]) => photoKeyPattern.test(label) && urlsFromUnknown(value).length > 0);
-  const fallbackEntry = entries.find(([, value]) => urlsFromUnknown(value).length > 0);
-  const entry = photoEntry ?? fallbackEntry;
+type TallyFileReference = {
+  label: string;
+  urls: string[];
+  filenames: string[];
+  kind: "profile" | "farm" | "produce" | "document" | "other";
+  access: "url" | "filename-only";
+};
+
+function filenamesFromText(value?: string | null) {
+  return Array.from(value?.matchAll(/[\w .()_-]+\.(?:jpe?g|png|webp|pdf|docx?|xlsx?|csv)/gi) ?? [])
+    .map((match) => match[0]?.trim())
+    .filter(Boolean);
+}
+
+function filenamesFromUnknown(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const direct = filenamesFromText(value);
+
+    if (direct.length > 0) {
+      return direct;
+    }
+
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return filenamesFromUnknown(JSON.parse(trimmed) as unknown);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(filenamesFromUnknown);
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(filenamesFromUnknown);
+  }
+
+  return [];
+}
+
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function classifyTallyFileLabel(label: string, urls: string[], filenames: string[]): TallyFileReference["kind"] {
+  const normalized = normalizeHeader(label);
+  const combined = [...urls, ...filenames].join(" ");
+  const hasImage = imageFilePattern.test(combined) || /(photo|image|picture)/i.test(label);
+  const hasDocument = documentFilePattern.test(combined) || /(certificate|document|license|licence|registration|permit)/i.test(label);
+
+  if (hasDocument && !hasImage) {
+    return "document";
+  }
+
+  if (/(produce|crop|product|harvest|livestock|animal)/i.test(normalized)) {
+    return hasImage ? "produce" : "other";
+  }
+
+  if (/(farm|field|land|garden)/i.test(normalized)) {
+    return hasImage ? "farm" : "other";
+  }
+
+  if (/(farmer|profile|passport|person|owner|selfie|headshot|face)/i.test(normalized)) {
+    return hasImage ? "profile" : "other";
+  }
+
+  if (hasDocument) {
+    return "document";
+  }
+
+  return hasImage ? "profile" : "other";
+}
+
+function tallyFileReferences(originalData?: Record<string, unknown> | null): TallyFileReference[] {
+  return Object.entries(originalData ?? {})
+    .map(([label, value]) => {
+      const urls = uniqueStrings(urlsFromUnknown(value));
+      const filenames = uniqueStrings(filenamesFromUnknown(value));
+
+      if (!photoKeyPattern.test(label) && urls.length === 0 && filenames.length === 0) {
+        return null;
+      }
+
+      return {
+        label,
+        urls,
+        filenames,
+        kind: classifyTallyFileLabel(label, urls, filenames),
+        access: urls.length > 0 ? "url" : "filename-only"
+      } satisfies TallyFileReference;
+    })
+    .filter((entry): entry is TallyFileReference => Boolean(entry));
+}
+
+function tallyMediaPayload(originalData?: Record<string, unknown> | null) {
+  const references = tallyFileReferences(originalData);
+  const byKind = (kind: TallyFileReference["kind"]) => references
+    .filter((reference) => reference.kind === kind)
+    .flatMap((reference) => reference.urls);
+  const filenameOnlyReferences = references.filter((reference) => reference.urls.length === 0 && reference.filenames.length > 0);
 
   return {
-    key: entry?.[0] ?? "",
-    url: entry ? urlsFromUnknown(entry[1])[0] ?? "" : "",
-    filename: entry ? filenameFromUnknown(entry[1]) : ""
+    references,
+    profilePhotoUrls: byKind("profile"),
+    farmPhotoUrls: byKind("farm"),
+    producePhotoUrls: byKind("produce"),
+    documentUrls: byKind("document"),
+    filenameOnlyReferences
+  };
+}
+
+function tallyPhotoCandidate(originalData?: Record<string, unknown> | null) {
+  const media = tallyMediaPayload(originalData);
+  const profileReference = media.references.find((reference) => reference.kind === "profile" && reference.urls.length > 0);
+  const photoReference = media.references.find((reference) => reference.kind !== "document" && reference.urls.length > 0);
+  const anyReference = media.references.find((reference) => reference.urls.length > 0);
+  const entry = profileReference ?? photoReference ?? anyReference;
+
+  return {
+    key: entry?.label ?? "",
+    url: entry?.urls[0] ?? "",
+    filename: entry?.filenames[0] ?? ""
   };
 }
 
@@ -472,6 +608,10 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
   const phoneNumber = normalizePhone(valueFromRow(values, headerInfo, "phoneNumber"));
   const whatsappNumber = normalizePhone(valueFromRow(values, headerInfo, "whatsappNumber")) || phoneNumber;
 
+  const originalTallyData = Object.fromEntries(headerInfo.rawHeaders.map((header, index) => [header, values[index]?.trim() ?? ""]));
+  const media = tallyMediaPayload(originalTallyData);
+  const tallyPhotoUrl = firstUrlFromText(valueFromRow(values, headerInfo, "tallyPhotoUrl")) || media.profilePhotoUrls[0] || media.farmPhotoUrls[0] || media.producePhotoUrls[0] || "";
+
   return {
     farmer_name: farmerName,
     farm_name: farmName,
@@ -491,8 +631,20 @@ function mapTallyRow(values: string[], headerInfo: ReturnType<typeof csvHeaderIn
     payment_preference: valueFromRow(values, headerInfo, "paymentPreference"),
     workshop_interest: valueFromRow(values, headerInfo, "workshopInterest"),
     referral_source: valueFromRow(values, headerInfo, "referralSource"),
-    tally_photo_url: firstUrlFromText(valueFromRow(values, headerInfo, "tallyPhotoUrl")),
-    original_tally_data: Object.fromEntries(headerInfo.rawHeaders.map((header, index) => [header, values[index]?.trim() ?? ""])),
+    tally_photo_url: tallyPhotoUrl,
+    farm_photo_urls: media.farmPhotoUrls,
+    produce_photo_urls: media.producePhotoUrls,
+    document_urls: media.documentUrls,
+    tally_file_references: { references: media.references },
+    photo_import_status: media.references.length
+      ? media.filenameOnlyReferences.length > 0 && !tallyPhotoUrl
+        ? "manual_review"
+        : "reference_found"
+      : "none",
+    photo_import_notes: media.filenameOnlyReferences.length
+      ? "Photo submitted, but file access needs manual review."
+      : "",
+    original_tally_data: originalTallyData,
     status: "Pending Review",
     verification_status: "Pending",
     source: "Tally Import"
@@ -602,15 +754,41 @@ async function importTallyPhoto(mapped: ImportableFarmer) {
   return { publicUrl: upload.publicUrl, sourceUrl: photoUrl, filename: photoCandidate.filename };
 }
 
-async function tallyDetailPayload(mapped: ImportableFarmer) {
+async function tallyDetailPayload(mapped: ImportableFarmer, existing?: ExistingFarmer) {
   const importedPhoto = await importTallyPhoto(mapped);
   const publicTallyPhotoUrl = publicTallyPhotoCandidate(mapped.tally_photo_url);
   const importedPhotoUrl = importedPhoto.publicUrl ?? "";
+  const preservedImportedPhotoUrl = existing?.imported_photo_url || importedPhotoUrl || "";
+  const profileImageUrl = existing?.profile_image_url || preservedImportedPhotoUrl || publicTallyPhotoUrl || "";
+  const existingFarmPhotos = existing?.farm_photo_urls ?? [];
+  const existingProducePhotos = existing?.produce_photo_urls ?? [];
+  const existingDocuments = existing?.document_urls ?? [];
+  const media = tallyMediaPayload(mapped.original_tally_data);
+  const photoImportStatus = preservedImportedPhotoUrl
+    ? "imported"
+    : mapped.photo_import_status === "manual_review"
+      ? "manual_review"
+      : mapped.tally_photo_url || media.references.length
+        ? "reference_found"
+        : "none";
+  const photoImportNotes = preservedImportedPhotoUrl
+    ? ""
+    : mapped.photo_import_status === "manual_review"
+      ? mapped.photo_import_notes || "Photo submitted, but file access needs manual review."
+      : importedPhoto.error
+        ? importedPhoto.error
+        : mapped.photo_import_notes || "";
 
   return {
     ...mapped,
-    imported_photo_url: importedPhotoUrl || null,
-    ...(importedPhotoUrl || publicTallyPhotoUrl ? { profile_image_url: importedPhotoUrl || publicTallyPhotoUrl } : {}),
+    imported_photo_url: preservedImportedPhotoUrl || null,
+    farm_photo_urls: uniqueStrings([...existingFarmPhotos, ...(mapped.farm_photo_urls ?? [])]),
+    produce_photo_urls: uniqueStrings([...existingProducePhotos, ...(mapped.produce_photo_urls ?? [])]),
+    document_urls: uniqueStrings([...existingDocuments, ...(mapped.document_urls ?? [])]),
+    tally_file_references: mapped.tally_file_references ?? { references: media.references },
+    photo_import_status: photoImportStatus,
+    photo_import_notes: photoImportNotes,
+    ...(profileImageUrl ? { profile_image_url: profileImageUrl } : {}),
     description: null
   };
 }
@@ -640,6 +818,12 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     tally_photo_url: record.tally_photo_url ?? "",
     imported_photo_url: record.imported_photo_url ?? "",
     original_tally_data: record.original_tally_data ?? {},
+    farm_photo_urls: record.farm_photo_urls ?? [],
+    produce_photo_urls: record.produce_photo_urls ?? [],
+    document_urls: record.document_urls ?? [],
+    tally_file_references: record.tally_file_references ?? {},
+    photo_import_status: record.photo_import_status ?? "",
+    photo_import_notes: record.photo_import_notes ?? "",
     status: record.status ?? "Pending Review",
     verification_status: record.verification_status ?? "Pending",
     verification_date: record.verification_date ?? null,
@@ -717,7 +901,7 @@ async function getImportedFarmerById(id: string) {
   const filter = isUuid(id) ? `id=eq.${encodeURIComponent(id)}` : `slug=eq.${encodeURIComponent(id)}`;
   let farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&${filter}&limit=1`);
 
-  if (farmers.error?.includes("gg_standard_status") || farmers.error?.includes("launch_status")) {
+  if (farmers.error && farmerReviewOptionalColumnPattern.test(farmers.error)) {
     farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewBaseSelect}&${filter}&limit=1`);
   }
 
@@ -743,7 +927,7 @@ export async function GET(request: Request) {
 
   let farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewSelect}&order=created_at.desc&limit=5000`);
 
-  if (farmers.error?.includes("gg_standard_status") || farmers.error?.includes("launch_status")) {
+  if (farmers.error && farmerReviewOptionalColumnPattern.test(farmers.error)) {
     farmers = await selectSupabaseRecords<ExistingFarmer>("farmers", `${farmerReviewBaseSelect}&order=created_at.desc&limit=5000`);
   }
 
@@ -827,7 +1011,7 @@ export async function POST(request: Request) {
 
   const existing = await selectSupabaseRecords<ExistingFarmer>(
     "farmers",
-    "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,whatsapp_number,status,verification_status,source&limit=5000"
+    "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,tally_photo_url,imported_photo_url,profile_image_url,farm_photo_urls,produce_photo_urls,document_urls,tally_file_references,photo_import_status,photo_import_notes,original_tally_data,status,verification_status,source&limit=5000"
   );
 
   if (existing.error) {
@@ -881,7 +1065,7 @@ export async function POST(request: Request) {
     }) === signature);
 
     if (exactExisting) {
-      const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(exactExisting.id)}`, await tallyDetailPayload(mapped));
+      const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(exactExisting.id)}`, await tallyDetailPayload(mapped, exactExisting));
 
       if (update.error) {
         errors.push({ row: rowNumber, message: "Existing farmer found, but full Tally details could not be updated." });
@@ -1037,7 +1221,9 @@ export async function PATCH(request: Request) {
 
     const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(target.farmer.id)}`, {
       imported_photo_url: importedPhotoUrl,
-      profile_image_url: importedPhotoUrl
+      profile_image_url: target.farmer.profile_image_url || importedPhotoUrl,
+      photo_import_status: "imported",
+      photo_import_notes: ""
     });
 
     if (update.error) {

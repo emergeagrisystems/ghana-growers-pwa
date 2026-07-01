@@ -363,6 +363,12 @@ type ImportedFarmerRecord = {
   referral_source?: string;
   tally_photo_url?: string;
   imported_photo_url?: string;
+  farm_photo_urls?: string[] | null;
+  produce_photo_urls?: string[] | null;
+  document_urls?: string[] | null;
+  tally_file_references?: Record<string, unknown> | null;
+  photo_import_status?: string | null;
+  photo_import_notes?: string | null;
   original_tally_data?: Record<string, unknown>;
   status: ImportAdminStatus;
   verification_status: string;
@@ -1539,6 +1545,8 @@ function reviewDebugFields(farmer: ImportedFarmerRecord) {
 }
 
 const photoKeyPattern = /(photo|image|picture|upload|file)/i;
+const imageFilePattern = /\.(?:jpe?g|png|webp)(?:\?|$)/i;
+const documentFilePattern = /\.(?:pdf|docx?|xlsx?|csv)(?:\?|$)/i;
 
 function urlsFromText(value?: string | null) {
   return Array.from(value?.matchAll(/https?:\/\/[^\s"',\])}]+/gi) ?? [])
@@ -1607,16 +1615,133 @@ function filenameFromUnknown(value: unknown): string {
   return "";
 }
 
+function filenamesFromText(value?: string | null) {
+  return Array.from(value?.matchAll(/[\w .()_-]+\.(?:jpe?g|png|webp|pdf|docx?|xlsx?|csv)/gi) ?? [])
+    .map((match) => match[0]?.trim())
+    .filter(Boolean);
+}
+
+function filenamesFromUnknown(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const direct = filenamesFromText(value);
+
+    if (direct.length > 0) {
+      return direct;
+    }
+
+    const trimmed = value.trim();
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      try {
+        return filenamesFromUnknown(JSON.parse(trimmed) as unknown);
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(filenamesFromUnknown);
+  }
+
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(filenamesFromUnknown);
+  }
+
+  return [];
+}
+
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+type FarmerMediaReference = {
+  label: string;
+  urls: string[];
+  filenames: string[];
+  kind: "profile" | "farm" | "produce" | "document" | "other";
+  access: "url" | "filename-only";
+};
+
+function classifyFarmerMediaReference(label: string, urls: string[], filenames: string[]): FarmerMediaReference["kind"] {
+  const normalized = label.toLowerCase();
+  const combined = [...urls, ...filenames].join(" ");
+  const hasImage = imageFilePattern.test(combined) || /(photo|image|picture)/i.test(label);
+  const hasDocument = documentFilePattern.test(combined) || /(certificate|document|license|licence|registration|permit)/i.test(label);
+
+  if (hasDocument && !hasImage) {
+    return "document";
+  }
+
+  if (/(produce|crop|product|harvest|livestock|animal)/i.test(normalized)) {
+    return hasImage ? "produce" : "other";
+  }
+
+  if (/(farm|field|land|garden)/i.test(normalized)) {
+    return hasImage ? "farm" : "other";
+  }
+
+  if (/(farmer|profile|passport|person|owner|selfie|headshot|face)/i.test(normalized)) {
+    return hasImage ? "profile" : "other";
+  }
+
+  if (hasDocument) {
+    return "document";
+  }
+
+  return hasImage ? "profile" : "other";
+}
+
+function fileReferencesFromTallyData(originalData?: Record<string, unknown> | null): FarmerMediaReference[] {
+  return Object.entries(originalData ?? {})
+    .map(([label, value]) => {
+      const urls = uniqueStrings(urlsFromUnknown(value));
+      const filenames = uniqueStrings(filenamesFromUnknown(value));
+
+      if (!photoKeyPattern.test(label) && urls.length === 0 && filenames.length === 0) {
+        return null;
+      }
+
+      return {
+        label,
+        urls,
+        filenames,
+        kind: classifyFarmerMediaReference(label, urls, filenames),
+        access: urls.length > 0 ? "url" : "filename-only"
+      } satisfies FarmerMediaReference;
+    })
+    .filter((entry): entry is FarmerMediaReference => Boolean(entry));
+}
+
+function storedTallyFileReferences(farmer: ImportedFarmerRecord): FarmerMediaReference[] {
+  const references = farmer.tally_file_references?.references;
+  return Array.isArray(references)
+    ? references.filter((reference): reference is FarmerMediaReference => {
+        return Boolean(reference && typeof reference === "object" && "label" in reference && "kind" in reference);
+      })
+    : [];
+}
+
+function farmerMediaReferences(farmer: ImportedFarmerRecord) {
+  const stored = storedTallyFileReferences(farmer);
+  return stored.length ? stored : fileReferencesFromTallyData(farmer.original_tally_data);
+}
+
 function originalTallyPhotoCandidate(originalData?: Record<string, unknown> | null) {
-  const entries = Object.entries(originalData ?? {});
-  const photoEntry = entries.find(([label, value]) => photoKeyPattern.test(label) && urlsFromUnknown(value).length > 0);
-  const fallbackEntry = entries.find(([, value]) => urlsFromUnknown(value).length > 0);
-  const entry = photoEntry ?? fallbackEntry;
+  const references = fileReferencesFromTallyData(originalData);
+  const entry = references.find((reference) => reference.kind === "profile" && reference.urls.length > 0)
+    ?? references.find((reference) => reference.kind !== "document" && reference.urls.length > 0)
+    ?? references.find((reference) => reference.urls.length > 0);
 
   return {
-    key: entry?.[0] ?? "",
-    url: entry ? urlsFromUnknown(entry[1])[0] ?? "" : "",
-    filename: entry ? filenameFromUnknown(entry[1]) : ""
+    key: entry?.label ?? "",
+    url: entry?.urls[0] ?? "",
+    filename: entry?.filenames[0] ?? ""
   };
 }
 
@@ -1639,25 +1764,31 @@ function isPublicReviewPhotoUrl(url?: string | null) {
 
 function publicReviewPhotoUrl(farmer: ImportedFarmerRecord) {
   const originalPhoto = originalTallyPhotoCandidate(farmer.original_tally_data);
-  const candidates = [farmer.profile_image_url, farmer.imported_photo_url, firstUrlFromText(farmer.tally_photo_url), originalPhoto.url];
+  const profileReference = farmerMediaReferences(farmer).find((reference) => reference.kind === "profile" && reference.urls.length > 0);
+  const candidates = [farmer.profile_image_url, farmer.imported_photo_url, firstUrlFromText(farmer.tally_photo_url), profileReference?.urls[0], originalPhoto.url];
 
   return candidates.find(isPublicReviewPhotoUrl);
 }
 
 function farmerSubmittedPhotoCandidate(farmer: ImportedFarmerRecord) {
   const originalPhoto = originalTallyPhotoCandidate(farmer.original_tally_data);
+  const references = farmerMediaReferences(farmer);
+  const profileReference = references.find((reference) => reference.kind === "profile");
+  const visualReference = references.find((reference) => reference.kind !== "document");
   const tallyPhotoUrl = firstUrlFromText(farmer.tally_photo_url);
-  const url = tallyPhotoUrl || originalPhoto.url;
+  const url = tallyPhotoUrl || profileReference?.urls[0] || visualReference?.urls[0] || originalPhoto.url;
+  const filename = originalPhoto.filename || profileReference?.filenames[0] || visualReference?.filenames[0] || "";
 
   return {
     url,
-    key: tallyPhotoUrl ? "tally_photo_url" : originalPhoto.key,
-    filename: originalPhoto.filename
+    key: tallyPhotoUrl ? "tally_photo_url" : profileReference?.label || visualReference?.label || originalPhoto.key,
+    filename
   };
 }
 
 function photoSubmittedButNotImported(farmer: ImportedFarmerRecord) {
-  return Boolean(farmerSubmittedPhotoCandidate(farmer).url && !farmer.profile_image_url && !farmer.imported_photo_url);
+  const submitted = farmerSubmittedPhotoCandidate(farmer);
+  return Boolean((submitted.url || submitted.filename) && !farmer.profile_image_url && !farmer.imported_photo_url);
 }
 
 function farmerPhotoDiagnostics(farmer: ImportedFarmerRecord) {
@@ -1666,6 +1797,7 @@ function farmerPhotoDiagnostics(farmer: ImportedFarmerRecord) {
   const submitted = farmerSubmittedPhotoCandidate(farmer);
   const publicPhoto = publicReviewPhotoUrl(farmer);
   const submittedUrlIsPublic = isPublicReviewPhotoUrl(submitted.url);
+  const hasFilenameReference = Boolean(submitted.filename);
   const status = farmer.profile_image_url
     ? "Public profile photo exists"
     : farmer.imported_photo_url
@@ -1674,6 +1806,8 @@ function farmerPhotoDiagnostics(farmer: ImportedFarmerRecord) {
         ? "Tally submitted photo found but not imported"
       : submitted.url
         ? "Tally photo URL found but private/expired"
+        : hasFilenameReference
+          ? "Photo reference found but could not be loaded"
         : "No submitted photo found";
 
   return {
@@ -1687,7 +1821,9 @@ function farmerPhotoDiagnostics(farmer: ImportedFarmerRecord) {
     extractedPhotoUrlPreview: submitted.url ? `${submitted.url.slice(0, 60)}${submitted.url.length > 60 ? "..." : ""}` : "",
     filename: submitted.filename,
     publicDisplayable: Boolean(publicPhoto),
-    submittedUrlIsPublic
+    submittedUrlIsPublic,
+    photoImportStatus: farmer.photo_import_status ?? "",
+    photoImportNotes: farmer.photo_import_notes ?? ""
   };
 }
 
@@ -1700,8 +1836,17 @@ function displayTallyValue(value: unknown) {
 }
 
 function farmerReviewReadiness(farmer: ImportedFarmerRecord) {
+  const hasVisualReference = Boolean(
+    publicReviewPhotoUrl(farmer) ||
+    farmerMediaUrlsByKind(farmer, "farm").length ||
+    farmerMediaUrlsByKind(farmer, "produce").length ||
+    farmerMediaFilenamesByKind(farmer, "farm").length ||
+    farmerMediaFilenamesByKind(farmer, "produce").length ||
+    farmerSubmittedPhotoCandidate(farmer).filename
+  );
+
   return [
-    { label: "Photo", complete: Boolean(publicReviewPhotoUrl(farmer)), note: farmerPhotoDiagnostics(farmer).status },
+    { label: "Photo", complete: hasVisualReference, note: farmerPhotoDiagnostics(farmer).status },
     { label: "Products", complete: farmer.products.length > 0, note: "No products listed" },
     { label: "Location", complete: hasReviewValue(farmer.region) && hasReviewValue(farmer.district), note: "Location incomplete" },
     { label: "Contact", complete: hasReviewValue(farmer.phone_number) || hasReviewValue(farmer.whatsapp_number), note: "No phone or WhatsApp" }
@@ -1734,7 +1879,7 @@ function farmerCompleteness(farmer: ImportedFarmerRecord) {
     { label: "Supply frequency", complete: hasReviewValue(farmer.supply_frequency) },
     { label: "Delivery preference", complete: hasReviewValue(farmer.delivery_preference) },
     { label: "Payment preference", complete: hasReviewValue(farmer.payment_preference) },
-    { label: "Farm photo", complete: Boolean(publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).url) }
+    { label: "Farm photo", complete: Boolean(publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).url || farmerSubmittedPhotoCandidate(farmer).filename || farmerMediaUrlsByKind(farmer, "farm").length || farmerMediaFilenamesByKind(farmer, "farm").length) }
   ];
   const completeCount = checks.filter((check) => check.complete).length;
   const percent = Math.round((completeCount / checks.length) * 100);
@@ -1856,21 +2001,113 @@ function farmerReviewTimeline(farmer: ImportedFarmerRecord) {
 }
 
 function farmerUploadedDocuments(farmer: ImportedFarmerRecord) {
-  const entries = Object.entries(farmer.original_tally_data ?? {});
+  const documentReferences = farmerMediaReferences(farmer).filter((reference) => reference.kind === "document");
+  const savedDocuments = farmer.document_urls ?? [];
+  const fromReferences = documentReferences.flatMap((reference) => {
+    const urls = reference.urls.map((url) => ({ label: reference.label, filename: url, url }));
+    const filenames = reference.filenames.map((filename) => ({ label: reference.label, filename, url: "" }));
+    return [...urls, ...filenames];
+  });
 
-  return entries
-    .filter(([label, value]) => /(certificate|document|file|upload)/i.test(label) && (urlsFromUnknown(value).length > 0 || filenameFromUnknown(value)))
-    .map(([label, value]) => ({
-      label,
-      filename: filenameFromUnknown(value) || urlsFromUnknown(value)[0] || "Uploaded file"
-    }));
+  return [
+    ...savedDocuments.map((url) => ({ label: "Uploaded document", filename: url, url })),
+    ...fromReferences
+  ].filter((document, index, documents) => {
+    const key = `${document.label}-${document.filename}`;
+    return documents.findIndex((item) => `${item.label}-${item.filename}` === key) === index;
+  });
+}
+
+function farmerMediaUrlsByKind(farmer: ImportedFarmerRecord, kind: FarmerMediaReference["kind"]) {
+  const savedUrls = kind === "farm"
+    ? farmer.farm_photo_urls ?? []
+    : kind === "produce"
+      ? farmer.produce_photo_urls ?? []
+      : [];
+  const referencedUrls = farmerMediaReferences(farmer)
+    .filter((reference) => reference.kind === kind)
+    .flatMap((reference) => reference.urls);
+
+  return uniqueStrings([...savedUrls, ...referencedUrls]);
+}
+
+function farmerMediaFilenamesByKind(farmer: ImportedFarmerRecord, kind: FarmerMediaReference["kind"]) {
+  return uniqueStrings(
+    farmerMediaReferences(farmer)
+      .filter((reference) => reference.kind === kind)
+      .flatMap((reference) => reference.filenames)
+  );
+}
+
+function farmerMediaSummary(farmer: ImportedFarmerRecord) {
+  const farmPhotoCount = farmerMediaUrlsByKind(farmer, "farm").length;
+  const producePhotoCount = farmerMediaUrlsByKind(farmer, "produce").length;
+  const farmReferenceCount = farmerMediaFilenamesByKind(farmer, "farm").length;
+  const produceReferenceCount = farmerMediaFilenamesByKind(farmer, "produce").length;
+
+  if (farmPhotoCount || producePhotoCount) {
+    return `${farmPhotoCount} farm photo${farmPhotoCount === 1 ? "" : "s"} and ${producePhotoCount} produce photo${producePhotoCount === 1 ? "" : "s"} found.`;
+  }
+
+  if (farmReferenceCount || produceReferenceCount) {
+    return "Photo reference found but could not be loaded.";
+  }
+
+  if (publicReviewPhotoUrl(farmer)) {
+    return "Primary farmer photo is available for profile review.";
+  }
+
+  return farmerPhotoDiagnostics(farmer).status;
+}
+
+function FarmerMediaGallery({
+  title,
+  urls,
+  filenames,
+  emptyLabel
+}: {
+  title: string;
+  urls: string[];
+  filenames: string[];
+  emptyLabel: string;
+}) {
+  return (
+    <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+      <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">{title}</h4>
+      {urls.length > 0 ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {urls.map((url, index) => (
+            <div key={`${title}-${url}`} className="overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+              <div
+                role="img"
+                aria-label={`${title} ${index + 1}`}
+                className="aspect-[4/3] bg-cover bg-center"
+                style={{ backgroundImage: `url(${url})` }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : filenames.length > 0 ? (
+        <div className="mt-4 grid gap-2">
+          {filenames.map((filename) => (
+            <div key={`${title}-${filename}`} className="rounded-md bg-earth-50 p-3 ring-1 ring-earth-500/20">
+              <p className="text-sm font-black text-ink">Photo reference found but could not be loaded.</p>
+              <p className="mt-1 break-all text-xs font-semibold text-ink/55">{filename}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">{emptyLabel}</p>
+      )}
+    </div>
+  );
 }
 
 function launchChecklistFromFarmer(farmer: ImportedFarmerRecord): Record<LaunchChecklistItem, boolean> {
   return {
     "Profile photo": Boolean(publicReviewPhotoUrl(farmer)),
-    "Farm photos": Boolean(publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).url),
-    "Produce photos": false,
+    "Farm photos": Boolean(farmerMediaUrlsByKind(farmer, "farm").length || farmerMediaFilenamesByKind(farmer, "farm").length || publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).filename),
+    "Produce photos": Boolean(farmerMediaUrlsByKind(farmer, "produce").length || farmerMediaFilenamesByKind(farmer, "produce").length),
     "Farm story": hasReviewValue(farmer.description),
     "Verified contact": hasReviewValue(farmer.phone_number) || hasReviewValue(farmer.whatsapp_number),
     "Produce listing": farmer.products.length > 0,
@@ -3919,6 +4156,10 @@ export function AdminDashboard({
   const farmerAverageReviewTime = farmerReviewRemaining > 0 ? "8 min" : "0 min";
   const recommendedFarmerAction = reviewingImportedFarmer ? farmerRecommendedAction(reviewingImportedFarmer) : "Select Farmer";
   const reviewingDocuments = reviewingImportedFarmer ? farmerUploadedDocuments(reviewingImportedFarmer) : [];
+  const reviewingFarmPhotoUrls = reviewingImportedFarmer ? farmerMediaUrlsByKind(reviewingImportedFarmer, "farm") : [];
+  const reviewingFarmPhotoFilenames = reviewingImportedFarmer ? farmerMediaFilenamesByKind(reviewingImportedFarmer, "farm") : [];
+  const reviewingProducePhotoUrls = reviewingImportedFarmer ? farmerMediaUrlsByKind(reviewingImportedFarmer, "produce") : [];
+  const reviewingProducePhotoFilenames = reviewingImportedFarmer ? farmerMediaFilenamesByKind(reviewingImportedFarmer, "produce") : [];
   const reviewingEditorialDecision = reviewingImportedFarmer
     ? editorialDecisions[reviewingImportedFarmer.id] ?? defaultEditorialDecision(reviewingImportedFarmer)
     : null;
@@ -6583,7 +6824,7 @@ export function AdminDashboard({
                                   />
                                 ) : (
                                   <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
-                                    {photoSubmittedButNotImported(reviewingImportedFarmer) ? "Photo submitted but not imported." : "No farmer photo submitted."}
+                                    {photoSubmittedButNotImported(reviewingImportedFarmer) ? farmerPhotoDiagnostics(reviewingImportedFarmer).status : "No photo submitted."}
                                   </div>
                                 )}
                               </div>
@@ -6591,9 +6832,7 @@ export function AdminDashboard({
                                 <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-ink/45">Farm Photographs</p>
                                   <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
-                                    {publicReviewPhotoUrl(reviewingImportedFarmer)
-                                      ? "Primary farmer photo is available for profile review."
-                                      : farmerPhotoDiagnostics(reviewingImportedFarmer).status}
+                                    {farmerMediaSummary(reviewingImportedFarmer)}
                                   </p>
                                   {photoSubmittedButNotImported(reviewingImportedFarmer) ? (
                                     <button
@@ -6612,6 +6851,21 @@ export function AdminDashboard({
                                 </div>
                               </div>
                             </div>
+
+                            <section className="grid gap-4 lg:grid-cols-2">
+                              <FarmerMediaGallery
+                                title="Farm Photos"
+                                urls={reviewingFarmPhotoUrls}
+                                filenames={reviewingFarmPhotoFilenames}
+                                emptyLabel="No farm photos submitted."
+                              />
+                              <FarmerMediaGallery
+                                title="Produce Photos"
+                                urls={reviewingProducePhotoUrls}
+                                filenames={reviewingProducePhotoFilenames}
+                                emptyLabel="No produce photos submitted."
+                              />
+                            </section>
 
                             <section className="rounded-md border border-leaf-900/10 bg-white p-4">
                               <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Information</h4>
@@ -9052,9 +9306,9 @@ export function AdminDashboard({
                           className="h-full w-full bg-cover bg-center"
                           style={{ backgroundImage: `url(${publicReviewPhotoUrl(reviewingImportedFarmer)})` }}
                         />
-                      ) : (
-                        <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
-                          {photoSubmittedButNotImported(reviewingImportedFarmer) ? "Photo submitted but not imported." : "No photo submitted."}
+                        ) : (
+                          <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
+                          {photoSubmittedButNotImported(reviewingImportedFarmer) ? farmerPhotoDiagnostics(reviewingImportedFarmer).status : "No photo submitted."}
                         </div>
                       )}
                     </div>
@@ -9087,7 +9341,12 @@ export function AdminDashboard({
                           ["original_tally_data photo key found", farmerPhotoDiagnostics(reviewingImportedFarmer).originalPhotoKeyFound ? "yes" : "no"],
                           ["photo key", farmerPhotoDiagnostics(reviewingImportedFarmer).originalPhotoKey || "none"],
                           ["extracted photo url", farmerPhotoDiagnostics(reviewingImportedFarmer).extractedPhotoUrlPreview || "none"],
-                          ["public/displayable", farmerPhotoDiagnostics(reviewingImportedFarmer).publicDisplayable ? "yes" : "no"]
+                          ["public/displayable", farmerPhotoDiagnostics(reviewingImportedFarmer).publicDisplayable ? "yes" : "no"],
+                          ["farm_photo_urls", reviewingFarmPhotoUrls.length ? `${reviewingFarmPhotoUrls.length}` : "0"],
+                          ["produce_photo_urls", reviewingProducePhotoUrls.length ? `${reviewingProducePhotoUrls.length}` : "0"],
+                          ["file references", farmerMediaReferences(reviewingImportedFarmer).length ? `${farmerMediaReferences(reviewingImportedFarmer).length}` : "0"],
+                          ["photo_import_status", farmerPhotoDiagnostics(reviewingImportedFarmer).photoImportStatus || "none"],
+                          ["photo_import_notes", farmerPhotoDiagnostics(reviewingImportedFarmer).photoImportNotes || "none"]
                         ].map(([label, value]) => (
                           <div key={label} className="flex items-start justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2">
                             <span className="font-black text-ink">{label}</span>
