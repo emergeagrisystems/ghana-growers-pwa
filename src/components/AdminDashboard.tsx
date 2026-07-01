@@ -5318,19 +5318,19 @@ export function AdminDashboard({
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-[96rem] gap-5 px-3 py-5 sm:px-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6 lg:px-5 lg:py-6 2xl:max-w-[110rem]">
-        <aside className="order-2 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
+      <div className="mx-auto grid max-w-[96rem] gap-5 px-4 py-5 sm:px-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-6 2xl:max-w-[110rem] 2xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="order-2 rounded-md border border-leaf-900/10 bg-leaf-50 px-5 py-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
             Workspaces
           </div>
-          <nav className="mt-5 grid gap-5">
+          <nav className="mt-5 grid gap-7">
             {operationsNavigation.map((group) => (
               <div key={group.group}>
                 <p className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-ink/40">
                   {group.icon} {group.group}
                 </p>
-                <div className="mt-2 grid gap-1.5">
+                <div className="mt-2.5 grid gap-1.5">
                   {group.items.map((item) => {
                     const isActive =
                       item.id === activeSection &&
@@ -5353,7 +5353,7 @@ export function AdminDashboard({
                             setApplicationTab("farmer");
                           }
                         }}
-                        className={`rounded-md px-3 py-2.5 text-left text-sm font-black transition ${
+                        className={`rounded-md px-3.5 py-2 text-left text-sm font-black transition ${
                           isActive ? "bg-leaf-700 text-white" : "bg-white text-ink/68 hover:text-leaf-800"
                         }`}
                       >
