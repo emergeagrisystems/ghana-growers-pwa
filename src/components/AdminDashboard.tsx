@@ -838,12 +838,14 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "district", label: "District", required: true },
     { name: "sellerFarmer", label: "Seller/Farmer", required: true },
     { name: "ownerType", label: "Owner Type", type: "select", required: true, options: ["Farmer", "Supplier", "Admin"] },
-    { name: "ownerId", label: "Owner ID", helper: "For farmer-owned listings, paste the farmer Supabase id. Leave blank for Admin-owned records." },
+    { name: "ownerId", label: "Owner ID", helper: "Auto-filled when creating a listing from a farmer review." },
     { name: "ownerName", label: "Owner Name", required: true, helper: "Use the farmer, supplier, or Ghana Growers owner name shown publicly." },
     { name: "quantity", label: "Quantity", required: true },
     { name: "unit", label: "Unit", required: true },
+    { name: "priceRange", label: "Price if available", helper: "Optional. Leave blank if price will be confirmed through Ghana Growers." },
     { name: "availability", label: "Availability", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
+    { name: "description", label: "Description", type: "textarea", helper: "Short notes on quality, harvest timing, collection, or delivery." },
     { name: "imageUrl", label: "Listing Image", type: "image", bucket: "marketplace", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
   ],
   "buyer-requests": [
@@ -1073,6 +1075,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
 
   if (formId === "marketplace") {
     const product = products.find((record) => record.id === row.id);
+    const productRecord = product as (typeof product & { priceRange?: string }) | undefined;
     return {
       ...values,
       productName: product?.name ?? row.name,
@@ -1085,8 +1088,10 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       ownerName: product?.ownerName ?? row.ownerName ?? product?.seller ?? "",
       quantity: product?.quantity ?? "",
       unit: product?.unit ?? "",
+      priceRange: productRecord?.priceRange ?? "",
       availability: product?.available ?? "",
       whatsappNumber: product?.whatsappNumber ?? "",
+      description: product?.description ?? "",
       imageUrl: product?.image ?? ""
     };
   }
@@ -4678,6 +4683,44 @@ export function AdminDashboard({
     });
   }
 
+  function openFarmerListingForm(farmer: ImportedFarmerRecord) {
+    const farmerName = farmer.farm_name || farmer.farmer_name || "Farmer";
+    const nextValues = {
+      ...emptyFormValues("marketplace"),
+      ownerType: "Farmer",
+      ownerId: farmer.id,
+      ownerName: farmerName,
+      sellerFarmer: farmerName,
+      region: farmer.region || "",
+      district: farmer.district || "",
+      whatsappNumber: farmer.whatsapp_number || farmer.phone_number || "",
+      availability: farmer.currently_harvesting || "Available on request",
+      unit: "",
+      quantity: "",
+      category: farmer.farm_type || "",
+      description: farmer.farm_name
+        ? `Listing connected to ${farmer.farm_name}. Confirm quantity, quality, and availability before publishing.`
+        : "Confirm quantity, quality, and availability before publishing."
+    };
+
+    setActiveSection("marketplace");
+    setSearchTerm("");
+    setStatusFilter("All");
+    setFormValues(nextValues);
+    setImagePreviews({});
+    setFormError("");
+    setFormSuccess("");
+    setUploadingField(null);
+    setActiveForm({
+      id: "marketplace",
+      mode: "add",
+      title: "Create Listing for this Farmer",
+      recordId: farmer.id,
+      recordName: farmerName
+    });
+    setNotice(`Creating a farmer-owned marketplace listing for ${farmerName}. Owner fields are pre-filled.`);
+  }
+
   function closeAdminForm() {
     setActiveForm(null);
     setFormValues({});
@@ -5225,7 +5268,7 @@ export function AdminDashboard({
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-white">
       <section className="border-b border-leaf-900/10 bg-leaf-50">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[96rem] px-4 py-8 sm:px-6 2xl:max-w-[110rem]">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Operations</p>
           <div className="mt-3 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
@@ -5248,7 +5291,7 @@ export function AdminDashboard({
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_1fr] lg:gap-8 lg:px-8 lg:py-8">
+      <div className="mx-auto grid max-w-[96rem] gap-5 px-3 py-5 sm:px-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-6 lg:px-5 lg:py-6 2xl:max-w-[110rem]">
         <aside className="order-2 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
@@ -6133,7 +6176,7 @@ export function AdminDashboard({
                       ))}
                     </section>
 
-                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[250px_minmax(520px,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
                       <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -6249,10 +6292,10 @@ export function AdminDashboard({
 
                             <section className="rounded-md border border-leaf-900/10 bg-white p-4">
                               <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Information</h4>
-                              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                              <dl className="mt-4 divide-y divide-leaf-900/10 rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
                                 {[
                                   ["Name", reviewingImportedFarmer.farmer_name],
-                                  ["Farm Name", reviewingImportedFarmer.farm_name],
+                                  ["Farm", reviewingImportedFarmer.farm_name],
                                   ["Phone", reviewingImportedFarmer.phone_number || reviewingImportedFarmer.whatsapp_number],
                                   ["WhatsApp", reviewingImportedFarmer.whatsapp_number],
                                   ["Email", reviewingImportedFarmer.email],
@@ -6261,11 +6304,26 @@ export function AdminDashboard({
                                   ["Farm Size", reviewingImportedFarmer.farm_size],
                                   ["Years Farming", reviewingImportedFarmer.farming_experience]
                                 ].map(([label, value]) => (
-                                  <div key={label} className="rounded-md bg-leaf-50 p-3">
-                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
-                                    <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                                  <div key={label} className="grid gap-1 px-4 py-3 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-4">
+                                    <dt className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</dt>
+                                    <dd className="min-w-0 break-words text-sm font-black leading-6 text-ink">{value || "Not provided"}</dd>
                                   </div>
                                 ))}
+                              </dl>
+                              <div className="mt-4 rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">Internal Farmer ID</p>
+                                    <p className="mt-2 break-all text-sm font-black text-ink">{reviewingImportedFarmer.id}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => navigator.clipboard.writeText(reviewingImportedFarmer.id)}
+                                    className="min-h-11 rounded-md bg-leaf-50 px-4 py-2 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                                  >
+                                    Copy ID
+                                  </button>
+                                </div>
                               </div>
                             </section>
 
@@ -6579,6 +6637,21 @@ export function AdminDashboard({
                               </div>
                             </div>
 
+                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Marketplace</p>
+                              <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
+                                Create a farmer-owned listing without copying owner details.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => openFarmerListingForm(reviewingImportedFarmer)}
+                                className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                              >
+                                <Store className="h-4 w-4" aria-hidden="true" />
+                                Create Listing for this Farmer
+                              </button>
+                            </div>
+
                             <div className="grid gap-2">
                               <button
                                 type="button"
@@ -6695,7 +6768,7 @@ export function AdminDashboard({
                       ))}
                     </section>
 
-                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[250px_minmax(520px,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
                       <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -7869,7 +7942,7 @@ export function AdminDashboard({
                   </label>
                 </section>
 
-                <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+                <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[270px_minmax(520px,1fr)_300px] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
                   <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -8992,7 +9065,7 @@ export function AdminDashboard({
 
           {activeForm ? (
             <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 px-3 py-4 sm:px-4 sm:py-6">
-              <section className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-md bg-white shadow-soft">
+              <section className={`max-h-[92dvh] w-full overflow-y-auto rounded-md bg-white shadow-soft ${activeForm.id === "marketplace" ? "max-w-4xl" : "max-w-3xl"}`}>
                 <div className="border-b border-leaf-900/10 p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>

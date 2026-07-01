@@ -54,6 +54,8 @@ export async function POST(request: Request) {
         quantity: payload.quantity,
         unit: payload.unit,
         availability: payload.availability,
+        price_range: payload.priceRange || null,
+        description: payload.description || null,
         image_url: payload.imageUrl || null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active",
@@ -94,6 +96,8 @@ export async function PATCH(request: Request) {
         quantity: payload.quantity,
         unit: payload.unit,
         availability: payload.availability,
+        price_range: payload.priceRange || null,
+        description: payload.description || null,
         image_url: payload.imageUrl || null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active"
