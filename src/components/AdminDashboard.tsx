@@ -218,6 +218,17 @@ type FarmerSourceFilter = "All" | "Tally Import" | "Founding Farmer" | "Manual/T
 type ProfileCompletenessFilter = "All" | "Ready to Publish" | "Needs Follow-up" | "Incomplete";
 type MarketplaceOwnerFilter = "All" | "Farmer" | "Supplier" | "Admin";
 type FeaturedFilter = "All" | "Featured" | "Not Featured" | "Expired Featured";
+type LaunchEditorialStatus = "Public Farmer" | "Featured Farmer" | "Founding Farmer 2026" | "Needs Improvement" | "Hold";
+type LaunchEditorialFilter = "All" | "Founding Farmers" | "Homepage Candidates" | "Featured Farmers" | "Launch Ready" | "Needs Improvement";
+type LaunchChecklistItem = "Profile photo" | "Farm photos" | "Produce photos" | "Farm story" | "Verified contact" | "Produce listing" | "Region confirmed";
+type EditorialDecisionState = {
+  launchStatus: LaunchEditorialStatus;
+  homepageCandidate: boolean;
+  marketplaceFeatured: boolean;
+  storyCandidate: boolean;
+  editorialNotes: string;
+  checklist: Record<LaunchChecklistItem, boolean>;
+};
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -358,6 +369,22 @@ const farmerBulkActionLabels: Record<FarmerBulkAction, string> = {
   founding: "Assign Founding Farmer",
   archive: "Archive"
 };
+const launchEditorialStatusOptions: LaunchEditorialStatus[] = [
+  "Public Farmer",
+  "Featured Farmer",
+  "Founding Farmer 2026",
+  "Needs Improvement",
+  "Hold"
+];
+const launchEditorialChecklistItems: LaunchChecklistItem[] = [
+  "Profile photo",
+  "Farm photos",
+  "Produce photos",
+  "Farm story",
+  "Verified contact",
+  "Produce listing",
+  "Region confirmed"
+];
 
 const statusStyles: Record<AdminStatus, string> = {
   Pending: "bg-earth-50 text-earth-700",
@@ -1657,6 +1684,98 @@ function farmerUploadedDocuments(farmer: ImportedFarmerRecord) {
     }));
 }
 
+function launchChecklistFromFarmer(farmer: ImportedFarmerRecord): Record<LaunchChecklistItem, boolean> {
+  return {
+    "Profile photo": Boolean(publicReviewPhotoUrl(farmer)),
+    "Farm photos": Boolean(publicReviewPhotoUrl(farmer) || farmerSubmittedPhotoCandidate(farmer).url),
+    "Produce photos": false,
+    "Farm story": hasReviewValue(farmer.description),
+    "Verified contact": hasReviewValue(farmer.phone_number) || hasReviewValue(farmer.whatsapp_number),
+    "Produce listing": farmer.products.length > 0,
+    "Region confirmed": hasReviewValue(farmer.region)
+  };
+}
+
+function defaultEditorialDecision(farmer: ImportedFarmerRecord): EditorialDecisionState {
+  const checklist = launchChecklistFromFarmer(farmer);
+  const checklistComplete = Object.values(checklist).filter(Boolean).length;
+  const launchStatus: LaunchEditorialStatus =
+    normalizedFarmerSource(farmer.source) === "Founding Farmer"
+      ? "Founding Farmer 2026"
+      : checklistComplete >= 5
+        ? "Public Farmer"
+        : "Needs Improvement";
+
+  return {
+    launchStatus,
+    homepageCandidate: false,
+    marketplaceFeatured: false,
+    storyCandidate: false,
+    editorialNotes: "",
+    checklist
+  };
+}
+
+function launchChecklistProgress(editorial: EditorialDecisionState) {
+  const complete = launchEditorialChecklistItems.filter((item) => editorial.checklist[item]).length;
+  const total = launchEditorialChecklistItems.length;
+
+  return {
+    complete,
+    total,
+    percent: Math.round((complete / total) * 100)
+  };
+}
+
+function launchReadiness(editorial: EditorialDecisionState) {
+  const progress = launchChecklistProgress(editorial);
+
+  if (editorial.launchStatus === "Hold" || progress.percent < 50) {
+    return {
+      label: "Hold Until Complete",
+      tone: "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+    };
+  }
+
+  if (editorial.launchStatus === "Needs Improvement" || progress.percent < 85) {
+    return {
+      label: "Needs Improvements",
+      tone: "bg-earth-50 text-earth-700 ring-1 ring-earth-500/20"
+    };
+  }
+
+  return {
+    label: "Launch Ready",
+    tone: "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
+  };
+}
+
+function matchesLaunchEditorialFilter(filter: LaunchEditorialFilter, editorial: EditorialDecisionState) {
+  const readiness = launchReadiness(editorial).label;
+
+  if (filter === "Founding Farmers") {
+    return editorial.launchStatus === "Founding Farmer 2026";
+  }
+
+  if (filter === "Homepage Candidates") {
+    return editorial.homepageCandidate;
+  }
+
+  if (filter === "Featured Farmers") {
+    return editorial.launchStatus === "Featured Farmer" || editorial.marketplaceFeatured;
+  }
+
+  if (filter === "Launch Ready") {
+    return readiness === "Launch Ready";
+  }
+
+  if (filter === "Needs Improvement") {
+    return editorial.launchStatus === "Needs Improvement" || readiness === "Needs Improvements";
+  }
+
+  return true;
+}
+
 function followUpMessageForFarmer(farmer: ImportedFarmerRecord) {
   const completeness = farmerCompleteness(farmer);
   const missingList = completeness.missing.length
@@ -2380,6 +2499,7 @@ export function AdminDashboard({
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
   const [profileCompletenessFilter, setProfileCompletenessFilter] = useState<ProfileCompletenessFilter>("All");
+  const [launchEditorialFilter, setLaunchEditorialFilter] = useState<LaunchEditorialFilter>("All");
   const [marketplaceOwnerFilter, setMarketplaceOwnerFilter] = useState<MarketplaceOwnerFilter>("All");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("All");
   const [selectedFarmerRowIds, setSelectedFarmerRowIds] = useState<string[]>([]);
@@ -2442,6 +2562,7 @@ export function AdminDashboard({
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
+  const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -3051,7 +3172,15 @@ export function AdminDashboard({
     reviewingImportedFarmer?.whatsapp_number
       ? `https://wa.me/${reviewingImportedFarmer.whatsapp_number.replace(/\D+/g, "")}?text=${encodeURIComponent(reviewingFollowUpMessage)}`
       : "";
-  const farmerReviewQueue = importedFarmers.filter((farmer) => farmer.status !== "Archived");
+  const farmerReviewQueue = importedFarmers.filter((farmer) => {
+    if (farmer.status === "Archived") {
+      return false;
+    }
+
+    const editorialDecision = editorialDecisions[farmer.id] ?? defaultEditorialDecision(farmer);
+
+    return matchesLaunchEditorialFilter(launchEditorialFilter, editorialDecision);
+  });
   const farmerReviewRemaining = farmerReviewQueue.filter((farmer) => farmer.status !== "Active" && farmer.verification_status !== "Verified").length;
   const oldestWaitingFarmer = farmerReviewQueue
     .slice()
@@ -3060,6 +3189,11 @@ export function AdminDashboard({
   const farmerAverageReviewTime = farmerReviewRemaining > 0 ? "8 min" : "0 min";
   const recommendedFarmerAction = reviewingImportedFarmer ? farmerRecommendedAction(reviewingImportedFarmer) : "Select Farmer";
   const reviewingDocuments = reviewingImportedFarmer ? farmerUploadedDocuments(reviewingImportedFarmer) : [];
+  const reviewingEditorialDecision = reviewingImportedFarmer
+    ? editorialDecisions[reviewingImportedFarmer.id] ?? defaultEditorialDecision(reviewingImportedFarmer)
+    : null;
+  const reviewingLaunchProgress = reviewingEditorialDecision ? launchChecklistProgress(reviewingEditorialDecision) : null;
+  const reviewingLaunchReadiness = reviewingEditorialDecision ? launchReadiness(reviewingEditorialDecision) : null;
 
   useEffect(() => {
     if (activeSection !== "applications" || applicationTab !== "farmer" || reviewingImportedFarmerId || farmerReviewQueue.length === 0) {
@@ -3072,6 +3206,23 @@ export function AdminDashboard({
     setFarmerReviewDebug(reviewDebugFields(firstFarmer));
     setFarmerReviewMessage(null);
   }, [activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
+
+  function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState) {
+    const farmer = importedFarmers.find((item) => item.id === recordId);
+
+    if (!farmer) {
+      return;
+    }
+
+    setEditorialDecisions((current) => {
+      const existing = current[recordId] ?? defaultEditorialDecision(farmer);
+
+      return {
+        ...current,
+        [recordId]: updater(existing)
+      };
+    });
+  }
 
   function mockAction(row: AdminRow, action: "Edit" | "Mark Verified" | "Archive") {
     if (action === "Mark Verified") {
@@ -5095,6 +5246,29 @@ export function AdminDashboard({
                 </div>
                 {applicationTab === "farmer" ? (
                   <div className="grid gap-5">
+                    <section className="flex flex-col gap-3 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">Editorial Filter</p>
+                        <p className="mt-1 text-sm font-semibold text-ink/58">
+                          Prepare launch collections without leaving the farmer review workspace.
+                        </p>
+                      </div>
+                      <label className="grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45 sm:min-w-64">
+                        Show farmers
+                        <select
+                          value={launchEditorialFilter}
+                          onChange={(event) => setLaunchEditorialFilter(event.target.value as LaunchEditorialFilter)}
+                          className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        >
+                          {(["All", "Founding Farmers", "Homepage Candidates", "Featured Farmers", "Launch Ready", "Needs Improvement"] as LaunchEditorialFilter[]).map((filter) => (
+                            <option key={filter} value={filter}>
+                              {filter}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </section>
+
                     <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-3">
                       {[
                         ["Applications Remaining", farmerReviewRemaining],
@@ -5391,6 +5565,127 @@ export function AdminDashboard({
                                 ))}
                               </div>
                             </div>
+
+                            {reviewingEditorialDecision && reviewingLaunchProgress && reviewingLaunchReadiness ? (
+                              <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Launch & Editorial</p>
+                                    <p className="mt-1 text-xs font-semibold leading-5 text-ink/55">
+                                      Internal curation for launch collections.
+                                    </p>
+                                  </div>
+                                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${reviewingLaunchReadiness.tone}`}>
+                                    {reviewingLaunchReadiness.label}
+                                  </span>
+                                </div>
+
+                                <div className="mt-4 grid gap-2">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Status</p>
+                                  <div className="grid gap-2">
+                                    {launchEditorialStatusOptions.map((status) => (
+                                      <button
+                                        key={status}
+                                        type="button"
+                                        onClick={() =>
+                                          updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
+                                            ...current,
+                                            launchStatus: status
+                                          }))
+                                        }
+                                        className={`rounded-md px-3 py-2 text-left text-xs font-black transition ${
+                                          reviewingEditorialDecision.launchStatus === status
+                                            ? "bg-leaf-700 text-white"
+                                            : "bg-leaf-50 text-ink/65 ring-1 ring-leaf-900/10 hover:text-leaf-800"
+                                        }`}
+                                      >
+                                        {status === "Founding Farmer 2026" ? "🌱 Founding Farmer 2026" : status}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-2">
+                                  {([
+                                    ["Homepage Candidate", "homepageCandidate"],
+                                    ["Marketplace Featured", "marketplaceFeatured"],
+                                    ["Story Candidate", "storyCandidate"]
+                                  ] as Array<[string, "homepageCandidate" | "marketplaceFeatured" | "storyCandidate"]>).map(([label, key]) => (
+                                    <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2 ring-1 ring-leaf-900/10">
+                                      <span className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
+                                            ...current,
+                                            [key]: !current[key]
+                                          }))
+                                        }
+                                        className={`rounded-full px-3 py-1 text-xs font-black transition ${
+                                          reviewingEditorialDecision[key]
+                                            ? "bg-leaf-700 text-white"
+                                            : "bg-white text-ink/55 ring-1 ring-leaf-900/10 hover:text-leaf-800"
+                                        }`}
+                                      >
+                                        {reviewingEditorialDecision[key] ? "Yes" : "No"}
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <label className="mt-4 grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45">
+                                  Editorial Notes
+                                  <textarea
+                                    value={reviewingEditorialDecision.editorialNotes}
+                                    onChange={(event) =>
+                                      updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
+                                        ...current,
+                                        editorialNotes: event.target.value
+                                      }))
+                                    }
+                                    rows={4}
+                                    className="resize-y rounded-md border border-leaf-900/10 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink/75 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                    placeholder="Excellent communication. Needs better produce photos."
+                                  />
+                                </label>
+
+                                <div className="mt-4">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Checklist</p>
+                                    <span className="text-xs font-black text-leaf-800">
+                                      {reviewingLaunchProgress.complete}/{reviewingLaunchProgress.total}
+                                    </span>
+                                  </div>
+                                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-leaf-50">
+                                    <div className="h-full rounded-full bg-leaf-700" style={{ width: `${reviewingLaunchProgress.percent}%` }} />
+                                  </div>
+                                  <div className="mt-3 grid gap-2">
+                                    {launchEditorialChecklistItems.map((item) => (
+                                      <label
+                                        key={item}
+                                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-ink/70 ring-1 ring-leaf-900/10"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={reviewingEditorialDecision.checklist[item]}
+                                          onChange={(event) =>
+                                            updateEditorialDecision(reviewingImportedFarmer.id, (current) => ({
+                                              ...current,
+                                              checklist: {
+                                                ...current.checklist,
+                                                [item]: event.target.checked
+                                              }
+                                            }))
+                                          }
+                                          className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
+                                        />
+                                        {item}
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null}
 
                             <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
                               <p className="text-xs font-black uppercase tracking-wide text-earth-700">Communication</p>
