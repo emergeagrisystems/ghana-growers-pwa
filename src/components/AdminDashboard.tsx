@@ -221,6 +221,9 @@ type FeaturedFilter = "All" | "Featured" | "Not Featured" | "Expired Featured";
 type LaunchEditorialStatus = "Public Farmer" | "Featured Farmer" | "Founding Farmer 2026" | "Needs Improvement" | "Hold";
 type LaunchEditorialFilter = "All" | "Founding Farmers" | "Homepage Candidates" | "Featured Farmers" | "Story Candidates" | "Launch Ready" | "Needs Improvement";
 type LaunchChecklistItem = "Profile photo" | "Farm photos" | "Produce photos" | "Farm story" | "Verified contact" | "Produce listing" | "Region confirmed";
+type SupplierLaunchStatus = "Public Supplier" | "Featured Supplier" | "Founding Supplier 2026" | "Needs Improvement" | "Hold";
+type SupplierEditorialFilter = "All" | "Founding Suppliers" | "Featured Suppliers" | "Homepage Candidates" | "Launch Ready" | "Needs Improvement" | "Overdue" | "New";
+type SupplierChecklistItem = "Business logo" | "Business photos" | "Products or services" | "Business description" | "Verified contact" | "Regions served" | "Registration reviewed";
 type SourcingQueueFilter =
   | "All"
   | "New"
@@ -240,6 +243,14 @@ type EditorialDecisionState = {
   storyCandidate: boolean;
   editorialNotes: string;
   checklist: Record<LaunchChecklistItem, boolean>;
+};
+type SupplierEditorialDecisionState = {
+  launchStatus: SupplierLaunchStatus;
+  homepageCandidate: boolean;
+  marketplaceFeatured: boolean;
+  storyCandidate: boolean;
+  editorialNotes: string;
+  checklist: Record<SupplierChecklistItem, boolean>;
 };
 type SourcingCaseState = {
   status: SourcingCaseStatus;
@@ -261,6 +272,27 @@ type ApplicationRecord = {
   status: ApplicationStatus;
   created_at: string;
   updated_at: string;
+  business_name?: string | null;
+  website_url?: string | null;
+  registration_number?: string | null;
+  categories?: string[] | null;
+  regions_served?: string[] | null;
+  products_services?: string | null;
+  business_description?: string | null;
+  years_in_business?: string | null;
+  logo_url?: string | null;
+  photo_urls?: string[] | null;
+  certificate_urls?: string[] | null;
+  gg_standard_agreement?: boolean | null;
+  launch_status?: SupplierLaunchStatus | string | null;
+  homepage_candidate?: boolean | null;
+  marketplace_featured?: boolean | null;
+  story_candidate?: boolean | null;
+  editorial_notes?: string | null;
+  launch_ready?: boolean | null;
+  launch_checklist?: Partial<Record<SupplierChecklistItem, boolean>> | null;
+  editorial_updated_at?: string | null;
+  editorial_updated_by?: string | null;
 };
 type ListingSubmissionRecord = {
   id: string;
@@ -410,6 +442,22 @@ const launchEditorialChecklistItems: LaunchChecklistItem[] = [
   "Verified contact",
   "Produce listing",
   "Region confirmed"
+];
+const supplierLaunchStatusOptions: SupplierLaunchStatus[] = [
+  "Public Supplier",
+  "Featured Supplier",
+  "Founding Supplier 2026",
+  "Needs Improvement",
+  "Hold"
+];
+const supplierLaunchChecklistItems: SupplierChecklistItem[] = [
+  "Business logo",
+  "Business photos",
+  "Products or services",
+  "Business description",
+  "Verified contact",
+  "Regions served",
+  "Registration reviewed"
 ];
 const sourcingCaseStatuses: SourcingCaseStatus[] = ["New", "Reviewing", "Matching Farmers", "Matching Suppliers", "Waiting Buyer", "Completed", "Closed"];
 const sourcingQueueFilters: SourcingQueueFilter[] = ["All", "New", "Overdue", "Due Today", "Assigned To Me", "Completed", "Waiting Buyer", "Waiting Farmer", "Waiting Supplier", "High Priority"];
@@ -1566,6 +1614,13 @@ function hasReviewValue(value?: string | null) {
   return Boolean(normalized && !["not provided", "n/a", "na", "none", "ghana"].includes(normalized));
 }
 
+function splitDisplayList(value?: string | null) {
+  return (value ?? "")
+    .split(/[,;\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function farmerCompleteness(farmer: ImportedFarmerRecord) {
   const checks = [
     { label: "Farmer name", complete: hasReviewValue(farmer.farmer_name) },
@@ -1810,6 +1865,253 @@ function matchesLaunchEditorialFilter(filter: LaunchEditorialFilter, editorial: 
 
   if (filter === "Needs Improvement") {
     return editorial.launchStatus === "Needs Improvement" || readiness === "Needs Improvements";
+  }
+
+  return true;
+}
+
+function applicationName(application: ApplicationRecord) {
+  return application.business_name || application.business_or_farm_name || application.name || "Unnamed supplier";
+}
+
+function applicationCategories(application: ApplicationRecord) {
+  const values = application.categories?.length
+    ? application.categories
+    : splitDisplayList(application.products_or_services || application.products_services || "");
+
+  return values.filter(Boolean);
+}
+
+function applicationRegions(application: ApplicationRecord) {
+  const values = application.regions_served?.length
+    ? application.regions_served
+    : [application.region, application.district].filter(Boolean) as string[];
+
+  return values.filter(Boolean);
+}
+
+function supplierQueuePriority(application: ApplicationRecord) {
+  const waitingDays = daysSinceDate(application.created_at);
+
+  if (waitingDays >= 2) {
+    return {
+      label: "Overdue",
+      tone: "border-l-tomato bg-tomato/5",
+      dot: "bg-tomato"
+    };
+  }
+
+  if (waitingDays >= 1) {
+    return {
+      label: "Due Today",
+      tone: "border-l-earth-500 bg-earth-50",
+      dot: "bg-earth-500"
+    };
+  }
+
+  return {
+    label: "New",
+    tone: "border-l-leaf-700 bg-white",
+    dot: "bg-leaf-700"
+  };
+}
+
+function supplierWaitingLabel(application: ApplicationRecord) {
+  const days = daysSinceDate(application.created_at);
+
+  if (days <= 0) {
+    return "New today";
+  }
+
+  return `${days} day${days === 1 ? "" : "s"} waiting`;
+}
+
+function supplierReviewTimeline(application: ApplicationRecord) {
+  return [
+    {
+      label: "Submitted",
+      detail: application.created_at ? new Date(application.created_at).toLocaleDateString() : "Submission date not provided"
+    },
+    {
+      label: "Updated",
+      detail: application.updated_at ? new Date(application.updated_at).toLocaleDateString() : "No update recorded"
+    },
+    {
+      label: "Previous Review",
+      detail: application.status === "New"
+        ? "No previous review recorded"
+        : `Application marked ${application.status}`
+    }
+  ];
+}
+
+function supplierUploadedDocuments(application: ApplicationRecord) {
+  const certificates = application.certificate_urls ?? [];
+
+  return certificates.map((url, index) => ({
+    label: index === 0 ? "Certificate" : `Certificate ${index + 1}`,
+    filename: url
+  }));
+}
+
+function supplierReviewReadiness(application: ApplicationRecord) {
+  const categories = applicationCategories(application);
+  const regions = applicationRegions(application);
+
+  return [
+    {
+      label: application.logo_url ? "Business logo available" : "Missing business logo",
+      complete: Boolean(application.logo_url),
+      note: "Missing Business Logo"
+    },
+    {
+      label: application.photo_urls?.length ? "Business photos available" : "Missing business photos",
+      complete: Boolean(application.photo_urls?.length),
+      note: "Missing Business Photos"
+    },
+    {
+      label: categories.length ? "Supplier categories provided" : "Missing categories",
+      complete: categories.length > 0,
+      note: "Missing Categories"
+    },
+    {
+      label: application.registration_number ? "Registration supplied" : "Registration not supplied",
+      complete: hasReviewValue(application.registration_number),
+      note: "Missing Registration"
+    },
+    {
+      label: application.phone || application.email ? "Contact information available" : "Contact information missing",
+      complete: hasReviewValue(application.phone) || hasReviewValue(application.email),
+      note: "Missing Contact"
+    },
+    {
+      label: regions.length ? "Regions served provided" : "Regions served missing",
+      complete: regions.length > 0,
+      note: "Missing Regions"
+    }
+  ];
+}
+
+function supplierRecommendedAction(application: ApplicationRecord) {
+  const readiness = supplierReviewReadiness(application);
+  const missing = readiness.find((item) => !item.complete);
+
+  if (!missing) {
+    return "Approve";
+  }
+
+  if (missing.note === "Missing Registration") {
+    return "Request Business Registration";
+  }
+
+  if (missing.note === "Missing Business Photos" || missing.note === "Missing Business Logo") {
+    return "Request Better Photos";
+  }
+
+  if (missing.note === "Missing Contact") {
+    return "Call Supplier";
+  }
+
+  return "Request More Information";
+}
+
+function supplierLaunchChecklistFromApplication(application: ApplicationRecord): Record<SupplierChecklistItem, boolean> {
+  return {
+    "Business logo": Boolean(application.logo_url),
+    "Business photos": Boolean(application.photo_urls?.length),
+    "Products or services": applicationCategories(application).length > 0 || hasReviewValue(application.products_or_services) || hasReviewValue(application.products_services),
+    "Business description": hasReviewValue(application.business_description) || hasReviewValue(application.notes),
+    "Verified contact": hasReviewValue(application.phone) || hasReviewValue(application.email),
+    "Regions served": applicationRegions(application).length > 0,
+    "Registration reviewed": hasReviewValue(application.registration_number)
+  };
+}
+
+function defaultSupplierEditorialDecision(application: ApplicationRecord): SupplierEditorialDecisionState {
+  const autoChecklist = supplierLaunchChecklistFromApplication(application);
+  const savedChecklist = application.launch_checklist && typeof application.launch_checklist === "object" ? application.launch_checklist : {};
+  const checklist = Object.fromEntries(
+    supplierLaunchChecklistItems.map((item) => [item, savedChecklist[item] ?? autoChecklist[item]])
+  ) as Record<SupplierChecklistItem, boolean>;
+  const complete = Object.values(checklist).filter(Boolean).length;
+  const persistedLaunchStatus = supplierLaunchStatusOptions.includes(application.launch_status as SupplierLaunchStatus)
+    ? application.launch_status as SupplierLaunchStatus
+    : null;
+
+  return {
+    launchStatus: persistedLaunchStatus ?? (complete >= 5 ? "Public Supplier" : "Needs Improvement"),
+    homepageCandidate: application.homepage_candidate === true,
+    marketplaceFeatured: application.marketplace_featured === true,
+    storyCandidate: application.story_candidate === true,
+    editorialNotes: application.editorial_notes ?? "",
+    checklist
+  };
+}
+
+function supplierLaunchChecklistProgress(editorial: SupplierEditorialDecisionState) {
+  const complete = supplierLaunchChecklistItems.filter((item) => editorial.checklist[item]).length;
+  const total = supplierLaunchChecklistItems.length;
+
+  return {
+    complete,
+    total,
+    percent: Math.round((complete / total) * 100)
+  };
+}
+
+function supplierLaunchReadiness(editorial: SupplierEditorialDecisionState) {
+  const progress = supplierLaunchChecklistProgress(editorial);
+
+  if (editorial.launchStatus === "Hold" || progress.percent < 50) {
+    return {
+      label: "Hold Until Complete",
+      tone: "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+    };
+  }
+
+  if (editorial.launchStatus === "Needs Improvement" || progress.percent < 85) {
+    return {
+      label: "Needs Improvements",
+      tone: "bg-earth-50 text-earth-700 ring-1 ring-earth-500/20"
+    };
+  }
+
+  return {
+    label: "Launch Ready",
+    tone: "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
+  };
+}
+
+function matchesSupplierEditorialFilter(filter: SupplierEditorialFilter, application: ApplicationRecord, editorial: SupplierEditorialDecisionState) {
+  const readiness = supplierLaunchReadiness(editorial).label;
+  const priority = supplierQueuePriority(application).label;
+
+  if (filter === "Founding Suppliers") {
+    return editorial.launchStatus === "Founding Supplier 2026";
+  }
+
+  if (filter === "Featured Suppliers") {
+    return editorial.launchStatus === "Featured Supplier" || editorial.marketplaceFeatured;
+  }
+
+  if (filter === "Homepage Candidates") {
+    return editorial.homepageCandidate;
+  }
+
+  if (filter === "Launch Ready") {
+    return readiness === "Launch Ready";
+  }
+
+  if (filter === "Needs Improvement") {
+    return readiness !== "Launch Ready" || editorial.launchStatus === "Needs Improvement";
+  }
+
+  if (filter === "Overdue") {
+    return priority === "Overdue";
+  }
+
+  if (filter === "New") {
+    return application.status === "New" || priority === "New";
   }
 
   return true;
@@ -2719,6 +3021,15 @@ export function AdminDashboard({
   const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
   const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
   const editorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [supplierEditorialFilter, setSupplierEditorialFilter] = useState<SupplierEditorialFilter>("All");
+  const [reviewingSupplierId, setReviewingSupplierId] = useState<string | null>(null);
+  const [supplierReviewNotes, setSupplierReviewNotes] = useState("");
+  const [supplierReviewMessage, setSupplierReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isUpdatingSupplierReview, setIsUpdatingSupplierReview] = useState(false);
+  const [pendingSupplierReviewAction, setPendingSupplierReviewAction] = useState<ApplicationStatus | "archive" | null>(null);
+  const [supplierEditorialDecisions, setSupplierEditorialDecisions] = useState<Record<string, SupplierEditorialDecisionState>>({});
+  const [supplierEditorialSaveStates, setSupplierEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
+  const supplierEditorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -2946,6 +3257,9 @@ export function AdminDashboard({
       buyer: result?.buyers ?? [],
       supplier: result?.suppliers ?? []
     });
+    setSupplierEditorialDecisions(
+      Object.fromEntries((result?.suppliers ?? []).map((supplier) => [supplier.id, defaultSupplierEditorialDecision(supplier)]))
+    );
     setApplicationError("");
   }, []);
 
@@ -3020,6 +3334,7 @@ export function AdminDashboard({
 
   useEffect(() => () => {
     Object.values(editorialSaveTimers.current).forEach((timer) => clearTimeout(timer));
+    Object.values(supplierEditorialSaveTimers.current).forEach((timer) => clearTimeout(timer));
   }, []);
 
   const newApplicationCounts = useMemo(() => ({
@@ -3427,6 +3742,31 @@ export function AdminDashboard({
     : null;
   const reviewingLaunchProgress = reviewingEditorialDecision ? launchChecklistProgress(reviewingEditorialDecision) : null;
   const reviewingLaunchReadiness = reviewingEditorialDecision ? launchReadiness(reviewingEditorialDecision) : null;
+  const supplierReviewQueue = applications.supplier.filter((application) => {
+    const editorial = supplierEditorialDecisions[application.id] ?? defaultSupplierEditorialDecision(application);
+    return matchesSupplierEditorialFilter(supplierEditorialFilter, application, editorial);
+  });
+  const reviewingSupplier = supplierReviewQueue.find((supplier) => supplier.id === reviewingSupplierId) ?? supplierReviewQueue[0] ?? null;
+  const reviewingSupplierIndex = reviewingSupplier ? supplierReviewQueue.findIndex((supplier) => supplier.id === reviewingSupplier.id) : -1;
+  const previousSupplier = reviewingSupplierIndex > 0 ? supplierReviewQueue[reviewingSupplierIndex - 1] : null;
+  const nextSupplier =
+    reviewingSupplierIndex !== -1 && reviewingSupplierIndex < supplierReviewQueue.length - 1
+      ? supplierReviewQueue[reviewingSupplierIndex + 1]
+      : null;
+  const supplierReviewRemaining = supplierReviewQueue.filter((supplier) => supplier.status !== "Approved" && supplier.status !== "Converted").length;
+  const oldestWaitingSupplier = supplierReviewQueue
+    .slice()
+    .sort((a, b) => daysSinceDate(b.created_at) - daysSinceDate(a.created_at))[0];
+  const oldestWaitingSupplierLabel = oldestWaitingSupplier ? supplierWaitingLabel(oldestWaitingSupplier) : "No waiting applications";
+  const supplierAverageReviewTime = supplierReviewRemaining > 0 ? "7 min" : "0 min";
+  const recommendedSupplierAction = reviewingSupplier ? supplierRecommendedAction(reviewingSupplier) : "Select Supplier";
+  const reviewingSupplierDocuments = reviewingSupplier ? supplierUploadedDocuments(reviewingSupplier) : [];
+  const reviewingSupplierReadiness = reviewingSupplier ? supplierReviewReadiness(reviewingSupplier) : [];
+  const reviewingSupplierEditorialDecision = reviewingSupplier
+    ? supplierEditorialDecisions[reviewingSupplier.id] ?? defaultSupplierEditorialDecision(reviewingSupplier)
+    : null;
+  const reviewingSupplierLaunchProgress = reviewingSupplierEditorialDecision ? supplierLaunchChecklistProgress(reviewingSupplierEditorialDecision) : null;
+  const reviewingSupplierLaunchReadiness = reviewingSupplierEditorialDecision ? supplierLaunchReadiness(reviewingSupplierEditorialDecision) : null;
 
   useEffect(() => {
     if (activeSection !== "applications" || applicationTab !== "farmer" || reviewingImportedFarmerId || farmerReviewQueue.length === 0) {
@@ -3439,6 +3779,17 @@ export function AdminDashboard({
     setFarmerReviewDebug(reviewDebugFields(firstFarmer));
     setFarmerReviewMessage(null);
   }, [activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
+
+  useEffect(() => {
+    if (activeSection !== "applications" || applicationTab !== "supplier" || reviewingSupplierId || supplierReviewQueue.length === 0) {
+      return;
+    }
+
+    const firstSupplier = supplierReviewQueue[0];
+    setReviewingSupplierId(firstSupplier.id);
+    setSupplierReviewNotes(firstSupplier.editorial_notes ?? "");
+    setSupplierReviewMessage(null);
+  }, [activeSection, applicationTab, reviewingSupplierId, supplierReviewQueue]);
 
   async function saveEditorialDecision(recordId: string, decision: EditorialDecisionState) {
     setEditorialSaveStates((current) => ({ ...current, [recordId]: "saving" }));
@@ -3510,6 +3861,95 @@ export function AdminDashboard({
       const nextDecision = updater(existing);
 
       scheduleEditorialSave(recordId, nextDecision, saveDelay);
+      return {
+        ...current,
+        [recordId]: nextDecision
+      };
+    });
+  }
+
+  async function saveSupplierEditorialDecision(recordId: string, decision: SupplierEditorialDecisionState) {
+    const supplier = applications.supplier.find((item) => item.id === recordId);
+
+    if (!supplier) {
+      return;
+    }
+
+    setSupplierEditorialSaveStates((current) => ({ ...current, [recordId]: "saving" }));
+    const readiness = supplierLaunchReadiness(decision).label === "Launch Ready";
+    const response = await fetch("/api/admin/applications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "supplier-editorial",
+        kind: "supplier",
+        id: recordId,
+        entityName: applicationName(supplier),
+        editorial: {
+          launchStatus: decision.launchStatus,
+          homepageCandidate: decision.homepageCandidate,
+          marketplaceFeatured: decision.marketplaceFeatured,
+          storyCandidate: decision.storyCandidate,
+          editorialNotes: decision.editorialNotes,
+          launchChecklist: decision.checklist,
+          launchReady: readiness
+        }
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { record?: ApplicationRecord; error?: string; message?: string } | null;
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      const errorMessage = result?.error ?? "Could not save supplier editorial decision.";
+      setSupplierEditorialSaveStates((current) => ({ ...current, [recordId]: "error" }));
+      setSupplierReviewMessage({ type: "error", text: errorMessage });
+      return;
+    }
+
+    if (result?.record) {
+      setApplications((current) => ({
+        ...current,
+        supplier: current.supplier.map((item) => (item.id === recordId ? { ...item, ...result.record } : item))
+      }));
+      setSupplierEditorialDecisions((current) => ({
+        ...current,
+        [recordId]: defaultSupplierEditorialDecision({ ...supplier, ...result.record })
+      }));
+    }
+
+    setSupplierEditorialSaveStates((current) => ({ ...current, [recordId]: "saved" }));
+    setSupplierReviewMessage({ type: "success", text: result?.message ?? "Supplier editorial decision saved." });
+    void loadActivity();
+  }
+
+  function scheduleSupplierEditorialSave(recordId: string, decision: SupplierEditorialDecisionState, delay = 450) {
+    const existingTimer = supplierEditorialSaveTimers.current[recordId];
+
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    supplierEditorialSaveTimers.current[recordId] = setTimeout(() => {
+      void saveSupplierEditorialDecision(recordId, decision);
+    }, delay);
+  }
+
+  function updateSupplierEditorialDecision(recordId: string, updater: (current: SupplierEditorialDecisionState) => SupplierEditorialDecisionState, saveDelay = 450) {
+    const supplier = applications.supplier.find((item) => item.id === recordId);
+
+    if (!supplier) {
+      return;
+    }
+
+    setSupplierEditorialDecisions((current) => {
+      const existing = current[recordId] ?? defaultSupplierEditorialDecision(supplier);
+      const nextDecision = updater(existing);
+
+      scheduleSupplierEditorialSave(recordId, nextDecision, saveDelay);
       return {
         ...current,
         [recordId]: nextDecision
@@ -4423,10 +4863,13 @@ export function AdminDashboard({
   const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
   const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
-  const sectionEyebrow = isFarmerReviewWorkspace ? "Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
-  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
+  const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
+  const sectionEyebrow = isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
+  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
     ? "Review one farmer, make one decision, then continue to the next application."
+    : isSupplierReviewWorkspace
+      ? "Review one supplier, make one decision, then continue to the next application."
     : isMatchOpportunitiesSection
       ? "Help buyers source produce by reviewing one case, choosing matches, and deciding the next action."
     : notice;
@@ -4509,6 +4952,68 @@ export function AdminDashboard({
     }));
     setApplicationError("");
     setNotice(`${application.name} application marked ${status}.`);
+    void loadActivity();
+  }
+
+  async function applySupplierReviewAction(application: ApplicationRecord, action: "under-review" | "approve-publish" | "approve-only" | "request-changes" | "reject" | "archive") {
+    const nextStatus: ApplicationStatus =
+      action === "approve-publish" || action === "approve-only"
+        ? "Approved"
+        : action === "under-review" || action === "request-changes"
+          ? "Under Review"
+          : "Rejected";
+    const actionLabel =
+      action === "approve-publish"
+        ? "approved for publishing"
+        : action === "approve-only"
+          ? "approved"
+          : action === "request-changes"
+            ? "marked for changes"
+            : action === "archive"
+              ? "archived"
+              : action === "reject"
+                ? "rejected"
+                : "marked under review";
+
+    setIsUpdatingSupplierReview(true);
+    setPendingSupplierReviewAction(action === "archive" ? "archive" : nextStatus);
+    setSupplierReviewMessage(null);
+
+    const response = await fetch("/api/admin/applications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: "supplier",
+        id: application.id,
+        status: nextStatus,
+        entityName: applicationName(application)
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string; record?: ApplicationRecord } | null;
+
+    setIsUpdatingSupplierReview(false);
+    setPendingSupplierReviewAction(null);
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setSupplierReviewMessage({ type: "error", text: result?.error ?? "Could not update supplier application." });
+      return;
+    }
+
+    setApplications((current) => ({
+      ...current,
+      supplier: current.supplier.map((item) =>
+        item.id === application.id
+          ? { ...item, ...(result?.record ?? {}), status: nextStatus, updated_at: new Date().toISOString() }
+          : item
+      )
+    }));
+    setSupplierReviewMessage({ type: "success", text: `${applicationName(application)} ${actionLabel}.` });
+    setNotice(`${applicationName(application)} ${actionLabel}.`);
     void loadActivity();
   }
 
@@ -6147,6 +6652,547 @@ export function AdminDashboard({
                         ) : (
                           <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/58">
                             Select a farmer from the queue to make a review decision.
+                          </p>
+                        )}
+                      </aside>
+                    </section>
+                  </div>
+                ) : applicationTab === "supplier" ? (
+                  <div className="grid min-w-0 gap-5">
+                    <section className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier Editorial Filter</p>
+                        <p className="mt-1 break-words text-sm font-semibold text-ink/58">
+                          Prepare supplier launch collections without leaving the review workspace.
+                        </p>
+                      </div>
+                      <label className="grid min-w-0 gap-2 text-xs font-black uppercase tracking-wide text-ink/45 sm:min-w-64">
+                        Show suppliers
+                        <select
+                          value={supplierEditorialFilter}
+                          onChange={(event) => setSupplierEditorialFilter(event.target.value as SupplierEditorialFilter)}
+                          className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        >
+                          {(["All", "Founding Suppliers", "Featured Suppliers", "Homepage Candidates", "Launch Ready", "Needs Improvement", "Overdue", "New"] as SupplierEditorialFilter[]).map((filter) => (
+                            <option key={filter} value={filter}>
+                              {filter}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </section>
+
+                    <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-3">
+                      {[
+                        ["Applications Remaining", supplierReviewRemaining],
+                        ["Average Review Time", supplierAverageReviewTime],
+                        ["Oldest Waiting Application", oldestWaitingSupplierLabel]
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                          <p className="mt-2 text-xl font-black text-ink">{value}</p>
+                        </div>
+                      ))}
+                    </section>
+
+                    <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+                      <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier Queue</p>
+                            <h3 className="mt-1 text-xl font-black text-ink">Review next</h3>
+                          </div>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                            {supplierReviewQueue.length}
+                          </span>
+                        </div>
+                        <div className="mt-4 grid gap-2">
+                          {supplierReviewQueue.map((supplier) => {
+                            const priority = supplierQueuePriority(supplier);
+                            const isSelected = reviewingSupplier?.id === supplier.id;
+                            const categories = applicationCategories(supplier);
+                            const region = applicationRegions(supplier)[0] || supplier.region || "Region not provided";
+
+                            return (
+                              <button
+                                key={supplier.id}
+                                type="button"
+                                onClick={() => {
+                                  setReviewingSupplierId(supplier.id);
+                                  setSupplierReviewNotes(supplier.editorial_notes ?? "");
+                                  setSupplierReviewMessage(null);
+                                }}
+                                className={`rounded-md border border-l-4 p-3 text-left transition ${
+                                  isSelected
+                                    ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
+                                    : `border-leaf-900/10 ${priority.tone} hover:bg-white`
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-black text-ink">{applicationName(supplier)}</p>
+                                    <p className="mt-1 truncate text-xs font-semibold text-ink/55">{supplier.name || "Contact not provided"}</p>
+                                  </div>
+                                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${priority.dot}`} aria-hidden="true" />
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {categories[0] || "Category missing"}
+                                  </span>
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {region}
+                                  </span>
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {supplier.status}
+                                  </span>
+                                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">
+                                    {supplierWaitingLabel(supplier)}
+                                  </span>
+                                </div>
+                                <p className="mt-2 text-[11px] font-black uppercase tracking-wide text-ink/40">
+                                  {supplier.created_at ? new Date(supplier.created_at).toLocaleDateString() : "No date"}
+                                </p>
+                              </button>
+                            );
+                          })}
+                          {supplierReviewQueue.length === 0 ? (
+                            <p className="rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/58 ring-1 ring-leaf-900/10">
+                              No supplier applications match this filter.
+                            </p>
+                          ) : null}
+                        </div>
+                      </aside>
+
+                      <div className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                        {reviewingSupplier ? (
+                          <div className="grid gap-6">
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier Review</p>
+                              <h3 className="mt-2 text-3xl font-black text-ink">{applicationName(reviewingSupplier)}</h3>
+                              <p className="mt-2 text-sm font-semibold text-ink/60">
+                                Review this business for the Ghana Growers supplier network.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                              <div className="aspect-square overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                                {reviewingSupplier.logo_url ? (
+                                  <div
+                                    role="img"
+                                    aria-label={`${applicationName(reviewingSupplier)} logo`}
+                                    className="h-full w-full bg-cover bg-center"
+                                    style={{ backgroundImage: `url(${reviewingSupplier.logo_url})` }}
+                                  />
+                                ) : (
+                                  <div className="grid h-full place-items-center px-6 text-center text-sm font-black uppercase tracking-wide text-ink/35">
+                                    Business logo not submitted.
+                                  </div>
+                                )}
+                              </div>
+                              <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                                <p className="text-xs font-black uppercase tracking-wide text-ink/45">Business Photos</p>
+                                {reviewingSupplier.photo_urls?.length ? (
+                                  <div className="mt-3 grid grid-cols-2 gap-3">
+                                    {reviewingSupplier.photo_urls.slice(0, 4).map((url, index) => (
+                                      <div
+                                        key={`${url}-${index}`}
+                                        role="img"
+                                        aria-label={`${applicationName(reviewingSupplier)} business photo ${index + 1}`}
+                                        className="aspect-[4/3] rounded-md bg-cover bg-center ring-1 ring-leaf-900/10"
+                                        style={{ backgroundImage: `url(${url})` }}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="mt-2 rounded-md bg-white p-3 text-sm font-semibold leading-6 text-ink/58 ring-1 ring-leaf-900/10">
+                                    No business photos submitted.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Business Information</h4>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                {[
+                                  ["Business Name", applicationName(reviewingSupplier)],
+                                  ["Contact Person", reviewingSupplier.name],
+                                  ["Phone", reviewingSupplier.phone || reviewingSupplier.whatsapp_number],
+                                  ["Email", reviewingSupplier.email],
+                                  ["Website", reviewingSupplier.website_url],
+                                  ["Registration Number", reviewingSupplier.registration_number],
+                                  ["Years in Business", reviewingSupplier.years_in_business]
+                                ].map(([label, value]) => (
+                                  <div key={label} className="rounded-md bg-leaf-50 p-3">
+                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
+                                    <p className="mt-2 break-words text-sm font-black text-ink">{value || "Not provided"}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Categories</h4>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {applicationCategories(reviewingSupplier).length > 0 ? (
+                                  applicationCategories(reviewingSupplier).map((category) => (
+                                    <span key={category} className="rounded-full bg-leaf-50 px-3 py-1.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                      {category}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="rounded-full bg-earth-50 px-3 py-1.5 text-sm font-black text-earth-700">
+                                    Categories not provided
+                                  </span>
+                                )}
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Regions Served</h4>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {applicationRegions(reviewingSupplier).map((region) => (
+                                  <span key={region} className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-ink/65 ring-1 ring-leaf-900/10">
+                                    {region}
+                                  </span>
+                                ))}
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Business Description</h4>
+                              <p className="mt-3 text-sm font-semibold leading-7 text-ink/68">
+                                {reviewingSupplier.business_description || reviewingSupplier.notes || `${applicationName(reviewingSupplier)} is applying to join the Ghana Growers supplier network.`}
+                              </p>
+                            </section>
+
+                            <section className="grid gap-4 lg:grid-cols-2">
+                              <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Uploaded Documents</h4>
+                                <div className="mt-3 grid gap-2">
+                                  {reviewingSupplierDocuments.length > 0 ? (
+                                    reviewingSupplierDocuments.map((document) => (
+                                      <div key={`${document.label}-${document.filename}`} className="rounded-md bg-leaf-50 p-3">
+                                        <p className="text-sm font-black text-ink">{document.label}</p>
+                                        <p className="mt-1 break-all text-xs font-semibold text-ink/55">{document.filename}</p>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No certificates or additional files submitted.</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Timeline</h4>
+                                <div className="mt-4 grid gap-3">
+                                  {supplierReviewTimeline(reviewingSupplier).map((item) => (
+                                    <div key={item.label} className="flex gap-3">
+                                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-leaf-700" />
+                                      <div>
+                                        <p className="text-sm font-black text-ink">{item.label}</p>
+                                        <p className="mt-1 text-xs font-semibold text-ink/55">{item.detail}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Profile Readiness</h4>
+                              <div className="mt-4 grid gap-2">
+                                {reviewingSupplierReadiness.map((item) => (
+                                  <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
+                                    <span className="text-sm font-black text-ink">{item.label}</span>
+                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${item.complete ? "bg-leaf-100 text-leaf-800" : "bg-earth-50 text-earth-700"}`}>
+                                      {item.complete ? "Ready" : item.note}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+                          </div>
+                        ) : (
+                          <div className="grid min-h-[420px] place-items-center rounded-md bg-leaf-50 p-8 text-center">
+                            <div>
+                              <p className="text-sm font-black uppercase tracking-wide text-earth-700">No supplier selected</p>
+                              <h3 className="mt-2 text-2xl font-black text-ink">Choose a supplier from the queue</h3>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <aside className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">Decision Center</p>
+                        {reviewingSupplier ? (
+                          <div className="mt-4 grid gap-4">
+                            {supplierReviewMessage ? (
+                              <div
+                                className={`rounded-md px-4 py-3 text-sm font-black ${
+                                  supplierReviewMessage.type === "success"
+                                    ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
+                                    : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+                                }`}
+                                role={supplierReviewMessage.type === "error" ? "alert" : "status"}
+                              >
+                                {supplierReviewMessage.text}
+                              </div>
+                            ) : null}
+
+                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
+                              <p className="mt-2 text-xl font-black text-ink">{recommendedSupplierAction}</p>
+                              <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
+                                Recommendations assist the reviewer. The final decision remains with Ghana Growers.
+                              </p>
+                            </div>
+
+                            <label htmlFor="supplier-review-notes" className="grid gap-2 text-sm font-black text-ink">
+                              Internal Notes
+                              <textarea
+                                id="supplier-review-notes"
+                                value={supplierReviewNotes}
+                                onChange={(event) => setSupplierReviewNotes(event.target.value)}
+                                rows={7}
+                                className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                placeholder="Record call notes, missing details, and decision context."
+                              />
+                            </label>
+
+                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Trust</p>
+                              <div className="mt-3 grid gap-2">
+                                {[
+                                  ["Verified Business", reviewingSupplier.status === "Approved" || reviewingSupplier.status === "Converted" ? "Yes" : "Pending"],
+                                  ["GG Standard", reviewingSupplier.gg_standard_agreement ? "Agreed" : "Pending"],
+                                  ["Featured Supplier", reviewingSupplierEditorialDecision?.marketplaceFeatured ? "Yes" : "No"],
+                                  ["Founding Supplier", reviewingSupplierEditorialDecision?.launchStatus === "Founding Supplier 2026" ? "Yes" : "No"]
+                                ].map(([label, value]) => (
+                                  <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
+                                    <span className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</span>
+                                    <span className="text-xs font-black text-ink">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {reviewingSupplierEditorialDecision && reviewingSupplierLaunchProgress && reviewingSupplierLaunchReadiness ? (
+                              <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Launch & Editorial</p>
+                                    <p className="mt-1 text-xs font-semibold leading-5 text-ink/55">
+                                      Internal curation for supplier launch collections.
+                                    </p>
+                                  </div>
+                                  <div className="grid justify-items-end gap-1">
+                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${reviewingSupplierLaunchReadiness.tone}`}>
+                                      {reviewingSupplierLaunchReadiness.label}
+                                    </span>
+                                    <span className="text-[11px] font-black uppercase tracking-wide text-ink/35">
+                                      {supplierEditorialSaveStates[reviewingSupplier.id] === "saving"
+                                        ? "Saving"
+                                        : supplierEditorialSaveStates[reviewingSupplier.id] === "error"
+                                          ? "Save failed"
+                                          : supplierEditorialSaveStates[reviewingSupplier.id] === "saved"
+                                            ? "Saved"
+                                            : reviewingSupplier.editorial_updated_by
+                                              ? `Saved by ${reviewingSupplier.editorial_updated_by}`
+                                              : "Not saved yet"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-2">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Status</p>
+                                  <div className="grid gap-2">
+                                    {supplierLaunchStatusOptions.map((status) => (
+                                      <button
+                                        key={status}
+                                        type="button"
+                                        onClick={() =>
+                                          updateSupplierEditorialDecision(reviewingSupplier.id, (current) => ({
+                                            ...current,
+                                            launchStatus: status
+                                          }), 0)
+                                        }
+                                        className={`rounded-md px-3 py-2 text-left text-xs font-black transition ${
+                                          reviewingSupplierEditorialDecision.launchStatus === status
+                                            ? "bg-leaf-700 text-white"
+                                            : "bg-leaf-50 text-ink/65 ring-1 ring-leaf-900/10 hover:text-leaf-800"
+                                        }`}
+                                      >
+                                        {status}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="mt-4 grid gap-2">
+                                  {([
+                                    ["Homepage Candidate", "homepageCandidate"],
+                                    ["Marketplace Featured", "marketplaceFeatured"],
+                                    ["Story Candidate", "storyCandidate"]
+                                  ] as Array<[string, "homepageCandidate" | "marketplaceFeatured" | "storyCandidate"]>).map(([label, key]) => (
+                                    <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2 ring-1 ring-leaf-900/10">
+                                      <span className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          updateSupplierEditorialDecision(reviewingSupplier.id, (current) => ({
+                                            ...current,
+                                            [key]: !current[key]
+                                          }), 0)
+                                        }
+                                        className={`rounded-full px-3 py-1 text-xs font-black transition ${
+                                          reviewingSupplierEditorialDecision[key]
+                                            ? "bg-leaf-700 text-white"
+                                            : "bg-white text-ink/55 ring-1 ring-leaf-900/10 hover:text-leaf-800"
+                                        }`}
+                                      >
+                                        {reviewingSupplierEditorialDecision[key] ? "Yes" : "No"}
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <label className="mt-4 grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45">
+                                  Editorial Notes
+                                  <textarea
+                                    value={reviewingSupplierEditorialDecision.editorialNotes}
+                                    onChange={(event) =>
+                                      updateSupplierEditorialDecision(reviewingSupplier.id, (current) => ({
+                                        ...current,
+                                        editorialNotes: event.target.value
+                                      }), 800)
+                                    }
+                                    rows={4}
+                                    className="resize-y rounded-md border border-leaf-900/10 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink/75 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                    placeholder="Strong input supplier. Needs better business photos."
+                                  />
+                                </label>
+
+                                <div className="mt-4">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Checklist</p>
+                                    <span className="text-xs font-black text-leaf-800">
+                                      {reviewingSupplierLaunchProgress.complete}/{reviewingSupplierLaunchProgress.total}
+                                    </span>
+                                  </div>
+                                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-leaf-50">
+                                    <div className="h-full rounded-full bg-leaf-700" style={{ width: `${reviewingSupplierLaunchProgress.percent}%` }} />
+                                  </div>
+                                  <div className="mt-3 grid gap-2">
+                                    {supplierLaunchChecklistItems.map((item) => (
+                                      <label
+                                        key={item}
+                                        className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-ink/70 ring-1 ring-leaf-900/10"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={reviewingSupplierEditorialDecision.checklist[item]}
+                                          onChange={(event) =>
+                                            updateSupplierEditorialDecision(reviewingSupplier.id, (current) => ({
+                                              ...current,
+                                              checklist: {
+                                                ...current.checklist,
+                                                [item]: event.target.checked
+                                              }
+                                            }), 200)
+                                          }
+                                          className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700"
+                                        />
+                                        {item}
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null}
+
+                            <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                              <p className="text-xs font-black uppercase tracking-wide text-earth-700">Communication</p>
+                              <div className="mt-3 grid gap-2 text-sm font-semibold text-ink/65">
+                                <p>Phone: {reviewingSupplier.phone || reviewingSupplier.whatsapp_number || "Not provided"}</p>
+                                <p>Email: {reviewingSupplier.email || "Not provided"}</p>
+                              </div>
+                              <div className="mt-3 grid gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => (reviewingSupplier.phone || reviewingSupplier.whatsapp_number) && navigator.clipboard.writeText(reviewingSupplier.phone || reviewingSupplier.whatsapp_number)}
+                                  className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                                >
+                                  Copy Number
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-publish")}
+                                disabled={isUpdatingSupplierReview}
+                                className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingSupplierReviewAction === "Approved" ? "Publishing..." : "Approve & Publish"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-only")}
+                                disabled={isUpdatingSupplierReview}
+                                className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingSupplierReviewAction === "Approved" ? "Approving..." : "Approve Only"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "request-changes")}
+                                disabled={isUpdatingSupplierReview}
+                                className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingSupplierReviewAction === "Under Review" ? "Requesting..." : "Request Changes"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "reject")}
+                                disabled={isUpdatingSupplierReview}
+                                className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingSupplierReviewAction === "Rejected" ? "Rejecting..." : "Reject"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "archive")}
+                                disabled={isUpdatingSupplierReview}
+                                className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {pendingSupplierReviewAction === "archive" ? "Archiving..." : "Archive"}
+                              </button>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => previousSupplier && setReviewingSupplierId(previousSupplier.id)}
+                                disabled={!previousSupplier || isUpdatingSupplierReview}
+                                className="flex-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Previous
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => nextSupplier && setReviewingSupplierId(nextSupplier.id)}
+                                disabled={!nextSupplier || isUpdatingSupplierReview}
+                                className="flex-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Next Supplier
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/58">
+                            Select a supplier from the queue to make a review decision.
                           </p>
                         )}
                       </aside>
