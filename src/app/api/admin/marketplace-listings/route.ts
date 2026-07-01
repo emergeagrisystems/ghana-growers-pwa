@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         availability: payload.availability,
         price_range: payload.priceRange || null,
         description: payload.description || null,
+        internal_operations_notes: payload.internalOperationsNotes || null,
         image_url: payload.imageUrl || null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active",
@@ -98,6 +99,7 @@ export async function PATCH(request: Request) {
         availability: payload.availability,
         price_range: payload.priceRange || null,
         description: payload.description || null,
+        internal_operations_notes: payload.internalOperationsNotes || null,
         image_url: payload.imageUrl || null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active"

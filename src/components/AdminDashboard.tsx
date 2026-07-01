@@ -845,7 +845,8 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "priceRange", label: "Price if available", helper: "Optional. Leave blank if price will be confirmed through Ghana Growers." },
     { name: "availability", label: "Availability", required: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
-    { name: "description", label: "Description", type: "textarea", helper: "Short notes on quality, harvest timing, collection, or delivery." },
+    { name: "description", label: "Public Description", type: "textarea", helper: "This description is shown publicly to buyers. You can edit the suggested text before publishing." },
+    { name: "internalOperationsNotes", label: "Internal Operations Notes", type: "textarea", helper: "Visible only to the Ghana Growers Operations Team." },
     { name: "imageUrl", label: "Listing Image", type: "image", bucket: "marketplace", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
   ],
   "buyer-requests": [
@@ -999,6 +1000,49 @@ function emptyFormValues(formId: AdminFormId) {
   return Object.fromEntries(formConfigs[formId].map((field) => [field.name, ""]));
 }
 
+function marketplaceListingDescriptionDraft(values: Record<string, string>) {
+  const product = values.productName?.trim();
+
+  if (!product) {
+    return "";
+  }
+
+  const category = values.category?.trim().toLowerCase() ?? "";
+  const ownerType = values.ownerType?.trim();
+  const sellerName = values.ownerName?.trim() || values.sellerFarmer?.trim() || "Ghana Growers member";
+  const region = values.region?.trim() || "Ghana";
+
+  if (category.includes("vegetable")) {
+    return `Fresh ${product} grown by ${sellerName} in ${region}. Carefully harvested and available for wholesale and bulk buyers. Contact Ghana Growers to confirm current availability, pricing and delivery arrangements.`;
+  }
+
+  if (category.includes("fruit")) {
+    return `Fresh ${product} supplied by ${sellerName} in ${region}. Suitable for retailers, restaurants and wholesale buyers. Contact Ghana Growers for current availability and delivery options.`;
+  }
+
+  if (category.includes("cereal") || category.includes("grain")) {
+    return `Quality ${product} supplied by ${sellerName} in ${region}. Available for wholesalers, processors and commercial buyers. Contact Ghana Growers to confirm quantity, pricing and collection.`;
+  }
+
+  if (category.includes("tuber") || category.includes("root")) {
+    return `Fresh ${product} produced by ${sellerName} in ${region}. Available for wholesale supply. Contact Ghana Growers for availability and delivery arrangements.`;
+  }
+
+  if (category.includes("livestock") || category.includes("poultry") || category.includes("animal")) {
+    return `Healthy ${product} supplied by ${sellerName}. Available for commercial buyers. Contact Ghana Growers for current availability and collection arrangements.`;
+  }
+
+  if (category.includes("input") || category.includes("seed") || category.includes("fertilizer") || ownerType === "Supplier") {
+    return `Quality ${product} available from ${sellerName}. Contact Ghana Growers for pricing, availability and delivery information.`;
+  }
+
+  if (category.includes("service") || category.includes("logistics") || category.includes("transport") || category.includes("machinery")) {
+    return `Professional ${product} available in ${region}. Contact Ghana Growers to discuss your requirements and availability.`;
+  }
+
+  return `${product} supplied by ${sellerName} in ${region}. Contact Ghana Growers to confirm current availability, quantity, pricing and delivery arrangements.`;
+}
+
 function districtFromLocation(location?: string) {
   return location?.split(",")[0]?.trim() ?? "";
 }
@@ -1092,6 +1136,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       availability: product?.available ?? "",
       whatsappNumber: product?.whatsappNumber ?? "",
       description: product?.description ?? "",
+      internalOperationsNotes: product?.internalOperationsNotes ?? "",
       imageUrl: product?.image ?? ""
     };
   }
@@ -2994,6 +3039,7 @@ export function AdminDashboard({
   const [notice, setNotice] = useState("Choose the next item in the queue and keep daily operations moving.");
   const [activeForm, setActiveForm] = useState<ActiveForm | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const marketplaceDescriptionDraftRef = useRef("");
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
@@ -3064,6 +3110,17 @@ export function AdminDashboard({
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
+  const marketplaceDescriptionDraftValues = useMemo(
+    () => ({
+      category: formValues.category ?? "",
+      ownerName: formValues.ownerName ?? "",
+      ownerType: formValues.ownerType ?? "",
+      productName: formValues.productName ?? "",
+      region: formValues.region ?? "",
+      sellerFarmer: formValues.sellerFarmer ?? ""
+    }),
+    [formValues.category, formValues.ownerName, formValues.ownerType, formValues.productName, formValues.region, formValues.sellerFarmer]
+  );
 
   useEffect(() => {
     const saved = window.localStorage.getItem("ghana-growers-launch-checklist");
@@ -3086,6 +3143,38 @@ export function AdminDashboard({
       window.localStorage.removeItem("ghana-growers-launch-checklist");
     }
   }, []);
+
+  useEffect(() => {
+    if (activeForm?.id !== "marketplace" || activeForm.mode !== "add") {
+      marketplaceDescriptionDraftRef.current = "";
+      return;
+    }
+
+    const draft = marketplaceListingDescriptionDraft(marketplaceDescriptionDraftValues);
+
+    if (!draft) {
+      return;
+    }
+
+    setFormValues((current) => {
+      const currentDescription = current.description ?? "";
+      const previousDraft = marketplaceDescriptionDraftRef.current;
+
+      if (currentDescription.trim() && currentDescription !== previousDraft) {
+        return current;
+      }
+
+      if (currentDescription === draft) {
+        return current;
+      }
+
+      marketplaceDescriptionDraftRef.current = draft;
+      return {
+        ...current,
+        description: draft
+      };
+    });
+  }, [activeForm?.id, activeForm?.mode, marketplaceDescriptionDraftValues]);
 
   const loadActivity = useCallback(async () => {
     const response = await fetch("/api/admin/activity").catch(() => null);
@@ -4725,9 +4814,8 @@ export function AdminDashboard({
       unit: "",
       quantity: "",
       category: farmer.farm_type || "",
-      description: farmer.farm_name
-        ? `Listing connected to ${farmer.farm_name}. Confirm quantity, quality, and availability before publishing.`
-        : "Confirm quantity, quality, and availability before publishing."
+      description: "",
+      internalOperationsNotes: ""
     };
 
     setActiveSection("marketplace");

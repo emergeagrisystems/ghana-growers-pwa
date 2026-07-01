@@ -33,6 +33,7 @@ export type Product = {
   ownerType?: "Farmer" | "Supplier" | "Admin";
   ownerId?: string;
   ownerName?: string;
+  internalOperationsNotes?: string;
 };
 
 export type BlogPost = {
