@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ArrowLeft,
   ArrowRight,
   Archive,
   BadgeCheck,
@@ -86,6 +87,16 @@ type AdminRow = {
   ownerType?: "Farmer" | "Supplier" | "Admin" | string;
   ownerId?: string;
   ownerName?: string;
+  district?: string;
+  sellerFarmer?: string;
+  quantity?: string;
+  unit?: string;
+  priceRange?: string;
+  availability?: string;
+  description?: string;
+  internalOperationsNotes?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
   isFeatured?: boolean;
   featuredUntil?: string;
   featuredNote?: string;
@@ -397,11 +408,12 @@ type FarmerImportPreview = {
 type FormField = {
   name: string;
   label: string;
-  type?: "text" | "date" | "number" | "url" | "textarea" | "select" | "image";
+  type?: "text" | "date" | "number" | "url" | "textarea" | "select" | "image" | "imageGallery";
   required?: boolean;
   helper?: string;
   options?: string[];
   bucket?: "farmers" | "suppliers" | "marketplace";
+  advanced?: boolean;
 };
 type ActiveForm = {
   id: AdminFormId;
@@ -804,6 +816,8 @@ const createEndpoints: Partial<Record<AdminFormId, string>> = {
   "success-stories": "/api/admin/success-stories"
 };
 
+const marketplaceGalleryLimit = 10;
+
 const formConfigs: Record<AdminFormId, FormField[]> = {
   farmers: [
     { name: "farmerName", label: "Farmer Name", required: true },
@@ -838,16 +852,16 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "district", label: "District", required: true },
     { name: "sellerFarmer", label: "Seller/Farmer", required: true },
     { name: "ownerType", label: "Owner Type", type: "select", required: true, options: ["Farmer", "Supplier", "Admin"] },
-    { name: "ownerId", label: "Owner ID", helper: "Auto-filled when creating a listing from a farmer review." },
+    { name: "ownerId", label: "Owner ID", helper: "Auto-filled when creating a listing from a farmer review.", advanced: true },
     { name: "ownerName", label: "Owner Name", required: true, helper: "Use the farmer, supplier, or Ghana Growers owner name shown publicly." },
     { name: "quantity", label: "Quantity", required: true },
     { name: "unit", label: "Unit", required: true },
-    { name: "priceRange", label: "Price if available", helper: "Optional. Leave blank if price will be confirmed through Ghana Growers." },
-    { name: "availability", label: "Availability", required: true },
+    { name: "priceRange", label: "Price (Optional)", helper: "Leave blank if price will be confirmed through Ghana Growers." },
+    { name: "availability", label: "Availability", type: "select", required: true, options: ["Available Now", "Limited Stock", "Harvesting Soon", "Sold Out"] },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "description", label: "Public Description", type: "textarea", helper: "This description is shown publicly to buyers. You can edit the suggested text before publishing." },
     { name: "internalOperationsNotes", label: "Internal Operations Notes", type: "textarea", helper: "Visible only to the Ghana Growers Operations Team." },
-    { name: "imageUrl", label: "Listing Image", type: "image", bucket: "marketplace", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
+    { name: "imageUrls", label: "Listing Gallery", type: "imageGallery", bucket: "marketplace", helper: "Upload up to 10 JPG, PNG, or WEBP images. The first image is the public cover photo." }
   ],
   "buyer-requests": [
     { name: "productNeeded", label: "Product Needed", required: true },
@@ -1000,6 +1014,39 @@ function emptyFormValues(formId: AdminFormId) {
   return Object.fromEntries(formConfigs[formId].map((field) => [field.name, ""]));
 }
 
+function uniqueMarketplaceGalleryImages(images: string[]) {
+  return Array.from(new Set(images.map((image) => image.trim()).filter(Boolean))).slice(0, marketplaceGalleryLimit);
+}
+
+function parseMarketplaceGalleryValue(value?: string) {
+  const source = value?.trim();
+
+  if (!source) {
+    return [];
+  }
+
+  if (source.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(source) as unknown;
+      if (Array.isArray(parsed)) {
+        return uniqueMarketplaceGalleryImages(parsed.filter((item): item is string => typeof item === "string"));
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return uniqueMarketplaceGalleryImages(source.split(/\r?\n|,/));
+}
+
+function marketplaceGalleryImagesFromValues(values: Record<string, string>) {
+  return uniqueMarketplaceGalleryImages([...parseMarketplaceGalleryValue(values.imageUrls), values.imageUrl ?? ""]);
+}
+
+function marketplaceGalleryValue(images: string[]) {
+  return JSON.stringify(uniqueMarketplaceGalleryImages(images));
+}
+
 function marketplaceListingDescriptionDraft(values: Record<string, string>) {
   const product = values.productName?.trim();
 
@@ -1071,6 +1118,7 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
     if (formId === "marketplace") {
       values.ownerType = "Admin";
       values.ownerName = "Ghana Growers";
+      values.availability = "Available Now";
     }
 
     if (formId === "farmers" || formId === "suppliers") {
@@ -1125,19 +1173,20 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       productName: product?.name ?? row.name,
       category: product?.category ?? row.type,
       region: product?.region ?? row.region,
-      district: districtFromLocation(product?.location),
-      sellerFarmer: product?.seller ?? row.ownerName ?? "",
+      district: districtFromLocation(product?.location) || row.district || "",
+      sellerFarmer: product?.seller ?? row.sellerFarmer ?? row.ownerName ?? "",
       ownerType: product?.ownerType ?? row.ownerType ?? (product?.farmerSlug ? "Farmer" : "Admin"),
       ownerId: product?.ownerId ?? row.ownerId ?? "",
       ownerName: product?.ownerName ?? row.ownerName ?? product?.seller ?? "",
-      quantity: product?.quantity ?? "",
-      unit: product?.unit ?? "",
-      priceRange: productRecord?.priceRange ?? "",
-      availability: product?.available ?? "",
-      whatsappNumber: product?.whatsappNumber ?? "",
-      description: product?.description ?? "",
-      internalOperationsNotes: product?.internalOperationsNotes ?? "",
-      imageUrl: product?.image ?? ""
+      quantity: product?.quantity ?? row.quantity ?? "",
+      unit: product?.unit ?? row.unit ?? "",
+      priceRange: productRecord?.priceRange ?? row.priceRange ?? "",
+      availability: product?.available ?? row.availability ?? "",
+      whatsappNumber: product?.whatsappNumber ?? row.whatsapp ?? "",
+      description: product?.description ?? row.description ?? "",
+      internalOperationsNotes: product?.internalOperationsNotes ?? row.internalOperationsNotes ?? "",
+      imageUrl: product?.image ?? row.imageUrl ?? "",
+      imageUrls: marketplaceGalleryValue(product?.images?.length ? product.images : row.imageUrls?.length ? row.imageUrls : product?.image ? [product.image] : row.imageUrl ? [row.imageUrl] : [])
     };
   }
 
@@ -2855,6 +2904,7 @@ function adminMarketplaceRowFromAnalytics(record: AnalyticsRecord): AdminRow {
   const id = textValue(record, "slug") || textValue(record, "id");
   const ownerType = textValue(record, "owner_type") || (textValue(record, "seller_type") === "Supplier" ? "Supplier" : "Admin");
   const ownerName = textValue(record, "owner_name") || textValue(record, "seller_name") || "Ghana Growers";
+  const imageUrls = arrayValue(record, "image_urls");
 
   return {
     id,
@@ -2863,9 +2913,20 @@ function adminMarketplaceRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     region: textValue(record, "region") || "Ghana",
     status: textValue(record, "status") === "Archived" ? "Archived" : "Active",
     dateAdded: textValue(record, "created_at")?.slice(0, 10) || "2026-06-07",
+    district: textValue(record, "district"),
+    sellerFarmer: textValue(record, "seller_name"),
     ownerType,
     ownerId: textValue(record, "owner_id"),
     ownerName,
+    quantity: textValue(record, "quantity"),
+    unit: textValue(record, "unit"),
+    priceRange: textValue(record, "price_range"),
+    availability: textValue(record, "availability"),
+    whatsapp: textValue(record, "whatsapp_number"),
+    description: textValue(record, "description"),
+    internalOperationsNotes: textValue(record, "internal_operations_notes"),
+    imageUrl: textValue(record, "image_url"),
+    imageUrls,
     isFeatured: recordBoolean(record, "is_featured"),
     featuredUntil: textValue(record, "featured_until"),
     featuredNote: textValue(record, "featured_note"),
@@ -4810,12 +4871,14 @@ export function AdminDashboard({
       region: farmer.region || "",
       district: farmer.district || "",
       whatsappNumber: farmer.whatsapp_number || farmer.phone_number || "",
-      availability: farmer.currently_harvesting || "Available on request",
+      availability: "Available Now",
       unit: "",
       quantity: "",
       category: farmer.farm_type || "",
       description: "",
-      internalOperationsNotes: ""
+      internalOperationsNotes: "",
+      imageUrl: "",
+      imageUrls: marketplaceGalleryValue([])
     };
 
     setActiveSection("marketplace");
@@ -4898,6 +4961,123 @@ export function AdminDashboard({
     setFormValues((current) => ({ ...current, [field.name]: result.publicUrl ?? "" }));
     setImagePreviews((current) => ({ ...current, [field.name]: result.publicUrl ?? localPreview }));
     setFormSuccess("Image uploaded. Save the form to attach it to this record.");
+  }
+
+  async function uploadMarketplaceGalleryImages(field: FormField, event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (!files.length || !field.bucket) {
+      return;
+    }
+
+    const currentImages = marketplaceGalleryImagesFromValues(formValues);
+    const remainingSlots = marketplaceGalleryLimit - currentImages.length;
+
+    if (remainingSlots <= 0) {
+      setFormError(`A listing can include up to ${marketplaceGalleryLimit} images.`);
+      event.target.value = "";
+      return;
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    const invalidFile = selectedFiles.find((file) => !allowedTypes.includes(file.type));
+    if (invalidFile) {
+      setFormError("Upload JPG, PNG, or WEBP images only.");
+      event.target.value = "";
+      return;
+    }
+
+    const oversizedFile = selectedFiles.find((file) => file.size > 5 * 1024 * 1024);
+    if (oversizedFile) {
+      setFormError("Each image must be 5MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingField(field.name);
+    setFormError("");
+    setFormSuccess("");
+
+    const uploadedUrls: string[] = [];
+
+    for (const file of selectedFiles) {
+      const formData = new FormData();
+      formData.append("bucket", field.bucket);
+      formData.append("file", file);
+
+      const response = await fetch("/api/admin/uploads", {
+        method: "POST",
+        body: formData
+      }).catch(() => null);
+      const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+
+      if (!response?.ok || !result?.publicUrl) {
+        setUploadingField(null);
+        event.target.value = "";
+
+        if (response?.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+
+        setFormError(result?.error ?? "One or more gallery images failed to upload. Check Supabase Storage configuration.");
+        return;
+      }
+
+      uploadedUrls.push(result.publicUrl);
+    }
+
+    const nextImages = uniqueMarketplaceGalleryImages([...currentImages, ...uploadedUrls]);
+    setFormValues((current) => ({
+      ...current,
+      imageUrl: nextImages[0] ?? "",
+      imageUrls: marketplaceGalleryValue(nextImages)
+    }));
+    setUploadingField(null);
+    event.target.value = "";
+    setFormSuccess(`Gallery updated. ${nextImages[0] ? "The first image is the cover photo." : ""} Save the form to update the listing.`);
+  }
+
+  function updateMarketplaceGallery(images: string[], successMessage: string) {
+    const nextImages = uniqueMarketplaceGalleryImages(images);
+    setFormValues((current) => ({
+      ...current,
+      imageUrl: nextImages[0] ?? "",
+      imageUrls: marketplaceGalleryValue(nextImages)
+    }));
+    setFormError("");
+    setFormSuccess(successMessage);
+  }
+
+  function moveMarketplaceGalleryImage(index: number, direction: -1 | 1) {
+    const images = marketplaceGalleryImagesFromValues(formValues);
+    const targetIndex = index + direction;
+
+    if (targetIndex < 0 || targetIndex >= images.length) {
+      return;
+    }
+
+    const nextImages = [...images];
+    [nextImages[index], nextImages[targetIndex]] = [nextImages[targetIndex], nextImages[index]];
+    updateMarketplaceGallery(nextImages, "Gallery order updated. Save the form to update the listing.");
+  }
+
+  function setMarketplaceGalleryCover(index: number) {
+    const images = marketplaceGalleryImagesFromValues(formValues);
+    const selectedImage = images[index];
+
+    if (!selectedImage) {
+      return;
+    }
+
+    updateMarketplaceGallery([selectedImage, ...images.filter((_, currentIndex) => currentIndex !== index)], "Cover image updated. Save the form to update the listing.");
+  }
+
+  function removeMarketplaceGalleryImage(index: number) {
+    const images = marketplaceGalleryImagesFromValues(formValues);
+    updateMarketplaceGallery(images.filter((_, currentIndex) => currentIndex !== index), "Image removed from the gallery. Save the form to update the listing.");
   }
 
   function removeImage(fieldName: string) {
@@ -9237,6 +9417,119 @@ export function AdminDashboard({
                       const fieldId = `admin-${activeForm.id}-${field.name}`;
                       const value = formValues[field.name] ?? "";
 
+                      if (field.advanced) {
+                        return null;
+                      }
+
+                      if (field.type === "imageGallery") {
+                        const images = marketplaceGalleryImagesFromValues(formValues);
+                        const isUploading = uploadingField === field.name;
+
+                        return (
+                          <div key={field.name} className="grid gap-3 text-sm font-black text-ink md:col-span-2">
+                            <span>{field.label}</span>
+                            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                              <div className="grid gap-4 lg:grid-cols-[minmax(220px,320px)_1fr]">
+                                <div className="overflow-hidden rounded-md bg-white ring-1 ring-leaf-900/10">
+                                  {images[0] ? (
+                                    <div
+                                      role="img"
+                                      aria-label="Marketplace cover image preview"
+                                      className="aspect-[4/3] w-full bg-cover bg-center"
+                                      style={{ backgroundImage: `url(${images[0]})` }}
+                                    />
+                                  ) : (
+                                    <div className="grid aspect-[4/3] place-items-center px-4 text-center text-xs font-black uppercase tracking-wide text-ink/35">
+                                      Cover preview
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex flex-wrap gap-2">
+                                    <label
+                                      htmlFor={fieldId}
+                                      className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800"
+                                    >
+                                      <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                                      {isUploading ? "Uploading..." : "Upload Images"}
+                                    </label>
+                                    <input
+                                      id={fieldId}
+                                      type="file"
+                                      accept="image/jpeg,image/png,image/webp"
+                                      multiple
+                                      disabled={isUploading || images.length >= marketplaceGalleryLimit}
+                                      onChange={(event) => uploadMarketplaceGalleryImages(field, event)}
+                                      className="sr-only"
+                                    />
+                                    <span className="inline-flex items-center rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-ink/45">
+                                      {images.length}/{marketplaceGalleryLimit} images
+                                    </span>
+                                  </div>
+                                  <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+                                    {field.helper}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {images.length > 0 ? (
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                                  {images.map((image, index) => (
+                                    <div key={`${image}-${index}`} className="rounded-md border border-leaf-900/10 bg-white p-2 shadow-sm">
+                                      <div
+                                        role="img"
+                                        aria-label={`Marketplace gallery image ${index + 1}`}
+                                        className="aspect-[4/3] rounded-md bg-leaf-50 bg-cover bg-center"
+                                        style={{ backgroundImage: `url(${image})` }}
+                                      />
+                                      <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {index === 0 ? (
+                                          <span className="rounded-md bg-earth-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-earth-700">Cover</span>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => setMarketplaceGalleryCover(index)}
+                                            className="rounded-md border border-leaf-900/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
+                                          >
+                                            Set cover
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => moveMarketplaceGalleryImage(index, -1)}
+                                          disabled={index === 0}
+                                          aria-label="Move image left"
+                                          className="grid h-7 w-7 place-items-center rounded-md border border-leaf-900/10 text-ink/55 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                          <ArrowLeft className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => moveMarketplaceGalleryImage(index, 1)}
+                                          disabled={index === images.length - 1}
+                                          aria-label="Move image right"
+                                          className="grid h-7 w-7 place-items-center rounded-md border border-leaf-900/10 text-ink/55 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                          <ArrowRight className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeMarketplaceGalleryImage(index)}
+                                          aria-label="Delete image"
+                                          className="grid h-7 w-7 place-items-center rounded-md border border-leaf-900/10 text-ink/55 transition hover:border-tomato hover:text-tomato"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      }
+
                       if (field.type === "image") {
                         const preview = imagePreviews[field.name] || value;
                         const isUploading = uploadingField === field.name;
@@ -9359,6 +9652,32 @@ export function AdminDashboard({
                       );
                     })}
                   </div>
+
+                  {activeForm.id === "marketplace" ? (
+                    <details className="mt-5 rounded-md border border-leaf-900/10 bg-white p-4">
+                      <summary className="cursor-pointer text-sm font-black text-ink">Advanced listing details</summary>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {formConfigs.marketplace.filter((field) => field.advanced).map((field) => {
+                          const fieldId = `admin-${activeForm.id}-${field.name}`;
+                          const value = formValues[field.name] ?? "";
+
+                          return (
+                            <label key={field.name} htmlFor={fieldId} className="grid gap-2 text-sm font-black text-ink">
+                              {field.label}
+                              <input
+                                id={fieldId}
+                                type="text"
+                                value={value}
+                                onChange={(event) => setFormValues((current) => ({ ...current, [field.name]: event.target.value }))}
+                                className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                              />
+                              {field.helper ? <span className="text-xs font-semibold leading-5 text-ink/50">{field.helper}</span> : null}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  ) : null}
 
                   {formError ? <p className="mt-5 rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">{formError}</p> : null}
                   {formSuccess ? <p className="mt-5 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black leading-6 text-leaf-700">{formSuccess}</p> : null}

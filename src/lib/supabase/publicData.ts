@@ -83,7 +83,9 @@ type SupabaseListing = {
   unit: string;
   availability: string;
   price_range: string | null;
+  description?: string | null;
   image_url: string | null;
+  image_urls?: string[] | null;
   whatsapp_number: string | null;
   verification_status: string | null;
   status: string | null;
@@ -514,6 +516,11 @@ function mapListing(row: SupabaseListing): Product {
   const productName = productDisplayName(row.product_name);
   const ownerType = row.owner_type === "Supplier" || row.owner_type === "Admin" ? row.owner_type : "Farmer";
   const ownerName = row.owner_name || row.seller_name;
+  const listingImages = Array.isArray(row.image_urls) && row.image_urls.length
+    ? Array.from(new Set(row.image_urls.filter(Boolean)))
+    : row.image_url
+      ? [row.image_url]
+      : [];
 
   return {
     id: row.slug ?? row.id,
@@ -522,10 +529,11 @@ function mapListing(row: SupabaseListing): Product {
     location: row.district,
     region: row.region,
     seller: ownerName,
-    description: `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
+    description: row.description || `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
-    image: productImageForListing(productName, row.category, row.image_url),
+    image: productImageForListing(productName, row.category, listingImages[0] ?? row.image_url),
+    images: listingImages.map((image) => productImageForListing(productName, row.category, image)),
     available: row.availability,
     datePosted: dateOnly(row.created_at),
     verified: trustStatus(row.verification_status) === "Verified",

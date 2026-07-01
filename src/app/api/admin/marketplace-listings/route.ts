@@ -21,6 +21,28 @@ function normalizeOwnerType(value: string | undefined) {
   return value === "Supplier" || value === "Admin" ? value : "Farmer";
 }
 
+function normalizeImageUrls(value: unknown, coverImage?: string) {
+  const rawImages = Array.isArray(value)
+    ? value
+    : typeof value === "string" && value.trim().startsWith("[")
+      ? (() => {
+          try {
+            const parsed = JSON.parse(value) as unknown;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
+      : typeof value === "string"
+        ? value.split(/\r?\n|,/)
+        : [];
+
+  const images = rawImages.filter((image): image is string => typeof image === "string").map((image) => image.trim()).filter(Boolean);
+  const cover = coverImage?.trim();
+
+  return Array.from(new Set([cover, ...images].filter((image): image is string => Boolean(image)))).slice(0, 10);
+}
+
 export async function POST(request: Request) {
   return createRecord({
     request,
@@ -35,6 +57,7 @@ export async function POST(request: Request) {
       const ownerName = payload.ownerName || payload.sellerFarmer || "Ghana Growers";
       const slugSource = `${payload.productName}-${ownerName}`;
       const uniqueSlug = await generateUniqueSlug("marketplace_listings", slugSource);
+      const imageUrls = normalizeImageUrls(payload.imageUrls, payload.imageUrl);
 
       return {
         slug: uniqueSlug.slug,
@@ -57,7 +80,8 @@ export async function POST(request: Request) {
         price_range: payload.priceRange || null,
         description: payload.description || null,
         internal_operations_notes: payload.internalOperationsNotes || null,
-        image_url: payload.imageUrl || null,
+        image_url: imageUrls[0] || null,
+        image_urls: imageUrls.length ? imageUrls : null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active",
         verification_status: "Pending Verification",
@@ -83,6 +107,7 @@ export async function PATCH(request: Request) {
     mapPayload: (payload) => {
       const ownerType = normalizeOwnerType(payload.ownerType);
       const ownerName = payload.ownerName || payload.sellerFarmer || "Ghana Growers";
+      const imageUrls = normalizeImageUrls(payload.imageUrls, payload.imageUrl);
 
       return {
         product_name: payload.productName,
@@ -100,7 +125,8 @@ export async function PATCH(request: Request) {
         price_range: payload.priceRange || null,
         description: payload.description || null,
         internal_operations_notes: payload.internalOperationsNotes || null,
-        image_url: payload.imageUrl || null,
+        image_url: imageUrls[0] || null,
+        image_urls: imageUrls.length ? imageUrls : null,
         whatsapp_number: payload.whatsappNumber,
         status: "Active"
       };

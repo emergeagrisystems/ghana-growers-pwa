@@ -13,7 +13,7 @@ import {
   UsersRound,
   X
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
@@ -35,7 +35,7 @@ type FilterConfig = {
   options: string[];
 };
 
-const availabilityOptions = ["All", "Available", "Limited", "Sold Out"];
+const availabilityOptions = ["All", "Available Now", "Limited Stock", "Harvesting Soon", "Sold Out"];
 const categoryGroupTerms: Record<string, string[]> = {
   "fresh-produce": ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "tomato", "onion", "maize", "cassava", "yam", "plantain", "rice"],
   "farm-inputs": ["input", "seed", "fertilizer", "agro", "chemical", "tool", "equipment", "irrigation", "feed"],
@@ -44,6 +44,11 @@ const categoryGroupTerms: Record<string, string[]> = {
   logistics: ["logistics", "transport", "delivery", "haulage", "aggregation", "cold", "storage"],
   "packaging-storage": ["packaging", "storage", "crate", "sack", "carton", "label", "warehouse"]
 };
+
+function listingGalleryImages(product: Product) {
+  const images = product.images?.length ? product.images : [product.image];
+  return Array.from(new Set(images.filter(Boolean).map((image) => productImageForListing(product.name, product.category, image))));
+}
 
 function SearchBox({
   searchTerm,
@@ -148,7 +153,7 @@ function ListingCard({
   const supplier = product.ownerType === "Supplier"
     ? (product.ownerId ? supplierById.get(product.ownerId) : undefined) ?? supplierBySlug.get(product.ownerName?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ?? "")
     : undefined;
-  const productImage = productImageForListing(product.name, product.category, product.image);
+  const productImage = listingGalleryImages(product)[0];
   const profileHref = farmer ? `/farmer-directory/${farmer.slug}` : supplier ? `/supplier-directory/${supplier.slug}` : "";
   const sellerName = farmer?.farmName ?? supplier?.companyName ?? product.seller;
 
@@ -250,10 +255,15 @@ function ProductDetailsModal({
   const supplier = product.ownerType === "Supplier"
     ? (product.ownerId ? supplierById.get(product.ownerId) : undefined) ?? supplierBySlug.get(product.ownerName?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ?? "")
     : undefined;
-  const productImage = productImageForListing(product.name, product.category, product.image);
+  const galleryImages = useMemo(() => listingGalleryImages(product), [product]);
+  const [selectedImage, setSelectedImage] = useState(galleryImages[0]);
   const relatedProducts = products
     .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
     .slice(0, 4);
+
+  useEffect(() => {
+    setSelectedImage(galleryImages[0]);
+  }, [galleryImages, product.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -270,15 +280,40 @@ function ProductDetailsModal({
           </button>
         </div>
         <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_1fr] lg:gap-7">
-          <SafeImage
-            src={productImage}
-            alt={`${product.name} listing photo`}
-            width={560}
-            height={420}
-            fallbackKind="marketplace"
-            sizes="(min-width: 1024px) 45vw, 100vw"
-            className="h-56 w-full rounded-md object-cover sm:h-80 lg:h-full"
-          />
+          <div className="grid gap-3">
+            <SafeImage
+              src={selectedImage}
+              alt={`${product.name} listing photo`}
+              width={560}
+              height={420}
+              fallbackKind="marketplace"
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              className="h-56 w-full rounded-md object-cover sm:h-80 lg:h-[420px]"
+            />
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+              {galleryImages.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImage(image)}
+                  aria-label={`View ${product.name} image ${index + 1}`}
+                  className={`overflow-hidden rounded-md border bg-white p-1 transition ${
+                    selectedImage === image ? "border-leaf-700 shadow-sm" : "border-leaf-900/10 hover:border-leaf-600"
+                  }`}
+                >
+                  <SafeImage
+                    src={image}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    width={120}
+                    height={90}
+                    fallbackKind="marketplace"
+                    sizes="96px"
+                    className="aspect-[4/3] w-full rounded-[8px] object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
             <div className="mt-5 grid gap-3 text-sm text-ink/68">
@@ -326,7 +361,7 @@ function ProductDetailsModal({
               {relatedProducts.map((listing) => (
                 <article key={listing.id} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
                   <SafeImage
-                    src={productImageForListing(listing.name, listing.category, listing.image)}
+                    src={listingGalleryImages(listing)[0]}
                     alt={`${listing.name} related listing`}
                     width={280}
                     height={180}

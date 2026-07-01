@@ -22,6 +22,7 @@ export type Product = {
   quantity: string;
   unit: string;
   image: string;
+  images?: string[];
   available: string;
   datePosted: string;
   verified?: boolean;
