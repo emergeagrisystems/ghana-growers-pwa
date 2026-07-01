@@ -5149,6 +5149,21 @@ export function AdminDashboard({
     setUploadingField(null);
   }
 
+  function adminDiagnosticMessage(
+    result: { error?: string; category?: string; diagnostic?: string; table?: string; bucket?: string } | null,
+    fallback: string
+  ) {
+    const diagnosticParts = [
+      result?.category,
+      result?.error,
+      result?.diagnostic ? `Details: ${result.diagnostic}` : "",
+      result?.table ? `Table: ${result.table}` : "",
+      result?.bucket ? `Bucket: ${result.bucket}` : ""
+    ].filter(Boolean);
+
+    return diagnosticParts.join("\n") || fallback;
+  }
+
   async function uploadImage(field: FormField, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -5187,7 +5202,13 @@ export function AdminDashboard({
     setUploadingField(null);
     event.target.value = "";
 
-    const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+    const result = (await response?.json().catch(() => null)) as {
+      publicUrl?: string;
+      error?: string;
+      category?: string;
+      diagnostic?: string;
+      bucket?: string;
+    } | null;
 
     if (!response?.ok || !result?.publicUrl) {
       if (response?.status === 401) {
@@ -5195,7 +5216,7 @@ export function AdminDashboard({
         return;
       }
 
-      setFormError(result?.error ?? "Image upload failed. Check Supabase Storage configuration.");
+      setFormError(adminDiagnosticMessage(result, "Image upload failed. Check Supabase Storage configuration."));
       return;
     }
 
@@ -5252,7 +5273,13 @@ export function AdminDashboard({
         method: "POST",
         body: formData
       }).catch(() => null);
-      const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+      const result = (await response?.json().catch(() => null)) as {
+        publicUrl?: string;
+        error?: string;
+        category?: string;
+        diagnostic?: string;
+        bucket?: string;
+      } | null;
 
       if (!response?.ok || !result?.publicUrl) {
         setUploadingField(null);
@@ -5263,7 +5290,7 @@ export function AdminDashboard({
           return;
         }
 
-        setFormError(result?.error ?? "One or more gallery images failed to upload. Check Supabase Storage configuration.");
+        setFormError(adminDiagnosticMessage(result, "One or more gallery images failed to upload. Check Supabase Storage configuration."));
         return;
       }
 
@@ -5393,7 +5420,15 @@ export function AdminDashboard({
       }).catch(() => null);
       setIsSubmittingForm(false);
 
-      const result = (await response?.json().catch(() => null)) as { error?: string; message?: string; record?: unknown } | null;
+      const result = (await response?.json().catch(() => null)) as {
+        error?: string;
+        message?: string;
+        record?: unknown;
+        category?: string;
+        diagnostic?: string;
+        table?: string;
+        operation?: string;
+      } | null;
 
       if (!response?.ok) {
         if (response?.status === 401) {
@@ -5401,7 +5436,7 @@ export function AdminDashboard({
           return;
         }
 
-        setFormError(result?.error ?? "Supabase insert failed. Check the admin session, environment variables, and table schema.");
+        setFormError(adminDiagnosticMessage(result, "Supabase insert failed. Check the admin session, environment variables, and table schema."));
         setFormSuccess("");
         return;
       }
@@ -9938,7 +9973,7 @@ export function AdminDashboard({
                     </details>
                   ) : null}
 
-                  {formError ? <p className="mt-5 rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">{formError}</p> : null}
+                  {formError ? <p className="mt-5 whitespace-pre-line rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">{formError}</p> : null}
                   {formSuccess ? <p className="mt-5 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black leading-6 text-leaf-700">{formSuccess}</p> : null}
 
                   <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

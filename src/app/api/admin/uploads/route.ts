@@ -12,6 +12,40 @@ const extensionByType: Record<string, string> = {
   "image/webp": "webp"
 };
 
+function classifyUploadError(error: string, status: number, bucket: string) {
+  const lower = error.toLowerCase();
+
+  if (lower.includes("not configured")) {
+    return {
+      category: "Supabase unavailable",
+      message: "Supabase Storage is not configured on the server.",
+      diagnostic: "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY on the server."
+    };
+  }
+
+  if (lower.includes("bucket") && (lower.includes("not found") || lower.includes("does not exist"))) {
+    return {
+      category: "Storage bucket missing",
+      message: `Storage upload failed. The "${bucket}" bucket is missing or unavailable.`,
+      diagnostic: error
+    };
+  }
+
+  if (lower.includes("permission") || lower.includes("policy") || lower.includes("row-level") || lower.includes("rls")) {
+    return {
+      category: "Permission denied",
+      message: `Storage upload failed. Check Supabase Storage policies for the "${bucket}" bucket.`,
+      diagnostic: error
+    };
+  }
+
+  return {
+    category: "Image upload failed",
+    message: "Image upload failed.",
+    diagnostic: error || `Supabase Storage returned HTTP ${status}.`
+  };
+}
+
 function safeName(value: string) {
   return value
     .toLowerCase()
@@ -61,7 +95,24 @@ export async function POST(request: Request) {
   });
 
   if (upload.error || !upload.publicUrl) {
-    return NextResponse.json({ error: upload.error ?? "Image upload failed." }, { status: upload.status });
+    const classified = classifyUploadError(upload.error ?? "Supabase Storage did not return a public URL.", upload.status, bucket);
+    console.error("[Admin Upload Error]", {
+      bucket,
+      path,
+      status: upload.status,
+      category: classified.category,
+      error: upload.error
+    });
+
+    return NextResponse.json(
+      {
+        error: classified.message,
+        category: classified.category,
+        diagnostic: classified.diagnostic,
+        bucket
+      },
+      { status: upload.status }
+    );
   }
 
   return NextResponse.json({
