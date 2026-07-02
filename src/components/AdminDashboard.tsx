@@ -1100,6 +1100,32 @@ function districtFromLocation(location?: string) {
   return location?.split(",")[0]?.trim() ?? "";
 }
 
+function storyTitleForFarmer(farmer: ImportedFarmerRecord) {
+  const farmerName = farmer.farmer_name || farmer.farm_name || "";
+
+  if (farmerName.toLowerCase().includes("samuel")) {
+    return "From WhatsApp to Marketplace";
+  }
+
+  return `${farmer.farm_name || farmer.farmer_name || "Farmer"} Joins the Ghana Growers Network`;
+}
+
+function storyDraftForFarmer(farmer: ImportedFarmerRecord) {
+  const farmerName = farmer.farmer_name || farmer.farm_name || "This farmer";
+  const farmName = farmer.farm_name && farmer.farm_name !== farmerName ? ` of ${farmer.farm_name}` : "";
+  const location = [farmer.district, farmer.region].filter(Boolean).join(", ");
+  const products = farmer.products?.length ? farmer.products.slice(0, 4).join(", ") : "farm produce";
+  const locationText = location ? ` in ${location}` : "";
+
+  return `${farmerName}${farmName}${locationText} became one of the early farmers to trade through Ghana Growers. With ${products} as part of the farm production, ${farmerName.split(" ")[0] || "this farmer"} represents the early farmers helping shape Ghana Growers into a trusted agricultural network.`;
+}
+
+function storyOutcomeForFarmer(farmer: ImportedFarmerRecord) {
+  const products = farmer.products?.length ? farmer.products.slice(0, 3).join(", ") : "farm produce";
+
+  return `Launch story candidate for ${farmer.farm_name || farmer.farmer_name || "this farmer"}, highlighting ${products} and early participation in the Ghana Growers marketplace.`;
+}
+
 function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
   const values = emptyFormValues(formId);
 
@@ -4232,7 +4258,14 @@ export function AdminDashboard({
         }
       })
     }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string; message?: string } | null;
+    const result = (await response?.json().catch(() => null)) as {
+      farmer?: ImportedFarmerRecord;
+      error?: string;
+      message?: string;
+      category?: string;
+      diagnostic?: string;
+      migration?: string;
+    } | null;
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -4240,7 +4273,12 @@ export function AdminDashboard({
         return;
       }
 
-      const errorMessage = result?.error ?? "Could not save editorial decision.";
+      const errorMessage = [
+        result?.category,
+        result?.error ?? "Could not save editorial decision.",
+        result?.diagnostic ? `Details: ${result.diagnostic}` : "",
+        result?.migration ? `Migration: ${result.migration}` : ""
+      ].filter(Boolean).join("\n");
       setEditorialSaveStates((current) => ({ ...current, [recordId]: "error" }));
       setFarmerReviewMessage({ type: "error", text: errorMessage });
       return;
@@ -5138,6 +5176,40 @@ export function AdminDashboard({
       recordName: farmerName
     });
     setNotice(`Creating a farmer-owned marketplace listing for ${farmerName}. Owner fields are pre-filled.`);
+  }
+
+  function openFarmerStoryForm(farmer: ImportedFarmerRecord) {
+    const farmerName = farmer.farmer_name || farmer.farm_name || "Farmer";
+    const profileImage = farmer.profile_image_url || farmer.imported_photo_url || farmer.tally_photo_url || farmer.farm_photo_urls?.[0] || farmer.produce_photo_urls?.[0] || "";
+    const nextValues = {
+      ...emptyFormValues("success-stories"),
+      title: storyTitleForFarmer(farmer),
+      category: "Farmers",
+      personBusinessName: farmer.farm_name || farmerName,
+      region: farmer.region || "",
+      summary: storyDraftForFarmer(farmer),
+      outcome: storyOutcomeForFarmer(farmer),
+      date: new Date().toISOString().slice(0, 10),
+      imageUrl: profileImage,
+      status: "Draft"
+    };
+
+    setActiveSection("success-stories");
+    setSearchTerm("");
+    setStatusFilter("All");
+    setFormValues(nextValues);
+    setImagePreviews({});
+    setFormError("");
+    setFormSuccess("");
+    setUploadingField(null);
+    setActiveForm({
+      id: "success-stories",
+      mode: "add",
+      title: "Create Story for this Farmer",
+      recordId: farmer.id,
+      recordName: farmerName
+    });
+    setNotice(`Creating an editable success story draft for ${farmerName}. Farmer ID: ${farmer.id}`);
   }
 
   function closeAdminForm() {
@@ -7039,7 +7111,7 @@ export function AdminDashboard({
                           <div className="mt-4 grid gap-4">
                             {farmerReviewMessage ? (
                               <div
-                                className={`rounded-md px-4 py-3 text-sm font-black ${
+                                className={`whitespace-pre-line rounded-md px-4 py-3 text-sm font-black ${
                                   farmerReviewMessage.type === "success"
                                     ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
                                     : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
@@ -7165,6 +7237,14 @@ export function AdminDashboard({
                                       </button>
                                     </div>
                                   ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => openFarmerStoryForm(reviewingImportedFarmer)}
+                                    className="mt-1 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  >
+                                    <Star className="h-4 w-4" aria-hidden="true" />
+                                    Create Story for this Farmer
+                                  </button>
                                 </div>
 
                                 <label className="mt-4 grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45">

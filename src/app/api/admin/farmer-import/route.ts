@@ -121,6 +121,17 @@ const farmerReviewBaseSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 const farmerEditorialStatuses = ["Public Farmer", "Featured Farmer", "Founding Farmer 2026", "Needs Improvement", "Hold"] as const;
 const farmerEditorialChecklistItems = ["Profile photo", "Farm photos", "Produce photos", "Farm story", "Verified contact", "Produce listing", "Region confirmed"] as const;
+const farmerEditorialColumns = [
+  "launch_status",
+  "homepage_candidate",
+  "marketplace_featured",
+  "story_candidate",
+  "editorial_notes",
+  "launch_ready",
+  "launch_checklist",
+  "editorial_updated_at",
+  "editorial_updated_by"
+];
 const farmerReviewOptionalColumnPattern = /(gg_standard_status|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|editorial_updated|farm_photo_urls|produce_photo_urls|document_urls|tally_file_references|photo_import_status|photo_import_notes)/;
 
 const headerAliases: Record<ImportFieldKey, string[]> = {
@@ -865,6 +876,54 @@ function launchReadyFromEditorial(status: string, checklist: Record<string, bool
   return percent >= 85;
 }
 
+function farmerEditorialSaveError(error: string, status: number) {
+  const lower = error.toLowerCase();
+  const missingEditorialColumn = farmerEditorialColumns.find((column) => lower.includes(column));
+
+  if (
+    lower.includes("could not find") && lower.includes("column") ||
+    lower.includes("schema cache") ||
+    lower.includes("column") && lower.includes("does not exist") ||
+    lower.includes("farmers_launch_status_check")
+  ) {
+    return {
+      category: "Database migration missing",
+      message: `Farmer editorial migration is missing or incomplete. Apply migration 025_farmer_editorial_workspace.sql${missingEditorialColumn ? ` for ${missingEditorialColumn}` : ""}.`,
+      diagnostic: error
+    };
+  }
+
+  if (lower.includes("permission denied") || lower.includes("row-level") || lower.includes("rls") || lower.includes("policy")) {
+    return {
+      category: "Permission denied",
+      message: "Permission denied while saving farmer editorial decisions. Check Supabase RLS policies and service role configuration.",
+      diagnostic: error
+    };
+  }
+
+  if (lower.includes("violates") || lower.includes("constraint") || lower.includes("invalid input")) {
+    return {
+      category: "Validation failed",
+      message: "Farmer editorial save failed because one of the values violates a database rule.",
+      diagnostic: error
+    };
+  }
+
+  if (status === 503 || lower.includes("not configured")) {
+    return {
+      category: "Supabase unavailable",
+      message: "Supabase is not configured on the server.",
+      diagnostic: "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY."
+    };
+  }
+
+  return {
+    category: status >= 500 ? "Unknown server error" : "Farmer editorial save failed",
+    message: "Could not save farmer editorial decision.",
+    diagnostic: error || `Supabase returned HTTP ${status}.`
+  };
+}
+
 async function importExistingFarmerPhoto(record: ExistingFarmer) {
   const originalTallyData = record.original_tally_data ?? {};
   const photoCandidate = tallyPhotoCandidate(originalTallyData);
@@ -1267,8 +1326,22 @@ export async function PATCH(request: Request) {
     });
 
     if (update.error) {
+      const classified = farmerEditorialSaveError(update.error, update.status);
+      console.error("[Farmer Editorial Save Error]", {
+        farmerId: ids[0],
+        launchStatus: status,
+        status: update.status,
+        category: classified.category,
+        error: update.error
+      });
+
       return NextResponse.json(
-        { error: `Could not save editorial decision. ${update.error}` },
+        {
+          error: classified.message,
+          category: classified.category,
+          diagnostic: classified.diagnostic,
+          migration: classified.category === "Database migration missing" ? "025_farmer_editorial_workspace.sql" : undefined
+        },
         { status: update.status }
       );
     }
