@@ -18,7 +18,6 @@ import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import type { BuyerRequest } from "@/data/buyerRequests";
-import { productImageForListing } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SupplierProfile } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -47,7 +46,7 @@ const categoryGroupTerms: Record<string, string[]> = {
 
 function listingGalleryImages(product: Product) {
   const images = product.images?.length ? product.images : [product.image];
-  return Array.from(new Set(images.filter(Boolean).map((image) => productImageForListing(product.name, product.category, image))));
+  return Array.from(new Set(images.filter(Boolean)));
 }
 
 function SearchBox({
@@ -568,7 +567,7 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
             {featuredProducts.map((product) => (
               <article key={product.id} className="overflow-hidden rounded-md border border-white/70 bg-white shadow-sm">
                 <SafeImage
-                  src={productImageForListing(product.name, product.category, product.image)}
+                  src={listingGalleryImages(product)[0]}
                   alt={`${product.name} featured marketplace listing`}
                   width={360}
                   height={220}

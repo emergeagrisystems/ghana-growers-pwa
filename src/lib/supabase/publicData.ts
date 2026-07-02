@@ -96,6 +96,31 @@ type SupabaseListing = {
   created_at: string;
 };
 
+function normalizeListingImages(imageUrls: unknown, imageUrl?: string | null) {
+  const galleryImages = Array.isArray(imageUrls)
+    ? imageUrls
+    : typeof imageUrls === "string" && imageUrls.trim().startsWith("[")
+      ? (() => {
+          try {
+            const parsed = JSON.parse(imageUrls) as unknown;
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
+      : typeof imageUrls === "string"
+        ? imageUrls.split(/\r?\n|,/)
+        : [];
+
+  const normalizedGallery = galleryImages
+    .filter((image): image is string => typeof image === "string")
+    .map((image) => image.trim())
+    .filter(Boolean);
+  const legacyImage = imageUrl?.trim();
+
+  return Array.from(new Set([...normalizedGallery, ...(legacyImage ? [legacyImage] : [])]));
+}
+
 type SupabaseBuyerRequest = {
   id: string;
   product_needed: string;
@@ -516,11 +541,8 @@ function mapListing(row: SupabaseListing): Product {
   const productName = productDisplayName(row.product_name);
   const ownerType = row.owner_type === "Supplier" || row.owner_type === "Admin" ? row.owner_type : "Farmer";
   const ownerName = row.owner_name || row.seller_name;
-  const listingImages = Array.isArray(row.image_urls) && row.image_urls.length
-    ? Array.from(new Set(row.image_urls.filter(Boolean)))
-    : row.image_url
-      ? [row.image_url]
-      : [];
+  const listingImages = normalizeListingImages(row.image_urls, row.image_url);
+  const coverImage = listingImages[0] ?? productImageForListing(productName, row.category);
 
   return {
     id: row.slug ?? row.id,
@@ -532,8 +554,8 @@ function mapListing(row: SupabaseListing): Product {
     description: row.description || `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
-    image: productImageForListing(productName, row.category, listingImages[0] ?? row.image_url),
-    images: listingImages.map((image) => productImageForListing(productName, row.category, image)),
+    image: coverImage,
+    images: listingImages.length ? listingImages : [coverImage],
     available: row.availability,
     datePosted: dateOnly(row.created_at),
     verified: trustStatus(row.verification_status) === "Verified",
