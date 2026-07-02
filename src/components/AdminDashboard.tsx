@@ -418,7 +418,7 @@ type FormField = {
   required?: boolean;
   helper?: string;
   options?: string[];
-  bucket?: "farmers" | "suppliers" | "marketplace";
+  bucket?: "farmers" | "suppliers" | "marketplace" | "stories";
   advanced?: boolean;
 };
 type ActiveForm = {
@@ -903,9 +903,9 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "personBusinessName", label: "Person/Business Name", required: true },
     { name: "region", label: "Region", required: true },
     { name: "summary", label: "Summary", type: "textarea", required: true },
-    { name: "outcome", label: "Outcome", type: "textarea", required: true },
+    { name: "outcome", label: "Story Highlights", type: "textarea", required: true, helper: "Summarize the practical result, milestone, or launch-ready highlight from this story." },
     { name: "date", label: "Story Date", type: "date", required: true },
-    { name: "imageUrl", label: "Image URL", helper: "Optional. Use a public image URL or leave blank." },
+    { name: "imageUrl", label: "Story Cover Image", type: "image", bucket: "stories", helper: "Upload, replace, or remove the story cover image. JPG, PNG, or WEBP up to 5MB." },
     { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Published", "Archived"] }
   ]
 };

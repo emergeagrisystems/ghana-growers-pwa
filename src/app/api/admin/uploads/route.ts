@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
 import { uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 
-const allowedBuckets = new Set(["farmers", "suppliers", "marketplace"]);
+const allowedBuckets = new Set(["farmers", "suppliers", "marketplace", "stories"]);
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxSize = 5 * 1024 * 1024;
 
