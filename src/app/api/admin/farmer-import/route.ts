@@ -7,6 +7,22 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type FarmerLinkedMarketplaceListing = {
+  id: string;
+  slug?: string | null;
+  product_name?: string | null;
+  status?: string | null;
+  availability?: string | null;
+  region?: string | null;
+  district?: string | null;
+  owner_type?: string | null;
+  owner_id?: string | null;
+  owner_name?: string | null;
+  image_url?: string | null;
+  image_urls?: string[] | null;
+  created_at?: string | null;
+};
+
 type ExistingFarmer = {
   id: string;
   slug: string | null;
@@ -54,6 +70,7 @@ type ExistingFarmer = {
   launch_checklist?: Record<string, unknown> | null;
   editorial_updated_at?: string | null;
   editorial_updated_by?: string | null;
+  linked_marketplace_listings?: FarmerLinkedMarketplaceListing[];
   created_at?: string | null;
   source: string | null;
 };
@@ -852,6 +869,7 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     launch_checklist: record.launch_checklist ?? {},
     editorial_updated_at: record.editorial_updated_at ?? null,
     editorial_updated_by: record.editorial_updated_by ?? null,
+    linked_marketplace_listings: record.linked_marketplace_listings ?? [],
     created_at: record.created_at ?? null,
     source: normalizedFarmerSource(record.source)
   };
@@ -974,7 +992,37 @@ async function getImportedFarmerById(id: string) {
     return { error: "Imported farmer could not be found.", status: 404 };
   }
 
-  return { farmer };
+  const linkedMarketplaceListings = await getLinkedMarketplaceListings(farmer.id);
+
+  return {
+    farmer: {
+      ...farmer,
+      linked_marketplace_listings: linkedMarketplaceListings
+    }
+  };
+}
+
+async function getLinkedMarketplaceListings(farmerId: string): Promise<FarmerLinkedMarketplaceListing[]> {
+  const select = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,image_urls,created_at";
+  const fallbackSelect = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,created_at";
+  let listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+    "marketplace_listings",
+    `${select}&or=(owner_id.eq.${encodeURIComponent(farmerId)},farmer_id.eq.${encodeURIComponent(farmerId)})&order=created_at.desc&limit=20`
+  );
+
+  if (listings.error && /(image_urls|farmer_id|schema cache|column)/i.test(listings.error)) {
+    listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+      "marketplace_listings",
+      `${fallbackSelect}&owner_id=eq.${encodeURIComponent(farmerId)}&order=created_at.desc&limit=20`
+    );
+  }
+
+  if (listings.error) {
+    console.error("[Farmer Review Linked Listings Error]", { farmerId, error: listings.error, status: listings.status });
+    return [];
+  }
+
+  return listings.data ?? [];
 }
 
 export async function GET(request: Request) {

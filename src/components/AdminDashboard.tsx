@@ -340,6 +340,21 @@ type BuyerRequestSubmissionRecord = {
   created_at: string;
   updated_at: string;
 };
+type FarmerLinkedMarketplaceListing = {
+  id: string;
+  slug?: string | null;
+  product_name?: string | null;
+  status?: string | null;
+  availability?: string | null;
+  region?: string | null;
+  district?: string | null;
+  owner_type?: string | null;
+  owner_id?: string | null;
+  owner_name?: string | null;
+  image_url?: string | null;
+  image_urls?: string[] | null;
+  created_at?: string | null;
+};
 type ImportedFarmerRecord = {
   id: string;
   slug: string;
@@ -387,6 +402,7 @@ type ImportedFarmerRecord = {
   launch_checklist?: Partial<Record<LaunchChecklistItem, boolean>> | null;
   editorial_updated_at?: string | null;
   editorial_updated_by?: string | null;
+  linked_marketplace_listings?: FarmerLinkedMarketplaceListing[];
   created_at?: string | null;
   source: string;
 };
@@ -2084,6 +2100,20 @@ function farmerMediaSummary(farmer: ImportedFarmerRecord) {
   }
 
   return farmerPhotoDiagnostics(farmer).status;
+}
+
+function linkedListingImageUrls(listing: FarmerLinkedMarketplaceListing) {
+  return uniqueStrings([
+    ...(Array.isArray(listing.image_urls) ? listing.image_urls : []),
+    listing.image_url ?? ""
+  ].filter(Boolean));
+}
+
+function farmerLinkedListingsWithPhotos(farmer: ImportedFarmerRecord) {
+  return (farmer.linked_marketplace_listings ?? []).map((listing) => ({
+    ...listing,
+    images: linkedListingImageUrls(listing)
+  }));
 }
 
 function FarmerMediaGallery({
@@ -4186,6 +4216,8 @@ export function AdminDashboard({
   const reviewingFarmPhotoFilenames = reviewingImportedFarmer ? farmerMediaFilenamesByKind(reviewingImportedFarmer, "farm") : [];
   const reviewingProducePhotoUrls = reviewingImportedFarmer ? farmerMediaUrlsByKind(reviewingImportedFarmer, "produce") : [];
   const reviewingProducePhotoFilenames = reviewingImportedFarmer ? farmerMediaFilenamesByKind(reviewingImportedFarmer, "produce") : [];
+  const reviewingLinkedMarketplaceListings = reviewingImportedFarmer ? farmerLinkedListingsWithPhotos(reviewingImportedFarmer) : [];
+  const reviewingLinkedListingPhotoCount = reviewingLinkedMarketplaceListings.reduce((total, listing) => total + listing.images.length, 0);
   const reviewingEditorialDecision = reviewingImportedFarmer
     ? editorialDecisions[reviewingImportedFarmer.id] ?? defaultEditorialDecision(reviewingImportedFarmer)
     : null;
@@ -4284,15 +4316,28 @@ export function AdminDashboard({
       return;
     }
 
-    if (result?.farmer) {
-      setImportedFarmers((current) => current.map((farmer) => (farmer.id === result.farmer?.id ? result.farmer : farmer)));
-      setEditorialDecisions((current) => ({
-        ...current,
-        [recordId]: defaultEditorialDecision(result.farmer as ImportedFarmerRecord)
-      }));
-      setFarmerReviewDebug(reviewDebugFields(result.farmer));
+    const savedFarmer = result?.farmer
+      ? ({
+          ...result.farmer,
+          launch_status: decision.launchStatus,
+          homepage_candidate: decision.homepageCandidate,
+          marketplace_featured: decision.marketplaceFeatured,
+          story_candidate: decision.storyCandidate,
+          editorial_notes: decision.editorialNotes,
+          launch_checklist: decision.checklist,
+          launch_ready: launchReadiness(decision).label === "Launch Ready"
+        } satisfies ImportedFarmerRecord)
+      : null;
+
+    if (savedFarmer) {
+      setImportedFarmers((current) => current.map((farmer) => (farmer.id === savedFarmer.id ? savedFarmer : farmer)));
+      setFarmerReviewDebug(reviewDebugFields(savedFarmer));
     }
 
+    setEditorialDecisions((current) => ({
+      ...current,
+      [recordId]: decision
+    }));
     setEditorialSaveStates((current) => ({ ...current, [recordId]: "saved" }));
     setFarmerReviewMessage({ type: "success", text: result?.message ?? "Editorial decision saved." });
     void loadActivity();
@@ -6970,8 +7015,68 @@ export function AdminDashboard({
                                 title="Produce Photos"
                                 urls={reviewingProducePhotoUrls}
                                 filenames={reviewingProducePhotoFilenames}
-                                emptyLabel="No produce photos submitted."
+                                emptyLabel={
+                                  reviewingLinkedListingPhotoCount > 0
+                                    ? "No profile produce photos submitted. Listing photos are available below."
+                                    : "No produce photos submitted."
+                                }
                               />
+                            </section>
+
+                            <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Linked Marketplace Listings</h4>
+                                  <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
+                                    Listing photos stay separate from farmer profile photos, but they help verify what this farmer is actively selling.
+                                  </p>
+                                </div>
+                                <span className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                  {reviewingLinkedMarketplaceListings.length} listing{reviewingLinkedMarketplaceListings.length === 1 ? "" : "s"}
+                                </span>
+                              </div>
+
+                              {reviewingLinkedMarketplaceListings.length > 0 ? (
+                                <div className="mt-4 grid gap-3">
+                                  {reviewingLinkedMarketplaceListings.map((listing) => (
+                                    <article key={listing.id} className="rounded-md bg-leaf-50 p-3 ring-1 ring-leaf-900/10">
+                                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="min-w-0">
+                                          <p className="break-words text-sm font-black text-ink">{listing.product_name || "Marketplace listing"}</p>
+                                          <p className="mt-1 text-xs font-semibold text-ink/55">
+                                            {[listing.availability, listing.status].filter(Boolean).join(" • ") || "Status not provided"}
+                                          </p>
+                                        </div>
+                                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-earth-700 ring-1 ring-leaf-900/10">
+                                          {listing.status || "Listed"}
+                                        </span>
+                                      </div>
+                                      {listing.images.length > 0 ? (
+                                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                          {listing.images.slice(0, 8).map((url, index) => (
+                                            <div key={`${listing.id}-${url}`} className="aspect-[4/3] overflow-hidden rounded-md bg-white ring-1 ring-leaf-900/10">
+                                              <div
+                                                role="img"
+                                                aria-label={`${listing.product_name || "Listing"} photo ${index + 1}`}
+                                                className="h-full w-full bg-cover bg-center"
+                                                style={{ backgroundImage: `url(${url})` }}
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="mt-3 rounded-md bg-white px-3 py-2 text-xs font-semibold text-ink/55 ring-1 ring-leaf-900/10">
+                                          This listing has no uploaded photos.
+                                        </p>
+                                      )}
+                                    </article>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">
+                                  No linked marketplace listings found for this farmer.
+                                </p>
+                              )}
                             </section>
 
                             <section className="rounded-md border border-leaf-900/10 bg-white p-4">
