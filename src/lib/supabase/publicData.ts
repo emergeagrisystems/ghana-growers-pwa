@@ -554,6 +554,7 @@ function mapListing(row: SupabaseListing): Product {
     description: row.description || `${productName} listed by ${ownerName} in ${row.district}, ${row.region}. Confirm quality, timing, and trade terms before purchase.`,
     quantity: row.quantity,
     unit: row.unit,
+    priceRange: row.price_range ?? undefined,
     image: coverImage,
     images: listingImages.length ? listingImages : [coverImage],
     available: row.availability,

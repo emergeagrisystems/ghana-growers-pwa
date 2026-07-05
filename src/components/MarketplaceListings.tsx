@@ -5,8 +5,12 @@ import { useSearchParams } from "next/navigation";
 import {
   BadgeCheck,
   ChevronDown,
+  CircleCheck,
+  Leaf,
+  MapPin,
   PackageCheck,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
   Star,
   Tag,
@@ -47,6 +51,70 @@ const categoryGroupTerms: Record<string, string[]> = {
 function listingGalleryImages(product: Product) {
   const images = product.images?.length ? product.images : [product.image];
   return Array.from(new Set(images.filter(Boolean)));
+}
+
+function availabilityBadge(availability: string) {
+  const normalized = availability.toLowerCase();
+
+  if (normalized.includes("limited")) {
+    return { label: "Limited Stock", icon: "🟡", tone: "bg-earth-50 text-earth-700 ring-earth-500/20" };
+  }
+
+  if (normalized.includes("harvest")) {
+    return { label: "Harvesting Soon", icon: "🔵", tone: "bg-sky-50 text-sky-800 ring-sky-500/20" };
+  }
+
+  if (normalized.includes("sold")) {
+    return { label: "Sold Out", icon: "⚪", tone: "bg-stone-100 text-stone-700 ring-stone-300" };
+  }
+
+  return { label: "Available Now", icon: "🟢", tone: "bg-leaf-50 text-leaf-800 ring-leaf-700/15" };
+}
+
+function listingLocation(product: Product) {
+  return Array.from(new Set([product.location, product.region].map((item) => item?.trim()).filter(Boolean))).join(", ");
+}
+
+function sellerDisplayName(product: Product, farmer?: FarmerProfile, supplier?: SupplierProfile) {
+  return farmer?.contactName || farmer?.farmName || supplier?.companyName || product.ownerName || product.seller;
+}
+
+function sellerBusinessName(product: Product, farmer?: FarmerProfile, supplier?: SupplierProfile) {
+  return farmer?.farmName || supplier?.companyName || product.ownerName || product.seller;
+}
+
+function sellerLocation(product: Product, farmer?: FarmerProfile, supplier?: SupplierProfile) {
+  return farmer
+    ? listingLocation({ ...product, location: farmer.district, region: farmer.region })
+    : supplier
+      ? listingLocation({ ...product, location: supplier.district, region: supplier.region })
+      : listingLocation(product);
+}
+
+function sellerVerificationLabel(product: Product, farmer?: FarmerProfile, supplier?: SupplierProfile) {
+  if (farmer) {
+    return farmer.verificationStatus === "Verified" || product.verified ? "Verified Farmer" : farmer.verificationStatus || "Verification Pending";
+  }
+
+  if (supplier) {
+    return supplier.verificationStatus === "Verified" || product.verified ? "Verified Business" : supplier.verificationStatus || "Verification Pending";
+  }
+
+  return product.verified ? "Verified Marketplace Listing" : "Marketplace Review Pending";
+}
+
+function sellerMarketplaceStatus(product: Product) {
+  return product.available === "Sold Out" ? "Marketplace listing sold out" : "Active Marketplace Member";
+}
+
+function sellerMemberSince(product: Product, farmer?: FarmerProfile, supplier?: SupplierProfile) {
+  const featuredDate = farmer?.featuredUntil || supplier?.featuredUntil;
+
+  if (featuredDate) {
+    return featuredDate.slice(0, 4);
+  }
+
+  return product.datePosted ? product.datePosted.slice(0, 4) : "";
 }
 
 function SearchBox({
@@ -256,6 +324,22 @@ function ProductDetailsModal({
     : undefined;
   const galleryImages = useMemo(() => listingGalleryImages(product), [product]);
   const [selectedImage, setSelectedImage] = useState(galleryImages[0]);
+  const selectedImageIndex = Math.max(0, galleryImages.findIndex((image) => image === selectedImage));
+  const availability = availabilityBadge(product.available);
+  const sellerName = sellerDisplayName(product, farmer, supplier);
+  const sellerBusiness = sellerBusinessName(product, farmer, supplier);
+  const sellerPlace = sellerLocation(product, farmer, supplier);
+  const sellerVerification = sellerVerificationLabel(product, farmer, supplier);
+  const profileHref = farmer ? `/farmer-directory/${farmer.slug}` : supplier ? `/supplier-directory/${supplier.slug}` : "";
+  const ggStandardStatus = farmer?.ggStandardStatus ?? supplier?.ggStandardStatus;
+  const activeListingsForSeller = products.filter((listing) => {
+    if (product.ownerId && listing.ownerId) {
+      return listing.ownerId === product.ownerId && listing.available !== "Sold Out";
+    }
+
+    return (listing.ownerName || listing.seller) === (product.ownerName || product.seller) && listing.available !== "Sold Out";
+  }).length;
+  const memberSince = sellerMemberSince(product, farmer, supplier);
   const relatedProducts = products
     .filter((listing) => listing.id !== product.id && (listing.category === product.category || listing.region === product.region))
     .slice(0, 4);
@@ -280,16 +364,21 @@ function ProductDetailsModal({
         </div>
         <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1fr_1fr] lg:gap-7">
           <div className="grid gap-3">
-            <SafeImage
-              src={selectedImage}
-              alt={`${product.name} listing photo`}
-              width={560}
-              height={420}
-              fallbackKind="marketplace"
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="h-56 w-full rounded-md object-cover sm:h-80 lg:h-[420px]"
-            />
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+            <div className="relative overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+              <SafeImage
+                src={selectedImage}
+                alt={`${product.name} listing photo`}
+                width={560}
+                height={420}
+                fallbackKind="marketplace"
+                sizes="(min-width: 1024px) 45vw, 100vw"
+                className="h-56 w-full object-cover sm:h-80 lg:h-[420px]"
+              />
+              <span className="absolute bottom-3 left-3 rounded-md bg-white/95 px-3 py-1.5 text-xs font-black text-ink shadow-sm">
+                Photo {selectedImageIndex + 1} of {galleryImages.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label={`${product.name} photo gallery`}>
               {galleryImages.map((image, index) => (
                 <button
                   key={`${image}-${index}`}
@@ -297,7 +386,7 @@ function ProductDetailsModal({
                   onClick={() => setSelectedImage(image)}
                   aria-label={`View ${product.name} image ${index + 1}`}
                   className={`overflow-hidden rounded-md border bg-white p-1 transition ${
-                    selectedImage === image ? "border-leaf-700 shadow-sm" : "border-leaf-900/10 hover:border-leaf-600"
+                    selectedImage === image ? "border-leaf-700 shadow-sm ring-2 ring-leaf-700/20" : "border-leaf-900/10 hover:border-leaf-600"
                   }`}
                 >
                   <SafeImage
@@ -313,28 +402,94 @@ function ProductDetailsModal({
               ))}
             </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
-            <div className="mt-5 grid gap-3 text-sm text-ink/68">
-              <Detail label="Seller" value={farmer?.farmName ?? supplier?.companyName ?? product.seller} />
-              {farmer ? (
-                <Link href={`/farmer-directory/${farmer.slug}`} className="inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
-                  View Farmer Profile
-                </Link>
-              ) : null}
-              {supplier ? (
-                <Link href={`/supplier-directory/${supplier.slug}`} className="inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
-                  View Supplier Profile
-                </Link>
-              ) : null}
-              <Detail label="Region" value={product.region} />
-              <Detail label="Quantity" value={`${product.quantity} ${product.unit}`} />
-              <Detail label="Availability" value={product.available} />
+          <div className="min-w-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{product.name}</h2>
+                <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-ink/58">
+                  <MapPin className="h-4 w-4 text-leaf-700" aria-hidden="true" />
+                  {listingLocation(product) || product.region}
+                </p>
+              </div>
+              <span className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-sm font-black ring-1 ${availability.tone}`}>
+                <span aria-hidden="true">{availability.icon}</span>
+                {availability.label}
+              </span>
             </div>
+
+            <div className="mt-5 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
+                <Leaf className="h-4 w-4 text-leaf-700" aria-hidden="true" />
+                Supplied by
+              </p>
+              <div className="mt-3 grid gap-2">
+                <p className="text-xl font-black text-ink">{sellerName}</p>
+                <p className="text-sm font-black text-ink/72">{sellerBusiness}</p>
+                <p className="text-sm font-semibold text-ink/58">{sellerPlace}</p>
+              </div>
+              <div className="mt-4 grid gap-2">
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-black text-leaf-800 ring-1 ring-leaf-700/15">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  {sellerVerification}
+                </span>
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-black text-leaf-800 ring-1 ring-leaf-700/15">
+                  <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                  {sellerMarketplaceStatus(product)}
+                </span>
+                {ggStandardStatus === "Member" ? (
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-earth-50 px-3 py-1.5 text-xs font-black text-earth-700 ring-1 ring-earth-500/20">
+                    <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                    GG Standard Member
+                  </span>
+                ) : null}
+              </div>
+              {profileHref ? (
+                <Link href={profileHref} className="mt-4 inline-flex w-fit rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-white hover:text-leaf-800">
+                  {farmer ? "View Farmer Profile" : "View Supplier Profile"}
+                </Link>
+              ) : null}
+            </div>
+
+            <div className="mt-5 grid gap-3 text-sm text-ink/68 sm:grid-cols-2">
+              <Detail label="Location" value={listingLocation(product) || product.region} />
+              <Detail label="Available Quantity" value={`${product.quantity} ${product.unit}`} />
+              {product.priceRange ? <Detail label="Guide Price" value={product.priceRange} /> : null}
+              <Detail label="Marketplace Status" value={availability.label} />
+            </div>
+
             <div className="mt-5 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
               <h3 className="font-black text-ink">Description</h3>
               <p className="mt-2 text-sm leading-6 text-ink/68">{product.description}</p>
             </div>
+
+            <div className="mt-5 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+              <h3 className="font-black text-ink">Buying through Ghana Growers</h3>
+              <ol className="mt-3 grid gap-2 text-sm font-semibold leading-6 text-ink/66">
+                <li>1. Submit your request.</li>
+                <li>2. Ghana Growers confirms availability.</li>
+                <li>3. We connect you with the supplier.</li>
+                <li>4. Collection or delivery is arranged.</li>
+              </ol>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {["Verified farmer profiles", "Direct farm sourcing", "Marketplace support", "Reliable communication"].map((point) => (
+                <div key={point} className="flex items-center gap-2 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                  <BadgeCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {point}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+              <h3 className="font-black text-ink">Marketplace Activity</h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <Detail label="Active Listings" value={String(activeListingsForSeller)} />
+                <Detail label="Last Updated" value={product.datePosted || "Recently"} />
+                {memberSince ? <Detail label="Member Since" value={memberSince} /> : null}
+              </div>
+            </div>
+
             <div className="mt-5">
               <RequestConnectionButton
                 label="Request Connection"
@@ -345,6 +500,9 @@ function ProductDetailsModal({
                 className="w-full"
                 helperText="Ghana Growers reviews your request before helping route the connection."
               />
+              <p className="mt-3 rounded-md bg-earth-50 px-3 py-2 text-sm font-semibold leading-6 text-ink/65 ring-1 ring-earth-500/20">
+                <span className="font-black text-ink">Need a large quantity?</span> Ghana Growers can help coordinate supply from multiple farmers.
+              </p>
             </div>
           </div>
         </div>

@@ -21,6 +21,7 @@ export type Product = {
   description: string;
   quantity: string;
   unit: string;
+  priceRange?: string;
   image: string;
   images?: string[];
   available: string;
