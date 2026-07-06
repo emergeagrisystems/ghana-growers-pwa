@@ -162,7 +162,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 priority
                 fallbackKind="farmer"
                 sizes="(min-width: 1024px) 25vw, 100vw"
-                className="aspect-[4/3] w-full rounded-md object-cover lg:aspect-square"
+                className="aspect-[4/5] w-full rounded-md object-cover object-[center_35%] lg:aspect-[4/5]"
               />
               {farmer.verificationStatus === "Verified" || farmer.ggStandardStatus === "Member" ? (
                 <div className="absolute bottom-5 left-5 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-2">

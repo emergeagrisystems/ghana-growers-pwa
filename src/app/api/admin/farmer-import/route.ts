@@ -160,6 +160,10 @@ const farmerEditorialColumns = [
 ];
 const farmerReviewOptionalColumnPattern = /(gg_standard_status|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|editorial_updated|farm_photo_urls|produce_photo_urls|document_urls|tally_file_references|photo_import_status|photo_import_notes)/;
 
+const allowedPublicFarmerStatuses = new Set(["Pending Review", "Active", "Archived"]);
+const allowedVerificationStatuses = new Set(["Pending", "Under Review", "Verified", "Rejected", "Needs Follow-up"]);
+const allowedGGStandardStatuses = new Set(["Pending", "Member", "Suspended"]);
+
 const headerAliases: Record<ImportFieldKey, string[]> = {
   farmerName: [
     "farmer name",
@@ -468,6 +472,22 @@ function validateFarmerAssetFile(file: File, assetType: FarmerAssetType) {
   }
 
   return "";
+}
+
+function cleanProfileText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function cleanProfileProducts(value: unknown) {
+  if (Array.isArray(value)) {
+    return uniqueStrings(value.map((item) => (typeof item === "string" ? item : "")));
+  }
+
+  if (typeof value === "string") {
+    return uniqueStrings(value.split(/,|\n/).map((item) => item.trim()));
+  }
+
+  return [];
 }
 
 function classifyTallyFileLabel(label: string, urls: string[], filenames: string[]): TallyFileReference["kind"] {
@@ -1580,9 +1600,10 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
-    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view" | "import-photo" | "gg-standard" | "editorial";
+    action?: "approve" | "under-review" | "needs-follow-up" | "verify" | "verify-only" | "founding" | "reject" | "archive" | "notes" | "view" | "import-photo" | "gg-standard" | "editorial" | "profile";
     ids?: string[];
     notes?: string;
+    profile?: Record<string, unknown>;
     editorial?: {
       launchStatus?: string;
       homepageCandidate?: boolean;
@@ -1594,7 +1615,7 @@ export async function PATCH(request: Request) {
   };
   const ids = (body.ids ?? []).filter(Boolean);
 
-  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view", "import-photo", "gg-standard", "editorial"].includes(body.action) || ids.length === 0) {
+  if (!body.action || !["approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "notes", "view", "import-photo", "gg-standard", "editorial", "profile"].includes(body.action) || ids.length === 0) {
     return NextResponse.json({ error: "Choose farmers and a valid bulk action." }, { status: 400 });
   }
 
@@ -1720,6 +1741,76 @@ export async function PATCH(request: Request) {
     const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
 
     return NextResponse.json({ ok: true, farmer, message: "Editorial decision saved." });
+  }
+
+  if (body.action === "profile") {
+    if (ids.length !== 1 || !body.profile) {
+      return NextResponse.json({ error: "Update one farmer profile at a time." }, { status: 400 });
+    }
+
+    const profile = body.profile;
+    const status = cleanProfileText(profile.status);
+    const verificationStatus = cleanProfileText(profile.verification_status);
+    const ggStandardStatus = cleanProfileText(profile.gg_standard_status);
+    const payload: Record<string, unknown> = {
+      farmer_name: cleanProfileText(profile.farmer_name),
+      farm_name: cleanProfileText(profile.farm_name),
+      region: cleanProfileText(profile.region),
+      district: cleanProfileText(profile.district),
+      phone_number: cleanProfileText(profile.phone_number),
+      whatsapp_number: cleanProfileText(profile.whatsapp_number),
+      email: cleanProfileText(profile.email) || null,
+      farm_location: cleanProfileText(profile.farm_location) || null,
+      farm_size: cleanProfileText(profile.farm_size) || null,
+      farm_type: cleanProfileText(profile.farm_type) || null,
+      farming_experience: cleanProfileText(profile.farming_experience) || null,
+      products: cleanProfileProducts(profile.products),
+      currently_harvesting: cleanProfileText(profile.currently_harvesting) || null,
+      supply_frequency: cleanProfileText(profile.supply_frequency) || null,
+      delivery_preference: cleanProfileText(profile.delivery_preference) || null,
+      payment_preference: cleanProfileText(profile.payment_preference) || null,
+      description: cleanProfileText(profile.description) || null,
+      verification_notes: cleanProfileText(profile.verification_notes) || null
+    };
+
+    if (allowedPublicFarmerStatuses.has(status)) {
+      payload.status = status;
+    }
+
+    if (allowedVerificationStatuses.has(verificationStatus)) {
+      payload.verification_status = verificationStatus;
+    }
+
+    if (allowedGGStandardStatuses.has(ggStandardStatus)) {
+      payload.gg_standard_status = ggStandardStatus;
+    }
+
+    const update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(ids[0])}`, payload);
+
+    if (update.error) {
+      console.error("[Farmer Profile Save Error]", { farmerId: ids[0], status: update.status, error: update.error });
+      return NextResponse.json(
+        {
+          error: "Could not save farmer profile.",
+          category: /column|schema cache|relation|table/i.test(update.error) ? "Database migration missing" : "Supabase update failed",
+          diagnostic: update.error
+        },
+        { status: update.status }
+      );
+    }
+
+    await logAdminActivity({
+      adminEmail: adminUser.email,
+      actionType: "Edit",
+      entityType: "Farmer",
+      entityId: ids[0],
+      entityName: `Farmer profile updated: ${cleanProfileText(profile.farm_name) || cleanProfileText(profile.farmer_name) || ids[0]}`
+    });
+
+    const refreshedTarget = await getImportedFarmerById(ids[0]);
+    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+
+    return NextResponse.json({ ok: true, farmer, message: "Farmer profile saved." });
   }
 
   const filter = `id=in.(${ids.map(encodeURIComponent).join(",")})`;

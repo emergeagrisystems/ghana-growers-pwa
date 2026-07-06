@@ -77,7 +77,7 @@ export function FeaturedListings({
                     alt={`${farmer.farmName} farm photo`}
                     width={420}
                     height={240}
-                    className={`${compact ? "h-40" : "mt-4 h-36"} w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover`}
+                    className={`${compact ? "h-40" : "mt-4 h-36"} w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover object-[center_35%]`}
                     fallbackKind="farmer"
                     sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />

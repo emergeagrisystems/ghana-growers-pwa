@@ -412,6 +412,29 @@ type ImportedFarmerRecord = {
   created_at?: string | null;
   source: string;
 };
+type FarmerProfileEditValues = {
+  farmer_name: string;
+  farm_name: string;
+  region: string;
+  district: string;
+  phone_number: string;
+  whatsapp_number: string;
+  email: string;
+  farm_location: string;
+  farm_size: string;
+  farm_type: string;
+  farming_experience: string;
+  products: string;
+  currently_harvesting: string;
+  supply_frequency: string;
+  delivery_preference: string;
+  payment_preference: string;
+  description: string;
+  gg_standard_status: string;
+  verification_status: string;
+  status: string;
+  verification_notes: string;
+};
 type FarmerImportReport = {
   imported: number;
   duplicates: number;
@@ -1562,6 +1585,39 @@ function importedFarmerPlaceholderFromRow(row: AdminRow): ImportedFarmerRecord {
     gg_standard_status: row.ggStandardStatus ?? "Pending",
     verification_notes: null,
     source: normalizedFarmerSource(row.source)
+  };
+}
+
+function profileEditValuesFromFarmer(farmer: ImportedFarmerRecord): FarmerProfileEditValues {
+  return {
+    farmer_name: farmer.farmer_name ?? "",
+    farm_name: farmer.farm_name ?? "",
+    region: farmer.region ?? "",
+    district: farmer.district ?? "",
+    phone_number: farmer.phone_number ?? "",
+    whatsapp_number: farmer.whatsapp_number ?? "",
+    email: farmer.email ?? "",
+    farm_location: farmer.farm_location ?? "",
+    farm_size: farmer.farm_size ?? "",
+    farm_type: farmer.farm_type ?? "",
+    farming_experience: farmer.farming_experience ?? "",
+    products: farmer.products.join(", "),
+    currently_harvesting: farmer.currently_harvesting ?? "",
+    supply_frequency: farmer.supply_frequency ?? "",
+    delivery_preference: farmer.delivery_preference ?? "",
+    payment_preference: farmer.payment_preference ?? "",
+    description: farmer.description ?? "",
+    gg_standard_status: farmer.gg_standard_status ?? "Pending",
+    verification_status: farmer.verification_status ?? "Pending",
+    status: farmer.status ?? "Pending Review",
+    verification_notes: farmer.verification_notes ?? ""
+  };
+}
+
+function farmerProfilePayload(values: FarmerProfileEditValues) {
+  return {
+    ...values,
+    products: values.products.split(/,|\n/).map((item) => item.trim()).filter(Boolean)
   };
 }
 
@@ -3456,6 +3512,10 @@ export function AdminDashboard({
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
+  const [editingFarmerProfile, setEditingFarmerProfile] = useState<ImportedFarmerRecord | null>(null);
+  const [farmerProfileEditValues, setFarmerProfileEditValues] = useState<FarmerProfileEditValues | null>(null);
+  const [isSavingFarmerProfile, setIsSavingFarmerProfile] = useState(false);
+  const [farmerProfileEditError, setFarmerProfileEditError] = useState("");
   const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
   const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
   const editorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -4454,6 +4514,80 @@ export function AdminDashboard({
     }));
     setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
     setFarmerReviewMessage({ type: "success", text: result.message ?? "Farmer asset uploaded successfully." });
+    void loadActivity();
+  }
+
+  function openFarmerProfileEditor(farmer: ImportedFarmerRecord) {
+    setEditingFarmerProfile(farmer);
+    setFarmerProfileEditValues(profileEditValuesFromFarmer(farmer));
+    setFarmerProfileEditError("");
+  }
+
+  function closeFarmerProfileEditor() {
+    if (isSavingFarmerProfile) {
+      return;
+    }
+
+    setEditingFarmerProfile(null);
+    setFarmerProfileEditValues(null);
+    setFarmerProfileEditError("");
+  }
+
+  function updateFarmerProfileEditValue(field: keyof FarmerProfileEditValues, value: string) {
+    setFarmerProfileEditValues((current) => (current ? { ...current, [field]: value } : current));
+  }
+
+  async function saveFarmerProfileEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingFarmerProfile || !farmerProfileEditValues) {
+      return;
+    }
+
+    setIsSavingFarmerProfile(true);
+    setFarmerProfileEditError("");
+
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "profile",
+        ids: [editingFarmerProfile.id],
+        profile: farmerProfilePayload(farmerProfileEditValues)
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      farmer?: ImportedFarmerRecord;
+      error?: string;
+      category?: string;
+      diagnostic?: string;
+      message?: string;
+    } | null;
+
+    setIsSavingFarmerProfile(false);
+
+    if (!response?.ok || !result?.farmer) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerProfileEditError(adminDiagnosticMessage(result, "Could not save farmer profile."));
+      return;
+    }
+
+    const updatedFarmer = result.farmer;
+    setImportedFarmers((current) => current.map((item) => (item.id === updatedFarmer.id ? updatedFarmer : item)));
+    setRowsBySection((current) => ({
+      ...current,
+      farmers: current.farmers.map((row) => (row.id === updatedFarmer.id || row.id === updatedFarmer.slug ? rowFromImportedFarmer(updatedFarmer) : row))
+    }));
+    setReviewingImportedFarmerId(updatedFarmer.id);
+    setVerificationReviewNotes(updatedFarmer.verification_notes ?? "");
+    setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
+    setFarmerReviewMessage({ type: "success", text: result.message ?? "Farmer profile saved." });
+    setEditingFarmerProfile(null);
+    setFarmerProfileEditValues(null);
     void loadActivity();
   }
 
@@ -7068,12 +7202,12 @@ export function AdminDashboard({
                             </div>
 
                             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(220px,0.9fr)]">
-                              <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                              <div className="aspect-[4/5] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10 sm:aspect-[3/4]">
                                 {publicReviewPhotoUrl(reviewingImportedFarmer) ? (
                                   <div
                                     role="img"
-                                    aria-label={`${reviewingImportedFarmer.farm_name} photo`}
-                                    className="h-full w-full bg-cover bg-center"
+                                    aria-label={`${reviewingImportedFarmer.farm_name || reviewingImportedFarmer.farmer_name} profile photo`}
+                                    className="h-full w-full bg-contain bg-center bg-no-repeat"
                                     style={{ backgroundImage: `url(${publicReviewPhotoUrl(reviewingImportedFarmer)})` }}
                                   />
                                 ) : (
@@ -7114,14 +7248,24 @@ export function AdminDashboard({
                                     Upload profile photos, farm photos, produce photos, and certificates directly to this farmer profile.
                                   </p>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => openFarmerListingForm(reviewingImportedFarmer)}
-                                  className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
-                                >
-                                  <Store className="h-4 w-4" aria-hidden="true" />
-                                  Add / Review Marketplace Listing
-                                </button>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                  <button
+                                    type="button"
+                                    onClick={() => openFarmerProfileEditor(reviewingImportedFarmer)}
+                                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  >
+                                    <FilePenLine className="h-4 w-4" aria-hidden="true" />
+                                    Edit Farmer Profile
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openFarmerListingForm(reviewingImportedFarmer)}
+                                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  >
+                                    <Store className="h-4 w-4" aria-hidden="true" />
+                                    Add / Review Marketplace Listing
+                                  </button>
+                                </div>
                               </div>
                               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                                 {([
@@ -9709,12 +9853,12 @@ export function AdminDashboard({
 
                 <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr]">
                   <div>
-                    <div className="aspect-[4/3] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
+                    <div className="aspect-[4/5] overflow-hidden rounded-md bg-leaf-50 ring-1 ring-leaf-900/10">
                       {publicReviewPhotoUrl(reviewingImportedFarmer) ? (
                         <div
                           role="img"
-                          aria-label={`${reviewingImportedFarmer.farm_name} photo`}
-                          className="h-full w-full bg-cover bg-center"
+                          aria-label={`${reviewingImportedFarmer.farm_name || reviewingImportedFarmer.farmer_name} profile photo`}
+                          className="h-full w-full bg-contain bg-center bg-no-repeat"
                           style={{ backgroundImage: `url(${publicReviewPhotoUrl(reviewingImportedFarmer)})` }}
                         />
                         ) : (
@@ -10054,6 +10198,160 @@ export function AdminDashboard({
             </div>
           ) : null}
           </>
+          ) : null}
+
+          {editingFarmerProfile && farmerProfileEditValues ? (
+            <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 px-3 py-4 sm:px-4 sm:py-6">
+              <section className="max-h-[92dvh] w-full max-w-5xl overflow-y-auto rounded-md bg-white shadow-soft">
+                <div className="flex flex-col gap-4 border-b border-leaf-900/10 p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Edit Farmer Profile</p>
+                    <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">
+                      {editingFarmerProfile.farm_name || editingFarmerProfile.farmer_name || "Farmer profile"}
+                    </h2>
+                    <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-ink/60">
+                      Update public profile details without changing uploaded media. Use the upload buttons for photos and documents.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeFarmerProfileEditor}
+                    disabled={isSavingFarmerProfile}
+                    className="rounded-md border border-leaf-900/10 px-4 py-2 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <form className="p-5" onSubmit={saveFarmerProfileEdit}>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    {([
+                      ["farmer_name", "Farmer name"],
+                      ["farm_name", "Farm name"],
+                      ["region", "Region"],
+                      ["district", "District / town"],
+                      ["phone_number", "Phone"],
+                      ["whatsapp_number", "WhatsApp"],
+                      ["email", "Email"],
+                      ["farm_location", "Farm location"],
+                      ["farm_size", "Farm size"],
+                      ["farm_type", "Farm type"],
+                      ["farming_experience", "Years farming / farming experience"],
+                      ["currently_harvesting", "Currently harvesting"],
+                      ["supply_frequency", "Supply frequency"],
+                      ["delivery_preference", "Delivery preference"],
+                      ["payment_preference", "Payment preference"]
+                    ] as Array<[keyof FarmerProfileEditValues, string]>).map(([field, label]) => (
+                      <label key={field} className="grid gap-2 text-sm font-black text-ink">
+                        {label}
+                        <input
+                          value={farmerProfileEditValues[field]}
+                          onChange={(event) => updateFarmerProfileEditValue(field, event.target.value)}
+                          className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        />
+                      </label>
+                    ))}
+
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      GG Standard status
+                      <select
+                        value={farmerProfileEditValues.gg_standard_status}
+                        onChange={(event) => updateFarmerProfileEditValue("gg_standard_status", event.target.value)}
+                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        {["Pending", "Member", "Suspended"].map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      Verification status
+                      <select
+                        value={farmerProfileEditValues.verification_status}
+                        onChange={(event) => updateFarmerProfileEditValue("verification_status", event.target.value)}
+                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        {["Pending", "Under Review", "Verified", "Rejected", "Needs Follow-up"].map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      Public visibility / status
+                      <select
+                        value={farmerProfileEditValues.status}
+                        onChange={(event) => updateFarmerProfileEditValue("status", event.target.value)}
+                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        {["Pending Review", "Active", "Archived"].map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-5 grid gap-5">
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      Crops grown / livestock
+                      <textarea
+                        value={farmerProfileEditValues.products}
+                        onChange={(event) => updateFarmerProfileEditValue("products", event.target.value)}
+                        rows={3}
+                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        placeholder="Maize, Yam, Cocoyam"
+                      />
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      Farm story / description
+                      <textarea
+                        value={farmerProfileEditValues.description}
+                        onChange={(event) => updateFarmerProfileEditValue("description", event.target.value)}
+                        rows={5}
+                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                        placeholder="Write a simple buyer-facing farm story."
+                      />
+                    </label>
+
+                    <label className="grid gap-2 text-sm font-black text-ink">
+                      Internal verification notes
+                      <textarea
+                        value={farmerProfileEditValues.verification_notes}
+                        onChange={(event) => updateFarmerProfileEditValue("verification_notes", event.target.value)}
+                        rows={4}
+                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      />
+                    </label>
+                  </div>
+
+                  {farmerProfileEditError ? (
+                    <p className="mt-5 whitespace-pre-wrap rounded-md bg-red-50 p-4 text-sm font-black text-tomato">
+                      {farmerProfileEditError}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-6 flex flex-col gap-3 border-t border-leaf-900/10 pt-5 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={closeFarmerProfileEditor}
+                      disabled={isSavingFarmerProfile}
+                      className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingFarmerProfile}
+                      className="rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isSavingFarmerProfile ? "Saving..." : "Save Farmer Profile"}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </div>
           ) : null}
 
           {activeForm ? (

@@ -155,7 +155,7 @@ export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
                       alt={`${farmer.farmName} farm photo`}
                       width={520}
                       height={320}
-                      className="h-48 w-full bg-leaf-50 object-cover"
+                      className="h-48 w-full bg-leaf-50 object-cover object-[center_35%]"
                       fallbackKind="farmer"
                       sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                     />
