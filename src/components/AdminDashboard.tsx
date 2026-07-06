@@ -3488,6 +3488,7 @@ export function AdminDashboard({
   });
   const [applicationTab, setApplicationTab] = useState<ApplicationKind>("farmer");
   const [applicationError, setApplicationError] = useState("");
+  const [applicationDiagnostics, setApplicationDiagnostics] = useState<Partial<Record<ApplicationKind, string[]>>>({});
   const [submissions, setSubmissions] = useState<{
     listings: ListingSubmissionRecord[];
     buyerRequests: BuyerRequestSubmissionRecord[];
@@ -3782,7 +3783,7 @@ export function AdminDashboard({
       buyers?: ApplicationRecord[];
       suppliers?: ApplicationRecord[];
       error?: string;
-      diagnostics?: string[];
+      diagnostics?: Partial<Record<ApplicationKind, string[]>>;
     } | null;
 
     if (!response?.ok) {
@@ -3803,7 +3804,8 @@ export function AdminDashboard({
     setSupplierEditorialDecisions(
       Object.fromEntries((result?.suppliers ?? []).map((supplier) => [supplier.id, defaultSupplierEditorialDecision(supplier)]))
     );
-    setApplicationError(result?.diagnostics?.length ? result.diagnostics.join(" ") : "");
+    setApplicationDiagnostics(result?.diagnostics ?? {});
+    setApplicationError("");
   }, []);
 
   useEffect(() => {
@@ -5840,6 +5842,7 @@ export function AdminDashboard({
     : isMatchOpportunitiesSection
       ? "Help buyers source produce by reviewing one case, choosing matches, and deciding the next action."
     : notice;
+  const visibleApplicationDiagnostics = applicationDiagnostics[applicationTab]?.join(" ") ?? "";
 
   async function updateLeadRequestStatus(lead: LeadRequestRecord, status: LeadRequestStatus) {
     const response = await fetch("/api/admin/lead-requests", {
@@ -7041,8 +7044,10 @@ export function AdminDashboard({
               </div>
             ) : isApplicationsSection ? (
               <div className="grid gap-5 p-5">
-                {applicationError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{applicationError}</div>
+                {applicationError || visibleApplicationDiagnostics ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">
+                    {applicationError || visibleApplicationDiagnostics}
+                  </div>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   {([
