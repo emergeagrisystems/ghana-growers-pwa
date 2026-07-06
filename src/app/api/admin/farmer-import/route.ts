@@ -108,6 +108,15 @@ type ImportableFarmer = {
   source: "Tally Import";
 };
 
+type FarmerAssetType = "profile" | "farm" | "produce" | "document";
+
+const farmerAssetTypes = new Set<FarmerAssetType>(["profile", "farm", "produce", "document"]);
+const imageAssetTypes = new Set<FarmerAssetType>(["profile", "farm", "produce"]);
+const allowedFarmerImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const allowedFarmerDocumentTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const farmerImageMaxSize = 5 * 1024 * 1024;
+const farmerDocumentMaxSize = 10 * 1024 * 1024;
+
 const fieldLabels = {
   farmerName: "Farmer Name",
   farmName: "Farm Name",
@@ -411,6 +420,54 @@ function filenamesFromUnknown(value: unknown): string[] {
 
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function safeUploadName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "asset";
+}
+
+function extensionForUpload(file: File) {
+  const fromName = file.name.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
+
+  if (fromName && /^[a-z0-9]+$/.test(fromName)) {
+    return fromName;
+  }
+
+  if (file.type === "application/pdf") {
+    return "pdf";
+  }
+
+  if (file.type === "image/png") {
+    return "png";
+  }
+
+  if (file.type === "image/webp") {
+    return "webp";
+  }
+
+  return "jpg";
+}
+
+function validateFarmerAssetFile(file: File, assetType: FarmerAssetType) {
+  const allowedTypes = imageAssetTypes.has(assetType) ? allowedFarmerImageTypes : allowedFarmerDocumentTypes;
+  const maxSize = imageAssetTypes.has(assetType) ? farmerImageMaxSize : farmerDocumentMaxSize;
+
+  if (!allowedTypes.has(file.type)) {
+    return assetType === "document"
+      ? "Upload a PDF, JPG, PNG, or WEBP certificate/document."
+      : "Upload a JPG, PNG, or WEBP image.";
+  }
+
+  if (file.size > maxSize) {
+    return assetType === "document" ? "Document must be 10MB or smaller." : "Image must be 5MB or smaller.";
+  }
+
+  return "";
 }
 
 function classifyTallyFileLabel(label: string, urls: string[], filenames: string[]): TallyFileReference["kind"] {
@@ -992,7 +1049,7 @@ async function getImportedFarmerById(id: string) {
     return { error: "Imported farmer could not be found.", status: 404 };
   }
 
-  const linkedMarketplaceListings = await getLinkedMarketplaceListings(farmer.id);
+  const linkedMarketplaceListings = await getLinkedMarketplaceListings(farmer);
 
   return {
     farmer: {
@@ -1002,27 +1059,279 @@ async function getImportedFarmerById(id: string) {
   };
 }
 
-async function getLinkedMarketplaceListings(farmerId: string): Promise<FarmerLinkedMarketplaceListing[]> {
-  const select = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,image_urls,created_at";
-  const fallbackSelect = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,created_at";
-  let listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
-    "marketplace_listings",
-    `${select}&or=(owner_id.eq.${encodeURIComponent(farmerId)},farmer_id.eq.${encodeURIComponent(farmerId)})&order=created_at.desc&limit=20`
-  );
-
-  if (listings.error && /(image_urls|farmer_id|schema cache|column)/i.test(listings.error)) {
-    listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
-      "marketplace_listings",
-      `${fallbackSelect}&owner_id=eq.${encodeURIComponent(farmerId)}&order=created_at.desc&limit=20`
-    );
+function normalizeLinkedListingImageUrls(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean);
   }
 
-  if (listings.error) {
-    console.error("[Farmer Review Linked Listings Error]", { farmerId, error: listings.error, status: listings.status });
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        return normalizeLinkedListingImageUrls(parsed);
+      } catch {
+        return [];
+      }
+    }
+
+    return trimmed.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+async function getLinkedMarketplaceListings(farmer: ExistingFarmer): Promise<FarmerLinkedMarketplaceListing[]> {
+  const farmerId = farmer.id;
+  const farmerNames = Array.from(new Set([farmer.farm_name, farmer.farmer_name].map((value) => value?.trim()).filter(Boolean))) as string[];
+  const select = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,image_urls,created_at";
+  const fallbackSelect = "select=id,slug,product_name,status,availability,region,district,owner_type,owner_id,owner_name,image_url,created_at";
+  const linkedListings = new Map<string, FarmerLinkedMarketplaceListing>();
+  const queries = [
+    `${select}&owner_id=eq.${encodeURIComponent(farmerId)}&order=created_at.desc&limit=20`,
+    ...farmerNames.flatMap((name) => [
+      `${select}&owner_name=eq.${encodeURIComponent(name)}&order=created_at.desc&limit=20`,
+      `${select}&seller_name=eq.${encodeURIComponent(name)}&order=created_at.desc&limit=20`
+    ])
+  ];
+
+  let columnFallbackRequired = false;
+
+  for (const query of queries) {
+    const listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+      "marketplace_listings",
+      query
+    );
+
+    if (listings.error && /(image_urls|seller_name|schema cache|column)/i.test(listings.error)) {
+      columnFallbackRequired = true;
+      continue;
+    }
+
+    if (listings.error) {
+      console.error("[Farmer Review Linked Listings Error]", { farmerId, query, error: listings.error, status: listings.status });
+      continue;
+    }
+
+    for (const listing of listings.data ?? []) {
+      linkedListings.set(listing.id, {
+        ...listing,
+        image_urls: normalizeLinkedListingImageUrls(listing.image_urls)
+      });
+    }
+  }
+
+  if (columnFallbackRequired) {
+    const fallbackQueries = [
+      `${fallbackSelect}&owner_id=eq.${encodeURIComponent(farmerId)}&order=created_at.desc&limit=20`,
+      ...farmerNames.map((name) => `${fallbackSelect}&owner_name=eq.${encodeURIComponent(name)}&order=created_at.desc&limit=20`)
+    ];
+
+    for (const query of fallbackQueries) {
+      const listings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+        "marketplace_listings",
+        query
+      );
+
+      if (listings.error) {
+        console.error("[Farmer Review Linked Listings Error]", { farmerId, query, error: listings.error, status: listings.status });
+        continue;
+      }
+
+      for (const listing of listings.data ?? []) {
+        linkedListings.set(listing.id, listing);
+      }
+    }
+  }
+
+  if (linkedListings.size > 0) {
+    return Array.from(linkedListings.values());
+  }
+
+  const broadListings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+    "marketplace_listings",
+    `${select}&owner_type=eq.Farmer&order=created_at.desc&limit=500`
+  );
+
+  if (broadListings.error && /(image_urls|schema cache|column)/i.test(broadListings.error)) {
+    const fallbackListings = await selectSupabaseRecords<FarmerLinkedMarketplaceListing>(
+      "marketplace_listings",
+      `${fallbackSelect}&owner_type=eq.Farmer&order=created_at.desc&limit=500`
+    );
+
+    if (fallbackListings.error) {
+      console.error("[Farmer Review Linked Listings Error]", { farmerId, error: fallbackListings.error, status: fallbackListings.status });
+      return [];
+    }
+
+    return (fallbackListings.data ?? []).filter((listing) => farmerNames.includes(listing.owner_name?.trim() ?? ""));
+  }
+
+  if (broadListings.error) {
+    console.error("[Farmer Review Linked Listings Error]", { farmerId, error: broadListings.error, status: broadListings.status });
     return [];
   }
 
-  return listings.data ?? [];
+  return (broadListings.data ?? [])
+    .filter((listing) => farmerNames.includes(listing.owner_name?.trim() ?? ""))
+    .map((listing) => ({
+      ...listing,
+      image_urls: normalizeLinkedListingImageUrls(listing.image_urls)
+    }));
+}
+
+async function handleFarmerAssetUpload(formData: FormData, adminEmail: string) {
+  const farmerId = formData.get("farmerId");
+  const assetTypeValue = formData.get("assetType");
+  const replace = formData.get("replace") === "true";
+  const files = formData.getAll("files").filter((file): file is File => file instanceof File && file.size > 0);
+
+  if (typeof farmerId !== "string" || !farmerId.trim()) {
+    return NextResponse.json({ error: "Farmer ID is required for asset upload." }, { status: 400 });
+  }
+
+  if (typeof assetTypeValue !== "string" || !farmerAssetTypes.has(assetTypeValue as FarmerAssetType)) {
+    return NextResponse.json({ error: "Choose a valid farmer asset type." }, { status: 400 });
+  }
+
+  const assetType = assetTypeValue as FarmerAssetType;
+
+  if (files.length === 0) {
+    return NextResponse.json({ error: "Choose at least one file to upload." }, { status: 400 });
+  }
+
+  if (assetType === "profile" && files.length > 1) {
+    return NextResponse.json({ error: "Upload one profile photo at a time." }, { status: 400 });
+  }
+
+  const target = await getImportedFarmerById(farmerId);
+
+  if (target.error || !target.farmer) {
+    return NextResponse.json({ error: target.error ?? "Imported farmer could not be found." }, { status: target.status ?? 404 });
+  }
+
+  if (assetType === "profile" && target.farmer.profile_image_url && !replace) {
+    return NextResponse.json(
+      { error: "This farmer already has a profile photo. Choose Replace Profile Photo to overwrite it." },
+      { status: 409 }
+    );
+  }
+
+  const validationError = files.map((file) => validateFarmerAssetFile(file, assetType)).find(Boolean);
+
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
+
+  const uploadedUrls: string[] = [];
+
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    const extension = extensionForUpload(file);
+    const path = `admin/farmers/${target.farmer.id}/${assetType}/${Date.now()}-${index}-${safeUploadName(file.name)}.${extension}`;
+    const upload = await uploadSupabaseStorageObject({
+      bucket: "farmers",
+      path,
+      contentType: file.type,
+      body: await file.arrayBuffer()
+    });
+
+    if (upload.error || !upload.publicUrl) {
+      return NextResponse.json(
+        {
+          error: upload.error || "Farmer asset upload failed.",
+          category: upload.status === 503 ? "Supabase unavailable" : "Storage upload failed",
+          diagnostic: upload.error || `Supabase Storage returned HTTP ${upload.status}.`,
+          bucket: "farmers"
+        },
+        { status: upload.status }
+      );
+    }
+
+    uploadedUrls.push(upload.publicUrl);
+  }
+
+  const existingChecklist = cleanEditorialChecklist(target.farmer.launch_checklist);
+  const nextChecklist = {
+    ...existingChecklist,
+    ...(assetType === "profile" ? { "Profile photo": true } : {}),
+    ...(assetType === "farm" ? { "Farm photos": true } : {}),
+    ...(assetType === "produce" ? { "Produce photos": true } : {})
+  };
+  const launchStatus = farmerEditorialStatuses.includes(target.farmer.launch_status as typeof farmerEditorialStatuses[number])
+    ? target.farmer.launch_status as typeof farmerEditorialStatuses[number]
+    : "Needs Improvement";
+
+  const payload: Record<string, unknown> = assetType === "profile"
+    ? {
+        profile_image_url: uploadedUrls[0],
+        launch_checklist: nextChecklist,
+        launch_ready: launchReadyFromEditorial(launchStatus, nextChecklist),
+        editorial_updated_at: new Date().toISOString(),
+        editorial_updated_by: adminEmail
+      }
+    : assetType === "farm"
+      ? {
+          farm_photo_urls: uniqueStrings([...(target.farmer.farm_photo_urls ?? []), ...uploadedUrls]),
+          launch_checklist: nextChecklist,
+          launch_ready: launchReadyFromEditorial(launchStatus, nextChecklist),
+          editorial_updated_at: new Date().toISOString(),
+          editorial_updated_by: adminEmail
+        }
+      : assetType === "produce"
+        ? {
+            produce_photo_urls: uniqueStrings([...(target.farmer.produce_photo_urls ?? []), ...uploadedUrls]),
+            launch_checklist: nextChecklist,
+            launch_ready: launchReadyFromEditorial(launchStatus, nextChecklist),
+            editorial_updated_at: new Date().toISOString(),
+            editorial_updated_by: adminEmail
+          }
+        : {
+            document_urls: uniqueStrings([...(target.farmer.document_urls ?? []), ...uploadedUrls])
+          };
+
+  let update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(target.farmer.id)}`, payload);
+  let checklistWarning = "";
+
+  if (update.error && farmerReviewOptionalColumnPattern.test(update.error)) {
+    const fallbackPayload: Record<string, unknown> = assetType === "profile"
+      ? { profile_image_url: uploadedUrls[0] }
+      : assetType === "farm"
+        ? { farm_photo_urls: uniqueStrings([...(target.farmer.farm_photo_urls ?? []), ...uploadedUrls]) }
+        : assetType === "produce"
+          ? { produce_photo_urls: uniqueStrings([...(target.farmer.produce_photo_urls ?? []), ...uploadedUrls]) }
+          : { document_urls: uniqueStrings([...(target.farmer.document_urls ?? []), ...uploadedUrls]) };
+
+    update = await updateSupabaseRecord("farmers", `id=eq.${encodeURIComponent(target.farmer.id)}`, fallbackPayload);
+    checklistWarning = "Asset uploaded, but launch checklist could not be updated. Apply the farmer media/editorial migrations.";
+  }
+
+  if (update.error) {
+    return NextResponse.json({ error: "Asset was uploaded but could not be saved to the farmer record.", diagnostic: update.error }, { status: update.status });
+  }
+
+  await logAdminActivity({
+    adminEmail,
+    actionType: "Edit",
+    entityType: "Farmer",
+    entityId: target.farmer.slug ?? target.farmer.id,
+    entityName: `${assetType} asset uploaded for ${target.farmer.farm_name}`
+  });
+
+  const refreshedTarget = await getImportedFarmerById(target.farmer.id);
+  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+
+  return NextResponse.json({
+    ok: true,
+    farmer,
+    uploadedUrls,
+    message: checklistWarning || "Farmer asset uploaded successfully."
+  });
 }
 
 export async function GET(request: Request) {
@@ -1067,6 +1376,11 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData().catch(() => null);
+
+  if (formData?.get("action") === "upload-asset") {
+    return handleFarmerAssetUpload(formData, adminUser.email);
+  }
+
   const file = formData?.get("csv");
 
   if (!(file instanceof File) || file.size === 0) {

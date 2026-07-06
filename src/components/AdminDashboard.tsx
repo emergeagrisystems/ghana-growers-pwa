@@ -3446,12 +3446,14 @@ export function AdminDashboard({
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
   const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | "gg-standard" | null>(null);
+  const [uploadingFarmerAsset, setUploadingFarmerAsset] = useState<string | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
   const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
   const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
   const editorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const editorialSaveVersions = useRef<Record<string, number>>({});
   const [supplierEditorialFilter, setSupplierEditorialFilter] = useState<SupplierEditorialFilter>("All");
   const [reviewingSupplierId, setReviewingSupplierId] = useState<string | null>(null);
   const [supplierReviewNotes, setSupplierReviewNotes] = useState("");
@@ -4273,6 +4275,8 @@ export function AdminDashboard({
   }, [activeSection, applicationTab, reviewingSupplierId, supplierReviewQueue]);
 
   async function saveEditorialDecision(recordId: string, decision: EditorialDecisionState) {
+    const saveVersion = (editorialSaveVersions.current[recordId] ?? 0) + 1;
+    editorialSaveVersions.current[recordId] = saveVersion;
     setEditorialSaveStates((current) => ({ ...current, [recordId]: "saving" }));
     const response = await fetch("/api/admin/farmer-import", {
       method: "PATCH",
@@ -4298,6 +4302,10 @@ export function AdminDashboard({
       diagnostic?: string;
       migration?: string;
     } | null;
+
+    if (editorialSaveVersions.current[recordId] !== saveVersion) {
+      return;
+    }
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -4353,6 +4361,93 @@ export function AdminDashboard({
     editorialSaveTimers.current[recordId] = setTimeout(() => {
       void saveEditorialDecision(recordId, decision);
     }, delay);
+  }
+
+  async function uploadFarmerAsset(
+    farmer: ImportedFarmerRecord,
+    assetType: "profile" | "farm" | "produce" | "document",
+    event: ChangeEvent<HTMLInputElement>,
+    replace = false
+  ) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+    const allowedDocumentTypes = ["application/pdf", ...allowedImageTypes];
+    const allowedTypes = assetType === "document" ? allowedDocumentTypes : allowedImageTypes;
+    const invalidFile = files.find((file) => !allowedTypes.includes(file.type));
+    const oversizeFile = files.find((file) => file.size > (assetType === "document" ? 10 : 5) * 1024 * 1024);
+
+    if (invalidFile) {
+      setFarmerReviewMessage({
+        type: "error",
+        text: assetType === "document" ? "Upload a PDF, JPG, PNG, or WEBP certificate/document." : "Upload JPG, PNG, or WEBP images."
+      });
+      event.target.value = "";
+      return;
+    }
+
+    if (oversizeFile) {
+      setFarmerReviewMessage({
+        type: "error",
+        text: assetType === "document" ? "Documents must be 10MB or smaller." : "Images must be 5MB or smaller."
+      });
+      event.target.value = "";
+      return;
+    }
+
+    const uploadKey = `${farmer.id}:${assetType}${replace ? ":replace" : ""}`;
+    editorialSaveVersions.current[farmer.id] = (editorialSaveVersions.current[farmer.id] ?? 0) + 1;
+    setUploadingFarmerAsset(uploadKey);
+    setFarmerReviewMessage(null);
+
+    const formData = new FormData();
+    formData.append("action", "upload-asset");
+    formData.append("farmerId", farmer.id);
+    formData.append("assetType", assetType);
+    formData.append("replace", replace ? "true" : "false");
+    files.forEach((file) => formData.append("files", file));
+
+    const response = await fetch("/api/admin/farmer-import", {
+      method: "POST",
+      body: formData
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      farmer?: ImportedFarmerRecord;
+      error?: string;
+      category?: string;
+      diagnostic?: string;
+      message?: string;
+    } | null;
+
+    setUploadingFarmerAsset(null);
+    event.target.value = "";
+
+    if (!response?.ok || !result?.farmer) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      setFarmerReviewMessage({
+        type: "error",
+        text: adminDiagnosticMessage(result, "Could not upload farmer asset. Check Supabase Storage and farmer media migrations.")
+      });
+      return;
+    }
+
+    const updatedFarmer = result.farmer;
+    setImportedFarmers((current) => current.map((item) => (item.id === updatedFarmer.id ? updatedFarmer : item)));
+    setEditorialDecisions((current) => ({
+      ...current,
+      [updatedFarmer.id]: defaultEditorialDecision(updatedFarmer)
+    }));
+    setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
+    setFarmerReviewMessage({ type: "success", text: result.message ?? "Farmer asset uploaded successfully." });
+    void loadActivity();
   }
 
   function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState, saveDelay = 450) {
@@ -7004,6 +7099,85 @@ export function AdminDashboard({
                               </div>
                             </div>
 
+                            <section className="rounded-md border border-earth-500/25 bg-earth-50 p-4">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Asset Uploads</h4>
+                                  <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
+                                    Upload profile photos, farm photos, produce photos, and certificates directly to this farmer profile.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => openFarmerListingForm(reviewingImportedFarmer)}
+                                  className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                >
+                                  <Store className="h-4 w-4" aria-hidden="true" />
+                                  Add / Review Marketplace Listing
+                                </button>
+                              </div>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                {([
+                                  {
+                                    key: "profile",
+                                    label: publicReviewPhotoUrl(reviewingImportedFarmer) ? "Replace Profile Photo" : "Upload Profile Photo",
+                                    accept: "image/jpeg,image/png,image/webp",
+                                    multiple: false,
+                                    replace: Boolean(publicReviewPhotoUrl(reviewingImportedFarmer))
+                                  },
+                                  {
+                                    key: "farm",
+                                    label: "Upload Farm Photos",
+                                    accept: "image/jpeg,image/png,image/webp",
+                                    multiple: true,
+                                    replace: false
+                                  },
+                                  {
+                                    key: "produce",
+                                    label: "Upload Produce Photos",
+                                    accept: "image/jpeg,image/png,image/webp",
+                                    multiple: true,
+                                    replace: false
+                                  },
+                                  {
+                                    key: "document",
+                                    label: "Upload Business / Registration Certificate",
+                                    accept: "application/pdf,image/jpeg,image/png,image/webp",
+                                    multiple: true,
+                                    replace: false
+                                  }
+                                ] as Array<{ key: "profile" | "farm" | "produce" | "document"; label: string; accept: string; multiple: boolean; replace: boolean }>).map((action) => {
+                                  const uploadKey = `${reviewingImportedFarmer.id}:${action.key}${action.replace ? ":replace" : ""}`;
+                                  const isUploading = uploadingFarmerAsset === uploadKey;
+
+                                  return (
+                                    <label
+                                      key={action.key}
+                                      className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-3 text-center text-sm font-black ring-1 transition ${
+                                        isUploading
+                                          ? "bg-ink/10 text-ink/45 ring-ink/10"
+                                          : "bg-white text-leaf-800 ring-leaf-900/10 hover:bg-leaf-50"
+                                      }`}
+                                    >
+                                      <UploadCloud className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                      {isUploading ? "Uploading..." : action.label}
+                                      <input
+                                        type="file"
+                                        accept={action.accept}
+                                        multiple={action.multiple}
+                                        disabled={Boolean(uploadingFarmerAsset)}
+                                        onChange={(event) => void uploadFarmerAsset(reviewingImportedFarmer, action.key, event, action.replace)}
+                                        className="sr-only"
+                                      />
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                              <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+                                Farmer profile photos and produce gallery photos stay separate from linked marketplace listing photos.
+                              </p>
+                            </section>
+
                             <section className="grid gap-4 lg:grid-cols-2">
                               <FarmerMediaGallery
                                 title="Farm Photos"
@@ -7158,6 +7332,16 @@ export function AdminDashboard({
                                     reviewingDocuments.map((document) => (
                                       <div key={`${document.label}-${document.filename}`} className="rounded-md bg-leaf-50 p-3">
                                         <p className="text-sm font-black text-ink">{document.label}</p>
+                                        {document.url ? (
+                                          <a
+                                            href={document.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="mt-1 block break-all text-xs font-black text-leaf-800 hover:text-leaf-900"
+                                          >
+                                            Open document
+                                          </a>
+                                        ) : null}
                                         <p className="mt-1 break-all text-xs font-semibold text-ink/55">{document.filename}</p>
                                       </div>
                                     ))
