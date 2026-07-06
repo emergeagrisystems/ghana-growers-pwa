@@ -42,6 +42,9 @@ export type ApplicationRecord = {
   editorial_updated_by?: string | null;
 };
 
+const supplierOptionalColumnPattern =
+  /(business_name|website_url|registration_number|categories|regions_served|products_services|business_description|years_in_business|logo_url|photo_urls|certificate_urls|gg_standard_agreement|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|editorial_updated)/i;
+
 const tableByKind: Record<ApplicationKind, string> = {
   farmer: "farmer_applications",
   buyer: "buyer_applications",
@@ -73,19 +76,46 @@ export async function insertApplication(kind: ApplicationKind, payload: Omit<App
 export async function getApplications() {
   const baseQuery =
     "select=id,name,business_or_farm_name,phone,whatsapp_number,email,region,district,user_type,products_or_services,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
+  const supplierOnboardingQuery =
+    "select=id,name,business_or_farm_name,phone,whatsapp_number,email,region,district,user_type,products_or_services,notes,status,created_at,updated_at,business_name,website_url,registration_number,categories,regions_served,business_description,years_in_business,logo_url,photo_urls,certificate_urls,gg_standard_agreement&order=created_at.desc&limit=500";
   const supplierQuery =
     "select=id,name,business_or_farm_name,phone,whatsapp_number,email,region,district,user_type,products_or_services,notes,status,created_at,updated_at,business_name,website_url,registration_number,categories,regions_served,products_services,business_description,years_in_business,logo_url,photo_urls,certificate_urls,gg_standard_agreement,launch_status,homepage_candidate,marketplace_featured,story_candidate,editorial_notes,launch_ready,launch_checklist,editorial_updated_at,editorial_updated_by&order=created_at.desc&limit=500";
-  const [farmers, buyers, suppliers] = await Promise.all([
+  const [farmers, buyers, supplierFull] = await Promise.all([
     selectSupabaseRecords<ApplicationRecord>("farmer_applications", baseQuery),
     selectSupabaseRecords<ApplicationRecord>("buyer_applications", baseQuery),
     selectSupabaseRecords<ApplicationRecord>("supplier_applications", supplierQuery)
   ]);
+  let suppliers = supplierFull;
+  const diagnostics: string[] = [];
+
+  if (supplierFull.error && supplierOptionalColumnPattern.test(supplierFull.error)) {
+    diagnostics.push(`Supplier applications loaded without optional editorial columns: ${supplierFull.error}`);
+    suppliers = await selectSupabaseRecords<ApplicationRecord>("supplier_applications", supplierOnboardingQuery);
+  }
+
+  if (suppliers.error && supplierOptionalColumnPattern.test(suppliers.error)) {
+    diagnostics.push(`Supplier applications loaded with base fields only: ${suppliers.error}`);
+    suppliers = await selectSupabaseRecords<ApplicationRecord>("supplier_applications", baseQuery);
+  }
+
+  if (farmers.error) {
+    diagnostics.push(`Farmer applications fetch failed: ${farmers.error}`);
+  }
+
+  if (buyers.error) {
+    diagnostics.push(`Buyer applications fetch failed: ${buyers.error}`);
+  }
+
+  if (suppliers.error) {
+    diagnostics.push(`Supplier applications fetch failed: ${suppliers.error}`);
+  }
 
   return {
     farmers: farmers.data ?? [],
     buyers: buyers.data ?? [],
     suppliers: suppliers.data ?? [],
-    error: farmers.error || buyers.error || suppliers.error
+    error: farmers.error || buyers.error || suppliers.error,
+    diagnostics
   };
 }
 

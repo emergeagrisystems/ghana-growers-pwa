@@ -220,7 +220,7 @@ type AdminMatchOpportunity = {
   listings: AnalyticsRecord[];
 };
 type ApplicationKind = "farmer" | "buyer" | "supplier";
-type ApplicationStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type ApplicationStatus = "New" | "Pending" | "Under Review" | "Approved" | "Rejected" | "Converted";
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Under Review" | "Approved" | "Rejected" | "Converted" | "Published";
 type LaunchStatus = "Incomplete" | "Complete";
@@ -263,6 +263,12 @@ type SupplierEditorialDecisionState = {
   editorialNotes: string;
   checklist: Record<SupplierChecklistItem, boolean>;
 };
+
+const waitingApplicationStatuses = new Set<ApplicationStatus>(["New", "Pending", "Under Review"]);
+
+function applicationNeedsReview(application: { status: ApplicationStatus }) {
+  return waitingApplicationStatuses.has(application.status);
+}
 type SourcingCaseState = {
   status: SourcingCaseStatus;
   owner: string;
@@ -946,7 +952,7 @@ function summarize(
     { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle },
     { label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout },
     { label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound },
-    { label: "New Supplier Applications", value: applicationCounts.suppliers, icon: Truck },
+    { label: "Supplier Applications Waiting", value: applicationCounts.suppliers, icon: Truck },
     { label: "New Listing Submissions", value: submissionCounts.listings, icon: Store },
     { label: "New Buyer Request Submissions", value: submissionCounts.buyerRequests, icon: PackageCheck }
   ];
@@ -2528,7 +2534,7 @@ function matchesSupplierEditorialFilter(filter: SupplierEditorialFilter, applica
   }
 
   if (filter === "New") {
-    return application.status === "New" || priority === "New";
+    return application.status === "New" || application.status === "Pending" || priority === "New";
   }
 
   return true;
@@ -3716,6 +3722,7 @@ export function AdminDashboard({
       buyers?: ApplicationRecord[];
       suppliers?: ApplicationRecord[];
       error?: string;
+      diagnostics?: string[];
     } | null;
 
     if (!response?.ok) {
@@ -3724,7 +3731,7 @@ export function AdminDashboard({
         return;
       }
 
-      setApplicationError(result?.error ?? "Applications are unavailable.");
+      setApplicationError(adminDiagnosticMessage(result, "Applications are unavailable."));
       return;
     }
 
@@ -3736,7 +3743,7 @@ export function AdminDashboard({
     setSupplierEditorialDecisions(
       Object.fromEntries((result?.suppliers ?? []).map((supplier) => [supplier.id, defaultSupplierEditorialDecision(supplier)]))
     );
-    setApplicationError("");
+    setApplicationError(result?.diagnostics?.length ? result.diagnostics.join(" ") : "");
   }, []);
 
   useEffect(() => {
@@ -3814,9 +3821,9 @@ export function AdminDashboard({
   }, []);
 
   const newApplicationCounts = useMemo(() => ({
-    farmers: applications.farmer.filter((application) => application.status === "New").length,
-    buyers: applications.buyer.filter((application) => application.status === "New").length,
-    suppliers: applications.supplier.filter((application) => application.status === "New").length
+    farmers: applications.farmer.filter(applicationNeedsReview).length,
+    buyers: applications.buyer.filter(applicationNeedsReview).length,
+    suppliers: applications.supplier.filter(applicationNeedsReview).length
   }), [applications]);
   const newSubmissionCounts = useMemo(() => ({
     listings: submissions.listings.filter((submission) => submission.status === "New").length,
@@ -3922,7 +3929,7 @@ export function AdminDashboard({
       {
         label: "Farmer Applications",
         value: farmerApplicationsWaiting,
-        oldest: oldestOperationalItem(applications.farmer.filter((application) => application.status === "New").map((application) => ({
+        oldest: oldestOperationalItem(applications.farmer.filter(applicationNeedsReview).map((application) => ({
           name: application.business_or_farm_name || application.name,
           date: application.created_at
         }))),
@@ -3935,7 +3942,7 @@ export function AdminDashboard({
       {
         label: "Supplier Applications",
         value: supplierApplicationsWaiting,
-        oldest: oldestOperationalItem(applications.supplier.filter((application) => application.status === "New").map((application) => ({
+        oldest: oldestOperationalItem(applications.supplier.filter(applicationNeedsReview).map((application) => ({
           name: application.business_or_farm_name || application.name,
           date: application.created_at
         }))),
@@ -6906,8 +6913,8 @@ export function AdminDashboard({
                 <div className="flex flex-wrap gap-2">
                   {([
                     ["farmer", "Farmer Applications", farmerReviewQueue.length],
-                    ["buyer", "Buyer Applications", applications.buyer.filter((application) => application.status === "New").length],
-                    ["supplier", "Supplier Applications", applications.supplier.filter((application) => application.status === "New").length]
+                    ["buyer", "Buyer Applications", applications.buyer.filter(applicationNeedsReview).length],
+                    ["supplier", "Supplier Applications", applications.supplier.filter(applicationNeedsReview).length]
                   ] as Array<[ApplicationKind, string, number]>).map(([kind, label, count]) => (
                     <button
                       key={kind}
