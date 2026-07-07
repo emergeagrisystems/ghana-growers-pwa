@@ -15,7 +15,7 @@ export const WHATSAPP_NUMBER = "233000000000";
 
 export const navigation: NavigationItem[] = [
   {
-    title: "Farmer Hub",
+    title: "GG FarmMate",
     href: "/smart-solutions"
   },
   { title: "Marketplace", href: "/marketplace" },

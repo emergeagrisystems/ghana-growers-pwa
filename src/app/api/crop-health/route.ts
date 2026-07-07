@@ -225,7 +225,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: data?.message ?? "Crop Health API request failed. Please try again with a clear photo.",
+        error: data?.message ?? "Crop Doctor API request failed. Please try again with a clear photo.",
         diagnostics: {
           apiKeyConfigured: true,
           mode: "crop.health",

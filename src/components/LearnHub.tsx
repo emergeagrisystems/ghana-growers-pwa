@@ -45,8 +45,8 @@ const learningPaths = [
 
 const featuredVideoGuides = [
   {
-    title: "How to use Crop Health Check",
-    category: "Farmer Hub",
+    title: "How to use Crop Doctor",
+    category: "GG FarmMate",
     duration: "3 min",
     image: "/images/marketplace/farm-activity-2.jpg"
   },
@@ -185,7 +185,7 @@ export function LearnHub({ posts }: LearnHubProps) {
               <p className="gg-eyebrow">Learn By Video</p>
               <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch practical farm lessons</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/64">
-                Video slots are prepared for Ghana Growers training clips, field demos, and Farmer Hub walkthroughs.
+                Video slots are prepared for Ghana Growers training clips, field demos, and GG FarmMate walkthroughs.
               </p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-md bg-[#ECE7D1] px-3 py-2 text-sm font-black text-ink">

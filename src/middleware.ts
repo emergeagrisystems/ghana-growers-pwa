@@ -31,6 +31,7 @@ function isAllowedPrelaunchRoute(pathname: string) {
     pathname === "/join" ||
     pathname === "/join/farmer" ||
     pathname === "/join/buyer" ||
+    pathname === "/farmer-hub" ||
     pathname === "/submit-buyer-request" ||
     isPublicAsset(pathname)
   );

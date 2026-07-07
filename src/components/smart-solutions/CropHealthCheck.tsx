@@ -195,12 +195,12 @@ export function CropHealthCheck() {
     }
 
     setReports((current) => [payload.report as SavedCropHealthReport, ...current].slice(0, 12));
-    setSaveMessage("Diagnosis saved to Saved Crop Health Reports.");
+    setSaveMessage("Diagnosis saved to Saved Crop Doctor Reports.");
   }
 
   return (
     <section id="crop-health" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-2xl font-black text-ink">Crop Health</h2>
+      <h2 className="text-2xl font-black text-ink">Crop Doctor</h2>
       <p className="mt-2 text-base leading-7 text-ink/65">Take or upload a crop photo.</p>
 
       <div className="mt-5 grid gap-4">
@@ -289,7 +289,7 @@ export function CropHealthCheck() {
                 const actions = splitText(result.recommendedAction);
                 const actionPreview = actions.slice(0, 3);
                 const attention = attentionLevel(result.severity);
-                const source = result.provider === "crop.health" ? "Crop Health Advisory" : "Crop Advisory";
+                const source = result.provider === "crop.health" ? "Crop Doctor Advisory" : "Crop Advisory";
                 const primaryAction = actionPreview[0] ?? result.recommendedAction;
                 const watchFor = symptomPreview[0] ?? "Watch for changes in leaf color, spots, wilting, or spread to nearby plants.";
 
@@ -437,7 +437,7 @@ export function CropHealthCheck() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-black uppercase text-earth-700">Saved diagnoses</p>
-            <h3 className="mt-1 text-xl font-black text-ink">Saved Crop Health Reports</h3>
+            <h3 className="mt-1 text-xl font-black text-ink">Saved Crop Doctor Reports</h3>
           </div>
           <p className="text-sm font-bold text-ink/55">{reports.length} saved</p>
         </div>
@@ -465,7 +465,7 @@ export function CropHealthCheck() {
                     </div>
                     <h4 className="mt-2 font-black leading-tight text-ink">{report.diagnosis}</h4>
                     <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/45">
-                      {new Date(report.report_date).toLocaleDateString()} - Crop Health Advisory
+                      {new Date(report.report_date).toLocaleDateString()} - Crop Doctor Advisory
                     </p>
                     <button
                       type="button"

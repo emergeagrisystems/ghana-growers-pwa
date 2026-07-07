@@ -25,13 +25,13 @@ type DigitalFarmToolboxProps = {
 const tools = [
   {
     id: "crop-health",
-    label: "Crop Health",
+    label: "Crop Doctor",
     icon: ScanSearch,
     description: "Take or upload a crop photo."
   },
   {
     id: "assistant",
-    label: "Farm Assistant",
+    label: "Ask FarmMate",
     icon: Bot,
     description: "Ask practical farming and market questions."
   },
@@ -153,7 +153,7 @@ function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeathe
   const markets = marketSignals(marketPrices);
   const allInsights = [
     {
-      title: "Today's Weather Tip",
+      title: "Can I Farm Today?",
       body: weather && weather.rainfallChance >= 40 ? "Delay spraying until tomorrow morning if clouds build up." : "Check the field early and keep harvested produce shaded.",
       icon: CloudRain
     },

@@ -59,7 +59,7 @@ export default function AboutPage() {
             <p className="gg-eyebrow">Who We Are</p>
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Ghana Growers organizes farmer, buyer, and supplier information in one place.</h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
-              Ghana Growers is being built as a trusted agricultural platform for Ghana. It brings together farmer profiles, marketplace listings, buyer demand, supplier services, verification information, and Farmer Hub tools.
+              Ghana Growers is being built as a trusted agricultural platform for Ghana. It brings together farmer profiles, marketplace listings, buyer demand, supplier services, verification information, and GG FarmMate tools.
             </p>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
               The platform is not a shortcut around good judgement. It gives farmers, buyers, suppliers, and partners a clearer starting point before they discuss quantity, price, quality, delivery, and payment.

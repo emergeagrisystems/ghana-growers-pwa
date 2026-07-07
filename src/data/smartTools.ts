@@ -9,7 +9,7 @@ export const smartTools = [
     icon: CloudSun
   },
   {
-    title: "Crop Health Check",
+    title: "Crop Doctor",
     description: "Use a crop or leaf photo to preview how disease and nutrient-stress advice will work.",
     cta: "Upload Crop Photo",
     href: "#crop-health",

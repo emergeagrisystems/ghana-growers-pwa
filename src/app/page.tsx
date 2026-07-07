@@ -11,7 +11,7 @@ import { getFarmersData } from "@/lib/supabase/publicData";
 export const metadata = createPageMetadata({
   title: "Trusted Agriculture Platform for Ghana",
   description:
-    "Ghana Growers connects Ghanaian farmers, buyers, suppliers, market women, processors, and agribusiness partners through Farmer Hub tools, directories, buyer requests, and reviewed lead requests.",
+    "Ghana Growers connects Ghanaian farmers, buyers, suppliers, market women, processors, and agribusiness partners through GG FarmMate tools, directories, buyer requests, and reviewed lead requests.",
   path: "/"
 });
 
@@ -59,7 +59,7 @@ export default async function HomePage() {
               </ButtonLink>
               <ButtonLink href="/farmer-hub" variant="secondary">
                 <Sprout size={17} aria-hidden="true" className="mr-2" />
-                Open Farmer Hub
+                Open GG FarmMate
               </ButtonLink>
             </div>
             <p className="mt-4 text-sm font-semibold text-leaf-800">
@@ -88,10 +88,10 @@ export default async function HomePage() {
       <section id="farmer-hub-teaser" className="bg-mist py-24 text-ink sm:py-28 lg:py-[120px]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="gg-eyebrow text-earth-700/70">Farmer Hub</p>
-            <h2 className="mt-3 gg-editorial-heading text-4xl leading-tight text-ink sm:text-5xl">Farmer Hub</h2>
+            <p className="gg-eyebrow text-earth-700/70">by Ghana Growers</p>
+            <h2 className="mt-3 gg-editorial-heading text-4xl leading-tight text-ink sm:text-5xl">GG FarmMate</h2>
             <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
-              Your Daily Farming Companion
+              Your AI-powered farming companion.
             </p>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/66 sm:text-lg">
               Check weather, diagnose crop problems, compare market prices and get practical farming advice, all in one place.
@@ -101,7 +101,7 @@ export default async function HomePage() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                title: "Crop Health",
+                title: "Crop Doctor",
                 description: "Upload a crop photo and receive farming advice.",
                 icon: ScanSearch
               },
@@ -116,7 +116,7 @@ export default async function HomePage() {
                 icon: LineChart
               },
               {
-                title: "Farm Assistant",
+                title: "Ask FarmMate",
                 description: "Ask practical farming questions anytime.",
                 icon: Bot
               }
@@ -126,7 +126,7 @@ export default async function HomePage() {
               return (
                 <Link
                   key={tool.title}
-                  href="/smart-solutions"
+                  href="/farmer-hub"
                   className="group flex h-full min-h-[13.5rem] flex-col rounded-md border border-leaf-900/10 bg-white p-5 text-ink shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft"
                 >
                   <span className="gg-icon gg-icon-farmer-hub h-14 w-14">
@@ -141,7 +141,7 @@ export default async function HomePage() {
 
           <div className="mt-10 flex justify-center">
             <ButtonLink href="/smart-solutions">
-              Open Farmer Hub
+              Open GG FarmMate
             </ButtonLink>
           </div>
         </div>

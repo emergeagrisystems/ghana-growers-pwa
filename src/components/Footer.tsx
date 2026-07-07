@@ -15,7 +15,7 @@ const footerGroups = [
   {
     title: "Services",
     links: [
-      { title: "Farmer Hub", href: "/smart-solutions" },
+      { title: "GG FarmMate", href: "/smart-solutions" },
       { title: "Sell", href: "/services" },
       { title: "Buy", href: "/services/buy" },
       { title: "Join as a Farmer", href: "/join/farmer" },

@@ -81,7 +81,7 @@ export function FarmerAssistant() {
 
   return (
     <section id="assistant" className="scroll-mt-28 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-2xl font-black text-ink">Farm Assistant</h2>
+      <h2 className="text-2xl font-black text-ink">Ask FarmMate</h2>
 
       {messages.length > 0 || isLoading ? (
         <div className="mt-5 max-h-80 overflow-y-auto rounded-md bg-leaf-50 p-4">

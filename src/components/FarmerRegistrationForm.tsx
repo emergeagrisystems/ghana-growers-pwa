@@ -76,7 +76,7 @@ export function FarmerRegistrationForm() {
         </div>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link href="/farmer-hub" className="gg-button-primary">
-            Open Farmer Hub
+            Open GG FarmMate
           </Link>
           <Link href="/marketplace" className="gg-button-secondary">
             Explore Marketplace

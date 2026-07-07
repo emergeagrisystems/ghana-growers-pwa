@@ -5,7 +5,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Terms of Use",
-  description: "Simple terms for using Ghana Growers profiles, marketplace listings, buyer requests, supplier pages, Farmer Hub tools, and lead forms.",
+  description: "Simple terms for using Ghana Growers profiles, marketplace listings, buyer requests, supplier pages, GG FarmMate tools, and lead forms.",
   path: "/terms-of-use"
 });
 
@@ -39,9 +39,9 @@ const sections = [
     ]
   },
   {
-    title: "Farmer Hub tools",
+    title: "GG FarmMate tools",
     body: [
-      "Farmer Hub tools provide general agricultural guidance, weather information, market information, crop health support, and farm question support where available.",
+      "GG FarmMate tools provide general agricultural guidance, weather information, market information, Crop Doctor support, and Ask FarmMate support where available.",
       "The tools do not replace an agricultural extension officer, veterinary officer, qualified agronomist, crop protection expert, or other professional advice where serious decisions are involved."
     ]
   },

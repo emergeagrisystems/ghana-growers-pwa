@@ -6,7 +6,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata({
   title: "Join Ghana Growers as a Farmer",
   description:
-    "Join Ghana Growers as a farmer to sell your harvest, use Farmer Hub, and become part of Ghana's trusted agricultural network.",
+    "Join Ghana Growers as a farmer to sell your harvest, use GG FarmMate, and become part of Ghana's trusted agricultural network.",
   path: "/join/farmer"
 });
 
@@ -18,7 +18,7 @@ const benefits = [
   },
   {
     title: "Farm Smarter",
-    description: "Use Farmer Hub for weather, crop health, market prices and practical farming support.",
+    description: "Use GG FarmMate for weather, Crop Doctor, market prices and practical farming support.",
     icon: CloudSun
   },
   {
@@ -69,7 +69,7 @@ export default function JoinFarmerPage() {
               </a>
               <div className="w-full sm:w-auto [&>a]:w-full sm:[&>a]:w-auto">
                 <ButtonLink href="/farmer-hub" variant="secondary">
-                  Open Farmer Hub
+                  Open GG FarmMate
                 </ButtonLink>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function JoinFarmerPage() {
                 Ghana Growers reviews farmer applications before public visibility so buyers can discover serious farms with confidence.
               </p>
               <div className="mt-6 grid gap-3">
-                {["Produce profiles", "Buyer opportunities", "Farmer Hub tools", "Marketplace support", "Quality guidelines"].map((item) => (
+                {["Produce profiles", "Buyer opportunities", "GG FarmMate tools", "Marketplace support", "Quality guidelines"].map((item) => (
                   <div key={item} className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink ring-1 ring-leaf-900/10">
                     <span className="min-w-0 truncate">{item}</span>
                     <ArrowRight size={15} className="text-earth-700" aria-hidden="true" />
@@ -157,7 +157,7 @@ export default function JoinFarmerPage() {
               <div className="flex items-start gap-3">
                 <BarChart3 size={20} className="mt-0.5 shrink-0 text-earth-700" aria-hidden="true" />
                 <p className="text-sm leading-6 text-ink/68">
-                  You can use Farmer Hub while your application is being reviewed.
+                  You can use GG FarmMate while your application is being reviewed.
                 </p>
               </div>
             </div>

@@ -48,7 +48,7 @@ const ways = [
   "Share buyer demand so Ghana Growers can match it with farmers or listings.",
   "Support verification, farmer photos, profile completeness, or field follow-up.",
   "Provide services such as transport, packaging, storage, inputs, or advisory support.",
-  "Sponsor practical content, training, or Farmer Hub resources for farmers."
+  "Sponsor practical content, training, or GG FarmMate resources for farmers."
 ];
 
 export default function PartnerPage() {

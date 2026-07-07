@@ -16,7 +16,7 @@
     "sections": [
       {
         "heading": "A practical network for agriculture",
-        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and Farmer Hub tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
+        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and GG FarmMate tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
       },
       {
         "heading": "What happens after registration",
@@ -226,7 +226,7 @@
         "body": "Too much water, dry soil, poor drainage, or compacted soil can all affect maize growth. Farmers should check whether roots are healthy and whether water is sitting in the field."
       },
       {
-        "heading": "Use Crop Health when unsure",
+        "heading": "Use Crop Doctor when unsure",
         "body": "A clear photo can help Ghana Growers provide advisory guidance, but serious crop problems should be confirmed with an agricultural extension officer."
       }
     ]
@@ -314,16 +314,16 @@
       },
       {
         "heading": "Use weather before field work",
-        "body": "Check rain chance before spraying, fertilizer application, or harvest work. Farmer Hub weather guidance can help farmers plan daily tasks."
+        "body": "Check rain chance before spraying, fertilizer application, or harvest work. GG FarmMate weather guidance can help farmers plan daily tasks."
       }
     ]
   },
   {
     "slug": "video-how-to-use-crop-health-check",
-    "title": "Video Guide: How to Use Crop Health Check",
+    "title": "Video Guide: How to Use Crop Doctor",
     "category": "Video Library",
     "excerpt": "A short video guide placeholder for farmers learning how to upload crop photos for advisory guidance.",
-    "audience": "Farmers using Farmer Hub",
+    "audience": "Farmers using GG FarmMate",
     "readTime": "Video guide",
     "date": "2026-06-20",
     "keyPoints": [
@@ -335,11 +335,11 @@
     "sections": [
       {
         "heading": "What the video will cover",
-        "body": "This guide will show farmers how to take a clear crop photo, upload it to Crop Health Check, read the result, and decide when to ask for expert confirmation."
+        "body": "This guide will show farmers how to take a clear crop photo, upload it to Crop Doctor, read the result, and decide when to ask for expert confirmation."
       },
       {
         "heading": "Important reminder",
-        "body": "Crop Health Check provides advisory guidance only. Farmers should confirm serious disease, pest, or chemical decisions with a qualified agricultural extension officer."
+        "body": "Crop Doctor provides advisory guidance only. Farmers should confirm serious disease, pest, or chemical decisions with a qualified agricultural extension officer."
       }
     ]
   }
