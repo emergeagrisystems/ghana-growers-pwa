@@ -31,8 +31,8 @@ const benefits = [
 const produceCategories = [
   "Vegetables",
   "Fruits",
-  "Tubers",
-  "Cereals",
+  "Roots & Tubers",
+  "Grains",
   "Legumes",
   "Livestock",
   "Herbs",
@@ -124,8 +124,8 @@ export default function JoinFarmerPage() {
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-[23rem] sm:max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">What farmers can list</p>
-            <h2 className="mt-3 text-3xl font-black text-ink sm:text-4xl">What do you produce?</h2>
-            <p className="mt-3 text-sm leading-6 text-ink/65">Ghana Growers organizes farmer profiles around the produce buyers can understand quickly.</p>
+            <h2 className="mt-3 text-3xl font-black text-ink sm:text-4xl">What do you grow?</h2>
+            <p className="mt-3 text-sm leading-6 text-ink/65">Ghana Growers organizes farmer profiles around clear categories buyers can understand quickly.</p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {produceCategories.map((category, index) => (

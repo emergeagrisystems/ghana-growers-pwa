@@ -20,8 +20,8 @@ const sellerActions = [
     image: "/images/marketplace/fresh-tomatoes.jpg"
   },
   {
-    title: "Sell Products & Services",
-    description: "Sell seeds, fertilizer, equipment or agricultural services.",
+    title: "Sell Products & Tools",
+    description: "Sell seeds, fertilizer, tools and agricultural supplies.",
     href: "/become-a-supplier",
     cta: "Become a Supplier",
     icon: PackageCheck,
@@ -81,12 +81,12 @@ export default function SellPage() {
 
       <section className="bg-white py-10 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid items-stretch gap-4 lg:grid-cols-3">
             {sellerActions.map((action) => {
               const Icon = action.icon;
 
               return (
-                <article key={action.title} className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft">
+                <article key={action.title} className="group flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft">
                   <SafeImage
                     src={action.image}
                     alt={`${action.title} category`}
@@ -94,15 +94,15 @@ export default function SellPage() {
                     height={380}
                     fallbackKind="crop"
                     sizes="(min-width: 1024px) 33vw, 100vw"
-                    className="h-36 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    className="h-36 w-full shrink-0 object-cover transition duration-500 group-hover:scale-[1.03]"
                   />
-                  <div className="p-5">
+                  <div className="flex flex-1 flex-col p-5">
                     <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-600 text-white">
                       <Icon size={20} aria-hidden="true" />
                     </span>
                     <h2 className="mt-4 text-xl font-black text-ink">{action.title}</h2>
-                    <p className="mt-2 text-sm leading-6 text-ink/66">{action.description}</p>
-                    <Link href={action.href} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900">
+                    <p className="mt-2 flex-1 text-sm leading-6 text-ink/66">{action.description}</p>
+                    <Link href={action.href} className="mt-5 inline-flex min-h-10 w-fit items-center gap-2 rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900">
                       {action.cta}
                       <ArrowRight size={16} aria-hidden="true" />
                     </Link>
