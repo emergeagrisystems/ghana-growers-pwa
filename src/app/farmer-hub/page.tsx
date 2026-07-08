@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Camera,
   CheckCircle2,
-  ChevronRight,
   CloudSun,
   Droplets,
   GraduationCap,
@@ -16,6 +15,7 @@ import {
   TrendingUp,
   WalletCards
 } from "lucide-react";
+import { AskFarmMate } from "@/components/AskFarmMate";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -253,21 +253,7 @@ export default function FarmerHubPage() {
           </div>
         </article>
 
-        <article id="assistant" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
-          <Bot className="text-[#2E7D32]" size={28} aria-hidden="true" />
-          <h2 className="mt-3 text-2xl font-black">Ask FarmMate preview</h2>
-          <p className="mt-3 text-sm leading-6 text-ink/66">
-            Ask simple farming questions and receive practical guidance. This preview uses demo examples only.
-          </p>
-          <div className="mt-4 rounded-md bg-[#FBFFE8] p-4">
-            <p className="text-sm font-black text-ink">Example question</p>
-            <p className="mt-1 text-sm leading-6 text-ink/64">What should I do if tomato leaves have brown spots after rain?</p>
-          </div>
-          <button className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#2E7D32] px-4 text-sm font-black text-white">
-            Ask FarmMate
-            <ChevronRight size={18} aria-hidden="true" />
-          </button>
-        </article>
+        <AskFarmMate />
 
         <article id="crop-doctor" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
           <Camera className="text-[#2E7D32]" size={28} aria-hidden="true" />
