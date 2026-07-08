@@ -8,3 +8,4 @@ export * from "./safety";
 export * from "./regions";
 export * from "./reasoning-rules";
 export * as farmMateDecisionEngine from "./decision-engine";
+export * as farmMateAi from "./ai";

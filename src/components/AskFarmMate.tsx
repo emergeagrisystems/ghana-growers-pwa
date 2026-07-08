@@ -3,6 +3,7 @@
 import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
+import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 
 const suggestions = [
   "Can I spray today?",
@@ -126,6 +127,27 @@ function conciseLines(lines: string[], limit: number) {
   return lines.map(cleanGuidance).filter(Boolean).slice(0, limit);
 }
 
+function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
+  return [
+    {
+      title: "Here's what I understand",
+      body: learnedSummary(response, answers)
+    },
+    {
+      title: "What I think",
+      body: conciseLines([...answerInsights(answers), ...sectionBody(response, "Direct answer").slice(0, 1), ...sectionBody(response, "Why this may happen")], 3)
+    },
+    {
+      title: "What to do now",
+      body: conciseLines([...sectionBody(response, "Recommended action"), ...sectionBody(response, "Prevention").slice(0, 2)], 3)
+    },
+    {
+      title: "Next step",
+      body: conciseLines(sectionBody(response, "Next Best Action"), 1)
+    }
+  ];
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -140,6 +162,8 @@ export function AskFarmMate({
   const [followUpIndex, setFollowUpIndex] = useState(0);
   const [followUpAnswers, setFollowUpAnswers] = useState<FollowUpAnswer[]>([]);
   const [showRecommendation, setShowRecommendation] = useState(false);
+  const [naturalAnswer, setNaturalAnswer] = useState("");
+  const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
 
   const canAsk = question.trim().length > 0 && !isThinking;
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
@@ -163,6 +187,40 @@ export function AskFarmMate({
     }
   }, [prefillQuestion]);
 
+  async function requestNaturalAnswer(farmerQuestion: string, farmMateResponse: FarmMateBrainResponse, answers: FollowUpAnswer[]) {
+    setNaturalAnswer("");
+    setIsGeneratingNaturalAnswer(true);
+
+    try {
+      const apiResponse = await fetch("/api/farmmate/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          farmerQuestion,
+          brain: farmMateResponse,
+          farmerAnswers: answers,
+          localStructuredResponse: localRecommendationCards(farmMateResponse, answers)
+        })
+      });
+
+      if (!apiResponse.ok) {
+        return;
+      }
+
+      const data = (await apiResponse.json()) as { ok?: boolean; answer?: string };
+
+      if (data.ok && data.answer?.trim()) {
+        setNaturalAnswer(data.answer.trim());
+      }
+    } catch {
+      setNaturalAnswer("");
+    } finally {
+      setIsGeneratingNaturalAnswer(false);
+    }
+  }
+
   function askFarmMate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
 
@@ -176,13 +234,21 @@ export function AskFarmMate({
     setFollowUpIndex(0);
     setFollowUpAnswers([]);
     setShowRecommendation(false);
+    setNaturalAnswer("");
+    setIsGeneratingNaturalAnswer(false);
     setIsThinking(true);
 
     window.setTimeout(() => {
       const farmMateResponse = buildFarmMateResponse(trimmedQuestion);
+      const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
+
       setResponse(farmMateResponse);
-      setShowRecommendation(farmMateResponse.confidence === "high" || !farmMateResponse.flow);
+      setShowRecommendation(shouldShowRecommendation);
       setIsThinking(false);
+
+      if (shouldShowRecommendation) {
+        void requestNaturalAnswer(trimmedQuestion, farmMateResponse, []);
+      }
     }, 1200);
   }
 
@@ -191,7 +257,9 @@ export function AskFarmMate({
       return;
     }
 
-    setFollowUpAnswers((answers) => [...answers, { question: currentFollowUp.question, answer }]);
+    const nextAnswers = [...followUpAnswers, { question: currentFollowUp.question, answer }];
+
+    setFollowUpAnswers(nextAnswers);
 
     if (followUpIndex + 1 < followUpQuestions.length) {
       setFollowUpIndex((index) => index + 1);
@@ -199,7 +267,13 @@ export function AskFarmMate({
     }
 
     setShowRecommendation(true);
+
+    if (response) {
+      void requestNaturalAnswer(askedQuestion, response, nextAnswers);
+    }
   }
+
+  const recommendationCards = response ? localRecommendationCards(response, followUpAnswers) : [];
 
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
@@ -298,33 +372,35 @@ export function AskFarmMate({
 
             {showRecommendation ? (
               <div className="space-y-3">
-                <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                  <h3 className="text-sm font-black text-ink">Here&apos;s what I understand</h3>
-                  <div className="mt-2 space-y-1">
-                    {learnedSummary(response, followUpAnswers).map((line) => (
-                      <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
-                        {line}
-                      </p>
-                    ))}
+                {isGeneratingNaturalAnswer ? (
+                  <div className="flex max-w-[92%] items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
+                    <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
+                    FarmMate is preparing your answer...
                   </div>
-                </section>
-
-                {[
-                  ["What I think", conciseLines([...answerInsights(followUpAnswers), ...sectionBody(response, "Direct answer").slice(0, 1), ...sectionBody(response, "Why this may happen")], 3)],
-                  ["What to do now", conciseLines([...sectionBody(response, "Recommended action"), ...sectionBody(response, "Prevention").slice(0, 2)], 3)],
-                  ["Next step", conciseLines(sectionBody(response, "Next Best Action"), 1)]
-                ].map(([title, body]) => (
-                  <section key={title as string} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                    <h3 className="text-sm font-black text-ink">{title as string}</h3>
-                    <div className="mt-2 space-y-1">
-                      {(body as string[]).map((line) => (
-                        <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
-                          {line}
+                ) : naturalAnswer ? (
+                  <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                    <div className="space-y-3">
+                      {naturalAnswer.split(/\n{2,}/).map((paragraph) => (
+                        <p key={paragraph} className="text-sm font-semibold leading-6 text-ink/72">
+                          {paragraph}
                         </p>
                       ))}
                     </div>
                   </section>
-                ))}
+                ) : (
+                  recommendationCards.map((card) => (
+                    <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                      <h3 className="text-sm font-black text-ink">{card.title}</h3>
+                      <div className="mt-2 space-y-1">
+                        {card.body.map((line) => (
+                          <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    </section>
+                  ))
+                )}
 
                 {response.shouldShowCropDoctorAction && onOpenCropDoctor ? (
                   <button
