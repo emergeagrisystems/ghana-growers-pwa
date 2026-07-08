@@ -4,6 +4,7 @@ import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
+import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 
 const suggestions = [
@@ -128,6 +129,40 @@ function conciseLines(lines: string[], limit: number) {
   return lines.map(cleanGuidance).filter(Boolean).slice(0, limit);
 }
 
+function marketplaceInfoResponse(): FarmMateLocalResponseCard[] {
+  return [
+    {
+      title: "What I think",
+      body: ["You can buy produce through Ghana Growers by joining the buyer network or contacting Ghana Growers directly."]
+    },
+    {
+      title: "What to do now",
+      body: ["Soon, FarmMate will connect buyers to available produce through the marketplace."]
+    },
+    {
+      title: "Next step",
+      body: ["Open the buyer network or contact Ghana Growers to request what you need."]
+    }
+  ];
+}
+
+function clarificationResponse(): FarmMateLocalResponseCard[] {
+  return [
+    {
+      title: "What I think",
+      body: ["I need a little more context before I can help."]
+    },
+    {
+      title: "What to do now",
+      body: ["Ask a full question, or tell me the crop and what you are seeing on the farm."]
+    },
+    {
+      title: "Next step",
+      body: ["Send one clear sentence about what you need help with."]
+    }
+  ];
+}
+
 function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
   return [
     {
@@ -169,6 +204,18 @@ function logBrainContext(question: string, response: FarmMateBrainResponse) {
   console.info("FarmMate selected decision flow crop/context:", response.flow?.requiredInformation.crop ?? "none");
 }
 
+function logConversationDecision(message: string, state: ConversationState, decision: ConversationDecision, selectedSpecialist?: string) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info("FarmMate incoming message:", message);
+  console.info("FarmMate active topic:", state.activeTopic ?? "none");
+  console.info("FarmMate conversation decision:", decision.action);
+  console.info("FarmMate reset reason:", decision.resetReason ?? "none");
+  console.info("FarmMate selected specialist:", selectedSpecialist ?? decision.specialist ?? "none");
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -185,7 +232,11 @@ export function AskFarmMate({
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [naturalAnswer, setNaturalAnswer] = useState("");
   const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
-  const [activeCropName, setActiveCropName] = useState("");
+  const [localCards, setLocalCards] = useState<FarmMateLocalResponseCard[]>([]);
+  const [conversationState, setConversationState] = useState<ConversationState>({
+    waitingForFollowUp: false,
+    turns: []
+  });
 
   const canAsk = question.trim().length > 0 && !isThinking;
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
@@ -251,6 +302,15 @@ export function AskFarmMate({
       return;
     }
 
+    const conversationDecision = manageFarmMateConversation(trimmedQuestion, conversationState);
+
+    if (conversationDecision.action === "continue" && conversationState.waitingForFollowUp && currentFollowUp) {
+      logConversationDecision(trimmedQuestion, conversationState, conversationDecision, conversationDecision.specialist);
+      answerFollowUp(trimmedQuestion);
+      setQuestion("");
+      return;
+    }
+
     setAskedQuestion(trimmedQuestion);
     setResponse(null);
     setFollowUpIndex(0);
@@ -258,11 +318,33 @@ export function AskFarmMate({
     setShowRecommendation(false);
     setNaturalAnswer("");
     setIsGeneratingNaturalAnswer(false);
+    setLocalCards([]);
     setIsThinking(true);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion);
+    logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
     logRouterResult(routerResult);
-    const previousCropName = routerResult.detectedCrop ? undefined : activeCropName || undefined;
+    const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
+
+    if (conversationDecision.action === "clarify") {
+      window.setTimeout(() => {
+        setLocalCards(clarificationResponse());
+        setShowRecommendation(true);
+        setConversationState(createConversationStateUpdate(conversationState, trimmedQuestion, conversationDecision, false));
+        setIsThinking(false);
+      }, 700);
+      return;
+    }
+
+    if (conversationDecision.isMarketplaceInfoRequest) {
+      window.setTimeout(() => {
+        setLocalCards(marketplaceInfoResponse());
+        setShowRecommendation(true);
+        setConversationState(createConversationStateUpdate(conversationState, trimmedQuestion, conversationDecision, false));
+        setIsThinking(false);
+      }, 700);
+      return;
+    }
 
     window.setTimeout(() => {
       const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, { previousCropName });
@@ -270,8 +352,19 @@ export function AskFarmMate({
 
       logBrainContext(trimmedQuestion, farmMateResponse);
       setResponse(farmMateResponse);
-      setActiveCropName(farmMateResponse.resolvedCrop ?? "");
       setShowRecommendation(shouldShowRecommendation);
+      setConversationState(
+        createConversationStateUpdate(
+          conversationState,
+          trimmedQuestion,
+          {
+            ...conversationDecision,
+            cropName: farmMateResponse.resolvedCrop ?? conversationDecision.cropName,
+            specialist: routerResult.selectedSpecialist
+          },
+          !shouldShowRecommendation
+        )
+      );
       setIsThinking(false);
 
       if (shouldShowRecommendation) {
@@ -291,17 +384,19 @@ export function AskFarmMate({
 
     if (followUpIndex + 1 < followUpQuestions.length) {
       setFollowUpIndex((index) => index + 1);
+      setConversationState((current) => ({ ...current, waitingForFollowUp: true }));
       return;
     }
 
     setShowRecommendation(true);
+    setConversationState((current) => ({ ...current, waitingForFollowUp: false }));
 
     if (response) {
       void requestNaturalAnswer(askedQuestion, response, nextAnswers);
     }
   }
 
-  const recommendationCards = response ? localRecommendationCards(response, followUpAnswers) : [];
+  const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
 
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
@@ -363,11 +458,13 @@ export function AskFarmMate({
           </div>
         ) : null}
 
-        {response ? (
+        {response || localCards.length ? (
           <div className="max-w-[92%] space-y-3">
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
               <p>I can help.</p>
-              {showRecommendation ? (
+              {localCards.length ? (
+                <p className="mt-2">Here is the practical answer.</p>
+              ) : showRecommendation ? (
                 <p className="mt-2">Here is the practical next step.</p>
               ) : (
                 <p className="mt-2">Let&apos;s narrow it down first. I&apos;ll ask one quick question at a time.</p>
@@ -430,7 +527,7 @@ export function AskFarmMate({
                   ))
                 )}
 
-                {response.shouldShowCropDoctorAction && onOpenCropDoctor ? (
+                {response?.shouldShowCropDoctorAction && onOpenCropDoctor ? (
                   <button
                     type="button"
                     onClick={onOpenCropDoctor}

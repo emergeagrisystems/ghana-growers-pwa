@@ -11,5 +11,6 @@ export * from "./regions";
 export * from "./reasoning-rules";
 export * from "./plant-health-specialist";
 export * as farmMateDecisionEngine from "./decision-engine";
+export * as farmMateConversationManager from "./conversation-manager";
 export * as farmMateAi from "./ai";
 export * as farmMateRouter from "./router";
