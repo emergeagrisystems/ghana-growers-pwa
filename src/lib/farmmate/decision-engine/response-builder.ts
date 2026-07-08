@@ -4,9 +4,10 @@ import { farmMateNutrientDeficiencies } from "../nutrient-deficiencies";
 import { farmMatePests } from "../pests";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
+import type { FarmMateSpecialist, RouterResult } from "../router";
 import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector";
 import { farmMateDecisionFlows } from "./flows";
-import { DecisionFlow } from "./types";
+import { DecisionFlow, FarmerIntent } from "./types";
 
 export type FarmMateResponseSection =
   | "Direct answer"
@@ -18,6 +19,7 @@ export type FarmMateResponseSection =
 
 export type FarmMateBrainResponse = {
   intent: DetectedFarmMateIntent;
+  routerResult?: RouterResult;
   flow?: DecisionFlow;
   confidence: "high" | "medium" | "low";
   sections: Array<{
@@ -28,8 +30,27 @@ export type FarmMateBrainResponse = {
   shouldShowCropDoctorAction: boolean;
 };
 
-function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent) {
+const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
+  crop_health: "crop-health",
+  pest_disease: "diseases",
+  weather_decision: "weather-decisions",
+  planting: "planting",
+  fertilizer: "fertilizer",
+  sustainability: "crop-planning",
+  general_farming: "crop-planning"
+};
+
+function selectedSpecialistFromRouter(routerResult?: RouterResult) {
+  if (!routerResult || routerResult.confidence === "low") {
+    return "general_farming";
+  }
+
+  return routerResult.selectedSpecialist;
+}
+
+function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, routerResult?: RouterResult) {
   const normalized = question.toLowerCase();
+  const selectedSpecialist = selectedSpecialistFromRouter(routerResult);
 
   if (normalized.includes("yellow") && normalized.includes("tomato")) {
     return farmMateDecisionFlows.find((flow) => flow.id === "yellow-tomato-leaves");
@@ -45,6 +66,16 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent) 
 
   if (normalized.includes("maize") && (normalized.includes("fertilizer") || normalized.includes("not growing") || normalized.includes("poor growth"))) {
     return farmMateDecisionFlows.find((flow) => flow.id === "maize-not-growing-well");
+  }
+
+  const routedIntent = specialistIntentMap[selectedSpecialist];
+
+  if (routedIntent) {
+    const routedFlow = farmMateDecisionFlows.find((flow) => flow.intent === routedIntent);
+
+    if (routedFlow) {
+      return routedFlow;
+    }
   }
 
   return farmMateDecisionFlows.find((flow) => flow.intent === intent.intent);
@@ -143,9 +174,9 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   };
 }
 
-export function buildFarmMateResponse(question: string): FarmMateBrainResponse {
+export function buildFarmMateResponse(question: string, routerResult?: RouterResult): FarmMateBrainResponse {
   const intent = detectFarmMateIntent(question);
-  const matchedFlow = findBestDecisionFlow(question, intent);
+  const matchedFlow = findBestDecisionFlow(question, intent, routerResult);
   const flow = matchedFlow ?? fallbackFlow(intent);
   const knowledge = knowledgeLines(flow, intent);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
@@ -156,6 +187,7 @@ export function buildFarmMateResponse(question: string): FarmMateBrainResponse {
 
   return {
     intent,
+    routerResult,
     flow: matchedFlow,
     confidence: flow.recommendation.confidence,
     shouldShowCropDoctorAction,

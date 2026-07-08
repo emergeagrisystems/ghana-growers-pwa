@@ -4,6 +4,7 @@ import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
+import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 
 const suggestions = [
   "Can I spray today?",
@@ -148,6 +149,15 @@ function localRecommendationCards(response: FarmMateBrainResponse, answers: Foll
   ];
 }
 
+function logRouterResult(routerResult: RouterResult) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info("FarmMate Router selected:", routerResult.selectedSpecialist);
+  console.info("FarmMate Router confidence:", routerResult.confidence);
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -238,8 +248,11 @@ export function AskFarmMate({
     setIsGeneratingNaturalAnswer(false);
     setIsThinking(true);
 
+    const routerResult = routeFarmMateQuestion(trimmedQuestion);
+    logRouterResult(routerResult);
+
     window.setTimeout(() => {
-      const farmMateResponse = buildFarmMateResponse(trimmedQuestion);
+      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult);
       const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
 
       setResponse(farmMateResponse);
