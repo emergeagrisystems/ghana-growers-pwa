@@ -3,7 +3,14 @@ import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/fa
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
-import { getFarmMateCreditDecision, getFarmMateCreditStatus, isCountableFarmMateSubmission, type FarmMateUsageEvent } from "../src/lib/farmmate/usage";
+import {
+  canUseMemoryUsageFallback,
+  getFarmMateCreditDecision,
+  getFarmMateCreditStatus,
+  isCountableFarmMateSubmission,
+  usageTrackingUnavailableDecision,
+  type FarmMateUsageEvent
+} from "../src/lib/farmmate/usage";
 
 type TestCase = {
   name: string;
@@ -212,6 +219,54 @@ const tests: TestCase[] = [
 
       assert.equal(isCountableFarmMateSubmission("   "), false);
       assert.equal(status.remaining, 5);
+    }
+  },
+  {
+    name: "production usage check failure blocks OpenAI",
+    run: () => {
+      const decision = usageTrackingUnavailableDecision("ask_farmmate", new Date("2026-07-09T12:00:00.000Z"));
+
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "usage_tracking_unavailable");
+      assert.equal(decision.remaining, 0);
+    }
+  },
+  {
+    name: "development usage check failure may use memory fallback",
+    run: () => {
+      assert.equal(canUseMemoryUsageFallback("development"), true);
+      assert.equal(canUseMemoryUsageFallback("test"), true);
+      assert.equal(canUseMemoryUsageFallback("production"), false);
+    }
+  },
+  {
+    name: "missing usage table fail-safe decision does not crash",
+    run: () => {
+      assert.doesNotThrow(() => usageTrackingUnavailableDecision("crop_doctor", new Date("2026-07-09T12:00:00.000Z")));
+    }
+  },
+  {
+    name: "failed usage write does not double-charge credits",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = [usageEvent("ask_farmmate", now.toISOString())];
+      const beforeFailedWrite = getFarmMateCreditStatus("ask_farmmate", events, now);
+      const afterFailedWrite = getFarmMateCreditStatus("ask_farmmate", events, now);
+
+      assert.equal(beforeFailedWrite.used, 1);
+      assert.equal(afterFailedWrite.used, 1);
+      assert.equal(afterFailedWrite.remaining, 4);
+    }
+  },
+  {
+    name: "successful OpenAI response records one usage event",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = [usageEvent("ask_farmmate", now.toISOString())];
+      const status = getFarmMateCreditStatus("ask_farmmate", events, now);
+
+      assert.equal(status.used, 1);
+      assert.equal(status.remaining, 4);
     }
   }
 ];

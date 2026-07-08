@@ -97,3 +97,17 @@ export function getFarmMateCreditDecision(tool: FarmMateUsageTool, events: FarmM
 export function isCountableFarmMateSubmission(message: string) {
   return message.trim().length > 0;
 }
+
+export function canUseMemoryUsageFallback(nodeEnv = process.env.NODE_ENV) {
+  return nodeEnv !== "production";
+}
+
+export function usageTrackingUnavailableDecision(tool: FarmMateUsageTool, now = new Date()): FarmMateCreditDecision {
+  return {
+    ...getFarmMateCreditStatus(tool, [], now),
+    remaining: 0,
+    isExhausted: true,
+    allowed: false,
+    reason: "usage_tracking_unavailable"
+  };
+}

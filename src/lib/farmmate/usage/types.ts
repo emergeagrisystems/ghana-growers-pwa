@@ -19,5 +19,5 @@ export type FarmMateCreditStatus = {
 
 export type FarmMateCreditDecision = FarmMateCreditStatus & {
   allowed: boolean;
-  reason?: "credits_exhausted" | "rapid_submission";
+  reason?: "credits_exhausted" | "rapid_submission" | "usage_tracking_unavailable";
 };

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { hasSupabaseAdminConfig, insertSupabaseRecord, selectSupabaseRecords } from "../../supabase/admin";
-import { getFarmMateCreditDecision, getFarmMateCreditStatus, FARM_MATE_USAGE_WINDOW_MS } from "./rules";
+import { canUseMemoryUsageFallback, getFarmMateCreditDecision, getFarmMateCreditStatus, FARM_MATE_USAGE_WINDOW_MS, usageTrackingUnavailableDecision } from "./rules";
 import type { FarmMateCreditDecision, FarmMateCreditStatus, FarmMateUsageEvent, FarmMateUsageTool } from "./types";
 
 type FarmMateUsageEventRow = {
@@ -11,6 +11,17 @@ type FarmMateUsageEventRow = {
 };
 
 const memoryEvents: Array<FarmMateUsageEventRow> = [];
+
+type UsageStorage = "supabase" | "memory" | "none" | "unavailable";
+
+function warnUsage(message: string, detail?: unknown) {
+  if (detail) {
+    console.warn(`[FarmMate Credits] ${message}`, detail);
+    return;
+  }
+
+  console.warn(`[FarmMate Credits] ${message}`);
+}
 
 export function hashAnonymousDeviceId(deviceId: string) {
   const salt = process.env.FARMMATE_USAGE_HASH_SALT?.trim() || process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "ghana-growers-farmmate-v1";
@@ -51,8 +62,9 @@ function pruneMemoryEvents(now = new Date()) {
 
 async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date()) {
   const windowStart = new Date(now.getTime() - FARM_MATE_USAGE_WINDOW_MS).toISOString();
+  const supabaseConfigured = hasSupabaseAdminConfig();
 
-  if (hasSupabaseAdminConfig()) {
+  if (supabaseConfigured) {
     const query = [
       `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
       `tool=eq.${encodeURIComponent(tool)}`,
@@ -64,19 +76,42 @@ async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageToo
 
     if (!result.error) {
       return {
+        ok: true as const,
         storage: "supabase" as const,
         events: (result.data ?? []).map(rowToEvent)
       };
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.warn("FarmMate usage Supabase read failed; using memory fallback.", result.error);
+    const missingTable = /farmmate_usage_events|does not exist|schema cache|relation/i.test(result.error);
+    warnUsage(missingTable ? "Usage table missing or unavailable during usage check." : "Usage check failed.", result.error);
+
+    if (!canUseMemoryUsageFallback()) {
+      return {
+        ok: false as const,
+        storage: "unavailable" as const,
+        events: [],
+        error: result.error
+      };
     }
+  } else {
+    warnUsage("Supabase config missing for usage tracking.");
+
+    if (!canUseMemoryUsageFallback()) {
+      return {
+        ok: false as const,
+        storage: "unavailable" as const,
+        events: [],
+        error: "missing_supabase_config"
+      };
+    }
+
+    warnUsage("Using in-memory FarmMate Credits fallback for local development.");
   }
 
   pruneMemoryEvents(now);
 
   return {
+    ok: true as const,
     storage: "memory" as const,
     events: memoryEvents
       .filter((event) => event.anonymous_user_hash === anonymousUserHash && event.tool === tool)
@@ -95,12 +130,23 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
     const result = await insertSupabaseRecord("farmmate_usage_events", payload);
 
     if (!result.error) {
-      return "supabase" as const;
+      return { recorded: true as const, storage: "supabase" as const };
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.warn("FarmMate usage Supabase write failed; using memory fallback.", result.error);
+    const missingTable = /farmmate_usage_events|does not exist|schema cache|relation/i.test(result.error);
+    warnUsage(missingTable ? "Usage table missing or unavailable during usage write." : "Usage write failed.", result.error);
+
+    if (!canUseMemoryUsageFallback()) {
+      return { recorded: false as const, storage: "unavailable" as const, error: result.error };
     }
+  } else {
+    warnUsage("Supabase config missing for usage tracking write.");
+
+    if (!canUseMemoryUsageFallback()) {
+      return { recorded: false as const, storage: "unavailable" as const, error: "missing_supabase_config" };
+    }
+
+    warnUsage("Using in-memory FarmMate Credits write fallback for local development.");
   }
 
   memoryEvents.push({
@@ -108,7 +154,7 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
     ...payload
   });
 
-  return "memory" as const;
+  return { recorded: true as const, storage: "memory" as const };
 }
 
 export async function getFarmMateCreditsForDevice({
@@ -119,7 +165,7 @@ export async function getFarmMateCreditsForDevice({
   anonymousDeviceId: unknown;
   tool: FarmMateUsageTool;
   now?: Date;
-}): Promise<FarmMateCreditStatus & { storage: "supabase" | "memory" | "none" }> {
+}): Promise<FarmMateCreditStatus & { storage: UsageStorage }> {
   const anonymousUserHash = getAnonymousUserHash(anonymousDeviceId);
 
   if (!anonymousUserHash) {
@@ -130,6 +176,15 @@ export async function getFarmMateCreditsForDevice({
   }
 
   const usage = await readUsageEvents(anonymousUserHash, tool, now);
+
+  if (!usage.ok) {
+    return {
+      ...getFarmMateCreditStatus(tool, [], now),
+      remaining: 0,
+      isExhausted: true,
+      storage: usage.storage
+    };
+  }
 
   return {
     ...getFarmMateCreditStatus(tool, usage.events, now),
@@ -145,7 +200,7 @@ export async function checkFarmMateCreditsForDevice({
   anonymousDeviceId: unknown;
   tool: FarmMateUsageTool;
   now?: Date;
-}): Promise<FarmMateCreditDecision & { storage: "supabase" | "memory" | "none" }> {
+}): Promise<FarmMateCreditDecision & { storage: UsageStorage }> {
   const anonymousUserHash = getAnonymousUserHash(anonymousDeviceId);
 
   if (!anonymousUserHash) {
@@ -156,6 +211,13 @@ export async function checkFarmMateCreditsForDevice({
   }
 
   const usage = await readUsageEvents(anonymousUserHash, tool, now);
+
+  if (!usage.ok) {
+    return {
+      ...usageTrackingUnavailableDecision(tool, now),
+      storage: usage.storage
+    };
+  }
 
   return {
     ...getFarmMateCreditDecision(tool, usage.events, now),
@@ -181,10 +243,10 @@ export async function recordFarmMateUsageForDevice({
     };
   }
 
-  const storage = await writeUsageEvent(anonymousUserHash, tool, now);
+  const writeResult = await writeUsageEvent(anonymousUserHash, tool, now);
 
   return {
-    recorded: true,
-    storage
+    recorded: writeResult.recorded,
+    storage: writeResult.storage
   };
 }

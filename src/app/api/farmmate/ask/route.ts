@@ -41,6 +41,8 @@ export async function POST(request: Request) {
   });
 
   if (!creditDecision.allowed) {
+    const usageUnavailable = creditDecision.reason === "usage_tracking_unavailable";
+
     return NextResponse.json(
       {
         ok: false,
@@ -48,11 +50,13 @@ export async function POST(request: Request) {
         fallback: true,
         credits: creditDecision,
         message:
-          creditDecision.reason === "rapid_submission"
+          usageUnavailable
+            ? "FarmMate AI is temporarily limited, but you can still use the local guidance."
+            : creditDecision.reason === "rapid_submission"
             ? "FarmMate is still catching up. Please wait a few seconds before asking again."
             : `You've used your free FarmMate AI questions for now. Your credits refresh in ${creditDecision.refreshInText}. You can still use FarmMate tools and learning tips.`
       },
-      { status: 429 }
+      { status: usageUnavailable ? 503 : 429 }
     );
   }
 
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, credits });
   }
 
-  await recordFarmMateUsageForDevice({
+  const recordResult = await recordFarmMateUsageForDevice({
     anonymousDeviceId,
     tool: "ask_farmmate"
   });
@@ -77,5 +81,19 @@ export async function POST(request: Request) {
     tool: "ask_farmmate"
   });
 
-  return NextResponse.json({ ...result, credits });
+  if (!recordResult.recorded) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: "usage_tracking_unavailable",
+        fallback: true,
+        credits,
+        usageRecorded: false,
+        message: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+      },
+      { status: 503 }
+    );
+  }
+
+  return NextResponse.json({ ...result, credits, usageRecorded: recordResult.recorded });
 }

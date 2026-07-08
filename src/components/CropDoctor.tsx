@@ -97,6 +97,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       setCreditMessage(
         usageData?.reason === "rapid_submission"
           ? "FarmMate is still checking your last photo. Please wait a few seconds before trying again."
+          : usageData?.reason === "usage_tracking_unavailable"
+          ? "Crop Doctor is temporarily limited, but you can still use the other FarmMate tools."
           : `You've used your free Crop Doctor checks for now. Your credits refresh in ${usageData?.credits?.refreshInText ?? "a little while"}.`
       );
       return;

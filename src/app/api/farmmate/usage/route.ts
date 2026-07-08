@@ -32,13 +32,32 @@ export async function POST(request: Request) {
     });
 
     if (!decision.allowed) {
-      return NextResponse.json({ ok: false, reason: decision.reason, credits: decision }, { status: 429 });
+      return NextResponse.json(
+        { ok: false, reason: decision.reason, credits: decision },
+        { status: decision.reason === "usage_tracking_unavailable" ? 503 : 429 }
+      );
     }
 
-    await recordFarmMateUsageForDevice({
+    const record = await recordFarmMateUsageForDevice({
       anonymousDeviceId: body.anonymousDeviceId,
       tool: body.tool
     });
+
+    if (!record.recorded) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: "usage_tracking_unavailable",
+          credits: {
+            ...decision,
+            allowed: false,
+            reason: "usage_tracking_unavailable",
+            storage: record.storage
+          }
+        },
+        { status: 503 }
+      );
+    }
 
     const credits = await getFarmMateCreditsForDevice({
       anonymousDeviceId: body.anonymousDeviceId,
