@@ -6,7 +6,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 
 const farmMateQuestion = "I uploaded a tomato leaf with possible early blight. What should I do next?";
 
-export function CropDoctor() {
+export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -51,6 +51,11 @@ export function CropDoctor() {
   }
 
   function askFarmMateAboutThis() {
+    if (onAskFarmMateAboutThis) {
+      onAskFarmMateAboutThis(farmMateQuestion);
+      return;
+    }
+
     window.dispatchEvent(new CustomEvent("gg-farmmate-prefill", { detail: farmMateQuestion }));
     document.getElementById("assistant")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }

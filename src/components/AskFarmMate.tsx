@@ -35,7 +35,7 @@ function responseForQuestion(question: string) {
   return "Start by checking the crop, soil moisture, recent weather, and any changes in fertilizer or spraying. Keep notes on what you see today, then compare again tomorrow. For crop symptoms, a clear photo in Crop Doctor can help narrow the problem.";
 }
 
-export function AskFarmMate() {
+export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
   const [question, setQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState("");
   const [response, setResponse] = useState("");
@@ -55,6 +55,12 @@ export function AskFarmMate() {
     window.addEventListener("gg-farmmate-prefill", handlePrefill);
     return () => window.removeEventListener("gg-farmmate-prefill", handlePrefill);
   }, []);
+
+  useEffect(() => {
+    if (prefillQuestion) {
+      setQuestion(prefillQuestion);
+    }
+  }, [prefillQuestion]);
 
   function askFarmMate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();

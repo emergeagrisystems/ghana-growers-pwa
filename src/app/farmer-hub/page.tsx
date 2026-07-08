@@ -1,12 +1,10 @@
 import {
-  CalendarDays,
   CloudSun,
   GraduationCap,
   Sprout,
   Sun
 } from "lucide-react";
-import { AskFarmMate } from "@/components/AskFarmMate";
-import { CropDoctor } from "@/components/CropDoctor";
+import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -20,12 +18,6 @@ const weatherForecast = [
   { day: "Today", condition: "Warm, cloudy", temp: "29 C", rain: "35%" },
   { day: "Tomorrow", condition: "Light rain", temp: "27 C", rain: "65%" },
   { day: "Day After Tomorrow", condition: "Sunny breaks", temp: "30 C", rain: "20%" }
-];
-
-const cropCalendar = [
-  { crop: "Maize", window: "Major season planting", timing: "Mar-Jun", action: "Check rainfall before sowing." },
-  { crop: "Tomato", window: "Nursery and transplanting", timing: "Dry season", action: "Use mulch and steady irrigation." },
-  { crop: "Yam", window: "Mound preparation", timing: "Nov-Mar", action: "Prepare seed yam and staking material." }
 ];
 
 const featuredLearningTip = "Mulch young tomato plants to keep soil moist and reduce weeds during dry spells.";
@@ -87,86 +79,7 @@ export default function FarmerHubPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-ink">{"\uD83C\uDF31 Farm Tools"}</h2>
-            <p className="mt-2 text-sm font-semibold text-ink/58">Swipe to open the tool you need.</p>
-          </div>
-        </div>
-
-        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="min-w-[min(20rem,calc(100vw-2rem))] snap-start sm:min-w-[20rem] lg:min-w-[20rem]">
-            <AskFarmMate />
-          </div>
-
-          <div className="min-w-[min(20rem,calc(100vw-2rem))] snap-start sm:min-w-[20rem] lg:min-w-[20rem]">
-            <CropDoctor />
-          </div>
-
-          <article id="crop-calendar" className="min-w-[min(20rem,calc(100vw-2rem))] snap-start rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:min-w-[20rem] sm:p-7 lg:min-w-[20rem]">
-            <span className="grid h-14 w-14 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-              <CalendarDays size={30} aria-hidden="true" />
-            </span>
-            <h3 className="mt-4 text-2xl font-black text-ink">{"\uD83D\uDCC5 Crop Calendar"}</h3>
-            <p className="mt-2 text-sm leading-6 text-ink/66">Plan your season.</p>
-            <div className="mt-5 grid gap-3">
-              {cropCalendar.map((item) => (
-                <div key={item.crop} className="rounded-md bg-[#FBFFE8] p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-black text-ink">{item.crop}</p>
-                    <p className="rounded-md bg-white px-2.5 py-1 text-xs font-black text-[#2E7D32]">{item.timing}</p>
-                  </div>
-                  <p className="mt-2 text-sm font-bold text-ink/72">{item.window}</p>
-                  <p className="mt-1 text-sm leading-5 text-ink/58">{item.action}</p>
-                </div>
-              ))}
-            </div>
-            <a
-              href="#crop-calendar"
-              className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white transition hover:bg-[#246428] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
-            >
-              View Calendar
-            </a>
-          </article>
-
-          <article id="planting-advisor" className="min-w-[min(20rem,calc(100vw-2rem))] snap-start rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:min-w-[20rem] sm:p-7 lg:min-w-[20rem]">
-            <span className="grid h-14 w-14 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-              <Sprout size={30} aria-hidden="true" />
-            </span>
-            <h3 className="mt-4 text-2xl font-black text-ink">{"\uD83C\uDF31 Planting Advisor"}</h3>
-            <p className="mt-2 text-sm leading-6 text-ink/66">Find the best time to plant.</p>
-            <div className="mt-5 grid gap-3">
-              <label className="grid gap-2 text-sm font-black text-ink">
-                Crop
-                <select className="gg-field min-h-12">
-                  <option>Maize</option>
-                  <option>Tomato</option>
-                  <option>Yam</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-black text-ink">
-                Region
-                <select className="gg-field min-h-12">
-                  <option>Ashanti</option>
-                  <option>Greater Accra</option>
-                  <option>Northern</option>
-                </select>
-              </label>
-            </div>
-            <div className="mt-4 rounded-md bg-[#2E7D32]/10 p-4">
-              <p className="text-sm font-black text-[#2E7D32]">Demo advice</p>
-              <p className="mt-1 text-sm leading-6 text-ink/68">Plant after two steady rains and avoid waterlogged soil.</p>
-            </div>
-            <button
-              type="button"
-              className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white transition hover:bg-[#246428] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
-            >
-              Start
-            </button>
-          </article>
-        </div>
-      </section>
+      <FarmTools />
 
       <section id="learn" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
