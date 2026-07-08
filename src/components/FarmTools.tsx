@@ -104,6 +104,10 @@ export function FarmTools() {
     openTool("ask");
   }
 
+  function openCropDoctorFromAsk() {
+    openTool("doctor");
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-5">
@@ -162,7 +166,7 @@ export function FarmTools() {
 
             <div className="max-h-[calc(94vh-5rem)] overflow-y-auto px-4 py-6 sm:px-6">
               <div className="mx-auto max-w-2xl">
-                {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} /> : null}
+                {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} onOpenCropDoctor={openCropDoctorFromAsk} /> : null}
                 {activeTool === "doctor" ? <CropDoctor onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
                 {activeTool === "calendar" ? <CropCalendarExperience /> : null}
                 {activeTool === "planting" ? <PlantingAdvisorExperience /> : null}

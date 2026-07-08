@@ -1,7 +1,8 @@
 "use client";
 
-import { Bot, Loader2, Send } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Bot, Camera, Loader2, Send } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 
 const suggestions = [
   "Can I spray today?",
@@ -9,38 +10,19 @@ const suggestions = [
   "Best fertilizer for maize"
 ];
 
-const demoResponses: Record<string, string> = {
-  "can i spray today?":
-    "Spray only if the leaves are dry, wind is low, and rain is not expected for at least 4-6 hours. Early morning is usually safer than afternoon. If clouds are building quickly, wait until tomorrow morning.",
-  "tomato leaves turning yellow":
-    "Tomato leaves usually turn yellow because of excess watering, nitrogen deficiency or early disease.\n\nCheck the lower leaves first.\n\nAvoid watering every day.\n\nIf you can upload a photo, Crop Doctor can help identify the exact problem.",
-  "best fertilizer for maize":
-    "For maize, many farmers use a balanced starter fertilizer early, then add nitrogen when the plants are growing strongly. Apply fertilizer into moist soil and keep it away from direct contact with the seed or stem.",
-  "when should i harvest pepper?":
-    "Harvest pepper when fruits are firm, shiny, and the size or color your buyer wants. Pick in the cool morning, avoid bruising, and sort damaged fruits before packing.",
-  "market price of tomatoes":
-    "Tomato prices can change quickly by market, quality, and supply volume. Check your nearest market, compare crate sizes, and confirm whether the buyer wants fresh table tomatoes or processing-grade tomatoes."
-};
-
-function responseForQuestion(question: string) {
-  const normalized = question.trim().toLowerCase();
-  const matchedKey = Object.keys(demoResponses).find((key) => normalized.includes(key.replace("?", "")));
-
-  if (matchedKey) {
-    return demoResponses[matchedKey];
-  }
-
-  return "Start by checking the crop, soil moisture, recent weather, and any changes in fertilizer or spraying. Keep notes on what you see today, then compare again tomorrow. For crop symptoms, a clear photo in Crop Doctor can help narrow the problem.";
-}
-
-export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
+export function AskFarmMate({
+  prefillQuestion,
+  onOpenCropDoctor
+}: {
+  prefillQuestion?: string;
+  onOpenCropDoctor?: () => void;
+}) {
   const [question, setQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState("");
-  const [response, setResponse] = useState("");
+  const [response, setResponse] = useState<FarmMateBrainResponse | null>(null);
   const [isThinking, setIsThinking] = useState(false);
 
   const canAsk = question.trim().length > 0 && !isThinking;
-  const responseParagraphs = useMemo(() => response.split("\n\n").filter(Boolean), [response]);
 
   useEffect(() => {
     function handlePrefill(event: Event) {
@@ -69,11 +51,11 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
     }
 
     setAskedQuestion(trimmedQuestion);
-    setResponse("");
+    setResponse(null);
     setIsThinking(true);
 
     window.setTimeout(() => {
-      setResponse(responseForQuestion(trimmedQuestion));
+      setResponse(buildFarmMateResponse(trimmedQuestion));
       setIsThinking(false);
     }, 1200);
   }
@@ -140,11 +122,40 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
 
         {response ? (
           <div className="max-w-[92%] rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
-            {responseParagraphs.map((paragraph) => (
-              <p key={paragraph} className="mb-3 last:mb-0">
-                {paragraph}
-              </p>
-            ))}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-black uppercase tracking-[0.1em] text-leaf-700">
+                {response.intent.label.replaceAll("_", " ")}
+              </span>
+              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-black uppercase tracking-[0.1em] text-ink/56">
+                {response.confidence} confidence
+              </span>
+            </div>
+            <div className="space-y-4">
+              {response.sections.map((section, index) => (
+                <section key={section.title}>
+                  <h3 className="text-sm font-black text-ink">
+                    {index + 1}. {section.title}
+                  </h3>
+                  <div className="mt-1 space-y-1">
+                    {section.body.map((line) => (
+                      <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+            {response.shouldShowCropDoctorAction && onOpenCropDoctor ? (
+              <button
+                type="button"
+                onClick={onOpenCropDoctor}
+                className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+              >
+                <Camera size={18} aria-hidden="true" />
+                Upload Crop Photo
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>
