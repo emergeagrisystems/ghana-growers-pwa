@@ -77,8 +77,8 @@ export default function FarmerHubPage() {
                       <WeatherIcon size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
                       <p className="text-[0.72rem] font-bold leading-tight sm:text-xs">{day.day}</p>
                     </div>
-                    <p className="mt-4 text-[2.5rem] font-black leading-none text-leaf-900 sm:text-5xl">{day.temp}</p>
-                    <p className="mt-4 text-[0.7rem] font-bold leading-4 text-ink/58 sm:text-xs">{day.rain}</p>
+                    <p className="mt-5 text-[2.125rem] font-bold leading-none text-leaf-900 sm:text-4xl">{day.temp}</p>
+                    <p className="mt-5 text-[0.7rem] font-bold leading-4 text-ink/58 sm:text-xs">{day.rain}</p>
                   </div>
                   );
                 })}
