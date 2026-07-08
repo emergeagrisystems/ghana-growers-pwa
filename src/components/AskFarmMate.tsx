@@ -81,13 +81,13 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
   }
 
   return (
-    <article id="assistant" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
+    <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-          <Bot size={30} aria-hidden="true" />
+        <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+          <Bot size={24} aria-hidden="true" />
         </span>
         <div>
-          <h2 className="text-2xl font-black text-ink">Ask FarmMate</h2>
+          <h2 className="gg-card-title">Ask FarmMate</h2>
           <p className="mt-2 text-sm leading-6 text-ink/66">
             Ask farming questions and receive practical guidance for your farm.
           </p>
@@ -102,11 +102,11 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="What would you like help with today?"
-            className="min-h-32 w-full resize-none rounded-lg border border-[#2E7D32]/15 bg-[#FBFFE8] px-4 py-4 text-base font-semibold leading-7 text-ink outline-none transition placeholder:text-ink/42 focus:border-[#2E7D32] focus:bg-white focus:ring-4 focus:ring-[#2E7D32]/10"
+            className="gg-field min-h-32 resize-none px-4 py-4 text-base leading-7"
           />
         </label>
 
-        <p className="rounded-md bg-[#FBFFE8] px-3 py-2 text-sm font-semibold leading-6 text-ink/62">
+        <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-semibold leading-6 text-ink/62">
           Example: Why are my tomato leaves turning yellow?
         </p>
 
@@ -116,7 +116,7 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
               key={suggestion}
               type="button"
               onClick={() => setQuestion(suggestion)}
-              className="min-h-11 rounded-md border border-[#2E7D32]/15 bg-white px-3 py-2 text-left text-sm font-black text-[#2E7D32] transition hover:border-[#2E7D32] hover:bg-[#2E7D32]/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
+              className="min-h-11 rounded-md border border-leaf-900/15 bg-white px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               {suggestion}
             </button>
@@ -126,7 +126,7 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
         <button
           type="submit"
           disabled={!canAsk}
-          className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-md bg-[#2E7D32] px-5 py-4 text-base font-black text-white shadow-sm transition hover:bg-[#246428] disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
+          className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-4 text-base font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
         >
           {isThinking ? <Loader2 className="animate-spin" size={20} aria-hidden="true" /> : <Send size={20} aria-hidden="true" />}
           Ask FarmMate
@@ -135,20 +135,20 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
 
       <div className="mt-5 space-y-3" aria-live="polite">
         {askedQuestion ? (
-          <div className="ml-auto max-w-[92%] rounded-md bg-[#2E7D32] px-4 py-3 text-sm font-bold leading-6 text-white">
+          <div className="ml-auto max-w-[92%] rounded-md bg-leaf-600 px-4 py-3 text-sm font-bold leading-6 text-white">
             {askedQuestion}
           </div>
         ) : null}
 
         {isThinking ? (
-          <div className="flex max-w-[92%] items-center gap-2 rounded-md bg-[#FBFFE8] px-4 py-3 text-sm font-black text-ink/70">
-            <Loader2 className="animate-spin text-[#2E7D32]" size={18} aria-hidden="true" />
+          <div className="flex max-w-[92%] items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
+            <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
             FarmMate is thinking...
           </div>
         ) : null}
 
         {response ? (
-          <div className="max-w-[92%] rounded-md border border-[#2E7D32]/10 bg-[#FBFFE8] px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
+          <div className="max-w-[92%] rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
             {responseParagraphs.map((paragraph) => (
               <p key={paragraph} className="mb-3 last:mb-0">
                 {paragraph}

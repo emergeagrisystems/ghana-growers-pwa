@@ -14,24 +14,26 @@ const cropCalendar = [
 ];
 
 const tools = [
-  { key: "ask" as const, title: "Ask FarmMate", icon: Bot, emoji: "\uD83E\uDD16", description: "Ask any farming question.", action: "Open" },
-  { key: "doctor" as const, title: "Crop Doctor", icon: Camera, emoji: "\uD83D\uDCF7", description: "Diagnose crop problems.", action: "Upload" },
-  { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, emoji: "\uD83D\uDCC5", description: "Plan your season.", action: "View Calendar" },
-  { key: "planting" as const, title: "Planting Advisor", icon: Sprout, emoji: "\uD83C\uDF31", description: "Find the best time to plant.", action: "Start" }
+  { key: "ask" as const, title: "Ask FarmMate", icon: Bot, description: "Ask any farming question.", action: "Open" },
+  { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Diagnose crop problems.", action: "Upload" },
+  { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "Plan your season.", action: "View Calendar" },
+  { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Find the best time to plant.", action: "Start" }
 ];
 
 function CropCalendarExperience() {
   return (
-    <article id="crop-calendar" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
-      <CalendarDays className="text-[#2E7D32]" size={30} aria-hidden="true" />
-      <h2 className="mt-4 text-2xl font-black text-ink">{"\uD83D\uDCC5 Crop Calendar"}</h2>
+    <article id="crop-calendar" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+      <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+        <CalendarDays size={24} aria-hidden="true" />
+      </span>
+      <h2 className="mt-4 gg-card-title">Crop Calendar</h2>
       <p className="mt-2 text-sm leading-6 text-ink/66">Plan your season.</p>
       <div className="mt-5 grid gap-3">
         {cropCalendar.map((item) => (
-          <div key={item.crop} className="rounded-md bg-[#FBFFE8] p-4">
+          <div key={item.crop} className="rounded-md bg-leaf-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="font-black text-ink">{item.crop}</p>
-              <p className="rounded-md bg-white px-2.5 py-1 text-xs font-black text-[#2E7D32]">{item.timing}</p>
+              <p className="rounded-md bg-white px-2.5 py-1 text-xs font-black text-leaf-700">{item.timing}</p>
             </div>
             <p className="mt-2 text-sm font-bold text-ink/72">{item.window}</p>
             <p className="mt-1 text-sm leading-5 text-ink/58">{item.action}</p>
@@ -44,9 +46,11 @@ function CropCalendarExperience() {
 
 function PlantingAdvisorExperience() {
   return (
-    <article id="planting-advisor" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
-      <Sprout className="text-[#2E7D32]" size={30} aria-hidden="true" />
-      <h2 className="mt-4 text-2xl font-black text-ink">{"\uD83C\uDF31 Planting Advisor"}</h2>
+    <article id="planting-advisor" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+      <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+        <Sprout size={24} aria-hidden="true" />
+      </span>
+      <h2 className="mt-4 gg-card-title">Planting Advisor</h2>
       <p className="mt-2 text-sm leading-6 text-ink/66">Find the best time to plant.</p>
       <div className="mt-5 grid gap-3">
         <label className="grid gap-2 text-sm font-black text-ink">
@@ -66,8 +70,8 @@ function PlantingAdvisorExperience() {
           </select>
         </label>
       </div>
-      <div className="mt-4 rounded-md bg-[#2E7D32]/10 p-4">
-        <p className="text-sm font-black text-[#2E7D32]">Demo advice</p>
+      <div className="mt-4 rounded-md bg-leaf-50 p-4">
+        <p className="text-sm font-black text-leaf-700">Demo advice</p>
         <p className="mt-1 text-sm leading-6 text-ink/68">Plant after two steady rains and avoid waterlogged soil.</p>
       </div>
     </article>
@@ -101,7 +105,7 @@ export function FarmTools() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-5">
-        <h2 className="text-2xl font-black text-ink">{"\uD83C\uDF31 Farm Tools"}</h2>
+        <h2 className="gg-section-title">Farm Tools</h2>
       </div>
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
@@ -112,16 +116,14 @@ export function FarmTools() {
               key={tool.key}
               type="button"
               onClick={() => openTool(tool.key)}
-              className="flex min-h-60 min-w-[82vw] snap-start flex-col items-start rounded-xl border border-[#2E7D32]/10 bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-[#2E7D32]/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32] sm:min-w-[44vw] md:min-w-0"
+              className="flex min-h-60 min-w-[82vw] snap-start flex-col items-start rounded-md border border-leaf-900/10 bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:min-w-[44vw] md:min-w-0"
             >
-              <span className="grid h-16 w-16 place-items-center rounded-lg bg-[#2E7D32]/10 text-[#2E7D32]">
-                <Icon size={32} aria-hidden="true" />
+              <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+                <Icon size={24} aria-hidden="true" />
               </span>
-              <h3 className="mt-6 text-2xl font-black text-ink">
-                {tool.emoji} {tool.title}
-              </h3>
+              <h3 className="mt-6 gg-card-title">{tool.title}</h3>
               <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">{tool.description}</p>
-              <span className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white">
+              <span className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900">
                 {tool.action}
               </span>
             </button>
@@ -136,19 +138,17 @@ export function FarmTools() {
           aria-modal="true"
           aria-label={activeToolMeta?.title}
         >
-          <div
-            className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-[1.35rem] bg-[#FBFFE8] shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}
-          >
+          <div className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-xl bg-earth-50 shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}>
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
-            <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 border-b border-[#2E7D32]/10 px-4 py-4 sm:px-6">
+            <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">GG FarmMate</p>
+                <p className="gg-eyebrow text-leaf-700">GG FarmMate</p>
                 <h2 className="text-xl font-black text-ink">{activeToolMeta?.title}</h2>
               </div>
               <button
                 type="button"
                 onClick={closeTool}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-sm ring-1 ring-[#2E7D32]/10 transition hover:bg-[#FBFFE8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-sm ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                 aria-label="Close tool"
               >
                 <X size={22} aria-hidden="true" />
