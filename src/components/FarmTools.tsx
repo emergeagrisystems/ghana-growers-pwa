@@ -83,6 +83,8 @@ export function FarmTools() {
   const [isClosing, setIsClosing] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
   const activeToolMeta = tools.find((tool) => tool.key === activeTool);
+  const sheetBackground =
+    activeTool === "ask" ? "bg-gradient-to-b from-white via-earth-50 to-leaf-50" : "bg-earth-50";
 
   function openTool(tool: ToolKey) {
     setIsClosing(false);
@@ -138,7 +140,7 @@ export function FarmTools() {
           aria-modal="true"
           aria-label={activeToolMeta?.title}
         >
-          <div className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-xl bg-earth-50 shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}>
+          <div className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-xl ${sheetBackground} shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}>
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
               <div>
@@ -155,7 +157,7 @@ export function FarmTools() {
               </button>
             </div>
 
-            <div className="max-h-[calc(94vh-5rem)] overflow-y-auto px-4 py-5 sm:px-6">
+            <div className="max-h-[calc(94vh-5rem)] overflow-y-auto px-4 py-6 sm:px-6">
               <div className="mx-auto max-w-3xl">
                 {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} /> : null}
                 {activeTool === "doctor" ? <CropDoctor onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}

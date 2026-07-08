@@ -6,9 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 const suggestions = [
   "Can I spray today?",
   "Tomato leaves turning yellow",
-  "Best fertilizer for maize",
-  "When should I harvest pepper?",
-  "Market price of tomatoes"
+  "Best fertilizer for maize"
 ];
 
 const demoResponses: Record<string, string> = {
@@ -81,34 +79,27 @@ export function AskFarmMate({ prefillQuestion }: { prefillQuestion?: string }) {
   }
 
   return (
-    <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+    <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
       <div className="flex items-start gap-3">
         <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
           <Bot size={24} aria-hidden="true" />
         </span>
         <div>
           <h2 className="gg-card-title">Ask FarmMate</h2>
-          <p className="mt-2 text-sm leading-6 text-ink/66">
-            Ask farming questions and receive practical guidance for your farm.
-          </p>
         </div>
       </div>
 
-      <form className="mt-5 grid gap-4" onSubmit={askFarmMate}>
-        <label className="grid gap-2 text-sm font-black text-ink" htmlFor="ask-farmmate-question">
-          What would you like help with today?
+      <form className="mt-6 grid gap-4" onSubmit={askFarmMate}>
+        <label className="grid gap-2" htmlFor="ask-farmmate-question">
+          <span className="sr-only">What would you like help with today?</span>
           <textarea
             id="ask-farmmate-question"
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder="What would you like help with today?"
-            className="gg-field min-h-32 resize-none px-4 py-4 text-base leading-7"
+            placeholder="Example: Why are my tomato leaves turning yellow?"
+            className="gg-field min-h-36 resize-none bg-leaf-50/70 px-4 py-4 text-base leading-7 focus:bg-white"
           />
         </label>
-
-        <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-semibold leading-6 text-ink/62">
-          Example: Why are my tomato leaves turning yellow?
-        </p>
 
         <div className="flex flex-wrap gap-2" aria-label="Suggested questions">
           {suggestions.map((suggestion) => (
