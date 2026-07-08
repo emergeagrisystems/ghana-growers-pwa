@@ -75,7 +75,7 @@ Support fields:
 1. Run `supabase/migrations/005_crop_health_reports.sql`.
 2. Confirm the `crop_health_reports` table exists.
 3. Confirm the `crop-health-reports` Storage bucket exists.
-4. Open `/smart-solutions#crop-health`.
+4. Open `/farmer-hub#crop-health`.
 5. Upload a valid JPG, PNG, or WEBP image under 5MB.
 6. Run the Crop Health Check.
 7. Click **Save Diagnosis**.

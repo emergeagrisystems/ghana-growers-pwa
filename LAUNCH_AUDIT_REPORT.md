@@ -164,7 +164,7 @@ Reviewed:
 2. Crop Health is promising, but users need to know a clear photo matters.
 3. Farm Assistant can answer many questions, but farmers may not know it gives general guidance only.
 4. Market Prices should make the date/source/region very clear so farmers know how current the numbers are.
-5. "Digital Farm Toolbox" is clear, but the route is still `/smart-solutions`; no issue for users, but internal naming remains mixed.
+5. "Digital Farm Toolbox" is clear, and GG FarmMate now routes through `/farmer-hub`.
 
 ### Digital Farm Verdict
 

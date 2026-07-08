@@ -46,7 +46,7 @@ public/images/           Placeholder visual assets
 
 ### Farm Help Assistant Setup
 
-The chat UI lives in `src/components/smart-solutions/FarmerAssistant.tsx` and is displayed on `/smart-solutions`.
+The chat UI lives in `src/components/smart-solutions/FarmerAssistant.tsx` and is displayed on `/farmer-hub`.
 
 The chat API route is located at:
 
@@ -87,7 +87,7 @@ To test locally:
 2. Add `OPENAI_API_KEY=your_api_key_here`.
 3. Optionally add `OPENAI_MODEL="gpt-5.4-mini"`.
 4. Run the app.
-5. Open `/smart-solutions` and ask a question in the Farm Help Assistant section.
+5. Open `/farmer-hub` and ask a question in the Farm Help Assistant section.
 
 Example local test:
 
@@ -98,7 +98,7 @@ pnpm run dev
 Then visit:
 
 ```text
-http://localhost:3000/smart-solutions
+http://localhost:3000/farmer-hub
 ```
 
 The frontend must never contain or expose the OpenAI API key. Browser code should only call the internal `/api/farmer-assistant` route.

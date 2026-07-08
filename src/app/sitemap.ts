@@ -9,7 +9,6 @@ const publicRoutes = [
   "/farmer-directory",
   "/supplier-directory",
   "/farmer-hub",
-  "/smart-solutions",
   "/learn",
   "/faq",
   "/success-stories",

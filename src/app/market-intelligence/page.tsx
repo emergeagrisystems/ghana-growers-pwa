@@ -87,7 +87,7 @@ export default function MarketIntelligencePage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/marketplace">Browse Marketplace</ButtonLink>
           <ButtonLink href="/buyer-requests" variant="secondary">View Produce Demand</ButtonLink>
-          <ButtonLink href="/smart-solutions" variant="light">Open GG FarmMate</ButtonLink>
+          <ButtonLink href="/farmer-hub" variant="light">Open GG FarmMate</ButtonLink>
         </div>
       </PageHero>
 

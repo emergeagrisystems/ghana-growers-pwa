@@ -140,7 +140,7 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-10 flex justify-center">
-            <ButtonLink href="/smart-solutions">
+            <ButtonLink href="/farmer-hub">
               Open GG FarmMate
             </ButtonLink>
           </div>

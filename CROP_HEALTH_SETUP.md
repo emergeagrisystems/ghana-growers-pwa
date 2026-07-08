@@ -97,7 +97,7 @@ Run `supabase/migrations/005_crop_health_reports.sql` in Supabase SQL Editor bef
 
 1. Add `CROP_HEALTH_API_KEY` to `.env.local`.
 2. Start the app locally.
-3. Open `/smart-solutions#crop-health`.
+3. Open `/farmer-hub#crop-health`.
 4. Upload a clear JPG, PNG, or WEBP crop/leaf image under 5MB.
 5. Click **Get Advisory Result**.
 6. Confirm that the UI shows:
