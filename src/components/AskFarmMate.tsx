@@ -84,6 +84,44 @@ function learnedSummary(response: FarmMateBrainResponse, answers: FollowUpAnswer
   return summary.length ? summary.slice(0, 4) : ["FarmMate has enough information to give a first recommendation."];
 }
 
+function answerInsights(answers: FollowUpAnswer[]) {
+  const insightsByAnswer: Record<string, string> = {
+    "Bottom leaves": "Since the yellowing starts at the bottom, water stress, nitrogen shortage or early disease are more likely.",
+    "Top leaves": "Since the yellowing starts at the top, check the newest growth and soil condition before treating.",
+    Everywhere: "Since the yellowing is everywhere, the whole plant may be under stress.",
+    "Brown spots or rings": "Since you see spots or rings, early blight is possible.",
+    "Curling or insects": "Since you see curling or insects, pest pressure may be involved.",
+    "No, just yellow": "Since the leaves are only yellow, nutrient or water stress may be more likely than leaf disease.",
+    "Heavy rain": "Since there has been heavy rain, excess moisture or nutrient leaching may be involved.",
+    "Daily watering": "Since the crop is watered daily, excess water may be stressing the roots.",
+    "Very hot or dry": "Since it has been very hot or dry, flower drop may be stress-related.",
+    "Irregular watering": "Since watering has been irregular, pepper flowers may drop from stress.",
+    "Rain is expected soon": "Since rain is expected soon, spraying should wait.",
+    "No rain expected soon": "Since no rain is expected soon, rain wash-off is less likely.",
+    "Leaves are dry": "Since the leaves are dry, leaf wetness is not the main concern.",
+    "Leaves are wet": "Since the leaves are wet, wait before spraying.",
+    "Wind is calm": "Since the wind is calm, wind drift is less likely.",
+    "Wind is strong": "Since the wind is strong, spraying can drift away from the crop.",
+    "I can see insects": "Since you can see insects, pest pressure may be involved.",
+    "I cannot see insects": "Since you cannot see insects, pests are less likely but still scout nearby plants.",
+    "Fertilizer was applied recently": "Since fertilizer was applied recently, avoid adding more until you inspect the crop.",
+    "No recent fertilizer": "Since no fertilizer was applied recently, nutrient stress may be possible.",
+    "Older leaves are pale yellow": "Since older leaves are pale yellow, nitrogen shortage is more likely.",
+    "Older leaves are purple": "Since older leaves are purple, early root or phosphorus stress may be worth checking.",
+    "Older leaves are dark green": "Since older leaves are dark green, nutrient shortage is less obvious.",
+    "The plot has been dry": "Since the plot has been dry, moisture stress may be part of the problem.",
+    "The plot was flooded or waterlogged": "Since the plot was flooded or waterlogged, root stress may be part of the problem.",
+    "No recent dryness or waterlogging": "Since there has been no recent dryness or waterlogging, water stress is less likely.",
+    "I can see whorl damage": "Since you can see whorl damage, check closely for fall armyworm.",
+    "No whorl damage seen": "Since you saw no whorl damage, fall armyworm is less likely."
+  };
+
+  return answers
+    .map((answer) => insightsByAnswer[answer.answer])
+    .filter((insight): insight is string => Boolean(insight))
+    .slice(0, 2);
+}
+
 function conciseLines(lines: string[], limit: number) {
   return lines.map(cleanGuidance).filter(Boolean).slice(0, limit);
 }
@@ -272,7 +310,7 @@ export function AskFarmMate({
                 </section>
 
                 {[
-                  ["What I think", conciseLines([...sectionBody(response, "Direct answer").slice(0, 1), ...sectionBody(response, "Why this may happen")], 3)],
+                  ["What I think", conciseLines([...answerInsights(followUpAnswers), ...sectionBody(response, "Direct answer").slice(0, 1), ...sectionBody(response, "Why this may happen")], 3)],
                   ["What to do now", conciseLines([...sectionBody(response, "Recommended action"), ...sectionBody(response, "Prevention").slice(0, 2)], 3)],
                   ["Next step", conciseLines(sectionBody(response, "Next Best Action"), 1)]
                 ].map(([title, body]) => (
