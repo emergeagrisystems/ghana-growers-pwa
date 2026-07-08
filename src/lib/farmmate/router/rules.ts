@@ -3,13 +3,32 @@ import type { RouterRule } from "./types";
 export const farmMateRouterRules: RouterRule[] = [
   {
     specialist: "crop_health",
-    keywords: ["yellow leaves", "leaves yellow", "wilting", "wilt", "poor growth", "not growing", "stunted", "plant stress", "crop health", "tomato leaves"],
+    keywords: [
+      "yellow leaves",
+      "leaves yellow",
+      "brown leaves",
+      "curling leaves",
+      "leaves curling",
+      "wilting",
+      "wilt",
+      "flower drop",
+      "flowers dropping",
+      "fruit drop",
+      "stunted",
+      "poor growth",
+      "not growing",
+      "root problem",
+      "root rot",
+      "plant stress",
+      "crop health",
+      "tomato leaves"
+    ],
     reason: "The question mentions crop symptoms, plant stress or poor growth.",
     suggestedFallbackSpecialist: "general_farming"
   },
   {
     specialist: "pest_disease",
-    keywords: ["whitefly", "whiteflies", "armyworm", "fall armyworm", "blight", "fungus", "fungal", "disease", "pest", "insect", "spots", "lesion", "mildew"],
+    keywords: ["whitefly", "whiteflies", "armyworm", "fall armyworm", "blight", "fungus", "fungal", "disease", "pest", "insect", "spots", "black spots", "holes in leaves", "leaf holes", "lesion", "mildew"],
     reason: "The question mentions pests, diseases or visible infection signs.",
     suggestedFallbackSpecialist: "crop_health"
   },

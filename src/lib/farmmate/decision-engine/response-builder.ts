@@ -3,6 +3,7 @@ import { resolveFarmMateCropForQuestion } from "../crop-context";
 import { farmMateDiseases } from "../diseases";
 import { farmMateNutrientDeficiencies } from "../nutrient-deficiencies";
 import { farmMatePests } from "../pests";
+import { assessPlantHealthQuestion, PlantHealthAssessment } from "../plant-health-specialist";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
 import type { FarmMateSpecialist, RouterResult } from "../router";
@@ -70,6 +71,11 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
   const normalized = question.toLowerCase();
   const normalizedPlain = normalized.replace(/[’']/g, "").replace(/\s+/g, " ");
   const selectedSpecialist = selectedSpecialistFromRouter(routerResult);
+  const plantHealthAssessment = assessPlantHealthQuestion(question, resolvedCrop);
+
+  if (plantHealthAssessment && ["crop_health", "pest_disease", "general_farming"].includes(selectedSpecialist)) {
+    return plantHealthAssessmentToDecisionFlow(plantHealthAssessment, intent);
+  }
 
   if (normalized.includes("yellow") && normalized.includes("tomato")) {
     return farmMateDecisionFlows.find((flow) => flow.id === "yellow-tomato-leaves");
@@ -106,6 +112,46 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
   }
 
   return farmMateDecisionFlows.find((flow) => flow.intent === intent.intent && flowMatchesCrop(flow, resolvedCrop));
+}
+
+function plantHealthAssessmentToDecisionFlow(assessment: PlantHealthAssessment, intent: DetectedFarmMateIntent): DecisionFlow {
+  const useExtensionNextAction = assessment.recommendExtensionOfficer && !assessment.recommendCropDoctor;
+
+  return {
+    id: `plant-health-${assessment.crop?.toLowerCase() ?? "general"}-${assessment.symptom.id}`,
+    question: `${assessment.crop ? `${assessment.crop} ` : ""}${assessment.symptom.name}`,
+    intent: intent.intent === "pests" || intent.intent === "diseases" ? intent.intent : "crop-health",
+    possibleCauses: assessment.likelyCauses.slice(0, 3),
+    requiredInformation: {
+      crop: assessment.crop,
+      growthStage: assessment.growthStage,
+      visibleSymptoms: [assessment.symptom.name]
+    },
+    followUpQuestions: assessment.followUpQuestions.slice(0, 3),
+    recommendation: {
+      summary: assessment.crop
+        ? `${assessment.symptom.name} on ${assessment.crop.toLowerCase()} can come from a few causes, so FarmMate checks the symptom, crop, growth stage and field condition before treatment.`
+        : `${assessment.symptom.name} can come from a few causes, so FarmMate needs the crop and field condition before treatment.`,
+      confidence: assessment.confidence,
+      reasoning: assessment.checks.slice(0, 3).map((check, index) => ({
+        id: `${assessment.symptom.id}-check-${index + 1}`,
+        observation: check,
+        interpretation: "This check helps separate nutrient, water, pest and disease causes before recommending treatment."
+      })),
+      sustainabilityPriority: ["prevention", "good-farming-practice", "natural-low-cost-solution", "chemical-recommendation-if-appropriate"],
+      recommendedAction: assessment.actions.slice(0, 3).join(" "),
+      guidance: assessment.actions.slice(0, 3),
+      nextBestAction: useExtensionNextAction
+        ? {
+            id: `plant-health-${assessment.symptom.id}-extension`,
+            label: "Contact extension officer",
+            instruction: `Speak with a local extension officer if ${assessment.symptom.name.toLowerCase()} is affecting many plants or spreading quickly.`,
+            actionType: "contact-extension-officer"
+          }
+        : assessment.nextBestAction
+    },
+    safetyRules: []
+  };
 }
 
 function cropFromResolvedContext(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent, resolvedCrop?: string) {

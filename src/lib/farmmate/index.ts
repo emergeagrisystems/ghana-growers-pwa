@@ -9,6 +9,7 @@ export * from "./sustainability";
 export * from "./safety";
 export * from "./regions";
 export * from "./reasoning-rules";
+export * from "./plant-health-specialist";
 export * as farmMateDecisionEngine from "./decision-engine";
 export * as farmMateAi from "./ai";
 export * as farmMateRouter from "./router";
