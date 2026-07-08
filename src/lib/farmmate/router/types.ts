@@ -24,6 +24,7 @@ export type RouterResult = {
   matchedKeywords: string[];
   reason: string;
   suggestedFallbackSpecialist: FarmMateSpecialist;
+  detectedCrop?: string;
 };
 
 export type FarmMateSpecialistProfile = {

@@ -1,13 +1,6 @@
 import { farmMateRouterRules } from "./rules";
+import { detectFarmMateCropFromQuestion } from "../crop-context";
 import type { RouterConfidence, RouterResult, RouterRule } from "./types";
-
-const fallbackResult: RouterResult = {
-  selectedSpecialist: "general_farming",
-  confidence: "low",
-  matchedKeywords: [],
-  reason: "No specialist keyword matched clearly, so FarmMate should start with general farming guidance and ask for more context.",
-  suggestedFallbackSpecialist: "general_farming"
-};
 
 function normalizeQuestion(question: string) {
   return question.toLowerCase().replace(/\s+/g, " ").trim();
@@ -31,6 +24,15 @@ function confidenceFromMatches(matchCount: number): RouterConfidence {
 
 export function routeFarmMateQuestion(question: string): RouterResult {
   const normalizedQuestion = normalizeQuestion(question);
+  const detectedCrop = detectFarmMateCropFromQuestion(question)?.name;
+  const fallbackResult: RouterResult = {
+    selectedSpecialist: "general_farming",
+    confidence: "low",
+    matchedKeywords: [],
+    reason: "No specialist keyword matched clearly, so FarmMate should start with general farming guidance and ask for more context.",
+    suggestedFallbackSpecialist: "general_farming",
+    detectedCrop
+  };
 
   if (!normalizedQuestion) {
     return fallbackResult;
@@ -55,6 +57,7 @@ export function routeFarmMateQuestion(question: string): RouterResult {
     confidence: confidenceFromMatches(bestMatch.matchedKeywords.length),
     matchedKeywords: bestMatch.matchedKeywords,
     reason: bestMatch.rule.reason,
-    suggestedFallbackSpecialist: bestMatch.rule.suggestedFallbackSpecialist
+    suggestedFallbackSpecialist: bestMatch.rule.suggestedFallbackSpecialist,
+    detectedCrop
   };
 }

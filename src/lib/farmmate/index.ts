@@ -1,4 +1,6 @@
 export * from "./types";
+export * from "./crop-context";
+export * from "./crop-context-examples";
 export * from "./crops";
 export * from "./diseases";
 export * from "./pests";

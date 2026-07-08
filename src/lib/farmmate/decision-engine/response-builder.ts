@@ -1,4 +1,5 @@
-import { farmMateCrops, findFarmMateCrop } from "../crops";
+import { findFarmMateCrop } from "../crops";
+import { resolveFarmMateCropForQuestion } from "../crop-context";
 import { farmMateDiseases } from "../diseases";
 import { farmMateNutrientDeficiencies } from "../nutrient-deficiencies";
 import { farmMatePests } from "../pests";
@@ -20,6 +21,7 @@ export type FarmMateResponseSection =
 export type FarmMateBrainResponse = {
   intent: DetectedFarmMateIntent;
   routerResult?: RouterResult;
+  resolvedCrop?: string;
   flow?: DecisionFlow;
   confidence: "high" | "medium" | "low";
   sections: Array<{
@@ -28,6 +30,10 @@ export type FarmMateBrainResponse = {
   }>;
   nextBestAction: DecisionFlow["recommendation"]["nextBestAction"];
   shouldShowCropDoctorAction: boolean;
+};
+
+export type FarmMateBrainOptions = {
+  previousCropName?: string;
 };
 
 const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
@@ -48,8 +54,21 @@ function selectedSpecialistFromRouter(routerResult?: RouterResult) {
   return routerResult.selectedSpecialist;
 }
 
-function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, routerResult?: RouterResult) {
+function flowMatchesCrop(flow: DecisionFlow, resolvedCrop?: string) {
+  if (!resolvedCrop) {
+    return true;
+  }
+
+  if (!flow.requiredInformation.crop) {
+    return true;
+  }
+
+  return flow.requiredInformation.crop.toLowerCase() === resolvedCrop.toLowerCase();
+}
+
+function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, routerResult?: RouterResult, resolvedCrop?: string) {
   const normalized = question.toLowerCase();
+  const normalizedPlain = normalized.replace(/[’']/g, "").replace(/\s+/g, " ");
   const selectedSpecialist = selectedSpecialistFromRouter(routerResult);
 
   if (normalized.includes("yellow") && normalized.includes("tomato")) {
@@ -64,33 +83,37 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
     return farmMateDecisionFlows.find((flow) => flow.id === "pepper-flowers-dropping");
   }
 
-  if (normalized.includes("maize") && (normalized.includes("fertilizer") || normalized.includes("not growing") || normalized.includes("poor growth"))) {
+  if (
+    normalized.includes("maize") &&
+    (normalized.includes("fertilizer") ||
+      normalized.includes("not growing") ||
+      normalized.includes("poor growth") ||
+      normalizedPlain.includes("isnt growing") ||
+      normalized.includes("growing well") ||
+      normalized.includes("not doing well"))
+  ) {
     return farmMateDecisionFlows.find((flow) => flow.id === "maize-not-growing-well");
   }
 
   const routedIntent = specialistIntentMap[selectedSpecialist];
 
   if (routedIntent) {
-    const routedFlow = farmMateDecisionFlows.find((flow) => flow.intent === routedIntent);
+    const routedFlow = farmMateDecisionFlows.find((flow) => flow.intent === routedIntent && flowMatchesCrop(flow, resolvedCrop));
 
     if (routedFlow) {
       return routedFlow;
     }
   }
 
-  return farmMateDecisionFlows.find((flow) => flow.intent === intent.intent);
+  return farmMateDecisionFlows.find((flow) => flow.intent === intent.intent && flowMatchesCrop(flow, resolvedCrop));
 }
 
-function cropFromFlowOrIntent(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent) {
-  if (flow?.requiredInformation.crop) {
-    return findFarmMateCrop(flow.requiredInformation.crop);
-  }
-
-  if (intent.cropName) {
-    return findFarmMateCrop(intent.cropName);
-  }
-
-  return undefined;
+function cropFromResolvedContext(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent, resolvedCrop?: string) {
+  return (
+    (resolvedCrop ? findFarmMateCrop(resolvedCrop) : undefined) ??
+    (intent.cropName ? findFarmMateCrop(intent.cropName) : undefined) ??
+    (flow?.requiredInformation.crop ? findFarmMateCrop(flow.requiredInformation.crop) : undefined)
+  );
 }
 
 function readableReferences(ids: string[], source: Array<{ id: string; name?: string; nutrient?: string; title?: string }>) {
@@ -101,8 +124,8 @@ function readableReferences(ids: string[], source: Array<{ id: string; name?: st
     .filter((label): label is string => Boolean(label));
 }
 
-function knowledgeLines(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent) {
-  const crop = cropFromFlowOrIntent(flow, intent);
+function knowledgeLines(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent, resolvedCrop?: string) {
+  const crop = cropFromResolvedContext(flow, intent, resolvedCrop);
 
   if (!crop) {
     return {
@@ -174,11 +197,15 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   };
 }
 
-export function buildFarmMateResponse(question: string, routerResult?: RouterResult): FarmMateBrainResponse {
-  const intent = detectFarmMateIntent(question);
-  const matchedFlow = findBestDecisionFlow(question, intent, routerResult);
+export function buildFarmMateResponse(question: string, routerResult?: RouterResult, options: FarmMateBrainOptions = {}): FarmMateBrainResponse {
+  const resolvedCrop = resolveFarmMateCropForQuestion(question, options.previousCropName)?.name;
+  const intent = {
+    ...detectFarmMateIntent(question),
+    cropName: resolvedCrop
+  };
+  const matchedFlow = findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
   const flow = matchedFlow ?? fallbackFlow(intent);
-  const knowledge = knowledgeLines(flow, intent);
+  const knowledge = knowledgeLines(flow, intent, resolvedCrop);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
   const shouldShowCropDoctorAction = flow.recommendation.nextBestAction.actionType === "use-crop-doctor";
   const shouldRecommendExtension = flow.recommendation.nextBestAction.actionType === "contact-extension-officer";
@@ -188,6 +215,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   return {
     intent,
     routerResult,
+    resolvedCrop,
     flow: matchedFlow,
     confidence: flow.recommendation.confidence,
     shouldShowCropDoctorAction,

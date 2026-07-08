@@ -28,30 +28,32 @@ function extractOutputText(data: OpenAIResponsesApiResult) {
 }
 
 function buildVoiceLayerInput(input: FarmMateAiInput) {
-  return JSON.stringify(
-    {
-      instruction:
-        "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
-      farmerQuestion: input.farmerQuestion,
-      detectedIntent: input.brain.intent,
-      crop: input.brain.flow?.requiredInformation.crop ?? input.brain.intent.cropName ?? null,
-      decisionFlow: input.brain.flow ?? null,
-      farmerAnswers: input.farmerAnswers,
-      recommendedAction: input.brain.flow?.recommendation.recommendedAction ?? null,
-      safetyRules: input.brain.flow?.safetyRules ?? [],
-      nextBestAction: input.brain.nextBestAction,
-      localStructuredResponse: input.localStructuredResponse,
-      responseRules: [
-        "Keep the answer concise and conversational.",
-        "Use the farmer's answers when explaining the recommendation.",
-        "If information is still missing, ask one clear follow-up question.",
-        "If Crop Doctor is the next best action, say that a clear photo will help.",
-        "End with exactly one clear next step."
-      ]
-    },
-    null,
-    2
-  );
+  const payload = {
+    instruction:
+      "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
+    farmerQuestion: input.farmerQuestion,
+    detectedIntent: input.brain.intent,
+    crop: input.brain.resolvedCrop ?? input.brain.intent.cropName ?? null,
+    decisionFlow: input.brain.flow ?? null,
+    farmerAnswers: input.farmerAnswers,
+    recommendedAction: input.brain.flow?.recommendation.recommendedAction ?? null,
+    safetyRules: input.brain.flow?.safetyRules ?? [],
+    nextBestAction: input.brain.nextBestAction,
+    localStructuredResponse: input.localStructuredResponse,
+    responseRules: [
+      "Keep the answer concise and conversational.",
+      "Use the farmer's answers when explaining the recommendation.",
+      "If information is still missing, ask one clear follow-up question.",
+      "If Crop Doctor is the next best action, say that a clear photo will help.",
+      "End with exactly one clear next step."
+    ]
+  };
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("FarmMate OpenAI payload crop:", payload.crop ?? "none");
+  }
+
+  return JSON.stringify(payload, null, 2);
 }
 
 export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Promise<FarmMateAiResult> {

@@ -158,6 +158,17 @@ function logRouterResult(routerResult: RouterResult) {
   console.info("FarmMate Router confidence:", routerResult.confidence);
 }
 
+function logBrainContext(question: string, response: FarmMateBrainResponse) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  console.info("FarmMate current user question:", question);
+  console.info("FarmMate detected crop:", response.resolvedCrop ?? "none");
+  console.info("FarmMate selected specialist:", response.routerResult?.selectedSpecialist ?? "none");
+  console.info("FarmMate selected decision flow crop/context:", response.flow?.requiredInformation.crop ?? "none");
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -174,6 +185,7 @@ export function AskFarmMate({
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [naturalAnswer, setNaturalAnswer] = useState("");
   const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
+  const [activeCropName, setActiveCropName] = useState("");
 
   const canAsk = question.trim().length > 0 && !isThinking;
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
@@ -250,12 +262,15 @@ export function AskFarmMate({
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion);
     logRouterResult(routerResult);
+    const previousCropName = routerResult.detectedCrop ? undefined : activeCropName || undefined;
 
     window.setTimeout(() => {
-      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult);
+      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, { previousCropName });
       const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
 
+      logBrainContext(trimmedQuestion, farmMateResponse);
       setResponse(farmMateResponse);
+      setActiveCropName(farmMateResponse.resolvedCrop ?? "");
       setShowRecommendation(shouldShowRecommendation);
       setIsThinking(false);
 

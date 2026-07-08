@@ -3,14 +3,72 @@
 import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { ChangeEvent, useEffect, useState } from "react";
+import { detectFarmMateCropFromQuestion } from "@/lib/farmmate/crop-context";
 
-const farmMateQuestion = "I uploaded a tomato leaf with possible early blight. What should I do next?";
+type CropDoctorDemoDiagnosis = {
+  crop?: string;
+  issue: string;
+  confidence: number;
+  meaning: string;
+  action: string;
+  prevention: string;
+};
+
+const diagnosisByCrop: Record<string, CropDoctorDemoDiagnosis> = {
+  Cassava: {
+    crop: "Cassava",
+    issue: "Possible mosaic disease",
+    confidence: 88,
+    meaning: "Mosaic disease can cause pale patches, leaf distortion and weaker cassava growth.",
+    action: "Remove badly affected plants where appropriate and avoid using cuttings from diseased plants.",
+    prevention: "Use clean planting material, control whiteflies where possible, and monitor nearby plants."
+  },
+  Maize: {
+    crop: "Maize",
+    issue: "Possible nutrient or water stress",
+    confidence: 84,
+    meaning: "Maize growth problems can come from low nutrients, poor root growth, moisture stress or waterlogging.",
+    action: "Check older leaves, soil moisture and the base of nearby plants before adding more fertilizer.",
+    prevention: "Keep weeds down early, avoid waterlogged plots, and apply nutrients based on local guidance."
+  },
+  Tomato: {
+    crop: "Tomato",
+    issue: "Possible early blight",
+    confidence: 86,
+    meaning: "Early blight is a fungal disease that often appears after rain and high humidity.",
+    action: "Remove affected leaves, improve airflow, and avoid watering the leaves directly.",
+    prevention: "Rotate crops, water at soil level, and monitor nearby plants."
+  }
+};
+
+const unknownCropDiagnosis: CropDoctorDemoDiagnosis = {
+  issue: "Possible crop health issue",
+  confidence: 72,
+  meaning: "This demo cannot confirm the crop from the photo yet, so FarmMate should avoid guessing.",
+  action: "Check the newest and oldest leaves, look for insects, and note whether the problem is spreading.",
+  prevention: "Keep the crop well spaced, avoid overwatering, and monitor nearby plants."
+};
+
+function diagnosisFromFileName(fileName: string): CropDoctorDemoDiagnosis {
+  const detectedCrop = detectFarmMateCropFromQuestion(fileName)?.name;
+
+  return (detectedCrop && diagnosisByCrop[detectedCrop]) || unknownCropDiagnosis;
+}
+
+function farmMateQuestionFromDiagnosis(diagnosis: CropDoctorDemoDiagnosis) {
+  if (diagnosis.crop && diagnosis.issue) {
+    return `I uploaded a ${diagnosis.crop.toLowerCase()} crop photo with ${diagnosis.issue.toLowerCase()}. What should I do next?`;
+  }
+
+  return "I uploaded a crop photo. What should I check next?";
+}
 
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasDiagnosis, setHasDiagnosis] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<CropDoctorDemoDiagnosis>(unknownCropDiagnosis);
 
   useEffect(() => {
     return () => {
@@ -32,6 +90,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
     setSelectedImage(URL.createObjectURL(file));
     setFileName(file.name);
+    setDiagnosis(diagnosisFromFileName(file.name));
     setHasDiagnosis(false);
     setIsAnalysing(false);
   }
@@ -51,6 +110,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   }
 
   function askFarmMateAboutThis() {
+    const farmMateQuestion = farmMateQuestionFromDiagnosis(diagnosis);
+
     if (onAskFarmMateAboutThis) {
       onAskFarmMateAboutThis(farmMateQuestion);
       return;
@@ -120,19 +181,19 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="gg-eyebrow text-leaf-700">Possible issue</p>
-                <h3 className="mt-2 gg-card-title">Early blight</h3>
+                <h3 className="mt-2 gg-card-title">{diagnosis.issue}</h3>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
-                92% confidence
+                {diagnosis.confidence}% confidence
               </span>
             </div>
 
             <div className="mt-4 grid gap-3">
               {[
-                ["What this means", "Early blight is a fungal disease that often appears after rain and high humidity."],
-                ["Recommended action", "Remove affected leaves, improve airflow, and avoid watering the leaves directly."],
-                ["Prevention", "Rotate crops, water at soil level, and monitor nearby plants."]
+                ["What this means", diagnosis.meaning],
+                ["Recommended action", diagnosis.action],
+                ["Prevention", diagnosis.prevention]
               ].map(([label, text]) => (
                 <div key={label} className="rounded-md bg-white p-3">
                   <p className="text-sm font-black text-ink">{label}</p>

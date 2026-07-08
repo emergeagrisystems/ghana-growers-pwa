@@ -1,4 +1,4 @@
-import { farmMateCrops } from "../crops";
+import { detectFarmMateCropFromQuestion } from "../crop-context";
 import { FarmerIntent } from "./types";
 
 export type DetectedFarmMateIntent = {
@@ -59,7 +59,7 @@ const intentKeywords: Array<{
 
 export function detectFarmMateIntent(question: string): DetectedFarmMateIntent {
   const normalized = question.trim().toLowerCase();
-  const detectedCrop = farmMateCrops.find((crop) => normalized.includes(crop.name.toLowerCase()));
+  const detectedCrop = detectFarmMateCropFromQuestion(question);
   const matchedIntent = intentKeywords.find((entry) => entry.keywords.some((keyword) => normalized.includes(keyword)));
 
   if (matchedIntent) {
@@ -78,4 +78,3 @@ export function detectFarmMateIntent(question: string): DetectedFarmMateIntent {
     matchedKeywords: []
   };
 }
-
