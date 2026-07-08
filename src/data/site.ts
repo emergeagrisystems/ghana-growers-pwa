@@ -16,35 +16,10 @@ export const WHATSAPP_NUMBER = "233000000000";
 export const navigation: NavigationItem[] = [
   {
     title: "GG FarmMate",
-    href: "/smart-solutions"
+    href: "/farmer-hub"
   },
-  { title: "Marketplace", href: "/marketplace" },
-  {
-    title: "Network",
-    href: "/farmer-directory",
-    children: [
-      { title: "Find Farmers", href: "/farmer-directory" },
-      { title: "Find Suppliers", href: "/supplier-directory" }
-    ]
-  },
-  {
-    title: "Services",
-    href: "/services",
-    children: [
-      { title: "Sell", href: "/services/farmers" },
-      { title: "Buy", href: "/services/buy" }
-    ]
-  },
+  { title: "Buy", href: "/buy" },
+  { title: "Sell", href: "/sell" },
+  { title: "Directory", href: "/directory" },
   { title: "Learn", href: "/learn" },
-  {
-    title: "About",
-    href: "/about",
-    children: [
-      { title: "Who We Are", href: "/about" },
-      { title: "Partner With Us", href: "/about/partner-with-us" },
-      { title: "Job Listings", href: "/about/careers" },
-      { title: "Verification Process", href: "/verification-process" },
-      { title: "Contact Us", href: "/contact" }
-    ]
-  }
 ];

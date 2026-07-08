@@ -50,7 +50,7 @@ export function Header() {
             href="/join"
             className="gg-button-primary px-4 py-2"
           >
-            Join the Network
+            Join Network
           </Link>
         </div>
 
@@ -97,7 +97,7 @@ export function Header() {
               onClick={() => setOpen(false)}
               className="gg-button-primary mt-2 block text-center"
             >
-              Join the Network
+              Join Network
             </Link>
           </div>
         </div>
