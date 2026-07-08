@@ -20,6 +20,7 @@ export type FollowUpQuestion = {
   id: string;
   question: string;
   requiredForConfidence: boolean;
+  options?: string[];
 };
 
 export type RequiredInformation = {

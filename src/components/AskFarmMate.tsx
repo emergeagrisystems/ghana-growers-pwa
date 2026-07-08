@@ -10,6 +10,15 @@ const suggestions = [
   "Best fertilizer for maize"
 ];
 
+type FollowUpAnswer = {
+  question: string;
+  answer: string;
+};
+
+function sectionBody(response: FarmMateBrainResponse, title: string) {
+  return response.sections.find((section) => section.title === title)?.body ?? [];
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -21,8 +30,13 @@ export function AskFarmMate({
   const [askedQuestion, setAskedQuestion] = useState("");
   const [response, setResponse] = useState<FarmMateBrainResponse | null>(null);
   const [isThinking, setIsThinking] = useState(false);
+  const [followUpIndex, setFollowUpIndex] = useState(0);
+  const [followUpAnswers, setFollowUpAnswers] = useState<FollowUpAnswer[]>([]);
+  const [showRecommendation, setShowRecommendation] = useState(false);
 
   const canAsk = question.trim().length > 0 && !isThinking;
+  const followUpQuestions = response?.flow?.followUpQuestions ?? [];
+  const currentFollowUp = followUpQuestions[followUpIndex];
 
   useEffect(() => {
     function handlePrefill(event: Event) {
@@ -52,12 +66,32 @@ export function AskFarmMate({
 
     setAskedQuestion(trimmedQuestion);
     setResponse(null);
+    setFollowUpIndex(0);
+    setFollowUpAnswers([]);
+    setShowRecommendation(false);
     setIsThinking(true);
 
     window.setTimeout(() => {
-      setResponse(buildFarmMateResponse(trimmedQuestion));
+      const farmMateResponse = buildFarmMateResponse(trimmedQuestion);
+      setResponse(farmMateResponse);
+      setShowRecommendation(farmMateResponse.confidence === "high" || !farmMateResponse.flow);
       setIsThinking(false);
     }, 1200);
+  }
+
+  function answerFollowUp(answer: string) {
+    if (!currentFollowUp) {
+      return;
+    }
+
+    setFollowUpAnswers((answers) => [...answers, { question: currentFollowUp.question, answer }]);
+
+    if (followUpIndex + 1 < followUpQuestions.length) {
+      setFollowUpIndex((index) => index + 1);
+      return;
+    }
+
+    setShowRecommendation(true);
   }
 
   return (
@@ -121,40 +155,72 @@ export function AskFarmMate({
         ) : null}
 
         {response ? (
-          <div className="max-w-[92%] rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-black uppercase tracking-[0.1em] text-leaf-700">
-                {response.intent.label.replaceAll("_", " ")}
-              </span>
-              <span className="rounded-md bg-white px-2.5 py-1 text-xs font-black uppercase tracking-[0.1em] text-ink/56">
-                {response.confidence} confidence
-              </span>
+          <div className="max-w-[92%] space-y-3">
+            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
+              <p>I can help.</p>
+              {showRecommendation ? (
+                <p className="mt-2">Here is the practical next step based on what FarmMate knows locally.</p>
+              ) : (
+                <p className="mt-2">Let&apos;s narrow it down first. I&apos;ll ask one quick question at a time.</p>
+              )}
             </div>
-            <div className="space-y-4">
-              {response.sections.map((section, index) => (
-                <section key={section.title}>
-                  <h3 className="text-sm font-black text-ink">
-                    {index + 1}. {section.title}
-                  </h3>
-                  <div className="mt-1 space-y-1">
-                    {section.body.map((line) => (
-                      <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
-                        {line}
-                      </p>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-            {response.shouldShowCropDoctorAction && onOpenCropDoctor ? (
-              <button
-                type="button"
-                onClick={onOpenCropDoctor}
-                className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-              >
-                <Camera size={18} aria-hidden="true" />
-                Upload Crop Photo
-              </button>
+
+            {followUpAnswers.map((answer) => (
+              <div key={`${answer.question}-${answer.answer}`} className="ml-auto max-w-[92%] rounded-md bg-white px-4 py-3 text-sm font-bold leading-6 text-ink/72 ring-1 ring-leaf-900/10">
+                {answer.answer}
+              </div>
+            ))}
+
+            {!showRecommendation && currentFollowUp ? (
+              <div className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                <p className="text-sm font-black text-ink">{currentFollowUp.question}</p>
+                <div className="mt-3 grid gap-2">
+                  {(currentFollowUp.options ?? ["Yes", "No", "Not sure"]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => answerFollowUp(option)}
+                      className="min-h-11 rounded-md border border-leaf-900/15 bg-leaf-50 px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {showRecommendation ? (
+              <div className="space-y-3">
+                {[
+                  ["Possible Cause", sectionBody(response, "Why this may happen")],
+                  ["What to check", sectionBody(response, "What to check").slice(0, 2)],
+                  ["Recommended Action", sectionBody(response, "Recommended action")],
+                  ["Prevention", sectionBody(response, "Prevention")],
+                  ["Next Best Action", sectionBody(response, "Next Best Action")]
+                ].map(([title, body]) => (
+                  <section key={title as string} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                    <h3 className="text-sm font-black text-ink">{title as string}</h3>
+                    <div className="mt-2 space-y-1">
+                      {(body as string[]).map((line) => (
+                        <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+
+                {response.shouldShowCropDoctorAction && onOpenCropDoctor ? (
+                  <button
+                    type="button"
+                    onClick={onOpenCropDoctor}
+                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                  >
+                    <Camera size={18} aria-hidden="true" />
+                    Upload Crop Photo
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
         ) : null}

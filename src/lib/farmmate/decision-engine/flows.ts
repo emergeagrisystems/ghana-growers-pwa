@@ -24,17 +24,20 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       {
         id: "yellowing-location",
         question: "Is the yellowing starting on the lower older leaves or the newer top leaves?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Bottom leaves", "Top leaves", "Everywhere"]
       },
       {
         id: "tomato-leaf-spots",
         question: "Do you see brown spots, rings, curling or insects under the leaves?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Brown spots or rings", "Curling or insects", "No, just yellow"]
       },
       {
         id: "watering-pattern",
         question: "Has the crop received heavy rain or daily watering recently?",
-        requiredForConfidence: false
+        requiredForConfidence: false,
+        options: ["Heavy rain", "Daily watering", "No"]
       }
     ],
     recommendation: {
@@ -81,17 +84,20 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       {
         id: "rain-window",
         question: "Is rain expected in the next 4-6 hours?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Yes", "No", "Not sure"]
       },
       {
         id: "leaf-wetness",
         question: "Are the leaves dry now?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Dry", "Wet", "Not sure"]
       },
       {
         id: "wind-level",
         question: "Is the wind calm enough that spray will not drift?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Calm", "Windy", "Not sure"]
       }
     ],
     recommendation: {
@@ -139,17 +145,20 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       {
         id: "pepper-heat-water",
         question: "Has the farm been very hot, dry or irregularly watered this week?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Very hot or dry", "Irregular watering", "No"]
       },
       {
         id: "pepper-insects",
         question: "Do you see thrips, whiteflies or tiny insects in the flowers or under leaves?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Yes", "No", "Not sure"]
       },
       {
         id: "pepper-fertilizer",
         question: "Was fertilizer applied recently, and did the plants become very leafy?",
-        requiredForConfidence: false
+        requiredForConfidence: false,
+        options: ["Yes", "No", "Not sure"]
       }
     ],
     recommendation: {
@@ -198,17 +207,20 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       {
         id: "maize-leaf-colour",
         question: "Are the older leaves pale yellow, purple, or still green?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Pale yellow", "Purple", "Still green"]
       },
       {
         id: "maize-waterlogging",
         question: "Has the plot been dry, flooded or waterlogged recently?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Dry", "Flooded or waterlogged", "Neither"]
       },
       {
         id: "maize-pest-damage",
         question: "Do you see holes, frass or damage in the maize whorl?",
-        requiredForConfidence: true
+        requiredForConfidence: true,
+        options: ["Yes", "No", "Not sure"]
       }
     ],
     recommendation: {
