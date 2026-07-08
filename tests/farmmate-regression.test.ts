@@ -3,6 +3,7 @@ import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/fa
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
+import { getFarmMateCreditDecision, getFarmMateCreditStatus, isCountableFarmMateSubmission, type FarmMateUsageEvent } from "../src/lib/farmmate/usage";
 
 type TestCase = {
   name: string;
@@ -32,6 +33,10 @@ function assertNoDeveloperLanguage(response: FarmMateBrainResponse) {
   assert.equal(text.includes("medium confidence"), false);
   assert.equal(text.includes("high confidence"), false);
   assert.equal(text.includes("low confidence"), false);
+}
+
+function usageEvent(tool: "ask_farmmate" | "crop_doctor", createdAt: string): FarmMateUsageEvent {
+  return { tool, createdAt };
 }
 
 const tests: TestCase[] = [
@@ -151,6 +156,62 @@ const tests: TestCase[] = [
       const totalLines = response.sections.reduce((count, section) => count + section.body.length, 0);
       assert.ok(totalLines <= 18);
       assert.ok(response.sections.every((section) => section.body.every((line) => line.length <= 220)));
+    }
+  },
+  {
+    name: "Ask FarmMate credits decrease after successful AI call",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const before = getFarmMateCreditStatus("ask_farmmate", [], now);
+      const after = getFarmMateCreditStatus("ask_farmmate", [usageEvent("ask_farmmate", now.toISOString())], now);
+
+      assert.equal(before.remaining, 5);
+      assert.equal(after.remaining, 4);
+    }
+  },
+  {
+    name: "Ask FarmMate blocks OpenAI call when credits are exhausted",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 60_000).toISOString()));
+      const decision = getFarmMateCreditDecision("ask_farmmate", events, now);
+
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "credits_exhausted");
+      assert.equal(decision.remaining, 0);
+    }
+  },
+  {
+    name: "Crop Doctor credits decrease after analysis",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const after = getFarmMateCreditStatus("crop_doctor", [usageEvent("crop_doctor", now.toISOString())], now);
+
+      assert.equal(after.limit, 2);
+      assert.equal(after.remaining, 1);
+    }
+  },
+  {
+    name: "credits reset after 12 hours",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const oldEvent = usageEvent("ask_farmmate", new Date(now.getTime() - 12 * 60 * 60 * 1000 - 1).toISOString());
+      const status = getFarmMateCreditStatus("ask_farmmate", [oldEvent], now);
+
+      assert.equal(status.used, 0);
+      assert.equal(status.remaining, 5);
+      assert.equal(status.resetAt, null);
+    }
+  },
+  {
+    name: "empty submissions do not consume credits",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = isCountableFarmMateSubmission("   ") ? [usageEvent("ask_farmmate", now.toISOString())] : [];
+      const status = getFarmMateCreditStatus("ask_farmmate", events, now);
+
+      assert.equal(isCountableFarmMateSubmission("   "), false);
+      assert.equal(status.remaining, 5);
     }
   }
 ];

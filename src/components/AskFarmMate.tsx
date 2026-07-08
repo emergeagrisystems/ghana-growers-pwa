@@ -6,6 +6,8 @@ import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/dec
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
+import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
+import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
 
 const suggestions = [
   "Can I spray today?",
@@ -261,6 +263,8 @@ export function AskFarmMate({
   const [naturalAnswer, setNaturalAnswer] = useState("");
   const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
   const [localCards, setLocalCards] = useState<FarmMateLocalResponseCard[]>([]);
+  const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
+  const [creditMessage, setCreditMessage] = useState("");
   const [conversationState, setConversationState] = useState<ConversationState>({
     waitingForFollowUp: false,
     turns: []
@@ -288,8 +292,36 @@ export function AskFarmMate({
     }
   }, [prefillQuestion]);
 
+  async function refreshCredits() {
+    try {
+      const apiResponse = await fetch("/api/farmmate/usage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+          tool: "ask_farmmate",
+          action: "status"
+        })
+      });
+      const data = (await apiResponse.json().catch(() => null)) as { credits?: FarmMateCreditStatus } | null;
+
+      if (data?.credits) {
+        setCredits(data.credits);
+      }
+    } catch {
+      setCredits(null);
+    }
+  }
+
+  useEffect(() => {
+    void refreshCredits();
+  }, []);
+
   async function requestNaturalAnswer(farmerQuestion: string, farmMateResponse: FarmMateBrainResponse, answers: FollowUpAnswer[]) {
     setNaturalAnswer("");
+    setCreditMessage("");
     setIsGeneratingNaturalAnswer(true);
 
     try {
@@ -299,20 +331,27 @@ export function AskFarmMate({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          anonymousDeviceId: getFarmMateAnonymousDeviceId(),
           farmerQuestion,
           brain: farmMateResponse,
           farmerAnswers: answers,
           localStructuredResponse: localRecommendationCards(farmMateResponse, answers)
         })
       });
+      const data = (await apiResponse.json().catch(() => null)) as { ok?: boolean; answer?: string; credits?: FarmMateCreditStatus; message?: string } | null;
+
+      if (data?.credits) {
+        setCredits(data.credits);
+      }
 
       if (!apiResponse.ok) {
+        if (data?.message) {
+          setCreditMessage(data.message);
+        }
         return;
       }
 
-      const data = (await apiResponse.json()) as { ok?: boolean; answer?: string };
-
-      if (data.ok && data.answer?.trim()) {
+      if (data?.ok && data.answer?.trim()) {
         setNaturalAnswer(data.answer.trim());
       }
     } catch {
@@ -347,6 +386,7 @@ export function AskFarmMate({
     setNaturalAnswer("");
     setIsGeneratingNaturalAnswer(false);
     setLocalCards([]);
+    setCreditMessage("");
     setIsThinking(true);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion);
@@ -435,6 +475,7 @@ export function AskFarmMate({
         </span>
         <div>
           <h2 className="gg-card-title">Ask FarmMate</h2>
+          <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("ask_farmmate", credits)}</p>
         </div>
       </div>
 
@@ -535,20 +576,28 @@ export function AskFarmMate({
                       ))}
                     </div>
                   </section>
-                ) : (
-                  recommendationCards.map((card) => (
-                    <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                      <h3 className="text-sm font-black text-ink">{card.title}</h3>
-                      <div className="mt-2 space-y-1">
-                        {card.body.map((line) => (
-                          <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
-                            {line}
-                          </p>
-                        ))}
-                      </div>
-                    </section>
-                  ))
-                )}
+                ) : null}
+
+                {creditMessage ? (
+                  <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
+                    {creditMessage}
+                  </p>
+                ) : null}
+
+                {!naturalAnswer
+                  ? recommendationCards.map((card) => (
+                      <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                        <h3 className="text-sm font-black text-ink">{card.title}</h3>
+                        <div className="mt-2 space-y-1">
+                          {card.body.map((line) => (
+                            <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      </section>
+                    ))
+                  : null}
 
                 {response?.shouldShowCropDoctorAction && onOpenCropDoctor ? (
                   <button

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput } from "@/lib/farmmate/ai";
+import { checkFarmMateCreditsForDevice, getFarmMateCreditsForDevice, recordFarmMateUsageForDevice } from "@/lib/farmmate/usage/server";
 
 function isFarmMateAiInput(value: unknown): value is FarmMateAiInput {
   if (!value || typeof value !== "object") {
@@ -29,7 +30,52 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "invalid_farmmate_context", fallback: true }, { status: 400 });
   }
 
+  if (!payload.farmerQuestion.trim()) {
+    return NextResponse.json({ ok: false, reason: "empty_question", fallback: true }, { status: 400 });
+  }
+
+  const anonymousDeviceId = (payload as FarmMateAiInput & { anonymousDeviceId?: unknown }).anonymousDeviceId;
+  const creditDecision = await checkFarmMateCreditsForDevice({
+    anonymousDeviceId,
+    tool: "ask_farmmate"
+  });
+
+  if (!creditDecision.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: creditDecision.reason,
+        fallback: true,
+        credits: creditDecision,
+        message:
+          creditDecision.reason === "rapid_submission"
+            ? "FarmMate is still catching up. Please wait a few seconds before asking again."
+            : `You've used your free FarmMate AI questions for now. Your credits refresh in ${creditDecision.refreshInText}. You can still use FarmMate tools and learning tips.`
+      },
+      { status: 429 }
+    );
+  }
+
   const result = await generateFarmMateNaturalAnswer(payload);
 
-  return NextResponse.json(result);
+  if (!result.ok) {
+    const credits = await getFarmMateCreditsForDevice({
+      anonymousDeviceId,
+      tool: "ask_farmmate"
+    });
+
+    return NextResponse.json({ ...result, credits });
+  }
+
+  await recordFarmMateUsageForDevice({
+    anonymousDeviceId,
+    tool: "ask_farmmate"
+  });
+
+  const credits = await getFarmMateCreditsForDevice({
+    anonymousDeviceId,
+    tool: "ask_farmmate"
+  });
+
+  return NextResponse.json({ ...result, credits });
 }

@@ -4,6 +4,8 @@ import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } fr
 import Image from "next/image";
 import { ChangeEvent, useEffect, useState } from "react";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis, type CropDoctorDemoDiagnosis } from "@/lib/farmmate/crop-doctor-demo";
+import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
+import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
 
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -11,6 +13,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasDiagnosis, setHasDiagnosis] = useState(false);
   const [diagnosis, setDiagnosis] = useState<CropDoctorDemoDiagnosis>(unknownCropDiagnosis);
+  const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
+  const [creditMessage, setCreditMessage] = useState("");
 
   useEffect(() => {
     return () => {
@@ -19,6 +23,33 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       }
     };
   }, [selectedImage]);
+
+  async function refreshCredits() {
+    try {
+      const response = await fetch("/api/farmmate/usage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+          tool: "crop_doctor",
+          action: "status"
+        })
+      });
+      const data = (await response.json().catch(() => null)) as { credits?: FarmMateCreditStatus } | null;
+
+      if (data?.credits) {
+        setCredits(data.credits);
+      }
+    } catch {
+      setCredits(null);
+    }
+  }
+
+  useEffect(() => {
+    void refreshCredits();
+  }, []);
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -35,10 +66,39 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     setDiagnosis(diagnosisFromFileName(file.name));
     setHasDiagnosis(false);
     setIsAnalysing(false);
+    setCreditMessage("");
   }
 
-  function analyseCrop() {
+  async function analyseCrop() {
     if (!selectedImage || isAnalysing) {
+      return;
+    }
+
+    setCreditMessage("");
+
+    const usageResponse = await fetch("/api/farmmate/usage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+        tool: "crop_doctor",
+        action: "record"
+      })
+    }).catch(() => null);
+    const usageData = (await usageResponse?.json().catch(() => null)) as { credits?: FarmMateCreditStatus; reason?: string } | null;
+
+    if (usageData?.credits) {
+      setCredits(usageData.credits);
+    }
+
+    if (!usageResponse?.ok) {
+      setCreditMessage(
+        usageData?.reason === "rapid_submission"
+          ? "FarmMate is still checking your last photo. Please wait a few seconds before trying again."
+          : `You've used your free Crop Doctor checks for now. Your credits refresh in ${usageData?.credits?.refreshInText ?? "a little while"}.`
+      );
       return;
     }
 
@@ -71,6 +131,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         </span>
         <div>
           <h2 className="gg-card-title">Crop Doctor</h2>
+          <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
           <p className="mt-2 text-sm leading-6 text-ink/66">Upload a crop photo and get practical next steps.</p>
         </div>
       </div>
@@ -116,6 +177,12 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
             FarmMate is analysing your crop...
           </div>
+        ) : null}
+
+        {creditMessage ? (
+          <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
+            {creditMessage}
+          </p>
         ) : null}
 
         {hasDiagnosis ? (
