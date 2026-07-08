@@ -9,7 +9,6 @@ import {
   GraduationCap,
   Leaf,
   LineChart,
-  MapPin,
   Sprout,
   Sun,
   TrendingUp,
@@ -26,13 +25,13 @@ export const metadata = createPageMetadata({
 });
 
 const weatherForecast = [
-  { day: "Today", condition: "Warm, cloudy", temp: "29°C", rain: "35%" },
-  { day: "Thu", condition: "Light rain", temp: "27°C", rain: "65%" },
-  { day: "Fri", condition: "Sunny breaks", temp: "30°C", rain: "20%" },
-  { day: "Sat", condition: "Humid", temp: "31°C", rain: "40%" },
-  { day: "Sun", condition: "Thunder likely", temp: "28°C", rain: "70%" },
-  { day: "Mon", condition: "Cloudy", temp: "29°C", rain: "45%" },
-  { day: "Tue", condition: "Dry morning", temp: "30°C", rain: "25%" }
+  { day: "Today", condition: "Warm, cloudy", temp: "29 C", rain: "35%" },
+  { day: "Thu", condition: "Light rain", temp: "27 C", rain: "65%" },
+  { day: "Fri", condition: "Sunny breaks", temp: "30 C", rain: "20%" },
+  { day: "Sat", condition: "Humid", temp: "31 C", rain: "40%" },
+  { day: "Sun", condition: "Thunder likely", temp: "28 C", rain: "70%" },
+  { day: "Mon", condition: "Cloudy", temp: "29 C", rain: "45%" },
+  { day: "Tue", condition: "Dry morning", temp: "30 C", rain: "25%" }
 ];
 
 const marketPrices = [
@@ -61,85 +60,86 @@ const learningTips = [
 ];
 
 const quickActions = [
-  { label: "Check Crop", icon: Camera },
-  { label: "Ask FarmMate", icon: Bot },
-  { label: "Plan Planting", icon: CalendarDays }
+  { label: "Ask FarmMate", href: "#assistant", icon: Bot },
+  { label: "Crop Doctor", href: "#crop-doctor", icon: Camera },
+  { label: "Weather", href: "#weather", icon: CloudSun },
+  { label: "Market Prices", href: "#market-prices", icon: LineChart },
+  { label: "Crop Calendar", href: "#crop-calendar", icon: CalendarDays },
+  { label: "Learn", href: "#learn", icon: GraduationCap }
 ];
-
-function MiniCard({
-  title,
-  value,
-  detail,
-  icon: Icon,
-  tone = "green"
-}: {
-  title: string;
-  value: string;
-  detail: string;
-  icon: typeof CloudSun;
-  tone?: "green" | "yellow" | "red";
-}) {
-  const toneClasses = {
-    green: "bg-[#2E7D32]/10 text-[#2E7D32] ring-[#2E7D32]/15",
-    yellow: "bg-[#FFC107]/20 text-[#765700] ring-[#FFC107]/30",
-    red: "bg-[#E53935]/10 text-[#E53935] ring-[#E53935]/15"
-  };
-
-  return (
-    <article className="rounded-md border border-[#2E7D32]/10 bg-white p-4 shadow-card">
-      <div className="flex items-start gap-3">
-        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-md ring-1 ${toneClasses[tone]}`}>
-          <Icon size={22} aria-hidden="true" />
-        </span>
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.1em] text-ink/45">{title}</p>
-          <p className="mt-1 text-xl font-black text-ink">{value}</p>
-          <p className="mt-1 text-sm leading-5 text-ink/62">{detail}</p>
-        </div>
-      </div>
-    </article>
-  );
-}
 
 export default function FarmerHubPage() {
   return (
     <main className="bg-[#FBFFE8] text-ink">
       <section className="border-b border-[#2E7D32]/10">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-12">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.78fr_1.22fr] lg:items-start lg:px-8 lg:py-16">
           <div>
             <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#2E7D32] shadow-sm">
               <Sprout size={16} aria-hidden="true" />
               by Ghana Growers
             </p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.02] text-ink sm:text-5xl lg:text-6xl">
+            <p className="mt-8 text-lg font-black text-[#2E7D32] sm:text-xl">Good morning &#128075;</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] text-ink sm:text-5xl lg:text-6xl">
               GG FarmMate
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">
-              Your AI-powered farming companion.
+              Your AI-powered farming companion
             </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          </div>
+
+          <div>
+            <article className="rounded-lg border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">Today&apos;s Farm Summary</p>
+                  <h2 className="mt-3 text-2xl font-black leading-tight text-ink sm:text-3xl">Good field window before noon</h2>
+                  <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-ink/60">
+                    Placeholder guidance for Kumasi, Ashanti. Check your local field before spraying or harvesting.
+                  </p>
+                </div>
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#FFC107]/20 text-[#765700]">
+                  <Sun size={30} aria-hidden="true" />
+                </span>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                {[
+                  { label: "Current weather", value: "29 C", detail: "Warm and cloudy", icon: CloudSun },
+                  { label: "Rain forecast", value: "35%", detail: "Possible afternoon showers", icon: Droplets },
+                  { label: "Recommendation", value: "Start early", detail: "Avoid late spraying", icon: CheckCircle2 },
+                  { label: "Disease risk", value: "Medium", detail: "Watch tomato leaves", icon: AlertTriangle },
+                  { label: "Market highlight", value: "Tomatoes up", detail: "Agbogbloshie demand rising", icon: TrendingUp }
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="rounded-md bg-[#FBFFE8] p-4">
+                      <div className="flex items-center gap-2">
+                        <Icon className="text-[#2E7D32]" size={18} aria-hidden="true" />
+                        <p className="text-[0.68rem] font-black uppercase tracking-[0.08em] text-ink/45">{item.label}</p>
+                      </div>
+                      <p className="mt-3 text-xl font-black text-ink">{item.value}</p>
+                      <p className="mt-1 text-sm font-semibold leading-5 text-ink/58">{item.detail}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {quickActions.map((action) => {
                 const Icon = action.icon;
-
                 return (
                   <a
                     key={action.label}
-                    href={action.label === "Check Crop" ? "#crop-doctor" : action.label === "Ask FarmMate" ? "#assistant" : "#planting-advisor"}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#246428] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
+                    href={action.href}
+                    className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-[#2E7D32] shadow-sm ring-1 ring-[#2E7D32]/15 transition hover:bg-[#2E7D32] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
                   >
-                    <Icon size={18} aria-hidden="true" />
+                    <Icon size={19} aria-hidden="true" />
                     {action.label}
                   </a>
                 );
               })}
             </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MiniCard title="Location" value="Kumasi, Ashanti" detail="Demo location for launch preview." icon={MapPin} />
-            <MiniCard title="Weather" value="29°C" detail="Cloudy with possible afternoon rain." icon={CloudSun} />
-            <MiniCard title="Farm Today" value="Farm with care" detail="Good morning window. Avoid late spraying." icon={CheckCircle2} tone="yellow" />
-            <MiniCard title="Crop Alert" value="Medium risk" detail="Humidity may increase fungal pressure." icon={AlertTriangle} tone="red" />
           </div>
         </div>
       </section>
@@ -149,7 +149,7 @@ export default function FarmerHubPage() {
           <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.1em] text-[#2E7D32]">Today&apos;s Farm Summary</p>
+                <p className="text-xs font-black uppercase tracking-[0.1em] text-[#2E7D32]">Field Work Plan</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">Good conditions before noon</h2>
               </div>
               <Sun className="text-[#FFC107]" size={34} aria-hidden="true" />
@@ -188,7 +188,7 @@ export default function FarmerHubPage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-8 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
-        <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
+        <article id="weather" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
               <CloudSun size={25} aria-hidden="true" />
@@ -212,7 +212,7 @@ export default function FarmerHubPage() {
           </div>
         </article>
 
-        <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
+        <article id="market-prices" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center rounded-md bg-[#FFC107]/20 text-[#765700]">
               <LineChart size={25} aria-hidden="true" />
@@ -272,7 +272,7 @@ export default function FarmerHubPage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-8 sm:px-6 lg:grid-cols-3 lg:px-8">
-        <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
+        <article id="crop-calendar" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
           <CalendarDays className="text-[#2E7D32]" size={28} aria-hidden="true" />
           <h2 className="mt-3 text-2xl font-black">Crop Calendar</h2>
           <div className="mt-4 grid gap-3">
@@ -335,7 +335,7 @@ export default function FarmerHubPage() {
         </article>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-4 pb-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+      <section id="learn" className="mx-auto grid max-w-7xl gap-5 px-4 pb-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
         <article className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
           <div className="flex items-center gap-3">
             <Droplets className="text-[#2E7D32]" size={28} aria-hidden="true" />
