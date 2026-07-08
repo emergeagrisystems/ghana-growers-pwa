@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Handshake, MapPinned, Search, ShieldCheck, Sprout, Tractor, Truck } from "lucide-react";
+import { Handshake, MapPinned, Search, ShieldCheck, Sprout, Tractor, Truck } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { createPageMetadata } from "@/lib/seo";
@@ -21,42 +21,22 @@ const categories = [
   ["Equipment", "/supplier-directory", "/images/marketplace/logistics-truck.jpg"]
 ];
 
-const featuredListings = [
+const buyActionCards = [
   {
-    title: "Fresh Tomatoes",
-    metaLabel: "Region",
-    meta: "Greater Accra",
-    status: "Available",
-    href: "/farmer-directory",
-    cta: "View Farmers",
-    image: "/images/marketplace/fresh-tomatoes.jpg"
+    title: "Buy Fresh Produce",
+    description: "Buy directly from trusted farmers.",
+    href: "/marketplace",
+    cta: "Browse Produce",
+    image: "/images/marketplace/fresh-tomatoes.jpg",
+    alt: "Fresh produce from trusted Ghanaian farmers"
   },
   {
-    title: "White Maize",
-    metaLabel: "Region",
-    meta: "Ashanti",
-    status: "Available",
-    href: "/farmer-directory",
-    cta: "View Farmers",
-    image: "/images/products/cereals.jpg"
-  },
-  {
-    title: "Fertilizer",
-    metaLabel: "Category",
-    meta: "Farm Inputs",
-    status: "Suppliers Available",
+    title: "Buy Farm Inputs",
+    description: "Find seeds, fertilizer, tools and agricultural supplies.",
     href: "/supplier-directory",
     cta: "Find Suppliers",
-    image: "/images/products/farm-inputs.jpg"
-  },
-  {
-    title: "Seeds",
-    metaLabel: "Category",
-    meta: "Farm Inputs",
-    status: "Suppliers Available",
-    href: "/supplier-directory",
-    cta: "Find Suppliers",
-    image: "/images/marketplace/farm-inputs.jpg"
+    image: "/images/products/farm-inputs.jpg",
+    alt: "Farm inputs and agricultural supplies"
   }
 ];
 
@@ -121,47 +101,32 @@ export default function BuyPage() {
       </section>
 
       <section className="bg-white py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="gg-eyebrow text-earth-700/75">Featured Marketplace</p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Start with popular requests.</h2>
-            </div>
-            <Link href="/marketplace" className="hidden text-sm font-black text-leaf-700 hover:text-leaf-900 sm:inline-flex">
-              Browse all
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredListings.map((listing) => (
-              <article key={listing.title} className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 sm:px-6 md:grid-cols-2 lg:px-8">
+          {buyActionCards.map((card) => (
+            <article
+              key={card.title}
+              className="group overflow-hidden rounded-md border border-leaf-900/10 bg-earth-50 shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft"
+            >
+              <Link href={card.href} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2">
                 <SafeImage
-                  src={listing.image}
-                  alt={`${listing.title} marketplace listing`}
-                  width={520}
-                  height={360}
+                  src={card.image}
+                  alt={card.alt}
+                  width={760}
+                  height={480}
                   fallbackKind="crop"
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  className="h-36 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                  sizes="(min-width: 768px) 50vw, 100vw"
+                  className="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.03] sm:h-56"
                 />
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-black text-ink">{listing.title}</h3>
-                    <span className="rounded-md bg-leaf-50 px-2 py-1 text-[0.68rem] font-black uppercase text-leaf-700">
-                      {listing.status}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-ink/62">
-                    {listing.metaLabel}: <span className="text-ink">{listing.meta}</span>
-                  </p>
-                  <Link href={listing.href} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900">
-                    {listing.cta}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
+                <div className="p-5 sm:p-6">
+                  <h2 className="text-2xl font-black text-ink">{card.title}</h2>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-ink/66">{card.description}</p>
+                  <span className="mt-5 inline-flex min-h-11 items-center rounded-md bg-leaf-600 px-5 py-2 text-sm font-black text-white transition group-hover:bg-leaf-900">
+                    {card.cta}
+                  </span>
                 </div>
-              </article>
-            ))}
-          </div>
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 

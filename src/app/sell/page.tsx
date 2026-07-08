@@ -13,53 +13,26 @@ export const metadata = createPageMetadata({
 const sellerActions = [
   {
     title: "Sell Your Harvest",
-    description: "For fruits, vegetables, grains, roots, and other farm produce.",
+    description: "Sell fruits, vegetables, grains and other farm produce.",
     href: "/join/farmer",
     cta: "Start Selling",
     icon: Sprout,
     image: "/images/marketplace/fresh-tomatoes.jpg"
   },
   {
-    title: "Sell Farm Inputs",
-    description: "For seeds, fertilizer, tools, and agricultural supplies.",
+    title: "Sell Products & Services",
+    description: "Sell seeds, fertilizer, equipment or agricultural services.",
     href: "/become-a-supplier",
     cta: "Become a Supplier",
     icon: PackageCheck,
     image: "/images/products/farm-inputs.jpg"
   },
   {
-    title: "Sell Agricultural Services",
-    description: "For spraying, ploughing, transport, consulting, equipment rental, and farm services.",
+    title: "List Agricultural Services",
+    description: "Offer spraying, ploughing, transport, equipment rental or farm support.",
     href: "/become-a-supplier",
-    cta: "List Your Service",
+    cta: "List Service",
     icon: Tractor,
-    image: "/images/marketplace/logistics-truck.jpg"
-  }
-];
-
-const sellerPreviews = [
-  {
-    title: "Tomatoes",
-    sellerType: "Farmer",
-    metaLabel: "Region",
-    meta: "Greater Accra",
-    status: "Ready to list",
-    image: "/images/products/tomatoes.jpg"
-  },
-  {
-    title: "Fertilizer",
-    sellerType: "Supplier",
-    metaLabel: "Category",
-    meta: "Farm Inputs",
-    status: "Supplier profile",
-    image: "/images/products/farm-inputs.jpg"
-  },
-  {
-    title: "Tractor Service",
-    sellerType: "Service Provider",
-    metaLabel: "Category",
-    meta: "Farm Services",
-    status: "Service listing",
     image: "/images/marketplace/logistics-truck.jpg"
   }
 ];
@@ -137,47 +110,6 @@ export default function SellPage() {
                 </article>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-leaf-50 py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="gg-eyebrow text-earth-700/75">Listing Preview</p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">See what sellers can publish.</h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {sellerPreviews.map((listing) => (
-              <article key={listing.title} className="group overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft">
-                <SafeImage
-                  src={listing.image}
-                  alt={`${listing.title} seller listing preview`}
-                  width={520}
-                  height={340}
-                  fallbackKind="crop"
-                  sizes="(min-width: 768px) 33vw, 100vw"
-                  className="h-36 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                />
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-black text-ink">{listing.title}</h3>
-                    <span className="rounded-md bg-earth-50 px-2 py-1 text-[0.68rem] font-black uppercase text-earth-700">
-                      {listing.status}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-ink/62">
-                    Seller type: <span className="text-ink">{listing.sellerType}</span>
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-ink/62">
-                    {listing.metaLabel}: <span className="text-ink">{listing.meta}</span>
-                  </p>
-                </div>
-              </article>
-            ))}
           </div>
         </div>
       </section>
