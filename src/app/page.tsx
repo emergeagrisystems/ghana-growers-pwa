@@ -12,7 +12,6 @@ import {
   ShoppingBasket,
   Sprout,
   Truck,
-  UserRound,
   UsersRound
 } from "lucide-react";
 import Link from "next/link";
@@ -137,29 +136,26 @@ export default async function HomePage() {
           <div className="relative z-10">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
-              Built for Ghanaian Agriculture
+              BUILT FOR GHANAIAN AGRICULTURE
             </p>
-            <h1 className="mt-6 max-w-3xl gg-hero-title !text-[2.45rem] sm:!text-[3.35rem] lg:!text-[3.8rem] xl:!text-[4.35rem]">
-              Ghana&apos;s trusted agricultural marketplace.
+            <h1 className="mt-6 max-w-3xl gg-hero-title !text-[2.7rem] sm:!text-[3.55rem] lg:!text-[4.15rem] xl:!text-[4.6rem]">
+              Buy.
+              <br />
+              Sell.
+              <br />
+              Grow.
             </h1>
-            <p className="mt-5 max-w-2xl text-lg font-black leading-8 text-leaf-800 sm:text-xl">
-              Buy farm produce, sell harvests, find trusted suppliers, and grow smarter with GG FarmMate.
-            </p>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
-              Ghana Growers connects farmers, buyers, suppliers, and agricultural service providers through verified profiles, marketplace listings, produce requests, and practical farming support.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
+              Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter&mdash;all in one place.
             </p>
             <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <ButtonLink href="/marketplace">
                 <ShoppingBasket size={17} aria-hidden="true" className="mr-2" />
                 Explore Marketplace
               </ButtonLink>
-              <ButtonLink href="/join" variant="secondary">
-                <UserRound size={17} aria-hidden="true" className="mr-2" />
-                Join the Network
-              </ButtonLink>
-              <Link href="/farmer-hub" className="focus-ring rounded-md px-1 py-2 text-sm font-black text-leaf-800 hover:text-leaf-900">
+              <ButtonLink href="/farmer-hub" variant="secondary">
                 Open GG FarmMate
-              </Link>
+              </ButtonLink>
             </div>
             <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-leaf-800">
               <CheckCircle2 size={16} aria-hidden="true" />
