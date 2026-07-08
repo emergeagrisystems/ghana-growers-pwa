@@ -170,6 +170,13 @@ function readableReferences(ids: string[], source: Array<{ id: string; name?: st
     .filter((label): label is string => Boolean(label));
 }
 
+function farmerSafeLine(line: string) {
+  return line
+    .replace("Do not invent chemical rates. Tell the farmer to ", "Avoid exact chemical rates unless they are on the product label. ")
+    .replace("Tell the farmer to ", "")
+    .replace("Tell FarmMate", "Share");
+}
+
 function knowledgeLines(flow: DecisionFlow | undefined, intent: DetectedFarmMateIntent, resolvedCrop?: string) {
   const crop = cropFromResolvedContext(flow, intent, resolvedCrop);
 
@@ -188,11 +195,11 @@ function knowledgeLines(flow: DecisionFlow | undefined, intent: DetectedFarmMate
 
   return {
     crop,
-    causes: [...(flow?.possibleCauses ?? []), ...deficiencies, ...diseases, ...pests].slice(0, 6),
+    causes: [...(flow?.possibleCauses ?? []), ...deficiencies, ...diseases, ...pests].slice(0, 3),
     prevention: [
       ...practices.map((practice) => `${practice}.`),
       ...(crop.sustainablePractices.length ? [] : crop.soil.preparation.slice(0, 2))
-    ].slice(0, 4)
+    ].slice(0, 2)
   };
 }
 
@@ -235,7 +242,7 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
       nextBestAction: {
         id: "answer-follow-up",
         label: "Answer follow-up question",
-        instruction: "Tell FarmMate the crop, region, growth stage and what you can see on the plant.",
+        instruction: "Share the crop, region, growth stage and what you can see on the plant.",
         actionType: "ask-follow-up"
       }
     },
@@ -276,7 +283,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "Why this may happen",
-        body: knowledge.causes.length ? knowledge.causes : flow.possibleCauses
+        body: (knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "What to check",
@@ -291,20 +298,20 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
           ...(shouldRecommendExtension ? ["If the problem is spreading quickly, speak with a local extension officer for field-specific help."] : []),
           ...(photoWouldHelp ? ["A clear crop photo will help FarmMate avoid guessing."] : []),
           ...(chemicalGuardrail ? [chemicalGuardrail.responseGuidance] : [])
-        ]
+        ].slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "Prevention",
         body: [
           "Prevention: reduce avoidable stress before the problem spreads.",
           "Good farming practice: keep spacing, watering and field hygiene steady.",
-          ...(knowledge.prevention.length ? knowledge.prevention : ["Natural or low-cost option: mulch, scout regularly and remove badly affected plant material where appropriate."]),
+          ...(knowledge.prevention.length ? knowledge.prevention.slice(0, 1) : ["Natural or low-cost option: mulch, scout regularly and remove badly affected plant material where appropriate."]),
           "Chemical solution: only consider this when appropriate, and follow the label or extension guidance."
-        ]
+        ].map(farmerSafeLine)
       },
       {
         title: "Next Best Action",
-        body: [`${flow.recommendation.nextBestAction.label}: ${flow.recommendation.nextBestAction.instruction}`]
+        body: [farmerSafeLine(`${flow.recommendation.nextBestAction.label}: ${flow.recommendation.nextBestAction.instruction}`)]
       }
     ]
   };

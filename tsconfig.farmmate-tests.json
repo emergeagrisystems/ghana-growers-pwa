@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020", "dom"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "outDir": ".farmmate-test-dist",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "incremental": false
+  },
+  "include": ["tests/**/*.ts", "src/lib/farmmate/**/*.ts"],
+  "exclude": ["node_modules", ".next", ".farmmate-test-dist"]
+}

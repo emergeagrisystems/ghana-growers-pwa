@@ -113,7 +113,7 @@ export const plantHealthSymptomGroups: PlantHealthSymptomGroup[] = [
   {
     id: "curling-leaves",
     name: "Curling leaves",
-    aliases: ["curling leaves", "leaves curling", "curled leaves", "leaf curl", "twisted leaves"],
+    aliases: ["curling leaves", "leaves curling", "leaves are curling", "curled leaves", "leaf curl", "twisted leaves"],
     possibleCauses: [
       { cause: "Sucking insects such as whiteflies, aphids or mites" },
       { cause: "Virus pressure in susceptible crops" },
