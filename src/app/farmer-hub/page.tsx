@@ -1,4 +1,5 @@
 import {
+  CloudRain,
   CloudSun,
   GraduationCap,
   Sprout,
@@ -16,9 +17,9 @@ export const metadata = createPageMetadata({
 });
 
 const weatherForecast = [
-  { day: "Today", condition: "Warm, cloudy", temp: "29 C", rain: "35% chance of rain" },
-  { day: "Tomorrow", condition: "Light rain", temp: "27 C", rain: "65% chance of rain" },
-  { day: "Day After Tomorrow", condition: "Sunny breaks", temp: "30 C", rain: "20% chance of rain" }
+  { day: "Today", condition: "Warm, cloudy", temp: "29°C", rain: "35% chance of rain", icon: CloudSun },
+  { day: "Tomorrow", condition: "Light rain", temp: "27°C", rain: "65% chance of rain", icon: CloudRain },
+  { day: "Day After Tomorrow", condition: "Sunny breaks", temp: "30°C", rain: "20% chance of rain", icon: Sun }
 ];
 
 const featuredLearningTip = "Mulch young tomato plants to keep soil moist and reduce weeds during dry spells.";
@@ -67,13 +68,20 @@ export default function FarmerHubPage() {
                 <h3 className="gg-eyebrow text-leaf-700">3-day forecast</h3>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {weatherForecast.map((day) => (
-                  <div key={day.day} className="rounded-md bg-white p-2">
-                    <p className="text-xs font-black text-ink">{day.day}</p>
-                    <p className="mt-1 text-xs font-bold text-ink/62">{day.temp}</p>
-                    <p className="mt-1 text-xs font-black leading-4 text-leaf-700">{day.rain}</p>
+                {weatherForecast.map((day) => {
+                  const WeatherIcon = day.icon;
+
+                  return (
+                  <div key={day.day} className="flex min-h-36 flex-col items-center justify-center rounded-md bg-white px-2 py-4 text-center shadow-sm ring-1 ring-leaf-900/5 sm:min-h-40 sm:px-3">
+                    <div className="flex items-center justify-center gap-1.5 text-ink/70">
+                      <WeatherIcon size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
+                      <p className="text-[0.72rem] font-bold leading-tight sm:text-xs">{day.day}</p>
+                    </div>
+                    <p className="mt-4 text-[2.5rem] font-black leading-none text-leaf-900 sm:text-5xl">{day.temp}</p>
+                    <p className="mt-4 text-[0.7rem] font-bold leading-4 text-ink/58 sm:text-xs">{day.rain}</p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </article>
