@@ -76,39 +76,52 @@ function PlantingAdvisorExperience() {
 
 export function FarmTools() {
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
   const activeToolMeta = tools.find((tool) => tool.key === activeTool);
 
+  function openTool(tool: ToolKey) {
+    setIsClosing(false);
+    setActiveTool(tool);
+  }
+
+  function closeTool() {
+    setIsClosing(true);
+    window.setTimeout(() => {
+      setActiveTool(null);
+      setIsClosing(false);
+    }, 180);
+  }
+
   function askFarmMateFromDoctor(question: string) {
     setPrefillQuestion(question);
-    setActiveTool("ask");
+    openTool("ask");
   }
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-5">
         <h2 className="text-2xl font-black text-ink">{"\uD83C\uDF31 Farm Tools"}</h2>
-        <p className="mt-2 text-sm font-semibold text-ink/58">Swipe to open the tool you need.</p>
       </div>
 
-      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
         {tools.map((tool) => {
           const Icon = tool.icon;
           return (
             <button
               key={tool.key}
               type="button"
-              onClick={() => setActiveTool(tool.key)}
-              className="flex min-h-56 min-w-[min(20rem,calc(100vw-2rem))] snap-start flex-col items-start rounded-lg border border-[#2E7D32]/10 bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-[#2E7D32]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32] sm:min-w-[calc((100%-1rem)/2)] lg:min-w-[calc((100%-2rem)/3)]"
+              onClick={() => openTool(tool.key)}
+              className="flex min-h-60 min-w-[82vw] snap-start flex-col items-start rounded-xl border border-[#2E7D32]/10 bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-[#2E7D32]/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32] sm:min-w-[44vw] md:min-w-0"
             >
-              <span className="grid h-14 w-14 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-                <Icon size={30} aria-hidden="true" />
+              <span className="grid h-16 w-16 place-items-center rounded-lg bg-[#2E7D32]/10 text-[#2E7D32]">
+                <Icon size={32} aria-hidden="true" />
               </span>
-              <h3 className="mt-5 text-2xl font-black text-ink">
+              <h3 className="mt-6 text-2xl font-black text-ink">
                 {tool.emoji} {tool.title}
               </h3>
               <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">{tool.description}</p>
-              <span className="mt-auto inline-flex min-h-11 items-center justify-center rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white">
+              <span className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-[#2E7D32] px-5 py-3 text-sm font-black text-white">
                 {tool.action}
               </span>
             </button>
@@ -117,8 +130,16 @@ export function FarmTools() {
       </div>
 
       {activeTool ? (
-        <div className="fixed inset-0 z-50 bg-ink/35" role="dialog" aria-modal="true" aria-label={activeToolMeta?.title}>
-          <div className="absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-2xl bg-[#FBFFE8] shadow-2xl">
+        <div
+          className={`fixed inset-0 z-50 bg-ink/35 backdrop-blur-[2px] ${isClosing ? "animate-[farmFadeOut_180ms_ease-in_forwards]" : "animate-[farmFadeIn_180ms_ease-out]"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={activeToolMeta?.title}
+        >
+          <div
+            className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-[1.35rem] bg-[#FBFFE8] shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}
+          >
+            <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 border-b border-[#2E7D32]/10 px-4 py-4 sm:px-6">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">GG FarmMate</p>
@@ -126,8 +147,8 @@ export function FarmTools() {
               </div>
               <button
                 type="button"
-                onClick={() => setActiveTool(null)}
-                className="grid h-11 w-11 place-items-center rounded-md bg-white text-ink shadow-sm ring-1 ring-[#2E7D32]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
+                onClick={closeTool}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-sm ring-1 ring-[#2E7D32]/10 transition hover:bg-[#FBFFE8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2E7D32]"
                 aria-label="Close tool"
               >
                 <X size={22} aria-hidden="true" />
@@ -143,6 +164,47 @@ export function FarmTools() {
               </div>
             </div>
           </div>
+          <style jsx global>{`
+            @keyframes farmSheetIn {
+              from {
+                transform: translateY(18%);
+                opacity: 0.96;
+              }
+              to {
+                transform: translateY(0);
+                opacity: 1;
+              }
+            }
+
+            @keyframes farmSheetOut {
+              from {
+                transform: translateY(0);
+                opacity: 1;
+              }
+              to {
+                transform: translateY(12%);
+                opacity: 0;
+              }
+            }
+
+            @keyframes farmFadeIn {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+
+            @keyframes farmFadeOut {
+              from {
+                opacity: 1;
+              }
+              to {
+                opacity: 0;
+              }
+            }
+          `}</style>
         </div>
       ) : null}
     </section>
