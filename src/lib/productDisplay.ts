@@ -1,5 +1,6 @@
 const PRODUCT_IMAGE_MAP: Record<string, string> = {
   maize: "/images/products/cereals.jpg",
+  maise: "/images/products/cereals.jpg",
   corn: "/images/products/cereals.jpg",
   onion: "/images/products/onions.jpg",
   onions: "/images/products/onions.jpg",
@@ -124,6 +125,7 @@ const CATEGORY_IMAGE_MAP: Record<string, string> = {
 
 const DISPLAY_NAME_MAP: Record<string, string> = {
   maize: "Maize",
+  maise: "Maize",
   corn: "Maize",
   onion: "Onions",
   onions: "Onions",

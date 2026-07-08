@@ -387,7 +387,7 @@ function farmerDescription(row: SupabaseFarmer, products: string[]) {
 
   const name = row.farm_name || row.farmer_name || "This farmer";
   const location = locationLabel(row.district, row.region);
-  const productText = products.length > 0 ? products.join(", ") : "";
+  const productText = products.length > 0 ? formatPublicList(products) : "";
 
   if (productText && location) {
     return `${name} is a Ghana Growers farmer based in ${location}, supplying ${productText}. Buyers can request availability, quantity, and collection or delivery details through Ghana Growers.`;
@@ -402,6 +402,18 @@ function farmerDescription(row: SupabaseFarmer, products: string[]) {
   }
 
   return `${name} is listed in the Ghana Growers farmer network. Buyers can request availability and quantity details through Ghana Growers.`;
+}
+
+function formatPublicList(items: string[]) {
+  if (items.length <= 1) {
+    return items[0] ?? "produce";
+  }
+
+  if (items.length === 2) {
+    return `${items[0]} and ${items[1]}`;
+  }
+
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
 function publicDeliveryPreference() {
@@ -477,13 +489,13 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     district: row.district,
     products,
     farmType: row.farm_type === "Livestock" || row.farm_type === "Mixed" ? row.farm_type : "Crop",
-    farmSize: row.farm_size ?? "Available on request",
-    yearsFarming: "Available on request",
-    availabilityStatus: row.status === "Archived" ? "Currently unavailable" : "Available on request",
+    farmSize: row.farm_size ?? "Not provided",
+    yearsFarming: "Not provided",
+    availabilityStatus: row.status === "Archived" ? "Currently unavailable" : "Request availability",
     description: farmerDescription(row, products),
     harvestSeason: "Confirm current harvest timing with Ghana Growers.",
-    capacityVolume: "Capacity available on request",
-    availableQuantities: "Available quantities confirmed during inquiry",
+    capacityVolume: "Quantities confirmed by Ghana Growers",
+    availableQuantities: "Ghana Growers confirms available quantities during the request process.",
     deliveryOptions: [publicDeliveryPreference()],
     paymentPreference: publicPaymentPreference(row.payment_preference),
     photos: farmerPhotoUrls(row),
