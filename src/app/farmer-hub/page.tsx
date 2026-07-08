@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   CalendarDays,
-  Camera,
   CheckCircle2,
   CloudSun,
   Droplets,
@@ -10,6 +9,7 @@ import {
   Sun
 } from "lucide-react";
 import { AskFarmMate } from "@/components/AskFarmMate";
+import { CropDoctor } from "@/components/CropDoctor";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -121,27 +121,7 @@ export default function FarmerHubPage() {
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
         <AskFarmMate />
-
-        <article id="crop-doctor" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
-          <div className="flex items-start gap-3">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-              <Camera size={30} aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-2xl font-black">Crop Doctor</h2>
-              <p className="mt-2 text-sm leading-6 text-ink/66">
-                Upload a crop photo later to receive possible issue categories and next-step advice.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 grid min-h-32 place-items-center rounded-md border-2 border-dashed border-[#2E7D32]/20 bg-[#FBFFE8] p-5 text-center">
-            <div>
-              <Camera className="mx-auto text-[#2E7D32]" size={30} aria-hidden="true" />
-              <p className="mt-2 text-sm font-black text-ink">Demo upload area</p>
-              <p className="mt-1 text-xs font-semibold text-ink/55">No real diagnosis yet</p>
-            </div>
-          </div>
-        </article>
+        <CropDoctor />
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-12 sm:px-6 lg:grid-cols-2 lg:px-8">

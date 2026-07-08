@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, Loader2, Send } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 const suggestions = [
   "Can I spray today?",
@@ -43,6 +43,18 @@ export function AskFarmMate() {
 
   const canAsk = question.trim().length > 0 && !isThinking;
   const responseParagraphs = useMemo(() => response.split("\n\n").filter(Boolean), [response]);
+
+  useEffect(() => {
+    function handlePrefill(event: Event) {
+      const customEvent = event as CustomEvent<string>;
+      if (customEvent.detail) {
+        setQuestion(customEvent.detail);
+      }
+    }
+
+    window.addEventListener("gg-farmmate-prefill", handlePrefill);
+    return () => window.removeEventListener("gg-farmmate-prefill", handlePrefill);
+  }, []);
 
   function askFarmMate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
