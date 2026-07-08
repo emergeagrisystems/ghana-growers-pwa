@@ -7,3 +7,4 @@ export * from "./sustainability";
 export * from "./safety";
 export * from "./regions";
 export * from "./reasoning-rules";
+export * as farmMateDecisionEngine from "./decision-engine";
