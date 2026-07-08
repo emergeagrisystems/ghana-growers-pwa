@@ -41,7 +41,7 @@ export default function FarmerHubPage() {
   return (
     <main className="bg-[#FBFFE8] text-ink">
       <section className="border-b border-[#2E7D32]/10">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[0.7fr_1.3fr] lg:items-start lg:px-8 lg:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:px-8 lg:py-16">
           <div>
             <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-[#2E7D32] shadow-sm">
               <Sprout size={16} aria-hidden="true" />
@@ -59,31 +59,27 @@ export default function FarmerHubPage() {
           <article className="rounded-lg border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">Today&apos;s Farm Summary</p>
-                <h2 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-4xl">What should I do on my farm today?</h2>
-                <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-ink/62">
-                  Start important field work before noon, watch for afternoon rain, and check tomato leaves for early signs of disease.
-                </p>
+                <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">Daily decision support</p>
+                <h2 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-4xl">Today&apos;s Farm Summary</h2>
               </div>
               <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#FFC107]/20 text-[#765700]">
                 <Sun size={30} aria-hidden="true" />
               </span>
             </div>
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="rounded-md bg-[#2E7D32] p-5 text-white">
+            <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-md bg-[#2E7D32] p-5 text-white sm:p-6">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-white/70">Current farming recommendation</p>
                 <h3 className="mt-3 text-2xl font-black">Farm early, pause spraying later</h3>
                 <p className="mt-3 text-sm font-semibold leading-6 text-white/78">
-                  Use the morning for spraying, harvesting, and field checks. Keep produce covered if clouds build after midday.
+                  Use the morning for spraying, harvesting, and field checks. Inspect lower tomato leaves first, and keep produce covered if clouds build after midday.
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 {[
                   { label: "Rain outlook", value: "35%", detail: "Possible afternoon showers", icon: Droplets },
-                  { label: "Disease risk", value: "Medium", detail: "Check lower tomato leaves", icon: AlertTriangle },
-                  { label: "Most important action", value: "Inspect first", detail: "Walk the field before spraying", icon: CheckCircle2 },
+                  { label: "Practical warning", value: "Check leaves", detail: "Avoid spraying damaged or wet leaves", icon: AlertTriangle },
                   { label: "Short learning tip", value: "Keep notes", detail: "Record weather, crop issue, and action", icon: GraduationCap }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -101,22 +97,17 @@ export default function FarmerHubPage() {
               </div>
             </div>
 
-            <div className="mt-7">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-[#2E7D32]">Rain Outlook</p>
-                  <h3 className="mt-2 text-xl font-black text-ink">Three-day forecast</h3>
-                </div>
+            <div className="mt-7 rounded-md bg-[#FBFFE8] p-4">
+              <div className="flex items-center gap-2">
+                <CloudSun className="text-[#2E7D32]" size={18} aria-hidden="true" />
+                <h3 className="text-sm font-black uppercase tracking-[0.1em] text-[#2E7D32]">Compact 3-day forecast</h3>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {weatherForecast.map((day) => (
-                  <div key={day.day} className="rounded-md border border-[#2E7D32]/10 bg-white p-4">
-                    <div className="flex items-center gap-2">
-                      <CloudSun className="text-[#2E7D32]" size={18} aria-hidden="true" />
-                      <p className="text-sm font-black text-ink">{day.day}</p>
-                    </div>
-                    <p className="mt-3 text-sm font-bold text-ink/70">{day.condition}</p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
+                  <div key={day.day} className="rounded-md bg-white p-3">
+                    <p className="text-sm font-black text-ink">{day.day}</p>
+                    <p className="mt-2 text-sm font-bold text-ink/68">{day.condition}</p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
                       <p className="text-sm font-black text-[#2E7D32]">{day.temp}</p>
                       <p className="text-xs font-black text-ink/50">Rain {day.rain}</p>
                     </div>
@@ -131,12 +122,18 @@ export default function FarmerHubPage() {
       <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-8">
         <AskFarmMate />
 
-        <article id="crop-doctor" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
-          <Camera className="text-[#2E7D32]" size={28} aria-hidden="true" />
-          <h2 className="mt-3 text-2xl font-black">Crop Doctor preview</h2>
-          <p className="mt-3 text-sm leading-6 text-ink/66">
-            Upload a crop photo later to receive possible issue categories and next-step advice.
-          </p>
+        <article id="crop-doctor" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
+          <div className="flex items-start gap-3">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
+              <Camera size={30} aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-black">Crop Doctor</h2>
+              <p className="mt-2 text-sm leading-6 text-ink/66">
+                Upload a crop photo later to receive possible issue categories and next-step advice.
+              </p>
+            </div>
+          </div>
           <div className="mt-4 grid min-h-32 place-items-center rounded-md border-2 border-dashed border-[#2E7D32]/20 bg-[#FBFFE8] p-5 text-center">
             <div>
               <Camera className="mx-auto text-[#2E7D32]" size={30} aria-hidden="true" />

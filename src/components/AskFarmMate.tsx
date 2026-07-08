@@ -63,13 +63,13 @@ export function AskFarmMate() {
   }
 
   return (
-    <article id="assistant" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-card sm:p-6">
+    <article id="assistant" className="rounded-md border border-[#2E7D32]/10 bg-white p-5 shadow-soft sm:p-7">
       <div className="flex items-start gap-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
-          <Bot size={27} aria-hidden="true" />
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-[#2E7D32]/10 text-[#2E7D32]">
+          <Bot size={30} aria-hidden="true" />
         </span>
         <div>
-          <h2 className="text-2xl font-black text-ink">🤖 Ask FarmMate</h2>
+          <h2 className="text-2xl font-black text-ink">Ask FarmMate</h2>
           <p className="mt-2 text-sm leading-6 text-ink/66">
             Ask farming questions and receive practical guidance for your farm.
           </p>
@@ -142,3 +142,4 @@ export function AskFarmMate() {
     </article>
   );
 }
+
