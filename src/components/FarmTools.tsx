@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, CalendarDays, Camera, Sprout, X } from "lucide-react";
+import { ArrowRight, Bot, CalendarDays, Camera, Sprout, X } from "lucide-react";
 import { useState } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
@@ -107,7 +107,10 @@ export function FarmTools() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-5">
-        <h2 className="gg-section-title">Farm Tools</h2>
+        <h2 className="gg-section-title inline-flex items-center gap-2">
+          Farm Tools
+          <ArrowRight className="text-leaf-700/70" size={22} strokeWidth={2} aria-hidden="true" />
+        </h2>
       </div>
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
@@ -142,7 +145,7 @@ export function FarmTools() {
         >
           <div className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-xl ${sheetBackground} shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}>
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
-            <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
+            <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
               <div>
                 <p className="gg-eyebrow text-leaf-700">GG FarmMate</p>
                 <h2 className="text-xl font-black text-ink">{activeToolMeta?.title}</h2>
@@ -158,7 +161,7 @@ export function FarmTools() {
             </div>
 
             <div className="max-h-[calc(94vh-5rem)] overflow-y-auto px-4 py-6 sm:px-6">
-              <div className="mx-auto max-w-3xl">
+              <div className="mx-auto max-w-2xl">
                 {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} /> : null}
                 {activeTool === "doctor" ? <CropDoctor onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
                 {activeTool === "calendar" ? <CropCalendarExperience /> : null}
