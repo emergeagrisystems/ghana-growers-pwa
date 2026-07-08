@@ -49,6 +49,7 @@ export type Recommendation = {
   confidence: ConfidenceLevel;
   reasoning: ReasoningStep[];
   sustainabilityPriority: SustainabilityPriority[];
+  recommendedAction: string;
   guidance: string[];
   nextBestAction: NextBestAction;
 };
@@ -65,6 +66,7 @@ export type DecisionFlow = {
   id: string;
   question: string;
   intent: FarmerIntent;
+  possibleCauses: string[];
   requiredInformation: RequiredInformation;
   followUpQuestions: FollowUpQuestion[];
   recommendation: Recommendation;

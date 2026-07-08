@@ -13,6 +13,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     id: "yellow-tomato-leaves",
     question: "Why are my tomato leaves turning yellow?",
     intent: "crop-health",
+    possibleCauses: ["Excess water", "Nitrogen deficiency", "Early blight or another leaf disease", "Root stress"],
     requiredInformation: {
       crop: "Tomato",
       visibleSymptoms: ["Yellow leaves"],
@@ -52,6 +53,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         }
       ],
       sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Inspect lower leaves and use Crop Doctor for a photo check before choosing treatment.",
       guidance: [
         "Check the lower leaves first.",
         "Avoid watering the leaves directly.",
@@ -70,6 +72,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     id: "can-i-spray-today",
     question: "Can I spray today?",
     intent: "weather-decisions",
+    possibleCauses: ["Rain wash-off risk", "Wind drift risk", "Wet leaves", "Heat stress risk"],
     requiredInformation: {
       recentWeather: "Rain, wind and leaf wetness needed",
       farmPracticeContext: ["Spraying decision"]
@@ -107,6 +110,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         }
       ],
       sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Spray only if leaves are dry, wind is calm and rain is not expected for 4-6 hours.",
       guidance: [
         "Prefer early morning when leaves are dry and wind is calm.",
         "Do not spray before rain.",
@@ -125,6 +129,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     id: "pepper-flowers-dropping",
     question: "Why are my pepper flowers dropping?",
     intent: "crop-health",
+    possibleCauses: ["Heat stress", "Irregular watering", "Poor pollination", "Insect pressure", "Nutrient imbalance"],
     requiredInformation: {
       crop: "Pepper",
       growthStage: "Flowering",
@@ -163,6 +168,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         }
       ],
       sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Stabilize watering and inspect flowers for insects before applying any treatment.",
       guidance: [
         "Keep watering regular but avoid waterlogging.",
         "Mulch to reduce heat and moisture stress.",
@@ -181,6 +187,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     id: "maize-not-growing-well",
     question: "Why is my maize not growing well?",
     intent: "fertilizer",
+    possibleCauses: ["Low nitrogen", "Poor early root growth", "Water stress", "Waterlogging", "Fall armyworm damage"],
     requiredInformation: {
       crop: "Maize",
       growthStage: "Vegetative growth",
@@ -220,6 +227,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         }
       ],
       sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Check leaf colour, soil moisture and whorl damage before deciding on fertilizer or pest control.",
       guidance: [
         "Check soil moisture and drainage first.",
         "Inspect the whorl for fall armyworm damage.",
