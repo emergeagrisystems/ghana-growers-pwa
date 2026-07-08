@@ -56,12 +56,12 @@ function selectedSpecialistFromRouter(routerResult?: RouterResult) {
 }
 
 function flowMatchesCrop(flow: DecisionFlow, resolvedCrop?: string) {
-  if (!resolvedCrop) {
+  if (!flow.requiredInformation.crop) {
     return true;
   }
 
-  if (!flow.requiredInformation.crop) {
-    return true;
+  if (!resolvedCrop) {
+    return false;
   }
 
   return flow.requiredInformation.crop.toLowerCase() === resolvedCrop.toLowerCase();

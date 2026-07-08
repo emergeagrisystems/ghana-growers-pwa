@@ -163,6 +163,34 @@ function clarificationResponse(): FarmMateLocalResponseCard[] {
   ];
 }
 
+function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean) {
+  if (localCards.some((card) => card.body.some((line) => line.toLowerCase().includes("buy produce")))) {
+    return {
+      lead: "Here is the buying guidance.",
+      detail: "This is separate from crop health advice."
+    };
+  }
+
+  if (localCards.length) {
+    return {
+      lead: "I need a clearer question.",
+      detail: "Send one full sentence so I can route it properly."
+    };
+  }
+
+  if (showRecommendation) {
+    return {
+      lead: "Here is the practical next step.",
+      detail: "I will keep it short and focused."
+    };
+  }
+
+  return {
+    lead: "Let’s narrow it down first.",
+    detail: "I’ll ask one quick question at a time."
+  };
+}
+
 function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
   return [
     {
@@ -397,6 +425,7 @@ export function AskFarmMate({
   }
 
   const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
+  const intro = responseIntro(localCards, showRecommendation);
 
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
@@ -461,14 +490,8 @@ export function AskFarmMate({
         {response || localCards.length ? (
           <div className="max-w-[92%] space-y-3">
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
-              <p>I can help.</p>
-              {localCards.length ? (
-                <p className="mt-2">Here is the practical answer.</p>
-              ) : showRecommendation ? (
-                <p className="mt-2">Here is the practical next step.</p>
-              ) : (
-                <p className="mt-2">Let&apos;s narrow it down first. I&apos;ll ask one quick question at a time.</p>
-              )}
+              <p>{intro.lead}</p>
+              <p className="mt-2">{intro.detail}</p>
             </div>
 
             {followUpAnswers.map((answer) => (

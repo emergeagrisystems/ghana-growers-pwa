@@ -51,6 +51,10 @@ function buildVoiceLayerInput(input: FarmMateAiInput) {
 
   if (process.env.NODE_ENV === "development") {
     console.info("FarmMate OpenAI payload crop:", payload.crop ?? "none");
+    console.info("FarmMate OpenAI payload intent:", input.brain.intent.intent);
+    console.info("FarmMate OpenAI payload specialist:", input.brain.routerResult?.selectedSpecialist ?? "none");
+    console.info("FarmMate OpenAI payload flow crop/context:", input.brain.flow?.requiredInformation.crop ?? "none");
+    console.info("FarmMate OpenAI payload decision flow:", input.brain.flow?.id ?? "fallback");
   }
 
   return JSON.stringify(payload, null, 2);

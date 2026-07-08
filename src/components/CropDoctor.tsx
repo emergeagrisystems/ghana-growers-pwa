@@ -182,12 +182,16 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               <div>
                 <p className="gg-eyebrow text-leaf-700">Possible issue</p>
                 <h3 className="mt-2 gg-card-title">{diagnosis.issue}</h3>
+                <p className="mt-2 text-sm font-bold text-ink/62">Crop: {diagnosis.crop ?? "Unknown crop"}</p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
-                {diagnosis.confidence}% confidence
+                Demo {diagnosis.confidence}% confidence
               </span>
             </div>
+            <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-bold leading-6 text-ink/64">
+              Demo only: Crop Doctor cannot confirm the crop or diagnosis yet. Use this as a guide for what to check next.
+            </p>
 
             <div className="mt-4 grid gap-3">
               {[
