@@ -19,6 +19,75 @@ function sectionBody(response: FarmMateBrainResponse, title: string) {
   return response.sections.find((section) => section.title === title)?.body ?? [];
 }
 
+function conversationalOption(questionId: string, option: string) {
+  const optionLabels: Record<string, Record<string, string>> = {
+    "rain-window": {
+      Yes: "Rain is expected soon",
+      No: "No rain expected soon",
+      "Not sure": "I am not sure about rain"
+    },
+    "leaf-wetness": {
+      Dry: "Leaves are dry",
+      Wet: "Leaves are wet",
+      "Not sure": "I am not sure if leaves are dry"
+    },
+    "wind-level": {
+      Calm: "Wind is calm",
+      Windy: "Wind is strong",
+      "Not sure": "I am not sure about the wind"
+    },
+    "pepper-insects": {
+      Yes: "I can see insects",
+      No: "I cannot see insects",
+      "Not sure": "I am not sure if insects are present"
+    },
+    "pepper-fertilizer": {
+      Yes: "Fertilizer was applied recently",
+      No: "No recent fertilizer",
+      "Not sure": "I am not sure about fertilizer"
+    },
+    "maize-leaf-colour": {
+      "Pale yellow": "Older leaves are pale yellow",
+      Purple: "Older leaves are purple",
+      "Still green": "Older leaves are dark green"
+    },
+    "maize-waterlogging": {
+      Dry: "The plot has been dry",
+      "Flooded or waterlogged": "The plot was flooded or waterlogged",
+      Neither: "No recent dryness or waterlogging"
+    },
+    "maize-pest-damage": {
+      Yes: "I can see whorl damage",
+      No: "No whorl damage seen",
+      "Not sure": "I am not sure about whorl damage"
+    }
+  };
+
+  return optionLabels[questionId]?.[option] ?? option;
+}
+
+function cleanGuidance(line: string) {
+  return line
+    .replace("Tell FarmMate", "Share")
+    .replace("Tell the farmer", "Use this guidance")
+    .replace("Do not invent product rates. ", "")
+    .replace("refer to product labels or extension officers", "follow the product label or ask an extension officer");
+}
+
+function learnedSummary(response: FarmMateBrainResponse, answers: FollowUpAnswer[]) {
+  const crop = response.flow?.requiredInformation.crop ?? response.intent.cropName;
+  const summary = [
+    ...(crop ? [`Crop: ${crop}`] : []),
+    ...answers.map((answer) => answer.answer)
+  ];
+
+  return summary.length ? summary.slice(0, 4) : ["FarmMate has enough information to give a first recommendation."];
+}
+
+function conciseLines(lines: string[], limit: number) {
+  return lines.map(cleanGuidance).filter(Boolean).slice(0, limit);
+}
+
 export function AskFarmMate({
   prefillQuestion,
   onOpenCropDoctor
@@ -159,7 +228,7 @@ export function AskFarmMate({
             <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
               <p>I can help.</p>
               {showRecommendation ? (
-                <p className="mt-2">Here is the practical next step based on what FarmMate knows locally.</p>
+                <p className="mt-2">Here is the practical next step.</p>
               ) : (
                 <p className="mt-2">Let&apos;s narrow it down first. I&apos;ll ask one quick question at a time.</p>
               )}
@@ -175,14 +244,14 @@ export function AskFarmMate({
               <div className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                 <p className="text-sm font-black text-ink">{currentFollowUp.question}</p>
                 <div className="mt-3 grid gap-2">
-                  {(currentFollowUp.options ?? ["Yes", "No", "Not sure"]).map((option) => (
+                  {(currentFollowUp.options ?? ["I can check this", "I am not sure", "I need help checking"]).map((option) => (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => answerFollowUp(option)}
+                      onClick={() => answerFollowUp(conversationalOption(currentFollowUp.id, option))}
                       className="min-h-11 rounded-md border border-leaf-900/15 bg-leaf-50 px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                     >
-                      {option}
+                      {conversationalOption(currentFollowUp.id, option)}
                     </button>
                   ))}
                 </div>
@@ -191,12 +260,21 @@ export function AskFarmMate({
 
             {showRecommendation ? (
               <div className="space-y-3">
+                <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                  <h3 className="text-sm font-black text-ink">Here&apos;s what I understand</h3>
+                  <div className="mt-2 space-y-1">
+                    {learnedSummary(response, followUpAnswers).map((line) => (
+                      <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+
                 {[
-                  ["Possible Cause", sectionBody(response, "Why this may happen")],
-                  ["What to check", sectionBody(response, "What to check").slice(0, 2)],
-                  ["Recommended Action", sectionBody(response, "Recommended action")],
-                  ["Prevention", sectionBody(response, "Prevention")],
-                  ["Next Best Action", sectionBody(response, "Next Best Action")]
+                  ["What I think", conciseLines([...sectionBody(response, "Direct answer").slice(0, 1), ...sectionBody(response, "Why this may happen")], 3)],
+                  ["What to do now", conciseLines([...sectionBody(response, "Recommended action"), ...sectionBody(response, "Prevention").slice(0, 2)], 3)],
+                  ["Next step", conciseLines(sectionBody(response, "Next Best Action"), 1)]
                 ].map(([title, body]) => (
                   <section key={title as string} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                     <h3 className="text-sm font-black text-ink">{title as string}</h3>
