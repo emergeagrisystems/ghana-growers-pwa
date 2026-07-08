@@ -8,6 +8,7 @@ type HomepageMarketplaceCategory = {
   summary: string;
   href: string;
   image: string;
+  action: string;
 };
 
 const marketplaceCategories: HomepageMarketplaceCategory[] = [
@@ -15,37 +16,43 @@ const marketplaceCategories: HomepageMarketplaceCategory[] = [
     title: "Fresh Produce",
     summary: "Fresh fruits, vegetables, cereals and root crops.",
     href: "/marketplace?category=fresh-produce",
-    image: "/images/marketplace/ghana-market-1.jpg"
+    image: "/images/marketplace/ghana-market-1.jpg",
+    action: "Browse Produce"
   },
   {
     title: "Farm Inputs",
     summary: "Seeds, fertilizer and crop support.",
     href: "/marketplace?category=farm-inputs",
-    image: "/images/marketplace/farm-inputs.jpg"
+    image: "/images/marketplace/farm-inputs.jpg",
+    action: "Browse Inputs"
   },
   {
     title: "Farm Services",
     summary: "Mechanization, advice and labour support.",
     href: "/marketplace?category=farm-services",
-    image: "/images/marketplace/farm-activity-2.jpg"
+    image: "/images/marketplace/farm-activity-2.jpg",
+    action: "Find Services"
   },
   {
     title: "Livestock",
     summary: "Poultry, goats, cattle and fish.",
     href: "/marketplace?category=livestock",
-    image: "/images/crops/poultry.jpg"
+    image: "/images/crops/poultry.jpg",
+    action: "View Livestock"
   },
   {
     title: "Logistics & Transport",
     summary: "Transport, aggregation and delivery.",
     href: "/marketplace?category=logistics",
-    image: "/images/marketplace/logistics-truck.jpg"
+    image: "/images/marketplace/logistics-truck.jpg",
+    action: "Find Logistics"
   },
   {
     title: "Packaging & Storage",
     summary: "Packaging, storage and warehouse support.",
     href: "/marketplace?category=packaging-storage",
-    image: "/images/marketplace/produce-packaging.jpg"
+    image: "/images/marketplace/produce-packaging.jpg",
+    action: "Find Packaging"
   }
 ];
 
@@ -59,16 +66,17 @@ export function MarketplaceCategoryShowcase() {
             Explore the Marketplace
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg">
-            Browse fresh produce, farm inputs, livestock and trusted agricultural services across Ghana.
+            Browse fresh produce, livestock, farm inputs, transport, packaging, and trusted agricultural services across Ghana.
           </p>
         </div>
 
-        <div className="mt-12 grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {marketplaceCategories.map((category) => (
             <Link
               key={category.title}
               href={category.href}
-              className="group min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:shadow-soft"
+              aria-label={`${category.action}: ${category.title}`}
+              className="focus-ring group min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:shadow-soft"
             >
               <SafeImage
                 src={category.image}
@@ -86,6 +94,9 @@ export function MarketplaceCategoryShowcase() {
                 <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
                   {category.summary}
                 </p>
+                <span className="mt-4 inline-flex text-sm font-black text-leaf-700 transition group-hover:text-leaf-900">
+                  {category.action}
+                </span>
               </div>
             </Link>
           ))}

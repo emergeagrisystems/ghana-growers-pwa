@@ -6,6 +6,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { normalizeTrust, VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
+import { cleanProductList, productImageForName } from "@/lib/productDisplay";
 import {
   featuredBuyerRequests,
   featuredFarmers,
@@ -33,6 +34,44 @@ const backgrounds = {
   earth: "bg-earth-50"
 };
 
+function titleCaseLocation(value?: string) {
+  return (value ?? "")
+    .split(/(\s+|-|\/|,)/)
+    .map((part) => {
+      if (/^(\s+|-|\/|,)$/.test(part)) {
+        return part;
+      }
+
+      return part ? `${part.charAt(0).toUpperCase()}${part.slice(1).toLowerCase()}` : part;
+    })
+    .join("")
+    .replace(/\s*\/\s*/g, ", ")
+    .replace(/\bRegion\b/gi, "Region");
+}
+
+function formatFarmerLocation(farmer: FarmerProfile) {
+  const district = titleCaseLocation(farmer.district);
+  const region = titleCaseLocation(farmer.region);
+
+  if (!district || district.toLowerCase() === region.toLowerCase()) {
+    return region || district || "Ghana";
+  }
+
+  return `${district}, ${region}`;
+}
+
+function formatFarmerProducts(products: string[]) {
+  return cleanProductList(products).map((product) => product.replace("Aquaculture And Poultry", "Aquaculture & Poultry"));
+}
+
+function farmerImage(farmer: FarmerProfile) {
+  if (farmer.hasRealPhoto && farmer.photos[0]) {
+    return farmer.photos[0];
+  }
+
+  return productImageForName(formatFarmerProducts(farmer.products)[0] ?? "Produce");
+}
+
 export function FeaturedListings({
   kinds = ["all"],
   title = "Featured listings",
@@ -58,6 +97,8 @@ export function FeaturedListings({
           {showFarmers
             ? selectedFarmers.slice(0, limit).map((farmer) => {
                 const trust = normalizeTrust(farmer.trust);
+                const products = formatFarmerProducts(farmer.products);
+                const location = formatFarmerLocation(farmer);
 
                 return (
                 <article
@@ -73,8 +114,8 @@ export function FeaturedListings({
                     </div>
                   )}
                   <SafeImage
-                    src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
-                    alt={`${farmer.farmName} farm photo`}
+                    src={farmerImage(farmer)}
+                    alt={`${farmer.farmName} farm or produce photo`}
                     width={420}
                     height={240}
                     className={`${compact ? "aspect-[4/3]" : "mt-4 aspect-[4/3]"} w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover object-[center_30%]`}
@@ -82,7 +123,7 @@ export function FeaturedListings({
                     sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                   />
                   <h3 className={`${compact ? "text-lg" : "text-xl"} mt-4 font-black text-ink`}>{farmer.farmName}</h3>
-                  <p className="mt-1 text-sm font-bold text-leaf-700">{farmer.region}</p>
+                  <p className="mt-1 text-sm font-bold text-leaf-700">{location}</p>
                   {trust.status === "Verified" ? (
                     <div className="mt-3">
                       <VerificationBadge kind="farmer" status={trust.status} />
@@ -96,17 +137,15 @@ export function FeaturedListings({
                   ) : null}
                   {compact ? null : <p className="mt-3 text-sm leading-6 text-ink/65">{farmer.availabilityStatus}</p>}
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {farmer.products.slice(0, 3).map((product) => (
+                    {products.slice(0, 3).map((product) => (
                       <span key={product} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
                         {product}
                       </span>
                     ))}
                   </div>
-                  {compact ? null : (
-                    <Link href={`/farmer-directory/${farmer.slug}`} className="gg-button-primary mt-5 w-full">
-                      View Farmer
-                    </Link>
-                  )}
+                  <Link href={`/farmer-directory/${farmer.slug}`} className={compact ? "gg-button-secondary mt-5 w-full" : "gg-button-primary mt-5 w-full"}>
+                    View Profile
+                  </Link>
                 </article>
                 );
               })
