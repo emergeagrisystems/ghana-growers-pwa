@@ -1,6 +1,7 @@
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
 import { findFertilizerGuidance } from "../fertilizer-specialist";
+import { findPlantingAdvisorGuidance } from "../planting-advisor-specialist";
 import { findWeatherDecisionGuidance, weatherTaskFromQuestion } from "../weather-decision-specialist";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -39,6 +40,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions"
       ? findWeatherDecisionGuidance(weatherTaskFromQuestion(input.farmerQuestion))
       : null;
+  const plantingContext =
+    input.brain.routerResult?.selectedSpecialist === "planting" || input.brain.flow?.intent === "planting"
+      ? findPlantingAdvisorGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
+      : null;
   const payload = {
     instruction:
       "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
@@ -67,6 +72,23 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           sustainabilityNotes: weatherContext.sustainabilityNotes,
           noLiveWeatherRule: "Do not invent live rain, wind, temperature or forecast details. Ask the farmer to check conditions when weather data is missing."
         }
+      : plantingContext
+      ? {
+          specialist: "planting",
+          crop: plantingContext.crop,
+          suitablePlantingConditions: plantingContext.suitablePlantingConditions,
+          plantingSeasonNotes: plantingContext.plantingSeasonNotes,
+          spacingGuidance: plantingContext.spacingGuidance,
+          nurseryTransplantingNotes: plantingContext.nurseryTransplantingNotes,
+          soilPreparation: plantingContext.soilPreparation,
+          waterRainfallNeeds: plantingContext.waterRainfallNeeds,
+          commonPlantingMistakes: plantingContext.commonPlantingMistakes,
+          sustainablePlantingPractices: plantingContext.sustainablePlantingPractices,
+          whenToDelayPlanting: plantingContext.whenToDelayPlanting,
+          nextBestAction: plantingContext.nextBestAction,
+          noLiveWeatherRule: "Do not invent exact local weather or forecast details. Use farmer-provided rain, irrigation and soil context only.",
+          noMarketRule: "Do not invent seed availability, market prices or guaranteed profit."
+        }
       : null,
     decisionFlow: input.brain.flow ?? null,
     farmerAnswers: input.farmerAnswers,
@@ -79,6 +101,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "Use the farmer's answers when explaining the recommendation.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
       "For weather decisions, do not invent live weather or forecast details.",
+      "For planting decisions, do not invent exact local weather, seed availability, market prices, or guaranteed profit.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

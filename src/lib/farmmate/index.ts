@@ -12,6 +12,7 @@ export * from "./reasoning-rules";
 export * from "./plant-health-specialist";
 export * from "./fertilizer-specialist";
 export * from "./weather-decision-specialist";
+export * from "./planting-advisor-specialist";
 export * from "./farmmate-qa-examples";
 export * from "./crop-doctor-demo";
 export * from "./crop-doctor-vision";

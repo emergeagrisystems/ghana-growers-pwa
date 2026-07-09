@@ -325,6 +325,131 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "what should I plant this month routes to planting",
+    run: () => {
+      const router = routeFarmMateQuestion("What should I plant this month?");
+      const response = buildFarmMateResponse("What should I plant this month?", router);
+
+      assert.equal(router.selectedSpecialist, "planting");
+      assert.equal(response.flow?.id, "what-should-i-plant-this-month");
+    }
+  },
+  {
+    name: "can I plant tomatoes now routes to planting",
+    run: () => {
+      const router = routeFarmMateQuestion("Can I plant tomatoes now?");
+      const response = buildFarmMateResponse("Can I plant tomatoes now?", router);
+
+      assert.equal(router.selectedSpecialist, "planting");
+      assert.equal(response.flow?.id, "can-i-plant-tomatoes-now");
+      assert.equal(response.resolvedCrop, "Tomato");
+    }
+  },
+  {
+    name: "best spacing for pepper routes to planting",
+    run: () => {
+      const router = routeFarmMateQuestion("Best spacing for pepper?");
+      const response = buildFarmMateResponse("Best spacing for pepper?", router);
+
+      assert.equal(router.selectedSpecialist, "planting");
+      assert.equal(response.flow?.id, "best-spacing-for-pepper");
+      assert.equal(response.resolvedCrop, "Pepper");
+    }
+  },
+  {
+    name: "when should I plant maize routes to planting",
+    run: () => {
+      const router = routeFarmMateQuestion("When should I plant maize?");
+      const response = buildFarmMateResponse("When should I plant maize?", router);
+
+      assert.equal(router.selectedSpecialist, "planting");
+      assert.equal(response.flow?.id, "when-should-i-plant-maize");
+      assert.equal(response.resolvedCrop, "Maize");
+    }
+  },
+  {
+    name: "planting flow asks region first when crop is known but region is missing",
+    run: () => {
+      const response = buildFarmMateResponse("Can I plant tomatoes now?", routeFarmMateQuestion("Can I plant tomatoes now?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Which region are you farming in?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]);
+    }
+  },
+  {
+    name: "planting flow asks crop type first when crop is not specified",
+    run: () => {
+      const response = buildFarmMateResponse("What should I plant this month?", routeFarmMateQuestion("What should I plant this month?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What type of crop are you interested in?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Vegetables", "Staples", "Root/tuber crops", "I am not sure"]);
+    }
+  },
+  {
+    name: "planting advice does not invent weather or market prices",
+    run: () => {
+      const response = buildFarmMateResponse("What should I plant this month?", routeFarmMateQuestion("What should I plant this month?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("rain is coming today"), false);
+      assert.equal(text.includes("market price"), false);
+      assert.equal(text.includes("guaranteed profit"), false);
+      assert.equal(text.includes("local planting context"), true);
+    }
+  },
+  {
+    name: "planting advice includes spacing when relevant",
+    run: () => {
+      const response = buildFarmMateResponse("Best spacing for pepper?", routeFarmMateQuestion("Best spacing for pepper?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("spacing"), true);
+      assert.equal(text.includes("45 to 60 cm"), true);
+    }
+  },
+  {
+    name: "planting advice warns against waterlogged soil",
+    run: () => {
+      const response = buildFarmMateResponse("Can I plant tomatoes now?", routeFarmMateQuestion("Can I plant tomatoes now?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("waterlogged soil"), true);
+    }
+  },
+  {
+    name: "planting recommendation includes one next best action",
+    run: () => {
+      const response = buildFarmMateResponse("When should I plant maize?", routeFarmMateQuestion("When should I plant maize?"));
+      const nextBestAction = response.sections.find((section) => section.title === "Next Best Action")?.body ?? [];
+
+      assert.equal(response.flow?.id, "when-should-i-plant-maize");
+      assert.equal(nextBestAction.length, 1);
+      assert.equal(Boolean(response.nextBestAction.instruction), true);
+    }
+  },
+  {
+    name: "OpenAI payload includes planting specialist context",
+    run: () => {
+      const farmerQuestion = "Best spacing for pepper?";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion,
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; crop?: string; noLiveWeatherRule?: string; noMarketRule?: string; spacingGuidance?: string[] } };
+
+      assert.equal(payload.selectedSpecialist, "planting");
+      assert.equal(payload.specialistContext?.specialist, "planting");
+      assert.equal(payload.specialistContext?.crop, "Pepper");
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.toLowerCase().includes("do not invent exact local weather"), true);
+      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
+      assert.equal(payload.specialistContext?.spacingGuidance?.some((line) => line.toLowerCase().includes("45 to 60 cm")), true);
+    }
+  },
+  {
     name: "buy produce does not route to plant health",
     run: () => {
       const router = routeFarmMateQuestion("How can I buy produce from Ghana Growers?");

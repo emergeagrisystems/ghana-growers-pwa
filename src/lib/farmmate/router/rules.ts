@@ -65,7 +65,25 @@ export const farmMateRouterRules: RouterRule[] = [
   },
   {
     specialist: "planting",
-    keywords: ["what should i plant", "planting season", "spacing", "seed", "sow", "germination", "plant maize", "plant tomato", "best time to plant"],
+    keywords: [
+      "plant",
+      "planting",
+      "sow",
+      "sowing",
+      "transplant",
+      "nursery",
+      "spacing",
+      "seed spacing",
+      "planting season",
+      "what should i plant",
+      "crop to grow",
+      "best time to plant",
+      "land preparation",
+      "germination",
+      "plant maize",
+      "plant tomato",
+      "plant tomatoes"
+    ],
     reason: "The question is about planting choices, timing, spacing or seed establishment.",
     suggestedFallbackSpecialist: "general_farming"
   },

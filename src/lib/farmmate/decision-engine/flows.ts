@@ -432,6 +432,315 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     safetyRules: [decisionEngineSafetyRules[2]]
   },
   {
+    id: "what-should-i-plant-this-month",
+    question: "What should I plant this month?",
+    intent: "planting",
+    possibleCauses: ["Crop type is not known", "Region and month affect planting choice", "Rain or irrigation availability is not known"],
+    requiredInformation: {
+      region: "Unknown",
+      recentWeather: "Rain or irrigation availability needed",
+      farmPracticeContext: ["Crop choice", "Month or season", "Land preparation"]
+    },
+    followUpQuestions: [
+      {
+        id: "planting-crop-type",
+        question: "What type of crop are you interested in?",
+        requiredForConfidence: true,
+        options: ["Vegetables", "Staples", "Root/tuber crops", "I am not sure"]
+      },
+      {
+        id: "planting-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "planting-water-source",
+        question: "Do you have steady rain, irrigation, or both?",
+        requiredForConfidence: true,
+        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "FarmMate should choose planting options only after checking crop type, region, season, water and land preparation.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "crop-choice-context-needed",
+          observation: "The farmer has not chosen a crop type yet.",
+          interpretation: "FarmMate should ask crop type first instead of pretending one crop is best."
+        },
+        {
+          id: "region-season-needed",
+          observation: "Region and month affect rain pattern, heat and irrigation needs.",
+          interpretation: "FarmMate needs local context before giving a planting recommendation."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Choose a crop category, then check region, water availability and whether the land is ready before planting.",
+      guidance: [
+        "Avoid planting into waterlogged soil.",
+        "Use healthy seed or planting material.",
+        "Add compost or organic matter where available."
+      ],
+      nextBestAction: {
+        id: "choose-crop-type",
+        label: "Choose crop type",
+        instruction: "Choose whether you want vegetables, staples, root or tuber crops, or need help deciding.",
+        actionType: "ask-follow-up"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "can-i-plant-tomatoes-now",
+    question: "Can I plant tomatoes now?",
+    intent: "planting",
+    possibleCauses: ["Region is unknown", "Rain or irrigation availability is unknown", "Tomato seedlings and drainage need checking"],
+    requiredInformation: {
+      crop: "Tomato",
+      region: "Unknown",
+      recentWeather: "Rain, irrigation and soil wetness needed",
+      farmPracticeContext: ["Tomato planting", "Land preparation", "Seedling strength"]
+    },
+    followUpQuestions: [
+      {
+        id: "tomato-planting-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "tomato-planting-water",
+        question: "Do you have steady rain or irrigation for the tomatoes?",
+        requiredForConfidence: true,
+        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
+      },
+      {
+        id: "tomato-field-condition",
+        question: "Is the field moist, dry, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Moist", "Dry", "Waterlogged", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Tomatoes can be planted when seedlings are strong, the soil is moist but not waterlogged, and water is reliable.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "tomato-region-needed",
+          observation: "The region is not known yet.",
+          interpretation: "FarmMate should ask region before giving timing advice."
+        },
+        {
+          id: "tomato-waterlogging-risk",
+          observation: "Tomato roots suffer in waterlogged soil.",
+          interpretation: "Drainage must be checked before transplanting."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Plant or transplant tomatoes only when seedlings are healthy, soil is moist, drainage is good and heavy rain or extreme heat is not expected.",
+      guidance: [
+        "Avoid planting into waterlogged soil.",
+        "Transplant in the cool morning or late afternoon.",
+        "Use compost and rotate away from tomato-family crops where possible."
+      ],
+      nextBestAction: {
+        id: "share-tomato-region",
+        label: "Share region",
+        instruction: "Share your region so FarmMate can guide the tomato planting decision more safely.",
+        actionType: "ask-follow-up"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "best-spacing-for-pepper",
+    question: "Best spacing for pepper",
+    intent: "planting",
+    possibleCauses: ["Pepper variety and field layout are unknown", "Crowding can reduce airflow", "Water and drainage affect pepper establishment"],
+    requiredInformation: {
+      crop: "Pepper",
+      region: "Unknown",
+      farmPracticeContext: ["Pepper spacing", "Transplanting", "Field airflow"]
+    },
+    followUpQuestions: [
+      {
+        id: "pepper-spacing-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "pepper-spacing-system",
+        question: "Are you planting on beds, ridges, or flat land?",
+        requiredForConfidence: true,
+        options: ["Beds", "Ridges", "Flat land", "Not sure"]
+      },
+      {
+        id: "pepper-spacing-moisture",
+        question: "Is the soil moist, dry, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Moist", "Dry", "Waterlogged", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Pepper spacing should give roots enough room and leave airflow so disease pressure is lower.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "pepper-airflow",
+          observation: "Crowded pepper plants hold humidity.",
+          interpretation: "Spacing helps airflow and makes scouting easier."
+        },
+        {
+          id: "pepper-field-layout",
+          observation: "Bed, ridge or flat planting affects practical spacing.",
+          interpretation: "FarmMate should ask field layout before being too exact."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Use local extension spacing where available; about 45 to 60 cm between pepper plants can help airflow in many smallholder fields.",
+      guidance: [
+        "Keep enough space for airflow and picking.",
+        "Avoid transplanting into waterlogged soil.",
+        "Use compost or well-rotted manure before planting where available."
+      ],
+      nextBestAction: {
+        id: "measure-pepper-spacing",
+        label: "Measure spacing",
+        instruction: "Measure your intended pepper spacing and keep enough room for airflow before transplanting.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "when-should-i-plant-maize",
+    question: "When should I plant maize?",
+    intent: "planting",
+    possibleCauses: ["Region is unknown", "Rain reliability is unknown", "Soil moisture and drainage need checking"],
+    requiredInformation: {
+      crop: "Maize",
+      region: "Unknown",
+      recentWeather: "Rain reliability and soil wetness needed",
+      farmPracticeContext: ["Maize sowing", "Land preparation"]
+    },
+    followUpQuestions: [
+      {
+        id: "maize-planting-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "maize-rain-status",
+        question: "Have steady rains started, or is the soil still dry?",
+        requiredForConfidence: true,
+        options: ["Steady rains started", "Soil is still dry", "I have irrigation", "Not sure"]
+      },
+      {
+        id: "maize-land-ready",
+        question: "Is the land prepared and draining well?",
+        requiredForConfidence: true,
+        options: ["Prepared and drains well", "Prepared but holds water", "Not prepared yet", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Maize should be planted when the soil has steady moisture, the field drains well and good seed is ready.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "maize-steady-rains",
+          observation: "Maize needs moisture for germination.",
+          interpretation: "Planting after reliable rains is safer than planting after one light shower."
+        },
+        {
+          id: "maize-waterlogging",
+          observation: "Waterlogged soil can rot seed and damage soil structure.",
+          interpretation: "Drainage should be checked before sowing."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Plant maize after steady rains when soil is moist but not waterlogged, and the land is prepared.",
+      guidance: [
+        "Avoid planting into waterlogged soil.",
+        "Use healthy seed.",
+        "Rotate with legumes where possible."
+      ],
+      nextBestAction: {
+        id: "check-maize-soil",
+        label: "Check soil",
+        instruction: "Check that maize soil is moist and drains well before sowing.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "when-to-transplant-tomatoes",
+    question: "When should I transplant tomatoes?",
+    intent: "planting",
+    possibleCauses: ["Seedling strength is unknown", "Region and field moisture are unknown", "Heat or waterlogging can damage seedlings"],
+    requiredInformation: {
+      crop: "Tomato",
+      region: "Unknown",
+      growthStage: "Seedling",
+      recentWeather: "Heat, rain and field moisture needed",
+      farmPracticeContext: ["Tomato transplanting", "Nursery", "Field preparation"]
+    },
+    followUpQuestions: [
+      {
+        id: "tomato-transplant-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "tomato-seedling-strength",
+        question: "Are the tomato seedlings strong and hardened?",
+        requiredForConfidence: true,
+        options: ["Strong and hardened", "Weak or leggy", "Not sure"]
+      },
+      {
+        id: "tomato-transplant-field",
+        question: "Is the field moist, dry, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Moist", "Dry", "Waterlogged", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Tomato seedlings should be transplanted when they are strong, the field is moist but not waterlogged, and the heat is not extreme.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "tomato-seedling-hardening",
+          observation: "Weak or soft seedlings suffer after transplanting.",
+          interpretation: "Seedling strength should be checked before moving them."
+        },
+        {
+          id: "tomato-transplant-heat",
+          observation: "Extreme heat can shock young tomato seedlings.",
+          interpretation: "Cool morning or late afternoon transplanting is safer."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Transplant tomatoes in the cool part of the day when seedlings are strong and the field is moist but not waterlogged.",
+      guidance: [
+        "Avoid transplanting during extreme heat.",
+        "Avoid waterlogged soil.",
+        "Use compost and keep spacing open for airflow."
+      ],
+      nextBestAction: {
+        id: "check-tomato-seedlings",
+        label: "Check seedlings",
+        instruction: "Check that tomato seedlings are strong and the field is moist before transplanting.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
     id: "pepper-flowers-dropping",
     question: "Why are my pepper flowers dropping?",
     intent: "crop-health",

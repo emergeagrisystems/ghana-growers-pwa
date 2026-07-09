@@ -27,7 +27,21 @@ const topicRules: TopicRule[] = [
   {
     topic: "planting",
     specialist: "planting",
-    keywords: ["plant", "planting", "spacing", "season", "sow", "transplant"]
+    keywords: [
+      "plant",
+      "planting",
+      "sow",
+      "sowing",
+      "transplant",
+      "nursery",
+      "spacing",
+      "seed spacing",
+      "planting season",
+      "what should i plant",
+      "crop to grow",
+      "best time to plant",
+      "land preparation"
+    ]
   },
   {
     topic: "harvest",
