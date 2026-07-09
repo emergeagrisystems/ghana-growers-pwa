@@ -111,6 +111,7 @@ function removeUnsafeCertainty(value: string) {
     .replace(/\bthis is definitely\b/gi, "this may be")
     .replace(/\bdefinitely\b/gi, "possibly")
     .replace(/\bguaranteed\b/gi, "possible")
+    .replace(/\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/gi, "follow local extension or product label guidance")
     .replace(/\btell the farmer to\b/gi, "")
     .trim();
 }
@@ -187,6 +188,39 @@ export function cropDoctorResultHeading(result: Pick<CropDoctorVisionResult, "re
     default:
       return "Possible disease";
   }
+}
+
+export function cropDoctorResultHeadline(result: Pick<CropDoctorVisionResult, "resultType" | "mainFinding">) {
+  if (
+    result.resultType === "no_clear_problem" ||
+    result.resultType === "harvest_or_storage_check" ||
+    result.resultType === "crop_not_confirmed" ||
+    result.resultType === "photo_unclear"
+  ) {
+    return cropDoctorResultHeading(result);
+  }
+
+  return result.mainFinding;
+}
+
+export function cropDoctorResultBadge(result: Pick<CropDoctorVisionResult, "resultType" | "confidence">) {
+  if (result.resultType === "photo_unclear" || result.resultType === "crop_not_confirmed") {
+    return "Photo unclear";
+  }
+
+  if (result.resultType === "no_clear_problem" || result.resultType === "harvest_or_storage_check") {
+    return "No clear issue";
+  }
+
+  if (result.resultType === "possible_disease") {
+    return "Possible disease";
+  }
+
+  if (result.confidence === "high") {
+    return "Check nearby plants";
+  }
+
+  return "Needs field check";
 }
 
 export function buildCropDoctorAskFarmMatePrompt(
@@ -291,7 +325,7 @@ export function cropDoctorResultHasUnsafeLanguage(result: CropDoctorVisionResult
     .join(" ")
     .toLowerCase();
 
-  return /tell the farmer|definitely|guaranteed diagnosis|guaranteed|exact diagnosis/.test(text);
+  return /tell the farmer|definitely|guaranteed diagnosis|guaranteed|exact diagnosis|\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/.test(text);
 }
 
 export function cropDoctorVisionSystemPrompt() {
@@ -301,6 +335,7 @@ crop, cropConfidence, resultType, possibleIssue, issueCategory, confidence, visi
 
 Rules:
 - Identify the likely crop if visible.
+- Do not use the filename to identify the crop or issue. Use only what is visible in the image.
 - If crop is unclear, set crop to null and cropConfidence to "low".
 - Use resultType exactly as one of: no_clear_problem, possible_disease, possible_pest, possible_nutrient_issue, possible_water_stress, crop_not_confirmed, photo_unclear, harvest_or_storage_check.
 - If the photo shows harvested produce, roots, tubers or storage quality rather than a field plant, use resultType "harvest_or_storage_check".
@@ -310,11 +345,13 @@ Rules:
 - Suggest possible issue categories only: pest, disease, nutrient, water_stress, unknown.
 - Keep visibleSigns, recommendedAction and prevention to maximum 3 short bullet strings each.
 - Keep mainFinding short, practical and specific to what is visible.
+- For field disease signs, mainFinding should be a farmer-friendly headline such as "Possible maize rust symptoms".
 - Recommend simple checks and practical next steps.
 - Recommend prevention and good farming practice before chemicals.
 - Use "possible" language when uncertain.
 - Do not claim a guaranteed diagnosis.
 - Do not invent pesticide dosage.
+- Do not recommend fungicide or pesticide as the first step unless the problem is widespread or confirmed by field checks or extension advice.
 - Do not recommend dangerous chemical use.
 - Do not say "this is definitely".
 - Do not give medical or veterinary advice.

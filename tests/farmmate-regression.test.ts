@@ -7,7 +7,9 @@ import {
   cropDoctorResultHasUnsafeLanguage,
   CROP_DOCTOR_MAX_IMAGE_BYTES,
   CROP_DOCTOR_TOO_LARGE_MESSAGE,
+  cropDoctorResultBadge,
   cropDoctorResultHeading,
+  cropDoctorResultHeadline,
   cropDoctorVisionSystemPrompt,
   normalizeCropDoctorVisionResult,
   validateCropDoctorImage
@@ -689,6 +691,121 @@ const tests: TestCase[] = [
       assert.equal(prompt.includes("harvest_or_storage_check"), true);
       assert.equal(prompt.includes("do not force a disease diagnosis"), true);
       assert.equal(prompt.includes("Do not invent pesticide dosage"), true);
+    }
+  },
+  {
+    name: "Crop Doctor main heading uses finding not Crop detected",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Maize",
+        cropConfidence: "high",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        possibleIssue: "Possible maize rust",
+        mainFinding: "Possible maize rust symptoms",
+        visibleSigns: ["orange brown spots on leaves"],
+        recommendedAction: ["Check both sides of 10 nearby maize leaves."],
+        nextBestAction: "Inspect nearby plants today to see if the spots are spreading."
+      });
+
+      assert.equal(cropDoctorResultHeadline(result), "Possible maize rust symptoms");
+      assert.notEqual(cropDoctorResultHeadline(result), "Crop detected: Maize");
+      assert.equal(result.crop, "Maize");
+    }
+  },
+  {
+    name: "Crop Doctor crop detected appears as metadata",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Maize",
+        mainFinding: "Possible maize rust symptoms",
+        visibleSigns: ["orange spots"]
+      });
+
+      const metadata = result.crop ? `Crop detected: ${result.crop}` : "Crop not confirmed";
+      assert.equal(metadata, "Crop detected: Maize");
+      assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
+    }
+  },
+  {
+    name: "Crop Doctor badge wording replaces Needs checking",
+    run: () => {
+      const medium = normalizeCropDoctorVisionResult({
+        crop: "Pepper",
+        cropConfidence: "medium",
+        resultType: "possible_pest",
+        confidence: "medium",
+        mainFinding: "Possible pest damage",
+        visibleSigns: ["holes in leaves"]
+      });
+      const unclear = normalizeCropDoctorVisionResult({
+        crop: null,
+        resultType: "photo_unclear",
+        confidence: "low",
+        mainFinding: "Photo not clear enough",
+        visibleSigns: ["blurred image"]
+      });
+
+      assert.equal(cropDoctorResultBadge(medium), "Needs field check");
+      assert.equal(cropDoctorResultBadge(unclear), "Photo unclear");
+      assert.notEqual(cropDoctorResultBadge(medium), "Needs checking");
+    }
+  },
+  {
+    name: "Crop Doctor prompt blocks filename diagnosis evidence",
+    run: () => {
+      const prompt = cropDoctorVisionSystemPrompt();
+
+      assert.equal(prompt.includes("Do not use the filename to identify the crop or issue."), true);
+      assert.equal(prompt.includes("Use only what is visible in the image."), true);
+    }
+  },
+  {
+    name: "maize rust Crop Doctor result remains cautious",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Maize",
+        cropConfidence: "high",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        confidence: "medium",
+        possibleIssue: "Possible maize rust",
+        mainFinding: "Possible maize rust symptoms",
+        visibleSigns: ["orange or brown spots", "leaf spots"],
+        recommendedAction: [
+          "Check both sides of 10 nearby maize leaves.",
+          "Look for orange or brown powder that rubs off.",
+          "If many plants are affected, contact an extension officer before using fungicide."
+        ],
+        nextBestAction: "Inspect nearby plants today to see if the spots are spreading."
+      });
+
+      assert.equal(cropDoctorResultHeadline(result), "Possible maize rust symptoms");
+      assert.deepEqual(result.recommendedAction, [
+        "Check both sides of 10 nearby maize leaves.",
+        "Look for orange or brown powder that rubs off.",
+        "If many plants are affected, contact an extension officer before using fungicide."
+      ]);
+      assert.equal(result.nextBestAction, "Inspect nearby plants today to see if the spots are spreading.");
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+    }
+  },
+  {
+    name: "Crop Doctor response strips pesticide dosage language",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Maize",
+        cropConfidence: "high",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        mainFinding: "Possible maize rust symptoms",
+        recommendedAction: ["Spray 10ml per litre on the crop."],
+        nextBestAction: "Check nearby plants before treatment."
+      });
+
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+      assert.equal(result.recommendedAction[0].includes("10ml per litre"), false);
+      assert.equal(result.recommendedAction[0].includes("product label guidance"), true);
     }
   },
   {
