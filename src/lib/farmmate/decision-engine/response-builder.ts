@@ -4,6 +4,7 @@ import { farmMateDiseases } from "../diseases";
 import { farmMateNutrientDeficiencies } from "../nutrient-deficiencies";
 import { farmMatePests } from "../pests";
 import { assessPlantHealthQuestion, PlantHealthAssessment } from "../plant-health-specialist";
+import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertilizer-specialist";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
 import type { FarmMateSpecialist, RouterResult } from "../router";
@@ -72,6 +73,24 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
   const normalizedPlain = normalized.replace(/[’']/g, "").replace(/\s+/g, " ");
   const selectedSpecialist = selectedSpecialistFromRouter(routerResult);
   const plantHealthAssessment = assessPlantHealthQuestion(question, resolvedCrop);
+
+  if (selectedSpecialist === "fertilizer") {
+    if (normalized.includes("maize") && (normalized.includes("best fertilizer") || normalized.includes("best fertiliser") || normalized.includes("fertilizer") || normalized.includes("fertiliser") || normalized.includes("npk") || normalized.includes("urea"))) {
+      return farmMateDecisionFlows.find((flow) => flow.id === "best-fertilizer-for-maize");
+    }
+
+    if (normalized.includes("pepper") && (normalized.includes("fertilizer") || normalized.includes("fertiliser") || normalized.includes("npk") || normalized.includes("urea"))) {
+      return farmMateDecisionFlows.find((flow) => flow.id === "fertilizer-for-pepper");
+    }
+
+    if ((normalized.includes("tomato") || normalized.includes("tomatoes")) && (normalized.includes("compost") || normalized.includes("manure"))) {
+      return farmMateDecisionFlows.find((flow) => flow.id === "compost-for-tomatoes");
+    }
+
+    if (normalized.includes("after rain") || normalized.includes("after the rain") || normalized.includes("before rain") || normalized.includes("heavy rain")) {
+      return farmMateDecisionFlows.find((flow) => flow.id === "fertilizer-after-rain");
+    }
+  }
 
   if (plantHealthAssessment && ["crop_health", "pest_disease", "general_farming"].includes(selectedSpecialist)) {
     return plantHealthAssessmentToDecisionFlow(plantHealthAssessment, intent);
@@ -203,6 +222,27 @@ function knowledgeLines(flow: DecisionFlow | undefined, intent: DetectedFarmMate
   };
 }
 
+function fertilizerContextLines(flow: DecisionFlow | undefined, resolvedCrop?: string) {
+  if (!flow || (flow.intent !== "fertilizer" && flow.id !== "yellow-maize-nutrient-stress")) {
+    return [];
+  }
+
+  const guidance = findFertilizerGuidance(resolvedCrop ?? flow.requiredInformation.crop);
+
+  if (!guidance) {
+    return [
+      "Fertilizer advice needs crop stage, soil moisture and what has already been applied.",
+      "Do not guess rates; use a soil test or local extension advice for exact product rates."
+    ];
+  }
+
+  return [
+    `Nutrient needs: ${guidance.commonNutrientNeeds.slice(0, 2).join("; ")}.`,
+    `Before applying: ${guidance.checksBeforeApplying.slice(0, 3).join("; ")}.`,
+    `Safe use: ${guidance.safeUseNotes.slice(0, 2).join("; ")}.`
+  ];
+}
+
 function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   return {
     id: "local-fallback",
@@ -264,6 +304,8 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const shouldRecommendExtension = flow.recommendation.nextBestAction.actionType === "contact-extension-officer";
   const photoWouldHelp = flow.safetyRules.some((rule) => rule.id.includes("photo")) || shouldShowCropDoctorAction;
   const chemicalGuardrail = farmMateSafetyRules.find((rule) => rule.action === "avoid-unsafe-chemical-advice");
+  const isFertilizerFlow = flow.intent === "fertilizer";
+  const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
 
   return {
     intent,
@@ -277,13 +319,14 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       {
         title: "Direct answer",
         body: [
+          ...(isFertilizerFlow ? [fertilizerOpeningForQuestion(question)] : []),
           flow.recommendation.summary,
           isLowerConfidence ? "I am not fully certain yet, so I will ask a few checks before suggesting treatment." : "This is a strong local demo match from the FarmMate Decision Engine."
-        ]
+        ].slice(0, 3)
       },
       {
         title: "Why this may happen",
-        body: (knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
+        body: (fertilizerContext.length ? fertilizerContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "What to check",
@@ -295,6 +338,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
         title: "Recommended action",
         body: [
           flow.recommendation.recommendedAction,
+          ...(isFertilizerFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(shouldRecommendExtension ? ["If the problem is spreading quickly, speak with a local extension officer for field-specific help."] : []),
           ...(photoWouldHelp ? ["A clear crop photo will help FarmMate avoid guessing."] : []),
           ...(chemicalGuardrail ? [chemicalGuardrail.responseGuidance] : [])

@@ -6,6 +6,7 @@ export const farmMateRouterRules: RouterRule[] = [
     keywords: [
       "yellow leaves",
       "leaves yellow",
+      "leaves are yellow",
       "brown leaves",
       "curling leaves",
       "leaves curling",
@@ -46,7 +47,29 @@ export const farmMateRouterRules: RouterRule[] = [
   },
   {
     specialist: "fertilizer",
-    keywords: ["npk", "fertilizer", "fertiliser", "compost", "manure", "nutrient", "soil fertility", "urea", "nitrogen", "phosphorus", "potassium"],
+    keywords: [
+      "npk",
+      "fertilizer",
+      "fertiliser",
+      "compost",
+      "manure",
+      "nutrient",
+      "soil fertility",
+      "urea",
+      "nitrogen",
+      "phosphorus",
+      "potassium",
+      "top dressing",
+      "top-dressing",
+      "basal fertilizer",
+      "basal fertiliser",
+      "apply fertilizer",
+      "apply fertiliser",
+      "feeding crop",
+      "feed crop",
+      "best fertilizer",
+      "best fertiliser"
+    ],
     reason: "The question mentions fertilizer, nutrients, compost, manure or soil fertility.",
     suggestedFallbackSpecialist: "crop_health"
   },

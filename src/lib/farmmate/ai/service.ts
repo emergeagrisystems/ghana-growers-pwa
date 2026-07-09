@@ -1,5 +1,6 @@
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
+import { findFertilizerGuidance } from "../fertilizer-specialist";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -27,13 +28,30 @@ function extractOutputText(data: OpenAIResponsesApiResult) {
     .trim();
 }
 
-function buildVoiceLayerInput(input: FarmMateAiInput) {
+export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
+  const crop = input.brain.resolvedCrop ?? input.brain.intent.cropName ?? null;
+  const fertilizerContext =
+    input.brain.routerResult?.selectedSpecialist === "fertilizer" || input.brain.flow?.intent === "fertilizer"
+      ? findFertilizerGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
+      : null;
   const payload = {
     instruction:
       "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
     farmerQuestion: input.farmerQuestion,
     detectedIntent: input.brain.intent,
-    crop: input.brain.resolvedCrop ?? input.brain.intent.cropName ?? null,
+    crop,
+    selectedSpecialist: input.brain.routerResult?.selectedSpecialist ?? null,
+    specialistContext: fertilizerContext
+      ? {
+          specialist: "fertilizer",
+          crop: fertilizerContext.crop,
+          commonNutrientNeeds: fertilizerContext.commonNutrientNeeds,
+          checksBeforeApplying: fertilizerContext.checksBeforeApplying,
+          safeUseNotes: fertilizerContext.safeUseNotes,
+          sustainabilityNotes: fertilizerContext.sustainabilityNotes,
+          extensionOfficerTriggers: fertilizerContext.extensionOfficerTriggers
+        }
+      : null,
     decisionFlow: input.brain.flow ?? null,
     farmerAnswers: input.farmerAnswers,
     recommendedAction: input.brain.flow?.recommendation.recommendedAction ?? null,
@@ -77,7 +95,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL,
         instructions: FARM_MATE_SYSTEM_PROMPT,
-        input: buildVoiceLayerInput(input),
+        input: buildFarmMateVoiceLayerInput(input),
         max_output_tokens: 420
       })
     });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
+import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
@@ -109,6 +110,98 @@ const tests: TestCase[] = [
       const router = routeFarmMateQuestion("Best fertilizer for maize");
       assert.equal(router.selectedSpecialist, "fertilizer");
       assert.equal(router.detectedCrop, "Maize");
+    }
+  },
+  {
+    name: "NPK pepper question routes to fertilizer",
+    run: () => {
+      const router = routeFarmMateQuestion("What NPK for pepper?");
+      assert.equal(router.selectedSpecialist, "fertilizer");
+      assert.equal(router.detectedCrop, "Pepper");
+    }
+  },
+  {
+    name: "compost tomato question routes to fertilizer",
+    run: () => {
+      const router = routeFarmMateQuestion("Can I use compost for tomatoes?");
+      assert.equal(router.selectedSpecialist, "fertilizer");
+      assert.equal(router.detectedCrop, "Tomato");
+    }
+  },
+  {
+    name: "best fertilizer for maize asks growth stage first",
+    run: () => {
+      const question = "Best fertilizer for maize";
+      const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+
+      assert.equal(response.routerResult?.selectedSpecialist, "fertilizer");
+      assert.equal(response.flow?.id, "best-fertilizer-for-maize");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "How old is the maize?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Less than 2 weeks", "2 to 4 weeks", "More than 4 weeks", "Already flowering"]);
+      assert.equal(response.flow?.followUpQuestions.some((followUp) => followUp.id.includes("yellow")), false);
+    }
+  },
+  {
+    name: "fertilizer recommendation does not invent dosage",
+    run: () => {
+      const response = buildFarmMateResponse("Best fertilizer for maize", routeFarmMateQuestion("Best fertilizer for maize"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(/\b\d+(?:\.\d+)?\s?(?:kg|g|ml|l)\b/.test(text), false);
+      assert.equal(text.includes("do not guess rates"), true);
+    }
+  },
+  {
+    name: "fertilizer advice warns against heavy rain",
+    run: () => {
+      const response = buildFarmMateResponse("When to apply fertilizer after rain?", routeFarmMateQuestion("When to apply fertilizer after rain?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(response.flow?.id, "fertilizer-after-rain");
+      assert.equal(text.includes("do not apply before heavy rain"), true);
+    }
+  },
+  {
+    name: "fertilizer advice includes one next best action",
+    run: () => {
+      const response = buildFarmMateResponse("What NPK for pepper?", routeFarmMateQuestion("What NPK for pepper?"));
+      const nextBestAction = response.sections.find((section) => section.title === "Next Best Action")?.body ?? [];
+
+      assert.equal(response.flow?.id, "fertilizer-for-pepper");
+      assert.equal(nextBestAction.length, 1);
+      assert.equal(Boolean(response.nextBestAction.instruction), true);
+    }
+  },
+  {
+    name: "maize yellow leaves routes to plant health first",
+    run: () => {
+      const question = "Maize leaves are yellow";
+      const router = routeFarmMateQuestion(question);
+      const response = buildFarmMateResponse(question, router);
+
+      assert.equal(router.selectedSpecialist, "crop_health");
+      assert.notEqual(response.flow?.id, "best-fertilizer-for-maize");
+      assert.equal(response.flow?.intent, "crop-health");
+    }
+  },
+  {
+    name: "OpenAI payload for fertilizer includes specialist context",
+    run: () => {
+      const farmerQuestion = "Best fertilizer for maize";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion,
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; crop?: string; safeUseNotes?: string[] } };
+
+      assert.equal(payload.selectedSpecialist, "fertilizer");
+      assert.equal(payload.specialistContext?.specialist, "fertilizer");
+      assert.equal(payload.specialistContext?.crop, "Maize");
+      assert.equal(payload.specialistContext?.safeUseNotes?.some((note) => note.toLowerCase().includes("do not guess rates")), true);
     }
   },
   {

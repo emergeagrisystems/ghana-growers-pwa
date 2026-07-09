@@ -65,6 +65,58 @@ function conversationalOption(questionId: string, option: string) {
       Yes: "I can see whorl damage",
       No: "No whorl damage seen",
       "Not sure": "I am not sure about whorl damage"
+    },
+    "maize-fertilizer-stage": {
+      "Less than 2 weeks": "Maize is less than 2 weeks old",
+      "2 to 4 weeks": "Maize is 2 to 4 weeks old",
+      "More than 4 weeks": "Maize is more than 4 weeks old",
+      "Already flowering": "Maize is already flowering"
+    },
+    "pepper-fertilizer-stage": {
+      Seedling: "Pepper is at seedling stage",
+      "Vegetative growth": "Pepper is growing leaves",
+      Flowering: "Pepper is flowering",
+      Fruiting: "Pepper is fruiting"
+    },
+    "tomato-compost-stage": {
+      "Before planting": "Tomatoes are not planted yet",
+      Seedling: "Tomatoes are seedlings",
+      Flowering: "Tomatoes are flowering",
+      Fruiting: "Tomatoes are fruiting"
+    },
+    "fertilizer-rain-moisture": {
+      "Soil is moist": "Soil is moist",
+      "Soil is dry": "Soil is dry",
+      "Soil is waterlogged": "Soil is waterlogged",
+      "Heavy rain expected soon": "Heavy rain is expected soon"
+    },
+    "fertilizer-already-applied": {
+      "No fertilizer yet": "No fertilizer has been applied yet",
+      "Compost or manure applied": "Compost or manure was applied",
+      "NPK or urea applied": "NPK or urea was applied",
+      "Not sure": "I am not sure what was applied"
+    },
+    "compost-readiness": {
+      "Well-rotted": "The compost is well-rotted",
+      "Still hot or fresh": "The compost is still hot or fresh",
+      "Not sure": "I am not sure if the compost is ready"
+    },
+    "after-rain-soil-state": {
+      "Moist but not flooded": "Soil is moist but not flooded",
+      "Still waterlogged": "Soil is still waterlogged",
+      "Dry again": "Soil is dry again",
+      "Not sure": "I am not sure about the soil"
+    },
+    "rain-forecast-fertilizer": {
+      Yes: "More heavy rain is expected",
+      No: "No more heavy rain expected",
+      "Not sure": "I am not sure about rain"
+    },
+    "fertilizer-crop-stage": {
+      "Young crop": "The crop is still young",
+      "Vegetative growth": "The crop is growing leaves",
+      "Flowering or fruiting": "The crop is flowering or fruiting",
+      "Not sure": "I am not sure about the stage"
     }
   };
 
@@ -118,7 +170,20 @@ function answerInsights(answers: FollowUpAnswer[]) {
     "The plot was flooded or waterlogged": "Since the plot was flooded or waterlogged, root stress may be part of the problem.",
     "No recent dryness or waterlogging": "Since there has been no recent dryness or waterlogging, water stress is less likely.",
     "I can see whorl damage": "Since you can see whorl damage, check closely for fall armyworm.",
-    "No whorl damage seen": "Since you saw no whorl damage, fall armyworm is less likely."
+    "No whorl damage seen": "Since you saw no whorl damage, fall armyworm is less likely.",
+    "Maize is less than 2 weeks old": "Since the maize is still very young, focus on establishment and avoid burning the crop with poorly placed fertilizer.",
+    "Maize is 2 to 4 weeks old": "Since the maize is actively growing, feeding decisions depend on moisture and what has already been applied.",
+    "Maize is more than 4 weeks old": "Since the maize is older, avoid guessing fertilizer needs without checking crop condition.",
+    "Maize is already flowering": "Since the maize is already flowering, avoid late unnecessary fertilizer spending.",
+    "Soil is moist": "Since the soil is moist, fertilizer is safer than on dry or waterlogged soil.",
+    "Soil is dry": "Since the soil is dry, wait for moisture before applying fertilizer.",
+    "Soil is waterlogged": "Since the soil is waterlogged, wait before applying fertilizer.",
+    "Heavy rain is expected soon": "Since heavy rain is expected soon, do not apply fertilizer now.",
+    "No fertilizer has been applied yet": "Since no fertilizer has been applied yet, choose the next feeding step based on crop stage.",
+    "Compost or manure was applied": "Since compost or manure was applied, avoid adding more inputs until you check crop response.",
+    "NPK or urea was applied": "Since NPK or urea was applied, avoid repeating fertilizer without checking the crop.",
+    "The compost is well-rotted": "Since the compost is well-rotted, it is safer to use than fresh organic material.",
+    "The compost is still hot or fresh": "Since the compost is fresh or hot, do not place it close to tomato roots."
   };
 
   return answers
