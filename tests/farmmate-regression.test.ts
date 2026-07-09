@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
 import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "../src/lib/farmmate/conversation-ui";
+import { farmMateDailySummaries, getFarmMateDailySummary } from "../src/lib/farmmate/daily-summary";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
@@ -68,6 +69,63 @@ function usageEvent(tool: "ask_farmmate" | "crop_doctor", createdAt: string): Fa
 }
 
 const tests: TestCase[] = [
+  {
+    name: "at least 14 daily summaries exist",
+    run: () => {
+      assert.equal(farmMateDailySummaries.length >= 14, true);
+    }
+  },
+  {
+    name: "daily summary changes by date",
+    run: () => {
+      const first = getFarmMateDailySummary(new Date(2026, 6, 9, 9));
+      const second = getFarmMateDailySummary(new Date(2026, 6, 10, 9));
+
+      assert.notEqual(first.mainRecommendation, second.mainRecommendation);
+    }
+  },
+  {
+    name: "same date returns same daily summary",
+    run: () => {
+      const first = getFarmMateDailySummary(new Date(2026, 6, 9, 8));
+      const second = getFarmMateDailySummary(new Date(2026, 6, 9, 10));
+
+      assert.deepEqual(first, second);
+    }
+  },
+  {
+    name: "evening daily summary does not show plant before noon",
+    run: () => {
+      const summary = getFarmMateDailySummary(new Date(2026, 6, 9, 18));
+      const text = `${summary.mainRecommendation} ${summary.rainOutlookNote} ${summary.todaysTip}`.toLowerCase();
+
+      assert.equal(text.includes("plant before noon"), false);
+      assert.notEqual(summary.suitableTimeOfDay, "morning");
+    }
+  },
+  {
+    name: "night daily summary does not show morning-only advice",
+    run: () => {
+      const summary = getFarmMateDailySummary(new Date(2026, 6, 9, 22));
+      const text = `${summary.mainRecommendation} ${summary.rainOutlookNote} ${summary.todaysTip}`.toLowerCase();
+
+      assert.equal(text.includes("before noon"), false);
+      assert.equal(text.includes("early when the day is cool"), false);
+      assert.notEqual(summary.suitableTimeOfDay, "morning");
+    }
+  },
+  {
+    name: "daily summary does not claim live weather",
+    run: () => {
+      for (const summary of farmMateDailySummaries) {
+        const text = `${summary.mainRecommendation} ${summary.rainOutlookNote} ${summary.todaysTip}`.toLowerCase();
+
+        assert.equal(text.includes("rain expected after"), false);
+        assert.equal(text.includes("rain will come"), false);
+        assert.equal(text.includes("rain is coming"), false);
+      }
+    }
+  },
   {
     name: "maize question resolves maize",
     run: () => {

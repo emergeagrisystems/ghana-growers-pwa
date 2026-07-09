@@ -7,6 +7,7 @@ import {
   Sun
 } from "lucide-react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
+import { FarmMateDailySummary } from "@/components/FarmMateDailySummary";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
 import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
@@ -57,14 +58,7 @@ export default function FarmerHubPage() {
               </span>
             </div>
 
-            <div className="mt-5 rounded-md bg-leaf-600 p-5 text-white">
-              <p className="text-xl font-black sm:text-2xl">Plant before noon.</p>
-              <p className="mt-3 text-base font-bold text-white/82">Rain expected after 3 PM.</p>
-              <div className="mt-4 rounded-md bg-white/12 p-3">
-                <p className="gg-eyebrow text-earth-500">Today&apos;s Tip</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-white/86">Mulch young tomato plants to keep soil moist.</p>
-              </div>
-            </div>
+            <FarmMateDailySummary />
 
             <div className="mt-4 rounded-md bg-leaf-50 p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
