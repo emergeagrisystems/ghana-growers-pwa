@@ -10,9 +10,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBasket,
-  Sprout,
-  Truck,
-  UsersRound
+  Sprout
 } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
@@ -50,37 +48,6 @@ const howItWorks = [
     title: "We help connect",
     text: "Ghana Growers supports communication so the right parties can move forward with confidence.",
     icon: Handshake
-  }
-];
-
-const networkRoles = [
-  {
-    title: "For Buyers",
-    text: "Find produce, request availability, and connect through Ghana Growers.",
-    href: "/buy",
-    action: "Buy Produce",
-    icon: ShoppingBasket
-  },
-  {
-    title: "For Farmers",
-    text: "Create a profile, list your harvest, and reach more buyers.",
-    href: "/sell",
-    action: "Sell Harvest",
-    icon: Sprout
-  },
-  {
-    title: "For Suppliers",
-    text: "Showcase inputs, packaging, equipment, logistics, or services.",
-    href: "/join/supplier",
-    action: "Join as Supplier",
-    icon: Truck
-  },
-  {
-    title: "For Partners",
-    text: "Discover agricultural actors and support stronger supply chains.",
-    href: "/about/partner-with-us",
-    action: "Partner with Ghana Growers",
-    icon: UsersRound
   }
 ];
 
@@ -179,6 +146,50 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="bg-[#F7F6EF] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6 lg:p-7">
+            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.25fr_auto] lg:items-center">
+              <div>
+                <p className="gg-eyebrow text-earth-700/70">GG FarmMate</p>
+                <h2 id="farmmate-strip-title" className="mt-2 text-2xl font-black leading-tight text-ink sm:text-3xl">
+                  Digital farming tools by Ghana Growers
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-ink/64 sm:text-base sm:leading-7">
+                  Check weather, diagnose crop problems, compare market prices, and get practical farming advice in one place.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {farmMateTools.map((tool) => {
+                  const Icon = tool.icon;
+
+                  return (
+                    <Link
+                      key={tool.title}
+                      href="/farmer-hub"
+                      className="focus-ring group flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-card"
+                    >
+                      <span className="gg-icon gg-icon-farmer-hub h-10 w-10 shrink-0">
+                        <Icon size={20} aria-hidden="true" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-black text-ink group-hover:text-leaf-700">{tool.title}</span>
+                        <span className="mt-0.5 block text-xs font-semibold leading-5 text-ink/55">{tool.description}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <ButtonLink href="/farmer-hub">
+                Open GG FarmMate
+              </ButtonLink>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <MarketplaceCategoryShowcase />
 
       <section className="bg-[#F7F6EF] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
@@ -214,38 +225,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="who-ghana-growers-serves">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="gg-eyebrow text-earth-700/70">Who It Serves</p>
-            <h2 id="who-ghana-growers-serves" className="mt-3 gg-section-title">
-              Built for Ghana&apos;s agricultural network
-            </h2>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {networkRoles.map((role) => {
-              const Icon = role.icon;
-
-              return (
-                <Link
-                  key={role.title}
-                  href={role.href}
-                  className="focus-ring group flex h-full flex-col rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:bg-white hover:shadow-soft"
-                >
-                  <span className="gg-icon bg-white text-leaf-700 ring-leaf-700/10">
-                    <Icon size={23} aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-5 text-xl font-black text-ink group-hover:text-leaf-700">{role.title}</h3>
-                  <p className="mt-3 flex-1 text-sm leading-6 text-ink/64">{role.text}</p>
-                  <span className="mt-5 text-sm font-black text-leaf-700">{role.action}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       <FeaturedListings
         kinds={["farmers"]}
         title="Featured farmers"
@@ -255,50 +234,6 @@ export default async function HomePage() {
         compact
         farmers={homepageFeaturedFarmers}
       />
-
-      <section id="farmer-hub-teaser" className="bg-mist py-16 text-ink sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="gg-eyebrow text-earth-700/70">By Ghana Growers</p>
-            <h2 className="mt-3 gg-editorial-heading text-4xl leading-tight text-ink sm:text-5xl">GG FarmMate</h2>
-            <p className="mt-3 text-xl font-black text-leaf-800 sm:text-2xl">
-              Your AI-powered farming companion.
-            </p>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/66 sm:text-lg">
-              Check weather, diagnose crop problems, compare market prices, and get practical farming advice in one place.
-            </p>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-ink/58">
-              Built into Ghana Growers to help farmers make better daily decisions before they plant, harvest, sell, or buy inputs.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {farmMateTools.map((tool) => {
-              const Icon = tool.icon;
-
-              return (
-                <Link
-                  key={tool.title}
-                  href="/farmer-hub"
-                  className="focus-ring group flex h-full min-h-[12rem] flex-col rounded-md border border-leaf-900/10 bg-white p-5 text-ink shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft"
-                >
-                  <span className="gg-icon gg-icon-farmer-hub h-14 w-14">
-                    <Icon size={26} aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-5 text-xl font-black text-ink group-hover:text-leaf-700">{tool.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-ink/66">{tool.description}</p>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="mt-10 flex justify-center">
-            <ButtonLink href="/farmer-hub">
-              Open GG FarmMate
-            </ButtonLink>
-          </div>
-        </div>
-      </section>
 
       <section className="bg-white py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
