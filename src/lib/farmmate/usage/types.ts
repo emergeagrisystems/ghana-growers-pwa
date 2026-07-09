@@ -5,6 +5,8 @@ export type FarmMateUsageEvent = {
   createdAt: string;
 };
 
+export type FarmMateCreditState = "available" | "exhausted" | "temporarily_unavailable";
+
 export type FarmMateCreditStatus = {
   tool: FarmMateUsageTool;
   label: string;
@@ -15,6 +17,7 @@ export type FarmMateCreditStatus = {
   resetAt: string | null;
   refreshInText: string;
   isExhausted: boolean;
+  creditState: FarmMateCreditState;
 };
 
 export type FarmMateCreditDecision = FarmMateCreditStatus & {

@@ -182,6 +182,7 @@ export async function getFarmMateCreditsForDevice({
       ...getFarmMateCreditStatus(tool, [], now),
       remaining: 0,
       isExhausted: true,
+      creditState: "temporarily_unavailable",
       storage: usage.storage
     };
   }

@@ -211,6 +211,48 @@ const tests: TestCase[] = [
 
       assert.equal(after.limit, 2);
       assert.equal(after.remaining, 1);
+      assert.equal(after.creditState, "available");
+    }
+  },
+  {
+    name: "fresh anonymous Crop Doctor user gets 2 checks remaining",
+    run: () => {
+      const status = getFarmMateCreditStatus("crop_doctor", [], new Date("2026-07-09T12:00:00.000Z"));
+
+      assert.equal(status.remaining, 2);
+      assert.equal(status.creditState, "available");
+      assert.equal(farmMateCreditLine("crop_doctor", status), "Crop Doctor Credits: 2 checks remaining");
+      assert.equal(shouldDisableCropDoctorUpload(status), false);
+    }
+  },
+  {
+    name: "one previous Crop Doctor event gives 1 check remaining",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const status = getFarmMateCreditStatus("crop_doctor", [usageEvent("crop_doctor", new Date(now.getTime() - 60_000).toISOString())], now);
+
+      assert.equal(status.remaining, 1);
+      assert.equal(status.creditState, "available");
+      assert.equal(farmMateCreditLine("crop_doctor", status), "Crop Doctor Credits: 1 check remaining");
+      assert.equal(shouldDisableCropDoctorUpload(status), false);
+    }
+  },
+  {
+    name: "two previous Crop Doctor events gives 0 checks remaining",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const status = getFarmMateCreditStatus(
+        "crop_doctor",
+        [
+          usageEvent("crop_doctor", new Date(now.getTime() - 60_000).toISOString()),
+          usageEvent("crop_doctor", new Date(now.getTime() - 30_000).toISOString())
+        ],
+        now
+      );
+
+      assert.equal(status.remaining, 0);
+      assert.equal(status.creditState, "exhausted");
+      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 checks remaining"), true);
     }
   },
   {
@@ -348,7 +390,8 @@ const tests: TestCase[] = [
         windowHours: 12,
         resetAt: null,
         refreshInText: formatRefreshIn(null),
-        isExhausted: true
+        isExhausted: true,
+        creditState: "exhausted"
       }).includes("soon"), false);
     }
   },
@@ -370,9 +413,10 @@ const tests: TestCase[] = [
           windowHours: 12,
           resetAt,
           refreshInText,
-          isExhausted: true
+          isExhausted: true,
+          creditState: "exhausted"
         }),
-        "0 of 2 checks available - refreshes in 6h 20m"
+        "0 checks remaining - refreshes in 6h 20m"
       );
     }
   },
@@ -400,7 +444,7 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 0);
       assert.equal(shouldDisableCropDoctorAnalysis(status), true);
-      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 of 2 checks available"), true);
+      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 checks remaining"), true);
     }
   },
   {
@@ -428,6 +472,25 @@ const tests: TestCase[] = [
 
       assert.equal(message, CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE);
       assert.equal(message.includes("Your credits refresh"), false);
+      assert.equal(decision.creditState, "temporarily_unavailable");
+      assert.equal(farmMateCreditLine("crop_doctor", decision), "Crop Doctor Credits: temporarily unavailable");
+      assert.equal(farmMateCreditLine("crop_doctor", decision).includes("0 checks"), false);
+    }
+  },
+  {
+    name: "Crop Doctor wording never says 0 of 2 checks available",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const status = getFarmMateCreditStatus(
+        "crop_doctor",
+        [
+          usageEvent("crop_doctor", new Date(now.getTime() - 60_000).toISOString()),
+          usageEvent("crop_doctor", new Date(now.getTime() - 30_000).toISOString())
+        ],
+        now
+      );
+
+      assert.equal(farmMateCreditLine("crop_doctor", status).includes("0 of 2 checks available"), false);
     }
   },
   {

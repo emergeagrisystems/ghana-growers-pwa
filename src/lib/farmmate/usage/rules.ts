@@ -53,6 +53,7 @@ export function getFarmMateCreditStatus(tool: FarmMateUsageTool, events: FarmMat
   const remaining = Math.max(0, config.limit - used);
   const oldestEvent = recentEvents[0];
   const resetAt = oldestEvent ? new Date(eventTime(oldestEvent) + FARM_MATE_USAGE_WINDOW_MS).toISOString() : null;
+  const isExhausted = remaining <= 0;
 
   return {
     tool,
@@ -63,7 +64,8 @@ export function getFarmMateCreditStatus(tool: FarmMateUsageTool, events: FarmMat
     windowHours: FARM_MATE_USAGE_WINDOW_HOURS,
     resetAt,
     refreshInText: formatRefreshIn(resetAt, now),
-    isExhausted: remaining <= 0
+    isExhausted,
+    creditState: isExhausted ? "exhausted" : "available"
   };
 }
 
@@ -107,6 +109,7 @@ export function usageTrackingUnavailableDecision(tool: FarmMateUsageTool, now = 
     ...getFarmMateCreditStatus(tool, [], now),
     remaining: 0,
     isExhausted: true,
+    creditState: "temporarily_unavailable",
     allowed: false,
     reason: "usage_tracking_unavailable"
   };
@@ -123,21 +126,25 @@ export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCre
     return tool === "ask_farmmate" ? "FarmMate Credits: checking Ask questions..." : "Crop Doctor Credits: checking checks...";
   }
 
+  if (status.creditState === "temporarily_unavailable") {
+    return tool === "ask_farmmate" ? "FarmMate Credits: temporarily unavailable" : "Crop Doctor Credits: temporarily unavailable";
+  }
+
   if (status.isExhausted) {
     const refreshText = status.resetAt ? `refreshes in ${status.refreshInText}` : `refreshes ${status.refreshInText}`;
 
     if (tool === "ask_farmmate") {
-      return `0 of ${status.limit} Ask questions available - ${refreshText}`;
+      return `0 Ask questions remaining - ${refreshText}`;
     }
 
-    return `0 of ${status.limit} checks available - ${refreshText}`;
+    return `0 checks remaining - ${refreshText}`;
   }
 
   if (tool === "ask_farmmate") {
-    return `FarmMate Credits: ${status.remaining} of ${status.limit} Ask questions available`;
+    return `FarmMate Credits: ${status.remaining} Ask question${status.remaining === 1 ? "" : "s"} remaining`;
   }
 
-  return `Crop Doctor Credits: ${status.remaining} of ${status.limit} available`;
+  return `Crop Doctor Credits: ${status.remaining} check${status.remaining === 1 ? "" : "s"} remaining`;
 }
 
 export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
@@ -154,9 +161,9 @@ export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "
 }
 
 export function shouldDisableCropDoctorAnalysis(status?: FarmMateCreditStatus | null) {
-  return Boolean(status?.isExhausted);
+  return status?.creditState === "exhausted" || status?.creditState === "temporarily_unavailable";
 }
 
 export function shouldDisableCropDoctorUpload(status?: FarmMateCreditStatus | null) {
-  return Boolean(status?.isExhausted);
+  return status?.creditState === "exhausted" || status?.creditState === "temporarily_unavailable";
 }

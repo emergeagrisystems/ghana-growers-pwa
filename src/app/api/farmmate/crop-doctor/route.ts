@@ -87,7 +87,12 @@ export async function POST(request: Request) {
         ok: false,
         reason: "usage_tracking_unavailable",
         fallback: true,
-        credits,
+        credits: {
+          ...credits,
+          remaining: 0,
+          isExhausted: true,
+          creditState: "temporarily_unavailable"
+        },
         message: CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE
       },
       { status: 503 }

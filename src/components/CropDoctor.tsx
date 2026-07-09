@@ -14,6 +14,28 @@ import {
   type FarmMateCreditStatus
 } from "@/lib/farmmate/usage";
 
+type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
+
+function logCropDoctorCreditState(detail: {
+  anonymousDeviceId: string;
+  tool: "crop_doctor";
+  credits?: CropDoctorCreditStatus | null;
+  supabaseCheck?: "success" | "failure" | "not_applicable";
+}) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  console.info("[FarmMate Crop Doctor Credits]", {
+    anonymousDeviceIdExists: detail.anonymousDeviceId.length > 0 ? "yes" : "no",
+    tool: detail.tool,
+    creditState: detail.credits?.creditState ?? "loading",
+    remainingCredits: detail.credits?.remaining ?? null,
+    resetTime: detail.credits?.resetAt ?? null,
+    supabaseCheck: detail.supabaseCheck ?? "not_applicable"
+  });
+}
+
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -24,7 +46,9 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
   const [showAskFarmMateFallback, setShowAskFarmMateFallback] = useState(false);
-  const isCreditExhausted = shouldDisableCropDoctorAnalysis(credits);
+  const isCreditExhausted = credits?.creditState === "exhausted";
+  const isCreditTemporarilyUnavailable = credits?.creditState === "temporarily_unavailable";
+  const isAnalysisDisabled = shouldDisableCropDoctorAnalysis(credits);
   const isUploadDisabled = shouldDisableCropDoctorUpload(credits);
 
   useEffect(() => {
@@ -36,6 +60,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   }, [selectedImage]);
 
   async function refreshCredits() {
+    const anonymousDeviceId = getFarmMateAnonymousDeviceId();
+
     try {
       const response = await fetch("/api/farmmate/usage", {
         method: "POST",
@@ -43,22 +69,45 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+          anonymousDeviceId,
           tool: "crop_doctor",
           action: "status"
         })
       });
-      const data = (await response.json().catch(() => null)) as { credits?: FarmMateCreditStatus } | null;
+      const data = (await response.json().catch(() => null)) as { credits?: CropDoctorCreditStatus } | null;
 
       if (data?.credits) {
         setCredits(data.credits);
-        if (data.credits.isExhausted) {
+        logCropDoctorCreditState({
+          anonymousDeviceId,
+          tool: "crop_doctor",
+          credits: data.credits,
+          supabaseCheck: data.credits.storage === "unavailable" ? "failure" : "success"
+        });
+
+        if (data.credits.creditState === "temporarily_unavailable") {
+          setCreditMessage(cropDoctorCreditMessage({ reason: "usage_tracking_unavailable", refreshInText: data.credits.refreshInText }));
+          setShowAskFarmMateFallback(true);
+          return;
+        }
+
+        if (data.credits.creditState === "exhausted") {
           setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: data.credits.refreshInText }));
           setShowAskFarmMateFallback(true);
+          return;
         }
+
+        setCreditMessage("");
+        setShowAskFarmMateFallback(false);
       }
     } catch {
       setCredits(null);
+      logCropDoctorCreditState({
+        anonymousDeviceId,
+        tool: "crop_doctor",
+        credits: null,
+        supabaseCheck: "failure"
+      });
     }
   }
 
@@ -82,7 +131,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     setDiagnosis(null);
     setHasDiagnosis(false);
     setIsAnalysing(false);
-    if (isCreditExhausted && credits) {
+    if (isCreditTemporarilyUnavailable && credits) {
+      setCreditMessage(cropDoctorCreditMessage({ reason: "usage_tracking_unavailable", refreshInText: credits.refreshInText }));
+      setShowAskFarmMateFallback(true);
+    } else if (isCreditExhausted && credits) {
       setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: credits.refreshInText }));
       setShowAskFarmMateFallback(true);
     } else {
@@ -96,8 +148,13 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       return;
     }
 
-    if (isCreditExhausted && credits) {
-      setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: credits.refreshInText }));
+    if (isAnalysisDisabled && credits) {
+      setCreditMessage(
+        cropDoctorCreditMessage({
+          reason: credits.creditState === "temporarily_unavailable" ? "usage_tracking_unavailable" : "credits_exhausted",
+          refreshInText: credits.refreshInText
+        })
+      );
       setShowAskFarmMateFallback(true);
       return;
     }
@@ -109,7 +166,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     setHasDiagnosis(false);
 
     const formData = new FormData();
-    formData.append("anonymousDeviceId", getFarmMateAnonymousDeviceId());
+    const anonymousDeviceId = getFarmMateAnonymousDeviceId();
+    formData.append("anonymousDeviceId", anonymousDeviceId);
     formData.append("image", selectedFile);
 
     const response = await fetch("/api/farmmate/crop-doctor", {
@@ -119,13 +177,28 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     const data = (await response?.json().catch(() => null)) as {
       ok?: boolean;
       result?: CropDoctorVisionResult;
-      credits?: FarmMateCreditStatus;
+      credits?: CropDoctorCreditStatus;
       reason?: FarmMateCreditDecision["reason"] | string;
       message?: string;
     } | null;
 
     if (data?.credits) {
-      setCredits(data.credits);
+      const nextCredits: CropDoctorCreditStatus =
+        data.reason === "usage_tracking_unavailable"
+          ? {
+              ...data.credits,
+              remaining: 0,
+              isExhausted: true,
+              creditState: "temporarily_unavailable"
+            }
+          : data.credits;
+      setCredits(nextCredits);
+      logCropDoctorCreditState({
+        anonymousDeviceId,
+        tool: "crop_doctor",
+        credits: nextCredits,
+        supabaseCheck: nextCredits.storage === "unavailable" || data.reason === "usage_tracking_unavailable" ? "failure" : "success"
+      });
     }
 
     if (!response?.ok || !data?.ok || !data.result) {
@@ -168,6 +241,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         <div>
           <h2 className="gg-card-title">Crop Doctor</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
+          <p className="mt-1 text-xs font-semibold text-ink/42">Free public users get 2 Crop Doctor checks every 12 hours.</p>
           <p className="mt-2 text-sm leading-6 text-ink/66">Upload a crop photo and get practical next steps.</p>
         </div>
       </div>
@@ -206,7 +280,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <button
               type="button"
               onClick={analyseCrop}
-              disabled={isAnalysing || isCreditExhausted}
+              disabled={isAnalysing || isAnalysisDisabled}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               {isAnalysing ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Stethoscope size={18} aria-hidden="true" />}
