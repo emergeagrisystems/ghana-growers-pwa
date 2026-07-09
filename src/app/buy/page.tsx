@@ -23,7 +23,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Buy",
-  description: "Source produce, farm inputs, livestock, equipment, and trusted suppliers through Ghana Growers.",
+  description: "Find fresh produce, farm inputs, livestock, tools, and trusted suppliers across Ghana.",
   path: "/buy"
 });
 
@@ -39,9 +39,9 @@ type BuyCategory = {
 const categories: BuyCategory[] = [
   { id: "vegetables", label: "Vegetables", group: "produce", description: "Fresh greens, tomatoes, pepper and market vegetables.", href: "/marketplace?search=vegetables&category=fresh-produce", icon: Carrot },
   { id: "fruits", label: "Fruits", group: "produce", description: "Seasonal fruit supply from farmers and aggregators.", href: "/marketplace?search=fruits&category=fresh-produce", icon: Sprout },
-  { id: "grains", label: "Grains", group: "produce", description: "Maize, rice and cereal sourcing options.", href: "/marketplace?search=maize&category=fresh-produce", icon: Wheat },
+  { id: "grains", label: "Grains", group: "produce", description: "Maize, rice and other grains.", href: "/marketplace?search=maize&category=fresh-produce", icon: Wheat },
   { id: "roots-tubers", label: "Roots & Tubers", group: "produce", description: "Cassava, yam and other staple crops.", href: "/marketplace?search=yam%20cassava&category=fresh-produce", icon: Shovel },
-  { id: "livestock", label: "Livestock", group: "produce", description: "Livestock and animal-product sourcing routes.", href: "/marketplace?search=livestock&category=livestock", icon: Beef },
+  { id: "livestock", label: "Livestock", group: "produce", description: "Find livestock and animal products.", href: "/marketplace?search=livestock&category=livestock", icon: Beef },
   { id: "seeds", label: "Seeds", group: "inputs", description: "Find seed suppliers and planting material.", href: "/supplier-directory?search=seeds", icon: Sprout },
   { id: "fertilizer", label: "Fertilizer", group: "inputs", description: "Source fertilizer and soil fertility suppliers.", href: "/supplier-directory?search=fertilizer", icon: PackageCheck },
   { id: "tools", label: "Tools", group: "inputs", description: "Farm tools and practical field supplies.", href: "/supplier-directory?search=tools", icon: Tractor },
@@ -102,7 +102,7 @@ const popularSearches = [
 ];
 
 const trustCards = [
-  ["Reviewed Network", "Farmers and suppliers are organized for clearer sourcing.", ShieldCheck],
+  ["Reviewed Network", "Find farmers and suppliers more easily.", ShieldCheck],
   ["Request Support", "Ghana Growers helps confirm quantity and availability.", Truck],
   ["No Checkout Pressure", "No payment is required at the request stage.", CircleDollarSign]
 ];
@@ -114,12 +114,12 @@ export default function BuyPage() {
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <div>
-              <p className="gg-eyebrow text-earth-700/80">Sourcing through Ghana Growers</p>
+              <p className="gg-eyebrow text-earth-700/80">Buy through Ghana Growers</p>
               <h1 className="mt-3 max-w-3xl text-3xl font-black leading-tight text-ink sm:text-5xl">
-                Source Produce, Inputs & Farm Supplies
+                Source Fresh Produce
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-ink/68">
-                Search Ghana&apos;s agricultural marketplace for fresh produce, farm inputs, livestock, equipment, and trusted suppliers.
+                Find fresh produce, farm inputs, livestock, tools, and trusted suppliers across Ghana.
               </p>
             </div>
 
@@ -138,7 +138,7 @@ export default function BuyPage() {
                 </label>
               </form>
               <p className="mt-3 text-sm font-semibold leading-6 text-ink/62">
-                Ghana Growers helps confirm availability, quantity, price guidance, and pickup or delivery details before connecting you.
+                Ghana Growers helps confirm availability, quantity, price, and pickup or delivery before connecting you.
               </p>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function BuyPage() {
           <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card sm:p-6">
             <div>
               <p className="gg-eyebrow text-leaf-700">Popular searches</p>
-              <h2 className="mt-2 text-2xl font-black text-ink">Start with common sourcing requests</h2>
+              <h2 className="mt-2 text-2xl font-black text-ink">Start with common searches</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {popularSearches.map((item) => (
@@ -277,10 +277,10 @@ export default function BuyPage() {
           <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
             <h2 className="text-2xl font-black text-ink">Can&apos;t find what you need?</h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-ink/66">
-              Tell Ghana Growers what you are looking for. We can help confirm availability, quantity, price guidance, and pickup or delivery details.
+              Tell Ghana Growers what you are looking for. We can help confirm availability, quantity, price, and pickup or delivery.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/submit-buyer-request">Request Sourcing Support</ButtonLink>
+              <ButtonLink href="/submit-buyer-request">Request Help</ButtonLink>
               <ButtonLink href="/directory" variant="secondary">View Directory</ButtonLink>
             </div>
           </div>
