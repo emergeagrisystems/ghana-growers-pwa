@@ -4,7 +4,7 @@ import { blogPosts } from "@/data/blog";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Farmer Improvement Center",
+  title: "Skills Center",
   description: "Practical Ghana Growers lessons for soil health, compost, crop care, water conservation, harvest preparation, and GG FarmMate tools.",
   path: "/learn"
 });

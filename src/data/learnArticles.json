@@ -284,7 +284,7 @@
   {
     "slug": "rainy-season-farm-checklist",
     "title": "Rainy Season Farm Checklist",
-    "category": "Water & Weather",
+    "category": "Crop Care",
     "excerpt": "Prepare drainage, seed, tools, and labour before heavy rains.",
     "audience": "Farmers preparing for rain",
     "readTime": "4 min read",
@@ -331,7 +331,7 @@
   {
     "slug": "simple-raised-beds-for-vegetables",
     "title": "Simple Raised Beds for Vegetables",
-    "category": "Water & Weather",
+    "category": "Crop Care",
     "excerpt": "Use raised beds to improve drainage and protect vegetable roots.",
     "audience": "Vegetable farmers and home gardeners",
     "readTime": "5 min read",
@@ -611,3 +611,4 @@
     ]
   }
 ]
+

@@ -936,7 +936,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ],
   learn: [
     { name: "title", label: "Title", required: true },
-    { name: "category", label: "Category", type: "select", required: true, options: ["Soil & Compost", "Crop Care", "Water & Weather", "Pests & Diseases", "Harvest, Storage & Selling", "FarmMate Guides", "Video Lessons"] },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Soil & Compost", "Crop Care", "Pests & Diseases", "Harvest & Storage", "FarmMate Guides", "Video Lessons"] },
     { name: "summary", label: "Summary", type: "textarea", required: true },
     { name: "author", label: "Author", required: true },
     { name: "publishDate", label: "Publish Date", type: "date", required: true },

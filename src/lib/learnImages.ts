@@ -17,9 +17,8 @@ export const learnImageMap = {
 const categoryImageMap: Record<BlogPost["category"], string> = {
   "Soil & Compost": learnImageMap.farmRecords,
   "Crop Care": learnImageMap.cropFarming,
-  "Water & Weather": learnImageMap.seasonalChecklist,
   "Pests & Diseases": learnImageMap.cropDoctor,
-  "Harvest, Storage & Selling": learnImageMap.harvestPrep,
+  "Harvest & Storage": learnImageMap.harvestPrep,
   "FarmMate Guides": learnImageMap.cropDoctor,
   "Video Lessons": learnImageMap.cropDoctor
 };

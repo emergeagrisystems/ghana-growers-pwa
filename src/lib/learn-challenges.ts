@@ -169,7 +169,7 @@ export const learnChallenges: LearnChallenge[] = [
     id: "water-saving",
     title: "5-Day Water Saving Challenge",
     durationDays: 5,
-    category: "Water & Weather",
+    category: "Crop Care",
     description: "Use simple checks, mulch, and watering timing to reduce water waste.",
     bestFor: ["Vegetables", "Dry periods", "Home gardens"],
     days: [
@@ -197,7 +197,7 @@ export const learnChallenges: LearnChallenge[] = [
     id: "harvest-ready",
     title: "5-Day Harvest Ready Challenge",
     durationDays: 5,
-    category: "Harvest, Storage & Selling",
+    category: "Harvest & Storage",
     description: "Prepare cleaner, better-counted produce before meeting buyers.",
     bestFor: ["Harvest handling", "Selling readiness", "Storage"],
     days: [
@@ -229,7 +229,7 @@ export const learnChallenges: LearnChallenge[] = [
     id: "farm-records",
     title: "3-Day Farm Records Starter",
     durationDays: 3,
-    category: "Harvest, Storage & Selling",
+    category: "Harvest & Storage",
     description: "Start simple farm records using only a phone or notebook.",
     bestFor: ["Planning", "Selling readiness", "Verification habits"],
     days: [

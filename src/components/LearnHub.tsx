@@ -6,7 +6,6 @@ import {
   BookOpen,
   CalendarDays,
   Camera,
-  Droplets,
   Leaf,
   PackageCheck,
   PlaySquare,
@@ -33,7 +32,7 @@ type LearnHubProps = {
 };
 
 type LearnFilter = "All" | BlogPost["category"];
-type TopicKey = "soil" | "crop" | "water" | "pests" | "harvest" | "farmmate";
+type TopicKey = "soil" | "crop" | "pests" | "harvest" | "farmmate";
 type MenuKey = "today" | TopicKey | "videos" | "all";
 
 type TopicPanel = {
@@ -60,9 +59,8 @@ const menuItems: Array<{ key: MenuKey; label: string }> = [
   { key: "today", label: "Today" },
   { key: "soil", label: "Soil & Compost" },
   { key: "crop", label: "Crop Care" },
-  { key: "water", label: "Water & Weather" },
   { key: "pests", label: "Pests & Diseases" },
-  { key: "harvest", label: "Harvest, Storage & Selling" },
+  { key: "harvest", label: "Harvest & Storage" },
   { key: "farmmate", label: "FarmMate Guides" },
   { key: "videos", label: "Videos" },
   { key: "all", label: "All Lessons" }
@@ -86,6 +84,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
       "How to Mulch Your Farm and Save Water",
       "How to Use Poultry Manure Safely",
       "Crop Rotation: Why Maize Should Not Stand Alone Every Season",
+      "How to Save Water with Mulch",
       "How to Keep Soil Covered During Dry Weather"
     ],
     action: {
@@ -111,35 +110,12 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
       "Maize Leaves Turning Yellow: What to Check First",
       "Tomato Field Checks Before Flowering",
       "Cassava Leaves Curling: What to Check",
+      "Best Time of Day to Water Vegetables",
+      "Simple Raised Beds for Vegetables",
       "Plant Spacing: Why Crowded Crops Struggle"
     ],
     action: {
       question: "My crop is not growing well. What should I check first?",
-      button: "Ask FarmMate",
-      href: "/farmer-hub?tool=ask"
-    }
-  },
-  water: {
-    label: "Water & Weather",
-    intro: "Use rain, shade, drainage, and watering time to protect crops and reduce waste.",
-    icon: Droplets,
-    category: "Water & Weather",
-    ladder: {
-      start: "Check rain and drainage before planting or spraying.",
-      improve: "Use mulch and watering time to save water.",
-      further: "Plan raised beds, drainage, and dry-season care."
-    },
-    featured: "Rainy Season Farm Checklist",
-    practice: "Walk the farm after rain and note where water collects.",
-    recommended: [
-      "Rainy Season Farm Checklist",
-      "Simple Raised Beds for Vegetables",
-      "How to Save Water with Mulch",
-      "Best Time of Day to Water Vegetables",
-      "When Not to Spray Because of Weather"
-    ],
-    action: {
-      question: "Can I spray today, or should I wait because of the weather?",
       button: "Ask FarmMate",
       href: "/farmer-hub?tool=ask"
     }
@@ -160,6 +136,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
       "Before You Spray: 3 Things to Check First",
       "How to Scout Your Farm Every Week",
       "Common Tomato Leaf Problems",
+      "When Not to Spray Because of Weather",
       "Natural Pest Prevention Practices",
       "When to Ask Crop Doctor"
     ],
@@ -170,10 +147,10 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
     }
   },
   harvest: {
-    label: "Harvest, Storage & Selling",
+    label: "Harvest & Storage",
     intro: "Reduce losses after harvest and prepare cleaner, better-counted produce before meeting buyers.",
     icon: PackageCheck,
-    category: "Harvest, Storage & Selling",
+    category: "Harvest & Storage",
     ladder: {
       start: "Sort damaged produce before selling.",
       improve: "Store produce in a way that reduces heat, moisture, and bruising.",
@@ -213,6 +190,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
       "How to Use GG FarmMate",
       "How to Ask FarmMate a Good Question",
       "How to Use Crop Doctor",
+      "When Not to Spray Because of Weather",
       "How to Use Crop Calendar",
       "How to Use Planting Advisor"
     ],
@@ -228,9 +206,8 @@ const categoryFilters: Array<{ label: string; value: LearnFilter }> = [
   { label: "All", value: "All" },
   { label: "Soil & Compost", value: "Soil & Compost" },
   { label: "Crop Care", value: "Crop Care" },
-  { label: "Water & Weather", value: "Water & Weather" },
   { label: "Pests & Diseases", value: "Pests & Diseases" },
-  { label: "Harvest, Storage & Selling", value: "Harvest, Storage & Selling" },
+  { label: "Harvest & Storage", value: "Harvest & Storage" },
   { label: "FarmMate Guides", value: "FarmMate Guides" },
   { label: "Videos", value: "Video Lessons" }
 ];
@@ -330,12 +307,12 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
         </article>
 
         <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-black text-ink">Skill ladder</h3>
+          <h3 className="text-lg font-black text-ink">Skill Path</h3>
           <div className="mt-4 grid gap-3">
             {[
-              ["Start", panel.ladder.start],
-              ["Improve", panel.ladder.improve],
-              ["Go Further", panel.ladder.further]
+              ["Basic Skill", panel.ladder.start],
+              ["Better Practice", panel.ladder.improve],
+              ["Advanced Practice", panel.ladder.further]
             ].map(([label, text]) => (
               <div key={label} className="rounded-md bg-leaf-50 p-3">
                 <p className="text-xs font-black uppercase tracking-wide text-earth-700">{label}</p>
@@ -343,11 +320,6 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
               </div>
             ))}
           </div>
-        </article>
-
-        <article className="rounded-md border border-leaf-900/10 bg-[#F7F7EA] p-5">
-          <p className="gg-eyebrow">This Week&apos;s Practice</p>
-          <p className="mt-2 text-base font-black leading-7 text-ink">{panel.practice}</p>
         </article>
       </div>
 
@@ -368,6 +340,11 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
           </article>
         ) : null}
 
+        <article className="rounded-md border border-leaf-900/10 bg-[#F7F7EA] p-5">
+          <p className="gg-eyebrow">This Week&apos;s Practice</p>
+          <p className="mt-2 text-base font-black leading-7 text-ink">{panel.practice}</p>
+        </article>
+
         <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
           <h3 className="text-lg font-black text-ink">Recommended Lessons</h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -377,9 +354,11 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
                 href={`/learn/${post.slug}`}
                 className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
               >
-                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.level}</p>
                 <p className="mt-1 text-sm font-black leading-5 text-ink">{post.title}</p>
-                <p className="mt-1 text-xs font-bold text-ink/55">{post.readTime}</p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-ink/55">
+                  <span className="rounded-md bg-white px-2 py-1 ring-1 ring-leaf-900/10">{post.readTime}</span>
+                  {post.level ? <span className="rounded-md bg-white px-2 py-1 ring-1 ring-leaf-900/10">{post.level}</span> : null}
+                </div>
               </Link>
             ))}
           </div>
@@ -640,7 +619,7 @@ function TodayPanel({ posts }: { posts: BlogPost[] }) {
     <section id="soil-compost" className="scroll-mt-24">
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-          <p className="gg-eyebrow">Start Here</p>
+          <p className="gg-eyebrow">Today&apos;s Farm Skill</p>
           <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Build one useful farm skill today</h2>
           <p className="mt-3 text-sm font-semibold leading-6 text-ink/68">
             Choose one practical lesson, try one small action, then use FarmMate if you need a next step.
@@ -727,8 +706,8 @@ export function LearnHub({ posts }: LearnHubProps) {
   return (
     <div className="bg-white">
       <nav className="sticky top-0 z-20 border-y border-leaf-900/10 bg-white/95 py-3 backdrop-blur" aria-label="Learning topics">
-        <div className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-max gap-2" role="tablist" aria-label="Skills Center topics">
+        <div className="mx-auto max-w-7xl overflow-x-auto px-4 [scrollbar-width:none] sm:px-6 lg:overflow-visible lg:px-8 [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-full flex-wrap gap-2" role="tablist" aria-label="Skills Center topics">
             {menuItems.map((item) => (
               <button
                 key={item.key}
@@ -777,3 +756,4 @@ export function LearnHub({ posts }: LearnHubProps) {
     </div>
   );
 }
+
