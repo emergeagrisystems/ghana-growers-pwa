@@ -293,8 +293,8 @@ export function LearnHub({ posts }: LearnHubProps) {
                 </div>
               ))}
             </div>
-            <Link href="/learn/make-your-own-compost-for-healthy-soil" className="mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
-              Start challenge
+            <Link href="/learn/challenges/soil-health" className="mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
+              Start Day 1
             </Link>
           </article>
         </div>
