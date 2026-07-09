@@ -51,23 +51,23 @@ const categories: BuyCategory[] = [
 const categoryGroups = [
   {
     id: "produce" as const,
-    title: "Produce",
-    description: "Browse crops, livestock and harvest supply.",
+    title: "Farm-Fresh Produce",
+    description: "Browse crops, livestock and fresh harvests.",
     categories: categories.filter((category) => category.group === "produce")
   },
   {
     id: "inputs" as const,
-    title: "Inputs & Supplies",
+    title: "Farm Inputs & Supplies",
     description: "Find suppliers for farm inputs, tools and equipment.",
     categories: categories.filter((category) => category.group === "inputs")
   }
 ];
 
 const howBuyingWorks = [
-  { title: "Search", description: "Find produce or suppliers.", icon: Search },
-  { title: "Request", description: "Share what you need.", icon: Send },
-  { title: "Confirm", description: "We check key details.", icon: CheckCircle2 },
-  { title: "Connect", description: "Meet the right source.", icon: Handshake }
+  { title: "Search", icon: Search },
+  { title: "Request", icon: Send },
+  { title: "Confirm", icon: CheckCircle2 },
+  { title: "Connect", icon: Handshake }
 ];
 
 const buyActionCards = [
@@ -104,7 +104,7 @@ const popularSearches = [
 const trustCards = [
   ["Reviewed Network", "Find farmers and suppliers more easily.", ShieldCheck],
   ["Request Support", "Ghana Growers helps confirm quantity and availability.", Truck],
-  ["No Checkout Pressure", "No payment is required at the request stage.", CircleDollarSign]
+  ["No Payment Required Yet", "No payment is required at the request stage.", CircleDollarSign]
 ];
 
 export default function BuyPage() {
@@ -112,7 +112,7 @@ export default function BuyPage() {
     <>
       <section className="bg-earth-50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
             <div>
               <p className="gg-eyebrow text-earth-700/80">Buy through Ghana Growers</p>
               <h1 className="mt-3 max-w-3xl text-3xl font-black leading-tight text-ink sm:text-5xl">
@@ -123,7 +123,7 @@ export default function BuyPage() {
               </p>
             </div>
 
-            <div>
+            <div className="grid gap-4">
               <form className="rounded-md border border-leaf-900/15 bg-white p-3 shadow-[0_18px_45px_rgba(22,69,38,0.12)]" action="/marketplace">
                 <label htmlFor="buy-marketplace-search" className="flex min-h-14 items-center gap-3 rounded-md bg-leaf-50/80 px-4 ring-1 ring-leaf-900/5">
                   <Search size={20} className="shrink-0 text-leaf-800" aria-hidden="true" />
@@ -137,34 +137,39 @@ export default function BuyPage() {
                   />
                 </label>
               </form>
-              <p className="mt-3 text-sm font-semibold leading-6 text-ink/62">
-                Ghana Growers helps confirm availability, quantity, price, and pickup or delivery before connecting you.
-              </p>
+              <div className="overflow-hidden rounded-md border border-leaf-900/10 bg-white p-2 shadow-[0_18px_45px_rgba(22,69,38,0.10)]">
+                <SafeImage
+                  src="/images/marketplace/ghana-market-2.jpg"
+                  alt="Fresh tomatoes at a Ghanaian market for buyers to source through Ghana Growers"
+                  width={760}
+                  height={420}
+                  fallbackKind="crop"
+                  sizes="(min-width: 1024px) 48vw, 100vw"
+                  className="h-44 w-full rounded-md object-cover sm:h-56 lg:h-64"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="bg-white px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl rounded-md border border-leaf-900/10 bg-[#FFFDF2] p-4 shadow-[0_12px_32px_rgba(22,69,38,0.06)] sm:p-5">
+        <div className="mx-auto max-w-7xl rounded-md bg-leaf-900 p-4 text-white shadow-[0_18px_45px_rgba(22,69,38,0.16)] sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-black text-ink">How buying works</h2>
-              <p className="mt-1 text-sm font-semibold text-ink/58">No payment is required at the request stage.</p>
+              <h2 className="text-lg font-black">How buying works</h2>
+              <p className="mt-1 text-sm font-semibold text-white/72">No payment is required at the request stage.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {howBuyingWorks.map((step) => {
                 const Icon = step.icon;
 
                 return (
-                  <div key={step.title} className="flex items-center gap-3 rounded-md bg-white px-3 py-3 ring-1 ring-leaf-900/8">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                  <div key={step.title} className="flex min-h-14 items-center gap-3 rounded-md bg-white/10 px-3 py-3 ring-1 ring-white/12">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-white/14 text-earth-300">
                       <Icon size={18} aria-hidden="true" />
                     </span>
-                    <div>
-                      <p className="text-sm font-black text-ink">{step.title}</p>
-                      <p className="text-xs font-semibold text-ink/55">{step.description}</p>
-                    </div>
+                    <p className="text-sm font-black">{step.title}</p>
                   </div>
                 );
               })}
@@ -173,7 +178,7 @@ export default function BuyPage() {
         </div>
       </section>
 
-      <section className="bg-white px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <section className="bg-white px-4 py-9 sm:px-6 sm:py-12 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <p className="gg-eyebrow text-leaf-700">Browse categories</p>
@@ -182,7 +187,7 @@ export default function BuyPage() {
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
             {categoryGroups.map((group) => (
-              <article key={group.id} className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card sm:p-5">
+              <article key={group.id} className="rounded-md border border-leaf-900/8 bg-earth-50/70 p-4 shadow-[0_10px_28px_rgba(22,69,38,0.045)] sm:p-5">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h3 className="text-xl font-black text-ink">{group.title}</h3>
@@ -190,7 +195,7 @@ export default function BuyPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                   {group.categories.map((category) => {
                     const Icon = category.icon;
 
@@ -199,13 +204,13 @@ export default function BuyPage() {
                         key={category.id}
                         href={category.href}
                         aria-label={`Browse ${category.label}`}
-                        className="group rounded-md border border-leaf-900/10 bg-white p-3 shadow-[0_8px_22px_rgba(22,69,38,0.055)] transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2"
+                        className="group rounded-md bg-white/90 p-3 shadow-[0_6px_16px_rgba(22,69,38,0.04)] ring-1 ring-leaf-900/8 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:ring-leaf-700/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2"
                       >
-                        <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700 transition group-hover:bg-leaf-600 group-hover:text-white">
+                        <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700 transition group-hover:bg-leaf-600 group-hover:text-white">
                           <Icon size={20} aria-hidden="true" />
                         </span>
-                        <p className="mt-3 text-sm font-black text-ink group-hover:text-leaf-700">{category.label}</p>
-                        <p className="mt-1 hidden text-xs font-semibold leading-5 text-ink/55 sm:block">{category.description}</p>
+                        <p className="mt-2.5 text-sm font-black text-ink group-hover:text-leaf-700">{category.label}</p>
+                        <p className="mt-1 hidden text-xs font-semibold leading-5 text-ink/52 sm:block">{category.description}</p>
                       </Link>
                     );
                   })}
@@ -216,19 +221,19 @@ export default function BuyPage() {
         </div>
       </section>
 
-      <section className="bg-earth-50 py-10 sm:py-12">
+      <section className="bg-leaf-50 py-10 sm:py-12">
         <div className="mx-auto grid max-w-7xl items-stretch gap-5 px-4 sm:px-6 md:grid-cols-2 lg:gap-10 lg:px-8 xl:gap-12">
           {buyActionCards.map((card) => (
             <article
               key={card.title}
-              className="group flex h-full overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft"
+              className="group flex h-full overflow-hidden rounded-md bg-white shadow-[0_14px_34px_rgba(22,69,38,0.08)] ring-1 ring-leaf-900/8 transition duration-200 hover:-translate-y-1 hover:shadow-soft"
             >
               <Link href={card.href} className="grid w-full gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 sm:p-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
                 <div className="flex flex-col justify-between">
                   <div>
                     <h2 className="text-2xl font-black leading-tight text-ink">{card.title}</h2>
                     <p className="mt-2 text-sm font-semibold leading-6 text-ink/66">{card.description}</p>
-                    <p className="mt-4 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black leading-5 text-leaf-800">{card.note}</p>
+                    <p className="mt-4 inline-flex rounded-full bg-leaf-50 px-3 py-1.5 text-xs font-black leading-5 text-leaf-800 ring-1 ring-leaf-700/10">{card.note}</p>
                   </div>
                   <span className="mt-5 inline-flex min-h-11 w-fit items-center gap-2 rounded-md bg-leaf-600 px-5 py-2 text-sm font-black text-white transition group-hover:bg-leaf-900">
                     {card.cta}
@@ -252,10 +257,10 @@ export default function BuyPage() {
 
       <section className="bg-white px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card sm:p-6">
+          <div className="flex flex-col gap-4 rounded-md bg-earth-50 p-5 shadow-[0_10px_28px_rgba(22,69,38,0.045)] ring-1 ring-leaf-900/8 sm:p-6">
             <div>
               <p className="gg-eyebrow text-leaf-700">Popular searches</p>
-              <h2 className="mt-2 text-2xl font-black text-ink">Start with common searches</h2>
+              <h2 className="mt-2 text-2xl font-black text-ink">Start with common requests</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {popularSearches.map((item) => (
@@ -272,29 +277,29 @@ export default function BuyPage() {
         </div>
       </section>
 
-      <section className="bg-leaf-50 px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <section className="bg-leaf-900 px-4 py-10 text-white sm:px-6 sm:py-12 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[1fr_0.85fr]">
-          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-            <h2 className="text-2xl font-black text-ink">Can&apos;t find what you need?</h2>
+          <div className="rounded-md bg-white p-5 text-ink shadow-soft sm:p-6">
+            <h2 className="text-2xl font-black">Can&apos;t find what you need?</h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-ink/66">
-              Tell Ghana Growers what you are looking for. We can help confirm availability, quantity, price, and pickup or delivery.
+              Tell Ghana Growers what you are looking for. We can help confirm availability, quantity, price, and pickup or delivery details.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/submit-buyer-request">Request Help</ButtonLink>
+              <ButtonLink href="/submit-buyer-request">Request Sourcing Support</ButtonLink>
               <ButtonLink href="/directory" variant="secondary">View Directory</ButtonLink>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             {trustCards.map(([title, description, Icon]) => (
-              <article key={title as string} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-[0_8px_22px_rgba(22,69,38,0.055)]">
+              <article key={title as string} className="rounded-md bg-white/10 p-4 shadow-[0_8px_22px_rgba(0,0,0,0.08)] ring-1 ring-white/12">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-600 text-white">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-white/14 text-earth-300">
                     <Icon size={19} aria-hidden="true" />
                   </span>
                   <div>
-                    <h3 className="text-sm font-black text-ink">{title as string}</h3>
-                    <p className="mt-1 text-xs font-semibold leading-5 text-ink/60">{description as string}</p>
+                    <h3 className="text-sm font-black">{title as string}</h3>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-white/68">{description as string}</p>
                   </div>
                 </div>
               </article>
