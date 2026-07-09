@@ -105,12 +105,8 @@ export default async function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               BUILT FOR GHANAIAN AGRICULTURE
             </p>
-            <h1 className="mt-6 max-w-3xl gg-hero-title !text-[2.7rem] sm:!text-[3.55rem] lg:!text-[4.15rem] xl:!text-[4.6rem]">
-              Buy.
-              <br />
-              Sell.
-              <br />
-              Grow.
+            <h1 className="mt-6 max-w-4xl gg-hero-title !text-[2.45rem] sm:!text-[3.2rem] lg:!text-[3.8rem] xl:!text-[4.15rem]">
+              Buy Local. Sell Your Harvest. Grow With Us.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
               Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter&mdash;all in one place.
