@@ -105,20 +105,28 @@ export default async function HomePage() {
               <ShieldCheck size={17} aria-hidden="true" />
               BUILT FOR GHANAIAN AGRICULTURE
             </p>
-            <h1 className="mt-6 max-w-4xl gg-hero-title !text-[2.45rem] sm:!text-[3.2rem] lg:!text-[3.8rem] xl:!text-[4.15rem]">
-              Buy Local. Sell Your Harvest. Grow With Us.
+            <h1 className="mt-6 max-w-3xl gg-hero-title !text-[2.18rem] !leading-[1.01] sm:!text-[3.35rem] lg:!text-[3.95rem] xl:!text-[4.25rem]">
+              <span className="block whitespace-nowrap">Buy Local.</span>
+              <span className="block whitespace-nowrap">Sell Your Harvest.</span>
+              <span className="block whitespace-nowrap">Grow With Us.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
-              Buy farm-fresh produce, sell your harvest, connect with trusted suppliers, and farm smarter&mdash;all in one place.
+              Buy farm-fresh produce from trusted Ghanaian farmers. Sell your harvest with confidence. Grow through learning, market access, and smarter farming tools.
             </p>
             <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-              <ButtonLink href="/marketplace">
-                <ShoppingBasket size={17} aria-hidden="true" className="mr-2" />
+              <Link
+                href="/marketplace"
+                className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#143A1F] px-6 py-3 text-center text-sm font-black leading-none text-white shadow-sm transition duration-200 ease-out hover:bg-leaf-900 sm:w-auto"
+              >
+                <ShoppingBasket size={17} aria-hidden="true" className="shrink-0" />
                 Explore Marketplace
-              </ButtonLink>
-              <ButtonLink href="/farmer-hub" variant="secondary">
+              </Link>
+              <Link
+                href="/farmer-hub"
+                className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#D6A84A] px-6 py-3 text-center text-sm font-black leading-none text-ink shadow-sm transition duration-200 ease-out hover:bg-earth-700 hover:text-white sm:w-auto"
+              >
                 Open GG FarmMate
-              </ButtonLink>
+              </Link>
             </div>
             <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-leaf-800">
               <CheckCircle2 size={16} aria-hidden="true" />
