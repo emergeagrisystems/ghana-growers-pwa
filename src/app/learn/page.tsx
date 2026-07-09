@@ -13,17 +13,17 @@ export default function LearnPage() {
   return (
     <>
       <PageHero
-        eyebrow="LEARN"
-        title="Farmer Improvement Center"
+        eyebrow="Ghana Growers"
+        title="Skills Center"
         description="Practical guides, short lessons, and sustainable farming skills to help farmers grow healthier crops, protect soil, and prepare better harvests."
         variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <a href="#soil-compost" className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
-            Start with Soil Health
+            Start Learning
           </a>
-          <a href="#skills-center" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
-            Browse Skills
+          <a href="#watch-videos" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
+            Watch Videos
           </a>
         </div>
       </PageHero>

@@ -321,7 +321,7 @@ export function SoilHealthChallenge() {
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {learnChallenges.map((item) => (
               <div key={item.id} className={`rounded-md p-4 ring-1 ring-leaf-900/10 ${item.id === challenge.id ? "bg-leaf-50" : "bg-white"}`}>
-                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{item.durationDays} days</p>
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{item.durationDays}-day challenge</p>
                 <h3 className="mt-2 text-base font-black leading-6 text-ink">{item.title}</h3>
                 <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">{item.description}</p>
               </div>
