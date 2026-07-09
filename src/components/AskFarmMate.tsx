@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
-import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
+import { FARM_MATE_EXHAUSTED_LEARN_CTA, FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 
 const suggestions = [
   "Can I spray today?",
@@ -345,6 +346,7 @@ export function AskFarmMate({
   const [aiFallbackMessage, setAiFallbackMessage] = useState("");
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
+  const [creditReason, setCreditReason] = useState("");
   const [conversationState, setConversationState] = useState<ConversationState>({
     waitingForFollowUp: false,
     turns: []
@@ -426,6 +428,7 @@ export function AskFarmMate({
       }
 
       if (!apiResponse.ok) {
+        setCreditReason(typeof data?.reason === "string" ? data.reason : "");
         if (data?.reason === "usage_tracking_unavailable") {
           setAiFallbackMessage(farmMateFallbackMessage(data?.message));
         } else if (data?.message) {
@@ -477,6 +480,7 @@ export function AskFarmMate({
     setLocalCards([]);
     setAiFallbackMessage("");
     setCreditMessage("");
+    setCreditReason("");
     setIsThinking(true);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion);
@@ -567,6 +571,7 @@ export function AskFarmMate({
   });
   const completedAnswerSummary = compactFollowUpSummary(followUpAnswers);
   const shouldShowIntro = Boolean(intro.lead || intro.detail) && (!showRecommendation || localCards.length > 0) && !isGeneratingNaturalAnswer && !naturalAnswer;
+  const shouldShowCreditActions = creditReason === "credits_exhausted";
 
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
@@ -697,9 +702,25 @@ export function AskFarmMate({
                 ) : null}
 
                 {creditMessage ? (
-                  <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
-                    {creditMessage}
-                  </p>
+                  <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
+                    <p className="text-sm font-bold leading-6 text-ink/68">{creditMessage}</p>
+                    {shouldShowCreditActions ? (
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        <Link
+                          href={FARM_MATE_EXHAUSTED_LEARN_CTA.href}
+                          className="inline-flex min-h-10 items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                        >
+                          {FARM_MATE_EXHAUSTED_LEARN_CTA.label}
+                        </Link>
+                        <Link
+                          href={FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.href}
+                          className="inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                        >
+                          {FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.label}
+                        </Link>
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 {shouldShowLocalGuidance

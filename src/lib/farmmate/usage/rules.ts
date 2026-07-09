@@ -121,6 +121,20 @@ export const CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT =
 export const CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE =
   "Crop Doctor AI is temporarily limited, but you can still ask FarmMate for guidance.";
 
+export const FARM_MATE_EXHAUSTED_LEARN_CTA = {
+  label: "Open Learn",
+  href: "/learn"
+} as const;
+
+export const FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA = {
+  label: "Start Soil Health Challenge",
+  href: "/learn/challenges/soil-health"
+} as const;
+
+function refreshPhrase(refreshInText: string) {
+  return refreshInText.startsWith("within ") ? `refresh ${refreshInText}` : `refresh in ${refreshInText}`;
+}
+
 export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCreditStatus | null) {
   if (!status) {
     return tool === "ask_farmmate" ? "FarmMate Credits: checking Ask questions..." : "Crop Doctor Credits: checking checks...";
@@ -156,8 +170,19 @@ export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "
     return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
   }
 
-  const refreshText = decision.refreshInText.startsWith("within ") ? `refresh ${decision.refreshInText}` : `refresh in ${decision.refreshInText}`;
-  return `You've used your free Crop Doctor checks for now. Your credits ${refreshText}.`;
+  return `You've used your free Crop Doctor checks for now. Your credits ${refreshPhrase(decision.refreshInText)}.`;
+}
+
+export function askFarmMateCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
+  if (decision.reason === "usage_tracking_unavailable") {
+    return "FarmMate AI is temporarily limited, but you can still use the local guidance.";
+  }
+
+  if (decision.reason === "rapid_submission") {
+    return "FarmMate is still catching up. Please wait a few seconds before asking again.";
+  }
+
+  return `You've used your free FarmMate AI questions for now. Your credits ${refreshPhrase(decision.refreshInText)}. While you wait, continue learning practical farming tips.`;
 }
 
 export function shouldDisableCropDoctorAnalysis(status?: FarmMateCreditStatus | null) {

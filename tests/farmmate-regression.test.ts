@@ -28,11 +28,14 @@ import {
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
 import {
   canUseMemoryUsageFallback,
+  askFarmMateCreditMessage,
   getFarmMateCreditDecision,
   getFarmMateCreditStatus,
   isCountableFarmMateSubmission,
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
   CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE,
+  FARM_MATE_EXHAUSTED_LEARN_CTA,
+  FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA,
   cropDoctorCreditMessage,
   farmMateCreditLine,
   formatRefreshIn,
@@ -750,6 +753,42 @@ const tests: TestCase[] = [
       assert.equal(decision.allowed, false);
       assert.equal(decision.reason, "credits_exhausted");
       assert.equal(decision.remaining, 0);
+    }
+  },
+  {
+    name: "exhausted Ask FarmMate message keeps refresh time and points to Learn",
+    run: () => {
+      const message = askFarmMateCreditMessage({ reason: "credits_exhausted", refreshInText: "6h 20m" });
+
+      assert.equal(message.includes("You've used your free FarmMate AI questions for now"), true);
+      assert.equal(message.includes("Your credits refresh in 6h 20m"), true);
+      assert.equal(message.includes("While you wait, continue learning practical farming tips."), true);
+      assert.equal(message.includes("FarmMate tools and learning tips"), false);
+    }
+  },
+  {
+    name: "exhausted Ask FarmMate state exposes Open Learn CTA",
+    run: () => {
+      assert.equal(FARM_MATE_EXHAUSTED_LEARN_CTA.label, "Open Learn");
+      assert.equal(FARM_MATE_EXHAUSTED_LEARN_CTA.href, "/learn");
+    }
+  },
+  {
+    name: "exhausted Ask FarmMate state exposes Soil Health Challenge CTA",
+    run: () => {
+      assert.equal(FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.label, "Start Soil Health Challenge");
+      assert.equal(FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.href, "/learn/challenges/soil-health");
+    }
+  },
+  {
+    name: "Ask FarmMate exhausted credits still prevent OpenAI call",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 60_000).toISOString()));
+      const decision = getFarmMateCreditDecision("ask_farmmate", events, now);
+
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "credits_exhausted");
     }
   },
   {

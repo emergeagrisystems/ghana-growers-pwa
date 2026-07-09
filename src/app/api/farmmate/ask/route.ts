@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput } from "@/lib/farmmate/ai";
+import { askFarmMateCreditMessage } from "@/lib/farmmate/usage";
 import { checkFarmMateCreditsForDevice, getFarmMateCreditsForDevice, recordFarmMateUsageForDevice } from "@/lib/farmmate/usage/server";
 
 function isFarmMateAiInput(value: unknown): value is FarmMateAiInput {
@@ -49,12 +50,7 @@ export async function POST(request: Request) {
         reason: creditDecision.reason,
         fallback: true,
         credits: creditDecision,
-        message:
-          usageUnavailable
-            ? "FarmMate AI is temporarily limited, but you can still use the local guidance."
-            : creditDecision.reason === "rapid_submission"
-            ? "FarmMate is still catching up. Please wait a few seconds before asking again."
-            : `You've used your free FarmMate AI questions for now. Your credits refresh in ${creditDecision.refreshInText}. You can still use FarmMate tools and learning tips.`
+        message: askFarmMateCreditMessage(creditDecision)
       },
       { status: usageUnavailable ? 503 : 429 }
     );

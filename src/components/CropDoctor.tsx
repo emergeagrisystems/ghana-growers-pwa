@@ -2,11 +2,13 @@
 
 import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react";
 import { cropDoctorResultBadge, cropDoctorResultHeadline, type CropDoctorVisionResult } from "@/lib/farmmate/crop-doctor-vision";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import {
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
+  FARM_MATE_EXHAUSTED_LEARN_CTA,
   cropDoctorCreditMessage,
   shouldDisableCropDoctorAnalysis,
   shouldDisableCropDoctorUpload,
@@ -302,13 +304,21 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
             <p className="text-sm font-bold leading-6 text-ink/68">{creditMessage}</p>
             {showAskFarmMateFallback ? (
-              <button
-                type="button"
-                onClick={askFarmMateInstead}
-                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-              >
-                Ask FarmMate instead
-              </button>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={askFarmMateInstead}
+                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                >
+                  Ask FarmMate instead
+                </button>
+                <Link
+                  href={FARM_MATE_EXHAUSTED_LEARN_CTA.href}
+                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                >
+                  {FARM_MATE_EXHAUSTED_LEARN_CTA.label}
+                </Link>
+              </div>
             ) : null}
           </div>
         ) : null}
