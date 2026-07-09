@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
+import {
+  buildCropDoctorAskFarmMatePrompt,
+  cropDoctorResultHasUnsafeLanguage,
+  CROP_DOCTOR_MAX_IMAGE_BYTES,
+  CROP_DOCTOR_TOO_LARGE_MESSAGE,
+  normalizeCropDoctorVisionResult,
+  validateCropDoctorImage
+} from "../src/lib/farmmate/crop-doctor-vision";
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
 import {
   canUseMemoryUsageFallback,
@@ -267,6 +275,130 @@ const tests: TestCase[] = [
 
       assert.equal(status.used, 1);
       assert.equal(status.remaining, 4);
+    }
+  },
+  {
+    name: "Crop Doctor rejects unsupported file type",
+    run: () => {
+      const result = validateCropDoctorImage({ type: "application/pdf", size: 128_000 });
+
+      assert.equal(result.ok, false);
+      assert.equal(result.reason, "unsupported_file_type");
+    }
+  },
+  {
+    name: "Crop Doctor rejects image above 5 MB",
+    run: () => {
+      const result = validateCropDoctorImage({ type: "image/jpeg", size: CROP_DOCTOR_MAX_IMAGE_BYTES + 1 });
+
+      assert.equal(result.ok, false);
+      assert.equal(result.reason, "file_too_large");
+      assert.equal(result.message, CROP_DOCTOR_TOO_LARGE_MESSAGE);
+    }
+  },
+  {
+    name: "Crop Doctor blocks analysis when credits are exhausted",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = [
+        usageEvent("crop_doctor", new Date(now.getTime() - 10 * 60_000).toISOString()),
+        usageEvent("crop_doctor", new Date(now.getTime() - 5 * 60_000).toISOString())
+      ];
+      const decision = getFarmMateCreditDecision("crop_doctor", events, now);
+
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "credits_exhausted");
+      assert.equal(decision.remaining, 0);
+    }
+  },
+  {
+    name: "failed Crop Doctor OpenAI call does not consume credit",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events: FarmMateUsageEvent[] = [];
+      const before = getFarmMateCreditStatus("crop_doctor", events, now);
+      const afterFailedCall = getFarmMateCreditStatus("crop_doctor", events, now);
+
+      assert.equal(before.remaining, 2);
+      assert.equal(afterFailedCall.used, 0);
+      assert.equal(afterFailedCall.remaining, 2);
+    }
+  },
+  {
+    name: "unknown Crop Doctor result does not mention tomato",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: null,
+        cropConfidence: "low",
+        possibleIssue: "Possible crop health issue",
+        visibleSigns: ["yellowing on lower leaves"],
+        recommendedAction: ["Check nearby plants"],
+        prevention: ["Avoid overwatering"],
+        nextBestAction: "Inspect five nearby plants."
+      });
+
+      assert.equal(result.crop, null);
+      assert.equal(result.askFarmMatePrompt.toLowerCase().includes("tomato"), false);
+    }
+  },
+  {
+    name: "Crop Doctor handoff uses dynamic crop when known",
+    run: () => {
+      const prompt = buildCropDoctorAskFarmMatePrompt({
+        crop: "Cassava",
+        possibleIssue: "Mosaic disease",
+        visibleSigns: ["leaf curling", "pale patches"]
+      });
+
+      assert.equal(prompt.includes("cassava photo"), true);
+      assert.equal(prompt.includes("leaf curling, pale patches"), true);
+      assert.equal(prompt.toLowerCase().includes("tomato"), false);
+    }
+  },
+  {
+    name: "Crop Doctor handoff uses neutral wording when crop unknown",
+    run: () => {
+      const prompt = buildCropDoctorAskFarmMatePrompt({
+        crop: null,
+        possibleIssue: "Possible disease",
+        visibleSigns: ["brown spots"]
+      });
+
+      assert.equal(prompt, "I uploaded a crop photo. FarmMate could not confirm the crop, but saw brown spots. What should I check next?");
+    }
+  },
+  {
+    name: "Crop Doctor response does not expose developer language",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Maize",
+        cropConfidence: "medium",
+        possibleIssue: "Tell the farmer to check nutrient stress",
+        visibleSigns: ["yellow leaves"],
+        recommendedAction: ["Tell the farmer to check older leaves"],
+        prevention: ["Keep records"],
+        nextBestAction: "Tell the farmer to inspect nearby plants."
+      });
+
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+    }
+  },
+  {
+    name: "Crop Doctor response does not claim guaranteed diagnosis",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Tomato",
+        cropConfidence: "high",
+        possibleIssue: "This is definitely early blight",
+        confidence: "high",
+        visibleSigns: ["leaf spots"],
+        recommendedAction: ["Remove affected leaves"],
+        prevention: ["Improve airflow"],
+        nextBestAction: "Inspect five nearby plants."
+      });
+
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+      assert.equal(result.possibleIssue.toLowerCase().includes("definitely"), false);
     }
   }
 ];

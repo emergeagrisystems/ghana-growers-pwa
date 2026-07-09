@@ -22,6 +22,8 @@ These limits protect Ghana Growers from unnecessary AI costs and API abuse while
 
 FarmMate does not store farmer names, phone numbers, emails, crop photos, or farm data for credit tracking. The browser stores a generated anonymous device ID in localStorage. The server hashes that anonymous ID before storing usage events.
 
+Crop Doctor uses AI image analysis to provide practical crop health guidance. In Version 1, uploaded crop photos are processed in memory for analysis and are not permanently stored by Ghana Growers. Crop Doctor guidance is not a guaranteed diagnosis. Farmers should contact a qualified agricultural extension officer for serious, spreading, or high-risk crop problems.
+
 ## Production Usage Storage
 
 Production must apply the Supabase migration in `supabase/migrations/030_farmmate_usage_events.sql` before OpenAI is enabled. The required table is:
@@ -43,6 +45,8 @@ The migration also adds individual indexes for `anonymous_user_hash`, `tool`, an
 ## Fail-Safe Behavior
 
 In production, FarmMate Credits must fail closed. If Supabase is configured but the usage table is missing, a usage check fails, or a usage write fails, the app must not silently grant extra AI usage. Ask FarmMate returns the local FarmMate Brain fallback with: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+
+Crop Doctor must also fail safely. If image analysis fails, FarmMate does not consume a Crop Doctor credit and shows a friendly fallback message encouraging the farmer to describe what they see in Ask FarmMate.
 
 Server logs should warn about missing Supabase config, missing usage table, failed usage checks, and failed usage writes. These details are never shown to farmers.
 
