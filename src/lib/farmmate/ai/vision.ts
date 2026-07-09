@@ -88,7 +88,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
               {
                 type: "input_text",
                 text:
-                  "Analyze this crop photo for visible crop health signs. Return only the requested JSON. Be cautious and avoid guaranteed diagnosis."
+                  "Analyze this crop photo for visible crop health signs or harvest/storage quality. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical."
               },
               {
                 type: "input_image",
@@ -97,7 +97,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
             ]
           }
         ],
-        max_output_tokens: 700
+        max_output_tokens: 600
       })
     });
 
@@ -126,4 +126,3 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
     return { ok: false, reason: "openai_request_error", fallback: true };
   }
 }
-

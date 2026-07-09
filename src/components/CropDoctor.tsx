@@ -3,7 +3,7 @@
 import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { ChangeEvent, useEffect, useState } from "react";
-import type { CropDoctorVisionResult } from "@/lib/farmmate/crop-doctor-vision";
+import { cropDoctorResultHeading, type CropDoctorVisionResult } from "@/lib/farmmate/crop-doctor-vision";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import {
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
@@ -317,10 +317,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="gg-eyebrow text-leaf-700">Possible issue</p>
-                <h3 className="mt-2 gg-card-title">{diagnosis.possibleIssue}</h3>
+                <p className="gg-eyebrow text-leaf-700">{cropDoctorResultHeading(diagnosis)}</p>
+                <h3 className="mt-2 gg-card-title">{diagnosis.crop ? `Crop detected: ${diagnosis.crop}` : "Crop not confirmed"}</h3>
                 <p className="mt-2 text-sm font-bold text-ink/62">
-                  {diagnosis.crop ? `Crop detected: ${diagnosis.crop}` : "Crop not confirmed"}
+                  {diagnosis.resultType === "photo_unclear" ? "Try a brighter, closer photo if possible." : "Photo guidance only"}
                 </p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
@@ -329,15 +329,13 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               </span>
             </div>
             <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-bold leading-6 text-ink/64">
-              Crop Doctor gives guidance from the photo, not a guaranteed diagnosis. Confirm serious or spreading problems with an extension officer.
+              Crop Doctor gives guidance from the photo, not a final diagnosis. Confirm serious or spreading problems with an extension officer.
             </p>
 
             <div className="mt-4 grid gap-3">
               {([
-                ["Visible signs", diagnosis.visibleSigns],
-                ["What this means", [diagnosis.whatThisMeans]],
+                ["Main finding", [diagnosis.mainFinding]],
                 ["What to do now", diagnosis.recommendedAction],
-                ["Prevention", diagnosis.prevention],
                 ["Next step", [diagnosis.nextBestAction]]
               ] as Array<[string, string[]]>).map(([label, items]) => (
                 <div key={label} className="rounded-md bg-white p-3">

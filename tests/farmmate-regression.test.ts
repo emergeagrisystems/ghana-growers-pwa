@@ -7,6 +7,8 @@ import {
   cropDoctorResultHasUnsafeLanguage,
   CROP_DOCTOR_MAX_IMAGE_BYTES,
   CROP_DOCTOR_TOO_LARGE_MESSAGE,
+  cropDoctorResultHeading,
+  cropDoctorVisionSystemPrompt,
   normalizeCropDoctorVisionResult,
   validateCropDoctorImage
 } from "../src/lib/farmmate/crop-doctor-vision";
@@ -574,7 +576,119 @@ const tests: TestCase[] = [
         visibleSigns: ["brown spots"]
       });
 
-      assert.equal(prompt, "I uploaded a crop photo. FarmMate could not confirm the crop, but saw brown spots. What should I check next?");
+      assert.equal(prompt, "I uploaded a crop photo. Crop Doctor could not confirm the crop. What should I check next?");
+    }
+  },
+  {
+    name: "no clear Crop Doctor problem does not use Possible issue heading",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Cassava",
+        cropConfidence: "high",
+        resultType: "no_clear_problem",
+        possibleIssue: "No clear disease problem visible",
+        mainFinding: "No clear crop health problem is visible from this photo.",
+        visibleSigns: ["mostly normal rough skin"],
+        recommendedAction: ["Check a few roots for rot."],
+        prevention: ["Keep roots shaded."],
+        nextBestAction: "Separate any soft roots."
+      });
+
+      assert.equal(cropDoctorResultHeading(result), "No clear problem visible");
+      assert.notEqual(cropDoctorResultHeading(result), "Possible issue");
+    }
+  },
+  {
+    name: "harvest Crop Doctor result renders harvest or storage heading",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Cassava",
+        cropConfidence: "high",
+        resultType: "harvest_or_storage_check",
+        possibleIssue: "Harvest or storage check",
+        mainFinding: "The image shows harvested cassava roots with mostly normal rough skin.",
+        visibleSigns: ["harvested roots", "rough outer skin"],
+        recommendedAction: ["Cut open 3 to 5 roots."],
+        prevention: ["Keep good roots shaded."],
+        nextBestAction: "Separate roots that are soft, rotten, or smell bad."
+      });
+
+      assert.equal(cropDoctorResultHeading(result), "Harvest or storage check");
+    }
+  },
+  {
+    name: "cassava root Crop Doctor result is concise",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Cassava",
+        cropConfidence: "high",
+        resultType: "harvest_or_storage_check",
+        possibleIssue: "Harvest or storage check",
+        mainFinding: "No clear crop health problem is visible from this photo. The image shows harvested cassava roots with mostly normal rough skin.",
+        visibleSigns: ["harvested roots", "mostly normal rough skin", "no clear rot visible", "extra sign should be trimmed"],
+        recommendedAction: [
+          "Cut open 3 to 5 roots.",
+          "Check for brown streaks, bad smell, soft tissue, or mould.",
+          "Keep good roots shaded and use or sell them soon.",
+          "Extra action should be trimmed."
+        ],
+        prevention: ["Avoid leaving harvested roots in direct sun.", "Keep roots dry and shaded.", "Sort damaged roots early.", "Extra tip should be trimmed."],
+        nextBestAction: "Separate any roots that are soft, rotten, or smell bad."
+      });
+
+      assert.equal(result.resultType, "harvest_or_storage_check");
+      assert.ok(result.mainFinding.length <= 150);
+      assert.deepEqual(result.recommendedAction, [
+        "Cut open 3 to 5 roots.",
+        "Check for brown streaks, bad smell, soft tissue, or mould.",
+        "Keep good roots shaded and use or sell them soon."
+      ]);
+      assert.equal(result.nextBestAction, "Separate any roots that are soft, rotten, or smell bad.");
+    }
+  },
+  {
+    name: "Crop Doctor result limits visible signs actions and prevention to 3",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Pepper",
+        visibleSigns: ["one", "two", "three", "four"],
+        recommendedAction: ["one", "two", "three", "four"],
+        prevention: ["one", "two", "three", "four"]
+      });
+
+      assert.equal(result.visibleSigns.length, 3);
+      assert.equal(result.recommendedAction.length, 3);
+      assert.equal(result.prevention.length, 3);
+    }
+  },
+  {
+    name: "Crop Doctor no clear known crop handoff is dynamic",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Cassava",
+        cropConfidence: "high",
+        resultType: "harvest_or_storage_check",
+        possibleIssue: "Harvest or storage check",
+        mainFinding: "The photo shows harvested cassava roots.",
+        visibleSigns: ["harvested roots"],
+        recommendedAction: ["Check roots for rot."],
+        nextBestAction: "Separate any roots that are soft, rotten, or smell bad."
+      });
+
+      assert.equal(
+        result.askFarmMatePrompt,
+        "I uploaded a cassava photo. Crop Doctor did not see a clear disease problem, but recommended checking the roots for rot or bad smell. What should I do next?"
+      );
+    }
+  },
+  {
+    name: "Crop Doctor vision prompt discourages forced diagnosis",
+    run: () => {
+      const prompt = cropDoctorVisionSystemPrompt();
+
+      assert.equal(prompt.includes("harvest_or_storage_check"), true);
+      assert.equal(prompt.includes("do not force a disease diagnosis"), true);
+      assert.equal(prompt.includes("Do not invent pesticide dosage"), true);
     }
   },
   {
