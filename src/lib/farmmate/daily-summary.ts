@@ -11,12 +11,24 @@ export type FarmMateDailySummary = {
   suitableTimeOfDay: FarmMateSummaryTimeOfDay;
 };
 
+export function getFarmMateGreetingForHour(hour: number) {
+  if (hour >= 5 && hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour >= 12 && hour < 17) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
+
 export const farmMateDailySummaries: FarmMateDailySummary[] = [
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Check soil moisture before planting or watering.",
     rainOutlookNote: "If rain is likely later, avoid spraying and protect inputs.",
-    todaysTip: "Moist soil should hold together lightly without feeling waterlogged.",
+    todaysTip: "Dig a small finger hole near the roots; water only if the soil below the surface is dry.",
     warning: "Do not work fields that are flooded or sticky.",
     suitableTimeOfDay: "all_day"
   },
@@ -24,63 +36,63 @@ export const farmMateDailySummaries: FarmMateDailySummary[] = [
     title: "Today's Farm Summary",
     mainRecommendation: "Weed young crops while the sun is still gentle.",
     rainOutlookNote: "Check the sky and local forecast before opening large field work.",
-    todaysTip: "Small weeds are easier to remove before they compete with maize or vegetables.",
+    todaysTip: "Pull weeds before they form seed, then leave clean dry weeds as light mulch if they are disease-free.",
     suitableTimeOfDay: "morning"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Inspect maize plants for poor growth and leaf damage.",
     rainOutlookNote: "If heavy rain is likely, delay fertilizer until the soil is moist but not flooded.",
-    todaysTip: "Check the whorl and older leaves on at least 20 maize plants.",
+    todaysTip: "Open the whorl on a few weak plants and look for fresh feeding damage or droppings.",
     suitableTimeOfDay: "all_day"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Check tomato leaves before choosing any treatment.",
     rainOutlookNote: "Wet leaves can increase disease pressure, so avoid watering leaves directly.",
-    todaysTip: "Look first at the lower leaves for yellowing, spots or early disease signs.",
+    todaysTip: "Remove badly diseased lower leaves from the field if they are dry enough to handle cleanly.",
     suitableTimeOfDay: "morning"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Prepare tools and inputs for tomorrow morning.",
     rainOutlookNote: "If rain is likely overnight, keep seed, fertilizer and produce covered.",
-    todaysTip: "Clean hand tools after use to reduce disease spread between plants.",
+    todaysTip: "Disinfect pruning tools between plants, especially after working on sick crops.",
     suitableTimeOfDay: "evening"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Plan tomorrow's field work before resting.",
     rainOutlookNote: "Check local rain signs before deciding on spraying or fertilizer tomorrow.",
-    todaysTip: "List the first farm task for the morning so work starts quickly.",
+    todaysTip: "Put spray, fertilizer and harvesting tasks in separate groups so risky jobs are easier to delay if rain comes.",
     suitableTimeOfDay: "night"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Keep harvested produce shaded and off bare ground.",
     rainOutlookNote: "If rain is likely, keep bags, crates and drying produce under cover.",
-    todaysTip: "Shade helps reduce heat damage before pickup or market.",
+    todaysTip: "Separate damaged produce before transport so one bad item does not spoil the rest.",
     suitableTimeOfDay: "afternoon"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Check drainage channels before the next heavy rain.",
     rainOutlookNote: "If rain is likely, clear blocked drains before water collects.",
-    todaysTip: "Good drainage protects roots and reduces fertilizer waste.",
+    todaysTip: "Open blocked drains gently from the lowest point so water can leave without washing soil away.",
     suitableTimeOfDay: "all_day"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Water young vegetables early when the day is cool.",
     rainOutlookNote: "If rain is likely, check soil moisture before adding more water.",
-    todaysTip: "Water at soil level to reduce leaf disease risk.",
+    todaysTip: "Use a cup, can, or drip line close to the soil instead of splashing leaves.",
     suitableTimeOfDay: "morning"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Avoid fertilizer before heavy rain.",
     rainOutlookNote: "If heavy rain is likely, wait until the soil is moist but not waterlogged.",
-    todaysTip: "Compost and mulch can help soil hold nutrients and moisture.",
+    todaysTip: "Keep fertilizer bags covered and raised off the floor so moisture does not spoil them.",
     warning: "Fertilizer can wash away before roots use it.",
     suitableTimeOfDay: "all_day"
   },
@@ -88,35 +100,35 @@ export const farmMateDailySummaries: FarmMateDailySummary[] = [
     title: "Today's Farm Summary",
     mainRecommendation: "Check pest signs under leaves and inside flowers.",
     rainOutlookNote: "After wet weather, scout more often for spots, rot and insects.",
-    todaysTip: "Look under leaves for whiteflies, eggs, holes or sticky marks.",
+    todaysTip: "Shake a few leaves over white paper to spot tiny insects more easily.",
     suitableTimeOfDay: "morning"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Prepare seedlings for transplanting carefully.",
     rainOutlookNote: "Transplant when soil is moist, but delay if the field is waterlogged.",
-    todaysTip: "Move seedlings in the cool morning or late afternoon to reduce stress.",
+    todaysTip: "Water seedlings lightly before moving them so roots hold together during transplanting.",
     suitableTimeOfDay: "afternoon"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Check cassava and plantain for early stress signs.",
     rainOutlookNote: "If the field is wet, watch low areas for waterlogging.",
-    todaysTip: "Remove badly diseased planting material and use healthy suckers or cuttings.",
+    todaysTip: "Mark weak plantain mats or cassava stands with a stick so you can inspect them again in two days.",
     suitableTimeOfDay: "all_day"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Review today's harvest and keep good produce protected.",
     rainOutlookNote: "If rain is likely tonight, cover produce and keep it raised.",
-    todaysTip: "Separate damaged or soft produce from good produce before storage.",
+    todaysTip: "Use crates, sacks, or clean boards to keep produce off damp floors overnight.",
     suitableTimeOfDay: "evening"
   },
   {
     title: "Today's Farm Summary",
     mainRecommendation: "Clean tools and prepare seed trays for the next work session.",
     rainOutlookNote: "If conditions are damp, let tools dry before storage where possible.",
-    todaysTip: "Clean tools help reduce disease spread in nurseries and vegetable beds.",
+    todaysTip: "Disinfect pruning tools between plants, especially after working on sick crops.",
     suitableTimeOfDay: "night"
   }
 ];

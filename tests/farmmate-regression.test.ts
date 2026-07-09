@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
 import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "../src/lib/farmmate/conversation-ui";
-import { farmMateDailySummaries, getFarmMateDailySummary } from "../src/lib/farmmate/daily-summary";
+import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
@@ -68,7 +68,27 @@ function usageEvent(tool: "ask_farmmate" | "crop_doctor", createdAt: string): Fa
   return { tool, createdAt };
 }
 
+function normalizeAdviceText(text: string) {
+  return text.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 const tests: TestCase[] = [
+  {
+    name: "FarmMate greeting never returns Good night",
+    run: () => {
+      for (let hour = 0; hour < 24; hour += 1) {
+        assert.notEqual(getFarmMateGreetingForHour(hour), "Good night");
+      }
+    }
+  },
+  {
+    name: "night time greeting returns Good evening",
+    run: () => {
+      assert.equal(getFarmMateGreetingForHour(21), "Good evening");
+      assert.equal(getFarmMateGreetingForHour(0), "Good evening");
+      assert.equal(getFarmMateGreetingForHour(4), "Good evening");
+    }
+  },
   {
     name: "at least 14 daily summaries exist",
     run: () => {
@@ -112,6 +132,42 @@ const tests: TestCase[] = [
       assert.equal(text.includes("before noon"), false);
       assert.equal(text.includes("early when the day is cool"), false);
       assert.notEqual(summary.suitableTimeOfDay, "morning");
+    }
+  },
+  {
+    name: "daily summaries do not repeat the exact recommendation as the tip",
+    run: () => {
+      for (const summary of farmMateDailySummaries) {
+        assert.notEqual(normalizeAdviceText(summary.mainRecommendation), normalizeAdviceText(summary.todaysTip));
+      }
+    }
+  },
+  {
+    name: "each daily summary has a practical tip",
+    run: () => {
+      const practicalWords = ["check", "water", "remove", "keep", "separate", "disinfect", "use", "open", "pull", "shake", "mark", "dig"];
+
+      for (const summary of farmMateDailySummaries) {
+        const tip = normalizeAdviceText(summary.todaysTip);
+
+        assert.equal(summary.todaysTip.length > 24, true);
+        assert.equal(practicalWords.some((word) => tip.includes(word)), true);
+      }
+    }
+  },
+  {
+    name: "evening and night summaries avoid immediate morning-only field work",
+    run: () => {
+      const summaries = farmMateDailySummaries.filter((summary) => summary.suitableTimeOfDay === "evening" || summary.suitableTimeOfDay === "night");
+
+      for (const summary of summaries) {
+        const text = normalizeAdviceText(`${summary.mainRecommendation} ${summary.rainOutlookNote} ${summary.todaysTip}`);
+
+        assert.equal(text.includes("water young vegetables early"), false);
+        assert.equal(text.includes("weed young crops"), false);
+        assert.equal(text.includes("transplant when soil is moist"), false);
+        assert.equal(text.includes("while the sun is still gentle"), false);
+      }
     }
   },
   {
