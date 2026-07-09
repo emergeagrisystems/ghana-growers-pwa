@@ -1,14 +1,14 @@
 import type { BlogPost } from "@/types";
-import learnArticles from "@/data/learnArticles.json";
+import { learnLessons } from "@/data/learnLessons";
 
-export const blogPosts = learnArticles as BlogPost[];
+export const blogPosts = learnLessons satisfies BlogPost[];
 
 export const learnCategories = [
   "Soil & Compost",
   "Crop Care",
   "Water & Weather",
   "Pests & Diseases",
-  "Harvest & Selling",
+  "Harvest, Storage & Selling",
   "FarmMate Guides",
   "Video Lessons"
 ] as const;

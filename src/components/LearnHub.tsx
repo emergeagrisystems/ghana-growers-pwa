@@ -4,19 +4,17 @@ import Link from "next/link";
 import {
   Bot,
   BookOpen,
-  CalendarCheck,
   CalendarDays,
   Camera,
   CheckCircle2,
-  CloudRain,
   Droplets,
   Leaf,
   PackageCheck,
+  PlaySquare,
   Search,
   ShieldCheck,
   Shovel,
   Sprout,
-  UploadCloud,
   Wheat
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -27,15 +25,28 @@ type LearnHubProps = {
 };
 
 type LearnFilter = "All" | BlogPost["category"];
-type MenuKey =
-  | "today"
-  | "soil"
-  | "crop"
-  | "water"
-  | "pests"
-  | "harvest"
-  | "videos"
-  | "farmmate";
+type TopicKey = "soil" | "crop" | "water" | "pests" | "harvest" | "farmmate";
+type MenuKey = "today" | TopicKey | "videos" | "all";
+
+type TopicPanel = {
+  label: string;
+  intro: string;
+  icon: typeof Leaf;
+  category: BlogPost["category"];
+  ladder: {
+    start: string;
+    improve: string;
+    further: string;
+  };
+  featured: string;
+  practice: string;
+  recommended: string[];
+  action: {
+    question: string;
+    button: string;
+    href: string;
+  };
+};
 
 const menuItems: Array<{ key: MenuKey; label: string }> = [
   { key: "today", label: "Today" },
@@ -43,71 +54,177 @@ const menuItems: Array<{ key: MenuKey; label: string }> = [
   { key: "crop", label: "Crop Care" },
   { key: "water", label: "Water & Weather" },
   { key: "pests", label: "Pests & Diseases" },
-  { key: "harvest", label: "Harvest & Selling" },
+  { key: "harvest", label: "Harvest, Storage & Selling" },
+  { key: "farmmate", label: "FarmMate Guides" },
   { key: "videos", label: "Videos" },
-  { key: "farmmate", label: "FarmMate Guides" }
+  { key: "all", label: "All Lessons" }
 ];
 
-const pathPanels: Record<
-  Exclude<MenuKey, "today" | "videos">,
-  {
-    eyebrow: string;
-    title: string;
-    body: string;
-    icon: typeof Leaf;
-    category: BlogPost["category"];
-  }
-> = {
+const topicPanels: Record<TopicKey, TopicPanel> = {
   soil: {
-    eyebrow: "IMPROVE SOIL",
-    title: "Compost, manure, mulching, crop rotation, and soil cover.",
-    body: "Start with low-cost practices that protect soil and feed crops slowly.",
+    label: "Soil & Compost",
+    intro: "Build healthier soil with compost, manure, mulching, crop rotation, and soil cover.",
     icon: Shovel,
-    category: "Soil & Compost"
+    category: "Soil & Compost",
+    ladder: {
+      start: "Make simple compost.",
+      improve: "Use mulch and manure safely.",
+      further: "Plan crop rotation and soil cover."
+    },
+    featured: "Make Your Own Compost for Healthy Soil",
+    practice: "Start a small compost corner using dry leaves, crop waste, and manure if available.",
+    recommended: [
+      "Make Your Own Compost for Healthy Soil",
+      "How to Mulch Your Farm and Save Water",
+      "How to Use Poultry Manure Safely",
+      "Crop Rotation: Why Maize Should Not Stand Alone Every Season",
+      "How to Keep Soil Covered During Dry Weather"
+    ],
+    action: {
+      question: "What can I use to improve my soil this week?",
+      button: "Ask FarmMate",
+      href: "/farmer-hub?tool=ask"
+    }
   },
   crop: {
-    eyebrow: "GROW HEALTHIER CROPS",
-    title: "Field checks, spacing, yellow leaves, pests, and diseases.",
-    body: "Use simple routines before assuming disease or reaching for chemicals.",
+    label: "Crop Care",
+    intro: "Learn simple field checks that help crops grow stronger before problems become serious.",
     icon: Wheat,
-    category: "Crop Care"
+    category: "Crop Care",
+    ladder: {
+      start: "Check leaves, stems, and soil every week.",
+      improve: "Understand yellowing, wilting, spacing, and early stress.",
+      further: "Build a regular crop care routine before flowering and harvest."
+    },
+    featured: "Weekly Crop Field Check",
+    practice: "Check the lower leaves, top leaves, stem, soil moisture, and underside of leaves on one crop.",
+    recommended: [
+      "Weekly Crop Field Check",
+      "Maize Leaves Turning Yellow: What to Check First",
+      "Tomato Field Checks Before Flowering",
+      "Cassava Leaves Curling: What to Check",
+      "Plant Spacing: Why Crowded Crops Struggle"
+    ],
+    action: {
+      question: "My crop is not growing well. What should I check first?",
+      button: "Ask FarmMate",
+      href: "/farmer-hub?tool=ask"
+    }
   },
   water: {
-    eyebrow: "SAVE WATER",
-    title: "Mulching, watering time, drainage, and dry-season practices.",
-    body: "Plan around rain and protect roots from both dry soil and standing water.",
+    label: "Water & Weather",
+    intro: "Use rain, shade, drainage, and watering time to protect crops and reduce waste.",
     icon: Droplets,
-    category: "Water & Weather"
+    category: "Water & Weather",
+    ladder: {
+      start: "Check rain and drainage before planting or spraying.",
+      improve: "Use mulch and watering time to save water.",
+      further: "Plan raised beds, drainage, and dry-season care."
+    },
+    featured: "Rainy Season Farm Checklist",
+    practice: "Walk the farm after rain and note where water collects.",
+    recommended: [
+      "Rainy Season Farm Checklist",
+      "Simple Raised Beds for Vegetables",
+      "How to Save Water with Mulch",
+      "Best Time of Day to Water Vegetables",
+      "When Not to Spray Because of Weather"
+    ],
+    action: {
+      question: "Can I spray today, or should I wait because of the weather?",
+      button: "Ask FarmMate",
+      href: "/farmer-hub?tool=ask"
+    }
   },
   pests: {
-    eyebrow: "PREVENT PESTS & DISEASES",
-    title: "Check the real problem before spraying.",
-    body: "Look closely, check the weather, and confirm signs before treatment.",
+    label: "Pests & Diseases",
+    intro: "Learn how to check crop problems before spraying.",
     icon: ShieldCheck,
-    category: "Pests & Diseases"
+    category: "Pests & Diseases",
+    ladder: {
+      start: "Look carefully before deciding to spray.",
+      improve: "Identify early signs of pests, disease, and crop stress.",
+      further: "Use prevention and safer pest management."
+    },
+    featured: "Before You Spray: 3 Things to Check First",
+    practice: "Check the underside of leaves, new growth, old leaves, and nearby plants before spraying.",
+    recommended: [
+      "Before You Spray: 3 Things to Check First",
+      "How to Scout Your Farm Every Week",
+      "Common Tomato Leaf Problems",
+      "Natural Pest Prevention Practices",
+      "When to Ask Crop Doctor"
+    ],
+    action: {
+      question: "Can I spray today, or should I check something first?",
+      button: "Ask FarmMate",
+      href: "/farmer-hub?tool=ask"
+    }
   },
   harvest: {
-    eyebrow: "PREPARE TO SELL",
-    title: "Sorting, packaging, quantity estimates, and buyer readiness.",
-    body: "Make harvests easier to inspect, count, transport, and sell.",
+    label: "Harvest, Storage & Selling",
+    intro: "Reduce losses after harvest and prepare cleaner, better-counted produce before meeting buyers.",
     icon: PackageCheck,
-    category: "Harvest & Selling"
+    category: "Harvest, Storage & Selling",
+    ladder: {
+      start: "Sort damaged produce before selling.",
+      improve: "Store produce in a way that reduces heat, moisture, and bruising.",
+      further: "Prepare buyer-ready produce with clear quantity, packaging, and records."
+    },
+    featured: "How to Reduce Produce Loss After Harvest",
+    practice: "Sort one harvest into good produce, damaged produce, and produce to use quickly.",
+    recommended: [
+      "How to Prepare Produce Before Selling",
+      "How to Sort and Pack Vegetables for Buyers",
+      "How to Store Maize After Harvest",
+      "How to Store Yam and Root Crops",
+      "How to Reduce Tomato Loss After Harvest",
+      "How to Estimate Quantity Before Talking to Buyers",
+      "Simple Harvest Records for Farmers",
+      "How Buyers Source Produce Through Ghana Growers"
+    ],
+    action: {
+      question: "How should I store my maize, yam, or tomatoes before selling?",
+      button: "Ask FarmMate",
+      href: "/farmer-hub?tool=ask"
+    }
   },
   farmmate: {
-    eyebrow: "USE FARMMATE BETTER",
-    title: "Crop Doctor, Ask FarmMate, planting advice, and daily farm summary.",
-    body: "Move from learning into the live tools when you need a practical next step.",
+    label: "FarmMate Guides",
+    intro: "Learn how to use GG FarmMate tools to get better answers and practical next steps.",
     icon: Bot,
-    category: "FarmMate Guides"
+    category: "FarmMate Guides",
+    ladder: {
+      start: "Ask clear farm questions.",
+      improve: "Upload better crop photos.",
+      further: "Use FarmMate advice with field checks and good records."
+    },
+    featured: "How to Use GG FarmMate",
+    practice: "Ask FarmMate one clear question about a crop, soil, weather, or harvest problem.",
+    recommended: [
+      "How to Use GG FarmMate",
+      "How to Ask FarmMate a Good Question",
+      "How to Use Crop Doctor",
+      "How to Use Crop Calendar",
+      "How to Use Planting Advisor"
+    ],
+    action: {
+      question: "How can I use FarmMate better on my farm?",
+      button: "Open FarmMate",
+      href: "/farmer-hub"
+    }
   }
 };
 
-const videoLessons = [
-  { title: "How to Make Compost at Home", category: "Soil & Compost", duration: "4 min", icon: Shovel },
-  { title: "How to Mulch Tomatoes", category: "Soil & Compost", duration: "3 min", icon: Leaf },
-  { title: "Before You Spray", category: "Pests & Diseases", duration: "3 min", icon: ShieldCheck },
-  { title: "How to Use Crop Doctor", category: "FarmMate Guides", duration: "3 min", icon: UploadCloud },
-  { title: "How to Prepare Produce Before Selling", category: "Harvest & Selling", duration: "4 min", icon: PackageCheck }
+const categoryFilters: Array<{ label: string; value: LearnFilter }> = [
+  { label: "All", value: "All" },
+  { label: "Soil & Compost", value: "Soil & Compost" },
+  { label: "Crop Care", value: "Crop Care" },
+  { label: "Water & Weather", value: "Water & Weather" },
+  { label: "Pests & Diseases", value: "Pests & Diseases" },
+  { label: "Harvest, Storage & Selling", value: "Harvest, Storage & Selling" },
+  { label: "FarmMate Guides", value: "FarmMate Guides" },
+  { label: "Videos", value: "Video Lessons" }
 ];
 
 const liveFarmMateTools = [
@@ -141,17 +258,6 @@ const liveFarmMateTools = [
   }
 ];
 
-const guideFilters: Array<{ label: string; value: LearnFilter }> = [
-  { label: "All", value: "All" },
-  { label: "Soil & Compost", value: "Soil & Compost" },
-  { label: "Crop Care", value: "Crop Care" },
-  { label: "Water & Weather", value: "Water & Weather" },
-  { label: "Pests & Diseases", value: "Pests & Diseases" },
-  { label: "Harvest & Selling", value: "Harvest & Selling" },
-  { label: "FarmMate Guides", value: "FarmMate Guides" },
-  { label: "Video Lessons", value: "Video Lessons" }
-];
-
 const challengeSteps = [
   "Day 1: Collect dry leaves and crop waste.",
   "Day 2: Choose a compost corner.",
@@ -161,6 +267,10 @@ const challengeSteps = [
   "Day 6: Turn the pile.",
   "Day 7: Ask FarmMate what to improve."
 ];
+
+function lessonByTitle(posts: BlogPost[], title: string) {
+  return posts.find((post) => post.title === title);
+}
 
 function LessonCard({ post }: { post: BlogPost }) {
   return (
@@ -174,27 +284,158 @@ function LessonCard({ post }: { post: BlogPost }) {
       <h3 className="mt-3 text-lg font-black leading-snug text-ink">{post.title}</h3>
       <p className="mt-2 flex-1 text-sm leading-6 text-ink/65">{post.excerpt}</p>
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-ink/58">
+        {post.level ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.level}</span> : null}
         <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.readTime}</span>
         {post.difficulty ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.difficulty}</span> : null}
-        {post.cost ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.cost}</span> : null}
       </div>
-      <Link href={`/learn/${post.slug}`} className="mt-4 text-sm font-black text-leaf-700 transition hover:text-leaf-800">
+      <Link href={`/learn/${post.slug}`} className="focus-ring mt-4 inline-flex w-fit rounded-md text-sm font-black text-leaf-700 transition hover:text-leaf-800">
         Read lesson
       </Link>
     </article>
   );
 }
 
-export function LearnHub({ posts }: LearnHubProps) {
-  const [activeMenu, setActiveMenu] = useState<MenuKey>("today");
+function CompactLessonCard({ post }: { post: BlogPost }) {
+  return (
+    <article className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+      <div className="flex flex-wrap gap-2 text-xs font-black text-ink/58">
+        <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.category}</span>
+        {post.level ? <span className="rounded-md bg-earth-50 px-2.5 py-1 text-earth-800">{post.level}</span> : null}
+        <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.readTime}</span>
+      </div>
+      <h3 className="mt-3 text-lg font-black leading-snug text-ink">{post.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink/64">{post.excerpt}</p>
+      <Link href={`/learn/${post.slug}`} className="focus-ring mt-4 inline-flex rounded-md text-sm font-black text-leaf-700 transition hover:text-leaf-800">
+        Read lesson
+      </Link>
+    </article>
+  );
+}
+
+function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[] }) {
+  const Icon = panel.icon;
+  const featured = lessonByTitle(posts, panel.featured);
+  const recommended = panel.recommended
+    .map((title) => lessonByTitle(posts, title))
+    .filter((post): post is BlogPost => Boolean(post));
+
+  return (
+    <section className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr]">
+      <div className="space-y-5">
+        <article className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
+          <span className="gg-icon gg-icon-standard h-12 w-12">
+            <Icon size={22} aria-hidden="true" />
+          </span>
+          <p className="mt-5 gg-eyebrow">{panel.label}</p>
+          <h2 className="mt-2 text-2xl font-black leading-tight text-ink">{panel.label}</h2>
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink/66">{panel.intro}</p>
+        </article>
+
+        <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-black text-ink">Skill ladder</h3>
+          <div className="mt-4 grid gap-3">
+            {[
+              ["Start", panel.ladder.start],
+              ["Improve", panel.ladder.improve],
+              ["Go Further", panel.ladder.further]
+            ].map(([label, text]) => (
+              <div key={label} className="rounded-md bg-leaf-50 p-3">
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{label}</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{text}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-md border border-leaf-900/10 bg-[#F7F7EA] p-5">
+          <p className="gg-eyebrow">This Week&apos;s Practice</p>
+          <p className="mt-2 text-base font-black leading-7 text-ink">{panel.practice}</p>
+        </article>
+      </div>
+
+      <div className="space-y-5">
+        {featured ? (
+          <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
+            <p className="gg-eyebrow">Featured Skill</p>
+            <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{featured.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-ink/65">{featured.excerpt}</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-ink/58">
+              {featured.level ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.level}</span> : null}
+              <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.readTime}</span>
+              {featured.cost ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.cost}</span> : null}
+            </div>
+            <Link href={`/learn/${featured.slug}`} className="focus-ring mt-5 inline-flex rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+              Read lesson
+            </Link>
+          </article>
+        ) : null}
+
+        <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+          <h3 className="text-lg font-black text-ink">Recommended Lessons</h3>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {recommended.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/learn/${post.slug}`}
+                className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+              >
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.level}</p>
+                <p className="mt-1 text-sm font-black leading-5 text-ink">{post.title}</p>
+                <p className="mt-1 text-xs font-bold text-ink/55">{post.readTime}</p>
+              </Link>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">FarmMate Action</p>
+          <p className="mt-3 text-xl font-black leading-8">{panel.action.question}</p>
+          <Link href={panel.action.href} className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
+            {panel.action.button}
+          </Link>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function VideosPanel({ posts }: { posts: BlogPost[] }) {
+  const videos = posts.filter((post) => post.category === "Video Lessons");
+
+  return (
+    <section id="watch-videos" className="scroll-mt-24">
+      <div className="max-w-3xl">
+        <p className="gg-eyebrow">Videos</p>
+        <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch Short Farm Lessons</h2>
+        <p className="mt-2 text-sm leading-6 text-ink/64">
+          Short practical videos for soil health, crop checks, FarmMate tools, harvest handling, and better growing practices.
+        </p>
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {videos.map((video) => (
+          <article key={video.slug} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+            <div className="flex items-start justify-between gap-3">
+              <span className="gg-icon gg-icon-standard h-11 w-11">
+                <PlaySquare size={20} aria-hidden="true" />
+              </span>
+              <span className="rounded-md bg-leaf-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-leaf-700">
+                Coming soon
+              </span>
+            </div>
+            <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">{video.category}</p>
+            <h3 className="mt-2 text-lg font-black leading-snug text-ink">{video.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-ink/64">{video.excerpt}</p>
+            <p className="mt-3 text-sm font-bold text-ink/55">{video.readTime}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AllLessonsPanel({ posts }: { posts: BlogPost[] }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<LearnFilter>("All");
-  const [showAllGuides, setShowAllGuides] = useState(false);
-
-  const todaySkill = posts.find((post) => post.slug === "make-your-own-compost-for-healthy-soil") ?? posts[0];
-  const activePanel = activeMenu === "today" || activeMenu === "videos" ? pathPanels.soil : pathPanels[activeMenu];
-  const ActivePanelIcon = activePanel.icon;
-  const panelLessons = posts.filter((post) => post.category === activePanel.category).slice(0, 4);
 
   const filteredPosts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -206,6 +447,7 @@ export function LearnHub({ posts }: LearnHubProps) {
         [
           post.title,
           post.category,
+          post.level ?? "",
           post.excerpt,
           post.audience ?? "",
           post.difficulty ?? "",
@@ -221,36 +463,194 @@ export function LearnHub({ posts }: LearnHubProps) {
     });
   }, [category, posts, search]);
 
-  const visibleGuides = showAllGuides ? filteredPosts : filteredPosts.slice(0, 6);
+  return (
+    <section>
+      <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[0.7fr_0.3fr] lg:items-end">
+          <div>
+            <p className="gg-eyebrow">All Lessons</p>
+            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Browse every Skills Center lesson</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/62">
+              Search compact lessons for soil, compost, crop care, rain, pest prevention, harvest readiness, and FarmMate tools.
+            </p>
+          </div>
+          <label className="block">
+            <span className="mb-2 block text-sm font-black text-ink">Search lessons</span>
+            <span className="relative block">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" aria-hidden="true" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search compost, spraying, storage..."
+                className="focus-ring w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm"
+              />
+            </span>
+          </label>
+        </div>
 
-  function chooseMenu(key: MenuKey) {
-    setActiveMenu(key);
+        <div className="mt-5 flex flex-wrap gap-2">
+          {categoryFilters.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => setCategory(item.value)}
+              className={`focus-ring rounded-md px-3 py-2 text-sm font-black transition ${
+                category === item.value
+                  ? "bg-leaf-700 text-white"
+                  : "bg-leaf-50 text-ink/70 ring-1 ring-leaf-900/10 hover:text-leaf-800"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-    if (key !== "today" && key !== "videos") {
-      setCategory(pathPanels[key].category);
+      <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredPosts.map((post) => (
+          <CompactLessonCard key={post.slug} post={post} />
+        ))}
+      </div>
+
+      {filteredPosts.length === 0 ? (
+        <div className="gg-empty-state mt-8">
+          <h3 className="gg-card-title">No lessons found</h3>
+          <p className="mt-2 text-sm leading-6 text-ink/62">Try another search term or category.</p>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function TodayPanel({ posts }: { posts: BlogPost[] }) {
+  const todaySkill = lessonByTitle(posts, "Make Your Own Compost for Healthy Soil") ?? posts[0];
+  const starterLessons = [
+    "Make Your Own Compost for Healthy Soil",
+    "Weekly Crop Field Check",
+    "Before You Spray: 3 Things to Check First"
+  ]
+    .map((title) => lessonByTitle(posts, title))
+    .filter((post): post is BlogPost => Boolean(post));
+
+  return (
+    <section id="soil-compost" className="scroll-mt-24">
+      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+          <p className="gg-eyebrow">Start Here</p>
+          <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Build one useful farm skill today</h2>
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink/68">
+            Choose one practical lesson, try one small action, then use FarmMate if you need a next step.
+          </p>
+          <div className="mt-5 grid gap-3">
+            {starterLessons.map((post) => (
+              <Link key={post.slug} href={`/learn/${post.slug}`} className="focus-ring rounded-md bg-leaf-50 p-3 transition hover:bg-white hover:shadow-sm">
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.level}</p>
+                <p className="mt-1 text-sm font-black text-ink">{post.title}</p>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link href={`/learn/${todaySkill.slug}`} className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+              Read today&apos;s lesson
+            </Link>
+            <Link href="/farmer-hub?tool=ask" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
+              Ask FarmMate
+            </Link>
+          </div>
+        </article>
+
+        <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-soft sm:p-6">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">7-Day Soil Health Challenge</p>
+          <h2 className="mt-2 text-2xl font-black">Start improving your soil this week with small steps.</h2>
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            {challengeSteps.map((step) => (
+              <div key={step} className="flex gap-2 rounded-md bg-white/10 p-3 text-sm font-semibold leading-5 text-white/86">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-earth-500" aria-hidden="true" />
+                <span>{step}</span>
+              </div>
+            ))}
+          </div>
+          <Link href="/learn/challenges/soil-health" className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
+            Start Day 1
+          </Link>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function FarmMateToolsPanel({ posts }: { posts: BlogPost[] }) {
+  return (
+    <section className="space-y-6">
+      <TopicPanelView panel={topicPanels.farmmate} posts={posts} />
+      <div>
+        <p className="gg-eyebrow">Practice with live FarmMate tools</p>
+        <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Move from learning into action</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {liveFarmMateTools.map((tool) => {
+            const Icon = tool.icon;
+
+            return (
+              <Link
+                key={tool.title}
+                href={tool.href}
+                className="group flex h-full flex-col rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+              >
+                <span className="gg-icon gg-icon-standard h-11 w-11">
+                  <Icon size={21} aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-lg font-black leading-snug text-ink group-hover:text-leaf-700">{tool.title}</h3>
+                <p className="mt-2 flex-1 text-sm font-semibold leading-6 text-ink/64">{tool.text}</p>
+                <span className="mt-5 inline-flex text-sm font-black text-leaf-700">{tool.cta}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function LearnHub({ posts }: LearnHubProps) {
+  const [activeMenu, setActiveMenu] = useState<MenuKey>("today");
+
+  function renderPanel() {
+    if (activeMenu === "today") {
+      return <TodayPanel posts={posts} />;
     }
 
-    if (key === "videos") {
-      document.getElementById("watch-videos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (activeMenu === "videos") {
+      return <VideosPanel posts={posts} />;
     }
+
+    if (activeMenu === "all") {
+      return <AllLessonsPanel posts={posts} />;
+    }
+
+    if (activeMenu === "farmmate") {
+      return <FarmMateToolsPanel posts={posts} />;
+    }
+
+    return <TopicPanelView panel={topicPanels[activeMenu]} posts={posts} />;
   }
 
   return (
     <div className="bg-white">
       <nav className="sticky top-0 z-20 border-y border-leaf-900/10 bg-white/95 py-3 backdrop-blur" aria-label="Learning topics">
         <div className="mx-auto max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-max gap-2">
+          <div className="flex min-w-max gap-2" role="tablist" aria-label="Skills Center topics">
             {menuItems.map((item) => (
               <button
                 key={item.key}
                 type="button"
-                onClick={() => chooseMenu(item.key)}
+                onClick={() => setActiveMenu(item.key)}
                 className={`focus-ring rounded-full px-4 py-2 text-sm font-black transition ${
                   activeMenu === item.key
                     ? "bg-leaf-700 text-white"
                     : "bg-leaf-50 text-ink/70 ring-1 ring-leaf-900/10 hover:text-leaf-800"
                 }`}
-                aria-pressed={activeMenu === item.key}
+                aria-selected={activeMenu === item.key}
+                role="tab"
               >
                 {item.label}
               </button>
@@ -259,209 +659,11 @@ export function LearnHub({ posts }: LearnHubProps) {
         </div>
       </nav>
 
-      <section id="soil-compost" className="scroll-mt-24 bg-[#ECE7D1] py-10 sm:py-12">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-          <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-            <p className="gg-eyebrow">TODAY&apos;S FARM SKILL</p>
-            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Make Your Own Compost</h2>
-            <p className="mt-3 text-sm font-semibold leading-6 text-ink/68">
-              Turn dry leaves, crop waste, grass, and animal manure into rich soil food for your farm.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs font-black text-ink/65">
-              <span className="rounded-md bg-leaf-50 px-3 py-2">Time: 20 min to start</span>
-              <span className="rounded-md bg-leaf-50 px-3 py-2">Cost: Low</span>
-              <span className="rounded-md bg-leaf-50 px-3 py-2">Best for: Vegetables, maize, cassava, pepper</span>
-            </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href={`/learn/${todaySkill.slug}`} className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
-                Read lesson
-              </Link>
-              <Link href="/farmer-hub?tool=ask" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
-                Ask FarmMate about soil
-              </Link>
-            </div>
-          </article>
-
-          <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-soft sm:p-6">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">7-DAY SOIL HEALTH CHALLENGE</p>
-            <h2 className="mt-2 text-2xl font-black">Start improving your soil this week with small steps.</h2>
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              {challengeSteps.map((step) => (
-                <div key={step} className="flex gap-2 rounded-md bg-white/10 p-3 text-sm font-semibold leading-5 text-white/86">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-earth-500" aria-hidden="true" />
-                  <span>{step}</span>
-                </div>
-              ))}
-            </div>
-            <Link href="/learn/challenges/soil-health" className="mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
-              Start Day 1
-            </Link>
-          </article>
+      <main id="skills-center" className="scroll-mt-24 bg-[#F7F7EA] py-10 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" role="tabpanel">
+          {renderPanel()}
         </div>
-      </section>
-
-      <section className="bg-white py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[0.34fr_0.66fr]">
-            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-              <span className="gg-icon gg-icon-standard h-12 w-12">
-                <ActivePanelIcon size={22} aria-hidden="true" />
-              </span>
-              <p className="mt-5 gg-eyebrow">{activePanel.eyebrow}</p>
-              <h2 className="mt-2 text-2xl font-black leading-tight text-ink">{activePanel.title}</h2>
-              <p className="mt-3 text-sm font-semibold leading-6 text-ink/64">{activePanel.body}</p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {panelLessons.map((post) => (
-                <LessonCard key={post.slug} post={post} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="watch-videos" className="scroll-mt-24 bg-[#F7F7EA] py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="gg-eyebrow">SHORT VIDEO LESSONS</p>
-            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch Short Farm Lessons</h2>
-            <p className="mt-2 text-sm leading-6 text-ink/64">
-              Short practical videos for soil health, crop checks, FarmMate tools, and selling preparation.
-            </p>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {videoLessons.map((video) => {
-              const Icon = video.icon;
-
-              return (
-                <article key={video.title} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="gg-icon gg-icon-standard h-10 w-10">
-                      <Icon size={19} aria-hidden="true" />
-                    </span>
-                    <span className="rounded-md bg-leaf-50 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-leaf-700">
-                      Coming soon
-                    </span>
-                  </div>
-                  <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">{video.category}</p>
-                  <h3 className="mt-2 text-lg font-black leading-snug text-ink">{video.title}</h3>
-                  <p className="mt-2 text-sm font-bold text-ink/55">{video.duration}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section id="browse-guides" className="scroll-mt-24 bg-leaf-50 py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[0.7fr_0.3fr] lg:items-end">
-              <div>
-                <p className="gg-eyebrow">GUIDE LIBRARY</p>
-                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Guide Library</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/62">
-                  Search compact lessons for soil, compost, crop care, rain, selling readiness, and FarmMate tools.
-                </p>
-              </div>
-              <label className="block">
-                <span className="mb-2 block text-sm font-black text-ink">Search guides</span>
-                <span className="relative block">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" aria-hidden="true" />
-                  <input
-                    value={search}
-                    onChange={(event) => {
-                      setSearch(event.target.value);
-                      setShowAllGuides(false);
-                    }}
-                    placeholder="Search compost, mulching, spraying..."
-                    className="focus-ring w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm"
-                  />
-                </span>
-              </label>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {guideFilters.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => {
-                    setCategory(item.value);
-                    setShowAllGuides(false);
-                  }}
-                  className={`rounded-md px-3 py-2 text-sm font-black transition ${
-                    category === item.value
-                      ? "bg-leaf-700 text-white"
-                      : "bg-leaf-50 text-ink/70 ring-1 ring-leaf-900/10 hover:text-leaf-800"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {visibleGuides.map((post) => (
-              <LessonCard key={post.slug} post={post} />
-            ))}
-          </div>
-
-          {filteredPosts.length > visibleGuides.length ? (
-            <div className="mt-7 text-center">
-              <button
-                type="button"
-                onClick={() => setShowAllGuides(true)}
-                className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50"
-              >
-                Show more guides
-              </button>
-            </div>
-          ) : null}
-
-          {filteredPosts.length === 0 ? (
-            <div className="gg-empty-state mt-8">
-              <h3 className="gg-card-title">No guides found</h3>
-              <p className="mt-2 text-sm leading-6 text-ink/62">Try another search term or category.</p>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="bg-white py-10 sm:py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="gg-eyebrow">GG FARMMATE</p>
-            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Practice with live FarmMate tools</h2>
-            <p className="mt-2 text-sm leading-6 text-ink/64">
-              Move from learning into the live daily farming companion when you need a practical next step.
-            </p>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {liveFarmMateTools.map((tool) => {
-              const Icon = tool.icon;
-
-              return (
-                <Link
-                  key={tool.title}
-                  href={tool.href}
-                  className="group flex h-full flex-col rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
-                >
-                  <span className="gg-icon gg-icon-standard h-11 w-11">
-                    <Icon size={21} aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-4 text-lg font-black leading-snug text-ink group-hover:text-leaf-700">{tool.title}</h3>
-                  <p className="mt-2 flex-1 text-sm font-semibold leading-6 text-ink/64">{tool.text}</p>
-                  <span className="mt-5 inline-flex text-sm font-black text-leaf-700">{tool.cta}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      </main>
 
       <section className="bg-leaf-700 py-12 text-white sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

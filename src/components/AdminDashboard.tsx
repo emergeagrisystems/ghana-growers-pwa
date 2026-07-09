@@ -33,7 +33,7 @@ import {
 import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
-import learnArticles from "@/data/learnArticles.json";
+import { learnLessons as learnArticles } from "@/data/learnLessons";
 import { marketPrices } from "@/data/marketPrices";
 import { products } from "@/data/products";
 import { WHATSAPP_NUMBER } from "@/data/site";
@@ -936,7 +936,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ],
   learn: [
     { name: "title", label: "Title", required: true },
-    { name: "category", label: "Category", type: "select", required: true, options: ["Soil & Compost", "Crop Care", "Water & Weather", "Pests & Diseases", "Harvest & Selling", "FarmMate Guides", "Video Lessons"] },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Soil & Compost", "Crop Care", "Water & Weather", "Pests & Diseases", "Harvest, Storage & Selling", "FarmMate Guides", "Video Lessons"] },
     { name: "summary", label: "Summary", type: "textarea", required: true },
     { name: "author", label: "Author", required: true },
     { name: "publishDate", label: "Publish Date", type: "date", required: true },

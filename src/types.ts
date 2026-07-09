@@ -46,9 +46,10 @@ export type BlogPost = {
     | "Crop Care"
     | "Water & Weather"
     | "Pests & Diseases"
-    | "Harvest & Selling"
+    | "Harvest, Storage & Selling"
     | "FarmMate Guides"
     | "Video Lessons";
+  level?: "Start" | "Improve" | "Go Further";
   excerpt: string;
   readTime: string;
   date: string;

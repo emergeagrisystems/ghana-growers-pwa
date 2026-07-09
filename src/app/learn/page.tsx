@@ -22,8 +22,8 @@ export default function LearnPage() {
           <a href="#soil-compost" className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
             Start with Soil Health
           </a>
-          <a href="#watch-videos" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
-            Watch Videos
+          <a href="#skills-center" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
+            Browse Skills
           </a>
         </div>
       </PageHero>
