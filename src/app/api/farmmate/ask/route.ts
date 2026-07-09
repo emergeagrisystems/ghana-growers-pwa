@@ -68,7 +68,11 @@ export async function POST(request: Request) {
       tool: "ask_farmmate"
     });
 
-    return NextResponse.json({ ...result, credits });
+    return NextResponse.json({
+      ...result,
+      credits,
+      message: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+    });
   }
 
   const recordResult = await recordFarmMateUsageForDevice({

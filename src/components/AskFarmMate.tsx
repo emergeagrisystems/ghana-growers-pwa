@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
+import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
@@ -233,28 +234,28 @@ function clarificationResponse(): FarmMateLocalResponseCard[] {
 function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean) {
   if (localCards.some((card) => card.body.some((line) => line.toLowerCase().includes("buy produce")))) {
     return {
-      lead: "Here is the buying guidance.",
+      lead: "Buying through Ghana Growers",
       detail: "This is separate from crop health advice."
     };
   }
 
   if (localCards.length) {
     return {
-      lead: "I need a clearer question.",
+      lead: "Send one clear question.",
       detail: "Send one full sentence so I can route it properly."
     };
   }
 
   if (showRecommendation) {
     return {
-      lead: "Here is the practical next step.",
-      detail: "I will keep it short and focused."
+      lead: "",
+      detail: ""
     };
   }
 
   return {
-    lead: "Let’s narrow it down first.",
-    detail: "I’ll ask one quick question at a time."
+    lead: "Let's narrow this down.",
+    detail: "I will ask one quick question at a time."
   };
 }
 
@@ -328,6 +329,7 @@ export function AskFarmMate({
   const [naturalAnswer, setNaturalAnswer] = useState("");
   const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
   const [localCards, setLocalCards] = useState<FarmMateLocalResponseCard[]>([]);
+  const [aiFallbackMessage, setAiFallbackMessage] = useState("");
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
   const [conversationState, setConversationState] = useState<ConversationState>({
@@ -386,6 +388,7 @@ export function AskFarmMate({
 
   async function requestNaturalAnswer(farmerQuestion: string, farmMateResponse: FarmMateBrainResponse, answers: FollowUpAnswer[]) {
     setNaturalAnswer("");
+    setAiFallbackMessage("");
     setCreditMessage("");
     setIsGeneratingNaturalAnswer(true);
 
@@ -403,24 +406,32 @@ export function AskFarmMate({
           localStructuredResponse: localRecommendationCards(farmMateResponse, answers)
         })
       });
-      const data = (await apiResponse.json().catch(() => null)) as { ok?: boolean; answer?: string; credits?: FarmMateCreditStatus; message?: string } | null;
+      const data = (await apiResponse.json().catch(() => null)) as { ok?: boolean; answer?: string; fallback?: boolean; reason?: string; credits?: FarmMateCreditStatus; message?: string } | null;
 
       if (data?.credits) {
         setCredits(data.credits);
       }
 
       if (!apiResponse.ok) {
-        if (data?.message) {
+        if (data?.reason === "usage_tracking_unavailable") {
+          setAiFallbackMessage(farmMateFallbackMessage(data?.message));
+        } else if (data?.message) {
           setCreditMessage(data.message);
         }
         return;
       }
 
       if (data?.ok && data.answer?.trim()) {
-        setNaturalAnswer(data.answer.trim());
+        setNaturalAnswer(cleanFarmMateFinalAnswer(data.answer));
+        return;
+      }
+
+      if (data?.fallback) {
+        setAiFallbackMessage(farmMateFallbackMessage(data.message));
       }
     } catch {
       setNaturalAnswer("");
+      setAiFallbackMessage(farmMateFallbackMessage());
     } finally {
       setIsGeneratingNaturalAnswer(false);
     }
@@ -451,6 +462,7 @@ export function AskFarmMate({
     setNaturalAnswer("");
     setIsGeneratingNaturalAnswer(false);
     setLocalCards([]);
+    setAiFallbackMessage("");
     setCreditMessage("");
     setIsThinking(true);
 
@@ -531,6 +543,15 @@ export function AskFarmMate({
 
   const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
   const intro = responseIntro(localCards, showRecommendation);
+  const shouldShowLocalGuidance = shouldRenderLocalFarmMateGuidance({
+    isGeneratingNaturalAnswer,
+    naturalAnswer,
+    localCards: recommendationCards,
+    aiFallbackMessage,
+    isLocalOnlyResponse: localCards.length > 0
+  });
+  const completedAnswerSummary = compactFollowUpSummary(followUpAnswers);
+  const shouldShowIntro = Boolean(intro.lead || intro.detail) && (!showRecommendation || localCards.length > 0) && !isGeneratingNaturalAnswer && !naturalAnswer;
 
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
@@ -595,16 +616,20 @@ export function AskFarmMate({
 
         {response || localCards.length ? (
           <div className="max-w-[92%] space-y-3">
-            <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
-              <p>{intro.lead}</p>
-              <p className="mt-2">{intro.detail}</p>
-            </div>
-
-            {followUpAnswers.map((answer) => (
-              <div key={`${answer.question}-${answer.answer}`} className="ml-auto max-w-[92%] rounded-md bg-white px-4 py-3 text-sm font-bold leading-6 text-ink/72 ring-1 ring-leaf-900/10">
-                {answer.answer}
+            {shouldShowIntro ? (
+              <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
+                {intro.lead ? <p>{intro.lead}</p> : null}
+                {intro.detail ? <p className={intro.lead ? "mt-2" : ""}>{intro.detail}</p> : null}
               </div>
-            ))}
+            ) : null}
+
+            {!showRecommendation
+              ? followUpAnswers.map((answer) => (
+                  <div key={`${answer.question}-${answer.answer}`} className="ml-auto max-w-[92%] rounded-md bg-white px-4 py-3 text-sm font-bold leading-6 text-ink/72 ring-1 ring-leaf-900/10">
+                    {answer.answer}
+                  </div>
+                ))
+              : null}
 
             {!showRecommendation && currentFollowUp ? (
               <div className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
@@ -632,15 +657,28 @@ export function AskFarmMate({
                     FarmMate is preparing your answer...
                   </div>
                 ) : naturalAnswer ? (
-                  <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                    <div className="space-y-3">
-                      {naturalAnswer.split(/\n{2,}/).map((paragraph) => (
-                        <p key={paragraph} className="text-sm font-semibold leading-6 text-ink/72">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </section>
+                  <>
+                    {completedAnswerSummary ? (
+                      <p className="rounded-md bg-leaf-50 px-4 py-3 text-xs font-black leading-5 text-ink/60">
+                        You told me: {completedAnswerSummary}
+                      </p>
+                    ) : null}
+                    <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                      <div className="space-y-3">
+                        {naturalAnswer.split(/\n{2,}/).map((paragraph) => (
+                          <p key={paragraph} className="text-sm font-semibold leading-6 text-ink/72">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    </section>
+                  </>
+                ) : null}
+
+                {aiFallbackMessage ? (
+                  <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
+                    {aiFallbackMessage}
+                  </p>
                 ) : null}
 
                 {creditMessage ? (
@@ -649,7 +687,7 @@ export function AskFarmMate({
                   </p>
                 ) : null}
 
-                {!naturalAnswer
+                {shouldShowLocalGuidance
                   ? recommendationCards.map((card) => (
                       <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                         <h3 className="text-sm font-black text-ink">{card.title}</h3>

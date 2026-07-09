@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
+import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "../src/lib/farmmate/conversation-ui";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
@@ -933,6 +934,122 @@ const tests: TestCase[] = [
 
       assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
       assert.equal(result.possibleIssue.toLowerCase().includes("definitely"), false);
+    }
+  },
+  {
+    name: "Ask FarmMate internal structured cards are hidden while AI is preparing",
+    run: () => {
+      const shouldRender = shouldRenderLocalFarmMateGuidance({
+        isGeneratingNaturalAnswer: true,
+        naturalAnswer: "",
+        aiFallbackMessage: "",
+        localCards: [
+          { title: "Here's what I understand", body: ["Crop: Maize"] },
+          { title: "What I think", body: ["Possible nutrient stress."] },
+          { title: "What to do now", body: ["Wait for moisture."] },
+          { title: "Next step", body: ["Check the soil today."] }
+        ]
+      });
+
+      assert.equal(shouldRender, false);
+    }
+  },
+  {
+    name: "Ask FarmMate filler phrases are never rendered in final answer",
+    run: () => {
+      const cleaned = cleanFarmMateFinalAnswer(
+        "I can help.\n\nI will keep it short and focused. Based on what you told me, wait for soil moisture.\n\nHere is the practical next step. Next step: Check the soil today."
+      );
+
+      assert.equal(cleaned.includes("I will keep it short and focused"), false);
+      assert.equal(cleaned.includes("I can help."), false);
+      assert.equal(cleaned.includes("Here is the practical next step"), false);
+      assert.equal(cleaned.includes("Next step: Check the soil today."), true);
+    }
+  },
+  {
+    name: "Ask FarmMate completed follow-up answers collapse into compact summary",
+    run: () => {
+      const summary = compactFollowUpSummary([
+        { answer: "Maize is already flowering" },
+        { answer: "Soil is dry" },
+        { answer: "No fertilizer has been applied yet" }
+      ]);
+
+      assert.equal(summary, "Maize is already flowering · Soil is dry · No fertilizer has been applied yet");
+    }
+  },
+  {
+    name: "Ask FarmMate local structured response only appears during fallback or local-only response",
+    run: () => {
+      const localCards = [{ title: "What I think", body: ["Use local guidance."] }];
+
+      assert.equal(
+        shouldRenderLocalFarmMateGuidance({
+          isGeneratingNaturalAnswer: false,
+          naturalAnswer: "Based on what you told me, wait for moisture.",
+          aiFallbackMessage: "",
+          localCards
+        }),
+        false
+      );
+      assert.equal(
+        shouldRenderLocalFarmMateGuidance({
+          isGeneratingNaturalAnswer: false,
+          naturalAnswer: "",
+          aiFallbackMessage: "FarmMate AI is temporarily limited, but you can still use the local guidance.",
+          localCards
+        }),
+        true
+      );
+      assert.equal(
+        shouldRenderLocalFarmMateGuidance({
+          isGeneratingNaturalAnswer: false,
+          naturalAnswer: "",
+          aiFallbackMessage: "",
+          localCards,
+          isLocalOnlyResponse: true
+        }),
+        true
+      );
+      assert.equal(
+        shouldRenderLocalFarmMateGuidance({
+          isGeneratingNaturalAnswer: false,
+          naturalAnswer: "",
+          aiFallbackMessage: "",
+          localCards
+        }),
+        false
+      );
+    }
+  },
+  {
+    name: "Ask FarmMate final AI response displays cleanly",
+    run: () => {
+      const finalAnswer = cleanFarmMateFinalAnswer(
+        "Based on what you told me, your maize is already flowering, the soil is dry, and no fertilizer has been applied yet.\n\nNext step: Wait until the soil has moisture before applying fertilizer."
+      );
+
+      assert.equal(finalAnswer.startsWith("Based on what you told me"), true);
+      assert.equal(finalAnswer.includes("What I think"), false);
+      assert.equal(finalAnswer.includes("Here's what I understand"), false);
+    }
+  },
+  {
+    name: "Ask FarmMate fallback still works when OpenAI fails",
+    run: () => {
+      const message = farmMateFallbackMessage();
+
+      assert.equal(message, "FarmMate AI is temporarily limited, but you can still use the local guidance.");
+      assert.equal(
+        shouldRenderLocalFarmMateGuidance({
+          isGeneratingNaturalAnswer: false,
+          naturalAnswer: "",
+          aiFallbackMessage: message,
+          localCards: [{ title: "Next step", body: ["Check the soil today."] }]
+        }),
+        true
+      );
     }
   }
 ];

@@ -61,6 +61,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     responseRules: [
       "Keep the answer concise and conversational.",
       "Use the farmer's answers when explaining the recommendation.",
+      "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

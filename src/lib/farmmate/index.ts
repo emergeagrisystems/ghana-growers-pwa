@@ -14,6 +14,7 @@ export * from "./fertilizer-specialist";
 export * from "./farmmate-qa-examples";
 export * from "./crop-doctor-demo";
 export * from "./crop-doctor-vision";
+export * from "./conversation-ui";
 export * as farmMateDecisionEngine from "./decision-engine";
 export * as farmMateConversationManager from "./conversation-manager";
 export * as farmMateAi from "./ai";
