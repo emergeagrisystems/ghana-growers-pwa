@@ -6,7 +6,6 @@ import {
   BookOpen,
   CalendarDays,
   Camera,
-  CheckCircle2,
   Droplets,
   Leaf,
   PackageCheck,
@@ -17,7 +16,16 @@ import {
   Sprout,
   Wheat
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getCurrentLearnChallenge,
+  getLearnChallengeById,
+  isChallengeComplete,
+  LEARN_CHALLENGE_STORAGE_KEY,
+  nextOpenChallengeDay,
+  type LearnChallenge,
+  type LearnChallengeProgress
+} from "@/lib/learn-challenges";
 import type { BlogPost } from "@/types";
 
 type LearnHubProps = {
@@ -258,16 +266,6 @@ const liveFarmMateTools = [
   }
 ];
 
-const challengeSteps = [
-  "Day 1: Collect dry leaves and crop waste.",
-  "Day 2: Choose a compost corner.",
-  "Day 3: Build your first pile.",
-  "Day 4: Cover the pile.",
-  "Day 5: Check moisture.",
-  "Day 6: Turn the pile.",
-  "Day 7: Ask FarmMate what to improve."
-];
-
 function lessonByTitle(posts: BlogPost[], title: string) {
   return posts.find((post) => post.title === title);
 }
@@ -433,6 +431,113 @@ function VideosPanel({ posts }: { posts: BlogPost[] }) {
   );
 }
 
+function readChallengeProgress(): LearnChallengeProgress | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LEARN_CHALLENGE_STORAGE_KEY) ?? "null") as Partial<LearnChallengeProgress> | null;
+
+    if (!parsed?.challengeId || !Array.isArray(parsed.completedDays)) {
+      return null;
+    }
+
+    const challenge = getLearnChallengeById(parsed.challengeId);
+
+    if (!challenge) {
+      return null;
+    }
+
+    return {
+      challengeId: challenge.id,
+      completedDays: parsed.completedDays.filter((day): day is number => typeof day === "number" && challenge.days.some((step) => step.day === day))
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeChallengeProgress(progress: LearnChallengeProgress) {
+  window.localStorage.setItem(LEARN_CHALLENGE_STORAGE_KEY, JSON.stringify(progress));
+}
+
+function CurrentChallengeCard() {
+  const [challenge, setChallenge] = useState<LearnChallenge>(() => getCurrentLearnChallenge());
+  const [completedDays, setCompletedDays] = useState<number[]>([]);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  useEffect(() => {
+    const saved = readChallengeProgress();
+
+    if (saved) {
+      const savedChallenge = getLearnChallengeById(saved.challengeId) ?? getCurrentLearnChallenge();
+      setChallenge(savedChallenge);
+      setCompletedDays(saved.completedDays);
+      setHasStarted(true);
+      return;
+    }
+
+    setChallenge(getCurrentLearnChallenge());
+    setCompletedDays([]);
+    setHasStarted(false);
+  }, []);
+
+  const isComplete = isChallengeComplete(challenge, completedDays);
+  const nextDay = nextOpenChallengeDay(challenge, completedDays);
+  const buttonText = !hasStarted ? "Start Day 1" : isComplete ? "Challenge complete" : `Continue Day ${nextDay}`;
+  const firstThreeDays = challenge.days.slice(0, 3);
+
+  function startChallenge() {
+    if (!hasStarted) {
+      writeChallengeProgress({ challengeId: challenge.id, completedDays: [] });
+      setHasStarted(true);
+    }
+  }
+
+  return (
+    <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-soft sm:p-6">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">CURRENT CHALLENGE</p>
+      <h2 className="mt-2 text-2xl font-black leading-tight">{challenge.title}</h2>
+      <p className="mt-3 text-sm font-semibold leading-6 text-white/78">{challenge.description}</p>
+
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-white/72">
+        <span className="rounded-md bg-white/10 px-3 py-2">{challenge.durationDays} days</span>
+        <span className="rounded-md bg-white/10 px-3 py-2">{challenge.category}</span>
+        <span className="rounded-md bg-white/10 px-3 py-2">Saved on this phone only.</span>
+      </div>
+
+      <div className="mt-5 grid gap-2">
+        {firstThreeDays.map((day) => {
+          const complete = completedDays.includes(day.day);
+
+          return (
+            <div key={day.day} className="flex gap-2 rounded-md bg-white/10 p-3 text-sm font-semibold leading-5 text-white/86">
+              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-earth-500">
+                {complete ? "OK" : day.day}
+              </span>
+              <span>
+                <span className="font-black">Day {day.day}: </span>
+                {day.title}
+                {complete ? <span className="ml-2 text-xs uppercase tracking-wide">Completed</span> : null}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <Link
+        href="/learn/challenges/soil-health"
+        onClick={startChallenge}
+        aria-disabled={isComplete}
+        className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50"
+      >
+        {buttonText}
+      </Link>
+    </article>
+  );
+}
+
 function AllLessonsPanel({ posts }: { posts: BlogPost[] }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<LearnFilter>("All");
@@ -559,21 +664,7 @@ function TodayPanel({ posts }: { posts: BlogPost[] }) {
           </div>
         </article>
 
-        <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-soft sm:p-6">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">7-Day Soil Health Challenge</p>
-          <h2 className="mt-2 text-2xl font-black">Start improving your soil this week with small steps.</h2>
-          <div className="mt-5 grid gap-2 sm:grid-cols-2">
-            {challengeSteps.map((step) => (
-              <div key={step} className="flex gap-2 rounded-md bg-white/10 p-3 text-sm font-semibold leading-5 text-white/86">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-earth-500" aria-hidden="true" />
-                <span>{step}</span>
-              </div>
-            ))}
-          </div>
-          <Link href="/learn/challenges/soil-health" className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
-            Start Day 1
-          </Link>
-        </article>
+        <CurrentChallengeCard />
       </div>
     </section>
   );

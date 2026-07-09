@@ -10,6 +10,7 @@ import {
   weatherGuidedRecommendationCards
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
+import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
@@ -191,6 +192,61 @@ const tests: TestCase[] = [
         assert.equal(text.includes("rain will come"), false);
         assert.equal(text.includes("rain is coming"), false);
       }
+    }
+  },
+  {
+    name: "Skills Center has rotating challenges with required durations",
+    run: () => {
+      assert.deepEqual(
+        learnChallenges.map((challenge) => challenge.durationDays),
+        [7, 5, 3, 5, 7, 3]
+      );
+      assert.equal(learnChallenges[0].title, "7-Day Soil Health Challenge");
+      assert.equal(learnChallenges.every((challenge) => challenge.days.length === challenge.durationDays), true);
+    }
+  },
+  {
+    name: "Skills Center challenge rotation is stable during one day",
+    run: () => {
+      const morning = getCurrentLearnChallenge(new Date("2026-07-09T06:00:00.000Z"));
+      const evening = getCurrentLearnChallenge(new Date("2026-07-09T20:00:00.000Z"));
+
+      assert.equal(morning.id, evening.id);
+    }
+  },
+  {
+    name: "Skills Center challenge rotation respects challenge duration",
+    run: () => {
+      const first = getCurrentLearnChallenge(new Date("1970-01-01T12:00:00.000Z"));
+      const seventh = getCurrentLearnChallenge(new Date("1970-01-07T12:00:00.000Z"));
+      const eighth = getCurrentLearnChallenge(new Date("1970-01-08T12:00:00.000Z"));
+
+      assert.equal(first.id, "soil-health");
+      assert.equal(seventh.id, "soil-health");
+      assert.equal(eighth.id, "water-saving");
+    }
+  },
+  {
+    name: "Skills Center challenge progress finds next open day",
+    run: () => {
+      const challenge = learnChallenges[0];
+
+      assert.equal(nextOpenChallengeDay(challenge, []), 1);
+      assert.equal(nextOpenChallengeDay(challenge, [1, 2, 3]), 4);
+      assert.equal(isChallengeComplete(challenge, [1, 2, 3, 4, 5, 6, 7]), true);
+    }
+  },
+  {
+    name: "Soil Health Challenge days include practical action details",
+    run: () => {
+      const dayOne = learnChallenges[0].days[0];
+
+      assert.equal(dayOne.title, "Collect dry leaves and crop waste");
+      assert.equal(dayOne.howToDoIt.length >= 5, true);
+      assert.equal(dayOne.doneWhen.includes("collected enough clean farm waste"), true);
+      assert.equal(dayOne.commonMistake.includes("Do not add plastic"), true);
+      assert.deepEqual(dayOne.actionSteps, ["Gather materials", "Remove rubbish", "Keep in shade"]);
+      assert.equal(dayOne.farmMatePrompt, "What materials on my farm can I use for compost?");
     }
   },
   {
