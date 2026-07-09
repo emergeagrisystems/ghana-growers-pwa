@@ -141,9 +141,9 @@ export function SoilHealthChallenge() {
 
   return (
     <div className="bg-gradient-to-b from-earth-50 via-white to-leaf-50 text-ink">
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pb-32 sm:pt-12 lg:px-8 lg:py-12">
         <div className="grid gap-6 lg:grid-cols-[0.38fr_0.62fr] lg:items-start">
-          <aside className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+          <aside className="order-2 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6 lg:order-1">
             <div className="flex items-start gap-3">
               <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                 <Leaf size={24} aria-hidden="true" />
@@ -156,9 +156,8 @@ export function SoilHealthChallenge() {
 
             <p className="mt-4 text-base font-semibold leading-7 text-ink/68">{challenge.description}</p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-ink/58">
-              <span className="rounded-md bg-leaf-50 px-3 py-2">{challenge.durationDays} days</span>
+              <span className="rounded-md bg-leaf-50 px-3 py-2">{challenge.durationDays}-day challenge</span>
               <span className="rounded-md bg-leaf-50 px-3 py-2">{challenge.category}</span>
-              <span className="rounded-md bg-earth-50 px-3 py-2">Saved on this phone only.</span>
             </div>
 
             <div className="mt-6 rounded-md bg-leaf-50 p-4" aria-label={`Progress: Day ${activeTask.day} of ${challenge.durationDays}, ${completedCount} completed`}>
@@ -211,7 +210,7 @@ export function SoilHealthChallenge() {
             </button>
           </aside>
 
-          <main className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+          <main className="order-1 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6 lg:order-2">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="gg-eyebrow">{isComplete ? "Challenge complete" : "Today's task"}</p>
@@ -282,7 +281,7 @@ export function SoilHealthChallenge() {
               </section>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-6 hidden flex-col gap-3 lg:flex lg:flex-row lg:flex-wrap">
               <button
                 type="button"
                 onClick={markActiveDayDone}
@@ -297,6 +296,23 @@ export function SoilHealthChallenge() {
               </Link>
             </div>
           </main>
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-leaf-900/10 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl gap-2">
+            <button
+              type="button"
+              onClick={markActiveDayDone}
+              disabled={isComplete}
+              className="focus-ring min-h-12 flex-1 rounded-md bg-leaf-600 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-700 disabled:cursor-not-allowed disabled:bg-leaf-600/55"
+            >
+              {primaryButtonText}
+            </button>
+            <Link href={farmMateHref(activeTask.farmMatePrompt)} className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md border border-leaf-900/15 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
+              <Bot size={18} aria-hidden="true" />
+              Ask FarmMate
+            </Link>
+          </div>
         </div>
 
         <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">

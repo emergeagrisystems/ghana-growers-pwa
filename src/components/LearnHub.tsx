@@ -502,7 +502,7 @@ function CurrentChallengeCard() {
       <p className="mt-3 text-sm font-semibold leading-6 text-white/78">{challenge.description}</p>
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-white/72">
-        <span className="rounded-md bg-white/10 px-3 py-2">{challenge.durationDays} days</span>
+        <span className="rounded-md bg-white/10 px-3 py-2">{challenge.durationDays}-day challenge</span>
         <span className="rounded-md bg-white/10 px-3 py-2">{challenge.category}</span>
         <span className="rounded-md bg-white/10 px-3 py-2">Saved on this phone only.</span>
       </div>
