@@ -1,6 +1,6 @@
 "use client";
 
-import type { FarmMateCreditStatus, FarmMateUsageTool } from "./types";
+import { farmMateCreditLine } from "./rules";
 
 const FARM_MATE_DEVICE_ID_KEY = "gg-farmmate-anonymous-device-id";
 
@@ -29,14 +29,4 @@ export function getFarmMateAnonymousDeviceId() {
   return nextDeviceId;
 }
 
-export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCreditStatus | null) {
-  if (!status) {
-    return tool === "ask_farmmate" ? "FarmMate Credits: checking Ask questions..." : "Crop Doctor Credits: checking analyses...";
-  }
-
-  if (tool === "ask_farmmate") {
-    return `FarmMate Credits: ${status.remaining} Ask question${status.remaining === 1 ? "" : "s"} remaining`;
-  }
-
-  return `Crop Doctor Credits: ${status.remaining} ${status.remaining === 1 ? "analysis" : "analyses"} remaining`;
-}
+export { farmMateCreditLine };

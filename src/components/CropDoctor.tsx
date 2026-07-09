@@ -5,7 +5,13 @@ import Image from "next/image";
 import { ChangeEvent, useEffect, useState } from "react";
 import type { CropDoctorVisionResult } from "@/lib/farmmate/crop-doctor-vision";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
-import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
+import {
+  CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
+  cropDoctorCreditMessage,
+  shouldDisableCropDoctorAnalysis,
+  type FarmMateCreditDecision,
+  type FarmMateCreditStatus
+} from "@/lib/farmmate/usage";
 
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -16,6 +22,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const [diagnosis, setDiagnosis] = useState<CropDoctorVisionResult | null>(null);
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
+  const [showAskFarmMateFallback, setShowAskFarmMateFallback] = useState(false);
+  const isCreditExhausted = shouldDisableCropDoctorAnalysis(credits);
 
   useEffect(() => {
     return () => {
@@ -42,6 +50,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
       if (data?.credits) {
         setCredits(data.credits);
+        if (data.credits.isExhausted) {
+          setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: data.credits.refreshInText }));
+          setShowAskFarmMateFallback(true);
+        }
       }
     } catch {
       setCredits(null);
@@ -68,7 +80,13 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     setDiagnosis(null);
     setHasDiagnosis(false);
     setIsAnalysing(false);
-    setCreditMessage("");
+    if (isCreditExhausted && credits) {
+      setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: credits.refreshInText }));
+      setShowAskFarmMateFallback(true);
+    } else {
+      setCreditMessage("");
+      setShowAskFarmMateFallback(false);
+    }
   }
 
   async function analyseCrop() {
@@ -76,7 +94,14 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       return;
     }
 
+    if (isCreditExhausted && credits) {
+      setCreditMessage(cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: credits.refreshInText }));
+      setShowAskFarmMateFallback(true);
+      return;
+    }
+
     setCreditMessage("");
+    setShowAskFarmMateFallback(false);
     setDiagnosis(null);
     setIsAnalysing(true);
     setHasDiagnosis(false);
@@ -93,7 +118,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       ok?: boolean;
       result?: CropDoctorVisionResult;
       credits?: FarmMateCreditStatus;
-      reason?: string;
+      reason?: FarmMateCreditDecision["reason"] | string;
       message?: string;
     } | null;
 
@@ -103,10 +128,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
     if (!response?.ok || !data?.ok || !data.result) {
       setIsAnalysing(false);
-      setCreditMessage(
-        data?.message ||
-          "FarmMate could not complete the photo check right now. You can still ask FarmMate to guide you using a description of what you see."
-      );
+      setCreditMessage(data?.message || "FarmMate could not complete the photo check right now. You can still ask FarmMate to guide you using a description of what you see.");
+      setShowAskFarmMateFallback(data?.reason === "credits_exhausted" || data?.reason === "usage_tracking_unavailable");
       return;
     }
 
@@ -117,7 +140,14 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
   function askFarmMateAboutThis() {
     const farmMateQuestion = diagnosis?.askFarmMatePrompt ?? "I uploaded a crop photo. What should I check next?";
+    askFarmMate(farmMateQuestion);
+  }
 
+  function askFarmMateInstead() {
+    askFarmMate(CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT);
+  }
+
+  function askFarmMate(farmMateQuestion: string) {
     if (onAskFarmMateAboutThis) {
       onAskFarmMateAboutThis(farmMateQuestion);
       return;
@@ -165,7 +195,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <button
               type="button"
               onClick={analyseCrop}
-              disabled={isAnalysing}
+              disabled={isAnalysing || isCreditExhausted}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               {isAnalysing ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Stethoscope size={18} aria-hidden="true" />}
@@ -184,9 +214,18 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         ) : null}
 
         {creditMessage ? (
-          <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
-            {creditMessage}
-          </p>
+          <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
+            <p className="text-sm font-bold leading-6 text-ink/68">{creditMessage}</p>
+            {showAskFarmMateFallback ? (
+              <button
+                type="button"
+                onClick={askFarmMateInstead}
+                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+              >
+                Ask FarmMate instead
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {hasDiagnosis && diagnosis ? (

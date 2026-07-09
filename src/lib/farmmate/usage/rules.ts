@@ -111,3 +111,42 @@ export function usageTrackingUnavailableDecision(tool: FarmMateUsageTool, now = 
     reason: "usage_tracking_unavailable"
   };
 }
+
+export const CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT =
+  "I uploaded a crop photo but Crop Doctor is not available right now. Can you guide me on what to check?";
+
+export const CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE =
+  "Crop Doctor AI is temporarily limited, but you can still ask FarmMate for guidance.";
+
+export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCreditStatus | null) {
+  if (!status) {
+    return tool === "ask_farmmate" ? "FarmMate Credits: checking Ask questions..." : "Crop Doctor Credits: checking checks...";
+  }
+
+  if (status.isExhausted) {
+    const label = tool === "ask_farmmate" ? "Ask questions" : "checks";
+    return `0 ${label} remaining — refreshes in ${status.refreshInText}`;
+  }
+
+  if (tool === "ask_farmmate") {
+    return `FarmMate Credits: ${status.remaining} of ${status.limit} Ask questions available`;
+  }
+
+  return `Crop Doctor Credits: ${status.remaining} of ${status.limit} available`;
+}
+
+export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
+  if (decision.reason === "usage_tracking_unavailable") {
+    return CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE;
+  }
+
+  if (decision.reason === "rapid_submission") {
+    return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
+  }
+
+  return `You've used your free Crop Doctor checks for now. Your credits refresh in ${decision.refreshInText}.`;
+}
+
+export function shouldDisableCropDoctorAnalysis(status?: FarmMateCreditStatus | null) {
+  return Boolean(status?.isExhausted);
+}

@@ -4,21 +4,10 @@ import {
   CROP_DOCTOR_FALLBACK_MESSAGE,
   validateCropDoctorImage
 } from "@/lib/farmmate/crop-doctor-vision";
+import { cropDoctorCreditMessage, CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE } from "@/lib/farmmate/usage";
 import { checkFarmMateCreditsForDevice, getFarmMateCreditsForDevice, recordFarmMateUsageForDevice } from "@/lib/farmmate/usage/server";
 
 export const dynamic = "force-dynamic";
-
-function creditMessage(decision: Awaited<ReturnType<typeof checkFarmMateCreditsForDevice>>) {
-  if (decision.reason === "usage_tracking_unavailable") {
-    return "Crop Doctor is temporarily limited, but you can still use the other FarmMate tools.";
-  }
-
-  if (decision.reason === "rapid_submission") {
-    return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
-  }
-
-  return `You've used your free Crop Doctor checks for now. Your credits refresh in ${decision.refreshInText}.`;
-}
 
 export async function POST(request: Request) {
   const formData = await request.formData().catch(() => null);
@@ -54,7 +43,7 @@ export async function POST(request: Request) {
         ok: false,
         reason: creditDecision.reason,
         credits: creditDecision,
-        message: creditMessage(creditDecision)
+        message: cropDoctorCreditMessage(creditDecision)
       },
       { status: creditDecision.reason === "usage_tracking_unavailable" ? 503 : 429 }
     );
@@ -99,7 +88,7 @@ export async function POST(request: Request) {
         reason: "usage_tracking_unavailable",
         fallback: true,
         credits,
-        message: "Crop Doctor is temporarily limited, but you can still use the other FarmMate tools."
+        message: CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE
       },
       { status: 503 }
     );
