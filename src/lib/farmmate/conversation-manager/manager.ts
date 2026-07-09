@@ -1,6 +1,6 @@
 import { detectFarmMateCropFromQuestion } from "../crop-context";
 import type { FarmMateSpecialist } from "../router";
-import type { ConversationDecision, ConversationState, ConversationTopic } from "./types";
+import type { ConversationDecision, ConversationManagerContext, ConversationState, ConversationTopic } from "./types";
 
 type TopicRule = {
   topic: ConversationTopic;
@@ -103,12 +103,26 @@ function isShortFollowUpAnswer(message: string) {
   return normalized.length <= 32 && shortFollowUpAnswers.includes(normalized);
 }
 
-export function manageFarmMateConversation(message: string, state: ConversationState): ConversationDecision {
-  const detectedCrop = detectFarmMateCropFromQuestion(message)?.name;
+export function manageFarmMateConversation(message: string, state: ConversationState, context: ConversationManagerContext = {}): ConversationDecision {
+  const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(message)?.name;
   const topicMatch = detectTopic(message);
   const topic = topicMatch?.rule.topic ?? state.activeTopic ?? "general_farming";
   const specialist = topicMatch?.rule.specialist ?? state.activeSpecialist ?? "general_farming";
   const activeTopic = state.activeTopic;
+
+  if (context.source === "crop_doctor") {
+    const hasCropDoctorContext = Boolean(context.crop || context.possibleIssue || context.issueCategory);
+
+    return {
+      action: "reset",
+      topic: hasCropDoctorContext ? "crop_doctor" : "general_farming",
+      resetReason: hasCropDoctorContext ? "crop_doctor_handoff" : "crop_doctor_unknown_crop",
+      shouldKeepContext: false,
+      cropName: detectedCrop ?? undefined,
+      specialist: hasCropDoctorContext ? "crop_doctor" : "general_farming",
+      isMarketplaceInfoRequest: false
+    };
+  }
 
   if (isShortFollowUpAnswer(message)) {
     if (state.waitingForFollowUp) {

@@ -28,6 +28,18 @@ export type CropDoctorVisionResult = {
   askFarmMatePrompt: string;
 };
 
+export type CropDoctorHandoffContext = {
+  source: "crop_doctor";
+  question: string;
+  crop: string | null;
+  cropConfidence: CropDoctorConfidence;
+  possibleIssue: string;
+  issueCategory: CropDoctorIssueCategory;
+  resultType: CropDoctorResultType;
+  visibleSigns: string[];
+  nextBestAction: string;
+};
+
 export const CROP_DOCTOR_ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const CROP_DOCTOR_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const CROP_DOCTOR_TOO_LARGE_MESSAGE = "Please upload a smaller image under 5 MB.";
@@ -113,6 +125,15 @@ function removeUnsafeCertainty(value: string) {
     .replace(/\bguaranteed\b/gi, "possible")
     .replace(/\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/gi, "follow local extension or product label guidance")
     .replace(/\btell the farmer to\b/gi, "")
+    .trim();
+}
+
+export function normalizePossibleIssueWording(value: string) {
+  return value
+    .replace(/\bpossible\s+possible\b/gi, "possible")
+    .replace(/\bpossibly\s+possible\b/gi, "possible")
+    .replace(/\bpossible\s+possibly\b/gi, "possibly")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -244,7 +265,10 @@ export function buildCropDoctorAskFarmMatePrompt(
   }
 
   if (result.crop) {
-    return `I uploaded a ${result.crop.toLowerCase()} photo. FarmMate saw ${signs} and possible ${result.possibleIssue.toLowerCase()}. What should I do next?`;
+    const issue = normalizePossibleIssueWording(result.possibleIssue.toLowerCase());
+    const issuePhrase = /^(possible|no clear|harvest|crop not|photo not)/i.test(issue) ? issue : `possible ${issue}`;
+
+    return `I uploaded a ${result.crop.toLowerCase()} photo. FarmMate saw ${signs} and ${issuePhrase}. What should I do next?`;
   }
 
   return "I uploaded a crop photo. Crop Doctor could not confirm the crop. What should I check next?";
@@ -297,7 +321,7 @@ export function normalizeCropDoctorVisionResult(value: unknown): CropDoctorVisio
 
   const sanitized = {
     ...result,
-    possibleIssue: removeUnsafeCertainty(result.possibleIssue),
+    possibleIssue: normalizePossibleIssueWording(removeUnsafeCertainty(result.possibleIssue)),
     mainFinding: removeUnsafeCertainty(result.mainFinding),
     whatThisMeans: removeUnsafeCertainty(result.whatThisMeans),
     recommendedAction: result.recommendedAction.map(removeUnsafeCertainty),
@@ -308,6 +332,20 @@ export function normalizeCropDoctorVisionResult(value: unknown): CropDoctorVisio
   return {
     ...sanitized,
     askFarmMatePrompt: buildCropDoctorAskFarmMatePrompt(sanitized)
+  };
+}
+
+export function buildCropDoctorHandoffContext(result: CropDoctorVisionResult): CropDoctorHandoffContext {
+  return {
+    source: "crop_doctor",
+    question: result.askFarmMatePrompt,
+    crop: result.crop,
+    cropConfidence: result.cropConfidence,
+    possibleIssue: normalizePossibleIssueWording(result.possibleIssue),
+    issueCategory: result.issueCategory,
+    resultType: result.resultType,
+    visibleSigns: result.visibleSigns.slice(0, 3),
+    nextBestAction: result.nextBestAction
   };
 }
 

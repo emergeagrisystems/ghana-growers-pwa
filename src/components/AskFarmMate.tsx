@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
+import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
 import {
@@ -126,6 +127,26 @@ function conversationalOption(questionId: string, option: string) {
       "Vegetative growth": "The crop is growing leaves",
       "Flowering or fruiting": "The crop is flowering or fruiting",
       "Not sure": "I am not sure about the stage"
+    },
+    "crop-doctor-pest-under-leaves": {
+      "Yes, I see tiny insects or webbing": "I see tiny insects or webbing under the leaves",
+      "No, I do not see them": "I do not see tiny insects or webbing under the leaves",
+      "I am not sure": "I am not sure if there are insects or webbing"
+    },
+    "crop-doctor-pest-spread": {
+      "Yes, many leaves are affected": "Many leaves show the same signs",
+      "Only a few leaves are affected": "Only a few leaves show the signs",
+      "I am not sure": "I am not sure if the signs are spreading"
+    },
+    "crop-doctor-leaf-spread": {
+      "Yes, nearby plants are affected": "Nearby plants show the same signs",
+      "No, only a few leaves": "Only a few leaves show the signs",
+      "I am not sure": "I am not sure if nearby plants are affected"
+    },
+    "crop-doctor-recent-rain": {
+      "Yes, after rain or wet leaves": "The problem appeared after rain or wet leaves",
+      "No recent rain": "There has not been recent rain",
+      "I am not sure": "I am not sure about recent rain"
     }
   };
 
@@ -328,9 +349,11 @@ function logConversationDecision(message: string, state: ConversationState, deci
 
 export function AskFarmMate({
   prefillQuestion,
+  cropDoctorHandoff,
   onOpenCropDoctor
 }: {
   prefillQuestion?: string;
+  cropDoctorHandoff?: CropDoctorHandoffContext | null;
   onOpenCropDoctor?: () => void;
 }) {
   const [question, setQuestion] = useState("");
@@ -351,6 +374,7 @@ export function AskFarmMate({
     waitingForFollowUp: false,
     turns: []
   });
+  const [activeCropDoctorHandoff, setActiveCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
 
   const canAsk = question.trim().length > 0 && !isThinking;
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
@@ -358,9 +382,16 @@ export function AskFarmMate({
 
   useEffect(() => {
     function handlePrefill(event: Event) {
-      const customEvent = event as CustomEvent<string>;
+      const customEvent = event as CustomEvent<string | CropDoctorHandoffContext>;
       if (customEvent.detail) {
-        setQuestion(customEvent.detail);
+        if (typeof customEvent.detail === "string") {
+          setQuestion(customEvent.detail);
+          setActiveCropDoctorHandoff(null);
+          return;
+        }
+
+        setQuestion(customEvent.detail.question);
+        setActiveCropDoctorHandoff(customEvent.detail);
       }
     }
 
@@ -373,6 +404,13 @@ export function AskFarmMate({
       setQuestion(prefillQuestion);
     }
   }, [prefillQuestion]);
+
+  useEffect(() => {
+    if (cropDoctorHandoff) {
+      setActiveCropDoctorHandoff(cropDoctorHandoff);
+      setQuestion(cropDoctorHandoff.question);
+    }
+  }, [cropDoctorHandoff]);
 
   async function refreshCredits() {
     try {
@@ -461,7 +499,8 @@ export function AskFarmMate({
       return;
     }
 
-    const conversationDecision = manageFarmMateConversation(trimmedQuestion, conversationState);
+    const handoffContext = activeCropDoctorHandoff?.question === trimmedQuestion ? activeCropDoctorHandoff : null;
+    const conversationDecision = manageFarmMateConversation(trimmedQuestion, conversationState, handoffContext ?? undefined);
 
     if (conversationDecision.action === "continue" && conversationState.waitingForFollowUp && currentFollowUp) {
       logConversationDecision(trimmedQuestion, conversationState, conversationDecision, conversationDecision.specialist);
@@ -483,7 +522,7 @@ export function AskFarmMate({
     setCreditReason("");
     setIsThinking(true);
 
-    const routerResult = routeFarmMateQuestion(trimmedQuestion);
+    const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
     logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
     logRouterResult(routerResult);
     const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
@@ -509,7 +548,7 @@ export function AskFarmMate({
     }
 
     window.setTimeout(() => {
-      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, { previousCropName });
+      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, { previousCropName, cropDoctorContext: handoffContext ?? undefined });
       const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
 
       logBrainContext(trimmedQuestion, farmMateResponse);
@@ -532,6 +571,7 @@ export function AskFarmMate({
       if (shouldShowRecommendation) {
         void requestNaturalAnswer(trimmedQuestion, farmMateResponse, []);
       }
+      setActiveCropDoctorHandoff(null);
     }, 1200);
   }
 
@@ -591,7 +631,12 @@ export function AskFarmMate({
           <textarea
             id="ask-farmmate-question"
             value={question}
-            onChange={(event) => setQuestion(event.target.value)}
+            onChange={(event) => {
+              setQuestion(event.target.value);
+              if (activeCropDoctorHandoff && event.target.value !== activeCropDoctorHandoff.question) {
+                setActiveCropDoctorHandoff(null);
+              }
+            }}
             placeholder="Example: Why are my tomato leaves turning yellow?"
             className="gg-field min-h-36 resize-none bg-leaf-50/70 px-4 py-4 text-base leading-7 focus:bg-white"
           />

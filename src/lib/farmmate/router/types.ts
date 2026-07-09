@@ -27,6 +27,13 @@ export type RouterResult = {
   detectedCrop?: string;
 };
 
+export type FarmMateRouterContext = {
+  source?: "crop_doctor";
+  crop?: string | null;
+  issueCategory?: "pest" | "disease" | "nutrient" | "water_stress" | "unknown";
+  possibleIssue?: string;
+};
+
 export type FarmMateSpecialistProfile = {
   specialist: FarmMateSpecialist;
   title: string;

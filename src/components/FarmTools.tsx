@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
+import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 
 type ToolKey = "ask" | "doctor" | "calendar" | "planting";
 
@@ -84,6 +85,7 @@ export function FarmTools() {
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
+  const [cropDoctorHandoff, setCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
   const activeToolMeta = tools.find((tool) => tool.key === activeTool);
   const sheetBackground =
     activeTool === "ask" ? "bg-gradient-to-b from-white via-earth-50 to-leaf-50" : "bg-earth-50";
@@ -125,8 +127,16 @@ export function FarmTools() {
     }, 180);
   }
 
-  function askFarmMateFromDoctor(question: string) {
-    setPrefillQuestion(question);
+  function askFarmMateFromDoctor(handoff: CropDoctorHandoffContext | string) {
+    if (typeof handoff === "string") {
+      setPrefillQuestion(handoff);
+      setCropDoctorHandoff(null);
+      openTool("ask");
+      return;
+    }
+
+    setPrefillQuestion(handoff.question);
+    setCropDoctorHandoff(handoff);
     openTool("ask");
   }
 
@@ -189,7 +199,7 @@ export function FarmTools() {
 
             <div className="max-h-[calc(94vh-5rem)] overflow-y-auto px-4 py-6 sm:px-6">
               <div className="mx-auto max-w-2xl">
-                {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} onOpenCropDoctor={openCropDoctorFromAsk} /> : null}
+                {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} onOpenCropDoctor={openCropDoctorFromAsk} /> : null}
                 {activeTool === "doctor" ? <CropDoctor onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
                 {activeTool === "calendar" ? <CropCalendarExperience /> : null}
                 {activeTool === "planting" ? <PlantingAdvisorExperience /> : null}

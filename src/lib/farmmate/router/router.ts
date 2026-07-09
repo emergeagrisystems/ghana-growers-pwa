@@ -1,6 +1,6 @@
 import { farmMateRouterRules } from "./rules";
 import { detectFarmMateCropFromQuestion } from "../crop-context";
-import type { RouterConfidence, RouterResult, RouterRule } from "./types";
+import type { FarmMateRouterContext, RouterConfidence, RouterResult, RouterRule } from "./types";
 
 function normalizeQuestion(question: string) {
   return question.toLowerCase().replace(/\s+/g, " ").trim();
@@ -22,9 +22,9 @@ function confidenceFromMatches(matchCount: number): RouterConfidence {
   return "low";
 }
 
-export function routeFarmMateQuestion(question: string): RouterResult {
+export function routeFarmMateQuestion(question: string, context: FarmMateRouterContext = {}): RouterResult {
   const normalizedQuestion = normalizeQuestion(question);
-  const detectedCrop = detectFarmMateCropFromQuestion(question)?.name;
+  const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(question)?.name;
   const fallbackResult: RouterResult = {
     selectedSpecialist: "general_farming",
     confidence: "low",
@@ -36,6 +36,23 @@ export function routeFarmMateQuestion(question: string): RouterResult {
 
   if (!normalizedQuestion) {
     return fallbackResult;
+  }
+
+  if (context.source === "crop_doctor") {
+    const hasCropDoctorContext = Boolean(context.crop || context.possibleIssue || context.issueCategory);
+
+    if (!hasCropDoctorContext) {
+      return fallbackResult;
+    }
+
+    return {
+      selectedSpecialist: context.issueCategory === "unknown" ? "crop_doctor" : "crop_doctor",
+      confidence: "high",
+      matchedKeywords: ["crop_doctor_handoff"],
+      reason: "Crop Doctor handed off structured photo context, so FarmMate should stay inside crop photo and plant health guidance.",
+      suggestedFallbackSpecialist: "crop_health",
+      detectedCrop: detectedCrop ?? undefined
+    };
   }
 
   const matches = farmMateRouterRules

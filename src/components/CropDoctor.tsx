@@ -4,7 +4,13 @@ import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } fr
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react";
-import { cropDoctorResultBadge, cropDoctorResultHeadline, type CropDoctorVisionResult } from "@/lib/farmmate/crop-doctor-vision";
+import {
+  buildCropDoctorHandoffContext,
+  cropDoctorResultBadge,
+  cropDoctorResultHeadline,
+  type CropDoctorHandoffContext,
+  type CropDoctorVisionResult
+} from "@/lib/farmmate/crop-doctor-vision";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import {
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
@@ -38,7 +44,7 @@ function logCropDoctorCreditState(detail: {
   });
 }
 
-export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (question: string) => void }) {
+export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (handoff: CropDoctorHandoffContext | string) => void }) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
@@ -216,21 +222,30 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   }
 
   function askFarmMateAboutThis() {
-    const farmMateQuestion = diagnosis?.askFarmMatePrompt ?? "I uploaded a crop photo. What should I check next?";
-    askFarmMate(farmMateQuestion);
-  }
-
-  function askFarmMateInstead() {
-    askFarmMate(CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT);
-  }
-
-  function askFarmMate(farmMateQuestion: string) {
-    if (onAskFarmMateAboutThis) {
-      onAskFarmMateAboutThis(farmMateQuestion);
+    if (!diagnosis) {
       return;
     }
 
-    window.dispatchEvent(new CustomEvent("gg-farmmate-prefill", { detail: farmMateQuestion }));
+    askFarmMate(buildCropDoctorHandoffContext(diagnosis));
+  }
+
+  function askFarmMateInstead() {
+    if (onAskFarmMateAboutThis) {
+      onAskFarmMateAboutThis(CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT);
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("gg-farmmate-prefill", { detail: CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT }));
+    document.getElementById("assistant")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function askFarmMate(handoff: CropDoctorHandoffContext) {
+    if (onAskFarmMateAboutThis) {
+      onAskFarmMateAboutThis(handoff);
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent("gg-farmmate-prefill", { detail: handoff }));
     document.getElementById("assistant")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

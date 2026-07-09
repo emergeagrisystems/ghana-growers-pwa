@@ -9,6 +9,7 @@ import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantin
 import { findWeatherDecisionGuidance, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
+import type { CropDoctorHandoffContext } from "../crop-doctor-vision";
 import type { FarmMateSpecialist, RouterResult } from "../router";
 import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector";
 import { farmMateDecisionFlows } from "./flows";
@@ -34,10 +35,12 @@ export type FarmMateBrainResponse = {
   }>;
   nextBestAction: DecisionFlow["recommendation"]["nextBestAction"];
   shouldShowCropDoctorAction: boolean;
+  cropDoctorContext?: CropDoctorHandoffContext;
 };
 
 export type FarmMateBrainOptions = {
   previousCropName?: string;
+  cropDoctorContext?: CropDoctorHandoffContext;
 };
 
 const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
@@ -185,6 +188,122 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
   }
 
   return farmMateDecisionFlows.find((flow) => flow.intent === intent.intent && flowMatchesCrop(flow, resolvedCrop));
+}
+
+function cropDoctorFollowUpQuestions(context: CropDoctorHandoffContext) {
+  if (context.issueCategory === "pest" || context.resultType === "possible_pest") {
+    return [
+      {
+        id: "crop-doctor-pest-under-leaves",
+        question: "Do you see tiny insects or webbing under the leaves?",
+        requiredForConfidence: true,
+        options: ["Yes, I see tiny insects or webbing", "No, I do not see them", "I am not sure"]
+      },
+      {
+        id: "crop-doctor-pest-spread",
+        question: "Are more leaves showing the same speckling or pest signs?",
+        requiredForConfidence: true,
+        options: ["Yes, many leaves are affected", "Only a few leaves are affected", "I am not sure"]
+      }
+    ];
+  }
+
+  if (context.issueCategory === "nutrient") {
+    return [
+      {
+        id: "crop-doctor-nutrient-leaf-position",
+        question: "Where are the strongest leaf colour changes?",
+        requiredForConfidence: true,
+        options: ["Older lower leaves", "New top leaves", "Across the whole plant"]
+      },
+      {
+        id: "crop-doctor-nutrient-soil-moisture",
+        question: "What is the soil moisture like around the affected plants?",
+        requiredForConfidence: true,
+        options: ["Soil is moist", "Soil is dry", "Soil is waterlogged"]
+      }
+    ];
+  }
+
+  if (context.issueCategory === "water_stress") {
+    return [
+      {
+        id: "crop-doctor-water-stress",
+        question: "Has the field been very dry or waterlogged recently?",
+        requiredForConfidence: true,
+        options: ["Very dry", "Waterlogged", "I am not sure"]
+      },
+      {
+        id: "crop-doctor-nearby-plants",
+        question: "Are nearby plants showing the same stress signs?",
+        requiredForConfidence: true,
+        options: ["Yes, nearby plants are affected", "No, only this plant", "I am not sure"]
+      }
+    ];
+  }
+
+  return [
+    {
+      id: "crop-doctor-leaf-spread",
+      question: "Are nearby plants showing the same signs?",
+      requiredForConfidence: true,
+      options: ["Yes, nearby plants are affected", "No, only a few leaves", "I am not sure"]
+    },
+    {
+      id: "crop-doctor-recent-rain",
+      question: "Did the problem appear after recent rain or wet leaves?",
+      requiredForConfidence: false,
+      options: ["Yes, after rain or wet leaves", "No recent rain", "I am not sure"]
+    }
+  ];
+}
+
+function cropDoctorContextToDecisionFlow(context: CropDoctorHandoffContext, intent: DetectedFarmMateIntent): DecisionFlow {
+  const cropLabel = context.crop ?? "the crop";
+  const signs = context.visibleSigns.length ? context.visibleSigns : ["visible crop signs from the photo"];
+  const possibleIssue = context.possibleIssue.replace(/\bpossible\s+possible\b/gi, "possible");
+
+  return {
+    id: `crop-doctor-handoff-${context.issueCategory}-${context.resultType}`,
+    question: context.question,
+    intent: context.issueCategory === "pest" ? "pests" : context.issueCategory === "disease" ? "diseases" : intent.intent === "fertilizer" || intent.intent === "planting" ? "crop-health" : intent.intent,
+    possibleCauses: [
+      possibleIssue,
+      ...(context.issueCategory === "pest" ? ["Tiny sucking pests such as mites or whiteflies", "Leaf stress that needs underside checks"] : []),
+      ...(context.issueCategory === "disease" ? ["Leaf disease pressure after wet conditions", "Spreading infection that needs field checks"] : []),
+      ...(context.issueCategory === "nutrient" ? ["Nutrient stress", "Soil moisture affecting nutrient uptake"] : []),
+      ...(context.issueCategory === "water_stress" ? ["Water stress", "Root stress from dry or waterlogged soil"] : [])
+    ].slice(0, 3),
+    requiredInformation: {
+      crop: context.crop ?? undefined,
+      visibleSymptoms: signs,
+      growthStage: "Unknown"
+    },
+    followUpQuestions: cropDoctorFollowUpQuestions(context),
+    recommendation: {
+      summary: `Crop Doctor saw ${signs.slice(0, 2).join(", ")} on ${cropLabel.toLowerCase()} and flagged ${possibleIssue.toLowerCase()}.`,
+      confidence: "medium",
+      reasoning: signs.slice(0, 3).map((sign, index) => ({
+        id: `crop-doctor-sign-${index + 1}`,
+        observation: sign,
+        interpretation: "This photo sign needs a quick field check before treatment."
+      })),
+      sustainabilityPriority: ["prevention", "good-farming-practice", "natural-low-cost-solution", "chemical-recommendation-if-appropriate"],
+      recommendedAction: "Check the affected leaves, nearby plants and leaf undersides before choosing treatment.",
+      guidance: [
+        "Check both sides of affected leaves.",
+        "Compare affected plants with nearby healthy plants.",
+        "Avoid spraying until the pest or disease sign is clearer."
+      ],
+      nextBestAction: {
+        id: "crop-doctor-field-check",
+        label: "Field check",
+        instruction: context.nextBestAction,
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: []
+  };
 }
 
 function plantHealthAssessmentToDecisionFlow(assessment: PlantHealthAssessment, intent: DetectedFarmMateIntent): DecisionFlow {
@@ -379,12 +498,14 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
 }
 
 export function buildFarmMateResponse(question: string, routerResult?: RouterResult, options: FarmMateBrainOptions = {}): FarmMateBrainResponse {
-  const resolvedCrop = resolveFarmMateCropForQuestion(question, options.previousCropName)?.name;
+  const resolvedCrop = options.cropDoctorContext?.crop ?? resolveFarmMateCropForQuestion(question, options.previousCropName)?.name;
   const intent = {
     ...detectFarmMateIntent(question),
     cropName: resolvedCrop
   };
-  const matchedFlow = findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
+  const matchedFlow = options.cropDoctorContext
+    ? cropDoctorContextToDecisionFlow(options.cropDoctorContext, intent)
+    : findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
   const flow = matchedFlow ?? fallbackFlow(intent);
   const knowledge = knowledgeLines(flow, intent, resolvedCrop);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
@@ -407,6 +528,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
     confidence: flow.recommendation.confidence,
     shouldShowCropDoctorAction,
     nextBestAction: flow.recommendation.nextBestAction,
+    cropDoctorContext: options.cropDoctorContext,
     sections: [
       {
         title: "Direct answer",

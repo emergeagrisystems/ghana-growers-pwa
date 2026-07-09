@@ -16,6 +16,7 @@ import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-sp
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
   buildCropDoctorAskFarmMatePrompt,
+  buildCropDoctorHandoffContext,
   cropDoctorResultHasUnsafeLanguage,
   CROP_DOCTOR_MAX_IMAGE_BYTES,
   CROP_DOCTOR_TOO_LARGE_MESSAGE,
@@ -24,6 +25,7 @@ import {
   cropDoctorResultHeadline,
   cropDoctorVisionSystemPrompt,
   normalizeCropDoctorVisionResult,
+  normalizePossibleIssueWording,
   validateCropDoctorImage
 } from "../src/lib/farmmate/crop-doctor-vision";
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
@@ -1219,6 +1221,133 @@ const tests: TestCase[] = [
       });
 
       assert.equal(prompt, "I uploaded a crop photo. Crop Doctor could not confirm the crop. What should I check next?");
+    }
+  },
+  {
+    name: "Crop Doctor handoff routes to Crop Doctor specialist",
+    run: () => {
+      const handoff = buildCropDoctorHandoffContext(
+        normalizeCropDoctorVisionResult({
+          crop: "Tomato",
+          cropConfidence: "high",
+          resultType: "possible_pest",
+          issueCategory: "pest",
+          possibleIssue: "possible spider mites or tiny sucking pests",
+          visibleSigns: ["pale speckles", "dull leaves", "no chewing damage"],
+          nextBestAction: "Check the underside of affected leaves today."
+        })
+      );
+      const route = routeFarmMateQuestion(handoff.question, handoff);
+
+      assert.equal(route.selectedSpecialist, "crop_doctor");
+      assert.notEqual(route.selectedSpecialist, "fertilizer");
+      assert.equal(route.detectedCrop, "Tomato");
+    }
+  },
+  {
+    name: "Crop Doctor handoff starts fresh consultation",
+    run: () => {
+      const oldFertilizerState: ConversationState = {
+        activeTopic: "fertilizer",
+        activeCropName: "Tomato",
+        activeSpecialist: "fertilizer",
+        waitingForFollowUp: true,
+        turns: [{ message: "Can I use compost for tomatoes?", topic: "fertilizer", cropName: "Tomato", specialist: "fertilizer" }]
+      };
+      const handoff = buildCropDoctorHandoffContext(
+        normalizeCropDoctorVisionResult({
+          crop: "Tomato",
+          cropConfidence: "high",
+          resultType: "possible_pest",
+          issueCategory: "pest",
+          possibleIssue: "possible spider mites",
+          visibleSigns: ["pale speckles"],
+          nextBestAction: "Check leaf undersides."
+        })
+      );
+      const decision = manageFarmMateConversation(handoff.question, oldFertilizerState, handoff);
+
+      assert.equal(decision.action, "reset");
+      assert.equal(decision.topic, "crop_doctor");
+      assert.equal(decision.resetReason, "crop_doctor_handoff");
+      assert.equal(decision.specialist, "crop_doctor");
+      assert.equal(decision.shouldKeepContext, false);
+    }
+  },
+  {
+    name: "Crop Doctor pest handoff asks leaf or pest follow-up",
+    run: () => {
+      const handoff = buildCropDoctorHandoffContext(
+        normalizeCropDoctorVisionResult({
+          crop: "Tomato",
+          cropConfidence: "high",
+          resultType: "possible_pest",
+          issueCategory: "pest",
+          possibleIssue: "possible spider mites or tiny sucking pests",
+          visibleSigns: ["pale speckles", "dull leaves", "no chewing damage"],
+          nextBestAction: "Check the underside of affected leaves today."
+        })
+      );
+      const route = routeFarmMateQuestion(handoff.question, handoff);
+      const response = buildFarmMateResponse(handoff.question, route, { cropDoctorContext: handoff });
+      const followUpText = response.flow?.followUpQuestions.map((question) => `${question.question} ${(question.options ?? []).join(" ")}`).join(" ").toLowerCase() ?? "";
+
+      assert.equal(followUpText.includes("insects") || followUpText.includes("webbing") || followUpText.includes("speckling"), true);
+      assert.equal(followUpText.includes("compost"), false);
+      assert.equal(followUpText.includes("tomatoes are not planted yet"), false);
+      assert.notEqual(response.flow?.id, "compost-for-tomatoes");
+    }
+  },
+  {
+    name: "Crop Doctor handoff allows nutrient questions only for nutrient issue",
+    run: () => {
+      const pestHandoff = buildCropDoctorHandoffContext(
+        normalizeCropDoctorVisionResult({
+          crop: "Tomato",
+          cropConfidence: "high",
+          resultType: "possible_pest",
+          issueCategory: "pest",
+          possibleIssue: "possible spider mites",
+          visibleSigns: ["pale speckles"],
+          nextBestAction: "Check leaf undersides."
+        })
+      );
+      const nutrientHandoff = buildCropDoctorHandoffContext(
+        normalizeCropDoctorVisionResult({
+          crop: "Tomato",
+          cropConfidence: "high",
+          resultType: "possible_nutrient_issue",
+          issueCategory: "nutrient",
+          possibleIssue: "possible nutrient stress",
+          visibleSigns: ["yellowing leaves"],
+          nextBestAction: "Check older and newer leaves."
+        })
+      );
+      const pestResponse = buildFarmMateResponse(pestHandoff.question, routeFarmMateQuestion(pestHandoff.question, pestHandoff), { cropDoctorContext: pestHandoff });
+      const nutrientResponse = buildFarmMateResponse(nutrientHandoff.question, routeFarmMateQuestion(nutrientHandoff.question, nutrientHandoff), { cropDoctorContext: nutrientHandoff });
+      const pestQuestions = pestResponse.flow?.followUpQuestions.map((question) => question.question).join(" ").toLowerCase() ?? "";
+      const nutrientQuestions = nutrientResponse.flow?.followUpQuestions.map((question) => question.question).join(" ").toLowerCase() ?? "";
+
+      assert.equal(pestQuestions.includes("soil moisture"), false);
+      assert.equal(nutrientQuestions.includes("soil moisture") || nutrientQuestions.includes("leaf colour"), true);
+    }
+  },
+  {
+    name: "Crop Doctor handoff removes duplicate possible wording",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        crop: "Tomato",
+        cropConfidence: "high",
+        resultType: "possible_pest",
+        issueCategory: "pest",
+        possibleIssue: "possible possible spider mites",
+        visibleSigns: ["pale speckles"],
+        nextBestAction: "Check leaf undersides."
+      });
+
+      assert.equal(result.possibleIssue, "possible spider mites");
+      assert.equal(result.askFarmMatePrompt.includes("possible possible"), false);
+      assert.equal(normalizePossibleIssueWording("possible possible spider mites"), "possible spider mites");
     }
   },
   {
