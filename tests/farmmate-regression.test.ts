@@ -4,6 +4,7 @@ import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
 import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
+import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
   buildCropDoctorAskFarmMatePrompt,
@@ -436,6 +437,28 @@ const tests: TestCase[] = [
       assert.equal(payload.specialistContext?.task, "fertilizer-before-rain");
       assert.equal(payload.specialistContext?.noLiveWeatherRule?.toLowerCase().includes("do not invent live"), true);
       assert.equal(payload.specialistContext?.safetyWarnings?.some((warning) => warning.toLowerCase().includes("heavy rain")), true);
+    }
+  },
+  {
+    name: "weather specialist includes all required decision task types",
+    run: () => {
+      const tasks = weatherDecisionGuidance.map((guidance) => guidance.task);
+
+      assert.deepEqual(
+        [
+          "spraying",
+          "fertilizer-before-rain",
+          "planting-before-rain",
+          "irrigation",
+          "harvesting-before-rain",
+          "drying-produce",
+          "heavy-rain-warning",
+          "windy-conditions",
+          "wet-leaves",
+          "waterlogged-soil"
+        ].every((task) => tasks.includes(task as (typeof tasks)[number])),
+        true
+      );
     }
   },
   {
