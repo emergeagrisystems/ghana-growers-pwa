@@ -47,7 +47,8 @@ export type BlogPost = {
     | "Home Gardening"
     | "Agribusiness"
     | "Seasonal Farming"
-    | "Video Library";
+    | "GG FarmMate"
+    | "Video Lessons";
   excerpt: string;
   readTime: string;
   date: string;

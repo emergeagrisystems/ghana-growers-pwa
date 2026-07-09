@@ -9,7 +9,8 @@ export const learnCategories = [
   "Home Gardening",
   "Agribusiness",
   "Seasonal Farming",
-  "Video Library"
+  "GG FarmMate",
+  "Video Lessons"
 ] as const;
 
 export function getBlogPost(slug: string) {

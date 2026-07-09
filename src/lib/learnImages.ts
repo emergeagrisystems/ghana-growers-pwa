@@ -20,23 +20,27 @@ const categoryImageMap: Record<BlogPost["category"], string> = {
   "Home Gardening": learnImageMap.homeGardening,
   Agribusiness: learnImageMap.agribusiness,
   "Seasonal Farming": learnImageMap.seasonalChecklist,
-  "Video Library": learnImageMap.cropDoctor
+  "GG FarmMate": learnImageMap.cropDoctor,
+  "Video Lessons": learnImageMap.cropDoctor
 };
 
 const slugImageMap: Partial<Record<string, string>> = {
   "how-ghana-growers-works": learnImageMap.agribusiness,
   "verification-process": learnImageMap.verification,
   "how-to-sell-produce-through-ghana-growers": learnImageMap.buyerDemand,
-  "how-buyers-use-ghana-growers": learnImageMap.buyerDemand,
+  "how-buyers-source-produce-through-ghana-growers": learnImageMap.buyerDemand,
+  "how-to-use-gg-farmmate": learnImageMap.cropDoctor,
+  "how-to-use-crop-doctor": learnImageMap.cropDoctor,
+  "how-to-prepare-harvest-before-selling": learnImageMap.harvestPrep,
   "tomato-production-in-southern-ghana": learnImageMap.cropFarming,
   "maize-yellow-leaves-field-guide": learnImageMap.cropDoctor,
+  "cassava-leaves-curling-checks": learnImageMap.cropFarming,
+  "before-you-spray-three-checks": learnImageMap.cropDoctor,
   "backyard-vegetable-garden-ghana": learnImageMap.homeGardening,
-  "seasonal-farm-checklist": learnImageMap.seasonalChecklist,
-  "harvest-preparation-guide": learnImageMap.harvestPrep,
-  "simple-farm-records-guide": learnImageMap.farmRecords,
   "seasonal-farming-rainy-season-checklist": learnImageMap.seasonalChecklist,
   "small-poultry-flock-records": learnImageMap.livestock,
-  "video-how-to-use-crop-health-check": learnImageMap.cropDoctor
+  "supplier-registration-guide": learnImageMap.agribusiness,
+  "video-how-to-use-crop-doctor": learnImageMap.cropDoctor
 };
 
 export function learnImageForPost(post: Pick<BlogPost, "slug" | "category">) {

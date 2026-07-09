@@ -6,117 +6,162 @@ import {
   BriefcaseBusiness,
   CalendarCheck,
   CheckCircle2,
+  ClipboardCheck,
+  CloudRain,
   Home,
+  Leaf,
   PlayCircle,
   Search,
+  ShieldCheck,
   Sprout,
-  Wheat,
-  Video
+  Tractor,
+  UploadCloud,
+  Wheat
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { BlogCard } from "@/components/BlogCard";
-import { SafeImage } from "@/components/SafeImage";
-import { learnImageMap } from "@/lib/learnImages";
 import type { BlogPost } from "@/types";
 
 type LearnHubProps = {
   posts: BlogPost[];
 };
 
+type LearnFilter = "All" | BlogPost["category"];
+
 const learningPaths = [
   {
     title: "Crop Farming",
     category: "Crops" as const,
-    description: "Learn field checks, pests, diseases, harvest planning, and crop care.",
-    image: learnImageMap.cropFarming,
+    description: "Field checks, pests, diseases, harvest planning, and crop care.",
     icon: Wheat
   },
   {
     title: "Livestock",
     category: "Livestock" as const,
-    description: "Learn feeding, housing, records, flock care, and sales planning.",
-    image: learnImageMap.livestock,
+    description: "Feeding, housing, records, flock care, and sales planning.",
     icon: Sprout
   },
   {
     title: "Agribusiness",
     category: "Agribusiness" as const,
-    description: "Learn pricing, buyer demand, packaging, verification, and selling through Ghana Growers.",
-    image: learnImageMap.agribusiness,
+    description: "Pricing, buyer demand, packaging, verification, and selling through Ghana Growers.",
     icon: BriefcaseBusiness
   },
   {
     title: "Home Gardening",
     category: "Home Gardening" as const,
-    description: "Learn simple vegetable gardening for homes and small spaces.",
-    image: learnImageMap.homeGardening,
+    description: "Simple vegetable gardening for homes and small spaces.",
     icon: Home
   }
 ];
 
-const featuredVideoGuides = [
+const checklistCards = [
   {
-    title: "How to use Crop Doctor",
-    category: "GG FarmMate",
-    duration: "3 min",
-    image: learnImageMap.cropDoctor,
-    videoUrl: ""
+    title: "Rainy Season Farm Checklist",
+    slug: "seasonal-farming-rainy-season-checklist",
+    icon: CloudRain,
+    items: ["Clear drainage paths.", "Check seed and tools early.", "Avoid planting in waterlogged soil."]
   },
   {
-    title: "How buyers submit produce demand",
-    category: "Market Access",
-    duration: "4 min",
-    image: learnImageMap.buyerDemand,
-    videoUrl: ""
+    title: "Before You Spray",
+    slug: "before-you-spray-three-checks",
+    icon: ShieldCheck,
+    items: ["Check if rain is expected.", "Avoid strong wind.", "Confirm the pest or disease first."]
   },
   {
-    title: "What farmers should prepare before verification",
-    category: "Verification",
-    duration: "5 min",
-    image: learnImageMap.verification,
-    videoUrl: ""
+    title: "Before You Sell Your Harvest",
+    slug: "how-to-prepare-harvest-before-selling",
+    icon: ClipboardCheck,
+    items: ["Sort damaged produce.", "Estimate quantity clearly.", "Prepare collection or delivery details."]
   },
   {
-    title: "How to check market prices before selling",
-    category: "Pricing",
-    duration: "4 min",
-    image: learnImageMap.marketPrices,
-    videoUrl: ""
+    title: "Weekly Crop Field Check",
+    slug: "maize-yellow-leaves-field-guide",
+    icon: Leaf,
+    items: ["Check lower leaves.", "Look for pests under leaves.", "Note yellowing, wilting, or spots."]
   }
 ];
 
-const checklistSlugs = [
-  "seasonal-farming-rainy-season-checklist",
-  "small-poultry-flock-records",
-  "backyard-vegetable-garden-ghana",
-  "maize-yellow-leaves-field-guide"
+const videoLessons = [
+  {
+    title: "How to Use Crop Doctor",
+    category: "GG FarmMate",
+    duration: "3 min",
+    slug: "video-how-to-use-crop-doctor",
+    icon: UploadCloud
+  },
+  {
+    title: "How to Ask FarmMate a Good Question",
+    category: "GG FarmMate",
+    duration: "3 min",
+    slug: "how-to-use-gg-farmmate",
+    icon: BookOpen
+  },
+  {
+    title: "What Farmers Should Prepare Before Verification",
+    category: "Verification",
+    duration: "5 min",
+    slug: "how-ghana-growers-works",
+    icon: ShieldCheck
+  },
+  {
+    title: "How to Prepare Produce Before Selling",
+    category: "Agribusiness",
+    duration: "4 min",
+    slug: "how-to-prepare-harvest-before-selling",
+    icon: Tractor
+  }
 ];
 
-const guideFilters: Array<{ label: string; value: "All" | BlogPost["category"] }> = [
+const startHereGuideSlugs = [
+  "how-ghana-growers-works",
+  "how-to-use-gg-farmmate",
+  "how-to-use-crop-doctor",
+  "how-to-prepare-harvest-before-selling"
+];
+
+const guideFilters: Array<{ label: string; value: LearnFilter }> = [
   { label: "All", value: "All" },
   { label: "Crops", value: "Crops" },
   { label: "Livestock", value: "Livestock" },
   { label: "Home Gardening", value: "Home Gardening" },
   { label: "Agribusiness", value: "Agribusiness" },
   { label: "Seasonal Farming", value: "Seasonal Farming" },
-  { label: "GG FarmMate", value: "Video Library" },
-  { label: "Video Lessons", value: "Video Library" }
+  { label: "GG FarmMate", value: "GG FarmMate" },
+  { label: "Video Lessons", value: "Video Lessons" }
 ];
+
+function GuideCard({ post, compact = false }: { post: BlogPost; compact?: boolean }) {
+  return (
+    <article className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
+        <span className="gg-icon gg-icon-standard h-9 w-9 shrink-0">
+          <BookOpen size={17} aria-hidden="true" />
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col">
+        <h3 className={`${compact ? "text-lg" : "text-xl"} mt-4 font-black leading-snug text-ink`}>{post.title}</h3>
+        <p className="mt-3 flex-1 text-sm leading-6 text-ink/65">{post.excerpt}</p>
+        <div className="mt-4 flex items-center justify-between gap-3 text-xs font-bold text-ink/55">
+          <span>{new Date(post.date).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" })}</span>
+          <span className="inline-flex items-center gap-1">
+            <CalendarCheck size={14} aria-hidden="true" />
+            {post.readTime}
+          </span>
+        </div>
+        <Link href={`/learn/${post.slug}`} className="mt-5 text-sm font-black text-leaf-700 transition hover:text-leaf-800">
+          Read guide
+        </Link>
+      </div>
+    </article>
+  );
+}
 
 export function LearnHub({ posts }: LearnHubProps) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<"All" | BlogPost["category"]>("All");
+  const [category, setCategory] = useState<LearnFilter>("All");
 
-  const startHereGuideSlugs = [
-    "how-ghana-growers-works",
-    "video-how-to-use-crop-health-check",
-    "how-to-sell-produce-through-ghana-growers",
-    "maize-yellow-leaves-field-guide"
-  ];
   const startHereGuides = startHereGuideSlugs
-    .map((slug) => posts.find((post) => post.slug === slug))
-    .filter((post): post is BlogPost => Boolean(post));
-  const checklistGuides = checklistSlugs
     .map((slug) => posts.find((post) => post.slug === slug))
     .filter((post): post is BlogPost => Boolean(post));
 
@@ -143,38 +188,26 @@ export function LearnHub({ posts }: LearnHubProps) {
     });
   }, [category, posts, search]);
 
+  function choosePath(nextCategory: BlogPost["category"]) {
+    setCategory(nextCategory);
+    document.getElementById("browse-guides")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="bg-white">
-      <section className="bg-[#ECE7D1] py-12 sm:py-14">
+      <section id="start-here" className="scroll-mt-24 bg-[#ECE7D1] py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="gg-eyebrow">Start Here</p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Beginner-friendly guides</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/64">
-                A short starting point for farmers, gardeners, buyers, and agribusiness users.
-              </p>
-            </div>
-            <a href="#browse-guides" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-              Browse all guides
-            </a>
+          <div className="max-w-3xl">
+            <p className="gg-eyebrow">START HERE</p>
+            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Beginner-friendly guides</h2>
+            <p className="mt-2 text-sm leading-6 text-ink/64">
+              Simple starting points for farmers, gardeners, buyers, and agribusiness users.
+            </p>
           </div>
 
           <div className="mt-7 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {startHereGuides.map((post) => (
-              <Link
-                key={post.slug}
-                href={`/learn/${post.slug}`}
-                className="group rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
-              >
-                <span className="gg-icon gg-icon-standard h-10 w-10">
-                  <BookOpen size={19} aria-hidden="true" />
-                </span>
-                <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
-                <h3 className="mt-3 text-lg font-black leading-snug text-ink group-hover:text-leaf-700">{post.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink/64">{post.excerpt}</p>
-                <span className="mt-4 inline-flex text-sm font-black text-leaf-700">Read guide</span>
-              </Link>
+              <GuideCard key={post.slug} post={post} compact />
             ))}
           </div>
         </div>
@@ -183,7 +216,7 @@ export function LearnHub({ posts }: LearnHubProps) {
       <section className="bg-white py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <p className="gg-eyebrow">Choose your path</p>
+            <p className="gg-eyebrow">CHOOSE YOUR PATH</p>
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Start with the learning path that fits your work</h2>
           </div>
 
@@ -194,29 +227,16 @@ export function LearnHub({ posts }: LearnHubProps) {
                 <button
                   key={path.title}
                   type="button"
-                  onClick={() => setCategory(path.category)}
-                  className={`focus-ring group overflow-hidden rounded-md border bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-soft ${
+                  onClick={() => choosePath(path.category)}
+                  className={`focus-ring group flex h-full flex-col rounded-md border bg-leaf-50 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-soft ${
                     category === path.category ? "border-leaf-700" : "border-leaf-900/10"
                   }`}
                 >
-                  <div className="relative">
-                    <SafeImage
-                      src={path.image}
-                      alt={`${path.title} learning path`}
-                      width={520}
-                      height={340}
-                      className="h-40 w-full object-cover"
-                      fallbackKind="default"
-                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    />
-                    <span className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-md bg-white text-leaf-700 shadow-soft">
-                      <Icon size={22} aria-hidden="true" />
-                    </span>
-                  </div>
-                  <span className="block p-5">
-                    <span className="text-xl font-black text-ink group-hover:text-leaf-700">{path.title}</span>
-                    <span className="mt-2 block text-sm leading-6 text-ink/64">{path.description}</span>
+                  <span className="gg-icon gg-icon-standard h-12 w-12">
+                    <Icon size={22} aria-hidden="true" />
                   </span>
+                  <span className="mt-5 text-xl font-black text-ink group-hover:text-leaf-700">{path.title}</span>
+                  <span className="mt-2 block text-sm leading-6 text-ink/64">{path.description}</span>
                 </button>
               );
             })}
@@ -224,71 +244,78 @@ export function LearnHub({ posts }: LearnHubProps) {
         </div>
       </section>
 
-      <section id="watch-videos" className="bg-white py-12 sm:py-14">
+      <section className="bg-[#F7F7EA] py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="gg-eyebrow">Video Lessons</p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch practical farm lessons</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/64">
-                Short videos for field checks, GG FarmMate walkthroughs, buyer demand, verification, and selling produce.
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-md bg-[#ECE7D1] px-3 py-2 text-sm font-black text-ink">
-              <Video size={16} aria-hidden="true" />
-              More videos coming
-            </span>
+          <div className="max-w-3xl">
+            <p className="gg-eyebrow">PRACTICAL CHECKLISTS</p>
+            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Improve your farm step by step</h2>
+            <p className="mt-2 text-sm leading-6 text-ink/64">
+              Short checklists for common farm decisions before planting, spraying, harvesting, or selling.
+            </p>
           </div>
 
           <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {featuredVideoGuides.map((video) => {
-              const hasVideo = Boolean(video.videoUrl);
-              const card = (
-                <>
-                  <div className="relative">
-                    <SafeImage
-                      src={video.image}
-                      alt={`${video.title} lesson thumbnail`}
-                      width={720}
-                      height={430}
-                      className="aspect-video w-full object-cover"
-                      fallbackKind="default"
-                      sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
-                    />
-                    <span className="absolute inset-0 bg-ink/10" aria-hidden="true" />
-                    {hasVideo ? (
-                      <span className="absolute left-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-white text-leaf-700 shadow-soft">
-                        <PlayCircle size={28} aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <span className="absolute right-4 top-4 rounded-md bg-white px-3 py-1.5 text-xs font-black uppercase tracking-wide text-leaf-700 shadow-soft">
-                        Coming soon
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">{video.category}</p>
-                    <h3 className="mt-2 text-xl font-black text-ink">{video.title}</h3>
-                    <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-ink/55">
-                      <CalendarCheck size={15} aria-hidden="true" />
-                      {video.duration} lesson
-                    </p>
-                  </div>
-                </>
-              );
-
-              return hasVideo ? (
+            {checklistCards.map((checklist) => {
+              const Icon = checklist.icon;
+              return (
                 <Link
-                  key={video.title}
-                  href={video.videoUrl}
-                  aria-label={`Watch ${video.title}`}
-                  className="focus-ring overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                  key={checklist.title}
+                  href={`/learn/${checklist.slug}`}
+                  className="group flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                  aria-label={`View checklist: ${checklist.title}`}
                 >
-                  {card}
+                  <span className="gg-icon gg-icon-standard h-10 w-10">
+                    <Icon size={19} aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-4 text-lg font-black leading-snug text-ink group-hover:text-leaf-700">{checklist.title}</h3>
+                  <ul className="mt-4 grid gap-2">
+                    {checklist.items.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm font-semibold leading-6 text-ink/66">
+                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-leaf-700" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <span className="mt-5 inline-flex text-sm font-black text-leaf-700">View checklist</span>
                 </Link>
-              ) : (
-                <article key={video.title} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
-                  {card}
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="watch-videos" className="scroll-mt-24 bg-white py-12 sm:py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="gg-eyebrow">VIDEO LESSONS</p>
+            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch practical farm lessons</h2>
+            <p className="mt-2 text-sm leading-6 text-ink/64">
+              Short videos for field checks, GG FarmMate walkthroughs, verification, and selling produce.
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {videoLessons.map((video) => {
+              const Icon = video.icon;
+              return (
+                <article key={video.title} className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="gg-icon gg-icon-standard h-12 w-12">
+                      <Icon size={22} aria-hidden="true" />
+                    </span>
+                    <span className="rounded-md bg-white px-3 py-1.5 text-xs font-black uppercase tracking-wide text-leaf-700 shadow-sm">
+                      Coming soon
+                    </span>
+                  </div>
+                  <p className="mt-5 text-xs font-black uppercase tracking-wide text-earth-700">{video.category}</p>
+                  <h3 className="mt-2 text-xl font-black leading-snug text-ink">{video.title}</h3>
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-ink/55">
+                    <PlayCircle size={15} aria-hidden="true" />
+                    {video.duration} lesson
+                  </p>
+                  <Link href={`/learn/${video.slug}`} className="mt-5 text-sm font-black text-leaf-700 transition hover:text-leaf-800">
+                    Read guide
+                  </Link>
                 </article>
               );
             })}
@@ -296,47 +323,17 @@ export function LearnHub({ posts }: LearnHubProps) {
         </div>
       </section>
 
-      <section className="bg-[#ECE7D1] py-12 sm:py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="gg-eyebrow">Practical Checklists</p>
-            <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Improve your farm step by step</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/64">
-              Short, practical guides for seasonal planning, harvest preparation, and farm records.
-            </p>
-          </div>
-
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
-            {checklistGuides.map((post) => (
-              <Link
-                key={post.slug}
-                href={`/learn/${post.slug}`}
-                className="group rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
-              >
-                <span className="gg-icon gg-icon-standard h-10 w-10">
-                  <CheckCircle2 size={19} aria-hidden="true" />
-                </span>
-                <p className="mt-4 text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
-                <h3 className="mt-3 text-lg font-black leading-snug text-ink group-hover:text-leaf-700">{post.title}</h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink/64">{post.excerpt}</p>
-                <span className="mt-4 inline-flex text-sm font-black text-leaf-700">Read guide</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="browse-guides" className="bg-leaf-50 py-12 sm:py-14">
+      <section id="browse-guides" className="scroll-mt-24 bg-leaf-50 py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
             <div className="grid gap-4 lg:grid-cols-[0.7fr_0.3fr] lg:items-end">
               <div>
-                <p className="gg-eyebrow">Browse All Guides</p>
+                <p className="gg-eyebrow">BROWSE ALL GUIDES</p>
                 <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">
-                  {category === "All" ? "Guide library" : `${category} guides`}
+                  {category === "All" ? "Guide Library" : `${category} guides`}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/62">
-                  Search practical Ghana-focused guides by topic, category, crop, livestock, garden, season, or market question.
+                  Search practical Ghana-focused guides by crop, livestock, garden, season, market access, or FarmMate tool.
                 </p>
               </div>
               <label className="block">
@@ -346,7 +343,7 @@ export function LearnHub({ posts }: LearnHubProps) {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search crops, livestock, prices..."
+                    placeholder="Search maize, spraying, Crop Doctor..."
                     className="focus-ring w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm text-ink shadow-sm"
                   />
                 </span>
@@ -373,13 +370,13 @@ export function LearnHub({ posts }: LearnHubProps) {
 
           <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {filteredPosts.map((post) => (
-              <BlogCard key={post.slug} post={post} />
+              <GuideCard key={post.slug} post={post} />
             ))}
           </div>
 
           {filteredPosts.length === 0 ? (
             <div className="gg-empty-state mt-8">
-              <h3 className="gg-card-title">No records available yet</h3>
+              <h3 className="gg-card-title">No guides found</h3>
               <p className="mt-2 text-sm leading-6 text-ink/62">Try another search term or category.</p>
             </div>
           ) : null}
@@ -392,13 +389,13 @@ export function LearnHub({ posts }: LearnHubProps) {
             <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">GG FarmMate</p>
             <h2 className="mt-3 text-2xl font-black sm:text-3xl">Need help with a farm question today?</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/74">
-              Use GG FarmMate to ask a question, upload a crop photo, or get a practical next step.
+              Use GG FarmMate to ask a question, upload a crop photo, or get one practical next step.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/farmer-hub" className="gg-text-link">
+              <Link href="/farmer-hub" className="focus-ring rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
                 Open GG FarmMate
               </Link>
-              <Link href="/farmer-hub" className="gg-text-link">
+              <Link href="/farmer-hub" className="focus-ring rounded-md border border-white/20 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10">
                 Upload Crop Photo
               </Link>
             </div>

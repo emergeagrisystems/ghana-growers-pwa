@@ -8,168 +8,174 @@
     "readTime": "4 min read",
     "date": "2026-06-18",
     "keyPoints": [
-      "Farmers register their farm details and products.",
-      "Buyers browse supply or submit demand.",
-      "Suppliers register inputs, logistics, packaging, and services.",
-      "Ghana Growers reviews records before public visibility."
+      "Farmers, buyers, and suppliers use one trusted agriculture network.",
+      "Clear records make it easier for Ghana Growers to follow up.",
+      "Verified information helps reduce confusion before trade."
     ],
     "sections": [
       {
-        "heading": "A practical network for agriculture",
-        "body": "Ghana Growers helps organize farmer profiles, marketplace listings, buyer requests, supplier services, and GG FarmMate tools in one place. The aim is simple: make it easier to know who produces what, where supply may be available, and how serious enquiries can be followed up."
+        "heading": "Summary",
+        "body": "Ghana Growers connects farmers, suppliers, buyers, and partners across Ghana. The platform helps people find produce, request supply, join the network, learn practical farming steps, and use GG FarmMate for daily farm decisions."
       },
       {
-        "heading": "What happens after registration",
-        "body": "Submitted farmer, buyer, and supplier records are reviewed before they are published. Complete records with clear products, location, contact details, and photos are easier to approve."
+        "heading": "What to check",
+        "body": "Check that your farm, business, product, region, district, phone number, and WhatsApp details are clear before submitting information. Good records help Ghana Growers understand what you offer or need."
       },
       {
-        "heading": "How connections happen",
-        "body": "Buyers and partners can request connections through Ghana Growers. This helps the platform track demand, follow up on serious enquiries, and reduce random contact that does not lead to useful trade."
+        "heading": "What to do now",
+        "body": "Start with the page that matches your goal. Use Buy to source produce or inputs, Sell to join as a seller, Directory to find farmers or suppliers, and GG FarmMate when you need farming guidance."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use GG FarmMate when you have a farm question, need a practical next step, or want help checking a crop problem. Use Crop Doctor when a clear photo can reduce guessing."
+      },
+      {
+        "heading": "Next step",
+        "body": "Choose Buy, Sell, Directory, or GG FarmMate based on what you need today."
       }
     ]
   },
   {
-    "slug": "verification-process",
-    "title": "Verification Process",
-    "category": "Agribusiness",
-    "excerpt": "What Ghana Growers checks before showing verified status on farmers, suppliers, and buyer requests.",
-    "audience": "Members preparing for review",
+    "slug": "how-to-use-gg-farmmate",
+    "title": "How to Use GG FarmMate",
+    "category": "GG FarmMate",
+    "excerpt": "Learn how to ask questions, use FarmMate tools, and get practical next steps.",
+    "audience": "Farmers using GG FarmMate",
     "readTime": "3 min read",
-    "date": "2026-06-18",
+    "date": "2026-06-20",
     "keyPoints": [
-      "Verification checks contact details, profile completeness, and basic business information.",
-      "Verified status is shown publicly only after review.",
-      "Some profiles may need follow-up before publishing.",
-      "Verification does not guarantee price, quality, delivery, or payment."
+      "Ask one clear farm question at a time.",
+      "Mention the crop and what you can see.",
+      "Follow the next step before adding more details."
     ],
     "sections": [
       {
-        "heading": "What Ghana Growers reviews",
-        "body": "The review process looks at name, phone number, WhatsApp number, location, products or services, photos where available, and whether the record is complete enough for public use."
+        "heading": "Summary",
+        "body": "GG FarmMate helps farmers make better farming decisions every day. It can guide crop checks, spraying decisions, planting questions, and practical next steps using local FarmMate knowledge."
       },
       {
-        "heading": "What verified means",
-        "body": "A verified profile has been reviewed by Ghana Growers. Buyers should still confirm availability, quality, quantity, delivery, and payment terms before making commitments."
+        "heading": "What to check",
+        "body": "Before asking, note the crop, growth stage, visible signs, recent rain, and where the problem appears. A clear question helps FarmMate avoid guessing."
       },
       {
-        "heading": "How to prepare",
-        "body": "Submit a working phone number, WhatsApp number, region, district, main products or services, and a real photo or logo where possible."
+        "heading": "What to do now",
+        "body": "Ask one short question such as: My maize leaves are yellow. What should I check first? If FarmMate asks a follow-up question, answer it directly."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use Ask FarmMate for questions. Use Crop Doctor when a photo would help, especially for leaf spots, curling leaves, wilting, pest damage, or an unknown crop problem."
+      },
+      {
+        "heading": "Next step",
+        "body": "Open GG FarmMate and ask one practical question about your farm today."
       }
     ]
   },
   {
-    "slug": "how-to-sell-produce-through-ghana-growers",
-    "title": "How to Sell Produce Through Ghana Growers",
+    "slug": "how-to-use-crop-doctor",
+    "title": "How to Use Crop Doctor",
+    "category": "GG FarmMate",
+    "excerpt": "Learn how to upload a clear crop photo so FarmMate can avoid guessing.",
+    "audience": "Farmers checking crop health",
+    "readTime": "3 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Use bright natural light.",
+      "Show the affected part clearly.",
+      "Treat results as guidance, not a final diagnosis."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Crop Doctor checks a crop photo and gives practical guidance. It cannot guarantee a diagnosis, but it can help you decide what to inspect next."
+      },
+      {
+        "heading": "What to check",
+        "body": "Take a clear photo of the affected leaves, stem, fruit, or whole plant. Avoid blurry photos, heavy shadows, and photos taken too far away."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Upload one clear image. Read the possible issue, visible signs, recommended action, prevention, and next best action before applying any treatment."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use Crop Doctor for visible crop problems. Use Ask FarmMate after the result if you need help deciding what to check next."
+      },
+      {
+        "heading": "Next step",
+        "body": "Take one clear crop photo in good light and upload it to Crop Doctor."
+      }
+    ]
+  },
+  {
+    "slug": "how-to-prepare-harvest-before-selling",
+    "title": "How to Prepare Your Harvest Before Selling",
     "category": "Agribusiness",
-    "excerpt": "Steps farmers can take to make produce easier for buyers to discover and request.",
-    "audience": "Farmers and farmer groups",
+    "excerpt": "Simple checks for sorting, packaging, quantity, and buyer readiness.",
+    "audience": "Farmers preparing produce for buyers",
     "readTime": "5 min read",
-    "date": "2026-06-18",
+    "date": "2026-06-20",
     "keyPoints": [
-      "Register with accurate location and contact details.",
-      "List crops, livestock, harvest periods, and quantities clearly.",
-      "Keep produce information practical and current.",
-      "Respond quickly when Ghana Growers follows up on buyer demand."
+      "Sort damaged produce before estimating quantity.",
+      "Prepare packaging and pickup details early.",
+      "Be clear about quality, quantity, and timing."
     ],
     "sections": [
       {
-        "heading": "Start with a clear farmer profile",
-        "body": "Buyers need to understand who you are, where you farm, what you produce, and when you may be able to supply. A clear profile helps Ghana Growers match your farm with relevant buyer requests."
+        "heading": "Summary",
+        "body": "Good harvest preparation helps farmers speak clearly with buyers. Sorting, packaging, and quantity checks reduce confusion before pickup or delivery."
       },
       {
-        "heading": "Share details buyers can use",
-        "body": "Useful information includes product name, expected quantity, harvest period, pickup or delivery arrangement, and whether supply is one-time, weekly, seasonal, or on request."
+        "heading": "What to check",
+        "body": "Check damaged produce, size differences, packaging needs, expected quantity, harvest date, pickup location, and whether delivery is possible."
       },
       {
-        "heading": "Keep communication simple",
-        "body": "When a buyer is interested, confirm the product, quantity, location, timing, and expected quality before discussing price or transport."
+        "heading": "What to do now",
+        "body": "Sort damaged produce first. Estimate quantity using a clear unit such as crates, sacks, bunches, kilograms, or bags. Keep photos ready if Ghana Growers asks for them."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use GG FarmMate if crop quality problems appear before selling. Use Crop Doctor if spots, wilting, or pest signs are affecting the harvest."
+      },
+      {
+        "heading": "Next step",
+        "body": "Sort your harvest and write down quantity, location, and preferred pickup time."
       }
     ]
   },
   {
-    "slug": "how-buyers-source-produce",
-    "title": "How Buyers Source Produce",
-    "category": "Agribusiness",
-    "excerpt": "How buyers can find farmers, browse listings, submit demand, and request connections.",
-    "audience": "Market traders, processors, restaurants, wholesalers, and institutions",
-    "readTime": "4 min read",
-    "date": "2026-06-18",
-    "keyPoints": [
-      "Search farmer profiles and marketplace listings by product and region.",
-      "Submit buyer requests when supply is not listed.",
-      "Use clear quantities, timelines, and location details.",
-      "Confirm product quality and logistics before purchasing."
-    ],
-    "sections": [
-      {
-        "heading": "Browse first, request when needed",
-        "body": "Buyers can browse farmer profiles, supplier profiles, and marketplace listings. If the right product is not available yet, a buyer request helps Ghana Growers understand demand and look for matching supply."
-      },
-      {
-        "heading": "Make your request specific",
-        "body": "Strong buyer requests include product, quantity, region, district, deadline, delivery preference, and any quality requirements."
-      },
-      {
-        "heading": "Confirm before committing",
-        "body": "Always confirm availability, grade, packaging, pickup or delivery, and payment terms before making a buying decision."
-      }
-    ]
-  },
-  {
-    "slug": "supplier-registration-guide",
-    "title": "Become a Supplier Guide",
-    "category": "Agribusiness",
-    "excerpt": "What agricultural suppliers should prepare before joining Ghana Growers.",
-    "audience": "Input dealers, logistics providers, packaging companies, consultants, and service providers",
-    "readTime": "4 min read",
-    "date": "2026-06-18",
-    "keyPoints": [
-      "Share your supplier category and main products or services.",
-      "List the regions or districts you can serve.",
-      "Add a WhatsApp number and website if available.",
-      "Use clear service descriptions so farmers and buyers understand your offer."
-    ],
-    "sections": [
-      {
-        "heading": "Who should register",
-        "body": "Suppliers can include seed companies, fertilizer dealers, agrochemical shops, farm equipment providers, irrigation installers, packaging suppliers, logistics operators, storage providers, finance providers, and agricultural consultants."
-      },
-      {
-        "heading": "What to include",
-        "body": "A useful supplier profile includes company name, contact person, category, products or services, coverage area, WhatsApp number, and a logo or service image when available."
-      },
-      {
-        "heading": "How profiles help",
-        "body": "Supplier profiles help farmers and buyers discover services that support production, packaging, transport, storage, and market access."
-      }
-    ]
-  },
-  {
-    "slug": "market-prices-explained",
-    "title": "Market Prices Explained",
-    "category": "Agribusiness",
-    "excerpt": "How farmers and buyers should interpret market price information on Ghana Growers.",
-    "audience": "Farmers, buyers, and agribusiness teams",
+    "slug": "maize-yellow-leaves-field-guide",
+    "title": "Maize Leaves Turning Yellow: What to Check First",
+    "category": "Crops",
+    "excerpt": "A simple field guide for farmers who notice yellowing maize leaves.",
+    "audience": "Maize farmers",
     "readTime": "5 min read",
-    "date": "2026-06-18",
+    "date": "2026-06-20",
     "keyPoints": [
-      "Prices are market intelligence, not guaranteed transaction prices.",
-      "Location, quality, packaging, and transport can change final price.",
-      "Trend direction can be as useful as the price itself.",
-      "Use price information alongside buyer demand and harvest timing."
+      "Check whether older or newer leaves yellow first.",
+      "Look at soil moisture and drainage.",
+      "Use Crop Doctor if a photo would reduce guessing."
     ],
     "sections": [
       {
-        "heading": "Market prices are a guide",
-        "body": "Market prices help users understand direction and compare opportunities, but actual prices depend on quality, quantity, timing, packaging, transport, and buyer relationship."
+        "heading": "Summary",
+        "body": "Yellow maize leaves can come from nutrient stress, poor water conditions, root problems, pests, or disease. Do not jump to disease before checking the pattern."
       },
       {
-        "heading": "How farmers can use price signals",
-        "body": "Farmers can use price signals to plan harvest timing, compare markets, and prepare for buyer conversations."
+        "heading": "What to check",
+        "body": "Check if the yellowing starts on older leaves, newer leaves, or the whole plant. Look at drainage, soil moisture, spacing, roots, and pest damage."
       },
       {
-        "heading": "How buyers can use price signals",
-        "body": "Buyers can use market prices to estimate budgets and compare regional supply conditions before submitting requests."
+        "heading": "What to do now",
+        "body": "Inspect five nearby maize plants. If older leaves are pale yellow and the field is not waterlogged, nutrient stress may be possible. Improve field observation before applying chemicals."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Ask FarmMate if you can describe where the yellowing starts. Use Crop Doctor if the leaves have spots, curling, insect damage, or unclear symptoms."
+      },
+      {
+        "heading": "Next step",
+        "body": "Check five plants and note whether the yellowing starts on old leaves, new leaves, or everywhere."
       }
     ]
   },
@@ -183,51 +189,209 @@
     "date": "2026-06-20",
     "keyPoints": [
       "Check drainage after rain.",
-      "Look for early pest pressure under leaves.",
-      "Stake or support plants before heavy fruiting.",
-      "Avoid applying chemicals without confirming the issue."
+      "Look under leaves early.",
+      "Support plants before heavy fruiting."
     ],
     "sections": [
       {
-        "heading": "Check the field after rain",
-        "body": "Tomatoes do not perform well in waterlogged soil. After heavy rain, check low areas of the field, clear blocked drains, and avoid leaving standing water around plant roots."
+        "heading": "Summary",
+        "body": "Tomato plants need steady checks before flowering. Early field checks can reduce losses from water stress, pests, poor airflow, and weak plant support."
       },
       {
-        "heading": "Inspect leaves early",
-        "body": "Look under leaves for small insects, yellowing, curling, spots, or chewing damage. Early checks help farmers act before a problem spreads across the field."
+        "heading": "What to check",
+        "body": "Check drainage, leaf colour, leaf spots, pest signs under leaves, plant spacing, airflow, and whether plants need staking before fruiting."
       },
       {
-        "heading": "Prepare for fruiting",
-        "body": "Staking, pruning, and steady watering before fruiting can reduce losses. Farmers should confirm fertilizer and spray decisions with an extension officer or trusted agronomist when unsure."
+        "heading": "What to do now",
+        "body": "Clear blocked drains, remove weeds around plants, inspect lower leaves, and support weak plants early. Avoid spraying until the problem is confirmed."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Ask FarmMate about watering, flowering, or field checks. Use Crop Doctor if tomato leaves show spots, curling, yellowing, or unusual damage."
+      },
+      {
+        "heading": "Next step",
+        "body": "Check the lower leaves and drainage before the next rain."
       }
     ]
   },
   {
-    "slug": "maize-yellow-leaves-field-guide",
-    "title": "Maize Leaves Turning Yellow: What to Check First",
+    "slug": "cassava-leaves-curling-checks",
+    "title": "Cassava Leaves Curling: What to Check",
     "category": "Crops",
-    "excerpt": "A simple field guide for farmers who notice yellowing maize leaves.",
-    "audience": "Maize farmers",
+    "excerpt": "Simple checks for curling cassava leaves before assuming disease.",
+    "audience": "Cassava farmers",
     "readTime": "4 min read",
     "date": "2026-06-20",
     "keyPoints": [
-      "Check whether yellowing starts on old or new leaves.",
-      "Look at soil moisture and drainage.",
-      "Check for pest damage or poor spacing.",
-      "Ask for expert confirmation before treating disease."
+      "Check young leaves and older leaves separately.",
+      "Look for insects before assuming disease.",
+      "Ask for help if curling spreads quickly."
     ],
     "sections": [
       {
-        "heading": "Start with the pattern",
-        "body": "If older leaves yellow first, the issue may be linked to nutrient stress. If newer leaves yellow, check for other stress signs. The pattern gives a useful clue, but it is not a final diagnosis."
+        "heading": "Summary",
+        "body": "Cassava leaf curling can be linked to pest pressure, disease, heat stress, nutrient stress, or young leaf growth. Check carefully before deciding what to do."
       },
       {
-        "heading": "Check water and roots",
-        "body": "Too much water, dry soil, poor drainage, or compacted soil can all affect maize growth. Farmers should check whether roots are healthy and whether water is sitting in the field."
+        "heading": "What to check",
+        "body": "Look at whether curling is on young leaves, older leaves, or the whole plant. Check under leaves for insects and compare affected plants with healthy nearby plants."
       },
       {
-        "heading": "Use Crop Doctor when unsure",
-        "body": "A clear photo can help Ghana Growers provide advisory guidance, but serious crop problems should be confirmed with an agricultural extension officer."
+        "heading": "What to do now",
+        "body": "Inspect several plants across the field. Remove badly affected leaves only if advised locally, keep the field clean, and avoid chemical treatment without confirmation."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use Crop Doctor if a clear photo can show the curling pattern. Contact an extension officer if symptoms spread quickly across many plants."
+      },
+      {
+        "heading": "Next step",
+        "body": "Take a clear photo of one affected leaf and one whole plant, then use Crop Doctor."
+      }
+    ]
+  },
+  {
+    "slug": "before-you-spray-three-checks",
+    "title": "Before You Spray: 3 Things to Check",
+    "category": "Crops",
+    "excerpt": "Check weather, wind, and the real crop problem before spraying.",
+    "audience": "Farmers planning spray work",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Check rain before spraying.",
+      "Avoid strong wind.",
+      "Confirm the pest or disease first."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Spraying at the wrong time can waste money and may not help the crop. Check weather, wind, and the actual problem before spraying."
+      },
+      {
+        "heading": "What to check",
+        "body": "Check if rain is expected, whether wind is strong, and whether the crop problem is pest, disease, nutrient stress, or water stress."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Delay spraying if rain is likely soon or wind is strong. Confirm the problem first. Follow the product label carefully if a chemical is truly needed."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Ask FarmMate: Can I spray today? Use Crop Doctor when the problem on the plant is unclear."
+      },
+      {
+        "heading": "Next step",
+        "body": "Check rain and wind before mixing any spray."
+      }
+    ]
+  },
+  {
+    "slug": "seasonal-farming-rainy-season-checklist",
+    "title": "Rainy Season Farm Checklist",
+    "category": "Seasonal Farming",
+    "excerpt": "Prepare fields, drainage, seed, and labour before heavy rains.",
+    "audience": "Farmers planning seasonal work",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Clear drainage paths.",
+      "Check seed and tools early.",
+      "Avoid planting in waterlogged soil."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Rainy season work becomes easier when drainage, seed, tools, and labour are prepared before heavy rains arrive."
+      },
+      {
+        "heading": "What to check",
+        "body": "Check blocked drainage, seed condition, tool readiness, field access, labour availability, and low areas that hold water."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Clear drainage paths, keep seed dry, prepare tools, and avoid planting in waterlogged soil. Use mulch where it helps protect young plants."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Ask FarmMate before planting, spraying, or harvesting around rain. Use Crop Doctor if wet weather is followed by leaf spots or wilting."
+      },
+      {
+        "heading": "Next step",
+        "body": "Walk the field and clear the main drainage paths today."
+      }
+    ]
+  },
+  {
+    "slug": "how-buyers-source-produce-through-ghana-growers",
+    "title": "How Buyers Source Produce Through Ghana Growers",
+    "category": "Agribusiness",
+    "excerpt": "How buyers find farmers, browse listings, submit demand, and request connections.",
+    "audience": "Buyers, processors, traders, restaurants, and institutions",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Browse before submitting a request.",
+      "Use clear quantity and timing details.",
+      "Confirm quality, packaging, and transport before buying."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Buyers can use Ghana Growers to discover farmers, check supply, and request help when produce or inputs are not easy to find."
+      },
+      {
+        "heading": "What to check",
+        "body": "Check product name, preferred region, quantity, delivery date, quality requirements, packaging, and pickup or delivery needs."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Search Buy first. If you cannot find what you need, submit a clear request so Ghana Growers can help source produce or suppliers."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "FarmMate is for farming guidance. Use Buy or Contact for sourcing produce, inputs, or suppliers."
+      },
+      {
+        "heading": "Next step",
+        "body": "Write down product, quantity, region, and deadline before requesting help."
+      }
+    ]
+  },
+  {
+    "slug": "supplier-registration-guide",
+    "title": "Become a Supplier Guide",
+    "category": "Agribusiness",
+    "excerpt": "What agricultural suppliers should prepare before joining Ghana Growers.",
+    "audience": "Input dealers, logistics providers, packaging companies, consultants, and service providers",
+    "readTime": "4 min read",
+    "date": "2026-06-20",
+    "keyPoints": [
+      "Share your supplier category clearly.",
+      "List the regions or districts you serve.",
+      "Use simple product and service descriptions."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Suppliers can join Ghana Growers to make seeds, fertilizer, tools, equipment, logistics, packaging, and agricultural services easier to discover."
+      },
+      {
+        "heading": "What to check",
+        "body": "Prepare your business name, contact person, WhatsApp number, supplier category, service area, products or services, and any useful images or logo."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Describe your offer in simple words. Mention where you operate and what farmers, buyers, or partners can request from you."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use FarmMate for farming guidance. Use supplier registration when you want Ghana Growers users to discover your products or services."
+      },
+      {
+        "heading": "Next step",
+        "body": "Prepare your supplier category, coverage area, and WhatsApp contact before joining."
       }
     ]
   },
@@ -237,26 +401,33 @@
     "category": "Livestock",
     "excerpt": "Record keeping that helps poultry keepers track feed, mortality, eggs, and sales.",
     "audience": "Small poultry farmers",
-    "readTime": "4 min read",
+    "readTime": "5 min read",
     "date": "2026-06-20",
     "keyPoints": [
       "Track feed purchases and daily use.",
-      "Record egg collection and bird losses.",
-      "Watch changes in water intake and behaviour.",
-      "Use records before making buying or selling decisions."
+      "Record eggs, losses, and sales.",
+      "Use records before buying more feed or birds."
     ],
     "sections": [
       {
-        "heading": "Why records matter",
-        "body": "Small poultry farmers can lose money without noticing where costs are rising. Simple records help track feed, eggs, mortality, medicine, and sales."
+        "heading": "Summary",
+        "body": "Simple poultry records help farmers understand costs, egg production, bird losses, and sales. A notebook is enough to begin."
       },
       {
-        "heading": "What to write down",
-        "body": "Record date, feed quantity, eggs collected, birds lost, medicine used, and sales. Even a notebook can help farmers see patterns."
+        "heading": "What to check",
+        "body": "Check feed use, water intake, egg numbers, bird losses, medicine use, sales, and changes in bird behaviour."
       },
       {
-        "heading": "Use records for buyer conversations",
-        "body": "If a buyer asks for regular supply, records help the farmer know what quantity can be supplied and how often."
+        "heading": "What to do now",
+        "body": "Write the date, feed used, eggs collected, birds lost, medicine used, and sales each day. Review the notes every week."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "FarmMate is focused on farming decisions. For serious animal health problems, contact a qualified veterinary or extension officer."
+      },
+      {
+        "heading": "Next step",
+        "body": "Start one daily poultry record page today."
       }
     ]
   },
@@ -269,77 +440,66 @@
     "readTime": "5 min read",
     "date": "2026-06-20",
     "keyPoints": [
-      "Choose a sunny place with access to water.",
-      "Start with vegetables you cook often.",
-      "Use compost or well-prepared soil.",
-      "Water in the morning or late afternoon."
+      "Start small.",
+      "Choose a sunny place with water access.",
+      "Check plants often."
     ],
     "sections": [
       {
-        "heading": "Start small",
-        "body": "A small garden is easier to manage than a large one. Begin with crops such as pepper, tomato, okra, kontomire, spring onion, or garden eggs depending on your space."
+        "heading": "Summary",
+        "body": "A small backyard garden can provide fresh vegetables for the home. Start with a manageable space and crops you use often."
       },
       {
-        "heading": "Prepare the soil",
-        "body": "Mix soil with compost or well-rotted organic matter. Avoid planting in soil that holds too much water or dries out too quickly."
+        "heading": "What to check",
+        "body": "Check sunlight, water access, soil quality, drainage, container size, and whether the crop fits your space."
       },
       {
-        "heading": "Keep checking the plants",
-        "body": "Home gardens need regular observation. Check leaves, soil moisture, weeds, and pest signs before problems become serious."
+        "heading": "What to do now",
+        "body": "Start with a small bed or containers. Use compost or well-prepared soil. Water in the morning or late afternoon."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Ask FarmMate for crop choice, watering, spacing, or pest checks. Use Crop Doctor if leaves start curling, yellowing, or showing spots."
+      },
+      {
+        "heading": "Next step",
+        "body": "Choose one sunny spot and start with two or three vegetables you cook often."
       }
     ]
   },
   {
-    "slug": "seasonal-farming-rainy-season-checklist",
-    "title": "Rainy Season Farm Checklist",
-    "category": "Seasonal Farming",
-    "excerpt": "A short checklist for preparing fields, drainage, seed, and labour before the rains.",
-    "audience": "Farmers planning seasonal work",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Prepare drainage before heavy rain.",
-      "Check seed quality before planting.",
-      "Plan labour early.",
-      "Watch weather updates before spraying."
-    ],
-    "sections": [
-      {
-        "heading": "Prepare before the field gets busy",
-        "body": "Before the main rains, farmers should check drainage, seed availability, tools, labour, and field access. Waiting until the rains are heavy can delay planting."
-      },
-      {
-        "heading": "Protect soil and young crops",
-        "body": "Heavy rain can wash away soil or damage young plants. Good spacing, drainage, and mulching where suitable can help reduce stress."
-      },
-      {
-        "heading": "Use weather before field work",
-        "body": "Check rain chance before spraying, fertilizer application, or harvest work. GG FarmMate weather guidance can help farmers plan daily tasks."
-      }
-    ]
-  },
-  {
-    "slug": "video-how-to-use-crop-health-check",
+    "slug": "video-how-to-use-crop-doctor",
     "title": "Video Guide: How to Use Crop Doctor",
-    "category": "Video Library",
-    "excerpt": "A short video guide placeholder for farmers learning how to upload crop photos for advisory guidance.",
+    "category": "Video Lessons",
+    "excerpt": "A short video guide for farmers learning how to upload crop photos for advisory guidance.",
     "audience": "Farmers using GG FarmMate",
     "readTime": "Video guide",
     "date": "2026-06-20",
     "keyPoints": [
-      "Take a clear photo of the affected leaf or plant.",
-      "Use good light and avoid blurry photos.",
-      "Read results as guidance, not final diagnosis.",
-      "Confirm serious problems with an extension officer."
+      "Take a clear crop photo.",
+      "Read results as guidance.",
+      "Ask FarmMate what to check next."
     ],
     "sections": [
       {
-        "heading": "What the video will cover",
-        "body": "This guide will show farmers how to take a clear crop photo, upload it to Crop Doctor, read the result, and decide when to ask for expert confirmation."
+        "heading": "Summary",
+        "body": "This video lesson will help farmers learn how to use Crop Doctor well. The page is ready for the video when the Ghana Growers training media is available."
       },
       {
-        "heading": "Important reminder",
-        "body": "Crop Doctor provides advisory guidance only. Farmers should confirm serious disease, pest, or chemical decisions with a qualified agricultural extension officer."
+        "heading": "What to check",
+        "body": "Check that the photo is clear, bright, and close enough to show the affected crop part."
+      },
+      {
+        "heading": "What to do now",
+        "body": "Use Crop Doctor when a photo can reduce guessing. Read the result carefully and avoid treating the crop before checking the next step."
+      },
+      {
+        "heading": "When to use FarmMate or Crop Doctor",
+        "body": "Use Crop Doctor for the photo check, then Ask FarmMate if you need help deciding what to inspect or do next."
+      },
+      {
+        "heading": "Next step",
+        "body": "Open GG FarmMate and upload a clear crop photo when you see a visible crop problem."
       }
     ]
   }
