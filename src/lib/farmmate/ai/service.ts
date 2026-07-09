@@ -1,6 +1,7 @@
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
 import { findFertilizerGuidance } from "../fertilizer-specialist";
+import { findWeatherDecisionGuidance, weatherTaskFromQuestion } from "../weather-decision-specialist";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -34,6 +35,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "fertilizer" || input.brain.flow?.intent === "fertilizer"
       ? findFertilizerGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
       : null;
+  const weatherContext =
+    input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions"
+      ? findWeatherDecisionGuidance(weatherTaskFromQuestion(input.farmerQuestion))
+      : null;
   const payload = {
     instruction:
       "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
@@ -51,6 +56,17 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           sustainabilityNotes: fertilizerContext.sustainabilityNotes,
           extensionOfficerTriggers: fertilizerContext.extensionOfficerTriggers
         }
+      : weatherContext
+      ? {
+          specialist: "weather_decision",
+          task: weatherContext.task,
+          handles: weatherContext.handles,
+          checks: weatherContext.checks,
+          actions: weatherContext.actions,
+          safetyWarnings: weatherContext.safetyWarnings,
+          sustainabilityNotes: weatherContext.sustainabilityNotes,
+          noLiveWeatherRule: "Do not invent live rain, wind, temperature or forecast details. Ask the farmer to check conditions when weather data is missing."
+        }
       : null,
     decisionFlow: input.brain.flow ?? null,
     farmerAnswers: input.farmerAnswers,
@@ -62,6 +78,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "Keep the answer concise and conversational.",
       "Use the farmer's answers when explaining the recommendation.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
+      "For weather decisions, do not invent live weather or forecast details.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

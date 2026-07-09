@@ -83,25 +83,25 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     followUpQuestions: [
       {
         id: "rain-window",
-        question: "Is rain expected in the next 4-6 hours?",
+        question: "Is rain expected in the next 4 to 6 hours?",
         requiredForConfidence: true,
-        options: ["Yes", "No", "Not sure"]
+        options: ["Yes, rain is expected", "No rain expected", "I am not sure"]
       },
       {
         id: "leaf-wetness",
         question: "Are the leaves dry now?",
         requiredForConfidence: true,
-        options: ["Dry", "Wet", "Not sure"]
+        options: ["Leaves are dry", "Leaves are wet", "I am not sure"]
       },
       {
         id: "wind-level",
         question: "Is the wind calm enough that spray will not drift?",
         requiredForConfidence: true,
-        options: ["Calm", "Windy", "Not sure"]
+        options: ["Wind is calm", "Wind is strong", "I am not sure"]
       }
     ],
     recommendation: {
-      summary: "Spraying is only advisable when leaves are dry, wind is low and rain is not expected soon.",
+      summary: "Before spraying, check whether rain is expected in the next 4 to 6 hours, wind is calm and leaves are dry.",
       confidence: "high",
       reasoning: [
         {
@@ -116,7 +116,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         }
       ],
       sustainabilityPriority: sustainabilityPriorityOrder,
-      recommendedAction: "Spray only if leaves are dry, wind is calm and rain is not expected for 4-6 hours.",
+      recommendedAction: "Spray only if leaves are dry, wind is calm and rain is not expected for 4 to 6 hours.",
       guidance: [
         "Prefer early morning when leaves are dry and wind is calm.",
         "Do not spray before rain.",
@@ -125,7 +125,307 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       nextBestAction: {
         id: "check-rain-wind",
         label: "Check weather window",
-        instruction: "Confirm no rain is expected for 4-6 hours and that wind is calm before spraying.",
+        instruction: "Confirm no rain is expected for 4 to 6 hours and that wind is calm before spraying.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "fertilizer-before-rain",
+    question: "Can I apply fertilizer before rain?",
+    intent: "weather-decisions",
+    possibleCauses: ["Heavy rain runoff risk", "Nutrient leaching risk", "Waterlogged soil", "Dry soil before rain"],
+    requiredInformation: {
+      recentWeather: "Rain expectation and soil wetness needed",
+      farmPracticeContext: ["Fertilizer before rain", "Runoff prevention"]
+    },
+    followUpQuestions: [
+      {
+        id: "weather-rain-expectation",
+        question: "Is heavy rain expected soon?",
+        requiredForConfidence: true,
+        options: ["Yes, heavy rain is expected", "No heavy rain expected", "I am not sure"]
+      },
+      {
+        id: "weather-soil-wetness",
+        question: "Is the soil dry, moist, or already waterlogged?",
+        requiredForConfidence: true,
+        options: ["Soil is dry", "Soil is moist", "Soil is waterlogged", "I am not sure"]
+      },
+      {
+        id: "weather-fertilizer-timing",
+        question: "Is the fertilizer for a young crop, an actively growing crop, or a crop near harvest?",
+        requiredForConfidence: false,
+        options: ["Young crop", "Actively growing crop", "Near harvest", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Rain timing matters before applying fertilizer because heavy rain can wash nutrients away.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "fertilizer-runoff-risk",
+          observation: "Heavy rain can move fertilizer away from crop roots.",
+          interpretation: "FarmMate should warn about runoff and avoid recommending fertilizer before heavy rain."
+        },
+        {
+          id: "soil-water-state",
+          observation: "Dry or waterlogged soil can make fertilizer less useful or more risky.",
+          interpretation: "Soil wetness should be checked before applying fertilizer."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Do not apply fertilizer before heavy rain; wait until soil is moist but not waterlogged and rain risk is lower.",
+      guidance: [
+        "Avoid fertilizer runoff before heavy rain.",
+        "Do not work waterlogged soil.",
+        "Use compost or mulch where available to reduce nutrient loss."
+      ],
+      nextBestAction: {
+        id: "check-rain-before-fertilizer",
+        label: "Check rain first",
+        instruction: "Confirm whether heavy rain is expected before applying fertilizer.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2], decisionEngineSafetyRules[3]]
+  },
+  {
+    id: "should-i-irrigate-today",
+    question: "Should I irrigate today?",
+    intent: "weather-decisions",
+    possibleCauses: ["Dry soil", "Rain may be expected soon", "Waterlogged soil", "Crop wilting from heat"],
+    requiredInformation: {
+      recentWeather: "Rain expectation and soil moisture needed",
+      farmPracticeContext: ["Irrigation decision"]
+    },
+    followUpQuestions: [
+      {
+        id: "weather-rain-expectation",
+        question: "Is rain expected today or tonight?",
+        requiredForConfidence: true,
+        options: ["Yes, rain is expected", "No rain expected", "I am not sure"]
+      },
+      {
+        id: "weather-soil-wetness",
+        question: "Is the soil dry, moist, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Soil is dry", "Soil is moist", "Soil is waterlogged", "I am not sure"]
+      },
+      {
+        id: "weather-crop-wilting",
+        question: "Is the crop still wilting in the morning or evening?",
+        requiredForConfidence: false,
+        options: ["Wilting in cool hours", "Only wilting in hot afternoon", "Not wilting", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Irrigation depends on soil moisture and whether rain is expected soon.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "avoid-overwatering",
+          observation: "Watering before rain or on waterlogged soil can stress roots.",
+          interpretation: "FarmMate should check soil wetness before recommending irrigation."
+        },
+        {
+          id: "dry-soil-water-need",
+          observation: "Dry soil and wilting in cool hours can show real water stress.",
+          interpretation: "Watering at soil level may help when rain is not expected soon."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Water only if the soil is dry and rain is not expected soon; avoid irrigating waterlogged soil.",
+      guidance: [
+        "Check soil moisture before watering.",
+        "Water at soil level instead of wetting leaves.",
+        "Mulch where available to save water."
+      ],
+      nextBestAction: {
+        id: "check-soil-before-irrigation",
+        label: "Check soil moisture",
+        instruction: "Check whether the soil is dry before irrigating.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "harvest-before-rain",
+    question: "Can I harvest before rain?",
+    intent: "weather-decisions",
+    possibleCauses: ["Rain may damage mature produce", "Produce may spoil if harvested wet", "Crop may not be mature enough"],
+    requiredInformation: {
+      recentWeather: "Rain expectation needed",
+      farmPracticeContext: ["Harvest before rain", "Post-harvest loss prevention"]
+    },
+    followUpQuestions: [
+      {
+        id: "weather-rain-expectation",
+        question: "Is heavy rain expected soon?",
+        requiredForConfidence: true,
+        options: ["Yes, heavy rain is expected", "No heavy rain expected", "I am not sure"]
+      },
+      {
+        id: "weather-harvest-maturity",
+        question: "Is the produce mature enough to harvest?",
+        requiredForConfidence: true,
+        options: ["Mature and ready", "Not fully ready", "I am not sure"]
+      },
+      {
+        id: "weather-harvest-storage",
+        question: "Can you keep the harvested produce dry and shaded?",
+        requiredForConfidence: false,
+        options: ["Yes, I can keep it dry", "No dry place available", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Harvesting before rain can reduce loss when produce is mature and rain may damage quality.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "mature-produce-rain-risk",
+          observation: "Heavy rain can damage or reduce quality of some mature produce.",
+          interpretation: "FarmMate should recommend harvesting mature produce first when loss risk is high."
+        },
+        {
+          id: "wet-storage-risk",
+          observation: "Wet harvested produce can spoil faster.",
+          interpretation: "Dry shade and handling matter after harvest."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Harvest mature produce before heavy rain if rain may damage it, then keep it dry and shaded.",
+      guidance: [
+        "Do not harvest immature produce only because rain may come.",
+        "Keep harvested produce off wet ground.",
+        "Sort damaged produce early."
+      ],
+      nextBestAction: {
+        id: "harvest-mature-produce-first",
+        label: "Harvest mature produce",
+        instruction: "Harvest mature produce first if heavy rain may damage it.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "dry-produce-outside",
+    question: "Can I dry produce outside?",
+    intent: "weather-decisions",
+    possibleCauses: ["Rain may wet produce", "Damp produce can mould", "Dirty drying surface", "No quick cover available"],
+    requiredInformation: {
+      recentWeather: "Rain expectation needed",
+      farmPracticeContext: ["Drying produce outside", "Post-harvest loss prevention"]
+    },
+    followUpQuestions: [
+      {
+        id: "weather-rain-expectation",
+        question: "Is rain likely today?",
+        requiredForConfidence: true,
+        options: ["Yes, rain is likely", "No rain expected", "I am not sure"]
+      },
+      {
+        id: "weather-drying-surface",
+        question: "Will the produce be on a clean raised surface?",
+        requiredForConfidence: true,
+        options: ["Clean raised surface", "Bare ground", "I am not sure"]
+      },
+      {
+        id: "weather-drying-cover",
+        question: "Can you cover or move the produce quickly if clouds build up?",
+        requiredForConfidence: false,
+        options: ["Yes, I can cover it", "No cover ready", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Dry produce outside only when rain risk is low and the produce can stay clean and dry.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "drying-rain-risk",
+          observation: "Rain can wet drying produce and increase mould risk.",
+          interpretation: "FarmMate should not recommend outdoor drying when rain risk is unclear."
+        },
+        {
+          id: "clean-drying-surface",
+          observation: "Drying on bare ground can contaminate produce.",
+          interpretation: "A clean raised surface protects quality."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Dry outside only if rain risk is low, the surface is clean and raised, and you can cover the produce quickly.",
+      guidance: [
+        "Do not dry on bare ground.",
+        "Keep a cover ready.",
+        "Move produce under shelter if clouds build up."
+      ],
+      nextBestAction: {
+        id: "check-rain-before-drying",
+        label: "Check rain risk",
+        instruction: "Check rain risk before drying produce outside.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "planting-before-rain",
+    question: "Can I plant before rain?",
+    intent: "weather-decisions",
+    possibleCauses: ["Light rain may help germination", "Heavy rain may wash seeds away", "Waterlogged soil may rot seed"],
+    requiredInformation: {
+      recentWeather: "Rain expectation and soil wetness needed",
+      farmPracticeContext: ["Planting before rain"]
+    },
+    followUpQuestions: [
+      {
+        id: "weather-rain-expectation",
+        question: "Is the rain expected to be light or heavy?",
+        requiredForConfidence: true,
+        options: ["Light rain expected", "Heavy rain expected", "I am not sure"]
+      },
+      {
+        id: "weather-soil-wetness",
+        question: "Is the soil moist, dry, or waterlogged now?",
+        requiredForConfidence: true,
+        options: ["Soil is moist", "Soil is dry", "Soil is waterlogged", "I am not sure"]
+      },
+      {
+        id: "weather-field-drainage",
+        question: "Does the field drain well after rain?",
+        requiredForConfidence: false,
+        options: ["Drains well", "Holds water", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Planting before rain can help if rain is light, but heavy rain can wash seed away or waterlog the field.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "light-rain-planting-benefit",
+          observation: "Light rain can support germination.",
+          interpretation: "Rain can help planting when soil is not waterlogged."
+        },
+        {
+          id: "heavy-rain-planting-risk",
+          observation: "Heavy rain can wash seed away and damage soil structure.",
+          interpretation: "FarmMate should ask about rain strength and drainage before recommending planting."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Plant when soil is moist and rain is not expected to be heavy; delay if the field may flood or wash seed away.",
+      guidance: [
+        "Avoid working waterlogged soil.",
+        "Protect seed from runoff.",
+        "Use mulch or soil cover where suitable."
+      ],
+      nextBestAction: {
+        id: "check-rain-strength-before-planting",
+        label: "Check rain strength",
+        instruction: "Check whether the expected rain is light or heavy before planting.",
         actionType: "take-farm-action"
       }
     },

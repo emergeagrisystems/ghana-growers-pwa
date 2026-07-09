@@ -5,6 +5,7 @@ import { farmMateNutrientDeficiencies } from "../nutrient-deficiencies";
 import { farmMatePests } from "../pests";
 import { assessPlantHealthQuestion, PlantHealthAssessment } from "../plant-health-specialist";
 import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertilizer-specialist";
+import { findWeatherDecisionGuidance, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
 import type { FarmMateSpecialist, RouterResult } from "../router";
@@ -89,6 +90,34 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
 
     if (normalized.includes("after rain") || normalized.includes("after the rain") || normalized.includes("before rain") || normalized.includes("heavy rain")) {
       return farmMateDecisionFlows.find((flow) => flow.id === "fertilizer-after-rain");
+    }
+  }
+
+  if (selectedSpecialist === "weather_decision") {
+    const weatherTask = weatherTaskFromQuestion(question);
+
+    if (weatherTask === "spraying") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "can-i-spray-today");
+    }
+
+    if (weatherTask === "fertilizer-before-rain") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "fertilizer-before-rain");
+    }
+
+    if (weatherTask === "irrigation") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "should-i-irrigate-today");
+    }
+
+    if (weatherTask === "harvesting-before-rain") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "harvest-before-rain");
+    }
+
+    if (weatherTask === "drying-produce") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "dry-produce-outside");
+    }
+
+    if (weatherTask === "planting-before-rain") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "planting-before-rain");
     }
   }
 
@@ -243,6 +272,19 @@ function fertilizerContextLines(flow: DecisionFlow | undefined, resolvedCrop?: s
   ];
 }
 
+function weatherContextLines(question: string, flow: DecisionFlow | undefined) {
+  if (!flow || flow.intent !== "weather-decisions") {
+    return [];
+  }
+
+  const guidance = findWeatherDecisionGuidance(weatherTaskFromQuestion(question));
+
+  return [
+    ...(guidance ? [`Farmer task: ${guidance.handles}`, ...guidance.checks.slice(0, 2)] : []),
+    "FarmMate does not have live weather in this local decision flow, so it must ask the farmer to check rain, wind and leaf or soil wetness."
+  ].slice(0, 3);
+}
+
 function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   return {
     id: "local-fallback",
@@ -305,7 +347,9 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const photoWouldHelp = flow.safetyRules.some((rule) => rule.id.includes("photo")) || shouldShowCropDoctorAction;
   const chemicalGuardrail = farmMateSafetyRules.find((rule) => rule.action === "avoid-unsafe-chemical-advice");
   const isFertilizerFlow = flow.intent === "fertilizer";
+  const isWeatherFlow = flow.intent === "weather-decisions";
   const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
+  const weatherContext = weatherContextLines(question, flow);
 
   return {
     intent,
@@ -320,13 +364,14 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
         title: "Direct answer",
         body: [
           ...(isFertilizerFlow ? [fertilizerOpeningForQuestion(question)] : []),
+          ...(isWeatherFlow ? [weatherOpeningForQuestion(question)] : []),
           flow.recommendation.summary,
-          isLowerConfidence ? "I am not fully certain yet, so I will ask a few checks before suggesting treatment." : "This is a strong local demo match from the FarmMate Decision Engine."
+          isLowerConfidence ? "I am not fully certain yet, so I will ask a few checks before suggesting treatment." : isWeatherFlow ? "Use the farmer's own rain, wind and field checks before acting." : "This is a strong local demo match from the FarmMate Decision Engine."
         ].slice(0, 3)
       },
       {
         title: "Why this may happen",
-        body: (fertilizerContext.length ? fertilizerContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
+        body: (weatherContext.length ? weatherContext : fertilizerContext.length ? fertilizerContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "What to check",
@@ -338,6 +383,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
         title: "Recommended action",
         body: [
           flow.recommendation.recommendedAction,
+          ...(isWeatherFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isFertilizerFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(shouldRecommendExtension ? ["If the problem is spreading quickly, speak with a local extension officer for field-specific help."] : []),
           ...(photoWouldHelp ? ["A clear crop photo will help FarmMate avoid guessing."] : []),

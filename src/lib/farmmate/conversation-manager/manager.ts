@@ -22,7 +22,7 @@ const topicRules: TopicRule[] = [
   {
     topic: "weather_decision",
     specialist: "weather_decision",
-    keywords: ["spray", "rain", "wind", "weather", "irrigation"]
+    keywords: ["spray", "spraying", "rain", "rainfall", "wind", "windy", "weather", "irrigate", "irrigation", "water today", "wet leaves", "dry leaves", "heavy rain", "harvest before rain", "dry produce", "fertilize before rain", "fertilise before rain", "apply fertilizer before rain", "apply fertiliser before rain"]
   },
   {
     topic: "planting",

@@ -212,6 +212,119 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "fertilizer before rain routes to weather decision",
+    run: () => {
+      const router = routeFarmMateQuestion("Can I apply fertilizer before rain?");
+      const response = buildFarmMateResponse("Can I apply fertilizer before rain?", router);
+
+      assert.equal(router.selectedSpecialist, "weather_decision");
+      assert.equal(response.flow?.id, "fertilizer-before-rain");
+    }
+  },
+  {
+    name: "irrigation question routes to weather decision",
+    run: () => {
+      const router = routeFarmMateQuestion("Should I irrigate today?");
+      const response = buildFarmMateResponse("Should I irrigate today?", router);
+
+      assert.equal(router.selectedSpecialist, "weather_decision");
+      assert.equal(response.flow?.id, "should-i-irrigate-today");
+    }
+  },
+  {
+    name: "harvest before rain routes to weather decision",
+    run: () => {
+      const router = routeFarmMateQuestion("Can I harvest before rain?");
+      const response = buildFarmMateResponse("Can I harvest before rain?", router);
+
+      assert.equal(router.selectedSpecialist, "weather_decision");
+      assert.equal(response.flow?.id, "harvest-before-rain");
+    }
+  },
+  {
+    name: "dry produce outside routes to weather decision",
+    run: () => {
+      const router = routeFarmMateQuestion("Can I dry produce outside?");
+      const response = buildFarmMateResponse("Can I dry produce outside?", router);
+
+      assert.equal(router.selectedSpecialist, "weather_decision");
+      assert.equal(response.flow?.id, "dry-produce-outside");
+    }
+  },
+  {
+    name: "weather flow asks rain expectation first when live weather is unavailable",
+    run: () => {
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.id, "rain-window");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Is rain expected in the next 4 to 6 hours?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, rain is expected", "No rain expected", "I am not sure"]);
+    }
+  },
+  {
+    name: "spraying advice warns against rain within 4 to 6 hours and strong wind",
+    run: () => {
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("4 to 6 hours"), true);
+      assert.equal(text.includes("do not spray before rain"), true);
+      assert.equal(text.includes("wind is calm"), true);
+    }
+  },
+  {
+    name: "fertilizer weather advice warns against heavy rain and runoff",
+    run: () => {
+      const response = buildFarmMateResponse("Can I apply fertilizer before rain?", routeFarmMateQuestion("Can I apply fertilizer before rain?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("heavy rain"), true);
+      assert.equal(text.includes("runoff"), true);
+      assert.equal(response.flow?.recommendation.guidance.some((line) => line.toLowerCase().includes("runoff")), true);
+    }
+  },
+  {
+    name: "weather advice does not invent live forecast",
+    run: () => {
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("rain is coming today"), false);
+      assert.equal(text.includes("rain will come today"), false);
+      assert.equal(text.includes("check whether rain is expected"), true);
+    }
+  },
+  {
+    name: "weather recommendation includes one next best action",
+    run: () => {
+      const response = buildFarmMateResponse("Can I harvest before rain?", routeFarmMateQuestion("Can I harvest before rain?"));
+
+      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Harvest mature produce first if heavy rain may damage it.");
+      assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
+    }
+  },
+  {
+    name: "OpenAI payload includes weather specialist context",
+    run: () => {
+      const farmerQuestion = "Can I apply fertilizer before rain?";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion,
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; task?: string; noLiveWeatherRule?: string; safetyWarnings?: string[] } };
+
+      assert.equal(payload.selectedSpecialist, "weather_decision");
+      assert.equal(payload.specialistContext?.specialist, "weather_decision");
+      assert.equal(payload.specialistContext?.task, "fertilizer-before-rain");
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.toLowerCase().includes("do not invent live"), true);
+      assert.equal(payload.specialistContext?.safetyWarnings?.some((warning) => warning.toLowerCase().includes("heavy rain")), true);
+    }
+  },
+  {
     name: "buy produce does not route to plant health",
     run: () => {
       const router = routeFarmMateQuestion("How can I buy produce from Ghana Growers?");
