@@ -5,7 +5,14 @@ import { FormEvent, useEffect, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
-import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "@/lib/farmmate/conversation-ui";
+import {
+  cleanFarmMateFinalAnswer,
+  compactFollowUpSummary,
+  farmMateFallbackMessage,
+  shouldCompleteWeatherGuidedFlow,
+  shouldRenderLocalFarmMateGuidance,
+  weatherGuidedRecommendationCards
+} from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import type { FarmMateCreditStatus } from "@/lib/farmmate/usage";
@@ -28,19 +35,19 @@ function sectionBody(response: FarmMateBrainResponse, title: string) {
 function conversationalOption(questionId: string, option: string) {
   const optionLabels: Record<string, Record<string, string>> = {
     "rain-window": {
-      Yes: "Rain is expected soon",
-      No: "No rain expected soon",
-      "Not sure": "I am not sure about rain"
+      "Yes, rain is expected": "Rain is expected soon",
+      "No rain expected": "No rain expected soon",
+      "I am not sure": "I am not sure about rain"
     },
     "leaf-wetness": {
-      Dry: "Leaves are dry",
-      Wet: "Leaves are wet",
-      "Not sure": "I am not sure if leaves are dry"
+      "Yes, leaves are dry": "Leaves are dry",
+      "No, leaves are wet": "Leaves are wet",
+      "I am not sure": "I am not sure if leaves are dry"
     },
     "wind-level": {
-      Calm: "Wind is calm",
-      Windy: "Wind is strong",
-      "Not sure": "I am not sure about the wind"
+      "Yes, wind is calm": "Wind is calm",
+      "No, it is windy": "Wind is strong",
+      "I am not sure": "I am not sure about the wind"
     },
     "pepper-insects": {
       Yes: "I can see insects",
@@ -260,6 +267,12 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
 }
 
 function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
+  const weatherCards = weatherGuidedRecommendationCards(response.flow?.id, answers);
+
+  if (weatherCards) {
+    return weatherCards;
+  }
+
   return [
     {
       title: "Here's what I understand",
@@ -527,7 +540,9 @@ export function AskFarmMate({
 
     setFollowUpAnswers(nextAnswers);
 
-    if (followUpIndex + 1 < followUpQuestions.length) {
+    const shouldCompleteWeatherFlow = shouldCompleteWeatherGuidedFlow(response?.flow?.id, nextAnswers);
+
+    if (!shouldCompleteWeatherFlow && followUpIndex + 1 < followUpQuestions.length) {
       setFollowUpIndex((index) => index + 1);
       setConversationState((current) => ({ ...current, waitingForFollowUp: true }));
       return;

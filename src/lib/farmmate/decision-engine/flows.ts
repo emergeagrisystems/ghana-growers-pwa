@@ -88,21 +88,21 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         options: ["Yes, rain is expected", "No rain expected", "I am not sure"]
       },
       {
-        id: "leaf-wetness",
-        question: "Are the leaves dry now?",
+        id: "wind-level",
+        question: "Is the wind calm?",
         requiredForConfidence: true,
-        options: ["Leaves are dry", "Leaves are wet", "I am not sure"]
+        options: ["Yes, wind is calm", "No, it is windy", "I am not sure"]
       },
       {
-        id: "wind-level",
-        question: "Is the wind calm enough that spray will not drift?",
+        id: "leaf-wetness",
+        question: "Are the leaves dry?",
         requiredForConfidence: true,
-        options: ["Wind is calm", "Wind is strong", "I am not sure"]
+        options: ["Yes, leaves are dry", "No, leaves are wet", "I am not sure"]
       }
     ],
     recommendation: {
       summary: "Before spraying, check whether rain is expected in the next 4 to 6 hours, wind is calm and leaves are dry.",
-      confidence: "high",
+      confidence: "medium",
       reasoning: [
         {
           id: "rain-washoff",

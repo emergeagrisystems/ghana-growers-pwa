@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
-import { cleanFarmMateFinalAnswer, compactFollowUpSummary, farmMateFallbackMessage, shouldRenderLocalFarmMateGuidance } from "../src/lib/farmmate/conversation-ui";
+import {
+  cleanFarmMateFinalAnswer,
+  compactFollowUpSummary,
+  farmMateFallbackMessage,
+  shouldCompleteWeatherGuidedFlow,
+  shouldRenderLocalFarmMateGuidance,
+  weatherGuidedRecommendationCards
+} from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
@@ -374,6 +381,75 @@ const tests: TestCase[] = [
       assert.equal(response.flow?.followUpQuestions[0]?.id, "rain-window");
       assert.equal(response.flow?.followUpQuestions[0]?.question, "Is rain expected in the next 4 to 6 hours?");
       assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, rain is expected", "No rain expected", "I am not sure"]);
+      assert.equal(response.flow?.followUpQuestions[1]?.question, "Is the wind calm?");
+      assert.deepEqual(response.flow?.followUpQuestions[1]?.options, ["Yes, wind is calm", "No, it is windy", "I am not sure"]);
+      assert.equal(response.flow?.followUpQuestions[2]?.question, "Are the leaves dry?");
+      assert.deepEqual(response.flow?.followUpQuestions[2]?.options, ["Yes, leaves are dry", "No, leaves are wet", "I am not sure"]);
+    }
+  },
+  {
+    name: "weather spray flow does not recommend immediately when conditions are missing",
+    run: () => {
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+
+      assert.equal(response.flow?.recommendation.confidence, "medium");
+      assert.equal(response.flow?.followUpQuestions.length, 3);
+      assert.equal(shouldCompleteWeatherGuidedFlow(response.flow?.id, []), false);
+    }
+  },
+  {
+    name: "rain expected answer leads to do-not-spray recommendation",
+    run: () => {
+      const answers = [{ question: "Is rain expected in the next 4 to 6 hours?", answer: "Rain is expected soon" }];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+
+      assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
+      assert.equal(text.includes("do not spray now"), true);
+      assert.equal(text.includes("wait until after the rain"), true);
+      assert.equal(text.includes("leaves are dry and wind is calm"), true);
+    }
+  },
+  {
+    name: "clear spray conditions lead to cautious suitable recommendation",
+    run: () => {
+      const answers = [
+        { question: "Is rain expected in the next 4 to 6 hours?", answer: "No rain expected soon" },
+        { question: "Is the wind calm?", answer: "Wind is calm" },
+        { question: "Are the leaves dry?", answer: "Leaves are dry" }
+      ];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+
+      assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
+      assert.equal(text.includes("spraying may be suitable"), true);
+      assert.equal(text.includes("follow product label instructions"), true);
+      assert.equal(text.includes("avoid spraying during hot midday sun"), true);
+    }
+  },
+  {
+    name: "unsure weather answer leads to cautious delay recommendation",
+    run: () => {
+      const answers = [{ question: "Is rain expected in the next 4 to 6 hours?", answer: "I am not sure about rain" }];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+
+      assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
+      assert.equal(text.includes("do not spray until you confirm rain"), true);
+      assert.equal(text.includes("wind"), true);
+    }
+  },
+  {
+    name: "weather guided recommendation includes exactly one next step card",
+    run: () => {
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", [
+        { question: "Is rain expected in the next 4 to 6 hours?", answer: "No rain expected soon" },
+        { question: "Is the wind calm?", answer: "Wind is calm" },
+        { question: "Are the leaves dry?", answer: "Leaves are dry" }
+      ]);
+
+      assert.equal(cards?.filter((card) => card.title === "Next step").length, 1);
+      assert.equal(cards?.find((card) => card.title === "Next step")?.body.length, 1);
     }
   },
   {
