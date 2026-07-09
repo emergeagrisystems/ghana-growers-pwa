@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   BadgeCheck,
-  CalendarDays,
   Clock3,
   MapPin,
   PackageCheck,
@@ -42,7 +41,7 @@ type DisplayRow = {
 };
 
 const REQUEST_EXPLANATION =
-  "Ghana Growers confirms availability, quantity, price guidance, and collection or delivery details before connecting buyers.";
+  "Ghana Growers confirms availability, quantity, price, and collection or delivery details before connecting buyers.";
 
 export async function generateMetadata({ params }: FarmerProfilePageProps) {
   const farmers = await getFarmersData();
@@ -267,18 +266,15 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     };
   });
 
-  const aboutCopy = `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}. Buyers can request availability, quantity, pricing guidance, and collection or delivery details through Ghana Growers.`;
+  const aboutCopy = `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}. Buyers can request availability, quantity, price, and collection or delivery details through Ghana Growers.`;
   const snapshotItems: DisplayRow[] = [
     { icon: Sprout, label: "Farm Type", value: displayValue(farmer.farmType) },
     { icon: Ruler, label: "Farm Size", value: displayValue(farmer.farmSize) },
-    ...(isMeaningful(farmer.yearsFarming) ? [{ icon: CalendarDays, label: "Years Farming", value: normalizeText(farmer.yearsFarming) }] : []),
     { icon: Clock3, label: "Supply Frequency", value: "Confirmed during request" },
     { icon: PackageCheck, label: "Active Listings", value: String(activeMarketplaceListings.length) }
   ];
   const locationRows: DisplayRow[] = [
-    ...(location.community ? [{ label: "Community/Town", value: location.community }] : []),
-    ...(location.district ? [{ label: "District", value: location.district }] : []),
-    ...(location.region ? [{ label: "Region", value: location.region }] : []),
+    { label: "Community/Town", value: location.community ?? "Available on request" },
     { label: "Service Area", value: location.serviceArea }
   ];
   const tradeRows: DisplayRow[] = [
@@ -296,7 +292,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[0.78fr_1.25fr_0.82fr] lg:items-center lg:px-8 lg:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:px-8 lg:py-10">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
               <SafeImage
@@ -348,36 +344,26 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               ))}
             </div>
           </div>
-
-          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Request produce from this farmer</p>
-            <h2 className="mt-2 text-xl font-black leading-tight text-ink">Request produce from this farmer</h2>
-            <p className="mt-3 text-sm leading-6 text-ink/64">
-              Tell Ghana Growers what you need from this farmer. We will confirm availability, quantity, price guidance, and collection or delivery details before connecting you.
-            </p>
-            <RequestConnectionButton
-              label="Request Produce"
-              sourceType="Farmer"
-              sourceId={farmer.slug}
-              sourceName={farmer.farmName}
-              productInterest={products.slice(0, 3).join(", ")}
-              className="mt-5 w-full"
-            />
-            <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
-              No payment is required at this stage.
-            </p>
-          </div>
         </div>
       </section>
 
       <main className="bg-white pb-24 md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">About the Farm</p>
-            <h2 className="mt-2 text-2xl font-black text-ink">{farmer.farmName}</h2>
-            <p className="mt-4 max-w-4xl text-sm leading-7 text-ink/68">{shortStory(aboutCopy)}</p>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/60">{REQUEST_EXPLANATION}</p>
-          </section>
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+            <aside className="order-1 space-y-4 lg:sticky lg:top-24 lg:order-2">
+              <RequestProduceCard farmerSlug={farmer.slug} farmName={farmer.farmName} products={products} />
+              <InfoPanel title="Farm Snapshot" eyebrow="Profile Details" icon={Sprout} rows={snapshotItems} />
+              <InfoPanel title="Location" eyebrow="Operating Area" icon={MapPin} rows={locationRows} />
+              <InfoPanel title="Trade Details" eyebrow="Buyer Routing" icon={Truck} rows={tradeRows} />
+            </aside>
+
+            <div className="order-2 lg:order-1">
+              <section className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+                <p className="text-sm font-black uppercase tracking-wide text-earth-700">About the Farm</p>
+                <h2 className="mt-2 text-2xl font-black text-ink">{farmer.farmName}</h2>
+                <p className="mt-4 max-w-4xl text-sm leading-7 text-ink/68">{shortStory(aboutCopy)}</p>
+                <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/60">{REQUEST_EXPLANATION}</p>
+              </section>
 
           <section className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -452,7 +438,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                           <DetailLine label="Quantity" value={formatQuantity(listing.quantity, listing.unit)} />
                           <DetailLine label="Guide Price" value={formatPrice(listing.priceRange)} />
                           <DetailLine label="Payment Terms" value={paymentPreference} />
-                          <DetailLine label="Fulfillment" value="Confirmed during request" />
+                          <DetailLine label="Delivery / Pickup" value="Confirmed during request" />
                         </div>
                         <RequestConnectionButton
                           label="Request this listing"
@@ -483,17 +469,11 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             )}
           </section>
 
-          <section className="mt-8 grid gap-5 lg:grid-cols-3">
-            <InfoPanel title="Farm Snapshot" eyebrow="Profile Details" icon={Sprout} rows={snapshotItems} />
-            <InfoPanel title="Location" eyebrow="Operating Area" icon={MapPin} rows={locationRows} />
-            <InfoPanel title="Trade Details" eyebrow="Buyer Routing" icon={Truck} rows={tradeRows} />
-          </section>
-
           <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Why Source Through Ghana Growers</p>
             <h2 className="mt-2 text-2xl font-black text-ink">A supported way to source farm produce</h2>
             <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/65">
-              Ghana Growers supports buyer requests by helping confirm produce availability, quantity, price guidance, and collection or delivery details. This profile follows the Ghana Growers platform commitment framework and is separate from formal certification.
+              Ghana Growers supports buyer requests by helping confirm produce availability, quantity, price, and collection or delivery details. This profile follows the Ghana Growers platform commitment framework and is separate from formal certification.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {trustPoints.map((point) => (
@@ -575,6 +555,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               No payment is required at this stage. Ghana Growers will first confirm availability and contact you.
             </p>
           </section>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -601,15 +583,38 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function RequestProduceCard({ farmerSlug, farmName, products }: { farmerSlug: string; farmName: string; products: string[] }) {
+  return (
+    <section className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-soft">
+      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Request Produce</p>
+      <h2 className="mt-2 text-xl font-black leading-tight text-ink">Request produce from this farmer</h2>
+      <p className="mt-3 text-sm leading-6 text-ink/64">
+        Tell Ghana Growers what you need. We will confirm availability, quantity, price, and pickup or delivery details before connecting you.
+      </p>
+      <RequestConnectionButton
+        label="Request Produce"
+        sourceType="Farmer"
+        sourceId={farmerSlug}
+        sourceName={farmName}
+        productInterest={products.slice(0, 3).join(", ")}
+        className="mt-5 w-full"
+      />
+      <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+        No payment is required at this stage.
+      </p>
+    </section>
+  );
+}
+
 function InfoPanel({ title, eyebrow, icon: Icon, rows }: { title: string; eyebrow: string; icon: LucideIcon; rows: DisplayRow[] }) {
   return (
     <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-      <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
+      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-earth-700">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {eyebrow}
       </p>
       <h2 className="mt-2 text-xl font-black text-ink">{title}</h2>
-      <div className="mt-4 grid gap-3 text-sm">
+      <div className="mt-4 divide-y divide-leaf-900/10 text-sm">
         {rows.map((row) => (
           <InfoRow key={row.label} {...row} />
         ))}
@@ -620,12 +625,12 @@ function InfoPanel({ title, eyebrow, icon: Icon, rows }: { title: string; eyebro
 
 function InfoRow({ icon: Icon, label, value }: DisplayRow) {
   return (
-    <div className="rounded-md bg-leaf-50 px-4 py-3">
-      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-ink/40">
-        {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-        {label}
+    <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
+      <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-ink/45">
+        {Icon ? <Icon className="h-3.5 w-3.5 shrink-0 text-leaf-700" aria-hidden="true" /> : null}
+        <span>{label}</span>
       </p>
-      <p className="mt-1 font-semibold leading-6 text-ink/72">{value}</p>
+      <p className="max-w-[58%] text-right font-semibold leading-6 text-ink/72">{value}</p>
     </div>
   );
 }
