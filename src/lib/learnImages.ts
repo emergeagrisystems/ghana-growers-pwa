@@ -15,31 +15,28 @@ export const learnImageMap = {
 } as const;
 
 const categoryImageMap: Record<BlogPost["category"], string> = {
-  Crops: learnImageMap.cropFarming,
-  Livestock: learnImageMap.livestock,
-  "Home Gardening": learnImageMap.homeGardening,
-  Agribusiness: learnImageMap.agribusiness,
-  "Seasonal Farming": learnImageMap.seasonalChecklist,
-  "GG FarmMate": learnImageMap.cropDoctor,
+  "Soil & Compost": learnImageMap.farmRecords,
+  "Crop Care": learnImageMap.cropFarming,
+  "Water & Weather": learnImageMap.seasonalChecklist,
+  "Pests & Diseases": learnImageMap.cropDoctor,
+  "Harvest & Selling": learnImageMap.harvestPrep,
+  "FarmMate Guides": learnImageMap.cropDoctor,
   "Video Lessons": learnImageMap.cropDoctor
 };
 
 const slugImageMap: Partial<Record<string, string>> = {
-  "how-ghana-growers-works": learnImageMap.agribusiness,
-  "verification-process": learnImageMap.verification,
-  "how-to-sell-produce-through-ghana-growers": learnImageMap.buyerDemand,
-  "how-buyers-source-produce-through-ghana-growers": learnImageMap.buyerDemand,
+  "make-your-own-compost-for-healthy-soil": learnImageMap.farmRecords,
+  "how-to-mulch-your-farm-and-save-water": learnImageMap.seasonalChecklist,
+  "how-to-use-poultry-manure-safely": learnImageMap.farmRecords,
+  "crop-rotation-why-maize-should-not-stand-alone": learnImageMap.cropFarming,
+  "before-you-spray-three-things-to-check-first": learnImageMap.cropDoctor,
+  "weekly-crop-field-check": learnImageMap.cropFarming,
+  "rainy-season-farm-checklist": learnImageMap.seasonalChecklist,
+  "simple-raised-beds-for-vegetables": learnImageMap.homeGardening,
+  "how-to-prepare-produce-before-selling": learnImageMap.harvestPrep,
+  "how-to-sort-and-pack-vegetables-for-buyers": learnImageMap.buyerDemand,
   "how-to-use-gg-farmmate": learnImageMap.cropDoctor,
   "how-to-use-crop-doctor": learnImageMap.cropDoctor,
-  "how-to-prepare-harvest-before-selling": learnImageMap.harvestPrep,
-  "tomato-production-in-southern-ghana": learnImageMap.cropFarming,
-  "maize-yellow-leaves-field-guide": learnImageMap.cropDoctor,
-  "cassava-leaves-curling-checks": learnImageMap.cropFarming,
-  "before-you-spray-three-checks": learnImageMap.cropDoctor,
-  "backyard-vegetable-garden-ghana": learnImageMap.homeGardening,
-  "seasonal-farming-rainy-season-checklist": learnImageMap.seasonalChecklist,
-  "small-poultry-flock-records": learnImageMap.livestock,
-  "supplier-registration-guide": learnImageMap.agribusiness,
   "video-how-to-use-crop-doctor": learnImageMap.cropDoctor
 };
 

@@ -42,6 +42,11 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
+  const relatedLessons = (post.relatedLessons ?? [])
+    .map((slug) => getBlogPost(slug))
+    .filter((lesson): lesson is (typeof blogPosts)[number] => Boolean(lesson))
+    .slice(0, 3);
+
   return (
     <article className="bg-white">
       <section className="bg-[#ECE7D1] py-10 sm:py-14">
@@ -62,6 +67,8 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
                 <Clock size={15} aria-hidden="true" />
                 {post.readTime}
               </span>
+              {post.difficulty ? <span>{post.difficulty}</span> : null}
+              {post.cost ? <span>{post.cost}</span> : null}
               {post.audience ? <span>{post.audience}</span> : null}
             </div>
           </div>
@@ -90,11 +97,33 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
               ))}
             </ul>
             <div className="mt-5">
-              <ButtonLink href="/farmer-hub" variant="primary">Open GG FarmMate</ButtonLink>
+              <ButtonLink href="/farmer-hub?tool=ask" variant="primary">Ask FarmMate</ButtonLink>
             </div>
           </aside>
         </div>
       </section>
+
+      {relatedLessons.length ? (
+        <section className="bg-leaf-50 py-10 sm:py-12">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <p className="gg-eyebrow">RELATED LESSONS</p>
+            <h2 className="mt-2 text-2xl font-black text-ink">Keep improving</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {relatedLessons.map((lesson) => (
+                <a
+                  key={lesson.slug}
+                  href={`/learn/${lesson.slug}`}
+                  className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
+                >
+                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">{lesson.category}</p>
+                  <h3 className="mt-2 text-lg font-black leading-snug text-ink">{lesson.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink/64">{lesson.excerpt}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }

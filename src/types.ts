@@ -42,16 +42,19 @@ export type BlogPost = {
   slug: string;
   title: string;
   category:
-    | "Crops"
-    | "Livestock"
-    | "Home Gardening"
-    | "Agribusiness"
-    | "Seasonal Farming"
-    | "GG FarmMate"
+    | "Soil & Compost"
+    | "Crop Care"
+    | "Water & Weather"
+    | "Pests & Diseases"
+    | "Harvest & Selling"
+    | "FarmMate Guides"
     | "Video Lessons";
   excerpt: string;
   readTime: string;
   date: string;
+  difficulty?: string;
+  cost?: string;
+  relatedLessons?: string[];
   audience?: string;
   keyPoints?: string[];
   sections?: {

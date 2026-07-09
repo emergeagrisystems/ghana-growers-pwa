@@ -14,7 +14,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata({
   title: "GG FarmMate",
   description:
-    "Your AI-powered farming companion by Ghana Growers, with daily demo farming recommendations, weather outlook, crop planning tools, and learning tips for Ghanaian farmers.",
+    "Your AI-powered farming companion by Ghana Growers, with daily farming recommendations, weather outlook, crop planning tools, and learning tips for Ghanaian farmers.",
   path: "/farmer-hub"
 });
 
@@ -50,7 +50,7 @@ export default function FarmerHubPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="gg-section-title">Today&apos;s Farm Summary</h2>
-                <p className="mt-2 text-sm font-bold text-ink/58">Sample farm summary</p>
+                <p className="mt-2 text-sm font-bold text-ink/58">Daily farming guidance</p>
               </div>
               <span className="gg-icon bg-earth-50 text-earth-700 ring-earth-500/20">
                 <Sun size={24} aria-hidden="true" />
@@ -113,7 +113,7 @@ export default function FarmerHubPage() {
             <div>
               <h2 className="gg-card-title">Learn Something Today</h2>
               <p className="mt-3 text-base font-bold leading-7 text-ink/72">{featuredLearningTip}</p>
-              <a href="/learn/backyard-vegetable-garden-ghana" className="mt-4 inline-flex text-sm font-black text-leaf-700">
+              <a href="/learn/make-your-own-compost-for-healthy-soil" className="mt-4 inline-flex text-sm font-black text-leaf-700">
                 Read guide
               </a>
             </div>

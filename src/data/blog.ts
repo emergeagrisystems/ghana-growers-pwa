@@ -4,12 +4,12 @@ import learnArticles from "@/data/learnArticles.json";
 export const blogPosts = learnArticles as BlogPost[];
 
 export const learnCategories = [
-  "Crops",
-  "Livestock",
-  "Home Gardening",
-  "Agribusiness",
-  "Seasonal Farming",
-  "GG FarmMate",
+  "Soil & Compost",
+  "Crop Care",
+  "Water & Weather",
+  "Pests & Diseases",
+  "Harvest & Selling",
+  "FarmMate Guides",
   "Video Lessons"
 ] as const;
 

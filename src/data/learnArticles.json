@@ -1,469 +1,565 @@
 [
   {
-    "slug": "how-ghana-growers-works",
-    "title": "How Ghana Growers Works",
-    "category": "Agribusiness",
-    "excerpt": "A simple guide to how farmers, buyers, suppliers, and partners use Ghana Growers.",
-    "audience": "Farmers, buyers, suppliers, and partners",
-    "readTime": "4 min read",
-    "date": "2026-06-18",
+    "slug": "make-your-own-compost-for-healthy-soil",
+    "title": "Make Your Own Compost for Healthy Soil",
+    "category": "Soil & Compost",
+    "excerpt": "Use farm waste, dry leaves, grass, and manure to improve soil naturally.",
+    "audience": "Farmers and gardeners improving soil",
+    "readTime": "6 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "how-to-mulch-your-farm-and-save-water",
+      "how-to-use-poultry-manure-safely",
+      "crop-rotation-why-maize-should-not-stand-alone"
+    ],
     "keyPoints": [
-      "Farmers, buyers, and suppliers use one trusted agriculture network.",
-      "Clear records make it easier for Ghana Growers to follow up.",
-      "Verified information helps reduce confusion before trade."
+      "Start with materials already on your farm.",
+      "The pile should be damp, not soaked.",
+      "Use compost when it is dark, crumbly, and smells earthy."
     ],
     "sections": [
       {
         "heading": "Summary",
-        "body": "Ghana Growers connects farmers, suppliers, buyers, and partners across Ghana. The platform helps people find produce, request supply, join the network, learn practical farming steps, and use GG FarmMate for daily farm decisions."
+        "body": "Compost helps improve soil, hold moisture, and feed crops slowly. You can start with materials already on your farm."
       },
       {
-        "heading": "What to check",
-        "body": "Check that your farm, business, product, region, district, phone number, and WhatsApp details are clear before submitting information. Good records help Ghana Growers understand what you offer or need."
+        "heading": "What you need",
+        "body": "Dry leaves or dry grass, crop waste, vegetable scraps, a small amount of animal manure, water, and a shaded, well-drained place."
       },
       {
-        "heading": "What to do now",
-        "body": "Start with the page that matches your goal. Use Buy to source produce or inputs, Sell to join as a seller, Directory to find farmers or suppliers, and GG FarmMate when you need farming guidance."
+        "heading": "Steps",
+        "body": "Choose a shaded, well-drained place. Put dry materials at the bottom. Add green materials like crop waste or vegetable scraps. Add a small layer of manure or old compost. Sprinkle water so the pile is damp, not soaked. Cover with dry grass, leaves, or a sack. Turn the pile every 1-2 weeks. Use it when it is dark, crumbly, and smells earthy."
       },
       {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use GG FarmMate when you have a farm question, need a practical next step, or want help checking a crop problem. Use Crop Doctor when a clear photo can reduce guessing."
+        "heading": "Mistakes to avoid",
+        "body": "Do not add plastic. Do not add meat or oil. Do not use human waste. Do not add chemical containers. Avoid fresh diseased crop material."
       },
       {
-        "heading": "Next step",
-        "body": "Choose Buy, Sell, Directory, or GG FarmMate based on what you need today."
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate what compost materials are available on your farm and what crop you want to plant."
+      },
+      {
+        "heading": "Next action",
+        "body": "Start a small compost pile this week using materials already on your farm."
+      }
+    ]
+  },
+  {
+    "slug": "how-to-mulch-your-farm-and-save-water",
+    "title": "How to Mulch Your Farm and Save Water",
+    "category": "Soil & Compost",
+    "excerpt": "Use dry grass, leaves, or crop residue to keep soil cool and reduce water loss.",
+    "audience": "Farmers managing water and weeds",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "make-your-own-compost-for-healthy-soil",
+      "simple-raised-beds-for-vegetables",
+      "weekly-crop-field-check"
+    ],
+    "keyPoints": [
+      "Mulch helps soil stay cooler.",
+      "Keep mulch away from the plant stem.",
+      "Use clean dry grass, leaves, or crop residue."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Mulching covers the soil with dry grass, leaves, or crop residue. It helps reduce water loss, protects soil from heat, and can reduce weeds."
+      },
+      {
+        "heading": "What you need",
+        "body": "Dry grass, dry leaves, rice straw, maize stalk pieces, or clean crop residue. Avoid materials with fresh disease signs or weed seeds."
+      },
+      {
+        "heading": "Steps",
+        "body": "Water the crop first if the soil is dry. Spread mulch around the crop in a thin layer. Leave a small space around the stem. Add more mulch when it breaks down. Check under the mulch for pests during weekly field checks."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not pile mulch tightly against stems. Do not use plastic waste. Do not use diseased crop leaves. Do not make the layer so thick that water cannot enter."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate which mulch materials are safest for your crop and season."
+      },
+      {
+        "heading": "Next action",
+        "body": "Mulch one small crop bed this week and compare soil moisture after two days."
+      }
+    ]
+  },
+  {
+    "slug": "how-to-use-poultry-manure-safely",
+    "title": "How to Use Poultry Manure Safely",
+    "category": "Soil & Compost",
+    "excerpt": "Learn why fresh manure can burn crops and how to use it more safely.",
+    "audience": "Farmers using manure",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "make-your-own-compost-for-healthy-soil",
+      "weekly-crop-field-check",
+      "how-to-mulch-your-farm-and-save-water"
+    ],
+    "keyPoints": [
+      "Fresh poultry manure can burn crops.",
+      "Compost or age manure before use.",
+      "Keep manure away from edible leaves and fruits."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Poultry manure can feed soil, but fresh manure is strong. If used wrongly, it can burn crops, smell badly, or contaminate produce."
+      },
+      {
+        "heading": "What you need",
+        "body": "Dry poultry manure, dry leaves or grass, a compost corner, water, and time for the manure to age before planting."
+      },
+      {
+        "heading": "Steps",
+        "body": "Mix poultry manure with dry plant material. Keep it in a compost pile or covered place. Let it break down before applying. Use small amounts. Apply to soil, not directly on edible leaves or fruits."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not put fresh poultry manure directly on young roots. Do not spread manure on leafy vegetables close to harvest. Do not store manure where rain can wash it into water sources."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate how to use manure for your crop, soil condition, and planting time."
+      },
+      {
+        "heading": "Next action",
+        "body": "Start aging or composting poultry manure before using it on young crops."
+      }
+    ]
+  },
+  {
+    "slug": "crop-rotation-why-maize-should-not-stand-alone",
+    "title": "Crop Rotation: Why Maize Should Not Stand Alone Every Season",
+    "category": "Soil & Compost",
+    "excerpt": "Simple crop rotation ideas to protect soil and reduce pest pressure.",
+    "audience": "Crop farmers planning seasons",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "make-your-own-compost-for-healthy-soil",
+      "weekly-crop-field-check",
+      "rainy-season-farm-checklist"
+    ],
+    "keyPoints": [
+      "Repeating one crop can weaken soil.",
+      "Rotation can reduce some pest pressure.",
+      "Legumes can help improve soil."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Planting maize on the same plot every season can reduce soil strength and allow some pests or diseases to build up. Rotation gives the soil a break."
+      },
+      {
+        "heading": "What you need",
+        "body": "A simple record of what you planted last season, available seed, land space, and a crop that fits your market or household needs."
+      },
+      {
+        "heading": "Steps",
+        "body": "Write down last season's crop. Choose a different crop family when possible. Add legumes where they fit. Keep crop residue managed well. Watch the new crop closely for early pest signs."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not rotate without checking market or food needs. Do not move from one stressed crop to another without improving soil. Do not ignore drainage and spacing."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate what crop you grew last season and what options fit your region and season."
+      },
+      {
+        "heading": "Next action",
+        "body": "Write down what was planted on each plot last season before choosing the next crop."
+      }
+    ]
+  },
+  {
+    "slug": "before-you-spray-three-things-to-check-first",
+    "title": "Before You Spray: 3 Things to Check First",
+    "category": "Pests & Diseases",
+    "excerpt": "Check weather, wind, and the real crop problem before spraying.",
+    "audience": "Farmers planning spray work",
+    "readTime": "4 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "weekly-crop-field-check",
+      "how-to-use-crop-doctor",
+      "rainy-season-farm-checklist"
+    ],
+    "keyPoints": [
+      "Check rain before spraying.",
+      "Avoid strong wind.",
+      "Confirm the real problem first."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Spraying at the wrong time can waste money and may not solve the crop problem. Check the weather, wind, and visible signs first."
+      },
+      {
+        "heading": "What you need",
+        "body": "A weather check, a quick wind check, a close look under leaves, and a clear reason for spraying."
+      },
+      {
+        "heading": "Steps",
+        "body": "Check if rain is expected. Check if the wind is strong. Inspect the crop closely. Confirm whether you see pests, disease signs, nutrient stress, or water stress. Follow label instructions only when spraying is truly needed."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not spray before rain. Do not spray in strong wind. Do not spray just because leaves look weak. Do not mix products without trusted advice."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate: Can I spray today? Use Crop Doctor if a photo would help confirm what you see."
+      },
+      {
+        "heading": "Next action",
+        "body": "Check rain and wind before mixing any spray."
+      }
+    ]
+  },
+  {
+    "slug": "weekly-crop-field-check",
+    "title": "Weekly Crop Field Check",
+    "category": "Crop Care",
+    "excerpt": "A simple weekly routine for checking leaves, pests, wilting, and plant growth.",
+    "audience": "Farmers checking crop health",
+    "readTime": "4 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "before-you-spray-three-things-to-check-first",
+      "how-to-use-crop-doctor",
+      "how-to-mulch-your-farm-and-save-water"
+    ],
+    "keyPoints": [
+      "Check bottom leaves first.",
+      "Look under leaves for pests.",
+      "Compare weak plants with healthy plants."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "A weekly field check helps you catch crop problems early. Walk the field slowly and compare affected plants with healthy ones."
+      },
+      {
+        "heading": "What you need",
+        "body": "A notebook or phone, time to inspect several plants, and good light so you can see leaves clearly."
+      },
+      {
+        "heading": "Steps",
+        "body": "Check bottom leaves. Look under leaves. Check stems and new growth. Look for wilting, yellowing, spots, holes, or insects. Note where the problem appears in the field."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not check only one plant. Do not ignore lower leaves. Do not spray before you know what problem you are trying to solve."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate what you see, which crop is affected, and whether symptoms are on old leaves, new leaves, or the whole plant."
+      },
+      {
+        "heading": "Next action",
+        "body": "Inspect five plants today and write down the first symptom you see."
+      }
+    ]
+  },
+  {
+    "slug": "rainy-season-farm-checklist",
+    "title": "Rainy Season Farm Checklist",
+    "category": "Water & Weather",
+    "excerpt": "Prepare drainage, seed, tools, and labour before heavy rains.",
+    "audience": "Farmers preparing for rain",
+    "readTime": "4 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "simple-raised-beds-for-vegetables",
+      "before-you-spray-three-things-to-check-first",
+      "how-to-mulch-your-farm-and-save-water"
+    ],
+    "keyPoints": [
+      "Clear drainage paths early.",
+      "Keep seed dry.",
+      "Avoid planting in waterlogged soil."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Heavy rain can delay planting, damage young crops, and spread some crop problems. Preparing early makes field work easier."
+      },
+      {
+        "heading": "What you need",
+        "body": "Clear drains, dry seed storage, working tools, labour plans, and a simple weather check before major field work."
+      },
+      {
+        "heading": "Steps",
+        "body": "Clear drainage paths. Check seed and tools early. Plan labour before the field gets busy. Avoid planting in waterlogged soil. Check rain before spraying or harvesting."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not wait until the field is flooded. Do not store seed where it can get wet. Do not apply fertilizer or spray before heavy rain."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate whether rain may affect planting, spraying, harvesting, or irrigation decisions."
+      },
+      {
+        "heading": "Next action",
+        "body": "Walk the field and clear the main drainage path today."
+      }
+    ]
+  },
+  {
+    "slug": "simple-raised-beds-for-vegetables",
+    "title": "Simple Raised Beds for Vegetables",
+    "category": "Water & Weather",
+    "excerpt": "Use raised beds to improve drainage and protect vegetable roots.",
+    "audience": "Vegetable farmers and home gardeners",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "rainy-season-farm-checklist",
+      "how-to-mulch-your-farm-and-save-water",
+      "weekly-crop-field-check"
+    ],
+    "keyPoints": [
+      "Raised beds help water drain away.",
+      "Beds make crop rows easier to manage.",
+      "Mulch can help raised beds hold moisture."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Raised beds lift vegetable roots above standing water. They are useful where rain or irrigation leaves the soil too wet."
+      },
+      {
+        "heading": "What you need",
+        "body": "A hoe, prepared soil, compost if available, and enough space between beds for walking and drainage."
+      },
+      {
+        "heading": "Steps",
+        "body": "Mark the bed area. Loosen the soil. Add compost if available. Raise the bed above the path. Smooth the top. Leave drainage space between beds. Mulch after planting where suitable."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not make beds where water cannot escape. Do not make paths too narrow. Do not plant too close together."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate about spacing, watering, and whether raised beds suit your crop and season."
+      },
+      {
+        "heading": "Next action",
+        "body": "Prepare one small raised bed before expanding to the full garden."
+      }
+    ]
+  },
+  {
+    "slug": "how-to-prepare-produce-before-selling",
+    "title": "How to Prepare Produce Before Selling",
+    "category": "Harvest & Selling",
+    "excerpt": "Sort, pack, estimate quantity, and prepare buyer details.",
+    "audience": "Farmers preparing produce for buyers",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "how-to-sort-and-pack-vegetables-for-buyers",
+      "weekly-crop-field-check",
+      "how-to-use-gg-farmmate"
+    ],
+    "keyPoints": [
+      "Sort damaged produce first.",
+      "Estimate quantity clearly.",
+      "Prepare pickup or delivery details."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Good harvest preparation helps buyers understand quality, quantity, timing, and pickup needs. It reduces confusion before sale."
+      },
+      {
+        "heading": "What you need",
+        "body": "Clean containers, sorting space, quantity estimates, produce photos if needed, harvest date, and pickup or delivery details."
+      },
+      {
+        "heading": "Steps",
+        "body": "Remove damaged produce. Group similar sizes together. Count or weigh clearly. Prepare packaging. Write down location, quantity, harvest date, and contact details."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not mix damaged produce with good produce. Do not guess quantity. Do not promise delivery before checking transport."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate if you notice crop quality problems before harvest or need a checklist before selling."
+      },
+      {
+        "heading": "Next action",
+        "body": "Sort your harvest and write down quantity, location, and preferred pickup time."
+      }
+    ]
+  },
+  {
+    "slug": "how-to-sort-and-pack-vegetables-for-buyers",
+    "title": "How to Sort and Pack Vegetables for Buyers",
+    "category": "Harvest & Selling",
+    "excerpt": "Simple steps to make produce cleaner, easier to count, and more buyer-ready.",
+    "audience": "Vegetable farmers and sellers",
+    "readTime": "5 min read",
+    "difficulty": "Beginner",
+    "cost": "Low",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "how-to-prepare-produce-before-selling",
+      "weekly-crop-field-check",
+      "rainy-season-farm-checklist"
+    ],
+    "keyPoints": [
+      "Separate damaged produce.",
+      "Use clean crates or sacks.",
+      "Keep quantity easy to confirm."
+    ],
+    "sections": [
+      {
+        "heading": "Summary",
+        "body": "Sorting and packing helps buyers trust what they are receiving. Clean, counted produce is easier to inspect and transport."
+      },
+      {
+        "heading": "What you need",
+        "body": "A clean sorting area, crates or sacks, shade, water for cleaning only where appropriate, and a simple way to count or estimate quantity."
+      },
+      {
+        "heading": "Steps",
+        "body": "Sort out damaged produce. Group by size or quality. Keep produce shaded. Pack in clean containers. Count crates, sacks, bunches, or kilograms clearly."
+      },
+      {
+        "heading": "Mistakes to avoid",
+        "body": "Do not pack wet produce tightly if it may spoil. Do not hide damaged produce inside good produce. Do not overfill containers."
+      },
+      {
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate for a harvest preparation checklist before contacting buyers."
+      },
+      {
+        "heading": "Next action",
+        "body": "Prepare one clean sorting area before harvest day."
       }
     ]
   },
   {
     "slug": "how-to-use-gg-farmmate",
     "title": "How to Use GG FarmMate",
-    "category": "GG FarmMate",
-    "excerpt": "Learn how to ask questions, use FarmMate tools, and get practical next steps.",
+    "category": "FarmMate Guides",
+    "excerpt": "Ask better questions, use live tools, and get practical next steps.",
     "audience": "Farmers using GG FarmMate",
     "readTime": "3 min read",
-    "date": "2026-06-20",
+    "difficulty": "Beginner",
+    "cost": "Free",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "how-to-use-crop-doctor",
+      "weekly-crop-field-check",
+      "before-you-spray-three-things-to-check-first"
+    ],
     "keyPoints": [
-      "Ask one clear farm question at a time.",
-      "Mention the crop and what you can see.",
+      "Ask one clear question at a time.",
+      "Mention crop, symptom, and recent weather.",
       "Follow the next step before adding more details."
     ],
     "sections": [
       {
         "heading": "Summary",
-        "body": "GG FarmMate helps farmers make better farming decisions every day. It can guide crop checks, spraying decisions, planting questions, and practical next steps using local FarmMate knowledge."
+        "body": "GG FarmMate is the live daily farming companion for practical farm questions, crop photos, crop timing, planting support, and daily farm guidance."
       },
       {
-        "heading": "What to check",
-        "body": "Before asking, note the crop, growth stage, visible signs, recent rain, and where the problem appears. A clear question helps FarmMate avoid guessing."
+        "heading": "What you need",
+        "body": "A clear question, the crop name, what you can see, and any recent rain, watering, spraying, or field change."
       },
       {
-        "heading": "What to do now",
-        "body": "Ask one short question such as: My maize leaves are yellow. What should I check first? If FarmMate asks a follow-up question, answer it directly."
+        "heading": "Steps",
+        "body": "Open GG FarmMate. Ask one farming question. Answer follow-up questions if FarmMate asks. Use Crop Doctor when a photo can reduce guessing."
       },
       {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use Ask FarmMate for questions. Use Crop Doctor when a photo would help, especially for leaf spots, curling leaves, wilting, pest damage, or an unknown crop problem."
+        "heading": "Mistakes to avoid",
+        "body": "Do not ask many unrelated questions at once. Do not leave out the crop name. Do not treat FarmMate as a replacement for an extension officer during serious outbreaks."
       },
       {
-        "heading": "Next step",
-        "body": "Open GG FarmMate and ask one practical question about your farm today."
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate when you need one practical next step for planting, spraying, crop symptoms, watering, harvest preparation, or tool guidance."
+      },
+      {
+        "heading": "Next action",
+        "body": "Open GG FarmMate and ask one clear question about your farm today."
       }
     ]
   },
   {
     "slug": "how-to-use-crop-doctor",
     "title": "How to Use Crop Doctor",
-    "category": "GG FarmMate",
-    "excerpt": "Learn how to upload a clear crop photo so FarmMate can avoid guessing.",
-    "audience": "Farmers checking crop health",
+    "category": "FarmMate Guides",
+    "excerpt": "Upload a clear crop photo so FarmMate can avoid guessing.",
+    "audience": "Farmers checking visible crop problems",
     "readTime": "3 min read",
-    "date": "2026-06-20",
+    "difficulty": "Beginner",
+    "cost": "Free",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "weekly-crop-field-check",
+      "before-you-spray-three-things-to-check-first",
+      "how-to-use-gg-farmmate"
+    ],
     "keyPoints": [
-      "Use bright natural light.",
-      "Show the affected part clearly.",
-      "Treat results as guidance, not a final diagnosis."
+      "Use good light.",
+      "Show the affected crop part clearly.",
+      "Use the result as guidance, not a final diagnosis."
     ],
     "sections": [
       {
         "heading": "Summary",
-        "body": "Crop Doctor checks a crop photo and gives practical guidance. It cannot guarantee a diagnosis, but it can help you decide what to inspect next."
+        "body": "Crop Doctor uses a crop photo to guide checks. It can help reduce guessing, but it does not replace local expert confirmation for serious problems."
       },
       {
-        "heading": "What to check",
-        "body": "Take a clear photo of the affected leaves, stem, fruit, or whole plant. Avoid blurry photos, heavy shadows, and photos taken too far away."
+        "heading": "What you need",
+        "body": "A clear photo of the affected leaf, stem, fruit, or whole plant. Good daylight helps FarmMate see visible signs."
       },
       {
-        "heading": "What to do now",
-        "body": "Upload one clear image. Read the possible issue, visible signs, recommended action, prevention, and next best action before applying any treatment."
+        "heading": "Steps",
+        "body": "Take a clear photo. Upload it to Crop Doctor. Read the visible signs, possible issue, recommended action, prevention, and next best action."
       },
       {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use Crop Doctor for visible crop problems. Use Ask FarmMate after the result if you need help deciding what to check next."
+        "heading": "Mistakes to avoid",
+        "body": "Do not upload blurry photos. Do not crop out the affected part. Do not treat the result as guaranteed. Do not apply chemicals before checking the real problem."
       },
       {
-        "heading": "Next step",
-        "body": "Take one clear crop photo in good light and upload it to Crop Doctor."
-      }
-    ]
-  },
-  {
-    "slug": "how-to-prepare-harvest-before-selling",
-    "title": "How to Prepare Your Harvest Before Selling",
-    "category": "Agribusiness",
-    "excerpt": "Simple checks for sorting, packaging, quantity, and buyer readiness.",
-    "audience": "Farmers preparing produce for buyers",
-    "readTime": "5 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Sort damaged produce before estimating quantity.",
-      "Prepare packaging and pickup details early.",
-      "Be clear about quality, quantity, and timing."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Good harvest preparation helps farmers speak clearly with buyers. Sorting, packaging, and quantity checks reduce confusion before pickup or delivery."
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate about the Crop Doctor result when you need help deciding what to check next."
       },
       {
-        "heading": "What to check",
-        "body": "Check damaged produce, size differences, packaging needs, expected quantity, harvest date, pickup location, and whether delivery is possible."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Sort damaged produce first. Estimate quantity using a clear unit such as crates, sacks, bunches, kilograms, or bags. Keep photos ready if Ghana Growers asks for them."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use GG FarmMate if crop quality problems appear before selling. Use Crop Doctor if spots, wilting, or pest signs are affecting the harvest."
-      },
-      {
-        "heading": "Next step",
-        "body": "Sort your harvest and write down quantity, location, and preferred pickup time."
-      }
-    ]
-  },
-  {
-    "slug": "maize-yellow-leaves-field-guide",
-    "title": "Maize Leaves Turning Yellow: What to Check First",
-    "category": "Crops",
-    "excerpt": "A simple field guide for farmers who notice yellowing maize leaves.",
-    "audience": "Maize farmers",
-    "readTime": "5 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Check whether older or newer leaves yellow first.",
-      "Look at soil moisture and drainage.",
-      "Use Crop Doctor if a photo would reduce guessing."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Yellow maize leaves can come from nutrient stress, poor water conditions, root problems, pests, or disease. Do not jump to disease before checking the pattern."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check if the yellowing starts on older leaves, newer leaves, or the whole plant. Look at drainage, soil moisture, spacing, roots, and pest damage."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Inspect five nearby maize plants. If older leaves are pale yellow and the field is not waterlogged, nutrient stress may be possible. Improve field observation before applying chemicals."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Ask FarmMate if you can describe where the yellowing starts. Use Crop Doctor if the leaves have spots, curling, insect damage, or unclear symptoms."
-      },
-      {
-        "heading": "Next step",
-        "body": "Check five plants and note whether the yellowing starts on old leaves, new leaves, or everywhere."
-      }
-    ]
-  },
-  {
-    "slug": "tomato-production-in-southern-ghana",
-    "title": "Tomato Production: Field Checks Before Flowering",
-    "category": "Crops",
-    "excerpt": "Practical checks for tomato farmers before flowering and fruiting begin.",
-    "audience": "Tomato farmers and gardeners",
-    "readTime": "5 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Check drainage after rain.",
-      "Look under leaves early.",
-      "Support plants before heavy fruiting."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Tomato plants need steady checks before flowering. Early field checks can reduce losses from water stress, pests, poor airflow, and weak plant support."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check drainage, leaf colour, leaf spots, pest signs under leaves, plant spacing, airflow, and whether plants need staking before fruiting."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Clear blocked drains, remove weeds around plants, inspect lower leaves, and support weak plants early. Avoid spraying until the problem is confirmed."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Ask FarmMate about watering, flowering, or field checks. Use Crop Doctor if tomato leaves show spots, curling, yellowing, or unusual damage."
-      },
-      {
-        "heading": "Next step",
-        "body": "Check the lower leaves and drainage before the next rain."
-      }
-    ]
-  },
-  {
-    "slug": "cassava-leaves-curling-checks",
-    "title": "Cassava Leaves Curling: What to Check",
-    "category": "Crops",
-    "excerpt": "Simple checks for curling cassava leaves before assuming disease.",
-    "audience": "Cassava farmers",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Check young leaves and older leaves separately.",
-      "Look for insects before assuming disease.",
-      "Ask for help if curling spreads quickly."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Cassava leaf curling can be linked to pest pressure, disease, heat stress, nutrient stress, or young leaf growth. Check carefully before deciding what to do."
-      },
-      {
-        "heading": "What to check",
-        "body": "Look at whether curling is on young leaves, older leaves, or the whole plant. Check under leaves for insects and compare affected plants with healthy nearby plants."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Inspect several plants across the field. Remove badly affected leaves only if advised locally, keep the field clean, and avoid chemical treatment without confirmation."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use Crop Doctor if a clear photo can show the curling pattern. Contact an extension officer if symptoms spread quickly across many plants."
-      },
-      {
-        "heading": "Next step",
-        "body": "Take a clear photo of one affected leaf and one whole plant, then use Crop Doctor."
-      }
-    ]
-  },
-  {
-    "slug": "before-you-spray-three-checks",
-    "title": "Before You Spray: 3 Things to Check",
-    "category": "Crops",
-    "excerpt": "Check weather, wind, and the real crop problem before spraying.",
-    "audience": "Farmers planning spray work",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Check rain before spraying.",
-      "Avoid strong wind.",
-      "Confirm the pest or disease first."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Spraying at the wrong time can waste money and may not help the crop. Check weather, wind, and the actual problem before spraying."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check if rain is expected, whether wind is strong, and whether the crop problem is pest, disease, nutrient stress, or water stress."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Delay spraying if rain is likely soon or wind is strong. Confirm the problem first. Follow the product label carefully if a chemical is truly needed."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Ask FarmMate: Can I spray today? Use Crop Doctor when the problem on the plant is unclear."
-      },
-      {
-        "heading": "Next step",
-        "body": "Check rain and wind before mixing any spray."
-      }
-    ]
-  },
-  {
-    "slug": "seasonal-farming-rainy-season-checklist",
-    "title": "Rainy Season Farm Checklist",
-    "category": "Seasonal Farming",
-    "excerpt": "Prepare fields, drainage, seed, and labour before heavy rains.",
-    "audience": "Farmers planning seasonal work",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Clear drainage paths.",
-      "Check seed and tools early.",
-      "Avoid planting in waterlogged soil."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Rainy season work becomes easier when drainage, seed, tools, and labour are prepared before heavy rains arrive."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check blocked drainage, seed condition, tool readiness, field access, labour availability, and low areas that hold water."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Clear drainage paths, keep seed dry, prepare tools, and avoid planting in waterlogged soil. Use mulch where it helps protect young plants."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Ask FarmMate before planting, spraying, or harvesting around rain. Use Crop Doctor if wet weather is followed by leaf spots or wilting."
-      },
-      {
-        "heading": "Next step",
-        "body": "Walk the field and clear the main drainage paths today."
-      }
-    ]
-  },
-  {
-    "slug": "how-buyers-source-produce-through-ghana-growers",
-    "title": "How Buyers Source Produce Through Ghana Growers",
-    "category": "Agribusiness",
-    "excerpt": "How buyers find farmers, browse listings, submit demand, and request connections.",
-    "audience": "Buyers, processors, traders, restaurants, and institutions",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Browse before submitting a request.",
-      "Use clear quantity and timing details.",
-      "Confirm quality, packaging, and transport before buying."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Buyers can use Ghana Growers to discover farmers, check supply, and request help when produce or inputs are not easy to find."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check product name, preferred region, quantity, delivery date, quality requirements, packaging, and pickup or delivery needs."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Search Buy first. If you cannot find what you need, submit a clear request so Ghana Growers can help source produce or suppliers."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "FarmMate is for farming guidance. Use Buy or Contact for sourcing produce, inputs, or suppliers."
-      },
-      {
-        "heading": "Next step",
-        "body": "Write down product, quantity, region, and deadline before requesting help."
-      }
-    ]
-  },
-  {
-    "slug": "supplier-registration-guide",
-    "title": "Become a Supplier Guide",
-    "category": "Agribusiness",
-    "excerpt": "What agricultural suppliers should prepare before joining Ghana Growers.",
-    "audience": "Input dealers, logistics providers, packaging companies, consultants, and service providers",
-    "readTime": "4 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Share your supplier category clearly.",
-      "List the regions or districts you serve.",
-      "Use simple product and service descriptions."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Suppliers can join Ghana Growers to make seeds, fertilizer, tools, equipment, logistics, packaging, and agricultural services easier to discover."
-      },
-      {
-        "heading": "What to check",
-        "body": "Prepare your business name, contact person, WhatsApp number, supplier category, service area, products or services, and any useful images or logo."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Describe your offer in simple words. Mention where you operate and what farmers, buyers, or partners can request from you."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use FarmMate for farming guidance. Use supplier registration when you want Ghana Growers users to discover your products or services."
-      },
-      {
-        "heading": "Next step",
-        "body": "Prepare your supplier category, coverage area, and WhatsApp contact before joining."
-      }
-    ]
-  },
-  {
-    "slug": "small-poultry-flock-records",
-    "title": "Simple Records for Small Poultry Flocks",
-    "category": "Livestock",
-    "excerpt": "Record keeping that helps poultry keepers track feed, mortality, eggs, and sales.",
-    "audience": "Small poultry farmers",
-    "readTime": "5 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Track feed purchases and daily use.",
-      "Record eggs, losses, and sales.",
-      "Use records before buying more feed or birds."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "Simple poultry records help farmers understand costs, egg production, bird losses, and sales. A notebook is enough to begin."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check feed use, water intake, egg numbers, bird losses, medicine use, sales, and changes in bird behaviour."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Write the date, feed used, eggs collected, birds lost, medicine used, and sales each day. Review the notes every week."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "FarmMate is focused on farming decisions. For serious animal health problems, contact a qualified veterinary or extension officer."
-      },
-      {
-        "heading": "Next step",
-        "body": "Start one daily poultry record page today."
-      }
-    ]
-  },
-  {
-    "slug": "backyard-vegetable-garden-ghana",
-    "title": "Starting a Backyard Vegetable Garden",
-    "category": "Home Gardening",
-    "excerpt": "A practical guide for growing vegetables at home with limited space.",
-    "audience": "Home gardeners and families",
-    "readTime": "5 min read",
-    "date": "2026-06-20",
-    "keyPoints": [
-      "Start small.",
-      "Choose a sunny place with water access.",
-      "Check plants often."
-    ],
-    "sections": [
-      {
-        "heading": "Summary",
-        "body": "A small backyard garden can provide fresh vegetables for the home. Start with a manageable space and crops you use often."
-      },
-      {
-        "heading": "What to check",
-        "body": "Check sunlight, water access, soil quality, drainage, container size, and whether the crop fits your space."
-      },
-      {
-        "heading": "What to do now",
-        "body": "Start with a small bed or containers. Use compost or well-prepared soil. Water in the morning or late afternoon."
-      },
-      {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Ask FarmMate for crop choice, watering, spacing, or pest checks. Use Crop Doctor if leaves start curling, yellowing, or showing spots."
-      },
-      {
-        "heading": "Next step",
-        "body": "Choose one sunny spot and start with two or three vegetables you cook often."
+        "heading": "Next action",
+        "body": "Upload one clear crop photo when you see a visible crop problem."
       }
     ]
   },
@@ -471,35 +567,46 @@
     "slug": "video-how-to-use-crop-doctor",
     "title": "Video Guide: How to Use Crop Doctor",
     "category": "Video Lessons",
-    "excerpt": "A short video guide for farmers learning how to upload crop photos for advisory guidance.",
+    "excerpt": "A short lesson for farmers learning how to upload crop photos for advisory guidance.",
     "audience": "Farmers using GG FarmMate",
-    "readTime": "Video guide",
-    "date": "2026-06-20",
+    "readTime": "3 min video",
+    "difficulty": "Beginner",
+    "cost": "Free",
+    "date": "2026-07-09",
+    "relatedLessons": [
+      "how-to-use-crop-doctor",
+      "weekly-crop-field-check",
+      "how-to-use-gg-farmmate"
+    ],
     "keyPoints": [
-      "Take a clear crop photo.",
-      "Read results as guidance.",
+      "Take a clear photo.",
+      "Use Crop Doctor for visible crop problems.",
       "Ask FarmMate what to check next."
     ],
     "sections": [
       {
         "heading": "Summary",
-        "body": "This video lesson will help farmers learn how to use Crop Doctor well. The page is ready for the video when the Ghana Growers training media is available."
+        "body": "This short lesson supports Crop Doctor practice. The video card shows Coming soon until the training video is live."
       },
       {
-        "heading": "What to check",
-        "body": "Check that the photo is clear, bright, and close enough to show the affected crop part."
+        "heading": "What you need",
+        "body": "A phone camera, good light, and a visible crop problem to photograph."
       },
       {
-        "heading": "What to do now",
-        "body": "Use Crop Doctor when a photo can reduce guessing. Read the result carefully and avoid treating the crop before checking the next step."
+        "heading": "Steps",
+        "body": "Open Crop Doctor, upload a clear photo, read the result, and use Ask FarmMate if you need help with the next check."
       },
       {
-        "heading": "When to use FarmMate or Crop Doctor",
-        "body": "Use Crop Doctor for the photo check, then Ask FarmMate if you need help deciding what to inspect or do next."
+        "heading": "Mistakes to avoid",
+        "body": "Do not upload unclear photos or assume the result is a guaranteed diagnosis."
       },
       {
-        "heading": "Next step",
-        "body": "Open GG FarmMate and upload a clear crop photo when you see a visible crop problem."
+        "heading": "When to ask FarmMate",
+        "body": "Ask FarmMate if the Crop Doctor result is uncertain or if you need help choosing the next field check."
+      },
+      {
+        "heading": "Next action",
+        "body": "Open Crop Doctor when you have a clear crop photo."
       }
     ]
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, CalendarDays, Camera, Sprout, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
@@ -71,7 +72,7 @@ function PlantingAdvisorExperience() {
         </label>
       </div>
       <div className="mt-4 rounded-md bg-leaf-50 p-4">
-        <p className="text-sm font-black text-leaf-700">Demo advice</p>
+        <p className="text-sm font-black text-leaf-700">Planting guidance</p>
         <p className="mt-1 text-sm leading-6 text-ink/68">Plant after two steady rains and avoid waterlogged soil.</p>
       </div>
     </article>
@@ -79,6 +80,7 @@ function PlantingAdvisorExperience() {
 }
 
 export function FarmTools() {
+  const searchParams = useSearchParams();
   const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
@@ -90,6 +92,14 @@ export function FarmTools() {
     setIsClosing(false);
     setActiveTool(tool);
   }
+
+  useEffect(() => {
+    const tool = searchParams.get("tool");
+
+    if (tool === "ask" || tool === "doctor" || tool === "calendar" || tool === "planting") {
+      openTool(tool);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     function handleOpenTool(event: Event) {
