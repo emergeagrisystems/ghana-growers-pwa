@@ -9,6 +9,7 @@ import {
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
   cropDoctorCreditMessage,
   shouldDisableCropDoctorAnalysis,
+  shouldDisableCropDoctorUpload,
   type FarmMateCreditDecision,
   type FarmMateCreditStatus
 } from "@/lib/farmmate/usage";
@@ -24,6 +25,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const [creditMessage, setCreditMessage] = useState("");
   const [showAskFarmMateFallback, setShowAskFarmMateFallback] = useState(false);
   const isCreditExhausted = shouldDisableCropDoctorAnalysis(credits);
+  const isUploadDisabled = shouldDisableCropDoctorUpload(credits);
 
   useEffect(() => {
     return () => {
@@ -172,13 +174,22 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
       <label
         htmlFor="crop-doctor-upload"
-        className="mt-5 grid min-h-44 cursor-pointer place-items-center rounded-md border-2 border-dashed border-leaf-700/20 bg-leaf-50 p-5 text-center transition hover:border-leaf-700/45 hover:bg-white"
+        aria-disabled={isUploadDisabled}
+        className={`mt-5 grid min-h-44 place-items-center rounded-md border-2 border-dashed p-5 text-center transition ${
+          isUploadDisabled
+            ? "cursor-not-allowed border-ink/10 bg-ink/5 opacity-75"
+            : "cursor-pointer border-leaf-700/20 bg-leaf-50 hover:border-leaf-700/45 hover:bg-white"
+        }`}
       >
-        <input id="crop-doctor-upload" type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
+        <input id="crop-doctor-upload" type="file" accept="image/*" className="sr-only" onChange={handleImageChange} disabled={isUploadDisabled} />
         <div>
-          <UploadCloud className="mx-auto text-leaf-700" size={32} aria-hidden="true" />
-          <p className="mt-3 text-base font-black text-ink">Take photo or choose photo</p>
-          <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">JPG, PNG, or WEBP under 5 MB. Ghana Growers does not permanently store this photo in V1.</p>
+          <UploadCloud className={`mx-auto ${isUploadDisabled ? "text-ink/35" : "text-leaf-700"}`} size={32} aria-hidden="true" />
+          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Take photo or choose photo"}</p>
+          <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
+            {isUploadDisabled
+              ? "You can still ask FarmMate for guidance while you wait."
+              : "JPG, PNG, or WEBP under 5 MB. Ghana Growers does not permanently store this photo in V1."}
+          </p>
         </div>
       </label>
 

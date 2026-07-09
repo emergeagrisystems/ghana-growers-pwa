@@ -32,7 +32,7 @@ export function eventsInsideWindow(events: FarmMateUsageEvent[], now = new Date(
 
 export function formatRefreshIn(resetAt: string | null, now = new Date()) {
   if (!resetAt) {
-    return "soon";
+    return `within ${FARM_MATE_USAGE_WINDOW_HOURS} hours`;
   }
 
   const diffMs = Math.max(0, new Date(resetAt).getTime() - now.getTime());
@@ -40,10 +40,10 @@ export function formatRefreshIn(resetAt: string | null, now = new Date()) {
   const minutes = Math.ceil((diffMs % (60 * 60 * 1000)) / (60 * 1000));
 
   if (hours <= 0) {
-    return `${Math.max(1, minutes)} minute${minutes === 1 ? "" : "s"}`;
+    return `${Math.max(1, minutes)}m`;
   }
 
-  return minutes > 0 ? `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"}` : `${hours} hour${hours === 1 ? "" : "s"}`;
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
 
 export function getFarmMateCreditStatus(tool: FarmMateUsageTool, events: FarmMateUsageEvent[], now = new Date()): FarmMateCreditStatus {
@@ -113,7 +113,7 @@ export function usageTrackingUnavailableDecision(tool: FarmMateUsageTool, now = 
 }
 
 export const CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT =
-  "I uploaded a crop photo but Crop Doctor is not available right now. Can you guide me on what to check?";
+  "I do not have Crop Doctor checks available right now. Can you guide me on what to check from my crop photo?";
 
 export const CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE =
   "Crop Doctor AI is temporarily limited, but you can still ask FarmMate for guidance.";
@@ -124,8 +124,13 @@ export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCre
   }
 
   if (status.isExhausted) {
-    const label = tool === "ask_farmmate" ? "Ask questions" : "checks";
-    return `0 ${label} remaining — refreshes in ${status.refreshInText}`;
+    const refreshText = status.resetAt ? `refreshes in ${status.refreshInText}` : `refreshes ${status.refreshInText}`;
+
+    if (tool === "ask_farmmate") {
+      return `0 of ${status.limit} Ask questions available - ${refreshText}`;
+    }
+
+    return `0 of ${status.limit} checks available - ${refreshText}`;
   }
 
   if (tool === "ask_farmmate") {
@@ -144,9 +149,14 @@ export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "
     return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
   }
 
-  return `You've used your free Crop Doctor checks for now. Your credits refresh in ${decision.refreshInText}.`;
+  const refreshText = decision.refreshInText.startsWith("within ") ? `refresh ${decision.refreshInText}` : `refresh in ${decision.refreshInText}`;
+  return `You've used your free Crop Doctor checks for now. Your credits ${refreshText}.`;
 }
 
 export function shouldDisableCropDoctorAnalysis(status?: FarmMateCreditStatus | null) {
+  return Boolean(status?.isExhausted);
+}
+
+export function shouldDisableCropDoctorUpload(status?: FarmMateCreditStatus | null) {
   return Boolean(status?.isExhausted);
 }

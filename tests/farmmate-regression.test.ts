@@ -20,7 +20,9 @@ import {
   CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE,
   cropDoctorCreditMessage,
   farmMateCreditLine,
+  formatRefreshIn,
   shouldDisableCropDoctorAnalysis,
+  shouldDisableCropDoctorUpload,
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
@@ -329,7 +331,58 @@ const tests: TestCase[] = [
 
       assert.equal(message.includes("You've used your free Crop Doctor checks for now."), true);
       assert.equal(message.includes("Your credits refresh in"), true);
+      assert.equal(message.includes("soon"), false);
       assert.equal(message.includes("temporarily limited"), false);
+    }
+  },
+  {
+    name: "credit refresh text never renders soon",
+    run: () => {
+      assert.equal(formatRefreshIn(null), "within 12 hours");
+      assert.equal(farmMateCreditLine("crop_doctor", {
+        tool: "crop_doctor",
+        label: "analyses",
+        limit: 2,
+        remaining: 0,
+        used: 2,
+        windowHours: 12,
+        resetAt: null,
+        refreshInText: formatRefreshIn(null),
+        isExhausted: true
+      }).includes("soon"), false);
+    }
+  },
+  {
+    name: "known Crop Doctor reset time renders compactly",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const resetAt = new Date(now.getTime() + 6 * 60 * 60 * 1000 + 20 * 60 * 1000).toISOString();
+      const refreshInText = formatRefreshIn(resetAt, now);
+
+      assert.equal(refreshInText, "6h 20m");
+      assert.equal(
+        farmMateCreditLine("crop_doctor", {
+          tool: "crop_doctor",
+          label: "analyses",
+          limit: 2,
+          remaining: 0,
+          used: 2,
+          windowHours: 12,
+          resetAt,
+          refreshInText,
+          isExhausted: true
+        }),
+        "0 of 2 checks available - refreshes in 6h 20m"
+      );
+    }
+  },
+  {
+    name: "unknown Crop Doctor reset time renders within 12 hours",
+    run: () => {
+      const message = cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: formatRefreshIn(null) });
+
+      assert.equal(message, "You've used your free Crop Doctor checks for now. Your credits refresh within 12 hours.");
+      assert.equal(message.includes("soon"), false);
     }
   },
   {
@@ -347,7 +400,24 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 0);
       assert.equal(shouldDisableCropDoctorAnalysis(status), true);
-      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 checks remaining"), true);
+      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 of 2 checks available"), true);
+    }
+  },
+  {
+    name: "exhausted Crop Doctor credits disable upload area",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const status = getFarmMateCreditStatus(
+        "crop_doctor",
+        [
+          usageEvent("crop_doctor", new Date(now.getTime() - 60_000).toISOString()),
+          usageEvent("crop_doctor", new Date(now.getTime() - 30_000).toISOString())
+        ],
+        now
+      );
+
+      assert.equal(shouldDisableCropDoctorUpload(status), true);
+      assert.equal(shouldDisableCropDoctorAnalysis(status), true);
     }
   },
   {
@@ -382,7 +452,7 @@ const tests: TestCase[] = [
     run: () => {
       assert.equal(
         CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
-        "I uploaded a crop photo but Crop Doctor is not available right now. Can you guide me on what to check?"
+        "I do not have Crop Doctor checks available right now. Can you guide me on what to check from my crop photo?"
       );
       assert.equal(CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT.toLowerCase().includes("tomato"), false);
       assert.equal(CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT.toLowerCase().includes("blight"), false);
