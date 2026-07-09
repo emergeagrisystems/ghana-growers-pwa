@@ -2,10 +2,12 @@ import {
   CloudRain,
   CloudSun,
   GraduationCap,
+  ShieldCheck,
   Sprout,
   Sun
 } from "lucide-react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
+import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
 import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -32,21 +34,23 @@ export default function FarmerHubPage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-leaf-700 shadow-sm">
               <Sprout size={16} aria-hidden="true" />
-              by Ghana Growers
+              BY GHANA GROWERS
             </p>
             <FarmMateGreeting />
             <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] text-ink sm:text-5xl lg:text-6xl">
               GG FarmMate
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">
-              Your AI-powered farming companion
+              Your daily farming companion for crop questions, farm planning, weather-aware decisions, and practical learning.
             </p>
+            <FarmMateHeroActions />
           </div>
 
           <article className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6 lg:max-w-[690px] lg:justify-self-end">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="gg-section-title">Today&apos;s Farm Summary</h2>
+                <p className="mt-2 text-sm font-bold text-ink/58">Sample farm summary</p>
               </div>
               <span className="gg-icon bg-earth-50 text-earth-700 ring-earth-500/20">
                 <Sun size={24} aria-hidden="true" />
@@ -63,9 +67,12 @@ export default function FarmerHubPage() {
             </div>
 
             <div className="mt-4 rounded-md bg-leaf-50 p-3">
-              <div className="flex items-center gap-2">
-                <CloudSun className="text-leaf-700" size={18} aria-hidden="true" />
-                <h3 className="gg-eyebrow text-leaf-700">3-day forecast</h3>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <CloudSun className="text-leaf-700" size={18} aria-hidden="true" />
+                  <h3 className="gg-eyebrow text-leaf-700">3-day forecast</h3>
+                </div>
+                <p className="text-xs font-bold text-ink/55">Set your location for live weather guidance.</p>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {weatherForecast.map((day) => {
@@ -90,6 +97,13 @@ export default function FarmerHubPage() {
 
       <FarmTools />
 
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="flex items-start gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm font-semibold leading-6 text-ink/62 shadow-sm">
+          <ShieldCheck className="mt-0.5 shrink-0 text-leaf-700" size={18} aria-hidden="true" />
+          <p>FarmMate gives practical decision support. It does not replace an agricultural extension officer for serious outbreaks.</p>
+        </div>
+      </section>
+
       <section id="learn" className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6">
           <div className="flex items-start gap-3">
@@ -99,8 +113,8 @@ export default function FarmerHubPage() {
             <div>
               <h2 className="gg-card-title">Learn Something Today</h2>
               <p className="mt-3 text-base font-bold leading-7 text-ink/72">{featuredLearningTip}</p>
-              <a href="#learn" className="mt-4 inline-flex text-sm font-black text-leaf-700">
-                Read &rarr;
+              <a href="/learn/backyard-vegetable-garden-ghana" className="mt-4 inline-flex text-sm font-black text-leaf-700">
+                Read guide
               </a>
             </div>
           </div>

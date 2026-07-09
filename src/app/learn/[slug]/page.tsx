@@ -3,21 +3,13 @@ import { Clock } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { blogPosts, getBlogPost } from "@/data/blog";
+import { learnImageForPost } from "@/lib/learnImages";
 import { createPageMetadata } from "@/lib/seo";
 
 type ArticlePageProps = {
   params: {
     slug: string;
   };
-};
-
-const categoryImages = {
-  Crops: "/images/products/tomatoes.jpg",
-  Livestock: "/images/crops/poultry.jpg",
-  "Home Gardening": "/images/products/vegetables.jpg",
-  Agribusiness: "/images/marketplace/ghana-market-1.jpg",
-  "Seasonal Farming": "/images/marketplace/farm-activity-1.jpg",
-  "Video Library": "/images/hero/ghana-growers-trade-hero.png"
 };
 
 export function generateStaticParams() {
@@ -40,7 +32,7 @@ export function generateMetadata({ params }: ArticlePageProps) {
     title: post.title,
     description: post.excerpt,
     path: `/learn/${params.slug}`,
-    image: categoryImages[post.category]
+    image: learnImageForPost(post)
   });
 }
 
@@ -69,7 +61,7 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
             </div>
           </div>
           <SafeImage
-            src={categoryImages[post.category]}
+            src={learnImageForPost(post)}
             alt={`${post.title} guide image`}
             width={820}
             height={560}

@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowRight, Bot, CalendarDays, Camera, Sprout, X } from "lucide-react";
-import { useState } from "react";
+import { Bot, CalendarDays, Camera, Sprout, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
 
@@ -14,8 +14,8 @@ const cropCalendar = [
 ];
 
 const tools = [
-  { key: "ask" as const, title: "Ask FarmMate", icon: Bot, description: "Ask any farming question.", action: "Open" },
-  { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Diagnose crop problems.", action: "Upload" },
+  { key: "ask" as const, title: "Ask FarmMate", icon: Bot, description: "Ask any farming question.", action: "Ask" },
+  { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Upload a crop photo for guided checks.", action: "Upload" },
   { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "Plan your season.", action: "View Calendar" },
   { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Find the best time to plant.", action: "Start" }
 ];
@@ -91,6 +91,22 @@ export function FarmTools() {
     setActiveTool(tool);
   }
 
+  useEffect(() => {
+    function handleOpenTool(event: Event) {
+      const tool = (event as CustomEvent<ToolKey>).detail;
+
+      if (["ask", "doctor", "calendar", "planting"].includes(tool)) {
+        openTool(tool);
+      }
+    }
+
+    window.addEventListener("gg-farmmate-open-tool", handleOpenTool);
+
+    return () => {
+      window.removeEventListener("gg-farmmate-open-tool", handleOpenTool);
+    };
+  }, []);
+
   function closeTool() {
     setIsClosing(true);
     window.setTimeout(() => {
@@ -111,10 +127,7 @@ export function FarmTools() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-5">
-        <h2 className="gg-section-title inline-flex items-center gap-2">
-          Farm Tools
-          <ArrowRight className="text-leaf-700/70" size={22} strokeWidth={2} aria-hidden="true" />
-        </h2>
+        <h2 className="gg-section-title">Choose a farm tool</h2>
       </div>
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
