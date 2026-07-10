@@ -266,20 +266,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#143A1F] py-20 text-white sm:py-24">
+      <section className="bg-[#143A1F] py-20 text-[#F7F3E8] sm:py-24">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
           <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">Build trusted agricultural connections across Ghana.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/72 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#ECF2D1]/85 sm:text-lg">
             Register as a farmer, buyer, supplier, or service provider. Ghana Growers will review your details before your profile, listing, or request is published.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/join" variant="light">
+            <Link
+              href="/join"
+              className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#F7F3E8] px-6 py-3 text-center text-sm font-black text-[#143A1F] shadow-sm transition duration-200 ease-out hover:bg-[#D6A84A] sm:w-auto"
+            >
               Join the Network
-            </ButtonLink>
-            <ButtonLink href="/contact" variant="light">
+            </Link>
+            <Link
+              href="/contact"
+              className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md border border-[#F7F3E8]/30 bg-[#F7F3E8]/10 px-6 py-3 text-center text-sm font-black text-[#F7F3E8] transition duration-200 ease-out hover:border-[#D6A84A]/70 hover:bg-[#D6A84A] hover:text-[#143A1F] sm:w-auto"
+            >
               Contact Ghana Growers
-            </ButtonLink>
+            </Link>
           </div>
         </div>
       </section>

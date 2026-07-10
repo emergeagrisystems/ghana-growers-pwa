@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, ChartNoAxesCombined, Eye, PackageCheck, Sprout, Tractor, Truck, Users } from "lucide-react";
-import { ButtonLink } from "@/components/ButtonLink";
 import { SafeImage } from "@/components/SafeImage";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -115,14 +114,19 @@ export default function SellPage() {
       </section>
 
       <section className="bg-white px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#143A1F] p-5 text-white shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#143A1F] p-5 text-[#F7F3E8] shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <h2 className="text-2xl font-black">Ready to reach more buyers?</h2>
-            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/72">
+            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-[#ECF2D1]/85">
               Join the Ghana Growers Network and create your seller profile.
             </p>
           </div>
-          <ButtonLink href="/join" variant="light">Join Network</ButtonLink>
+          <Link
+            href="/join"
+            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-[#F7F3E8] px-6 py-3 text-sm font-black text-[#143A1F] shadow-sm transition duration-200 ease-out hover:bg-[#D6A84A]"
+          >
+            Join Network
+          </Link>
         </div>
       </section>
 
