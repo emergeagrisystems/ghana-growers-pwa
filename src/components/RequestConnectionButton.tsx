@@ -10,6 +10,7 @@ type RequestConnectionButtonProps = {
   sourceName: string;
   productInterest?: string;
   label?: string;
+  ariaLabel?: string;
   className?: string;
   helperText?: string;
 };
@@ -22,6 +23,7 @@ export function RequestConnectionButton({
   sourceName,
   productInterest = "",
   label = "Request Connection",
+  ariaLabel,
   className = "",
   helperText = ""
 }: RequestConnectionButtonProps) {
@@ -74,6 +76,7 @@ export function RequestConnectionButton({
       <div className={helperText ? "grid gap-2" : ""}>
         <button
           type="button"
+          aria-label={ariaLabel}
           onClick={() => {
             setIsOpen(true);
             setError("");

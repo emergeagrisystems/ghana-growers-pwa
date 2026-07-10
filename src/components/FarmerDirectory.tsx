@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Search, SlidersHorizontal, Star } from "lucide-react";
+import { BadgeCheck, Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
 import { GGStandardBadge } from "@/components/GGStandard";
 import { SafeImage } from "@/components/SafeImage";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
-import { isFeaturedActive } from "@/lib/featured";
+import { cleanProductList, productImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -20,12 +19,77 @@ function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
 }
 
+function titleCaseValue(value: string) {
+  return value
+    .trim()
+    .replace(/\s*\/\s*/g, ", ")
+    .replace(/\s+/g, " ")
+    .split(/(\s+|-|,)/)
+    .map((part) => {
+      if (/^(\s+|-|,)$/.test(part)) {
+        return part;
+      }
+
+      const lower = part.toLowerCase();
+      return lower ? `${lower.charAt(0).toUpperCase()}${lower.slice(1)}` : lower;
+    })
+    .join("")
+    .replace(/\bRegion\b/gi, "Region");
+}
+
+function cleanProfileLabel(value: string) {
+  return titleCaseValue(value)
+    .replace(/\bMaise\b/gi, "Maize")
+    .replace(/\bAquaculture And Poultry\b/gi, "Aquaculture & Poultry")
+    .replace(/\bCabbages And Chili Pepper\b/gi, "Cabbage & Chili Pepper");
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function cleanFarmerLocation(farmer: FarmerProfile) {
+  const region = cleanProfileLabel(farmer.region);
+  let district = cleanProfileLabel(farmer.district);
+
+  if (region) {
+    district = district
+      .replace(new RegExp(`^${escapeRegExp(region)}\\s*`, "i"), "")
+      .replace(new RegExp(`,?\\s*${escapeRegExp(region)}$`, "i"), "")
+      .trim()
+      .replace(/^,|,$/g, "")
+      .trim();
+  }
+
+  if (!district) {
+    return region || "Ghana";
+  }
+
+  return region ? `${district}, ${region}` : district;
+}
+
+function farmerProducts(farmer: FarmerProfile) {
+  return cleanProductList(farmer.products).map(cleanProfileLabel);
+}
+
+function farmerCardImage(farmer: FarmerProfile, products: string[]) {
+  if (farmer.hasRealPhoto && farmer.photos[0]) {
+    return farmer.photos[0];
+  }
+
+  return productImageForName(products[0] ?? "Produce", farmer.farmType);
+}
+
+function farmerImagePosition(farmer: FarmerProfile) {
+  return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
+}
+
 function FarmerBadge({ status }: { status: string }) {
   if (status === "Verified") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
+      <span aria-label="Verified by Ghana Growers" className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
         <BadgeCheck className="h-3.5 w-3.5" />
-        Verified by Ghana Growers
+        Verified
       </span>
     );
   }
@@ -52,9 +116,11 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
       farmer.contactName,
       farmer.region,
       farmer.district,
+      cleanFarmerLocation(farmer),
       farmer.farmType,
       farmer.availabilityStatus,
-      farmer.products.join(" ")
+      farmer.products.join(" "),
+      farmerProducts(farmer).join(" ")
     ].join(" ").toLowerCase();
 
     return (
@@ -83,10 +149,9 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 Farmer discovery
               </p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search verified-ready farmer profiles</h2>
+              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search farmer profiles</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                Browse farmers across the Ghana Growers network by region, district, product, and farm type. Profiles include location,
-                products, verification status, and contact options.
+                Browse farmers by region, district, product, and farm type.
               </p>
             </div>
             <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">
@@ -119,7 +184,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                   <option value="All">All {filter.label.toLowerCase()}s</option>
                   {filter.options.map((option) => (
                     <option key={option} value={option}>
-                      {option}
+                      {cleanProfileLabel(option)}
                     </option>
                   ))}
                 </select>
@@ -144,41 +209,37 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
         ) : (
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredFarmers.map((farmer) => (
-              <article key={farmer.slug} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+              <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
               {(() => {
                 const trust = normalizeTrust(farmer.trust);
-                const mainProducts = farmer.products.slice(0, 3);
+                const products = farmerProducts(farmer);
+                const mainProducts = products.slice(0, 3);
+                const extraProductCount = Math.max(0, products.length - mainProducts.length);
 
                 return (
                   <>
                     <SafeImage
-                      src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
+                      src={farmerCardImage(farmer, products)}
                       alt={`${farmer.farmName} farm photo`}
-                      width={520}
-                      height={320}
-                      className="aspect-[4/3] w-full bg-leaf-50 object-cover object-[center_30%]"
-                      fallbackKind="farmer"
+                      width={420}
+                      height={360}
+                      className={`aspect-[4/3] w-full bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
+                      fallbackKind="crop"
                       sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
                     />
-                    <div className="p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="flex flex-1 flex-col p-5">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{farmer.region}</p>
-                          <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">{farmer.farmName}</h3>
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{cleanProfileLabel(farmer.farmType)}</p>
+                          <h3 className="mt-1 text-xl font-black text-ink">{farmer.farmName}</h3>
                         </div>
-                        <div className="flex flex-wrap gap-2 sm:justify-end">
-                          {isFeaturedActive(farmer) ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
-                              <Star className="h-3.5 w-3.5 fill-current" />
-                              Featured
-                            </span>
-                          ) : null}
+                        <div className="flex shrink-0 flex-wrap justify-end gap-2">
                           <FarmerBadge status={trust.status} />
                           <GGStandardBadge status={farmer.ggStandardStatus} />
                         </div>
                       </div>
 
-                      <p className="mt-3 text-sm font-semibold text-ink/58">{farmer.district}</p>
+                      <p className="mt-3 text-sm font-semibold text-ink/58">{cleanFarmerLocation(farmer)}</p>
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         {mainProducts.map((item) => (
@@ -186,21 +247,28 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                               {item}
                             </span>
                         ))}
+                        {extraProductCount > 0 ? (
+                          <span className="rounded-md bg-earth-50 px-3 py-1 text-xs font-bold text-earth-700">
+                            +{extraProductCount} more
+                          </span>
+                        ) : null}
                       </div>
 
-                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="mt-auto grid gap-3 pt-5 sm:grid-cols-2">
                         <Link
                           href={`/farmer-directory/${farmer.slug}`}
                           className="gg-button-primary w-full"
+                          aria-label={`View profile for ${farmer.farmName}`}
                         >
                           View Profile
                         </Link>
                         <RequestConnectionButton
-                          label="Request"
+                          label="Request Produce"
                           sourceType="Farmer"
                           sourceId={farmer.slug}
                           sourceName={farmer.farmName}
-                          productInterest={farmer.products.slice(0, 3).join(", ")}
+                          productInterest={mainProducts.join(", ")}
+                          ariaLabel={`Request produce from ${farmer.farmName}`}
                           className="w-full border border-leaf-900/10 bg-white text-leaf-700 shadow-none hover:bg-leaf-50"
                         />
                       </div>
@@ -214,12 +282,27 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
         )}
 
         {farmers.length > 0 && filteredFarmers.length === 0 ? (
-          <p className="mt-8 rounded-md bg-leaf-50 p-5 text-sm font-bold text-ink/70">
-            No farmer profiles match these filters. Try another region, district, product, or farm type.
-          </p>
+          <div className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <h3 className="text-lg font-black text-ink">No matching farmers found.</h3>
+            <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
+              Try another region, district, product, or farm type.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setRegion("All");
+                setDistrict("All");
+                setProduct("All");
+                setFarmType("All");
+              }}
+              className="gg-button-secondary mt-4"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+              Clear filters
+            </button>
+          </div>
         ) : null}
-
-        {farmers.length > 0 ? <FeaturedPlacementCTA defaultRole="Farmer" className="mt-10" /> : null}
       </div>
     </section>
   );
