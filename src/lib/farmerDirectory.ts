@@ -1,4 +1,5 @@
 import { cleanProductList, productImageForName } from "./productDisplay";
+import { isFeaturedActive } from "./featured";
 import type { FarmerProfile } from "../types";
 
 export const FARMERS_PER_PAGE = 12;
@@ -86,6 +87,14 @@ export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "verificationS
 
 export function publicFarmerProfiles(farmers: FarmerProfile[]) {
   return farmers.filter(isPublicFarmerProfile);
+}
+
+export function orderFarmerDirectoryProfiles(farmers: FarmerProfile[]) {
+  const featured = farmers.filter(isFeaturedActive).slice(0, 4);
+  const featuredSlugs = new Set(featured.map((farmer) => farmer.slug));
+  const remaining = farmers.filter((farmer) => !featuredSlugs.has(farmer.slug));
+
+  return [...featured, ...remaining];
 }
 
 export function paginateFarmers<T>(items: T[], page: number, pageSize = FARMERS_PER_PAGE) {

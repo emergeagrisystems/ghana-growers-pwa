@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Sprout, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
-import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
-  farmerCardImage,
   farmerImagePosition,
   farmerProducts,
   FARMERS_PER_PAGE,
@@ -30,14 +28,25 @@ function unique(values: string[]) {
 function FarmerBadge({ status }: { status: string }) {
   if (status === "Verified") {
     return (
-      <span aria-label="Verified by Ghana Growers" className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/95 px-3 py-1.5 text-xs font-black text-leaf-700 shadow-sm">
-        <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+      <span aria-label="Verified by Ghana Growers" className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-2.5 py-1 text-[0.68rem] font-bold text-leaf-700 shadow-sm">
+        <BadgeCheck className="h-3 w-3" aria-hidden="true" />
         Verified
       </span>
     );
   }
 
   return null;
+}
+
+function FarmerPhotoPlaceholder() {
+  return (
+    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-t-md bg-gradient-to-br from-leaf-50 to-earth-50 text-center text-leaf-700">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-white/80 shadow-sm ring-1 ring-leaf-900/10">
+        <Sprout className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <span className="text-xs font-bold text-ink/55">Photo coming soon</span>
+    </div>
+  );
 }
 
 export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectoryProps) {
@@ -114,46 +123,45 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
   const showingEnd = paginatedFarmers.endIndex;
 
   return (
-    <section id="farmer-discovery" ref={sectionRef} className="scroll-mt-24 bg-white py-14 sm:py-16">
+    <section id="farmer-discovery" ref={sectionRef} className="scroll-mt-24 bg-earth-50 py-12 sm:py-14">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="flex items-center gap-2 text-sm font-black uppercase text-earth-700">
-                <SlidersHorizontal size={17} aria-hidden="true" />
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-earth-700">
+                <SlidersHorizontal size={15} aria-hidden="true" />
                 Farmer discovery
               </p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search farmer profiles</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
+              <h2 className="mt-1 text-xl font-black text-ink sm:text-2xl">Search farmer profiles</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
                 Browse farmers by region, district, product, and farm type.
               </p>
             </div>
-            <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">
+            <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-ink/70">
               {filteredFarmers.length > 0
                 ? `Showing ${showingStart}-${showingEnd} of ${filteredFarmers.length} farmers`
                 : `Showing 0 of ${farmers.length} farmers`}
             </p>
           </div>
 
-          <label className="mt-6 grid gap-2 text-sm font-bold text-ink/75">
-            Search farmers
-            <span className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-600" size={18} aria-hidden="true" />
-              <input
-                className="focus-ring min-h-12 w-full rounded-md border border-leaf-900/15 bg-white py-3 pl-10 pr-3 font-normal"
-                placeholder="Search by farm, product, region, district, or contact name"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </span>
-          </label>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(260px,1.7fr)_repeat(4,minmax(0,1fr))] lg:items-end">
+            <label className="grid gap-1.5 text-sm font-bold text-ink/75">
+              Search farmers
+              <span className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-600" size={18} aria-hidden="true" />
+                <input
+                  className="focus-ring min-h-11 w-full rounded-md border border-leaf-900/15 bg-white py-2.5 pl-10 pr-3 font-normal"
+                  placeholder="Search by farm, product, region, district, or contact name"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </span>
+            </label>
             {filters.map((filter) => (
-              <label key={filter.label} className="grid gap-2 text-sm font-bold text-ink/75">
+              <label key={filter.label} className="grid gap-1.5 text-sm font-bold text-ink/75">
                 {filter.label}
                 <select
-                  className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
+                  className="focus-ring min-h-11 rounded-md border border-leaf-900/15 bg-white px-3 py-2.5 font-normal disabled:cursor-not-allowed disabled:bg-white/55 disabled:text-ink/40"
                   value={filter.value}
                   disabled={filter.disabled}
                   onChange={(event) => {
@@ -174,7 +182,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             ))}
           </div>
           {hasActiveFilters ? (
-            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-5">
+            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-4 min-h-10 px-4 py-2">
               <X className="h-4 w-4" aria-hidden="true" />
               Clear filters
             </button>
@@ -197,68 +205,65 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedFarmers.pageItems.map((farmer) => (
-              <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+              <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-card">
               {(() => {
                 const products = farmerProducts(farmer);
-                const mainProducts = products.slice(0, 3);
+                const mainProducts = products.slice(0, 2);
                 const extraProductCount = Math.max(0, products.length - mainProducts.length);
-                const imageSrc = farmerCardImage(farmer, products);
                 const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
 
                 return (
                   <>
                     <div className="relative">
-                      <SafeImage
-                        src={imageSrc}
-                        alt={hasRealPhoto ? `${farmer.farmName} farm photo` : ""}
-                        width={360}
-                        height={360}
-                        className={`aspect-square w-full rounded-t-md bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
-                        fallbackKind="crop"
-                        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      />
-                      {!hasRealPhoto ? (
-                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-black text-ink/60 shadow-sm">
-                          Profile photo pending
-                        </span>
-                      ) : null}
+                      {hasRealPhoto ? (
+                        <SafeImage
+                          src={farmer.photos[0]}
+                          alt={`${farmer.farmName} farm photo`}
+                          width={360}
+                          height={270}
+                          className={`aspect-[4/3] w-full rounded-t-md bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
+                          fallbackKind="crop"
+                          sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        />
+                      ) : (
+                        <FarmerPhotoPlaceholder />
+                      )}
                       <FarmerBadge status={isVerifiedFarmer(farmer) ? "Verified" : farmer.verificationStatus} />
                     </div>
-                    <div className="flex flex-1 flex-col p-5">
-                      <h3 className="min-h-[3.25rem] text-xl font-black leading-tight text-ink [text-wrap:balance] line-clamp-2">{farmer.farmName}</h3>
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="min-h-[2.9rem] text-lg font-extrabold leading-tight text-ink [text-wrap:balance] line-clamp-2">
+                        <Link
+                          href={`/farmer-directory/${farmer.slug}`}
+                          className="focus-ring rounded-sm hover:text-leaf-700"
+                          aria-label={`View profile for ${farmer.farmName}`}
+                        >
+                          {farmer.farmName}
+                        </Link>
+                      </h3>
 
-                      <p className="mt-2 line-clamp-1 text-sm font-semibold text-ink/58">{cleanFarmerLocation(farmer)}</p>
+                      <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 text-ink/58">{cleanFarmerLocation(farmer)}</p>
 
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-wrap gap-1.5">
                         {mainProducts.map((item) => (
-                            <span key={item} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
+                            <span key={item} className="rounded-md bg-leaf-50 px-2.5 py-1 text-[0.72rem] font-semibold text-leaf-700">
                               {item}
                             </span>
                         ))}
                         {extraProductCount > 0 ? (
-                          <span className="rounded-md bg-earth-50 px-3 py-1 text-xs font-bold text-earth-700">
+                          <span className="rounded-md bg-earth-50 px-2.5 py-1 text-[0.72rem] font-semibold text-earth-700">
                             +{extraProductCount} more
                           </span>
                         ) : null}
                       </div>
 
-                      <div className="mt-auto grid gap-3 pt-5 sm:grid-cols-2">
+                      <div className="mt-auto pt-4">
                         <Link
                           href={`/farmer-directory/${farmer.slug}`}
-                          className="gg-button-primary w-full"
+                          className="focus-ring inline-flex min-h-10 items-center rounded-md px-1 text-sm font-bold text-leaf-700 transition hover:text-leaf-900"
                           aria-label={`View profile for ${farmer.farmName}`}
                         >
-                          View Profile
+                          View profile <span aria-hidden="true">&rarr;</span>
                         </Link>
-                        <RequestConnectionButton
-                          label="Request Produce"
-                          sourceType="Farmer"
-                          sourceId={farmer.slug}
-                          sourceName={farmer.farmName}
-                          productInterest={mainProducts.join(", ")}
-                          ariaLabel={`Request produce from ${farmer.farmName}`}
-                          className="w-full border border-leaf-900/10 bg-white text-leaf-700 shadow-none hover:bg-leaf-50"
-                        />
                       </div>
                     </div>
                   </>

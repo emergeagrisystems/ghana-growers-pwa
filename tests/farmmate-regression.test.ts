@@ -15,6 +15,7 @@ import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
   isVerifiedFarmer,
+  orderFarmerDirectoryProfiles,
   paginateFarmers,
   paginationPages,
   publicFarmerProfiles
@@ -149,6 +150,30 @@ const tests: TestCase[] = [
       assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Verified" })), true);
       assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Premium Member" })), false);
       assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Pending Verification" })), false);
+    }
+  },
+  {
+    name: "Farmer Directory pins up to four featured profiles in the main grid",
+    run: () => {
+      const farmers = [
+        farmerFixture({ slug: "normal-1", isFeatured: false }),
+        farmerFixture({ slug: "featured-1", isFeatured: true }),
+        farmerFixture({ slug: "featured-2", isFeatured: true }),
+        farmerFixture({ slug: "featured-3", isFeatured: true }),
+        farmerFixture({ slug: "featured-4", isFeatured: true }),
+        farmerFixture({ slug: "featured-5", isFeatured: true }),
+        farmerFixture({ slug: "normal-2", isFeatured: false })
+      ];
+
+      assert.deepEqual(orderFarmerDirectoryProfiles(farmers).map((farmer) => farmer.slug), [
+        "featured-1",
+        "featured-2",
+        "featured-3",
+        "featured-4",
+        "normal-1",
+        "featured-5",
+        "normal-2"
+      ]);
     }
   },
   {
