@@ -99,13 +99,13 @@ export default async function HomePage() {
   return (
     <>
       <section className="overflow-hidden bg-earth-50">
-        <div className="mx-auto grid max-w-[1440px] items-center gap-8 px-4 pb-8 pt-10 sm:px-6 lg:grid-cols-[minmax(0,620px)_minmax(360px,560px)] lg:justify-between lg:gap-16 lg:px-8 lg:pb-10 lg:pt-14 xl:grid-cols-[minmax(0,680px)_minmax(420px,660px)] xl:gap-20 2xl:gap-24">
-          <div className="relative z-10 max-w-[680px]">
+        <div className="mx-auto grid max-w-[1480px] items-center gap-8 px-4 pb-8 pt-10 sm:px-6 lg:grid-cols-[minmax(0,640px)_minmax(340px,600px)] lg:justify-between lg:gap-[clamp(3rem,6vw,6rem)] lg:px-8 lg:pb-10 lg:pt-14 xl:grid-cols-[minmax(0,720px)_minmax(420px,680px)]">
+          <div className="relative z-10 max-w-[720px]">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
               BUILT FOR GHANAIAN AGRICULTURE
             </p>
-            <h1 className="mt-6 max-w-[680px] gg-hero-title !text-[2.18rem] !leading-[1.01] sm:!text-[3.35rem] lg:!text-[3.85rem] xl:!text-[4.75rem] 2xl:!text-[5.1rem]">
+            <h1 className="mt-6 max-w-[720px] gg-hero-title !text-[clamp(1.9rem,9.2vw,3.35rem)] !leading-[0.98] !tracking-[-0.035em] lg:!text-[clamp(4.05rem,5vw,5.15rem)]">
               <span className="block whitespace-nowrap">Buy Local.</span>
               <span className="block whitespace-nowrap">Sell Your Harvest.</span>
               <span className="block whitespace-nowrap">Grow With Us.</span>
@@ -134,7 +134,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="relative w-full max-w-[660px] justify-self-center overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft lg:justify-self-end">
+          <div className="relative w-full max-w-[680px] justify-self-center overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft lg:justify-self-end">
             <SafeImage
               src="/images/hero/ghana-growers-trade-hero.png"
               alt="Ghanaian agriculture marketplace with farmers, buyers, and fresh produce"
@@ -143,7 +143,7 @@ export default async function HomePage() {
               fallbackSrc="/images/marketplace/ghana-market-1.jpg"
               fallbackKind="default"
               priority
-              sizes="(min-width: 1536px) 660px, (min-width: 1024px) 46vw, 100vw"
+              sizes="(min-width: 1536px) 680px, (min-width: 1024px) 44vw, 100vw"
               className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/9]"
             />
           </div>
