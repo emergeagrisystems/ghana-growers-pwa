@@ -150,7 +150,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#F7F6EF] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
+      <section className="bg-[#F7F3E8] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6 lg:p-7">
             <div className="grid gap-6 lg:grid-cols-[0.9fr_1.25fr_auto] lg:items-center">
@@ -196,7 +196,7 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
-      <section className="bg-[#F7F6EF] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
+      <section className="bg-[#F7F3E8] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="gg-eyebrow text-earth-700/70">How It Works</p>
@@ -284,7 +284,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-leaf-900/10 bg-[#F7F6EF] py-8" aria-label="End of homepage content">
+      <section className="border-y border-leaf-900/10 bg-[#F7F3E8] py-8" aria-label="End of homepage content">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="h-px bg-leaf-900/10" />
         </div>
