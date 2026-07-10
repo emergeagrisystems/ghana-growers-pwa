@@ -15,9 +15,20 @@ export const metadata = createPageMetadata({
   path: "/supplier-directory"
 });
 
-export default async function SupplierDirectoryPage() {
+type SupplierDirectoryPageProps = {
+  searchParams?: {
+    q?: string | string[];
+  };
+};
+
+function searchQuery(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+export default async function SupplierDirectoryPage({ searchParams }: SupplierDirectoryPageProps) {
   const suppliers = await getSuppliersData();
   const featuredSuppliers = suppliers.filter((supplier) => isFeaturedActive(supplier) || supplier.verificationStatus === "Verified").slice(0, 3);
+  const initialSearch = searchQuery(searchParams?.q);
 
   return (
     <>
@@ -39,7 +50,7 @@ export default async function SupplierDirectoryPage() {
         background="leaf"
         suppliers={featuredSuppliers}
       />
-      <SupplierDirectory suppliers={suppliers} />
+      <SupplierDirectory suppliers={suppliers} initialSearch={initialSearch} />
     </>
   );
 }

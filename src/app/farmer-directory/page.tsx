@@ -15,9 +15,20 @@ export const metadata = createPageMetadata({
   path: "/farmer-directory"
 });
 
-export default async function FarmerDirectoryPage() {
+type FarmerDirectoryPageProps = {
+  searchParams?: {
+    q?: string | string[];
+  };
+};
+
+function searchQuery(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+export default async function FarmerDirectoryPage({ searchParams }: FarmerDirectoryPageProps) {
   const farmers = await getFarmersData();
   const featuredFarmers = farmers.filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer").slice(0, 3);
+  const initialSearch = searchQuery(searchParams?.q);
 
   return (
     <>
@@ -39,7 +50,7 @@ export default async function FarmerDirectoryPage() {
         background="leaf"
         farmers={featuredFarmers}
       />
-      <FarmerDirectory farmers={farmers} />
+      <FarmerDirectory farmers={farmers} initialSearch={initialSearch} />
     </>
   );
 }

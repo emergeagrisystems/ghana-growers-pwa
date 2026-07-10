@@ -13,6 +13,7 @@ import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
   farmers: FarmerProfile[];
+  initialSearch?: string;
 };
 
 function unique(values: string[]) {
@@ -32,8 +33,8 @@ function FarmerBadge({ status }: { status: string }) {
   return null;
 }
 
-export function FarmerDirectory({ farmers }: FarmerDirectoryProps) {
-  const [search, setSearch] = useState("");
+export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectoryProps) {
+  const [search, setSearch] = useState(initialSearch);
   const [region, setRegion] = useState("All");
   const [district, setDistrict] = useState("All");
   const [product, setProduct] = useState("All");

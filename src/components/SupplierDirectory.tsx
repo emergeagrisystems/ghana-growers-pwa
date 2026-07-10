@@ -14,6 +14,7 @@ import type { SupplierProfile } from "@/types";
 
 type SupplierDirectoryProps = {
   suppliers: SupplierProfile[];
+  initialSearch?: string;
 };
 
 function unique(values: string[]) {
@@ -44,8 +45,8 @@ function relatedMarketplaceCategory(category: string) {
   return productCategories.find((item) => item.slug === "farm-inputs");
 }
 
-export function SupplierDirectory({ suppliers }: SupplierDirectoryProps) {
-  const [search, setSearch] = useState("");
+export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDirectoryProps) {
+  const [search, setSearch] = useState(initialSearch);
   const [region, setRegion] = useState("All");
   const [district, setDistrict] = useState("All");
   const [category, setCategory] = useState("All");
