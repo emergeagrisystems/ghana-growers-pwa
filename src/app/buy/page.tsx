@@ -78,7 +78,7 @@ const buyActionCards = [
     description: "Browse farmer listings, fresh harvests, and available crops through Ghana Growers.",
     href: "/marketplace?category=fresh-produce",
     cta: "Browse Produce",
-    note: "Availability and quantities are confirmed during request.",
+    note: "Availability confirmed during request.",
     image: "/images/marketplace/fresh-tomatoes.jpg",
     alt: "Fresh tomatoes and produce ready for sourcing through Ghana Growers"
   },
@@ -87,7 +87,7 @@ const buyActionCards = [
     description: "Find seeds, fertilizer, tools, equipment, and trusted agricultural suppliers.",
     href: "/supplier-directory",
     cta: "Source Inputs",
-    note: "Ghana Growers can help route supplier connections.",
+    note: "Supplier connections routed by Ghana Growers.",
     image: "/images/products/farm-inputs.jpg",
     alt: "Farm inputs and agricultural supplies available through suppliers"
   }
@@ -232,19 +232,19 @@ export default function BuyPage() {
           {buyActionCards.map((card) => (
             <article
               key={card.title}
-              className="group flex h-full overflow-hidden rounded-md border border-white bg-white shadow-card ring-1 ring-leaf-900/8 transition duration-200 hover:-translate-y-1 hover:shadow-soft"
+              className="group flex h-full overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:border-leaf-700/20 hover:shadow-soft"
             >
-              <Link href={card.href} className="grid w-full gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 sm:p-5 lg:grid-cols-[1.08fr_0.92fr] lg:items-stretch">
+              <Link href={card.href} className="grid w-full gap-3 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 focus-visible:ring-offset-2 sm:p-4 lg:grid-cols-[1.08fr_0.92fr] lg:items-stretch">
                 <div className="flex flex-col justify-between">
                   <div>
                     <h2 className="text-2xl font-black leading-tight text-ink">{card.title}</h2>
                     <p className="mt-2 text-sm font-semibold leading-6 text-ink/66">{card.description}</p>
-                    <p className="mt-4 flex items-start gap-2 text-xs font-black leading-5 text-leaf-800">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <p className="mt-3 flex items-start gap-2 text-xs font-bold leading-5 text-leaf-800">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       {card.note}
                     </p>
                   </div>
-                  <span className="mt-5 inline-flex min-h-11 w-fit items-center gap-2 rounded-md bg-leaf-600 px-5 py-2 text-sm font-black text-white transition group-hover:bg-leaf-900">
+                  <span className="mt-4 inline-flex min-h-11 w-fit items-center gap-2 rounded-md bg-leaf-600 px-5 py-2 text-sm font-black text-white transition group-hover:bg-leaf-900">
                     {card.cta}
                     <ArrowRight size={16} aria-hidden="true" />
                   </span>
@@ -256,7 +256,7 @@ export default function BuyPage() {
                   height={420}
                   fallbackKind="crop"
                   sizes="(min-width: 1024px) 24vw, (min-width: 768px) 50vw, 100vw"
-                  className="h-36 w-full rounded-md object-cover transition duration-500 group-hover:scale-[1.02] sm:h-44 lg:h-full lg:min-h-44"
+                  className="h-32 w-full rounded-md object-cover transition duration-500 group-hover:scale-[1.02] sm:h-40 lg:h-full lg:min-h-40"
                 />
               </Link>
             </article>
