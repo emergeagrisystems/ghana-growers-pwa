@@ -16,6 +16,8 @@ const sellerActions = [
     description: "Sell fruits, vegetables, grains, roots, tubers, livestock, or other farm produce.",
     href: "/join/farmer",
     cta: "Start Selling",
+    targetId: "sell-harvest",
+    shortcutLabel: "Go to Sell Your Harvest option",
     icon: Sprout,
     image: "/images/marketplace/fresh-tomatoes.jpg"
   },
@@ -24,6 +26,8 @@ const sellerActions = [
     description: "List seeds, fertilizer, tools, equipment, packaging, or farm supplies.",
     href: "/become-a-supplier",
     cta: "Become a Supplier",
+    targetId: "sell-inputs-tools",
+    shortcutLabel: "Go to Sell Farm Inputs and Tools option",
     icon: PackageCheck,
     image: "/images/products/farm-inputs.jpg"
   },
@@ -32,6 +36,8 @@ const sellerActions = [
     description: "Offer transport, ploughing, spraying, equipment rental, packaging, storage, or farm support.",
     href: "/become-a-supplier",
     cta: "List Service",
+    targetId: "list-services",
+    shortcutLabel: "Go to List Agricultural Services option",
     icon: Tractor,
     image: "/images/marketplace/logistics-truck.jpg"
   }
@@ -74,7 +80,12 @@ export default function SellPage() {
                   const Icon = action.icon;
 
                   return (
-                    <Link key={action.title} href={action.href} className="group rounded-md bg-leaf-50 p-3 transition duration-200 hover:-translate-y-1 hover:bg-white hover:shadow-card">
+                    <Link
+                      key={action.title}
+                      href={`#${action.targetId}`}
+                      aria-label={action.shortcutLabel}
+                      className="focus-ring group rounded-md border border-leaf-900/10 bg-leaf-50 p-3 transition duration-200 hover:-translate-y-1 hover:border-leaf-700/20 hover:bg-white hover:shadow-card"
+                    >
                       <Icon size={22} className="text-leaf-700" aria-hidden="true" />
                       <p className="mt-2 text-sm font-black text-ink group-hover:text-leaf-700">{action.title}</p>
                     </Link>
@@ -93,7 +104,12 @@ export default function SellPage() {
               const Icon = action.icon;
 
               return (
-                <article key={action.title} className="group flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:shadow-soft">
+                <article
+                  key={action.title}
+                  id={action.targetId}
+                  tabIndex={-1}
+                  className="group flex h-full scroll-mt-24 flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-card transition duration-200 target:ring-2 target:ring-leaf-600/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf-600 hover:-translate-y-1 hover:shadow-soft"
+                >
                   <SafeImage
                     src={action.image}
                     alt={`${action.title} category`}
