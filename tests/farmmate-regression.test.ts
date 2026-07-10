@@ -11,6 +11,14 @@ import {
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
+import {
+  cleanFarmerLocation,
+  cleanFarmerProfileLabel,
+  isVerifiedFarmer,
+  paginateFarmers,
+  paginationPages,
+  publicFarmerProfiles
+} from "../src/lib/farmerDirectory";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
@@ -47,6 +55,7 @@ import {
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
+import type { FarmerProfile } from "../src/types";
 
 type TestCase = {
   name: string;
@@ -70,6 +79,30 @@ function responseText(response: FarmMateBrainResponse) {
   return response.sections.flatMap((section) => [section.title, ...section.body]).join("\n");
 }
 
+function farmerFixture(overrides: Partial<FarmerProfile> = {}): FarmerProfile {
+  return {
+    slug: overrides.slug ?? "test-farmer",
+    farmName: overrides.farmName ?? "Test Farm",
+    contactName: overrides.contactName ?? "Test Farmer",
+    region: overrides.region ?? "Eastern Region",
+    district: overrides.district ?? "TIE NKWANTA-KOFORIDUA/EASTERN REGION",
+    products: overrides.products ?? ["Maise", "Aquaculture And Poultry", "Cabbages And Chili Pepper", "Yam"],
+    farmType: overrides.farmType ?? "Crop",
+    farmSize: overrides.farmSize ?? "5 acres",
+    availabilityStatus: overrides.availabilityStatus ?? "Available",
+    description: overrides.description ?? "Test farmer profile.",
+    harvestSeason: overrides.harvestSeason ?? "Seasonal",
+    capacityVolume: overrides.capacityVolume ?? "Confirm by request",
+    photos: overrides.photos ?? [],
+    hasRealPhoto: overrides.hasRealPhoto,
+    verificationStatus: overrides.verificationStatus ?? "Verified",
+    source: overrides.source,
+    isFeatured: overrides.isFeatured,
+    trust: overrides.trust,
+    whatsappMessage: overrides.whatsappMessage ?? "Hello Ghana Growers"
+  };
+}
+
 function assertNoDeveloperLanguage(response: FarmMateBrainResponse) {
   const text = responseText(response).toLowerCase();
   assert.equal(text.includes("tell the farmer"), false);
@@ -87,6 +120,56 @@ function normalizeAdviceText(text: string) {
 }
 
 const tests: TestCase[] = [
+  {
+    name: "Farmer Directory normalizes rough farmer labels and locations",
+    run: () => {
+      const farmer = farmerFixture();
+
+      assert.equal(cleanFarmerLocation(farmer), "Tie Nkwanta-Koforidua, Eastern Region");
+      assert.equal(cleanFarmerProfileLabel("Maise"), "Maize");
+      assert.equal(cleanFarmerProfileLabel("Aquaculture And Poultry"), "Aquaculture & Poultry");
+      assert.equal(cleanFarmerProfileLabel("Cabbages And Chili Pepper"), "Cabbage & Chili Pepper");
+    }
+  },
+  {
+    name: "Farmer Directory excludes unpublished or under-review profiles",
+    run: () => {
+      const publicProfiles = publicFarmerProfiles([
+        farmerFixture({ slug: "verified", verificationStatus: "Verified" }),
+        farmerFixture({ slug: "pending", verificationStatus: "Pending Verification", source: undefined, isFeatured: false }),
+        farmerFixture({ slug: "founding", verificationStatus: "Pending Verification", source: "Founding Farmer" })
+      ]);
+
+      assert.deepEqual(publicProfiles.map((farmer) => farmer.slug), ["verified", "founding"]);
+    }
+  },
+  {
+    name: "Farmer Directory verified badge is conditional",
+    run: () => {
+      assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Verified" })), true);
+      assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Premium Member" })), false);
+      assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Pending Verification" })), false);
+    }
+  },
+  {
+    name: "Farmer Directory paginates 12 profiles per page",
+    run: () => {
+      const farmers = Array.from({ length: 25 }, (_, index) => farmerFixture({ slug: `farmer-${index + 1}` }));
+      const firstPage = paginateFarmers(farmers, 1, 12);
+      const thirdPage = paginateFarmers(farmers, 3, 12);
+
+      assert.equal(firstPage.pageItems.length, 12);
+      assert.equal(firstPage.totalPages, 3);
+      assert.equal(thirdPage.pageItems.length, 1);
+      assert.equal(thirdPage.startIndex, 24);
+    }
+  },
+  {
+    name: "Farmer Directory pagination creates compact page list",
+    run: () => {
+      assert.deepEqual(paginationPages(5, 9), [1, "ellipsis", 4, 5, 6, "ellipsis", 9]);
+    }
+  },
   {
     name: "FarmMate greeting never returns Good night",
     run: () => {

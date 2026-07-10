@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MessageCircle, X } from "lucide-react";
 import type { LeadRequestSourceType } from "@/lib/leadRequests";
 
@@ -28,9 +29,71 @@ export function RequestConnectionButton({
   helperText = ""
 }: RequestConnectionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusableSelector = [
+      "a[href]",
+      "button:not([disabled])",
+      "textarea:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "[tabindex]:not([tabindex='-1'])"
+    ].join(",");
+    const focusable = Array.from(modalRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
+    focusable[0]?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+      triggerRef.current?.focus();
+    };
+  }, [isOpen]);
+
+  function closeModal() {
+    setIsOpen(false);
+  }
 
   async function submitLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,9 +138,11 @@ export function RequestConnectionButton({
     <>
       <div className={helperText ? "grid gap-2" : ""}>
         <button
+          ref={triggerRef}
           type="button"
           aria-label={ariaLabel}
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation();
             setIsOpen(true);
             setError("");
             setSuccess("");
@@ -90,20 +155,32 @@ export function RequestConnectionButton({
         {helperText ? <p className="text-xs font-semibold leading-5 text-ink/55">{helperText}</p> : null}
       </div>
 
-      {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <section className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md">
+      {isMounted && isOpen ? createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/55 p-0 backdrop-blur-sm sm:items-center sm:p-4 motion-reduce:transition-none"
+          onClick={closeModal}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <section
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`request-title-${sourceType}-${sourceId}`}
+            className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-md bg-white shadow-soft sm:rounded-md"
+            onClick={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4 border-b border-leaf-900/10 px-5 py-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-wide text-earth-700">Request Connection</p>
-                <h2 className="mt-1 text-xl font-black text-ink">{sourceName}</h2>
+                <h2 id={`request-title-${sourceType}-${sourceId}`} className="mt-1 text-xl font-black text-ink">{sourceName}</h2>
                 <p className="mt-1 text-sm leading-6 text-ink/60">
                   Ghana Growers will review your request and help connect you with the relevant contact.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeModal}
                 aria-label="Close connection request"
                 className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-leaf-900/10 text-ink/65 transition hover:bg-leaf-50"
               >
@@ -137,7 +214,7 @@ export function RequestConnectionButton({
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={closeModal}
                   className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800"
                 >
                   Close
@@ -152,7 +229,8 @@ export function RequestConnectionButton({
               </div>
             </form>
           </section>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   );

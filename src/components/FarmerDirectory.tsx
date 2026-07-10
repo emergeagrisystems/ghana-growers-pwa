@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Search, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import { GGStandardBadge } from "@/components/GGStandard";
+import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
-import { normalizeTrust } from "@/components/TrustIndicators";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
-import { cleanProductList, productImageForName } from "@/lib/productDisplay";
+import {
+  cleanFarmerLocation,
+  cleanFarmerProfileLabel,
+  farmerCardImage,
+  farmerImagePosition,
+  farmerProducts,
+  FARMERS_PER_PAGE,
+  paginateFarmers,
+  paginationPages,
+  isVerifiedFarmer
+} from "@/lib/farmerDirectory";
 import type { FarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
@@ -19,76 +27,11 @@ function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
 }
 
-function titleCaseValue(value: string) {
-  return value
-    .trim()
-    .replace(/\s*\/\s*/g, ", ")
-    .replace(/\s+/g, " ")
-    .split(/(\s+|-|,)/)
-    .map((part) => {
-      if (/^(\s+|-|,)$/.test(part)) {
-        return part;
-      }
-
-      const lower = part.toLowerCase();
-      return lower ? `${lower.charAt(0).toUpperCase()}${lower.slice(1)}` : lower;
-    })
-    .join("")
-    .replace(/\bRegion\b/gi, "Region");
-}
-
-function cleanProfileLabel(value: string) {
-  return titleCaseValue(value)
-    .replace(/\bMaise\b/gi, "Maize")
-    .replace(/\bAquaculture And Poultry\b/gi, "Aquaculture & Poultry")
-    .replace(/\bCabbages And Chili Pepper\b/gi, "Cabbage & Chili Pepper");
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function cleanFarmerLocation(farmer: FarmerProfile) {
-  const region = cleanProfileLabel(farmer.region);
-  let district = cleanProfileLabel(farmer.district);
-
-  if (region) {
-    district = district
-      .replace(new RegExp(`^${escapeRegExp(region)}\\s*`, "i"), "")
-      .replace(new RegExp(`,?\\s*${escapeRegExp(region)}$`, "i"), "")
-      .trim()
-      .replace(/^,|,$/g, "")
-      .trim();
-  }
-
-  if (!district) {
-    return region || "Ghana";
-  }
-
-  return region ? `${district}, ${region}` : district;
-}
-
-function farmerProducts(farmer: FarmerProfile) {
-  return cleanProductList(farmer.products).map(cleanProfileLabel);
-}
-
-function farmerCardImage(farmer: FarmerProfile, products: string[]) {
-  if (farmer.hasRealPhoto && farmer.photos[0]) {
-    return farmer.photos[0];
-  }
-
-  return productImageForName(products[0] ?? "Produce", farmer.farmType);
-}
-
-function farmerImagePosition(farmer: FarmerProfile) {
-  return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
-}
-
 function FarmerBadge({ status }: { status: string }) {
   if (status === "Verified") {
     return (
-      <span aria-label="Verified by Ghana Growers" className="inline-flex items-center gap-1.5 rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
-        <BadgeCheck className="h-3.5 w-3.5" />
+      <span aria-label="Verified by Ghana Growers" className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/95 px-3 py-1.5 text-xs font-black text-leaf-700 shadow-sm">
+        <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
         Verified
       </span>
     );
@@ -98,16 +41,44 @@ function FarmerBadge({ status }: { status: string }) {
 }
 
 export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectoryProps) {
+  const sectionRef = useRef<HTMLElement>(null);
   const [search, setSearch] = useState(initialSearch);
   const [region, setRegion] = useState("All");
   const [district, setDistrict] = useState("All");
   const [product, setProduct] = useState("All");
   const [farmType, setFarmType] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const regions = useMemo(() => unique(farmers.map((farmer) => farmer.region)), [farmers]);
-  const districts = useMemo(() => unique(farmers.map((farmer) => farmer.district)), [farmers]);
+  const districts = useMemo(() => {
+    const districtSource = region === "All" ? farmers : farmers.filter((farmer) => farmer.region === region);
+    return unique(districtSource.map((farmer) => farmer.district));
+  }, [farmers, region]);
   const products = useMemo(() => unique(farmers.flatMap((farmer) => farmer.products)), [farmers]);
   const farmTypes = useMemo(() => unique(farmers.map((farmer) => farmer.farmType)), [farmers]);
+  const hasActiveFilters = search.trim().length > 0 || region !== "All" || district !== "All" || product !== "All" || farmType !== "All";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, region, district, product, farmType]);
+
+  function scrollToDiscovery() {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+  }
+
+  function changePage(page: number) {
+    setCurrentPage(page);
+    window.requestAnimationFrame(scrollToDiscovery);
+  }
+
+  function clearFilters() {
+    setSearch("");
+    setRegion("All");
+    setDistrict("All");
+    setProduct("All");
+    setFarmType("All");
+  }
 
   const filteredFarmers = farmers.filter((farmer) => {
     const query = search.trim().toLowerCase();
@@ -133,15 +104,18 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
   });
 
   const filters = [
-    { label: "Region", value: region, setValue: setRegion, options: regions },
-    { label: "District", value: district, setValue: setDistrict, options: districts },
-    { label: "Product", value: product, setValue: setProduct, options: products },
-    { label: "Farm Type", value: farmType, setValue: setFarmType, options: farmTypes }
+    { label: "Region", value: region, setValue: setRegion, options: regions, disabled: false },
+    { label: "District", value: district, setValue: setDistrict, options: districts, disabled: region === "All" },
+    { label: "Product", value: product, setValue: setProduct, options: products, disabled: false },
+    { label: "Farm Type", value: farmType, setValue: setFarmType, options: farmTypes, disabled: false }
   ];
+  const paginatedFarmers = paginateFarmers(filteredFarmers, currentPage, FARMERS_PER_PAGE);
+  const showingStart = filteredFarmers.length === 0 ? 0 : paginatedFarmers.startIndex + 1;
+  const showingEnd = paginatedFarmers.endIndex;
 
   return (
-    <section className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="farmer-discovery" ref={sectionRef} className="scroll-mt-24 bg-white py-14 sm:py-16">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -155,7 +129,9 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
               </p>
             </div>
             <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">
-              Showing {filteredFarmers.length} of {farmers.length} farmers
+              {filteredFarmers.length > 0
+                ? `Showing ${showingStart}-${showingEnd} of ${filteredFarmers.length} farmers`
+                : `Showing 0 of ${farmers.length} farmers`}
             </p>
           </div>
 
@@ -179,18 +155,30 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                 <select
                   className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
                   value={filter.value}
-                  onChange={(event) => filter.setValue(event.target.value)}
+                  disabled={filter.disabled}
+                  onChange={(event) => {
+                    filter.setValue(event.target.value);
+                    if (filter.label === "Region") {
+                      setDistrict("All");
+                    }
+                  }}
                 >
                   <option value="All">All {filter.label.toLowerCase()}s</option>
                   {filter.options.map((option) => (
                     <option key={option} value={option}>
-                      {cleanProfileLabel(option)}
+                      {cleanFarmerProfileLabel(option)}
                     </option>
                   ))}
                 </select>
               </label>
             ))}
           </div>
+          {hasActiveFilters ? (
+            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-5">
+              <X className="h-4 w-4" aria-hidden="true" />
+              Clear filters
+            </button>
+          ) : null}
         </div>
 
         {farmers.length === 0 ? (
@@ -207,39 +195,39 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             </Link>
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredFarmers.map((farmer) => (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {paginatedFarmers.pageItems.map((farmer) => (
               <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
               {(() => {
-                const trust = normalizeTrust(farmer.trust);
                 const products = farmerProducts(farmer);
                 const mainProducts = products.slice(0, 3);
                 const extraProductCount = Math.max(0, products.length - mainProducts.length);
+                const imageSrc = farmerCardImage(farmer, products);
+                const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
 
                 return (
                   <>
-                    <SafeImage
-                      src={farmerCardImage(farmer, products)}
-                      alt={`${farmer.farmName} farm photo`}
-                      width={420}
-                      height={360}
-                      className={`aspect-[4/3] w-full bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
-                      fallbackKind="crop"
-                      sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    />
+                    <div className="relative">
+                      <SafeImage
+                        src={imageSrc}
+                        alt={hasRealPhoto ? `${farmer.farmName} farm photo` : ""}
+                        width={360}
+                        height={360}
+                        className={`aspect-square w-full rounded-t-md bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
+                        fallbackKind="crop"
+                        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      />
+                      {!hasRealPhoto ? (
+                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-black text-ink/60 shadow-sm">
+                          Profile photo pending
+                        </span>
+                      ) : null}
+                      <FarmerBadge status={isVerifiedFarmer(farmer) ? "Verified" : farmer.verificationStatus} />
+                    </div>
                     <div className="flex flex-1 flex-col p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">{cleanProfileLabel(farmer.farmType)}</p>
-                          <h3 className="mt-1 text-xl font-black text-ink">{farmer.farmName}</h3>
-                        </div>
-                        <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                          <FarmerBadge status={trust.status} />
-                          <GGStandardBadge status={farmer.ggStandardStatus} />
-                        </div>
-                      </div>
+                      <h3 className="min-h-[3.25rem] text-xl font-black leading-tight text-ink [text-wrap:balance] line-clamp-2">{farmer.farmName}</h3>
 
-                      <p className="mt-3 text-sm font-semibold text-ink/58">{cleanFarmerLocation(farmer)}</p>
+                      <p className="mt-2 line-clamp-1 text-sm font-semibold text-ink/58">{cleanFarmerLocation(farmer)}</p>
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         {mainProducts.map((item) => (
@@ -289,13 +277,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             </p>
             <button
               type="button"
-              onClick={() => {
-                setSearch("");
-                setRegion("All");
-                setDistrict("All");
-                setProduct("All");
-                setFarmType("All");
-              }}
+              onClick={clearFilters}
               className="gg-button-secondary mt-4"
             >
               <X className="h-4 w-4" aria-hidden="true" />
@@ -303,7 +285,80 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             </button>
           </div>
         ) : null}
+
+        {filteredFarmers.length > FARMERS_PER_PAGE ? (
+          <Pagination
+            currentPage={paginatedFarmers.currentPage}
+            totalPages={paginatedFarmers.totalPages}
+            onPageChange={changePage}
+          />
+        ) : null}
       </div>
     </section>
+  );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pages = paginationPages(currentPage, totalPages);
+
+  return (
+    <nav className="mt-8 flex flex-col items-center justify-between gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-3 sm:flex-row" aria-label="Farmer directory pagination">
+      <button
+        type="button"
+        className="gg-button-secondary w-full sm:w-auto"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        aria-label="Go to previous farmer results page"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        Previous
+      </button>
+
+      <div className="text-sm font-black text-ink/65 sm:hidden">
+        Page {currentPage} of {totalPages}
+      </div>
+
+      <div className="hidden items-center gap-2 sm:flex">
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <span key={`ellipsis-${index}`} className="px-2 text-sm font-black text-ink/45">
+              ...
+            </span>
+          ) : (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-current={page === currentPage ? "page" : undefined}
+              aria-label={`Go to farmer results page ${page}`}
+              className={`focus-ring grid h-10 min-w-10 place-items-center rounded-md px-3 text-sm font-black transition ${
+                page === currentPage ? "bg-leaf-700 text-white" : "bg-white text-leaf-700 hover:bg-leaf-100"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="gg-button-secondary w-full sm:w-auto"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        aria-label="Go to next farmer results page"
+      >
+        Next
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </nav>
   );
 }
