@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
@@ -39,10 +38,8 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/become-a-supplier">Become a Supplier</ButtonLink>
-          <Link href="/marketplace?category=farm-inputs" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-earth-500 px-6 py-3 text-sm font-black text-ink shadow-sm transition duration-200 ease-out hover:bg-earth-700 hover:text-white">
-            Browse Farm Inputs
-          </Link>
-          <ButtonLink href="/farmer-directory" variant="secondary">Browse Farmer Directory</ButtonLink>
+          <ButtonLink href="/marketplace?category=farm-inputs" variant="secondary">Browse Farm Inputs</ButtonLink>
+          <ButtonLink href="/farmer-directory" variant="light">Browse Farmer Directory</ButtonLink>
         </div>
       </PageHero>
       <SupplierDirectory suppliers={suppliers} initialSearch={initialSearch} />
