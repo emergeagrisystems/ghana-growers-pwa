@@ -435,30 +435,30 @@ function writeChallengeProgress(progress: LearnChallengeProgress) {
 }
 
 function CurrentChallengeCard() {
-  const [challenge, setChallenge] = useState<LearnChallenge>(() => getCurrentLearnChallenge());
+  const [challenge, setChallenge] = useState<LearnChallenge>(() => getLearnChallengeById("soil-health") ?? getCurrentLearnChallenge());
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
     const saved = readChallengeProgress();
+    const soilHealthChallenge = getLearnChallengeById("soil-health") ?? getCurrentLearnChallenge();
 
-    if (saved) {
-      const savedChallenge = getLearnChallengeById(saved.challengeId) ?? getCurrentLearnChallenge();
-      setChallenge(savedChallenge);
+    if (saved?.challengeId === soilHealthChallenge.id) {
+      setChallenge(soilHealthChallenge);
       setCompletedDays(saved.completedDays);
       setHasStarted(true);
       return;
     }
 
-    setChallenge(getCurrentLearnChallenge());
+    setChallenge(soilHealthChallenge);
     setCompletedDays([]);
     setHasStarted(false);
   }, []);
 
   const isComplete = isChallengeComplete(challenge, completedDays);
   const nextDay = nextOpenChallengeDay(challenge, completedDays);
-  const buttonText = !hasStarted ? "Start Day 1" : isComplete ? "Challenge complete" : `Continue Day ${nextDay}`;
-  const firstThreeDays = challenge.days.slice(0, 3);
+  const buttonText = !hasStarted ? "Start Day 1" : isComplete ? "Review Challenge" : `Continue Day ${nextDay}`;
+  const progressText = isComplete ? `${challenge.durationDays} of ${challenge.durationDays} days completed` : hasStarted ? `Day ${nextDay} of ${challenge.durationDays}` : `Day 1 of ${challenge.durationDays}`;
 
   function startChallenge() {
     if (!hasStarted) {
@@ -476,21 +476,29 @@ function CurrentChallengeCard() {
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-white/72">
         <span className="rounded-md bg-white/10 px-3 py-2">{challenge.durationDays}-day challenge</span>
         <span className="rounded-md bg-white/10 px-3 py-2">{challenge.category}</span>
+        <span className="rounded-md bg-white/10 px-3 py-2">{progressText}</span>
       </div>
 
-      <div className="mt-5 grid gap-2">
-        {firstThreeDays.map((day) => {
+      <div className="mt-5 grid gap-2 md:grid-cols-2">
+        {challenge.days.map((day) => {
           const complete = completedDays.includes(day.day);
+          const current = !isComplete && day.day === nextDay;
+          const stateLabel = complete ? "completed" : current ? "current" : "upcoming";
 
           return (
-            <div key={day.day} className="flex gap-2 rounded-md bg-white/10 p-3 text-sm font-semibold leading-5 text-white/86">
-              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-earth-500">
+            <div
+              key={day.day}
+              className={`flex gap-2 rounded-md p-3 text-sm leading-5 ${
+                current ? "bg-white/[0.18] text-white" : complete ? "bg-white/[0.12] text-white/90" : "bg-white/[0.08] text-white/68"
+              }`}
+            >
+              <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-black ${complete || current ? "bg-white/18 text-earth-500" : "bg-white/10 text-white/60"}`}>
                 {complete ? "OK" : day.day}
               </span>
               <span>
                 <span className="font-black">Day {day.day}: </span>
                 {day.title}
-                {complete ? <span className="ml-2 text-xs uppercase tracking-wide">Completed</span> : null}
+                <span className="sr-only">, {stateLabel}</span>
               </span>
             </div>
           );
@@ -500,7 +508,6 @@ function CurrentChallengeCard() {
       <Link
         href="/learn/challenges/soil-health"
         onClick={startChallenge}
-        aria-disabled={isComplete}
         className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50"
       >
         {buttonText}
@@ -600,37 +607,35 @@ function AllLessonsPanel({ posts }: { posts: BlogPost[] }) {
 
 function TodayPanel({ posts }: { posts: BlogPost[] }) {
   const todaySkill = lessonByTitle(posts, "Make Your Own Compost for Healthy Soil") ?? posts[0];
-  const starterLessons = [
-    "Make Your Own Compost for Healthy Soil",
-    "Weekly Crop Field Check",
-    "Before You Spray: 3 Things to Check First"
-  ]
-    .map((title) => lessonByTitle(posts, title))
-    .filter((post): post is BlogPost => Boolean(post));
+  const lessonDuration = todaySkill.readTime.match(/(\d+)\s*min/i)?.[1];
+  const lessonChips = [
+    lessonDuration ? `${lessonDuration}-minute lesson` : todaySkill.readTime ? todaySkill.readTime.replace("read", "lesson") : null,
+    todaySkill.cost ? `Cost: ${todaySkill.cost}` : null,
+    todaySkill.audience ? `Best for: ${todaySkill.audience}` : null
+  ].filter((chip): chip is string => Boolean(chip)).slice(0, 3);
 
   return (
-    <section id="soil-compost" className="scroll-mt-24">
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+    <section id="soil-compost" className="scroll-mt-24 rounded-md bg-earth-50 px-4 py-6 sm:px-5 sm:py-7">
+      <div className="grid gap-5 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
+        <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
           <p className="gg-eyebrow">Today&apos;s Farm Skill</p>
-          <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Build one useful farm skill today</h2>
-          <p className="mt-3 text-sm font-semibold leading-6 text-ink/68">
-            Choose one practical lesson, try one small action, then use FarmMate if you need a next step.
-          </p>
-          <div className="mt-5 grid gap-3">
-            {starterLessons.map((post) => (
-              <Link key={post.slug} href={`/learn/${post.slug}`} className="focus-ring rounded-md bg-leaf-50 p-3 transition hover:bg-white hover:shadow-sm">
-                <p className="text-sm font-black text-ink">{post.title}</p>
-                <p className="mt-1 text-sm leading-6 text-ink/64">{post.excerpt}</p>
-              </Link>
-            ))}
-          </div>
+          <h2 className="mt-2 text-2xl font-black leading-tight text-ink sm:text-3xl">{todaySkill.title}</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-ink/68">{todaySkill.excerpt}</p>
+          {lessonChips.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-ink/62">
+              {lessonChips.map((chip) => (
+                <span key={chip} className="rounded-md bg-leaf-50 px-3 py-2 ring-1 ring-leaf-900/5">
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href={`/learn/${todaySkill.slug}`} className="focus-ring rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
-              Read today&apos;s lesson
+              Read lesson
             </Link>
             <Link href="/farmer-hub?tool=ask" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
-              Ask FarmMate
+              Ask FarmMate about soil
             </Link>
           </div>
         </article>
