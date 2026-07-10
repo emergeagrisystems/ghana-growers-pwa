@@ -164,7 +164,7 @@ function displayValue(value?: string | null, fallback = "Not provided") {
 function deliveryDisplay(options?: string[]) {
   const option = options?.map(normalizeText).find(isMeaningful);
 
-  if (!option || /upon arrangement|available on request|not provided/i.test(option)) {
+  if (!option || /upon arrangement|available on request|not provided|cash|mobile money|bank transfer|payment/i.test(option)) {
     return "Confirmed during request";
   }
 
@@ -204,6 +204,10 @@ function formatQuantity(quantity?: string | null, unit?: string | null) {
   }
 
   return unitText ? `${quantityText} ${unitText}` : quantityText;
+}
+
+function compactRows(rows: DisplayRow[]) {
+  return rows.filter((row) => isMeaningful(row.value) || row.label === "Active Listings");
 }
 
 function activeListingMatchesProduct(listingName: string, product: string) {
@@ -267,21 +271,21 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   });
 
   const aboutCopy = `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}. Buyers can request availability, quantity, price, and collection or delivery details through Ghana Growers.`;
-  const snapshotItems: DisplayRow[] = [
+  const snapshotItems: DisplayRow[] = compactRows([
     { icon: Sprout, label: "Farm Type", value: displayValue(farmer.farmType) },
     { icon: Ruler, label: "Farm Size", value: displayValue(farmer.farmSize) },
     { icon: Clock3, label: "Supply Frequency", value: "Confirmed during request" },
     { icon: PackageCheck, label: "Active Listings", value: String(activeMarketplaceListings.length) }
-  ];
-  const locationRows: DisplayRow[] = [
+  ]);
+  const locationRows: DisplayRow[] = compactRows([
     { label: "Community/Town", value: location.community ?? "Available on request" },
     { label: "Service Area", value: location.serviceArea }
-  ];
-  const tradeRows: DisplayRow[] = [
+  ]);
+  const tradeRows: DisplayRow[] = compactRows([
     { label: "Delivery / Pickup", value: deliveryOption },
     { label: "Payment Terms", value: paymentPreference },
     { label: "Buyer Routing", value: "Through Ghana Growers" }
-  ];
+  ]);
   const trustPoints = [
     "Verified farmer profile",
     "Produce information reviewed",
@@ -473,7 +477,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Why Source Through Ghana Growers</p>
             <h2 className="mt-2 text-2xl font-black text-ink">A supported way to source farm produce</h2>
             <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/65">
-              Ghana Growers supports buyer requests by helping confirm produce availability, quantity, price, and collection or delivery details. This profile follows the Ghana Growers platform commitment framework and is separate from formal certification.
+              Ghana Growers helps confirm produce availability, quantity, price, and pickup or delivery details before connecting buyers.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {trustPoints.map((point) => (
@@ -535,25 +539,6 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 No matching produce demand is listed yet. Buyers can request sourcing support for these products through Ghana Growers.
               </p>
             )}
-          </section>
-
-          <section className="mt-8 rounded-md border border-earth-500/25 bg-earth-50 p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Request Produce</p>
-            <h2 className="mt-2 text-2xl font-black text-ink">Interested in buying from {farmer.farmName}?</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-              Tell Ghana Growers what you need and we will confirm availability before connecting you with the farmer.
-            </p>
-            <RequestConnectionButton
-              label="Request Produce"
-              sourceType="Farmer"
-              sourceId={farmer.slug}
-              sourceName={farmer.farmName}
-              productInterest={products.slice(0, 3).join(", ")}
-              className="mt-5 w-full sm:w-auto"
-            />
-            <p className="mt-3 text-sm font-semibold leading-6 text-ink/62">
-              No payment is required at this stage. Ghana Growers will first confirm availability and contact you.
-            </p>
           </section>
             </div>
           </div>
