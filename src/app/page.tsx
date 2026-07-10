@@ -150,7 +150,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#F7F3E8] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
+      <section className="bg-[#F7F6EF] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6 lg:p-7">
             <div className="grid gap-6 lg:grid-cols-[0.9fr_1.25fr_auto] lg:items-center">
@@ -196,7 +196,7 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
-      <section className="bg-[#F7F3E8] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
+      <section className="bg-[#F7F6EF] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="gg-eyebrow text-earth-700/70">How It Works</p>
@@ -266,31 +266,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#143A1F] py-20 text-[#F7F3E8] sm:py-24">
+      <section className="bg-[#143A1F] py-20 text-white sm:py-24">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
           <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">Build trusted agricultural connections across Ghana.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#ECF2D1]/85 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/72 sm:text-lg">
             Register as a farmer, buyer, supplier, or service provider. Ghana Growers will review your details before your profile, listing, or request is published.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/join"
-              className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#F7F3E8] px-6 py-3 text-center text-sm font-black text-[#143A1F] shadow-sm transition duration-200 ease-out hover:bg-[#D6A84A] sm:w-auto"
-            >
+            <ButtonLink href="/join" variant="light">
               Join the Network
-            </Link>
-            <Link
-              href="/contact"
-              className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md border border-[#F7F3E8]/30 bg-[#F7F3E8]/10 px-6 py-3 text-center text-sm font-black text-[#F7F3E8] transition duration-200 ease-out hover:border-[#D6A84A]/70 hover:bg-[#D6A84A] hover:text-[#143A1F] sm:w-auto"
-            >
+            </ButtonLink>
+            <ButtonLink href="/contact" variant="light">
               Contact Ghana Growers
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-leaf-900/10 bg-[#F7F3E8] py-8" aria-label="End of homepage content">
+      <section className="border-y border-leaf-900/10 bg-[#F7F6EF] py-8" aria-label="End of homepage content">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="h-px bg-leaf-900/10" />
         </div>

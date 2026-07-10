@@ -5,11 +5,10 @@
 :root {
   color-scheme: light;
   --gg-primary-green: #143A1F;
-  --gg-secondary-green: #4C6B36;
-  --gg-accent-gold: #D6A84A;
-  --gg-cream-bg: #F7F3E8;
-  --gg-morning-mist: #ECF2D1;
-  --gg-soft-ivory: #FFFFE2;
+  --gg-secondary-green: #4E7A3D;
+  --gg-accent-gold: #E1B75A;
+  --gg-cream-bg: #F7F6EF;
+  --gg-morning-mist: #EEF3E8;
   --gg-cocoa-earth: #6B4A2F;
   --gg-dark-text: #162016;
   --gg-white-card: #ffffff;
@@ -53,7 +52,7 @@ h3 {
 }
 
 ::selection {
-  background: #D6A84A;
+  background: #E1B75A;
   color: #162016;
 }
 

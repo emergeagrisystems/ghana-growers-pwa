@@ -11,17 +11,17 @@ const config: Config = {
     extend: {
       colors: {
         leaf: {
-          50: "#ECF2D1",
+          50: "#EEF3E8",
           100: "#DDE8D2",
-          500: "#4C6B36",
+          500: "#4E7A3D",
           600: "#143A1F",
           700: "#143A1F",
           900: "#143A1F"
         },
         earth: {
-          50: "#F7F3E8",
+          50: "#F7F6EF",
           100: "#F2E6C2",
-          500: "#D6A84A",
+          500: "#E1B75A",
           700: "#9A6D1F"
         },
         cocoa: {
@@ -29,8 +29,7 @@ const config: Config = {
           500: "#6B4A2F",
           700: "#553922"
         },
-        mist: "#ECF2D1",
-        ivory: "#FFFFE2",
+        mist: "#EEF3E8",
         tomato: "#d94b35",
         ink: "#162016"
       },

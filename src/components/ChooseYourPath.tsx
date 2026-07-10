@@ -54,14 +54,14 @@ const toneClasses = {
 
 export function ChooseYourPath() {
   return (
-    <section className="bg-[#143A1F] py-12 text-[#F7F3E8] sm:py-14" aria-labelledby="choose-your-path-title">
+    <section className="bg-[#143A1F] py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-500">Start here</p>
-          <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-[#F7F3E8] sm:text-4xl">
+          <h2 id="choose-your-path-title" className="mt-3 break-words text-2xl font-black tracking-normal text-white sm:text-4xl">
             Choose Your Path
           </h2>
-          <p className="mt-4 text-base leading-7 text-[#ECF2D1]/85 sm:text-lg sm:leading-8">
+          <p className="mt-4 text-base leading-7 text-white/72 sm:text-lg sm:leading-8">
             Whether you grow, buy, or supply, Ghana Growers helps you connect with the right people across Ghana&apos;s agricultural network.
           </p>
         </div>

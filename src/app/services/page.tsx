@@ -56,7 +56,7 @@ export default function ServicesPage() {
               const Icon = card.icon;
 
               return (
-                <article key={card.title} className="rounded-md border border-leaf-900/10 bg-[#F7F3E8] p-6 shadow-sm">
+                <article key={card.title} className="rounded-md border border-leaf-900/10 bg-[#F7F6EF] p-6 shadow-sm">
                   <div className="grid h-12 w-12 place-items-center rounded-md bg-leaf-700 text-white">
                     <Icon size={23} aria-hidden="true" />
                   </div>
