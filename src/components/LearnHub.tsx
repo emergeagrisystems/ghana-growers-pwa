@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ArrowUpRight,
   Bot,
   BookOpen,
   CalendarDays,
@@ -25,6 +26,7 @@ import {
   type LearnChallenge,
   type LearnChallengeProgress
 } from "@/lib/learn-challenges";
+import { getLearnIllustrationType, LearnIllustration } from "@/components/learn/LearnIllustration";
 import type { BlogPost } from "@/types";
 
 type LearnHubProps = {
@@ -327,13 +329,16 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
 
       <div className="space-y-5">
         {featured ? (
-          <article className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft">
-            <p className="gg-eyebrow">Featured Skill</p>
-            <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{featured.title}</h3>
-            <p className="mt-3 text-sm leading-6 text-ink/65">{featured.excerpt}</p>
-            <Link href={`/learn/${featured.slug}`} className="focus-ring mt-5 inline-flex rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
-              Read lesson
-            </Link>
+          <article className="grid gap-5 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft md:grid-cols-[1fr_12rem] md:items-center">
+            <div>
+              <p className="gg-eyebrow">Featured Skill</p>
+              <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{featured.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-ink/65">{featured.excerpt}</p>
+              <Link href={`/learn/${featured.slug}`} className="focus-ring mt-5 inline-flex rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
+                Read lesson
+              </Link>
+            </div>
+            <LearnIllustration type={getLearnIllustrationType(featured)} className="hidden md:block" />
           </article>
         ) : null}
 
@@ -349,11 +354,12 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
               <Link
                 key={post.slug}
                 href={`/learn/${post.slug}`}
-                className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+                aria-label={`Read lesson: ${post.title}`}
+                className="focus-ring group relative rounded-md border border-leaf-900/10 bg-leaf-50 p-3 pr-10 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
               >
                 <p className="text-sm font-black leading-5 text-ink">{post.title}</p>
                 <p className="mt-2 text-sm leading-6 text-ink/64">{post.excerpt}</p>
-                <span className="mt-3 inline-flex text-sm font-black text-leaf-700">Read lesson</span>
+                <ArrowUpRight className="absolute right-3 top-3 h-4 w-4 text-leaf-700 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
               </Link>
             ))}
           </div>

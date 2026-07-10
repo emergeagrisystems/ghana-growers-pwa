@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, Clock, ListChecks, Sprout, Target } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
+import { getLearnIllustrationType, LearnIllustration, type LearnIllustrationType } from "@/components/learn/LearnIllustration";
 import { blogPosts, getBlogPost } from "@/data/blog";
 import { learnImageForPost } from "@/lib/learnImages";
 import { createPageMetadata } from "@/lib/seo";
@@ -52,6 +53,22 @@ function farmMateHref(prompt: string) {
   return prompt ? `/farmer-hub?tool=ask&question=${encodeURIComponent(prompt)}` : "/farmer-hub?tool=ask";
 }
 
+function actionStepIllustrationType(post: BlogPost, step: string, index: number): LearnIllustrationType {
+  const text = `${post.title} ${step}`.toLowerCase();
+
+  if (text.includes("spray")) return "spray-check";
+  if (text.includes("rain") || text.includes("water") || text.includes("drain")) return "rain-drainage";
+  if (text.includes("harvest") || text.includes("sort") || text.includes("pack")) return "harvest-sorting";
+  if (text.includes("store") || text.includes("dry") || text.includes("maize") || text.includes("yam")) return "storage";
+  if (text.includes("mulch")) return "mulch";
+  if (text.includes("manure")) return "manure";
+  if (text.includes("rotation")) return "rotation";
+  if (text.includes("soil") || text.includes("compost")) return index % 2 === 0 ? "compost" : "soil-cover";
+  if (text.includes("farmmate") || text.includes("photo")) return "farmmate";
+
+  return getLearnIllustrationType(post);
+}
+
 export default function LearnArticlePage({ params }: ArticlePageProps) {
   const post = getBlogPost(params.slug);
 
@@ -72,6 +89,7 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
   const actionSteps = splitPracticalText(stepsText, 5);
   const needItems = splitPracticalText(needText, 5);
   const doFirst = (post.keyPoints ?? []).slice(0, 4);
+  const illustrationType = getLearnIllustrationType(post);
   const metadataChips = [
     post.readTime.replace("read", "lesson"),
     post.level,
@@ -89,21 +107,24 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
               Back to Learn
             </span>
           </ButtonLink>
-          <div className="mt-7">
-            <p className="gg-eyebrow">{post.category}</p>
-            <h1 className="mt-3 max-w-4xl text-3xl font-black leading-tight text-ink sm:text-4xl">{post.title}</h1>
-            <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-ink/70">{post.excerpt}</p>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-black text-ink/58">
-              {metadataChips.map((chip) => (
-                <span key={chip} className="rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
-                  {chip}
+          <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_14rem] lg:items-end">
+            <div>
+              <p className="gg-eyebrow">{post.category}</p>
+              <h1 className="mt-3 max-w-4xl text-3xl font-black leading-tight text-ink sm:text-4xl">{post.title}</h1>
+              <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-ink/70">{post.excerpt}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-black text-ink/58">
+                {metadataChips.map((chip) => (
+                  <span key={chip} className="rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
+                    {chip}
+                  </span>
+                ))}
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
+                  <Clock size={15} aria-hidden="true" />
+                  Updated {new Date(post.date).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
-              ))}
-              <span className="inline-flex items-center gap-1 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
-                <Clock size={15} aria-hidden="true" />
-                Updated {new Date(post.date).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" })}
-              </span>
+              </div>
             </div>
+            <LearnIllustration type={illustrationType} className="hidden lg:block" />
           </div>
         </div>
       </section>
@@ -136,9 +157,12 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {actionSteps.map((step, index) => (
                 <div key={step} className="rounded-md bg-leaf-50 p-4">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
-                    {index + 1}
-                  </span>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
+                      {index + 1}
+                    </span>
+                    <LearnIllustration type={actionStepIllustrationType(post, step, index)} size="mini" />
+                  </div>
                   <p className="mt-3 text-sm font-black leading-6 text-ink">{step}</p>
                 </div>
               ))}
