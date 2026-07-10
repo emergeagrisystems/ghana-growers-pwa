@@ -58,7 +58,7 @@ const marketplaceCategories: HomepageMarketplaceCategory[] = [
 
 export function MarketplaceCategoryShowcase() {
   return (
-    <section className="overflow-hidden bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="marketplace-category-showcase-title">
+    <section className="overflow-hidden bg-white py-12 sm:py-14 lg:py-16" aria-labelledby="marketplace-category-showcase-title">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.25fr] lg:items-start lg:px-8">
         <div className="lg:sticky lg:top-28">
           <p className="gg-eyebrow text-earth-700/70">Marketplace</p>
@@ -78,13 +78,13 @@ export function MarketplaceCategoryShowcase() {
           </div>
         </div>
 
-        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+        <div className="grid min-w-0 items-stretch gap-4 sm:grid-cols-2">
           {marketplaceCategories.map((category) => (
             <Link
               key={category.title}
               href={category.href}
               aria-label={`${category.action}: ${category.title}`}
-              className="focus-ring group flex min-w-0 gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-3 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:bg-white hover:shadow-soft"
+              className="focus-ring group flex h-full min-w-0 gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-3 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:bg-white hover:shadow-soft"
             >
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md border border-white bg-white sm:h-24 sm:w-24">
                 <SafeImage

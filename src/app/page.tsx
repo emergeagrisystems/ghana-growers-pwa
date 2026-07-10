@@ -17,7 +17,9 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { SafeImage } from "@/components/SafeImage";
+import { featuredFarmers as configuredFeaturedFarmers } from "@/data/featuredListings";
 import { isFeaturedActive } from "@/lib/featured";
+import { isPublicFarmerProfile } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
@@ -74,7 +76,7 @@ const farmMateTools = [
   }
 ];
 
-const trustPoints = ["Verified Profiles", "Reviewed Listings", "Buyer Request Support"];
+const trustPoints = ["Reviewed Profiles", "Reviewed Listings", "Buyer Request Support"];
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
@@ -89,29 +91,32 @@ export default async function HomePage() {
       )
     );
   });
-  const homepageFeaturedFarmers = realFarmers.filter(
-    (farmer) =>
-      isFeaturedActive(farmer) ||
-      farmer.verificationStatus === "Verified" ||
-      farmer.source === "Founding Farmer"
-  );
+  const activeFeaturedFarmers = realFarmers
+    .filter((farmer) => isPublicFarmerProfile(farmer) && isFeaturedActive(farmer))
+    .filter((farmer, index, featuredFarmers) => featuredFarmers.findIndex((item) => item.slug === farmer.slug) === index)
+    .slice(0, 4);
+  const configuredPublicFeaturedFarmers = configuredFeaturedFarmers
+    .filter(isPublicFarmerProfile)
+    .filter((farmer, index, featuredFarmers) => featuredFarmers.findIndex((item) => item.slug === farmer.slug) === index)
+    .slice(0, 4);
+  const homepageFeaturedFarmers = activeFeaturedFarmers.length > 0 ? activeFeaturedFarmers : configuredPublicFeaturedFarmers;
 
   return (
     <>
       <section className="overflow-hidden bg-earth-50">
-        <div className="mx-auto grid max-w-[1480px] items-center gap-8 px-4 pb-8 pt-10 sm:px-6 lg:grid-cols-[minmax(0,640px)_minmax(340px,600px)] lg:justify-between lg:gap-[clamp(3rem,6vw,6rem)] lg:px-8 lg:pb-10 lg:pt-14 xl:grid-cols-[minmax(0,720px)_minmax(420px,680px)]">
+        <div className="mx-auto grid max-w-[1480px] items-center gap-8 px-4 pb-7 pt-9 sm:px-6 lg:grid-cols-[minmax(0,620px)_minmax(340px,560px)] lg:justify-between lg:gap-[clamp(3.5rem,6vw,6rem)] lg:px-8 lg:pb-9 lg:pt-12 xl:grid-cols-[minmax(0,700px)_minmax(420px,640px)]">
           <div className="relative z-10 max-w-[720px]">
             <p className="inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm">
               <ShieldCheck size={17} aria-hidden="true" />
               BUILT FOR GHANAIAN AGRICULTURE
             </p>
-            <h1 className="mt-6 max-w-[720px] gg-hero-title !text-[clamp(1.9rem,9.2vw,3.35rem)] !leading-[0.98] !tracking-[-0.035em] lg:!text-[clamp(4.05rem,5vw,5.15rem)]">
-              <span className="block whitespace-nowrap">Buy Local.</span>
+            <h1 className="mt-6 max-w-[700px] gg-hero-title !text-[clamp(1.9rem,9vw,3.2rem)] !leading-[0.96] !tracking-[-0.035em] lg:!text-[clamp(3.55rem,4.35vw,4.55rem)]">
+              <span className="block whitespace-nowrap">Buy Farm-Fresh.</span>
               <span className="block whitespace-nowrap">Sell Your Harvest.</span>
               <span className="block whitespace-nowrap">Grow With Us.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
-              Buy fresh produce from trusted farmers. Sell your harvest with confidence. Grow through learning, market access, and smart farming tools.
+              Buy fresh produce from reviewed local farmers. Sell your harvest with confidence, or offer agricultural inputs and services through Ghana Growers. Grow through better market access, practical learning, and smart farming tools.
             </p>
             <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <Link
@@ -122,19 +127,19 @@ export default async function HomePage() {
                 Explore Marketplace
               </Link>
               <Link
-                href="/farmer-hub"
+                href="/sell"
                 className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#D6A84A] px-6 py-3 text-center text-sm font-black leading-none text-ink shadow-sm transition duration-200 ease-out hover:bg-earth-700 hover:text-white sm:w-auto"
               >
-                Open GG FarmMate
+                Sell Your Harvest
               </Link>
             </div>
             <p className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-leaf-800">
               <CheckCircle2 size={16} aria-hidden="true" />
-              Building Ghana&apos;s trusted agricultural network.
+              Connecting reviewed farmers, buyers and suppliers across Ghana.
             </p>
           </div>
 
-          <div className="relative w-full max-w-[680px] justify-self-center overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft lg:justify-self-end">
+          <div className="relative w-full max-w-[640px] justify-self-center overflow-hidden rounded-md border border-white/70 bg-white p-0.5 shadow-soft lg:justify-self-end">
             <SafeImage
               src="/images/hero/ghana-growers-trade-hero.png"
               alt="Ghanaian agriculture marketplace with farmers, buyers, and fresh produce"
@@ -143,14 +148,14 @@ export default async function HomePage() {
               fallbackSrc="/images/marketplace/ghana-market-1.jpg"
               fallbackKind="default"
               priority
-              sizes="(min-width: 1536px) 680px, (min-width: 1024px) 44vw, 100vw"
-              className="aspect-[4/3] w-full rounded-md object-cover sm:aspect-[16/9]"
+              sizes="(min-width: 1536px) 640px, (min-width: 1024px) 40vw, 100vw"
+              className="aspect-[4/3] w-full rounded-md object-cover object-[center_42%]"
             />
           </div>
         </div>
       </section>
 
-      <section className="bg-[#F7F6EF] py-10 sm:py-12" aria-labelledby="farmmate-strip-title">
+      <section className="bg-[#F7F6EF] py-8 sm:py-10" aria-labelledby="farmmate-strip-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6 lg:p-7">
             <div className="grid gap-6 lg:grid-cols-[0.9fr_1.25fr_auto] lg:items-center">
@@ -159,7 +164,7 @@ export default async function HomePage() {
                 <h2 id="farmmate-strip-title" className="mt-2 text-2xl font-black leading-tight text-ink sm:text-3xl">
                   Digital farming tools by Ghana Growers
                 </h2>
-                <p className="mt-3 text-sm leading-6 text-ink/64 sm:text-base sm:leading-7">
+                <p className="mt-3 text-sm leading-6 text-ink/64">
                   Check weather, diagnose crop problems, compare market prices, and get practical farming advice in one place.
                 </p>
               </div>
@@ -196,7 +201,7 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
-      <section className="bg-[#F7F6EF] py-16 sm:py-20 lg:py-24" aria-labelledby="how-ghana-growers-works">
+      <section className="bg-[#F7F6EF] py-12 sm:py-14 lg:py-16" aria-labelledby="how-ghana-growers-works">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="gg-eyebrow text-earth-700/70">How It Works</p>
@@ -208,12 +213,12 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {howItWorks.map((step, index) => {
               const Icon = step.icon;
 
               return (
-                <article key={step.title} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card">
+                <article key={step.title} className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-card">
                   <div className="flex items-center justify-between gap-4">
                     <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                       <Icon size={22} aria-hidden="true" />
@@ -229,23 +234,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <FeaturedListings
-        kinds={["farmers"]}
-        title="Featured farmers"
-        description="Meet trusted farmers from the Ghana Growers network."
-        background="earth"
-        limit={3}
-        compact
-        farmers={homepageFeaturedFarmers}
-      />
+      {homepageFeaturedFarmers.length > 0 ? (
+        <FeaturedListings
+          kinds={["farmers"]}
+          title="Featured farmers"
+          description="Meet reviewed farmers from the Ghana Growers network."
+          background="earth"
+          limit={4}
+          compact
+          farmers={homepageFeaturedFarmers}
+        />
+      ) : null}
 
-      <section className="bg-white py-14 sm:py-16">
+      <section className="bg-white py-12 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-6 shadow-card lg:p-7">
             <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_auto] lg:items-center">
               <div>
                 <p className="gg-eyebrow">Ghana Growers Checks</p>
-                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Why source through Ghana Growers</h2>
+                <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Why connect through Ghana Growers</h2>
                 <p className="mt-3 text-sm leading-6 text-ink/64">
                   Ghana Growers reviews profiles, listings, and buyer requests to support clearer communication and more reliable agricultural connections. This framework is separate from formal certification.
                 </p>
@@ -266,7 +273,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#143A1F] py-20 text-white sm:py-24">
+      <section className="bg-[#143A1F] py-16 text-white sm:py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
           <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">Build trusted agricultural connections across Ghana.</h2>
@@ -274,12 +281,12 @@ export default async function HomePage() {
             Register as a farmer, buyer, supplier, or service provider. Ghana Growers will review your details before your profile, listing, or request is published.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/join" variant="light">
+            <Link href="/join" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-black text-leaf-900 shadow-sm transition duration-200 ease-out hover:bg-earth-50">
               Join the Network
-            </ButtonLink>
-            <ButtonLink href="/contact" variant="light">
+            </Link>
+            <Link href="/contact" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/35 px-6 py-3 text-sm font-black text-white transition duration-200 ease-out hover:border-earth-500 hover:text-earth-500">
               Contact Ghana Growers
-            </ButtonLink>
+            </Link>
           </div>
         </div>
       </section>

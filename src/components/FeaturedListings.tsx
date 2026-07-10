@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { Building2, CalendarDays, MapPin, ShoppingBasket, Sprout, Star } from "lucide-react";
+import { BadgeCheck, Building2, CalendarDays, MapPin, ShoppingBasket, Sprout, Star } from "lucide-react";
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { normalizeTrust, VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
+import {
+  cleanFarmerLocation,
+  farmerCardImage,
+  farmerCardProducts,
+  farmerImagePosition,
+  isVerifiedFarmer
+} from "@/lib/farmerDirectory";
 import { cleanProductList, productImageForName } from "@/lib/productDisplay";
 import {
   featuredBuyerRequests,
@@ -72,6 +79,17 @@ function farmerImage(farmer: FarmerProfile) {
   return productImageForName(formatFarmerProducts(farmer.products)[0] ?? "Produce");
 }
 
+function FarmerPhotoPlaceholder({ rounded = "rounded-t-md" }: { rounded?: string }) {
+  return (
+    <div className={`flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-leaf-50 to-earth-50 text-center text-leaf-700 ${rounded}`}>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-white/80 shadow-sm ring-1 ring-leaf-900/10">
+        <Sprout className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <span className="text-xs font-bold text-ink/55">Photo coming soon</span>
+    </div>
+  );
+}
+
 export function FeaturedListings({
   kinds = ["all"],
   title = "Featured listings",
@@ -90,15 +108,87 @@ export function FeaturedListings({
   const selectedSuppliers = suppliers ?? featuredSuppliers;
 
   return (
-    <section className={`${backgrounds[background]} py-20 sm:py-24 lg:py-[120px]`}>
+    <section className={`${backgrounds[background]} ${compact ? "py-12 sm:py-14 lg:py-16" : "py-20 sm:py-24 lg:py-[120px]"}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Featured" title={title} description={description} />
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className={`mt-8 grid gap-5 ${compact ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3"}`}>
           {showFarmers
             ? selectedFarmers.slice(0, limit).map((farmer) => {
                 const trust = normalizeTrust(farmer.trust);
                 const products = formatFarmerProducts(farmer.products);
                 const location = formatFarmerLocation(farmer);
+
+                if (compact) {
+                  const cardProducts = farmerCardProducts(farmer);
+                  const mainProducts = cardProducts.slice(0, 2);
+                  const extraProductCount = Math.max(0, cardProducts.length - mainProducts.length);
+                  const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
+
+                  return (
+                    <article
+                      key={farmer.slug}
+                      className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card"
+                    >
+                      <div className="relative">
+                        {hasRealPhoto ? (
+                          <SafeImage
+                            src={farmerCardImage(farmer, cardProducts)}
+                            alt={`${farmer.farmName} farm photo`}
+                            width={360}
+                            height={270}
+                            className={`aspect-[4/3] w-full rounded-t-md bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
+                            fallbackKind="farmer"
+                            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          />
+                        ) : (
+                          <FarmerPhotoPlaceholder />
+                        )}
+                        {isVerifiedFarmer(farmer) ? (
+                          <span aria-label="Verified by Ghana Growers" className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-2.5 py-1 text-[0.68rem] font-bold text-leaf-700 shadow-sm">
+                            <BadgeCheck className="h-3 w-3" aria-hidden="true" />
+                            Verified
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="flex flex-1 flex-col p-4">
+                        <h3 className="line-clamp-2 min-h-[2.9rem] text-lg font-extrabold leading-tight text-ink [text-wrap:balance]">
+                          <Link
+                            href={`/farmer-directory/${farmer.slug}`}
+                            className="focus-ring rounded-sm hover:text-leaf-700"
+                            aria-label={`View profile for ${farmer.farmName}`}
+                          >
+                            {farmer.farmName}
+                          </Link>
+                        </h3>
+                        <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 text-ink/58">
+                          {cleanFarmerLocation(farmer)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {mainProducts.map((product) => (
+                            <span key={product} className="rounded-md bg-leaf-50 px-2.5 py-1 text-[0.72rem] font-semibold text-leaf-700">
+                              {product}
+                            </span>
+                          ))}
+                          {extraProductCount > 0 ? (
+                            <span className="rounded-md bg-earth-50 px-2.5 py-1 text-[0.72rem] font-semibold text-earth-700">
+                              +{extraProductCount} more
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-auto pt-4">
+                          <Link
+                            href={`/farmer-directory/${farmer.slug}`}
+                            className="focus-ring group inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-sm font-bold text-leaf-700 transition hover:text-leaf-900"
+                            aria-label={`View profile for ${farmer.farmName}`}
+                          >
+                            View profile <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                }
 
                 return (
                 <article
@@ -241,8 +331,8 @@ export function FeaturedListings({
         </div>
         {compact && showFarmers && !showSuppliers && !showBuyerRequests ? (
           <div className="mt-8 flex justify-center">
-            <Link href="/farmer-directory" className="gg-button-primary">
-              View all Farmers
+            <Link href="/farmer-directory" className="focus-ring group inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-sm font-black text-leaf-700 transition hover:text-leaf-900">
+              View all farmers <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
             </Link>
           </div>
         ) : null}
