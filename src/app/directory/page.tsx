@@ -6,6 +6,7 @@ import { SafeImage } from "@/components/SafeImage";
 import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
+import type { FarmerProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ const directoryCards = [
   {
     title: "Find Services",
     description: "Find transport, ploughing, spraying, storage, packaging, and farm support.",
-    href: "/supplier-directory",
+    href: "/supplier-directory?q=service",
     cta: "Find Services",
     icon: Wrench
   }
@@ -62,11 +63,54 @@ const directorySteps = [
   }
 ];
 
+function titleCaseValue(value: string) {
+  return value
+    .trim()
+    .replace(/\s*\/\s*/g, ", ")
+    .replace(/\s+/g, " ")
+    .split(/(\s+|-|,)/)
+    .map((part) => {
+      if (/^(\s+|-|,)$/.test(part)) {
+        return part;
+      }
+
+      const lower = part.toLowerCase();
+      return lower ? `${lower.charAt(0).toUpperCase()}${lower.slice(1)}` : lower;
+    })
+    .join("")
+    .replace(/\bRegion\b/gi, "Region");
+}
+
+function cleanProfileLabel(value: string) {
+  return titleCaseValue(value)
+    .replace(/\bMaise\b/gi, "Maize")
+    .replace(/\bAquaculture And Poultry\b/gi, "Aquaculture & Poultry");
+}
+
+function cleanFarmerLocation(farmer: FarmerProfile) {
+  const district = cleanProfileLabel(farmer.district);
+  const region = cleanProfileLabel(farmer.region);
+
+  if (!district) {
+    return region || "Ghana";
+  }
+
+  if (!region || district.toLowerCase().includes(region.toLowerCase())) {
+    return district;
+  }
+
+  return `${district}, ${region}`;
+}
+
+function featuredImagePosition(farmer: FarmerProfile) {
+  return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
+}
+
 export default async function DirectoryPage() {
   const farmers = await getFarmersData();
   const featuredFarmers = farmers
     .filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer")
-    .slice(0, 3);
+    .slice(0, 4);
 
   return (
     <>
@@ -137,25 +181,25 @@ export default async function DirectoryPage() {
                   Explore active profiles from the Ghana Growers network.
                 </p>
               </div>
-              <ButtonLink href="/farmer-directory" variant="secondary">View all Farmers</ButtonLink>
+              <ButtonLink href="/farmer-directory" variant="secondary">View Farmer Directory</ButtonLink>
             </div>
 
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {featuredFarmers.map((farmer) => (
-                <article key={farmer.slug} className="overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+                <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
                   <SafeImage
                     src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
                     alt={`${farmer.farmName} farm photo`}
-                    width={420}
-                    height={260}
-                    className="h-40 w-full bg-leaf-50 object-cover object-[center_30%]"
+                    width={320}
+                    height={320}
+                    className={`aspect-square w-full bg-leaf-50 object-cover ${featuredImagePosition(farmer)}`}
                     fallbackKind="farmer"
-                    sizes="(min-width: 768px) 33vw, 100vw"
+                    sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
                   />
-                  <div className="p-5">
+                  <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{farmer.region}</p>
+                        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{cleanProfileLabel(farmer.region)}</p>
                         <h3 className="mt-1 text-lg font-black text-ink">{farmer.farmName}</h3>
                       </div>
                       {farmer.verificationStatus === "Verified" ? (
@@ -164,17 +208,19 @@ export default async function DirectoryPage() {
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-ink/58">{farmer.district}</p>
+                    <p className="mt-2 text-sm font-semibold text-ink/58">{cleanFarmerLocation(farmer)}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {farmer.products.slice(0, 3).map((product) => (
                         <span key={product} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
-                          {product}
+                          {cleanProfileLabel(product)}
                         </span>
                       ))}
                     </div>
-                    <Link href={`/farmer-directory/${farmer.slug}`} className="gg-button-secondary mt-5 w-full">
+                    <div className="mt-auto pt-5">
+                      <Link href={`/farmer-directory/${farmer.slug}`} className="gg-button-secondary w-full" aria-label={`View profile for ${farmer.farmName}`}>
                       View Profile
-                    </Link>
+                      </Link>
+                    </div>
                   </div>
                 </article>
               ))}
