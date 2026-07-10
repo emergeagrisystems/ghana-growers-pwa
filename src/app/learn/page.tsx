@@ -15,7 +15,7 @@ export default function LearnPage() {
       <PageHero
         eyebrow="Ghana Growers"
         title="Skills Center"
-        description="Practical guides, short lessons, and sustainable farming skills to help farmers grow healthier crops, protect soil, and prepare better harvests."
+        description="Practical guides, short lessons, and sustainable farming skills to help growers care for crops, protect soil, and prepare better harvests."
         variant="compact"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">

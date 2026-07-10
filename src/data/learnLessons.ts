@@ -23,7 +23,7 @@ function lesson(input: LessonInput): BlogPost {
       { heading: "When to ask FarmMate", body: input.farmMate },
       {
         heading: "Better Practice",
-        body: "This skill supports healthier soil, safer growing, cleaner harvest handling, and future Ghana Growers verification standards."
+        body: "Use this skill to improve soil care, crop checks, harvest handling, and everyday farm decisions."
       },
       { heading: "Next action", body: input.next }
     ]

@@ -310,13 +310,15 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
           <h3 className="text-lg font-black text-ink">Skill Path</h3>
           <div className="mt-4 grid gap-3">
             {[
-              ["Basic Skill", panel.ladder.start],
-              ["Better Practice", panel.ladder.improve],
-              ["Advanced Practice", panel.ladder.further]
-            ].map(([label, text]) => (
-              <div key={label} className="rounded-md bg-leaf-50 p-3">
-                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{label}</p>
-                <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{text}</p>
+              panel.ladder.start,
+              panel.ladder.improve,
+              panel.ladder.further
+            ].map((text, index) => (
+              <div key={text} className="flex gap-3 rounded-md bg-leaf-50 p-3">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
+                  {index + 1}
+                </span>
+                <p className="text-sm font-semibold leading-6 text-ink/70">{text}</p>
               </div>
             ))}
           </div>
@@ -329,11 +331,6 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
             <p className="gg-eyebrow">Featured Skill</p>
             <h3 className="mt-2 text-2xl font-black leading-tight text-ink">{featured.title}</h3>
             <p className="mt-3 text-sm leading-6 text-ink/65">{featured.excerpt}</p>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-ink/58">
-              {featured.level ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.level}</span> : null}
-              <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.readTime}</span>
-              {featured.cost ? <span className="rounded-md bg-leaf-50 px-2.5 py-1">{featured.cost}</span> : null}
-            </div>
             <Link href={`/learn/${featured.slug}`} className="focus-ring mt-5 inline-flex rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-700">
               Read lesson
             </Link>
@@ -354,22 +351,12 @@ function TopicPanelView({ panel, posts }: { panel: TopicPanel; posts: BlogPost[]
                 href={`/learn/${post.slug}`}
                 className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
               >
-                <p className="mt-1 text-sm font-black leading-5 text-ink">{post.title}</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-ink/55">
-                  <span className="rounded-md bg-white px-2 py-1 ring-1 ring-leaf-900/10">{post.readTime}</span>
-                  {post.level ? <span className="rounded-md bg-white px-2 py-1 ring-1 ring-leaf-900/10">{post.level}</span> : null}
-                </div>
+                <p className="text-sm font-black leading-5 text-ink">{post.title}</p>
+                <p className="mt-2 text-sm leading-6 text-ink/64">{post.excerpt}</p>
+                <span className="mt-3 inline-flex text-sm font-black text-leaf-700">Read lesson</span>
               </Link>
             ))}
           </div>
-        </article>
-
-        <article className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">FarmMate Action</p>
-          <p className="mt-3 text-xl font-black leading-8">{panel.action.question}</p>
-          <Link href={panel.action.href} className="focus-ring mt-5 inline-flex rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
-            {panel.action.button}
-          </Link>
         </article>
       </div>
     </section>
@@ -627,8 +614,8 @@ function TodayPanel({ posts }: { posts: BlogPost[] }) {
           <div className="mt-5 grid gap-3">
             {starterLessons.map((post) => (
               <Link key={post.slug} href={`/learn/${post.slug}`} className="focus-ring rounded-md bg-leaf-50 p-3 transition hover:bg-white hover:shadow-sm">
-                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.level}</p>
-                <p className="mt-1 text-sm font-black text-ink">{post.title}</p>
+                <p className="text-sm font-black text-ink">{post.title}</p>
+                <p className="mt-1 text-sm leading-6 text-ink/64">{post.excerpt}</p>
               </Link>
             ))}
           </div>
@@ -733,26 +720,6 @@ export function LearnHub({ posts }: LearnHubProps) {
           {renderPanel()}
         </div>
       </main>
-
-      <section className="bg-leaf-700 py-12 text-white sm:py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-white/10 bg-white/10 p-6 sm:p-8">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">GG FarmMate</p>
-            <h2 className="mt-3 text-2xl font-black sm:text-3xl">Need help with a farm question today?</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-white/74">
-              Use GG FarmMate to ask a question, upload a crop photo, or get one practical next step.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/farmer-hub?tool=ask" className="focus-ring rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 transition hover:bg-earth-50">
-                Open GG FarmMate
-              </Link>
-              <Link href="/farmer-hub?tool=doctor" className="focus-ring rounded-md border border-white/20 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10">
-                Upload Crop Photo
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
