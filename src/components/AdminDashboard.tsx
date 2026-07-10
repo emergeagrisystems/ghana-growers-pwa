@@ -881,7 +881,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "verificationStatus", label: "Verification Status", type: "select", required: true, options: ["Pending", "Under Review", "Verified", "Rejected"] },
     { name: "ggStandardStatus", label: "GG Standard Status", type: "select", required: true, options: ["Pending", "Member", "Suspended"] },
-    { name: "profileImageUrl", label: "Farmer Profile Image", type: "image", bucket: "farmers", helper: "Upload a JPG, PNG, or WEBP image up to 5MB." }
+    { name: "profileImageUrl", label: "Farmer Profile Image", type: "image", bucket: "farmers", helper: "Upload an optimized JPG, PNG, or WEBP image up to 5MB. Aim for about 800px on the longest side." }
   ],
   suppliers: [
     { name: "companyName", label: "Company Name", required: true },

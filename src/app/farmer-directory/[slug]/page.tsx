@@ -10,7 +10,6 @@ import {
   Truck,
   type LucideIcon
 } from "lucide-react";
-import { GGStandardBadge } from "@/components/GGStandard";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
@@ -39,9 +38,6 @@ type DisplayRow = {
   label: string;
   value: string;
 };
-
-const REQUEST_EXPLANATION =
-  "Ghana Growers confirms availability, quantity, price, and collection or delivery details before connecting buyers.";
 
 export async function generateMetadata({ params }: FarmerProfilePageProps) {
   const farmers = await getFarmersData();
@@ -153,6 +149,13 @@ function shortStory(text: string) {
   return `${words.slice(0, 86).join(" ")}...`;
 }
 
+function farmStory(text: string) {
+  return normalizeText(text)
+    .replace(/\s*Buyers can request[^.]*\./i, "")
+    .replace(/\s*Contact Ghana Growers[^.]*\./i, "")
+    .trim();
+}
+
 function listingImages(listing: { image: string; images?: string[] }) {
   return Array.from(new Set([...(listing.images ?? []), listing.image].filter(Boolean)));
 }
@@ -210,6 +213,13 @@ function compactRows(rows: DisplayRow[]) {
   return rows.filter((row) => isMeaningful(row.value) || row.label === "Active Listings");
 }
 
+function isLikelyFarmGalleryPhoto(photo: string) {
+  const normalized = photo.toLowerCase();
+  const produceOnlyPaths = ["/images/crops/", "/images/products/", "/images/marketplace/fresh-", "/images/marketplace/yam-cassava"];
+
+  return !produceOnlyPaths.some((path) => normalized.includes(path));
+}
+
 function activeListingMatchesProduct(listingName: string, product: string) {
   const cleanedListing = listingName
     .toLowerCase()
@@ -255,10 +265,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
   const deliveryOption = deliveryDisplay(farmer.deliveryOptions);
   const paymentPreference = paymentDisplay(farmer.paymentPreference);
-  const listingPhotoGallery = Array.from(new Set(activeMarketplaceListings.flatMap((listing) => listingImages(listing))));
-  const profileGallery = Array.from(new Set(farmer.photos.filter((photo) => photo !== profilePhoto)));
-  const currentProduceGallery = listingPhotoGallery.filter((image) => !farmer.photos.includes(image));
-  const galleryImages = Array.from(new Set([...currentProduceGallery, ...profileGallery])).filter((photo) => photo !== profilePhoto);
+  const farmGalleryImages = Array.from(new Set(farmer.photos.filter((photo) => photo !== profilePhoto && isLikelyFarmGalleryPhoto(photo)))).slice(0, 2);
   const productListings = products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => activeListingMatchesProduct(listing.name, product));
 
@@ -270,7 +277,9 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     };
   });
 
-  const aboutCopy = `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}. Buyers can request availability, quantity, price, and collection or delivery details through Ghana Growers.`;
+  const aboutCopy = isMeaningful(farmStory(farmer.description))
+    ? farmStory(farmer.description)
+    : `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}.`;
   const snapshotItems: DisplayRow[] = compactRows([
     { icon: Sprout, label: "Farm Type", value: displayValue(farmer.farmType) },
     { icon: Ruler, label: "Farm Size", value: displayValue(farmer.farmSize) },
@@ -286,35 +295,22 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     { label: "Payment Terms", value: paymentPreference },
     { label: "Buyer Routing", value: "Through Ghana Growers" }
   ]);
-  const trustPoints = [
-    "Verified farmer profile",
-    "Produce information reviewed",
-    "Buyer request support",
-    "Communication routed through Ghana Growers"
-  ];
-
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:px-8 lg:py-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-6 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:px-8 lg:py-9">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
               <SafeImage
                 src={profilePhoto}
                 alt={`${farmer.contactName} of ${farmer.farmName}`}
-                width={560}
-                height={620}
+                width={520}
+                height={390}
                 priority
                 fallbackKind="farmer"
-                sizes="(min-width: 1024px) 28vw, 100vw"
-                className="aspect-[4/5] w-full rounded-md object-cover object-[center_32%]"
+                sizes="(min-width: 1024px) 34vw, 100vw"
+                className="h-72 w-full rounded-md object-cover object-[center_30%] sm:h-80 lg:h-[340px]"
               />
-              {farmer.verificationStatus === "Verified" || farmer.ggStandardStatus === "Member" ? (
-                <div className="absolute bottom-5 left-5 flex max-w-[calc(100%-2.5rem)] flex-wrap gap-2">
-                  <FarmerVerificationBadge status={farmer.verificationStatus} />
-                  <GGStandardBadge status={farmer.ggStandardStatus} />
-                </div>
-              ) : null}
             </div>
           </div>
 
@@ -326,21 +322,10 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               <span className="inline-flex items-center gap-2 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
                 <MapPin className="h-4 w-4 text-leaf-700" aria-hidden="true" />
                 {location.hero}
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
-                <PackageCheck className="h-4 w-4 text-leaf-700" aria-hidden="true" />
-                Quantities confirmed by Ghana Growers
+                <FarmerVerificationBadge status={farmer.verificationStatus} />
               </span>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <FarmerVerificationBadge status={farmer.verificationStatus} />
-              <GGStandardBadge status={farmer.ggStandardStatus} />
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
-                <PackageCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                Marketplace Member
-              </span>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {products.slice(0, 6).map((product) => (
                 <span key={product} className="rounded-md bg-white px-3 py-1.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
                   {product}
@@ -366,7 +351,6 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">About the Farm</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">{farmer.farmName}</h2>
                 <p className="mt-4 max-w-4xl text-sm leading-7 text-ink/68">{shortStory(aboutCopy)}</p>
-                <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/60">{REQUEST_EXPLANATION}</p>
               </section>
 
           <section className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
@@ -473,58 +457,38 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             )}
           </section>
 
-          <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Why Source Through Ghana Growers</p>
-            <h2 className="mt-2 text-2xl font-black text-ink">A supported way to source farm produce</h2>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-ink/65">
-              Ghana Growers helps confirm produce availability, quantity, price, and pickup or delivery details before connecting buyers.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {trustPoints.map((point) => (
-                <div key={point} className="flex items-start gap-2 rounded-md bg-leaf-50 px-3 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">
-                  <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  {point}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Gallery</p>
-            <h2 className="mt-2 text-2xl font-black text-ink">Farm and produce photos</h2>
-            {galleryImages.length > 0 ? (
+          {farmGalleryImages.length > 0 ? (
+            <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Gallery</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Farm Gallery</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {galleryImages.slice(0, 6).map((photo, index) => (
+                {farmGalleryImages.map((photo, index) => (
                   <SafeImage
                     key={photo}
                     src={photo}
-                    alt={`${farmer.farmName} farm or produce photo ${index + 1}`}
+                    alt={`${farmer.farmName} farm photo ${index + 1}`}
                     width={420}
                     height={280}
-                    fallbackKind="marketplace"
+                    fallbackKind="farmer"
                     sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
                     className="h-44 w-full rounded-md object-cover object-center ring-1 ring-leaf-900/10"
                   />
                 ))}
               </div>
-            ) : (
-              <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm leading-6 text-ink/62">
-                Farm gallery photos are not available yet. Current produce images are shown in the produce and listing sections above.
-              </p>
-            )}
-          </section>
+            </section>
+          ) : null}
 
-          <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand</p>
-                <h2 className="mt-2 text-2xl font-black text-ink">Related buyer demand</h2>
+          {relevantBuyerRequests.length > 0 ? (
+            <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand</p>
+                  <h2 className="mt-2 text-2xl font-black text-ink">Related buyer demand</h2>
+                </div>
+                <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+                  View Produce Demand
+                </Link>
               </div>
-              <Link href="/buyer-requests" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
-                View Produce Demand
-              </Link>
-            </div>
-            {relevantBuyerRequests.length > 0 ? (
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {relevantBuyerRequests.map((request) => (
                   <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
@@ -534,12 +498,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                   </article>
                 ))}
               </div>
-            ) : (
-              <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm leading-6 text-ink/62">
-                No matching produce demand is listed yet. Buyers can request sourcing support for these products through Ghana Growers.
-              </p>
-            )}
-          </section>
+            </section>
+          ) : null}
             </div>
           </div>
         </div>
