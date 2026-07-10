@@ -111,7 +111,7 @@ export default async function HomePage() {
               <span className="block whitespace-nowrap">Grow With Us.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/68 sm:text-lg sm:leading-8">
-              Buy farm-fresh produce from trusted Ghanaian farmers. Sell your harvest with confidence. Grow through learning, market access, and smarter farming tools.
+              Buy fresh produce from trusted farmers. Sell your harvest with confidence. Grow through learning, market access, and smart farming tools.
             </p>
             <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <Link
