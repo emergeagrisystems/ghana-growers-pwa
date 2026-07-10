@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { hasSupabaseAdminConfig, insertSupabaseRecord, selectSupabaseRecords } from "../../supabase/admin";
-import { canUseMemoryUsageFallback, getFarmMateCreditDecision, getFarmMateCreditStatus, FARM_MATE_USAGE_WINDOW_MS, usageTrackingUnavailableDecision } from "./rules";
+import { canUseMemoryUsageFallback, farmMateUsageWindowMs, getFarmMateCreditDecision, getFarmMateCreditStatus, FARM_MATE_MAX_USAGE_WINDOW_MS, usageTrackingUnavailableDecision } from "./rules";
 import type { FarmMateCreditDecision, FarmMateCreditStatus, FarmMateUsageEvent, FarmMateUsageTool } from "./types";
 
 type FarmMateUsageEventRow = {
@@ -51,7 +51,7 @@ function rowToEvent(row: FarmMateUsageEventRow): FarmMateUsageEvent {
 }
 
 function pruneMemoryEvents(now = new Date()) {
-  const cutoff = now.getTime() - FARM_MATE_USAGE_WINDOW_MS - 60_000;
+  const cutoff = now.getTime() - FARM_MATE_MAX_USAGE_WINDOW_MS - 60_000;
 
   for (let index = memoryEvents.length - 1; index >= 0; index -= 1) {
     if (new Date(memoryEvents[index].created_at).getTime() < cutoff) {
@@ -61,7 +61,7 @@ function pruneMemoryEvents(now = new Date()) {
 }
 
 async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date()) {
-  const windowStart = new Date(now.getTime() - FARM_MATE_USAGE_WINDOW_MS).toISOString();
+  const windowStart = new Date(now.getTime() - farmMateUsageWindowMs(tool)).toISOString();
   const supabaseConfigured = hasSupabaseAdminConfig();
 
   if (supabaseConfigured) {

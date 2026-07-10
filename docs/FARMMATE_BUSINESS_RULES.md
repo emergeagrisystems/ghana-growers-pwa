@@ -4,15 +4,15 @@ GG FarmMate Version 1 is a public farming support tool. Farmers do not need acco
 
 ## Free Public Usage Limits
 
-- Ask FarmMate: 5 AI-assisted questions per 12 hours.
-- Crop Doctor: 2 analyses per 12 hours.
+- Ask FarmMate: 5 AI-assisted questions every 6 hours.
+- Crop Doctor: 2 photo checks every 12 hours.
 - Crop Calendar: unlimited.
 - Planting Advisor: unlimited.
 - Learning: unlimited.
 
 ## Refresh Rule
 
-FarmMate Credits renew every 12 hours. The refresh time is calculated from the oldest counted event still inside the current 12-hour window.
+FarmMate Credits renew by tool. Ask FarmMate credits refresh every 6 hours. Crop Doctor credits refresh every 12 hours. The refresh time is calculated from the oldest counted event still inside the active window for that tool.
 
 ## Why Limits Exist
 

@@ -797,15 +797,30 @@ const tests: TestCase[] = [
       const before = getFarmMateCreditStatus("ask_farmmate", [], now);
       const after = getFarmMateCreditStatus("ask_farmmate", [usageEvent("ask_farmmate", now.toISOString())], now);
 
+      assert.equal(before.limit, 5);
+      assert.equal(before.windowHours, 6);
       assert.equal(before.remaining, 5);
       assert.equal(after.remaining, 4);
     }
   },
   {
-    name: "Ask FarmMate blocks OpenAI call when credits are exhausted",
+    name: "Ask FarmMate allows 5 questions within 6 hours",
     run: () => {
       const now = new Date("2026-07-09T12:00:00.000Z");
-      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 60_000).toISOString()));
+      const fourPreviousEvents = Array.from({ length: 4 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 30 * 60_000).toISOString()));
+      const fifthDecision = getFarmMateCreditDecision("ask_farmmate", fourPreviousEvents, now);
+
+      assert.equal(fifthDecision.allowed, true);
+      assert.equal(fifthDecision.limit, 5);
+      assert.equal(fifthDecision.windowHours, 6);
+      assert.equal(fifthDecision.remaining, 1);
+    }
+  },
+  {
+    name: "6th Ask FarmMate question is blocked",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 30 * 60_000).toISOString()));
       const decision = getFarmMateCreditDecision("ask_farmmate", events, now);
 
       assert.equal(decision.allowed, false);
@@ -842,7 +857,7 @@ const tests: TestCase[] = [
     name: "Ask FarmMate exhausted credits still prevent OpenAI call",
     run: () => {
       const now = new Date("2026-07-09T12:00:00.000Z");
-      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 60_000).toISOString()));
+      const events = Array.from({ length: 5 }, (_, index) => usageEvent("ask_farmmate", new Date(now.getTime() - (index + 1) * 30 * 60_000).toISOString()));
       const decision = getFarmMateCreditDecision("ask_farmmate", events, now);
 
       assert.equal(decision.allowed, false);
@@ -856,6 +871,7 @@ const tests: TestCase[] = [
       const after = getFarmMateCreditStatus("crop_doctor", [usageEvent("crop_doctor", now.toISOString())], now);
 
       assert.equal(after.limit, 2);
+      assert.equal(after.windowHours, 12);
       assert.equal(after.remaining, 1);
       assert.equal(after.creditState, "available");
     }
@@ -902,14 +918,28 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "credits reset after 12 hours",
+    name: "Ask FarmMate credits refresh after 6 hours",
     run: () => {
       const now = new Date("2026-07-09T12:00:00.000Z");
-      const oldEvent = usageEvent("ask_farmmate", new Date(now.getTime() - 12 * 60 * 60 * 1000 - 1).toISOString());
+      const oldEvent = usageEvent("ask_farmmate", new Date(now.getTime() - 6 * 60 * 60 * 1000 - 1).toISOString());
       const status = getFarmMateCreditStatus("ask_farmmate", [oldEvent], now);
 
       assert.equal(status.used, 0);
       assert.equal(status.remaining, 5);
+      assert.equal(status.windowHours, 6);
+      assert.equal(status.resetAt, null);
+    }
+  },
+  {
+    name: "Crop Doctor credits refresh after 12 hours",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const oldEvent = usageEvent("crop_doctor", new Date(now.getTime() - 12 * 60 * 60 * 1000 - 1).toISOString());
+      const status = getFarmMateCreditStatus("crop_doctor", [oldEvent], now);
+
+      assert.equal(status.used, 0);
+      assert.equal(status.remaining, 2);
+      assert.equal(status.windowHours, 12);
       assert.equal(status.resetAt, null);
     }
   },
