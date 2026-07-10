@@ -57,6 +57,23 @@ export function farmerProducts(farmer: Pick<FarmerProfile, "products">) {
   return cleanProductList(farmer.products).map(cleanFarmerProfileLabel);
 }
 
+function isBroadFarmerProductLabel(product: string, farmType?: string) {
+  const normalizedProduct = product.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+  const normalizedFarmType = farmType?.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+
+  return (
+    normalizedProduct === normalizedFarmType ||
+    normalizedProduct === "aquaculture and poultry" ||
+    normalizedProduct === "mixed farming" ||
+    normalizedProduct === "crop" ||
+    normalizedProduct === "livestock"
+  );
+}
+
+export function farmerCardProducts(farmer: Pick<FarmerProfile, "farmType" | "products">) {
+  return farmerProducts(farmer).filter((product) => !isBroadFarmerProductLabel(product, farmer.farmType));
+}
+
 export function farmerCardImage(farmer: Pick<FarmerProfile, "farmType" | "hasRealPhoto" | "photos">, products: string[]) {
   if (farmer.hasRealPhoto && farmer.photos[0]) {
     return farmer.photos[0];
@@ -90,9 +107,10 @@ export function publicFarmerProfiles(farmers: FarmerProfile[]) {
 }
 
 export function orderFarmerDirectoryProfiles(farmers: FarmerProfile[]) {
-  const featured = farmers.filter(isFeaturedActive).slice(0, 4);
+  const publicProfiles = publicFarmerProfiles(farmers);
+  const featured = publicProfiles.filter((farmer) => isVerifiedFarmer(farmer) && isFeaturedActive(farmer)).slice(0, 4);
   const featuredSlugs = new Set(featured.map((farmer) => farmer.slug));
-  const remaining = farmers.filter((farmer) => !featuredSlugs.has(farmer.slug));
+  const remaining = publicProfiles.filter((farmer) => !featuredSlugs.has(farmer.slug));
 
   return [...featured, ...remaining];
 }

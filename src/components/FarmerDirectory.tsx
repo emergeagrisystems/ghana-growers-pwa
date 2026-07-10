@@ -7,6 +7,7 @@ import { SafeImage } from "@/components/SafeImage";
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
+  farmerCardProducts,
   farmerImagePosition,
   farmerProducts,
   FARMERS_PER_PAGE,
@@ -139,12 +140,12 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             </div>
             <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-ink/70">
               {filteredFarmers.length > 0
-                ? `Showing ${showingStart}-${showingEnd} of ${filteredFarmers.length} farmers`
+                ? `Showing ${showingStart}–${showingEnd} of ${filteredFarmers.length} farmers`
                 : `Showing 0 of ${farmers.length} farmers`}
             </p>
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(260px,1.7fr)_repeat(4,minmax(0,1fr))] lg:items-end">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(420px,2fr)_repeat(4,minmax(0,1fr))] lg:items-end">
             <label className="grid gap-1.5 text-sm font-bold text-ink/75">
               Search farmers
               <span className="relative">
@@ -207,7 +208,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             {paginatedFarmers.pageItems.map((farmer) => (
               <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-card">
               {(() => {
-                const products = farmerProducts(farmer);
+                const products = farmerCardProducts(farmer);
                 const mainProducts = products.slice(0, 2);
                 const extraProductCount = Math.max(0, products.length - mainProducts.length);
                 const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
@@ -259,10 +260,10 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                       <div className="mt-auto pt-4">
                         <Link
                           href={`/farmer-directory/${farmer.slug}`}
-                          className="focus-ring inline-flex min-h-10 items-center rounded-md px-1 text-sm font-bold text-leaf-700 transition hover:text-leaf-900"
+                          className="focus-ring group inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-sm font-bold text-leaf-700 transition hover:text-leaf-900"
                           aria-label={`View profile for ${farmer.farmName}`}
                         >
-                          View profile <span aria-hidden="true">&rarr;</span>
+                          View profile <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
                         </Link>
                       </div>
                     </div>

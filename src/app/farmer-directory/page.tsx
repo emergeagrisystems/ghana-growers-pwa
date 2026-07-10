@@ -3,8 +3,7 @@ import { FarmerDirectory } from "@/components/FarmerDirectory";
 import { PageHero } from "@/components/PageHero";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import {
-  orderFarmerDirectoryProfiles,
-  publicFarmerProfiles
+  orderFarmerDirectoryProfiles
 } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
@@ -29,7 +28,7 @@ function searchQuery(value?: string | string[]) {
 }
 
 export default async function FarmerDirectoryPage({ searchParams }: FarmerDirectoryPageProps) {
-  const farmers = orderFarmerDirectoryProfiles(publicFarmerProfiles(await getFarmersData()));
+  const farmers = orderFarmerDirectoryProfiles(await getFarmersData());
   const initialSearch = searchQuery(searchParams?.q);
 
   return (

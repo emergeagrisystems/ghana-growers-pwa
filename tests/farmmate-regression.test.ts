@@ -14,6 +14,7 @@ import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpe
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
+  farmerCardProducts,
   isVerifiedFarmer,
   orderFarmerDirectoryProfiles,
   paginateFarmers,
@@ -162,6 +163,7 @@ const tests: TestCase[] = [
         farmerFixture({ slug: "featured-3", isFeatured: true }),
         farmerFixture({ slug: "featured-4", isFeatured: true }),
         farmerFixture({ slug: "featured-5", isFeatured: true }),
+        farmerFixture({ slug: "pending-featured", isFeatured: true, verificationStatus: "Pending Verification" }),
         farmerFixture({ slug: "normal-2", isFeatured: false })
       ];
 
@@ -172,8 +174,32 @@ const tests: TestCase[] = [
         "featured-4",
         "normal-1",
         "featured-5",
+        "pending-featured",
         "normal-2"
       ]);
+    }
+  },
+  {
+    name: "Farmer Directory card chips omit broad farm-type labels",
+    run: () => {
+      assert.deepEqual(
+        farmerCardProducts(
+          farmerFixture({
+            farmType: "Mixed",
+            products: ["Aquaculture And Poultry", "Fish", "Poultry", "Eggs"]
+          })
+        ),
+        ["Fish", "Poultry", "Eggs"]
+      );
+      assert.deepEqual(
+        farmerCardProducts(
+          farmerFixture({
+            farmType: "Mixed",
+            products: ["Aquaculture And Poultry"]
+          })
+        ),
+        []
+      );
     }
   },
   {
