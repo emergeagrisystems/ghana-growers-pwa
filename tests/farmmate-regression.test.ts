@@ -21,6 +21,13 @@ import {
   paginationPages,
   publicFarmerProfiles
 } from "../src/lib/farmerDirectory";
+import {
+  isVerifiedSupplier,
+  orderSupplierDirectoryProfiles,
+  paginateSuppliers,
+  publicSupplierProfiles,
+  supplierProducts
+} from "../src/lib/supplierDirectory";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
@@ -57,7 +64,7 @@ import {
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
-import type { FarmerProfile } from "../src/types";
+import type { FarmerProfile, SupplierProfile } from "../src/types";
 
 type TestCase = {
   name: string;
@@ -100,6 +107,35 @@ function farmerFixture(overrides: Partial<FarmerProfile> = {}): FarmerProfile {
     verificationStatus: overrides.verificationStatus ?? "Verified",
     source: overrides.source,
     isFeatured: overrides.isFeatured,
+    trust: overrides.trust,
+    whatsappMessage: overrides.whatsappMessage ?? "Hello Ghana Growers"
+  };
+}
+
+function supplierFixture(overrides: Partial<SupplierProfile> = {}): SupplierProfile {
+  return {
+    slug: overrides.slug ?? "test-supplier",
+    companyName: overrides.companyName ?? "Test Supplier",
+    contactPerson: overrides.contactPerson ?? "Supplier Contact",
+    supplierCategory: overrides.supplierCategory ?? "Seeds",
+    region: overrides.region ?? "Ashanti Region",
+    district: overrides.district ?? "Kumasi",
+    productsServices: overrides.productsServices ?? ["Seeds", "Fertilizer", "Farm Tools"],
+    shortDescription: overrides.shortDescription ?? "Test supplier profile.",
+    companyOverview: overrides.companyOverview ?? "Supplier overview.",
+    serviceCoverageArea: overrides.serviceCoverageArea ?? "Ashanti Region",
+    photos: overrides.photos ?? [],
+    website: overrides.website,
+    socialLink: overrides.socialLink,
+    phone: overrides.phone ?? "0000000000",
+    verificationStatus: overrides.verificationStatus ?? "Verified",
+    verificationDate: overrides.verificationDate,
+    verifiedBy: overrides.verifiedBy,
+    verificationNotes: overrides.verificationNotes,
+    ggStandardStatus: overrides.ggStandardStatus,
+    isFeatured: overrides.isFeatured,
+    featuredUntil: overrides.featuredUntil,
+    featuredNote: overrides.featuredNote,
     trust: overrides.trust,
     whatsappMessage: overrides.whatsappMessage ?? "Hello Ghana Growers"
   };
@@ -213,6 +249,55 @@ const tests: TestCase[] = [
       assert.equal(firstPage.totalPages, 3);
       assert.equal(thirdPage.pageItems.length, 1);
       assert.equal(thirdPage.startIndex, 24);
+    }
+  },
+  {
+    name: "Supplier Directory publishes only verified supplier profiles",
+    run: () => {
+      const publicProfiles = publicSupplierProfiles([
+        supplierFixture({ slug: "verified", verificationStatus: "Verified" }),
+        supplierFixture({ slug: "pending", verificationStatus: "Pending Verification" })
+      ]);
+
+      assert.equal(isVerifiedSupplier(supplierFixture({ verificationStatus: "Verified" })), true);
+      assert.equal(isVerifiedSupplier(supplierFixture({ verificationStatus: "Pending Verification" })), false);
+      assert.deepEqual(publicProfiles.map((supplier) => supplier.slug), ["verified"]);
+    }
+  },
+  {
+    name: "Supplier Directory pins up to four approved featured suppliers",
+    run: () => {
+      const suppliers = [
+        supplierFixture({ slug: "normal-1", isFeatured: false }),
+        supplierFixture({ slug: "featured-1", isFeatured: true }),
+        supplierFixture({ slug: "featured-2", isFeatured: true }),
+        supplierFixture({ slug: "featured-3", isFeatured: true }),
+        supplierFixture({ slug: "featured-4", isFeatured: true }),
+        supplierFixture({ slug: "featured-5", isFeatured: true }),
+        supplierFixture({ slug: "pending-featured", verificationStatus: "Pending Verification", isFeatured: true })
+      ];
+
+      assert.deepEqual(orderSupplierDirectoryProfiles(suppliers).map((supplier) => supplier.slug), [
+        "featured-1",
+        "featured-2",
+        "featured-3",
+        "featured-4",
+        "normal-1",
+        "featured-5"
+      ]);
+    }
+  },
+  {
+    name: "Supplier Directory prepares compact products and paginates 12 profiles",
+    run: () => {
+      const suppliers = Array.from({ length: 25 }, (_, index) => supplierFixture({ slug: `supplier-${index + 1}` }));
+      const firstPage = paginateSuppliers(suppliers, 1, 12);
+      const thirdPage = paginateSuppliers(suppliers, 3, 12);
+
+      assert.deepEqual(supplierProducts(supplierFixture({ productsServices: ["fertilizer", "farm tools", "fertilizer"] })), ["Fertilizer", "Farm Tools"]);
+      assert.equal(firstPage.pageItems.length, 12);
+      assert.equal(firstPage.totalPages, 3);
+      assert.equal(thirdPage.pageItems.length, 1);
     }
   },
   {

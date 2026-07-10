@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Search, SlidersHorizontal, Star } from "lucide-react";
-import { useMemo, useState } from "react";
-import { FeaturedPlacementCTA } from "@/components/FeaturedPlacementCTA";
-import { GGStandardBadge } from "@/components/GGStandard";
-import { RequestConnectionButton } from "@/components/RequestConnectionButton";
+import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Store, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
-import { normalizeTrust, TrustScoreCard, VerificationBadge } from "@/components/TrustIndicators";
-import { productCategories } from "@/data/products";
-import { isFeaturedActive } from "@/lib/featured";
+import {
+  cleanSupplierLabel,
+  cleanSupplierLocation,
+  isVerifiedSupplier,
+  paginateSuppliers,
+  SUPPLIERS_PER_PAGE,
+  supplierPaginationPages,
+  supplierProducts
+} from "@/lib/supplierDirectory";
 import type { SupplierProfile } from "@/types";
 
 type SupplierDirectoryProps = {
@@ -17,48 +20,112 @@ type SupplierDirectoryProps = {
   initialSearch?: string;
 };
 
+type FilterConfig = {
+  label: string;
+  value: string;
+  setValue: (value: string) => void;
+  options: string[];
+  disabled?: boolean;
+};
+
 function unique(values: string[]) {
-  return Array.from(new Set(values)).sort();
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort();
 }
 
-function relatedMarketplaceCategory(category: string) {
-  const normalized = category.toLowerCase();
-
-  if (normalized.includes("packaging")) {
-    return productCategories.find((item) => item.slug === "packaging");
+function SupplierBadge({ supplier }: { supplier: SupplierProfile }) {
+  if (!isVerifiedSupplier(supplier)) {
+    return null;
   }
 
-  if (normalized.includes("logistics") || normalized.includes("storage")) {
-    return productCategories.find((item) => item.slug === "logistics-services");
-  }
+  return (
+    <span aria-label="Verified Supplier by Ghana Growers" className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-2.5 py-1 text-[0.68rem] font-bold text-leaf-700 shadow-sm">
+      <BadgeCheck className="h-3 w-3" aria-hidden="true" />
+      Verified Supplier
+    </span>
+  );
+}
 
-  if (
-    normalized.includes("seed") ||
-    normalized.includes("fertilizer") ||
-    normalized.includes("agrochemical") ||
-    normalized.includes("equipment") ||
-    normalized.includes("irrigation")
-  ) {
-    return productCategories.find((item) => item.slug === "farm-inputs");
-  }
-
-  return productCategories.find((item) => item.slug === "farm-inputs");
+function SupplierLogoPlaceholder() {
+  return (
+    <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-t-md bg-gradient-to-br from-leaf-50 to-earth-50 text-center text-leaf-700">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-white/80 shadow-sm ring-1 ring-leaf-900/10">
+        <Store className="h-6 w-6" aria-hidden="true" />
+      </span>
+      <span className="text-xs font-bold text-ink/55">Logo coming soon</span>
+    </div>
+  );
 }
 
 export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDirectoryProps) {
+  const sectionRef = useRef<HTMLElement>(null);
   const [search, setSearch] = useState(initialSearch);
   const [region, setRegion] = useState("All");
   const [district, setDistrict] = useState("All");
   const [category, setCategory] = useState("All");
   const [coverage, setCoverage] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const regions = useMemo(() => unique(suppliers.map((supplier) => supplier.region)), [suppliers]);
-  const districts = useMemo(() => unique(suppliers.map((supplier) => supplier.district)), [suppliers]);
+  const districts = useMemo(() => {
+    const districtSource = region === "All" ? suppliers : suppliers.filter((supplier) => supplier.region === region);
+    return unique(districtSource.map((supplier) => supplier.district));
+  }, [region, suppliers]);
   const categories = useMemo(() => unique(suppliers.map((supplier) => supplier.supplierCategory)), [suppliers]);
   const coverageAreas = useMemo(() => unique(suppliers.map((supplier) => supplier.serviceCoverageArea)), [suppliers]);
+  const hasActiveFilters = search.trim().length > 0 || region !== "All" || district !== "All" || category !== "All" || coverage !== "All";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, region, district, category, coverage]);
+
+  function scrollToDirectory() {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sectionRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+  }
+
+  function changePage(page: number) {
+    setCurrentPage(page);
+    window.requestAnimationFrame(scrollToDirectory);
+  }
+
+  function clearFilters() {
+    setSearch("");
+    setRegion("All");
+    setDistrict("All");
+    setCategory("All");
+    setCoverage("All");
+  }
+
+  if (suppliers.length === 0) {
+    return (
+      <section id="supplier-discovery" className="bg-earth-50 py-12 sm:py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-md border border-leaf-900/10 bg-white p-6 text-center shadow-sm sm:p-8">
+            <p className="gg-eyebrow">Supplier Directory</p>
+            <h2 className="mt-3 text-2xl font-black text-ink sm:text-3xl">Supplier profiles are coming soon</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-ink/65 sm:text-base sm:leading-7">
+              Ghana Growers is currently reviewing agricultural suppliers before publishing their profiles.
+            </p>
+            <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-leaf-700">
+              Supplier profiles are published only after review.
+            </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
+              <Link href="/become-a-supplier" className="gg-button-primary">
+                Become a Supplier
+              </Link>
+              <Link href="/marketplace?category=farm-inputs" className="gg-button-secondary">
+                Browse Farm Inputs
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const filteredSuppliers = suppliers.filter((supplier) => {
     const query = search.trim().toLowerCase();
+    const products = supplierProducts(supplier);
     const searchable = [
       supplier.companyName,
       supplier.contactPerson,
@@ -67,7 +134,8 @@ export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDir
       supplier.district,
       supplier.serviceCoverageArea,
       supplier.shortDescription,
-      supplier.productsServices.join(" ")
+      supplier.productsServices.join(" "),
+      products.join(" ")
     ].join(" ").toLowerCase();
 
     return (
@@ -79,186 +147,235 @@ export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDir
     );
   });
 
-  const filters = [
+  const filters: FilterConfig[] = [
     { label: "Region", value: region, setValue: setRegion, options: regions },
-    { label: "District", value: district, setValue: setDistrict, options: districts },
+    { label: "District", value: district, setValue: setDistrict, options: districts, disabled: region === "All" },
     { label: "Supplier Category", value: category, setValue: setCategory, options: categories },
-    { label: "Service Coverage Area", value: coverage, setValue: setCoverage, options: coverageAreas }
-  ];
+    { label: "Service Coverage", value: coverage, setValue: setCoverage, options: coverageAreas }
+  ].filter((filter) => filter.options.length > 0);
+  const paginatedSuppliers = paginateSuppliers(filteredSuppliers, currentPage, SUPPLIERS_PER_PAGE);
+  const showingStart = filteredSuppliers.length === 0 ? 0 : paginatedSuppliers.startIndex + 1;
+  const showingEnd = paginatedSuppliers.endIndex;
 
   return (
-    <section className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section id="supplier-discovery" ref={sectionRef} className="scroll-mt-24 bg-earth-50 py-12 sm:py-14">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="flex items-center gap-2 text-sm font-black uppercase text-earth-700">
-                <SlidersHorizontal size={17} aria-hidden="true" />
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-earth-700">
+                <SlidersHorizontal size={15} aria-hidden="true" />
                 Supplier discovery
               </p>
-              <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Search agricultural suppliers and service providers</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-ink/65">
-                Find seed suppliers, input providers, equipment dealers, packaging companies, logistics partners,
-                storage operators, finance providers, and agricultural consultants across Ghana.
+              <h2 className="mt-1 text-xl font-black text-ink sm:text-2xl">Search supplier profiles</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/65">
+                Browse approved suppliers by region, district, category, product, and service area.
               </p>
             </div>
-            <p className="rounded-md bg-white px-4 py-3 text-sm font-bold text-ink/70">
-              Showing {filteredSuppliers.length} of {suppliers.length} suppliers
+            <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-ink/70">
+              {filteredSuppliers.length > 0
+                ? `Showing ${showingStart}–${showingEnd} of ${filteredSuppliers.length} suppliers`
+                : `Showing 0 of ${suppliers.length} suppliers`}
             </p>
           </div>
 
-          <label className="mt-6 grid gap-2 text-sm font-bold text-ink/75">
-            Search suppliers
-            <span className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-600" size={18} aria-hidden="true" />
-              <input
-                className="focus-ring min-h-12 w-full rounded-md border border-leaf-900/15 bg-white py-3 pl-10 pr-3 font-normal"
-                placeholder="Search by company, category, service, region, district, or coverage area"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </span>
-          </label>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(420px,2fr)_repeat(4,minmax(0,1fr))] lg:items-end">
+            <label className="grid gap-1.5 text-sm font-bold text-ink/75">
+              Search suppliers
+              <span className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-600" size={18} aria-hidden="true" />
+                <input
+                  className="focus-ring min-h-11 w-full rounded-md border border-leaf-900/15 bg-white py-2.5 pl-10 pr-3 font-normal"
+                  placeholder="Search by company, product, category, region, district, or service area"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </span>
+            </label>
             {filters.map((filter) => (
-              <label key={filter.label} className="grid gap-2 text-sm font-bold text-ink/75">
+              <label key={filter.label} className="grid gap-1.5 text-sm font-bold text-ink/75">
                 {filter.label}
                 <select
-                  className="focus-ring rounded-md border border-leaf-900/15 bg-white px-3 py-3 font-normal"
+                  className="focus-ring min-h-11 rounded-md border border-leaf-900/15 bg-white px-3 py-2.5 font-normal disabled:cursor-not-allowed disabled:bg-white/55 disabled:text-ink/40"
                   value={filter.value}
-                  onChange={(event) => filter.setValue(event.target.value)}
+                  disabled={filter.disabled}
+                  onChange={(event) => {
+                    filter.setValue(event.target.value);
+                    if (filter.label === "Region") {
+                      setDistrict("All");
+                    }
+                  }}
                 >
                   <option value="All">All {filter.label.toLowerCase()}s</option>
                   {filter.options.map((option) => (
                     <option key={option} value={option}>
-                      {option}
+                      {cleanSupplierLabel(option)}
                     </option>
                   ))}
                 </select>
               </label>
             ))}
           </div>
+          {hasActiveFilters ? (
+            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-4 min-h-10 px-4 py-2">
+              <X className="h-4 w-4" aria-hidden="true" />
+              Clear filters
+            </button>
+          ) : null}
         </div>
 
-        {suppliers.length === 0 ? (
-          <div className="gg-empty-state mt-8">
-            <h3 className="gg-card-title">No records available yet</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-ink/62">
-              Ghana Growers is reviewing supplier profiles before they appear publicly.
-            </p>
-            <Link
-              href="/join"
-              className="gg-button-primary mt-5"
-            >
-              Join the Network
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredSuppliers.map((supplier) => (
-              <article
-              key={supplier.slug}
-              className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft"
-            >
-              {(() => {
-                const trust = normalizeTrust(supplier.trust);
-                const categoryMatch = relatedMarketplaceCategory(supplier.supplierCategory);
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {paginatedSuppliers.pageItems.map((supplier) => {
+            const products = supplierProducts(supplier);
+            const mainProducts = products.slice(0, 2);
+            const extraProductCount = Math.max(0, products.length - mainProducts.length);
+            const hasApprovedImage = Boolean(supplier.photos[0]);
 
-                return (
-                  <>
-              <SafeImage
-                src={supplier.photos[0] ?? "/images/suppliers/supplier-1.jpg"}
-                alt={`${supplier.companyName} supplier photo`}
-                width={520}
-                height={320}
-                className="mb-5 h-40 w-full rounded-md border border-leaf-900/10 bg-leaf-50 object-cover sm:h-44"
-                fallbackKind="supplier"
-                sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-              />
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-black uppercase text-earth-700">{supplier.supplierCategory}</p>
-                  <h3 className="mt-1 text-xl font-black text-ink sm:text-2xl">{supplier.companyName}</h3>
-                  <p className="mt-2 text-sm font-bold text-leaf-700">{supplier.district}, {supplier.region}</p>
+            return (
+              <article key={supplier.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-card">
+                <div className="relative">
+                  {hasApprovedImage ? (
+                    <SafeImage
+                      src={supplier.photos[0]}
+                      alt={`${supplier.companyName} supplier image`}
+                      width={360}
+                      height={270}
+                      className="aspect-[4/3] w-full rounded-t-md bg-leaf-50 object-cover object-center"
+                      fallbackKind="supplier"
+                      sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    />
+                  ) : (
+                    <SupplierLogoPlaceholder />
+                  )}
+                  <SupplierBadge supplier={supplier} />
                 </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex flex-wrap gap-2">
-                  {isFeaturedActive(supplier) ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-earth-50 px-3 py-1 text-xs font-black text-earth-700">
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                      Featured
-                    </span>
-                  ) : null}
-                  <VerificationBadge kind="supplier" status={trust.status} />
-                  <GGStandardBadge status={supplier.ggStandardStatus} />
-                </div>
-              </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="min-h-[2.9rem] text-lg font-extrabold leading-tight text-ink [text-wrap:balance] line-clamp-2">
+                    <Link
+                      href={`/supplier-directory/${supplier.slug}`}
+                      className="focus-ring rounded-sm hover:text-leaf-700"
+                      aria-label={`View supplier profile for ${supplier.companyName}`}
+                    >
+                      {supplier.companyName}
+                    </Link>
+                  </h3>
 
-              <p className="mt-4 text-sm leading-6 text-ink/65">{supplier.shortDescription}</p>
+                  <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 text-ink/58">{cleanSupplierLocation(supplier)}</p>
 
-              <dl className="mt-5 grid gap-3 text-sm text-ink/70">
-                <div>
-                  <dt className="font-black text-ink">Products/Services Offered</dt>
-                  <dd className="mt-2 flex flex-wrap gap-2">
-                    {supplier.productsServices.map((item) => (
-                      <span key={item} className="rounded-md bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {mainProducts.map((item) => (
+                      <span key={item} className="rounded-md bg-leaf-50 px-2.5 py-1 text-[0.72rem] font-semibold text-leaf-700">
                         {item}
                       </span>
                     ))}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-black text-ink">Service Coverage Area</dt>
-                  <dd>{supplier.serviceCoverageArea}</dd>
-                </div>
-              </dl>
+                    {extraProductCount > 0 ? (
+                      <span className="rounded-md bg-earth-50 px-2.5 py-1 text-[0.72rem] font-semibold text-earth-700">
+                        +{extraProductCount} more
+                      </span>
+                    ) : null}
+                  </div>
 
-              <div className="mt-5">
-                <TrustScoreCard score={trust.score} />
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <RequestConnectionButton
-                  label="Request Connection"
-                  sourceType="Supplier"
-                  sourceId={supplier.slug}
-                  sourceName={supplier.companyName}
-                  productInterest={supplier.productsServices.slice(0, 3).join(", ")}
-                  className="w-full"
-                />
-                <Link
-                  href={`/supplier-directory/${supplier.slug}`}
-                  className="gg-button-secondary"
-                >
-                  View Profile
-                </Link>
-              </div>
-              {categoryMatch ? (
-                <Link
-                  href="/marketplace"
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-2.5 text-sm font-black text-leaf-800 transition hover:border-leaf-700 hover:bg-white"
-                >
-                  View Products: {categoryMatch.name}
-                </Link>
-              ) : null}
-                  </>
-                );
-              })()}
+                  <div className="mt-auto pt-4">
+                    <Link
+                      href={`/supplier-directory/${supplier.slug}`}
+                      className="focus-ring group inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-sm font-bold text-leaf-700 transition hover:text-leaf-900"
+                      aria-label={`View supplier profile for ${supplier.companyName}`}
+                    >
+                      View supplier <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
               </article>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
 
-        {suppliers.length > 0 && filteredSuppliers.length === 0 ? (
-          <p className="mt-8 rounded-md bg-leaf-50 p-5 text-sm font-bold text-ink/70">
-            No supplier profiles match these filters. Try another region, district, category, or service coverage area.
-          </p>
+        {filteredSuppliers.length === 0 ? (
+          <div className="mt-8 rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+            <h3 className="text-lg font-black text-ink">No matching suppliers found.</h3>
+            <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">
+              Try another region, district, category, product, or service area.
+            </p>
+            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-4">
+              <X className="h-4 w-4" aria-hidden="true" />
+              Clear filters
+            </button>
+          </div>
         ) : null}
 
-        {suppliers.length > 0 ? <FeaturedPlacementCTA defaultRole="Supplier" className="mt-10" /> : null}
+        {filteredSuppliers.length > SUPPLIERS_PER_PAGE ? (
+          <SupplierPagination
+            currentPage={paginatedSuppliers.currentPage}
+            totalPages={paginatedSuppliers.totalPages}
+            onPageChange={changePage}
+          />
+        ) : null}
       </div>
     </section>
+  );
+}
+
+function SupplierPagination({
+  currentPage,
+  totalPages,
+  onPageChange
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pages = supplierPaginationPages(currentPage, totalPages);
+
+  return (
+    <nav className="mt-8 flex flex-col items-center justify-between gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-3 sm:flex-row" aria-label="Supplier directory pagination">
+      <button
+        type="button"
+        className="gg-button-secondary w-full sm:w-auto"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        aria-label="Go to previous supplier results page"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        Previous
+      </button>
+
+      <div className="text-sm font-black text-ink/65 sm:hidden">
+        Page {currentPage} of {totalPages}
+      </div>
+
+      <div className="hidden items-center gap-2 sm:flex">
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <span key={`ellipsis-${index}`} className="px-2 text-sm font-black text-ink/45">
+              ...
+            </span>
+          ) : (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-current={page === currentPage ? "page" : undefined}
+              aria-label={`Go to supplier results page ${page}`}
+              className={`focus-ring grid h-10 min-w-10 place-items-center rounded-md px-3 text-sm font-black transition ${
+                page === currentPage ? "bg-leaf-700 text-white" : "bg-white text-leaf-700 hover:bg-leaf-100"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="gg-button-secondary w-full sm:w-auto"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        aria-label="Go to next supplier results page"
+      >
+        Next
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </nav>
   );
 }
