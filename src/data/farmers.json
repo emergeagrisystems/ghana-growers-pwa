@@ -27,6 +27,7 @@
       "/images/crops/tomatoes.jpg"
     ],
     "verificationStatus": "Verified",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Akumadan Growers Group about tomatoes, pepper, and onion supply.",
     "trust": {
       "status": "Verified",
@@ -71,6 +72,7 @@
       "/images/crops/pineapple.jpg"
     ],
     "verificationStatus": "Premium Member",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Nsawam Fruit Farmers about fruit supply.",
     "trust": {
       "status": "Premium Member",
@@ -115,6 +117,7 @@
       "/images/crops/yam.jpg"
     ],
     "verificationStatus": "Pending Verification",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Northern Root Crops Network about yam and tuber supply.",
     "trust": {
       "status": "Pending Verification",
@@ -159,6 +162,7 @@
       "/images/crops/tomatoes.jpg"
     ],
     "verificationStatus": "Verified",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Ada Vegetable Cooperative about okra, garden eggs, and pepper.",
     "trust": {
       "status": "Verified",
@@ -202,6 +206,7 @@
       "/images/crops/eggs.jpg"
     ],
     "verificationStatus": "Pending Verification",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Volta Rice and Fish Farm about rice or tilapia supply.",
     "trust": {
       "status": "Pending Verification",
@@ -246,6 +251,7 @@
       "/images/crops/inputs.jpg"
     ],
     "verificationStatus": "Premium Member",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Techiman Maize and Beans Farm about grain and legume supply.",
     "trust": {
       "status": "Premium Member",
@@ -290,6 +296,7 @@
       "/images/crops/poultry.jpg"
     ],
     "verificationStatus": "Verified",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Cape Coast Poultry Unit about eggs or poultry supply.",
     "trust": {
       "status": "Verified",
@@ -334,6 +341,7 @@
       "/images/crops/tomatoes.jpg"
     ],
     "verificationStatus": "Pending Verification",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Upper East Onion Growers about onion supply.",
     "trust": {
       "status": "Pending Verification",
@@ -378,6 +386,7 @@
       "/images/crops/pineapple.jpg"
     ],
     "verificationStatus": "Verified",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Western Cocoa and Plantain Farm about plantain or cocoyam supply.",
     "trust": {
       "status": "Verified",
@@ -422,6 +431,7 @@
       "/images/crops/yam.jpg"
     ],
     "verificationStatus": "Pending Verification",
+    "source": "Demo Seed",
     "whatsappMessage": "Hello Ghana Growers, I want to contact Upper West Shea and Groundnut Farmers about groundnut, shea nuts, or millet.",
     "trust": {
       "status": "Pending Verification",

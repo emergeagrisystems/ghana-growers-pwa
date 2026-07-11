@@ -90,7 +90,18 @@ export function isVerifiedFarmer(farmer: Pick<FarmerProfile, "verificationStatus
   return farmer.verificationStatus === "Verified" || farmer.trust?.status === "Verified";
 }
 
-export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "verificationStatus" | "source" | "isFeatured" | "trust">) {
+export function isDemoSeedFarmerProfile(farmer: Pick<FarmerProfile, "source">) {
+  const source = farmer.source?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ?? "";
+  const demoSourceMarkers = ["demo", "demo seed", "seed data", "seed record", "seed profile", "sample", "mock", "placeholder"];
+
+  return demoSourceMarkers.some((marker) => source === marker || source.includes(marker));
+}
+
+export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "verificationStatus" | "source" | "trust">) {
+  if (isDemoSeedFarmerProfile(farmer)) {
+    return false;
+  }
+
   if (isVerifiedFarmer(farmer)) {
     return true;
   }
@@ -99,11 +110,38 @@ export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "verificationS
     return true;
   }
 
-  return Boolean(farmer.isFeatured || farmer.source === "Founding Farmer");
+  return farmer.source === "Founding Farmer";
 }
 
 export function publicFarmerProfiles(farmers: FarmerProfile[]) {
   return farmers.filter(isPublicFarmerProfile);
+}
+
+function uniqueFarmersBySlug(farmers: FarmerProfile[]) {
+  return farmers.filter((farmer, index, allFarmers) => allFarmers.findIndex((item) => item.slug === farmer.slug) === index);
+}
+
+function configuredFarmersBySlug(farmers: FarmerProfile[], configuredSlugs: string[]) {
+  return configuredSlugs
+    .map((slug) => farmers.find((farmer) => farmer.slug === slug))
+    .filter((farmer): farmer is FarmerProfile => Boolean(farmer));
+}
+
+export function homepageFeaturedFarmerProfiles(farmers: FarmerProfile[], configuredFarmers: FarmerProfile[] = [], limit = 4, configuredSlugs: string[] = []) {
+  const configuredFeatured = uniqueFarmersBySlug([
+    ...configuredFarmersBySlug(farmers, configuredSlugs),
+    ...configuredFarmers
+  ])
+    .filter(isPublicFarmerProfile)
+    .slice(0, limit);
+
+  if (configuredFeatured.length > 0) {
+    return configuredFeatured;
+  }
+
+  return uniqueFarmersBySlug(farmers)
+    .filter((farmer) => isPublicFarmerProfile(farmer) && isFeaturedActive(farmer))
+    .slice(0, limit);
 }
 
 export function orderFarmerDirectoryProfiles(farmers: FarmerProfile[]) {

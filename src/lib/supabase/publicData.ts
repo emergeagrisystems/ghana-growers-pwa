@@ -5,6 +5,7 @@ import { products as fallbackProducts } from "@/data/products";
 import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
 import fallbackSuccessStories from "@/data/successStories.json";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
+import { isDemoSeedFarmerProfile, isPublicFarmerProfile } from "@/lib/farmerDirectory";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
 import type { FarmerProfile, Product, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
@@ -645,13 +646,16 @@ function mapSuccessStory(row: SupabaseSuccessStory): SuccessStory {
 
 export async function getFarmersData() {
   const rows = await fetchRows<SupabaseFarmer>("farmers");
-  const publicRows = rows.filter((row) => row.status === "Active");
+  const publicRows = rows
+    .filter((row) => row.status === "Active" && !isDemoSeedFarmerProfile({ source: row.source ?? undefined }))
+    .map(mapFarmer)
+    .filter(isPublicFarmerProfile);
 
   if (rows.length > 0) {
-    return featuredSort(publicRows.map(mapFarmer));
+    return featuredSort(publicRows);
   }
 
-  return allowDemoPublicData() ? fallbackFarmers : [];
+  return allowDemoPublicData() ? fallbackFarmers.filter(isPublicFarmerProfile) : [];
 }
 
 export async function getSuppliersData() {
@@ -661,7 +665,10 @@ export async function getSuppliersData() {
 
 export async function getMarketplaceListingsData() {
   const rows = await fetchRows<SupabaseListing>("marketplace_listings");
-  return rows.length > 0 ? featuredSort(rows.map(mapListing)) : allowDemoPublicData() ? fallbackProducts : [];
+  const demoFarmerSlugs = new Set(fallbackFarmers.filter(isDemoSeedFarmerProfile).map((farmer) => farmer.slug));
+  const publicFallbackProducts = fallbackProducts.filter((product) => !product.farmerSlug || !demoFarmerSlugs.has(product.farmerSlug));
+
+  return rows.length > 0 ? featuredSort(rows.map(mapListing)) : allowDemoPublicData() ? publicFallbackProducts : [];
 }
 
 export async function getBuyerRequestsData() {

@@ -17,9 +17,8 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { SafeImage } from "@/components/SafeImage";
-import { featuredFarmers as configuredFeaturedFarmers } from "@/data/featuredListings";
-import { isFeaturedActive } from "@/lib/featured";
-import { isPublicFarmerProfile } from "@/lib/farmerDirectory";
+import { featuredFarmers as configuredFeaturedFarmers, featuredFarmerSlugs } from "@/data/featuredListings";
+import { homepageFeaturedFarmerProfiles } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
@@ -80,26 +79,7 @@ const trustPoints = ["Reviewed Profiles", "Reviewed Listings", "Buyer Request Su
 
 export default async function HomePage() {
   const farmers = await getFarmersData();
-  const realFarmers = farmers.filter((farmer) => {
-    const source = (farmer.source ?? "").toLowerCase();
-    const name = `${farmer.farmName} ${farmer.contactName}`.toLowerCase();
-    return (
-      !source.includes("demo") &&
-      !source.includes("sample") &&
-      !["akumadan growers group", "nsawam fruit farmers", "northern root crops network"].some((demoName) =>
-        name.includes(demoName)
-      )
-    );
-  });
-  const activeFeaturedFarmers = realFarmers
-    .filter((farmer) => isPublicFarmerProfile(farmer) && isFeaturedActive(farmer))
-    .filter((farmer, index, featuredFarmers) => featuredFarmers.findIndex((item) => item.slug === farmer.slug) === index)
-    .slice(0, 4);
-  const configuredPublicFeaturedFarmers = configuredFeaturedFarmers
-    .filter(isPublicFarmerProfile)
-    .filter((farmer, index, featuredFarmers) => featuredFarmers.findIndex((item) => item.slug === farmer.slug) === index)
-    .slice(0, 4);
-  const homepageFeaturedFarmers = activeFeaturedFarmers.length > 0 ? activeFeaturedFarmers : configuredPublicFeaturedFarmers;
+  const homepageFeaturedFarmers = homepageFeaturedFarmerProfiles(farmers, configuredFeaturedFarmers, 4, featuredFarmerSlugs);
 
   return (
     <>
