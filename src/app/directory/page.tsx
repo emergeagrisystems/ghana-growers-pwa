@@ -267,14 +267,14 @@ export default async function DirectoryPage() {
           <div className="rounded-md border border-leaf-900/10 bg-white p-6 shadow-soft sm:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="gg-eyebrow">Join the network</p>
+                <p className="gg-eyebrow">Join the Network</p>
                 <h2 className="mt-2 text-3xl font-black text-ink">Want to be listed?</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/68">
                   Join the Ghana Growers Network as a farmer, supplier, buyer, or service provider.
                 </p>
               </div>
               <Link href="/join" className="gg-button-primary shrink-0">
-                Join Network
+                Join the Network
                 <ArrowRight size={18} aria-hidden="true" />
               </Link>
             </div>

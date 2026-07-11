@@ -210,7 +210,7 @@ export default function SellPage() {
               Join the Ghana Growers Network and create your seller profile.
             </p>
           </div>
-          <ButtonLink href="/join" variant="light">Join Network</ButtonLink>
+          <ButtonLink href="/join" variant="light">Join the Network</ButtonLink>
         </div>
       </section>
     </>

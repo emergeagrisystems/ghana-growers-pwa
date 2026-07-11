@@ -110,7 +110,7 @@ export default async function HomePage() {
 
       <section className="bg-leaf-50 py-8 sm:py-10" aria-label="GG FarmMate tools">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card sm:p-6 lg:p-7">
+          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-4 shadow-card sm:p-5 lg:p-7">
             <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {homepageFarmMateTools.map((tool, index) => {
                 const Icon = tool.icon;
@@ -120,14 +120,14 @@ export default async function HomePage() {
                   <Link
                     key={tool.title}
                     href="/farmer-hub"
-                    className={`focus-ring group flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-leaf-700/30 hover:shadow-card ${
+                    className={`focus-ring group flex flex-col rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-leaf-700/30 hover:shadow-card sm:h-full lg:p-5 ${
                       isCenteredTabletCard ? "sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-md lg:col-span-1 lg:max-w-none" : ""
                     }`}
                   >
-                    <span className="gg-icon gg-icon-farmer-hub h-11 w-11 shrink-0">
-                      <Icon size={21} aria-hidden="true" />
+                    <span className="gg-icon gg-icon-farmer-hub h-10 w-10 shrink-0 lg:h-11 lg:w-11">
+                      <Icon size={20} aria-hidden="true" />
                     </span>
-                    <span className="mt-5 block text-base font-black leading-tight text-ink group-hover:text-leaf-700">{tool.title}</span>
+                    <span className="mt-4 block text-base font-black leading-tight text-ink group-hover:text-leaf-700 lg:mt-5">{tool.title}</span>
                     <span className="mt-2 block text-sm font-semibold leading-6 text-ink/58">{tool.description}</span>
                   </Link>
                 );
@@ -145,7 +145,7 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
-      <section className="bg-[#F7F6EF] py-12 sm:py-14 lg:py-16" aria-labelledby="how-ghana-growers-works">
+      <section className="bg-[#F7F6EF] py-10 sm:py-12 lg:py-16" aria-labelledby="how-ghana-growers-works">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="gg-eyebrow text-earth-700/70">How It Works</p>
@@ -157,20 +157,20 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid items-stretch gap-4 sm:mt-8 sm:grid-cols-2 lg:grid-cols-4">
             {howItWorks.map((step, index) => {
               const Icon = step.icon;
 
               return (
-                <article key={step.title} className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-card">
+                <article key={step.title} className="flex flex-col rounded-md border border-leaf-900/10 bg-white p-4 shadow-card sm:h-full lg:p-5">
                   <div className="flex items-center justify-between gap-4">
                     <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                       <Icon size={22} aria-hidden="true" />
                     </span>
                     <span className="text-sm font-black text-earth-700/65">0{index + 1}</span>
                   </div>
-                  <h3 className="mt-5 text-lg font-black text-ink">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-ink/64">{step.text}</p>
+                  <h3 className="mt-4 text-lg font-black text-ink lg:mt-5">{step.title}</h3>
+                  <p className="mt-2.5 text-sm leading-6 text-ink/64 lg:mt-3">{step.text}</p>
                 </article>
               );
             })}
@@ -190,10 +190,10 @@ export default async function HomePage() {
         />
       ) : null}
 
-      <section className="bg-white py-12 sm:py-14">
+      <section className="bg-white py-10 sm:py-12 lg:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-6 shadow-card lg:p-7">
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_auto] lg:items-center">
+          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card sm:p-6 lg:p-7">
+            <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.1fr_1fr_auto] lg:items-center">
               <div>
                 <p className="gg-eyebrow">Ghana Growers Checks</p>
                 <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Why connect through Ghana Growers</h2>
@@ -217,27 +217,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#143A1F] py-16 text-white sm:py-20">
+      <section className="border-b border-white/10 bg-leaf-900 py-12 text-white sm:py-16 lg:py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
-          <h2 className="mt-4 text-3xl font-black leading-tight sm:text-5xl">Build trusted agricultural connections across Ghana.</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/72 sm:text-lg">
+          <h2 className="mt-4 text-2xl font-black leading-tight sm:text-4xl lg:text-5xl">Build trusted agricultural connections across Ghana.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/72 sm:mt-5 sm:text-lg">
             Register as a farmer, buyer, supplier, or service provider. Ghana Growers will review your details before your profile, listing, or request is published.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/join" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-black text-leaf-900 shadow-sm transition duration-200 ease-out hover:bg-earth-50">
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row">
+            <Link href="/join" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-black text-leaf-900 shadow-sm transition duration-200 ease-out hover:bg-earth-50 sm:min-h-12">
               Join the Network
             </Link>
-            <Link href="/contact" className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-white/35 px-6 py-3 text-sm font-black text-white transition duration-200 ease-out hover:border-earth-500 hover:text-earth-500">
-              Contact Ghana Growers
+            <Link href="/contact" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-white/35 px-6 py-3 text-sm font-black text-white transition duration-200 ease-out hover:border-earth-500 hover:text-earth-500 sm:min-h-12">
+              Send us a message
             </Link>
           </div>
-        </div>
-      </section>
-
-      <section className="border-y border-leaf-900/10 bg-[#F7F6EF] py-8" aria-label="End of homepage content">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="h-px bg-leaf-900/10" />
         </div>
       </section>
     </>

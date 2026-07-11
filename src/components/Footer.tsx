@@ -7,22 +7,23 @@ const quickLinks = [
   { title: "Directory", href: "/directory" },
   { title: "GG FarmMate", href: "/farmer-hub" },
   { title: "Learn", href: "/learn" },
-  { title: "Contact", href: "/contact" }
+  { title: "Contact", href: "/contact" },
+  { title: "Join the Network", href: "/join" }
 ];
 
 const legalLinks = [
-  { title: "Privacy Policy", href: "/privacy" },
-  { title: "Terms", href: "/terms" },
+  { title: "Privacy Policy", href: "/privacy-policy" },
+  { title: "Terms", href: "/terms-of-use" },
   { title: "About", href: "/about" }
 ];
 
 export function Footer() {
   return (
-    <footer className="border-t border-leaf-900/10 bg-[#143A1F] text-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:px-8">
+    <footer className="border-t border-white/10 bg-leaf-900 text-white">
+      <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.95fr_1.1fr] lg:items-start lg:px-8">
         <div className="max-w-md">
           <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-md text-xl font-black">
-            <span className="grid h-10 w-10 place-items-center rounded-md bg-earth-500 text-[#143A1F]">
+            <span className="grid h-10 w-10 place-items-center rounded-md bg-earth-500 text-leaf-900">
               <Sprout size={22} aria-hidden="true" />
             </span>
             Ghana Growers
@@ -30,10 +31,6 @@ export function Footer() {
           <p className="mt-3 text-sm leading-6 text-white/76">
             Connecting farmers, suppliers and buyers across Ghana.
           </p>
-
-          <Link href="/join" className="gg-button-primary mt-5 bg-earth-500 text-[#143A1F] hover:bg-earth-400">
-            Join Network
-          </Link>
         </div>
 
         <div>
@@ -53,7 +50,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-xs text-white/58 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3.5 text-xs text-white/58 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="grid gap-1">
             <p>&copy; {new Date().getFullYear()} Ghana Growers</p>
             <p>A Product of Emerge Agri Systems (E.A.Sy.)</p>
