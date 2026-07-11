@@ -41,6 +41,22 @@ const backgrounds = {
   earth: "bg-earth-50"
 };
 
+function compactFarmerGridClass(count: number) {
+  if (count >= 4) {
+    return "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+  }
+
+  if (count === 3) {
+    return "justify-center sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,20rem))]";
+  }
+
+  if (count === 2) {
+    return "justify-center sm:grid-cols-[repeat(2,minmax(0,20rem))]";
+  }
+
+  return "justify-center sm:grid-cols-[minmax(0,20rem)]";
+}
+
 function titleCaseLocation(value?: string) {
   return (value ?? "")
     .split(/(\s+|-|\/|,)/)
@@ -106,14 +122,22 @@ export function FeaturedListings({
   const showBuyerRequests = showAll || kinds.includes("buyerRequests");
   const selectedFarmers = farmers ?? featuredFarmers;
   const selectedSuppliers = suppliers ?? featuredSuppliers;
+  const farmerLimit = limit ?? selectedFarmers.length;
+  const visibleFarmers = selectedFarmers.slice(0, farmerLimit);
+  const isCompactFarmersOnly = compact && showFarmers && !showSuppliers && !showBuyerRequests;
+  const gridClass = isCompactFarmersOnly
+    ? compactFarmerGridClass(visibleFarmers.length)
+    : compact
+      ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      : "md:grid-cols-2 xl:grid-cols-3";
 
   return (
     <section className={`${backgrounds[background]} ${compact ? "py-12 sm:py-14 lg:py-16" : "py-20 sm:py-24 lg:py-[120px]"}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Featured" title={title} description={description} />
-        <div className={`mt-8 grid gap-5 ${compact ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+        <div className={`mt-8 grid gap-5 ${gridClass}`}>
           {showFarmers
-            ? selectedFarmers.slice(0, limit).map((farmer) => {
+            ? visibleFarmers.map((farmer) => {
                 const trust = normalizeTrust(farmer.trust);
                 const products = formatFarmerProducts(farmer.products);
                 const location = formatFarmerLocation(farmer);
@@ -330,7 +354,7 @@ export function FeaturedListings({
             : null}
         </div>
         {compact && showFarmers && !showSuppliers && !showBuyerRequests ? (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-5 flex justify-center">
             <Link href="/farmer-directory" className="focus-ring group inline-flex min-h-10 items-center gap-1 rounded-md px-1 text-sm font-black text-leaf-700 transition hover:text-leaf-900">
               View all farmers <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
             </Link>
