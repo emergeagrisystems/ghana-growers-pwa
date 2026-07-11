@@ -1,13 +1,11 @@
 import {
   CheckCircle2,
   ClipboardCheck,
-  CloudSun,
   Handshake,
   PackageCheck,
   Search,
   ShieldCheck,
-  ShoppingBasket,
-  Sprout
+  ShoppingBasket
 } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
@@ -15,7 +13,7 @@ import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { SafeImage } from "@/components/SafeImage";
 import { featuredFarmers as configuredFeaturedFarmers, featuredFarmerSlugs } from "@/data/featuredListings";
-import { homepageFarmMateDescription, homepageFarmMateTools } from "@/data/farmmatePublicTools";
+import { homepageFarmMateTools } from "@/data/farmmatePublicTools";
 import { homepageFeaturedFarmerProfiles } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
@@ -110,44 +108,33 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#F7F6EF] py-8 sm:py-10" aria-labelledby="farmmate-strip-title">
+      <section className="bg-leaf-50 py-8 sm:py-10" aria-label="GG FarmMate tools">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6 lg:p-7">
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.25fr_auto] lg:items-center">
-              <div>
-                <p className="gg-eyebrow text-earth-700/70">GG FarmMate</p>
-                <h2 id="farmmate-strip-title" className="mt-2 text-2xl font-black leading-tight text-ink sm:text-3xl">
-                  Digital farming tools by Ghana Growers
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-ink/64">
-                  {homepageFarmMateDescription}
-                </p>
-              </div>
+          <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-card sm:p-6 lg:p-7">
+            <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {homepageFarmMateTools.map((tool, index) => {
+                const Icon = tool.icon;
+                const isCenteredTabletCard = homepageFarmMateTools.length === 3 && index === homepageFarmMateTools.length - 1;
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {homepageFarmMateTools.map((tool, index) => {
-                  const Icon = tool.icon;
+                return (
+                  <Link
+                    key={tool.title}
+                    href="/farmer-hub"
+                    className={`focus-ring group flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-leaf-700/30 hover:shadow-card ${
+                      isCenteredTabletCard ? "sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-md lg:col-span-1 lg:max-w-none" : ""
+                    }`}
+                  >
+                    <span className="gg-icon gg-icon-farmer-hub h-11 w-11 shrink-0">
+                      <Icon size={21} aria-hidden="true" />
+                    </span>
+                    <span className="mt-5 block text-base font-black leading-tight text-ink group-hover:text-leaf-700">{tool.title}</span>
+                    <span className="mt-2 block text-sm font-semibold leading-6 text-ink/58">{tool.description}</span>
+                  </Link>
+                );
+              })}
+            </div>
 
-                  return (
-                    <Link
-                      key={tool.title}
-                      href="/farmer-hub"
-                      className={`focus-ring group flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-card ${
-                        index === homepageFarmMateTools.length - 1 && homepageFarmMateTools.length % 2 === 1 ? "sm:col-span-2" : ""
-                      }`}
-                    >
-                      <span className="gg-icon gg-icon-farmer-hub h-10 w-10 shrink-0">
-                        <Icon size={20} aria-hidden="true" />
-                      </span>
-                      <span>
-                        <span className="block text-sm font-black text-ink group-hover:text-leaf-700">{tool.title}</span>
-                        <span className="mt-0.5 block text-xs font-semibold leading-5 text-ink/55">{tool.description}</span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-
+            <div className="mt-5 flex justify-center sm:mt-6">
               <ButtonLink href="/farmer-hub">
                 Open GG FarmMate
               </ButtonLink>
