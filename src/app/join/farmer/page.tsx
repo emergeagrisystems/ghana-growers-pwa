@@ -18,7 +18,7 @@ const benefits = [
   },
   {
     title: "Farm Smarter",
-    description: "Use GG FarmMate for weather, Crop Doctor, market prices and practical farming support.",
+    description: "Use GG FarmMate for weather, Crop Doctor and practical farming support.",
     icon: CloudSun
   },
   {

@@ -1,12 +1,9 @@
 import {
-  Bot,
   CheckCircle2,
   ClipboardCheck,
   CloudSun,
   Handshake,
-  LineChart,
   PackageCheck,
-  ScanSearch,
   Search,
   ShieldCheck,
   ShoppingBasket,
@@ -18,6 +15,7 @@ import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
 import { SafeImage } from "@/components/SafeImage";
 import { featuredFarmers as configuredFeaturedFarmers, featuredFarmerSlugs } from "@/data/featuredListings";
+import { homepageFarmMateDescription, homepageFarmMateTools } from "@/data/farmmatePublicTools";
 import { homepageFeaturedFarmerProfiles } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
@@ -49,29 +47,6 @@ const howItWorks = [
     title: "We help connect",
     text: "Ghana Growers supports communication so the right parties can move forward with confidence.",
     icon: Handshake
-  }
-];
-
-const farmMateTools = [
-  {
-    title: "Crop Doctor",
-    description: "Upload a crop photo and receive practical next steps.",
-    icon: ScanSearch
-  },
-  {
-    title: "Live Weather",
-    description: "Check today's farming conditions before heading to the field.",
-    icon: CloudSun
-  },
-  {
-    title: "Market Price Check",
-    description: "Compare crop prices before you negotiate.",
-    icon: LineChart
-  },
-  {
-    title: "Ask FarmMate",
-    description: "Ask practical farming questions anytime.",
-    icon: Bot
   }
 ];
 
@@ -145,19 +120,21 @@ export default async function HomePage() {
                   Digital farming tools by Ghana Growers
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-ink/64">
-                  Check weather, diagnose crop problems, compare market prices, and get practical farming advice in one place.
+                  {homepageFarmMateDescription}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                {farmMateTools.map((tool) => {
+                {homepageFarmMateTools.map((tool, index) => {
                   const Icon = tool.icon;
 
                   return (
                     <Link
                       key={tool.title}
                       href="/farmer-hub"
-                      className="focus-ring group flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-card"
+                      className={`focus-ring group flex items-center gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-card ${
+                        index === homepageFarmMateTools.length - 1 && homepageFarmMateTools.length % 2 === 1 ? "sm:col-span-2" : ""
+                      }`}
                     >
                       <span className="gg-icon gg-icon-farmer-hub h-10 w-10 shrink-0">
                         <Icon size={20} aria-hidden="true" />

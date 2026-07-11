@@ -4,17 +4,14 @@ import {
   AlertTriangle,
   Bot,
   CloudRain,
-  LineChart,
   MapPin,
   ScanSearch,
-  Store,
   ThermometerSun
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { MarketPrice } from "@/data/marketPrices";
 import { CropHealthCheck } from "@/components/smart-solutions/CropHealthCheck";
 import { FarmerAssistant } from "@/components/smart-solutions/FarmerAssistant";
-import { MarketPricesDashboard } from "@/components/smart-solutions/MarketPricesDashboard";
 import { WeatherUpdates } from "@/components/smart-solutions/WeatherUpdates";
 import { weatherLocations } from "@/data/weatherLocations";
 
@@ -34,12 +31,6 @@ const tools = [
     label: "Ask FarmMate",
     icon: Bot,
     description: "Ask practical farming and market questions."
-  },
-  {
-    id: "market-prices",
-    label: "Current Market Prices",
-    icon: LineChart,
-    description: "Check crop price signals."
   }
 ] as const;
 
@@ -65,14 +56,6 @@ function sprayAdvice(weather?: SnapshotWeather) {
   }
 
   return "Good fieldwork window";
-}
-
-function marketSignals(prices: MarketPrice[]) {
-  return {
-    rising: prices.find((item) => item.trend === "Rising"),
-    falling: prices.find((item) => item.trend === "Falling"),
-    stable: prices.find((item) => item.trend === "Stable") ?? prices[0]
-  };
 }
 
 function useAccraSnapshot() {
@@ -149,8 +132,7 @@ function TodayFarmSnapshot({ weather, isActive, onOpenWeather }: { weather?: Sna
   );
 }
 
-function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeather; marketPrices: MarketPrice[] }) {
-  const markets = marketSignals(marketPrices);
+function DailyInsightCards({ weather }: { weather?: SnapshotWeather }) {
   const allInsights = [
     {
       title: "Can I Farm Today?",
@@ -158,19 +140,9 @@ function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeathe
       icon: CloudRain
     },
     {
-      title: "Market Watch",
-      body: markets.rising ? `${markets.rising.crop} prices are rising in ${markets.rising.region}.` : "No market alerts today.",
-      icon: LineChart
-    },
-    {
       title: "Crop Alert",
       body: weather && weather.humidity >= 80 ? "High humidity may increase fungal disease risk." : "No crop alerts today.",
       icon: AlertTriangle
-    },
-    {
-      title: "Selling Opportunity",
-      body: markets.stable ? `${markets.stable.crop} remains active in current market snapshots.` : "No buyer opportunities yet.",
-      icon: Store
     }
   ];
   const start = new Date().getDate() % allInsights.length;
@@ -196,7 +168,7 @@ function DailyInsightCards({ weather, marketPrices }: { weather?: SnapshotWeathe
   );
 }
 
-export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
+export function DigitalFarmToolbox({ marketPrices: _marketPrices }: DigitalFarmToolboxProps) {
   const [activeTool, setActiveTool] = useState<ToolId>("crop-health");
   const weather = useAccraSnapshot();
 
@@ -241,11 +213,10 @@ export function DigitalFarmToolbox({ marketPrices }: DigitalFarmToolboxProps) {
         </aside>
 
         <div className="grid min-w-0 gap-5">
-          <DailyInsightCards weather={weather} marketPrices={marketPrices} />
+          <DailyInsightCards weather={weather} />
           {activeTool === "weather" ? <WeatherUpdates /> : null}
           {activeTool === "crop-health" ? <CropHealthCheck /> : null}
           {activeTool === "assistant" ? <FarmerAssistant /> : null}
-          {activeTool === "market-prices" ? <MarketPricesDashboard prices={marketPrices} /> : null}
         </div>
       </div>
     </section>

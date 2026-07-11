@@ -10,11 +10,16 @@ import {
   weatherGuidedRecommendationCards
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
+import { homepageFarmMateDescription, homepageFarmMateTools } from "../src/data/farmmatePublicTools";
+import { smartTools } from "../src/data/smartTools";
+import featuredListingData from "../src/data/featuredListings.json";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
   farmerCardProducts,
+  homepageFeaturedFarmerProfiles,
+  isDemoSeedFarmerProfile,
   isVerifiedFarmer,
   orderFarmerDirectoryProfiles,
   paginateFarmers,
@@ -182,6 +187,115 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Farmer Directory excludes demo seed profiles from public UI",
+    run: () => {
+      const publicProfiles = publicFarmerProfiles([
+        farmerFixture({ slug: "demo-seed", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true }),
+        farmerFixture({ slug: "sample-record", source: "Sample", verificationStatus: "Verified", isFeatured: true }),
+        farmerFixture({ slug: "real-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true })
+      ]);
+
+      assert.equal(isDemoSeedFarmerProfile(farmerFixture({ source: "Demo Seed" })), true);
+      assert.equal(isDemoSeedFarmerProfile(farmerFixture({ source: "Tally Import" })), false);
+      assert.deepEqual(publicProfiles.map((farmer) => farmer.slug), ["real-featured"]);
+    }
+  },
+  {
+    name: "Homepage featured farmers excludes demo seed configured profiles",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles(
+        [],
+        [
+          farmerFixture({ slug: "akumadan-growers-group", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true }),
+          farmerFixture({ slug: "real-configured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true })
+        ]
+      );
+
+      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["real-configured"]);
+    }
+  },
+  {
+    name: "Featured farmer config uses genuine curated profile slugs",
+    run: () => {
+      const obsoleteDemoSlugs = [
+        "akumadan-growers-group",
+        "nsawam-fruit-farmers",
+        "northern-root-crops-network",
+        "ada-vegetable-cooperative",
+        "techiman-maize-and-beans-farm",
+        "western-cocoa-and-plantain-farm"
+      ];
+
+      assert.deepEqual(featuredListingData.farmerSlugs, [
+        "ibrahim-mohammed-farm",
+        "duakib-baariyan-farm",
+        "s-k-nart-farms"
+      ]);
+      assert.equal(featuredListingData.farmerSlugs.some((slug) => obsoleteDemoSlugs.includes(slug)), false);
+    }
+  },
+  {
+    name: "Homepage featured farmers maps configured slugs to live public farmers",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles(
+        [
+          farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", source: "Tally Import", verificationStatus: "Verified" }),
+          farmerFixture({ slug: "unconfigured-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true }),
+          farmerFixture({ slug: "ibrahim-mohammed-farm", farmName: "Ibrahim Mohammed Farm", source: "Tally Import", verificationStatus: "Verified" }),
+          farmerFixture({ slug: "duakib-baariyan-farm", farmName: "Duakib Baariyan Farm", source: "Tally Import", verificationStatus: "Verified" })
+        ],
+        [],
+        4,
+        ["ibrahim-mohammed-farm", "duakib-baariyan-farm", "s-k-nart-farms"]
+      );
+
+      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), [
+        "ibrahim-mohammed-farm",
+        "duakib-baariyan-farm",
+        "s-k-nart-farms"
+      ]);
+    }
+  },
+  {
+    name: "Homepage featured farmers does not duplicate configured farmers",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles(
+        [farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified" })],
+        [farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified" })],
+        4,
+        ["ibrahim-mohammed-farm"]
+      );
+
+      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["ibrahim-mohammed-farm"]);
+    }
+  },
+  {
+    name: "Homepage featured farmers renders genuine approved featured profiles",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles([
+        farmerFixture({ slug: "real-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true }),
+        farmerFixture({ slug: "real-normal", source: "Tally Import", verificationStatus: "Verified", isFeatured: false }),
+        farmerFixture({ slug: "demo-featured", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true })
+      ]);
+
+      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["real-featured"]);
+    }
+  },
+  {
+    name: "Homepage featured farmers hides when no eligible real featured profiles exist",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles(
+        [
+          farmerFixture({ slug: "real-under-review", source: "Tally Import", verificationStatus: "Pending Verification", isFeatured: true }),
+          farmerFixture({ slug: "demo-featured", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true })
+        ],
+        [farmerFixture({ slug: "configured-demo", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true })]
+      );
+
+      assert.deepEqual(featuredFarmers, []);
+    }
+  },
+  {
     name: "Farmer Directory verified badge is conditional",
     run: () => {
       assert.equal(isVerifiedFarmer(farmerFixture({ verificationStatus: "Verified" })), true);
@@ -210,7 +324,6 @@ const tests: TestCase[] = [
         "featured-4",
         "normal-1",
         "featured-5",
-        "pending-featured",
         "normal-2"
       ]);
     }
@@ -304,6 +417,35 @@ const tests: TestCase[] = [
     name: "Farmer Directory pagination creates compact page list",
     run: () => {
       assert.deepEqual(paginationPages(5, 9), [1, "ellipsis", 4, 5, 6, "ellipsis", 9]);
+    }
+  },
+  {
+    name: "Homepage FarmMate tools hide inactive Market Price Check",
+    run: () => {
+      const titles = homepageFarmMateTools.map((tool) => tool.title);
+
+      assert.deepEqual(titles, ["Crop Doctor", "Live Weather", "Ask FarmMate"]);
+      assert.equal(titles.includes("Market Price Check"), false);
+    }
+  },
+  {
+    name: "Homepage FarmMate description no longer mentions market prices",
+    run: () => {
+      const description = homepageFarmMateDescription.toLowerCase();
+
+      assert.equal(description, "check weather, diagnose crop problems, and get practical farming advice in one place.");
+      assert.equal(description.includes("market price"), false);
+      assert.equal(description.includes("compare market"), false);
+    }
+  },
+  {
+    name: "Inactive market price public links are not exposed by smart tools",
+    run: () => {
+      const toolText = smartTools.map((tool) => `${tool.title} ${tool.description} ${tool.cta} ${tool.href}`).join(" ").toLowerCase();
+
+      assert.equal(toolText.includes("market price"), false);
+      assert.equal(toolText.includes("#market-prices"), false);
+      assert.equal(smartTools.some((tool) => tool.href === "#market-prices"), false);
     }
   },
   {

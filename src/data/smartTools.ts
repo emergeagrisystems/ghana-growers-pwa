@@ -1,6 +1,7 @@
 import { Bot, CloudSun, LineChart, ScanSearch } from "lucide-react";
+import { publicFeatureAvailability } from "../lib/publicFeatureAvailability";
 
-export const smartTools = [
+const allSmartTools = [
   {
     title: "Live Weather Updates",
     description: "Plan spraying, drying, irrigation, and harvesting with weather guidance for key Ghana regions.",
@@ -27,9 +28,12 @@ export const smartTools = [
     description: "Compare indicative prices by crop, region, and market before starting trade conversations.",
     cta: "View Market Prices",
     href: "#market-prices",
-    icon: LineChart
+    icon: LineChart,
+    isPubliclyAvailable: publicFeatureAvailability.marketPriceCheck
   }
 ];
+
+export const smartTools = allSmartTools.filter((tool) => tool.isPubliclyAvailable !== false);
 
 export const assistantSuggestions = [
   "How do I improve tomato yield?",
