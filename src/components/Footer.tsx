@@ -7,8 +7,7 @@ const quickLinks = [
   { title: "Directory", href: "/directory" },
   { title: "GG FarmMate", href: "/farmer-hub" },
   { title: "Learn", href: "/learn" },
-  { title: "Contact", href: "/contact" },
-  { title: "Join the Network", href: "/join" }
+  { title: "Contact", href: "/contact" }
 ];
 
 const legalLinks = [

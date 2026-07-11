@@ -117,7 +117,7 @@ export default async function DirectoryPage() {
       <PageHero
         eyebrow="Directory"
         title="Find Farmers, Suppliers & Services"
-        description="Browse trusted farmers, agricultural suppliers, and service providers across Ghana."
+        description="Browse reviewed farmers, agricultural suppliers, and service providers across Ghana."
         variant="compact"
       >
         <form action="/farmer-directory" method="get" className="max-w-3xl rounded-md border border-leaf-900/10 bg-white p-2 shadow-soft">
