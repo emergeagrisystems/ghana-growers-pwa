@@ -84,6 +84,26 @@ type SupabaseListing = {
   unit: string;
   availability: string;
   price_range: string | null;
+  selling_method?: Product["sellingMethod"] | null;
+  selling_unit?: string | null;
+  custom_unit_label?: string | null;
+  custom_unit_reviewed?: boolean | null;
+  unit_size_value?: Product["unitSizeValue"] | null;
+  unit_size_measure?: string | null;
+  unit_size_approximate?: boolean | null;
+  price_amount?: Product["priceAmount"] | null;
+  price_currency?: string | null;
+  price_basis?: string | null;
+  units_available?: Product["unitsAvailable"] | null;
+  total_quantity_value?: Product["totalQuantityValue"] | null;
+  total_quantity_measure?: string | null;
+  minimum_order_value?: Product["minimumOrderValue"] | null;
+  minimum_order_unit?: string | null;
+  supply_frequency?: string | null;
+  available_from_date?: string | null;
+  grade_description?: string | null;
+  delivery_details?: string | null;
+  record_source?: string | null;
   description?: string | null;
   image_url: string | null;
   image_urls?: string[] | null;
@@ -542,6 +562,7 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     verifiedBy: row.verified_by ?? undefined,
     verificationNotes: row.verification_notes ?? undefined,
     ggStandardStatus: row.gg_standard_status ?? "Pending",
+    status: row.status ?? undefined,
     isFeatured: Boolean(row.is_featured),
     featuredUntil: row.featured_until ?? undefined,
     featuredNote: row.featured_note ?? undefined,
@@ -568,10 +589,32 @@ function mapListing(row: SupabaseListing): Product {
     quantity: row.quantity,
     unit: row.unit,
     priceRange: row.price_range ?? undefined,
+    sellingMethod: row.selling_method ?? undefined,
+    sellingUnit: row.selling_unit ?? undefined,
+    customUnitLabel: row.custom_unit_label ?? undefined,
+    customUnitReviewed: Boolean(row.custom_unit_reviewed),
+    unitSizeValue: row.unit_size_value ?? undefined,
+    unitSizeMeasure: row.unit_size_measure ?? undefined,
+    unitSizeApproximate: Boolean(row.unit_size_approximate),
+    priceAmount: row.price_amount ?? undefined,
+    priceCurrency: row.price_currency ?? undefined,
+    priceBasis: row.price_basis ?? undefined,
+    unitsAvailable: row.units_available ?? undefined,
+    totalQuantityValue: row.total_quantity_value ?? undefined,
+    totalQuantityMeasure: row.total_quantity_measure ?? undefined,
+    minimumOrderValue: row.minimum_order_value ?? undefined,
+    minimumOrderUnit: row.minimum_order_unit ?? undefined,
+    supplyFrequency: row.supply_frequency ?? undefined,
+    availableFromDate: row.available_from_date ?? undefined,
+    gradeDescription: row.grade_description ?? undefined,
+    deliveryDetails: row.delivery_details ?? undefined,
+    recordSource: row.record_source ?? undefined,
     image: coverImage,
     images: listingImages.length ? listingImages : [coverImage],
     available: row.availability,
     datePosted: dateOnly(row.created_at),
+    verificationStatus: trustStatus(row.verification_status),
+    status: row.status ?? undefined,
     verified: trustStatus(row.verification_status) === "Verified",
     featured: isFeaturedActive({
       isFeatured: Boolean(row.is_featured ?? row.featured),

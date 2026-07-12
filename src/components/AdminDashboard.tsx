@@ -92,6 +92,26 @@ type AdminRow = {
   quantity?: string;
   unit?: string;
   priceRange?: string;
+  sellingMethod?: string;
+  sellingUnit?: string;
+  customUnitLabel?: string;
+  customUnitReviewed?: boolean;
+  unitSizeValue?: string;
+  unitSizeMeasure?: string;
+  unitSizeApproximate?: boolean;
+  priceAmount?: string;
+  priceCurrency?: string;
+  priceBasis?: string;
+  unitsAvailable?: string;
+  totalQuantityValue?: string;
+  totalQuantityMeasure?: string;
+  minimumOrderValue?: string;
+  minimumOrderUnit?: string;
+  supplyFrequency?: string;
+  availableFromDate?: string;
+  gradeDescription?: string;
+  deliveryDetails?: string;
+  recordSource?: string;
   availability?: string;
   description?: string;
   internalOperationsNotes?: string;
@@ -905,10 +925,29 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "ownerType", label: "Owner Type", type: "select", required: true, options: ["Farmer", "Supplier", "Admin"] },
     { name: "ownerId", label: "Owner ID", helper: "Auto-filled when creating a listing from a farmer review.", advanced: true },
     { name: "ownerName", label: "Owner Name", required: true, helper: "Use the farmer, supplier, or Ghana Growers owner name shown publicly." },
-    { name: "quantity", label: "Quantity", required: true },
-    { name: "unit", label: "Unit", required: true },
-    { name: "priceRange", label: "Price (Optional)", helper: "Leave blank if price will be confirmed through Ghana Growers." },
+    { name: "sellingMethod", label: "Selling Method", type: "select", required: true, options: ["packaged_unit", "weight", "count", "livestock", "volume"] },
+    { name: "sellingUnit", label: "Selling Unit", required: true, helper: "Examples: sack, crate, kg, tonne, goat, tray, carton." },
+    { name: "customUnitLabel", label: "Custom Unit Label", helper: "Required only when Selling Unit is Other." },
+    { name: "customUnitReviewed", label: "Custom Unit Reviewed", type: "select", options: ["false", "true"] },
+    { name: "unitSizeValue", label: "Unit Size / Net Weight" },
+    { name: "unitSizeMeasure", label: "Unit Size Measure", helper: "Examples: kg, tonnes, litres, gallons." },
+    { name: "unitSizeApproximate", label: "Unit Size Is Approximate", type: "select", options: ["false", "true"] },
+    { name: "priceAmount", label: "Price Amount (GH₵)" },
+    { name: "priceCurrency", label: "Price Currency", helper: "Use GHS unless another confirmed currency is required." },
+    { name: "unitsAvailable", label: "Units Available", helper: "Number of sacks, crates, animals, pieces, or containers." },
+    { name: "totalQuantityValue", label: "Total Available Quantity", helper: "Use only when confirmed or calculated from unit size x units available." },
+    { name: "totalQuantityMeasure", label: "Total Quantity Measure" },
+    { name: "minimumOrderValue", label: "Minimum Order" },
+    { name: "minimumOrderUnit", label: "Minimum Order Unit" },
+    { name: "quantity", label: "Legacy Quantity", advanced: true },
+    { name: "unit", label: "Legacy Unit", advanced: true },
+    { name: "priceRange", label: "Legacy Price Text", helper: "Use structured price fields where possible.", advanced: true },
     { name: "availability", label: "Availability", type: "select", required: true, options: ["Available Now", "Limited Stock", "Harvesting Soon", "Sold Out"] },
+    { name: "supplyFrequency", label: "Supply Frequency", type: "select", options: ["", "One-time", "Weekly", "Monthly", "On request"] },
+    { name: "availableFromDate", label: "Ready / Harvest Date", type: "date" },
+    { name: "gradeDescription", label: "Grade or Quality Description" },
+    { name: "deliveryDetails", label: "Pickup or Delivery Details", type: "textarea" },
+    { name: "recordSource", label: "Listing Record Source", helper: "Accepted values: public_submission, admin, import, demo_seed, sample, mock.", advanced: true },
     { name: "whatsappNumber", label: "WhatsApp Number", required: true },
     { name: "description", label: "Public Description", type: "textarea", helper: "This description is shown publicly to buyers. You can edit the suggested text before publishing." },
     { name: "internalOperationsNotes", label: "Internal Operations Notes", type: "textarea", helper: "Visible only to the Ghana Growers Operations Team." },
@@ -1257,8 +1296,28 @@ function formValuesForRow(formId: AdminFormId, row?: AdminRow) {
       ownerName: product?.ownerName ?? row.ownerName ?? product?.seller ?? "",
       quantity: product?.quantity ?? row.quantity ?? "",
       unit: product?.unit ?? row.unit ?? "",
+      sellingMethod: product?.sellingMethod ?? row.sellingMethod ?? "packaged_unit",
+      sellingUnit: product?.sellingUnit ?? row.sellingUnit ?? product?.unit ?? "",
+      customUnitLabel: product?.customUnitLabel ?? row.customUnitLabel ?? "",
+      customUnitReviewed: product?.customUnitReviewed || row.customUnitReviewed ? "true" : "false",
+      unitSizeValue: product?.unitSizeValue ?? row.unitSizeValue ?? "",
+      unitSizeMeasure: product?.unitSizeMeasure ?? row.unitSizeMeasure ?? "",
+      unitSizeApproximate: product?.unitSizeApproximate || row.unitSizeApproximate ? "true" : "",
+      priceAmount: product?.priceAmount ?? row.priceAmount ?? "",
+      priceCurrency: product?.priceCurrency ?? row.priceCurrency ?? "GHS",
+      priceBasis: product?.priceBasis ?? row.priceBasis ?? "",
+      unitsAvailable: product?.unitsAvailable ?? row.unitsAvailable ?? "",
+      totalQuantityValue: product?.totalQuantityValue ?? row.totalQuantityValue ?? "",
+      totalQuantityMeasure: product?.totalQuantityMeasure ?? row.totalQuantityMeasure ?? "",
+      minimumOrderValue: product?.minimumOrderValue ?? row.minimumOrderValue ?? "",
+      minimumOrderUnit: product?.minimumOrderUnit ?? row.minimumOrderUnit ?? "",
       priceRange: productRecord?.priceRange ?? row.priceRange ?? "",
       availability: product?.available ?? row.availability ?? "",
+      supplyFrequency: product?.supplyFrequency ?? row.supplyFrequency ?? "",
+      availableFromDate: product?.availableFromDate ?? row.availableFromDate ?? "",
+      gradeDescription: product?.gradeDescription ?? row.gradeDescription ?? "",
+      deliveryDetails: product?.deliveryDetails ?? row.deliveryDetails ?? "",
+      recordSource: product?.recordSource ?? row.recordSource ?? "",
       whatsappNumber: product?.whatsappNumber ?? row.whatsapp ?? "",
       description: product?.description ?? row.description ?? "",
       internalOperationsNotes: product?.internalOperationsNotes ?? row.internalOperationsNotes ?? "",
@@ -3275,8 +3334,28 @@ function adminMarketplaceRowFromAnalytics(record: AnalyticsRecord): AdminRow {
     ownerName,
     quantity: textValue(record, "quantity"),
     unit: textValue(record, "unit"),
+    sellingMethod: textValue(record, "selling_method"),
+    sellingUnit: textValue(record, "selling_unit"),
+    customUnitLabel: textValue(record, "custom_unit_label"),
+    customUnitReviewed: recordBoolean(record, "custom_unit_reviewed"),
+    unitSizeValue: textValue(record, "unit_size_value"),
+    unitSizeMeasure: textValue(record, "unit_size_measure"),
+    unitSizeApproximate: recordBoolean(record, "unit_size_approximate"),
+    priceAmount: textValue(record, "price_amount"),
+    priceCurrency: textValue(record, "price_currency"),
+    priceBasis: textValue(record, "price_basis"),
+    unitsAvailable: textValue(record, "units_available"),
+    totalQuantityValue: textValue(record, "total_quantity_value"),
+    totalQuantityMeasure: textValue(record, "total_quantity_measure"),
+    minimumOrderValue: textValue(record, "minimum_order_value"),
+    minimumOrderUnit: textValue(record, "minimum_order_unit"),
     priceRange: textValue(record, "price_range"),
     availability: textValue(record, "availability"),
+    supplyFrequency: textValue(record, "supply_frequency"),
+    availableFromDate: textValue(record, "available_from_date"),
+    gradeDescription: textValue(record, "grade_description"),
+    deliveryDetails: textValue(record, "delivery_details"),
+    recordSource: textValue(record, "record_source"),
     whatsapp: textValue(record, "whatsapp_number"),
     description: textValue(record, "description"),
     internalOperationsNotes: textValue(record, "internal_operations_notes"),
@@ -5401,7 +5480,10 @@ export function AdminDashboard({
     setActiveSection(formId);
     setSearchTerm("");
     setStatusFilter("All");
-    const nextValues = formValuesForRow(formId, row);
+    const rawValues = formValuesForRow(formId, row);
+    const nextValues = Object.fromEntries(
+      Object.entries(rawValues).map(([key, value]) => [key, value === undefined || value === null ? "" : String(value)])
+    ) as Record<string, string>;
     setFormValues(nextValues);
     setImagePreviews(
       Object.fromEntries(

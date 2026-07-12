@@ -123,6 +123,26 @@ function migrationHintForError(error: string, table: string) {
     { column: "owner_name", migration: "014_marketplace_listing_ownership.sql" },
     { column: "internal_operations_notes", migration: "026_marketplace_listing_internal_notes.sql" },
     { column: "image_urls", migration: "027_marketplace_listing_gallery.sql" },
+    { column: "selling_method", migration: "031_marketplace_trade_fields.sql" },
+    { column: "selling_unit", migration: "031_marketplace_trade_fields.sql" },
+    { column: "custom_unit_label", migration: "031_marketplace_trade_fields.sql" },
+    { column: "custom_unit_reviewed", migration: "031_marketplace_trade_fields.sql" },
+    { column: "unit_size_value", migration: "031_marketplace_trade_fields.sql" },
+    { column: "unit_size_measure", migration: "031_marketplace_trade_fields.sql" },
+    { column: "unit_size_approximate", migration: "031_marketplace_trade_fields.sql" },
+    { column: "price_amount", migration: "031_marketplace_trade_fields.sql" },
+    { column: "price_currency", migration: "031_marketplace_trade_fields.sql" },
+    { column: "price_basis", migration: "031_marketplace_trade_fields.sql" },
+    { column: "units_available", migration: "031_marketplace_trade_fields.sql" },
+    { column: "total_quantity_value", migration: "031_marketplace_trade_fields.sql" },
+    { column: "total_quantity_measure", migration: "031_marketplace_trade_fields.sql" },
+    { column: "minimum_order_value", migration: "031_marketplace_trade_fields.sql" },
+    { column: "minimum_order_unit", migration: "031_marketplace_trade_fields.sql" },
+    { column: "supply_frequency", migration: "031_marketplace_trade_fields.sql" },
+    { column: "available_from_date", migration: "031_marketplace_trade_fields.sql" },
+    { column: "grade_description", migration: "031_marketplace_trade_fields.sql" },
+    { column: "delivery_details", migration: "031_marketplace_trade_fields.sql" },
+    { column: "record_source", migration: "031_marketplace_trade_fields.sql" },
     { column: "is_featured", migration: "018_featured_memberships.sql" },
     { column: "featured_until", migration: "018_featured_memberships.sql" },
     { column: "featured_note", migration: "018_featured_memberships.sql" },
@@ -446,6 +466,14 @@ export async function updateRecord({ request, table, requiredFields, filterColum
       table,
       payloadKeys: Object.keys(payload)
     });
+  }
+  const adminError = typeof recordPayload.__adminError === "string" ? recordPayload.__adminError : undefined;
+  const adminStatus = typeof recordPayload.__adminStatus === "number" ? recordPayload.__adminStatus : 500;
+  delete recordPayload.__adminError;
+  delete recordPayload.__adminStatus;
+
+  if (adminError) {
+    return NextResponse.json({ error: adminError }, { status: adminStatus });
   }
 
   const update = await updateSupabaseRecord(table, recordFilter(recordId, filterColumn), recordPayload);

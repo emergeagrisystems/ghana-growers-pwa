@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
 import {
@@ -33,6 +35,26 @@ import {
   publicSupplierProfiles,
   supplierProducts
 } from "../src/lib/supplierDirectory";
+import {
+  featuredMarketplaceListings,
+  marketplaceAvailability,
+  marketplaceResultRange,
+  marketplaceSupplyFrequency,
+  normalizeMarketplaceQuantity,
+  paginateMarketplaceListings,
+  publicMarketplaceListings
+} from "../src/lib/marketplace/publicListings";
+import {
+  canonicalMarketplaceTradeFields,
+  calculatedMarketplaceTotal,
+  formatMarketplaceCurrency,
+  marketplacePriceLine,
+  marketplaceQuantityLine,
+  marketplaceTradeLines,
+  pluralizeMarketplaceUnit,
+  reviewedCustomUnitMessage,
+  validateMarketplaceTradeInput
+} from "../src/lib/marketplace/trade";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
@@ -69,7 +91,7 @@ import {
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
-import type { FarmerProfile, SupplierProfile } from "../src/types";
+import type { FarmerProfile, Product, SupplierProfile } from "../src/types";
 
 type TestCase = {
   name: string;
@@ -138,11 +160,62 @@ function supplierFixture(overrides: Partial<SupplierProfile> = {}): SupplierProf
     verifiedBy: overrides.verifiedBy,
     verificationNotes: overrides.verificationNotes,
     ggStandardStatus: overrides.ggStandardStatus,
+    status: overrides.status,
     isFeatured: overrides.isFeatured,
     featuredUntil: overrides.featuredUntil,
     featuredNote: overrides.featuredNote,
     trust: overrides.trust,
     whatsappMessage: overrides.whatsappMessage ?? "Hello Ghana Growers"
+  };
+}
+
+function marketplaceProductFixture(overrides: Partial<Product> = {}): Product {
+  return {
+    id: overrides.id ?? "fresh-tomatoes-real-farm",
+    name: overrides.name ?? "Fresh Tomatoes",
+    category: overrides.category ?? "Vegetables",
+    location: overrides.location ?? "accra",
+    region: overrides.region ?? "Greater Accra Region",
+    seller: overrides.seller ?? "Real Farm",
+    description: overrides.description ?? "Fresh produce listing.",
+    quantity: overrides.quantity ?? "50",
+    unit: overrides.unit ?? "Kilo",
+    sellingMethod: overrides.sellingMethod,
+    sellingUnit: overrides.sellingUnit,
+    customUnitLabel: overrides.customUnitLabel,
+    customUnitReviewed: overrides.customUnitReviewed,
+    unitSizeValue: overrides.unitSizeValue,
+    unitSizeMeasure: overrides.unitSizeMeasure,
+    unitSizeApproximate: overrides.unitSizeApproximate,
+    priceAmount: overrides.priceAmount,
+    priceCurrency: overrides.priceCurrency,
+    priceBasis: overrides.priceBasis,
+    unitsAvailable: overrides.unitsAvailable,
+    totalQuantityValue: overrides.totalQuantityValue,
+    totalQuantityMeasure: overrides.totalQuantityMeasure,
+    minimumOrderValue: overrides.minimumOrderValue,
+    minimumOrderUnit: overrides.minimumOrderUnit,
+    supplyFrequency: overrides.supplyFrequency,
+    availableFromDate: overrides.availableFromDate,
+    gradeDescription: overrides.gradeDescription,
+    deliveryDetails: overrides.deliveryDetails,
+    recordSource: overrides.recordSource,
+    image: overrides.image ?? "/images/marketplace/fresh-tomatoes.jpg",
+    images: overrides.images,
+    available: overrides.available ?? "Available Now",
+    datePosted: overrides.datePosted ?? "2026-07-01",
+    verified: overrides.verified,
+    verificationStatus: overrides.verificationStatus ?? "Pending",
+    status: overrides.status ?? "Active",
+    featured: overrides.featured,
+    featuredUntil: overrides.featuredUntil,
+    featuredNote: overrides.featuredNote,
+    whatsappNumber: overrides.whatsappNumber,
+    farmerSlug: overrides.farmerSlug ?? "real-farm",
+    ownerType: overrides.ownerType ?? "Farmer",
+    ownerId: overrides.ownerId,
+    ownerName: overrides.ownerName ?? "Real Farm",
+    internalOperationsNotes: overrides.internalOperationsNotes
   };
 }
 
@@ -162,7 +235,77 @@ function normalizeAdviceText(text: string) {
   return text.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function repoFile(path: string) {
+  return readFileSync(join(process.cwd(), path), "utf8");
+}
+
 const tests: TestCase[] = [
+  {
+    name: "Listing submissions reconciliation migration creates the missing public queue safely",
+    run: () => {
+      const migration = repoFile("supabase/migrations/031_reconcile_listing_submissions.sql");
+
+      assert.equal(migration.includes("begin;"), true);
+      assert.equal(migration.includes("commit;"), true);
+      assert.equal(migration.includes("create table if not exists public.listing_submissions"), true);
+      assert.equal(migration.includes("id uuid primary key default gen_random_uuid()"), true);
+      assert.equal(migration.includes("status text not null default 'New'"), true);
+      assert.equal(migration.includes("check (status in ('New', 'Under Review', 'Approved', 'Rejected', 'Converted'))"), true);
+      assert.equal(migration.includes("conrelid = 'public.listing_submissions'::regclass"), true);
+      assert.equal(migration.includes("before update on public.listing_submissions"), true);
+      assert.equal(migration.includes("execute function public.set_updated_at()"), true);
+      assert.equal(migration.includes("alter table public.listing_submissions enable row level security"), true);
+      assert.equal(migration.includes("listing_submissions_status_idx"), true);
+      assert.equal(migration.includes("on public.listing_submissions (status, created_at desc)"), true);
+      assert.equal(migration.includes("grant insert ("), true);
+      assert.equal(migration.includes("to anon"), true);
+      assert.equal(migration.includes("for insert"), true);
+      assert.equal(migration.includes("with check"), true);
+      assert.equal(migration.includes("grant select, insert, update, delete on public.listing_submissions to service_role"), true);
+      assert.equal(/grant\s+select\s+on\s+public\.listing_submissions\s+to\s+anon/i.test(migration), false);
+      assert.equal(/for\s+select\s+to\s+anon/i.test(migration), false);
+      assert.equal(migration.includes("marketplace_listings"), true);
+      assert.equal(migration.includes("create table if not exists public.buyer_request_submissions"), false);
+      assert.equal(migration.includes("alter table public.marketplace_listings"), false);
+    }
+  },
+  {
+    name: "Marketplace trade migration runs after listing submission reconciliation",
+    run: () => {
+      const tradeMigration = repoFile("supabase/migrations/032_marketplace_trade_fields.sql");
+
+      assert.equal(tradeMigration.includes("begin;"), true);
+      assert.equal(tradeMigration.includes("commit;"), true);
+      assert.equal(tradeMigration.includes("alter table public.marketplace_listings"), true);
+      assert.equal(tradeMigration.includes("alter table public.listing_submissions"), true);
+      assert.equal(tradeMigration.includes("to_regclass('public.listing_submissions')"), false);
+      assert.equal(tradeMigration.includes("Skipping listing_submissions"), false);
+      assert.equal(tradeMigration.includes("listing_submissions_selling_method_check"), true);
+      assert.equal(tradeMigration.includes("'public.listing_submissions'::regclass"), true);
+      assert.equal(tradeMigration.includes("'packaged_unit', 'weight', 'count', 'livestock', 'volume'"), true);
+      assert.equal(tradeMigration.includes("selling_method in ('packaged_unit', 'weight', 'count', 'livestock', 'volume', 'other')"), false);
+    }
+  },
+  {
+    name: "Public listing submission workflow uses listing_submissions and converts structured trade fields",
+    run: () => {
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+      const route = repoFile("src/app/api/listing-submissions/route.ts");
+
+      assert.equal(route.includes("createListingSubmission(formData)"), true);
+      assert.equal(publicSubmissions.includes('insertSupabaseRecord("listing_submissions"'), true);
+      assert.equal(publicSubmissions.includes('selectSupabaseRecords<ListingSubmission>("listing_submissions"'), true);
+      assert.equal(publicSubmissions.includes('const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications"'), true);
+      assert.equal(publicSubmissions.includes('insertSupabaseRecord("marketplace_listings"'), true);
+      assert.equal(publicSubmissions.includes("selling_method: submission.selling_method"), true);
+      assert.equal(publicSubmissions.includes("selling_unit: submission.selling_unit"), true);
+      assert.equal(publicSubmissions.includes("custom_unit_label: submission.custom_unit_label"), true);
+      assert.equal(publicSubmissions.includes("price_amount: submission.price_amount"), true);
+      assert.equal(publicSubmissions.includes("units_available: submission.units_available"), true);
+      assert.equal(publicSubmissions.includes("total_quantity_value: submission.total_quantity_value"), true);
+      assert.equal(publicSubmissions.includes("record_source: \"public_submission\""), true);
+    }
+  },
   {
     name: "Farmer Directory normalizes rough farmer labels and locations",
     run: () => {
@@ -446,6 +589,535 @@ const tests: TestCase[] = [
       assert.equal(toolText.includes("market price"), false);
       assert.equal(toolText.includes("#market-prices"), false);
       assert.equal(smartTools.some((tool) => tool.href === "#market-prices"), false);
+    }
+  },
+  {
+    name: "Marketplace public listings exclude demo seed sellers",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({ id: "demo-listing", farmerSlug: "demo-farm", seller: "Demo Farm", ownerName: "Demo Farm" }),
+          marketplaceProductFixture({ id: "real-listing", farmerSlug: "real-farm", seller: "Real Farm", ownerName: "Real Farm" })
+        ],
+        [
+          farmerFixture({ slug: "demo-farm", farmName: "Demo Farm", source: "Demo Seed", verificationStatus: "Verified" }),
+          farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })
+        ],
+        []
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.product.id), ["real-listing"]);
+    }
+  },
+  {
+    name: "Marketplace excludes Farmer J and related tomato demo listings",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "farmer-j-tomato-1",
+            seller: "Farmer J",
+            ownerName: "Farmer J",
+            farmerSlug: "farmer-j",
+            name: "Fresh Tomatoes",
+            recordSource: "demo_seed"
+          }),
+          marketplaceProductFixture({
+            id: "farmer-j-tomato-2",
+            seller: "Farmer J",
+            ownerName: "Farmer J",
+            farmerSlug: "farmer-j",
+            name: "Fresh Tomatoes"
+          }),
+          marketplaceProductFixture({
+            id: "yellow-maize-sk-nart",
+            seller: "S. K. Nart Farms",
+            ownerName: "S. K. Nart Farms",
+            farmerSlug: "s-k-nart-farms",
+            name: "Yellow Maize",
+            category: "Cereals"
+          })
+        ],
+        [
+          farmerFixture({ slug: "farmer-j", farmName: "Farmer J", source: "Demo Seed", verificationStatus: "Verified" }),
+          farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", source: "Tally Import", verificationStatus: "Verified" })
+        ],
+        []
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.product.id), ["yellow-maize-sk-nart"]);
+      assert.equal(listings[0].title, "Yellow Maize");
+    }
+  },
+  {
+    name: "Marketplace public listings exclude exact duplicates",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({ id: "tomato-1" }),
+          marketplaceProductFixture({ id: "tomato-2" })
+        ],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.product.id), ["tomato-1"]);
+    }
+  },
+  {
+    name: "Marketplace public listings exclude inactive unpublished or invalid seller records",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({ id: "active", farmerSlug: "real-farm", ownerName: "Real Farm" }),
+          marketplaceProductFixture({ id: "draft", status: "Draft", farmerSlug: "real-farm", ownerName: "Real Farm" }),
+          marketplaceProductFixture({ id: "inactive", status: "Inactive", farmerSlug: "real-farm", ownerName: "Real Farm" }),
+          marketplaceProductFixture({ id: "inactive-supplier", ownerType: "Supplier", ownerName: "Input Supplier", farmerSlug: undefined }),
+          marketplaceProductFixture({ id: "missing-seller", farmerSlug: "missing-farm", ownerName: "Missing Farm" })
+        ],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })],
+        [supplierFixture({ slug: "input-supplier", companyName: "Input Supplier", verificationStatus: "Verified", status: "Inactive" })]
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.product.id), ["active"]);
+    }
+  },
+  {
+    name: "Marketplace unverified sellers do not receive a verified badge",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [marketplaceProductFixture({ verified: true })],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Founding Farmer", verificationStatus: "Pending Verification" })],
+        []
+      );
+
+      assert.equal(listings.length, 1);
+      assert.equal(listings[0].isSellerVerified, false);
+    }
+  },
+  {
+    name: "Marketplace featured section hides without genuine featured listings",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [marketplaceProductFixture({ featured: false })],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      );
+
+      assert.deepEqual(featuredMarketplaceListings(listings), []);
+    }
+  },
+  {
+    name: "Marketplace formatting separates quantity availability and supply frequency",
+    run: () => {
+      assert.equal(normalizeMarketplaceQuantity(marketplaceProductFixture({ quantity: "50", unit: "Kg" })), "50 kg");
+      assert.equal(normalizeMarketplaceQuantity(marketplaceProductFixture({ quantity: "50", unit: "Kilo" })), "50 kg");
+      assert.equal(marketplaceAvailability("Monthly"), "Ask availability");
+      assert.equal(marketplaceSupplyFrequency("Monthly"), "Monthly");
+      assert.equal(marketplaceAvailability(""), "Ask availability");
+    }
+  },
+  {
+    name: "Marketplace structured package totals calculate and format separately",
+    run: () => {
+      const product = marketplaceProductFixture({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        priceAmount: "700",
+        priceCurrency: "GHS",
+        unitsAvailable: "20",
+        totalQuantityValue: "1000",
+        totalQuantityMeasure: "kg",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "sack"
+      });
+
+      assert.equal(calculatedMarketplaceTotal(product), "1,000 kg");
+      assert.equal(marketplacePriceLine(product), "GH₵700 per 50 kg sack");
+      assert.equal(marketplaceQuantityLine(product), "20 sacks available · 1,000 kg total");
+      assert.equal(pluralizeMarketplaceUnit("crate", 1), "crate");
+      assert.equal(pluralizeMarketplaceUnit("crate", 40), "crates");
+      assert.equal(marketplaceTradeLines(product).find((line) => line.label === "Minimum order")?.value, "2 sacks");
+    }
+  },
+  {
+    name: "Marketplace approximate crate totals stay local and clearly marked",
+    run: () => {
+      const product = marketplaceProductFixture({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "crate",
+        unitSizeValue: "25",
+        unitSizeMeasure: "kg",
+        unitSizeApproximate: true,
+        priceAmount: "250",
+        priceCurrency: "GHS",
+        unitsAvailable: "40",
+        totalQuantityValue: "1000",
+        totalQuantityMeasure: "kg",
+        minimumOrderValue: "4",
+        minimumOrderUnit: "crate"
+      });
+
+      assert.equal(calculatedMarketplaceTotal(product), "1,000 kg");
+      assert.equal(marketplacePriceLine(product), "GH₵250 per 25 kg crate");
+      assert.equal(marketplaceQuantityLine(product), "40 crates available \u00b7 approx. 1,000 kg total");
+    }
+  },
+  {
+    name: "Marketplace direct weight listing uses confirmed stock without package math",
+    run: () => {
+      const product = marketplaceProductFixture({
+        sellingMethod: "weight",
+        sellingUnit: "kg",
+        totalQuantityValue: "1000",
+        totalQuantityMeasure: "kg",
+        priceAmount: "14",
+        priceCurrency: "GHS",
+        priceBasis: "kg",
+        unitsAvailable: undefined,
+        unitSizeValue: undefined
+      });
+
+      assert.equal(calculatedMarketplaceTotal(product), "");
+      assert.equal(marketplacePriceLine(product), "GH₵14 per kg");
+      assert.equal(marketplaceQuantityLine(product), "1,000 kg available");
+    }
+  },
+  {
+    name: "Marketplace count and livestock listings do not invent weight totals",
+    run: () => {
+      const countProduct = marketplaceProductFixture({
+        sellingMethod: "count",
+        sellingUnit: "bunch",
+        priceAmount: "30",
+        priceCurrency: "GHS",
+        unitsAvailable: "80",
+        unitSizeValue: "10",
+        unitSizeMeasure: "kg"
+      });
+      const livestockProduct = marketplaceProductFixture({
+        sellingMethod: "livestock",
+        sellingUnit: "goat",
+        priceAmount: "900",
+        priceCurrency: "GHS",
+        unitsAvailable: "12",
+        unitSizeValue: "20",
+        unitSizeMeasure: "kg"
+      });
+
+      assert.equal(calculatedMarketplaceTotal(countProduct), "");
+      assert.equal(marketplacePriceLine(countProduct), "GH₵30 per bunch");
+      assert.equal(marketplaceQuantityLine(countProduct), "80 bunches available");
+      assert.equal(calculatedMarketplaceTotal(livestockProduct), "");
+      assert.equal(marketplacePriceLine(livestockProduct), "GH₵900 per goat");
+      assert.equal(marketplaceQuantityLine(livestockProduct), "12 goats available");
+    }
+  },
+  {
+    name: "Marketplace volume listings calculate only with confirmed volume size",
+    run: () => {
+      const product = marketplaceProductFixture({
+        sellingMethod: "volume",
+        sellingUnit: "container",
+        unitSizeValue: "20",
+        unitSizeMeasure: "litres",
+        priceAmount: "150",
+        priceCurrency: "GHS",
+        priceBasis: "litres",
+        unitsAvailable: "10",
+        totalQuantityValue: "200",
+        totalQuantityMeasure: "litres",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "container"
+      });
+
+      assert.equal(calculatedMarketplaceTotal(product), "200 litres");
+      assert.equal(marketplacePriceLine(product), "GH₵150 per litres");
+      assert.equal(marketplaceQuantityLine(product), "10 containers available \u00b7 200 litres total");
+    }
+  },
+  {
+    name: "Marketplace canonical trade fields ignore stale client total",
+    run: () => {
+      const fields = canonicalMarketplaceTradeFields({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "20",
+        totalQuantityValue: "999999",
+        totalQuantityMeasure: "tonnes"
+      });
+
+      assert.equal(fields.total_quantity_value, 1000);
+      assert.equal(fields.total_quantity_measure, "kg");
+      assert.equal(fields.price_basis, "sack");
+    }
+  },
+  {
+    name: "Marketplace canonical direct weight keeps entered total",
+    run: () => {
+      const fields = canonicalMarketplaceTradeFields({
+        sellingMethod: "weight",
+        sellingUnit: "kg",
+        totalQuantityValue: "1000.5",
+        totalQuantityMeasure: "kg"
+      });
+
+      assert.equal(fields.total_quantity_value, 1000.5);
+      assert.equal(fields.total_quantity_measure, "kg");
+      assert.equal(fields.price_basis, "kg");
+    }
+  },
+  {
+    name: "Marketplace incomplete listings do not invent quantities or prices",
+    run: () => {
+      const yellowMaize = marketplaceProductFixture({
+        name: "Yellow Maize",
+        quantity: "",
+        unit: "",
+        priceAmount: undefined,
+        priceRange: undefined,
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: undefined,
+        unitsAvailable: undefined,
+        totalQuantityValue: undefined
+      });
+
+      assert.equal(marketplacePriceLine(yellowMaize), "Ask for price");
+      assert.equal(marketplaceQuantityLine(yellowMaize), "Ask for quantity");
+      assert.equal(marketplaceTradeLines(yellowMaize).find((line) => line.label === "Total available")?.value, "Ask for details");
+    }
+  },
+  {
+    name: "Marketplace keeps Yellow Maize eligible without invented trade data",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "yellow-maize-sk-nart",
+            name: "Yellow Maize",
+            quantity: "",
+            unit: "",
+            priceAmount: undefined,
+            priceRange: undefined,
+            sellingMethod: undefined,
+            sellingUnit: undefined,
+            unitsAvailable: undefined,
+            totalQuantityValue: undefined,
+            farmerSlug: "s-k-nart-farms",
+            ownerName: "S. K. Nart Farms",
+            seller: "S. K. Nart Farms"
+          })
+        ],
+        [farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      );
+
+      assert.equal(listings.length, 1);
+      assert.equal(listings[0].title, "Yellow Maize");
+      assert.equal(listings[0].priceLine, "Ask for price");
+      assert.equal(listings[0].quantity, "Ask for quantity");
+    }
+  },
+  {
+    name: "Marketplace trade validation rejects invalid values but keeps price optional",
+    run: () => {
+      assert.deepEqual(validateMarketplaceTradeInput({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "20",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "sack"
+      }), []);
+
+      assert.equal(validateMarketplaceTradeInput({ priceAmount: "-1" }).includes("Price cannot be negative."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "count", sellingUnit: "tray", unitsAvailable: "0" }).includes("Units available must be greater than zero."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "packaged_unit", sellingUnit: "sack", unitsAvailable: "5", minimumOrderValue: "6", minimumOrderUnit: "sack" }).includes("Minimum order cannot be greater than available units."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "packaged_unit", sellingUnit: "sack", unitsAvailable: "5", minimumOrderValue: "2", minimumOrderUnit: "kg" }).includes("Minimum order unit must match the available stock unit."), true);
+      assert.equal(validateMarketplaceTradeInput({ priceAmount: "12abc" }).includes("Price must be a valid number."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "weight", priceBasis: "crate" }).includes("Weight listings need a kg or tonnes price basis."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "packaged_unit" }).includes("Packaged listings need a unit or container type."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "other" as never }).includes("Selling method is not supported."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingUnit: "other" }).includes("Custom units need a clear label."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingUnit: "other", customUnitLabel: "paint bucket" }).includes(reviewedCustomUnitMessage), true);
+    }
+  },
+  {
+    name: "Marketplace method validation separates whole counts from decimal measures",
+    run: () => {
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50.5",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "20.5",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "sack"
+      }).includes("Units available must be a whole number for this selling method."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50.5",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "20",
+        minimumOrderValue: "2.5",
+        minimumOrderUnit: "sack"
+      }).includes("Minimum order must be a whole number for this selling method."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "count",
+        sellingUnit: "piece",
+        unitsAvailable: "3.5",
+        minimumOrderValue: "1"
+      }).includes("Units available must be a whole number for this selling method."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "livestock",
+        sellingUnit: "goat",
+        unitsAvailable: "2",
+        minimumOrderValue: "1.5"
+      }).includes("Minimum order must be a whole number for this selling method."), true);
+      assert.deepEqual(validateMarketplaceTradeInput({
+        sellingMethod: "weight",
+        sellingUnit: "kg",
+        totalQuantityValue: "1000.75",
+        totalQuantityMeasure: "kg",
+        minimumOrderValue: "25.5",
+        minimumOrderUnit: "kg"
+      }), []);
+    }
+  },
+  {
+    name: "Marketplace validation blocks inconsistent method and measure combinations",
+    run: () => {
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "kg",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "20",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "kg"
+      }).includes("Packaged listings need a recognised package unit."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "weight",
+        sellingUnit: "crate",
+        totalQuantityValue: "100",
+        totalQuantityMeasure: "kg"
+      }).includes("Direct weight listings need kg or tonnes as the selling unit."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "volume",
+        sellingUnit: "container",
+        unitSizeValue: "20",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "10"
+      }).includes("Volume listings need litres or gallons as the unit size measure."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "livestock",
+        sellingUnit: "crate",
+        unitsAvailable: "5",
+        minimumOrderValue: "1"
+      }).includes("Livestock listings need an animal type, not a package unit."), true);
+      assert.equal(validateMarketplaceTradeInput({
+        sellingMethod: "volume",
+        sellingUnit: "container",
+        unitSizeValue: "20.5",
+        unitSizeMeasure: "litres",
+        unitsAvailable: "10.25",
+        minimumOrderValue: "1"
+      }).includes("Units available must be a whole number for this selling method."), true);
+    }
+  },
+  {
+    name: "Marketplace price basis and currency are normalised server-side",
+    run: () => {
+      const packageFields = canonicalMarketplaceTradeFields({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        priceAmount: "700",
+        priceCurrency: "ghs",
+        priceBasis: "litres",
+        unitsAvailable: "20",
+        totalQuantityValue: "1",
+        minimumOrderValue: "2",
+        minimumOrderUnit: "sack"
+      });
+      const weightFields = canonicalMarketplaceTradeFields({
+        sellingMethod: "weight",
+        sellingUnit: "kg",
+        totalQuantityValue: "1000",
+        totalQuantityMeasure: "kg",
+        priceBasis: "crate"
+      });
+
+      assert.equal(packageFields.price_currency, "GHS");
+      assert.equal(packageFields.price_basis, "sack");
+      assert.equal(packageFields.total_quantity_value, 1000);
+      assert.equal(weightFields.price_basis, "kg");
+      assert.equal(formatMarketplaceCurrency("700", "GHS"), "GH₵700");
+    }
+  },
+  {
+    name: "Marketplace availability and supply frequency stay separate",
+    run: () => {
+      const listing = publicMarketplaceListings(
+        [marketplaceProductFixture({ available: "Available Now", supplyFrequency: "One-time" })],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      )[0];
+
+      assert.equal(marketplaceAvailability("Available Now"), "Available now");
+      assert.equal(marketplaceAvailability("Harvesting Soon"), "Seasonal");
+      assert.equal(marketplaceAvailability("Sold Out"), "Unavailable");
+      assert.equal(marketplaceSupplyFrequency("One-time"), "One-time");
+      assert.equal(listing.availability, "Available now");
+      assert.equal(listing.supplyFrequency, "One-time");
+    }
+  },
+  {
+    name: "Marketplace custom units require review before publication",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "custom-unit-pending",
+            sellingUnit: "other",
+            customUnitLabel: "paint bucket",
+            customUnitReviewed: false,
+            verificationStatus: "Verified"
+          }),
+          marketplaceProductFixture({
+            id: "custom-unit-reviewed",
+            sellingUnit: "other",
+            customUnitLabel: "paint bucket",
+            customUnitReviewed: true,
+            verificationStatus: "Verified"
+          })
+        ],
+        [farmerFixture({ slug: "real-farm", farmName: "Real Farm", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.product.id), ["custom-unit-reviewed"]);
+    }
+  },
+  {
+    name: "Marketplace pagination runs after filtering and uses result range",
+    run: () => {
+      const items = Array.from({ length: 25 }, (_, index) => index + 1);
+      const firstPage = paginateMarketplaceListings(items, 1);
+      const thirdPage = paginateMarketplaceListings(items, 3);
+
+      assert.equal(firstPage.pageItems.length, 12);
+      assert.equal(thirdPage.pageItems.length, 1);
+      assert.equal(marketplaceResultRange(1, 25), "Showing 1–12 of 25 listings");
+      assert.equal(marketplaceResultRange(3, 25), "Showing 25–25 of 25 listings");
     }
   },
   {
