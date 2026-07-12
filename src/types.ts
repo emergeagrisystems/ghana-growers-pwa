@@ -11,6 +11,8 @@ export type ProductCategory = {
   image: string;
 };
 
+export type MarketplaceNumericValue = string | number;
+
 export type Product = {
   id: string;
   name: string;
@@ -22,11 +24,33 @@ export type Product = {
   quantity: string;
   unit: string;
   priceRange?: string;
+  sellingMethod?: "packaged_unit" | "weight" | "count" | "livestock" | "volume";
+  sellingUnit?: string;
+  customUnitLabel?: string;
+  customUnitReviewed?: boolean;
+  unitSizeValue?: MarketplaceNumericValue;
+  unitSizeMeasure?: string;
+  unitSizeApproximate?: boolean;
+  priceAmount?: MarketplaceNumericValue;
+  priceCurrency?: string;
+  priceBasis?: string;
+  unitsAvailable?: MarketplaceNumericValue;
+  totalQuantityValue?: MarketplaceNumericValue;
+  totalQuantityMeasure?: string;
+  minimumOrderValue?: MarketplaceNumericValue;
+  minimumOrderUnit?: string;
+  supplyFrequency?: string;
+  availableFromDate?: string;
+  gradeDescription?: string;
+  deliveryDetails?: string;
+  recordSource?: string;
   image: string;
   images?: string[];
   available: string;
   datePosted: string;
   verified?: boolean;
+  verificationStatus?: string;
+  status?: string;
   featured?: boolean;
   featuredUntil?: string;
   featuredNote?: string;
@@ -166,6 +190,7 @@ export type SupplierProfile = {
   verifiedBy?: string;
   verificationNotes?: string;
   ggStandardStatus?: GGStandardStatus | string;
+  status?: string;
   isFeatured?: boolean;
   featuredUntil?: string;
   featuredNote?: string;
