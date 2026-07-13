@@ -102,17 +102,17 @@ export function weatherGuidedRecommendationCards(flowId: string | undefined, ans
 
   if (rainExpected) {
     return [
-      { title: "What I think", body: ["Do not spray now. Rain can wash spray off the leaves and waste the product."] },
+      { title: "What I think", body: ["Do not spray now."] },
       { title: "What to do now", body: ["Wait until after the rain and spray only when leaves are dry and wind is calm."] },
-      { title: "Next step", body: ["Check the crop again after the rain before spraying."] }
+      { title: "Next step", body: ["Check the crop after the rain before spraying."] }
     ];
   }
 
   if (rainUnsure || windUnsure || leavesUnsure) {
     return [
-      { title: "What I think", body: ["Do not spray until you confirm rain, wind and leaf conditions."] },
-      { title: "What to do now", body: ["Check whether rain is expected, whether wind is calm, and whether leaves are dry."] },
-      { title: "Next step", body: ["Confirm the weather window before spraying."] }
+      { title: "What I think", body: ["Don't spray yet."] },
+      { title: "What to do now", body: ["First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm."] },
+      { title: "Next step", body: ["Confirm the rain window before spraying."] }
     ];
   }
 
@@ -134,8 +134,8 @@ export function weatherGuidedRecommendationCards(flowId: string | undefined, ans
 
   if (noRain && calmWind && dryLeaves) {
     return [
-      { title: "What I think", body: ["Spraying may be suitable because rain is not expected soon, wind is calm, and leaves are dry."] },
-      { title: "What to do now", body: ["Follow product label instructions and avoid spraying during hot midday sun."] },
+      { title: "What I think", body: ["Spraying may be suitable."] },
+      { title: "What to do now", body: ["Follow the product label and avoid spraying during hot midday sun."] },
       { title: "Next step", body: ["Spray only if the product label and field conditions are suitable."] }
     ];
   }

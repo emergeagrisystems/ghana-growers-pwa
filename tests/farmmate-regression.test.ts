@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
-import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai";
+import { buildFarmMateVoiceLayerInput, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
@@ -118,6 +118,18 @@ const emptyState: ConversationState = {
 
 function responseText(response: FarmMateBrainResponse) {
   return response.sections.flatMap((section) => [section.title, ...section.body]).join("\n");
+}
+
+function weatherAiInput(answer: string) {
+  const brain = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+  const farmerAnswers = [{ question: "Is rain expected in the next 4 to 6 hours?", answer }];
+
+  return {
+    farmerQuestion: "Can I spray today?",
+    brain,
+    farmerAnswers,
+    localStructuredResponse: weatherGuidedRecommendationCards(brain.flow?.id, farmerAnswers) ?? []
+  };
 }
 
 function farmerFixture(overrides: Partial<FarmerProfile> = {}): FarmerProfile {
@@ -1826,11 +1838,13 @@ const tests: TestCase[] = [
       const answers = [{ question: "Is rain expected in the next 4 to 6 hours?", answer: "Rain is expected soon" }];
       const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
       const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+      const body = cards?.flatMap((card) => card.body).join(" ").toLowerCase() ?? "";
 
       assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
       assert.equal(text.includes("do not spray now"), true);
       assert.equal(text.includes("wait until after the rain"), true);
       assert.equal(text.includes("leaves are dry and wind is calm"), true);
+      assert.equal(body.includes("do not spray now. wait until after the rain and spray only when leaves are dry and wind is calm."), true);
     }
   },
   {
@@ -1843,11 +1857,13 @@ const tests: TestCase[] = [
       ];
       const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
       const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+      const body = cards?.flatMap((card) => card.body).join(" ").toLowerCase() ?? "";
 
       assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
       assert.equal(text.includes("spraying may be suitable"), true);
-      assert.equal(text.includes("follow product label instructions"), true);
+      assert.equal(text.includes("follow the product label"), true);
       assert.equal(text.includes("avoid spraying during hot midday sun"), true);
+      assert.equal(body.includes("spraying may be suitable. follow the product label and avoid spraying during hot midday sun."), true);
     }
   },
   {
@@ -1858,8 +1874,52 @@ const tests: TestCase[] = [
       const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
 
       assert.equal(shouldCompleteWeatherGuidedFlow("can-i-spray-today", answers), true);
-      assert.equal(text.includes("do not spray until you confirm rain"), true);
-      assert.equal(text.includes("wind"), true);
+      assert.equal(text.includes("don't spray yet"), true);
+      assert.equal(text.includes("first confirm whether rain is expected in the next 4 to 6 hours"), true);
+      assert.equal(text.includes("spray only when leaves are dry and wind is calm"), true);
+    }
+  },
+  {
+    name: "unsure rain answer returns complete delay recommendation",
+    run: () => {
+      const answers = [{ question: "Is rain expected in the next 4 to 6 hours?", answer: "I am not sure" }];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers);
+      const body = cards?.flatMap((card) => card.body).join(" ") ?? "";
+
+      assert.equal(body.includes("Don't spray yet."), true);
+      assert.equal(body.includes("First confirm whether rain is expected in the next 4 to 6 hours."), true);
+      assert.equal(body.includes("Spray only when leaves are dry and wind is calm."), true);
+      assert.equal(/[.!?]$/.test(body.trim()), true);
+    }
+  },
+  {
+    name: "final weather response never ends with and the",
+    run: () => {
+      const input = weatherAiInput("I am not sure");
+      const truncated = "Since you're not sure about rain, don't spray yet. Spray only if no rain is expected for 4-6 hours, the wind is calm, and the";
+
+      assert.equal(isLikelyIncompleteFarmMateAnswer(truncated, input), true);
+      assert.equal(isLikelyIncompleteFarmMateAnswer("Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.", input), false);
+    }
+  },
+  {
+    name: "rain expected weather answer is complete",
+    run: () => {
+      const input = weatherAiInput("Rain is expected soon");
+      const answer = "Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.";
+
+      assert.equal(isLikelyIncompleteFarmMateAnswer(answer, input), false);
+      assert.equal(answer.endsWith("."), true);
+    }
+  },
+  {
+    name: "safe spraying weather answer is complete",
+    run: () => {
+      const input = weatherAiInput("No rain expected soon");
+      const answer = "Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.";
+
+      assert.equal(isLikelyIncompleteFarmMateAnswer(answer, input), false);
+      assert.equal(answer.endsWith("."), true);
     }
   },
   {

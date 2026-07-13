@@ -30,6 +30,28 @@ function extractOutputText(data: OpenAIResponsesApiResult) {
     .trim();
 }
 
+const danglingWeatherEndingPattern = /\b(?:and|or|the|a|an|to|for|with|when|if|that|because|while|before|after|whether)$/i;
+
+export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMateAiInput) {
+  const trimmed = answer.trim();
+
+  if (!trimmed) {
+    return true;
+  }
+
+  const isWeatherDecision =
+    input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions";
+
+  if (!isWeatherDecision) {
+    return false;
+  }
+
+  const withoutTrailingMarkdown = trimmed.replace(/[\s>*_`#-]+$/g, "").trim();
+  const lastLine = withoutTrailingMarkdown.split(/\n+/).pop()?.trim() ?? withoutTrailingMarkdown;
+
+  return danglingWeatherEndingPattern.test(lastLine) || !/[.!?]$/.test(withoutTrailingMarkdown);
+}
+
 export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   const crop = input.brain.resolvedCrop ?? input.brain.intent.cropName ?? null;
   const fertilizerContext =
@@ -101,6 +123,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "Use the farmer's answers when explaining the recommendation.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
       "For weather decisions, do not invent live weather or forecast details.",
+      "For weather decisions, use complete sentences. Never end mid-phrase.",
+      "For unsure rain answers, say: \"Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.\"",
+      "For rain expected answers, say: \"Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.\"",
+      "For clear spray conditions, say: \"Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.\"",
       "For planting decisions, do not invent exact local weather, seed availability, market prices, or guaranteed profit.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
@@ -150,6 +176,10 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
 
     if (!answer) {
       return { ok: false, reason: "empty_response", fallback: true };
+    }
+
+    if (isLikelyIncompleteFarmMateAnswer(answer, input)) {
+      return { ok: false, reason: "incomplete_response", fallback: true };
     }
 
     return { ok: true, answer };

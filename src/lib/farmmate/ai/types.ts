@@ -25,7 +25,8 @@ export type FarmMateAiSuccess = {
 export type FarmMateAiFailureReason =
   | "missing_api_key"
   | "openai_request_error"
-  | "empty_response";
+  | "empty_response"
+  | "incomplete_response";
 
 export type FarmMateAiFailure = {
   ok: false;
