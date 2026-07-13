@@ -14,7 +14,7 @@ type HomepageMarketplaceCategory = {
 const marketplaceCategories: HomepageMarketplaceCategory[] = [
   {
     title: "Fresh Produce",
-    summary: "Fruits, vegetables, cereals, and root crops.",
+    summary: "Fruits, vegetables, grains, legumes, nuts, and root crops.",
     href: "/marketplace?category=fresh-produce",
     image: "/images/marketplace/ghana-market-1.jpg",
     action: "Browse"
@@ -27,13 +27,6 @@ const marketplaceCategories: HomepageMarketplaceCategory[] = [
     action: "Browse"
   },
   {
-    title: "Farm Services",
-    summary: "Mechanization, advisory, and labour support.",
-    href: "/marketplace?category=farm-services",
-    image: "/images/marketplace/farm-activity-2.jpg",
-    action: "Explore"
-  },
-  {
     title: "Livestock",
     summary: "Poultry, goats, cattle, and fish.",
     href: "/marketplace?category=livestock",
@@ -41,18 +34,11 @@ const marketplaceCategories: HomepageMarketplaceCategory[] = [
     action: "Explore"
   },
   {
-    title: "Logistics & Transport",
-    summary: "Aggregation, transport, and delivery support.",
-    href: "/marketplace?category=logistics",
-    image: "/images/marketplace/logistics-truck.jpg",
-    action: "Find support"
-  },
-  {
-    title: "Packaging & Storage",
-    summary: "Packaging, storage, and warehouse support.",
-    href: "/marketplace?category=packaging-storage",
-    image: "/images/marketplace/produce-packaging.jpg",
-    action: "Find support"
+    title: "Tools & Equipment",
+    summary: "Tools, equipment, and practical field support.",
+    href: "/marketplace?category=tools-equipment",
+    image: "/images/marketplace/farm-activity-2.jpg",
+    action: "Browse"
   }
 ];
 

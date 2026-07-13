@@ -5,6 +5,11 @@ export type MarketplaceTradeLine = {
   value: string;
 };
 
+export type MarketplaceTradeInformation = {
+  lines: MarketplaceTradeLine[];
+  missingNote?: string;
+};
+
 export type MarketplaceNumericInput = string | number | null | undefined;
 
 export type MarketplaceTradeValidationInput = Partial<Pick<
@@ -306,29 +311,98 @@ export function marketplaceQuantityLine(product: Product) {
   return legacy || "Ask for quantity";
 }
 
+export function marketplaceQuantityLabel(product: Product) {
+  if ((product.sellingMethod === "packaged_unit" || product.sellingMethod === "volume") && product.unitsAvailable && effectiveMarketplaceUnit(product)) {
+    return "Quantity available";
+  }
+
+  if (product.sellingMethod === "weight" && product.totalQuantityValue && product.totalQuantityMeasure) {
+    return "Quantity available";
+  }
+
+  if ((product.sellingMethod === "count" || product.sellingMethod === "livestock") && product.unitsAvailable) {
+    return "Quantity available";
+  }
+
+  if (formatMarketplaceMeasure(product.quantity, product.unit)) {
+    return "Listed quantity";
+  }
+
+  return "Quantity available";
+}
+
 export function marketplaceTradeLines(product: Product): MarketplaceTradeLine[] {
   const unitSize = formatMarketplaceMeasure(product.unitSizeValue, product.unitSizeMeasure);
   const total = storedMarketplaceTotal(product);
-  const packageUnit = effectiveMarketplaceUnit(product);
+  const hasStructuredPackageUnit = Boolean(product.sellingMethod && product.sellingUnit);
+  const packageUnit = hasStructuredPackageUnit ? effectiveMarketplaceUnit(product) : "";
   const minimumOrderUnit = product.minimumOrderUnit || packageUnit || product.totalQuantityMeasure;
   const minimumOrder = measureAliases[minimumOrderUnit?.trim().toLowerCase() ?? ""]
     ? formatMarketplaceMeasure(product.minimumOrderValue, minimumOrderUnit)
     : formatMarketplaceCount(product.minimumOrderValue, minimumOrderUnit);
-
-  return [
-    { label: "Price", value: marketplacePriceLine(product) },
-    { label: "Selling method", value: product.sellingMethod ? product.sellingMethod.replace(/_/g, " ") : "Confirmed during request" },
-    { label: "Package / unit", value: packageUnit || "Confirmed during request" },
-    { label: "Unit size", value: unitSize || "Ask for details" },
-    { label: "Units available", value: product.unitsAvailable ? marketplaceQuantityLine({ ...product, totalQuantityValue: undefined, totalQuantityMeasure: undefined }) : "Confirmed during request" },
-    { label: "Total available", value: total || "Ask for details" },
-    { label: "Minimum order", value: minimumOrder || "Confirmed during request" },
-    { label: "Availability", value: product.available || "Confirmed during request" },
-    { label: "Supply frequency", value: product.supplyFrequency || "Confirmed during request" },
-    { label: "Available from", value: product.availableFromDate || "Confirmed during request" },
-    { label: "Grade / quality", value: product.gradeDescription || "Confirmed during request" },
-    { label: "Pickup or delivery", value: product.deliveryDetails || "Confirmed during request" }
+  const lines: MarketplaceTradeLine[] = [
+    { label: "Package / unit", value: packageUnit || "Ask for unit details" }
   ];
+
+  if (product.sellingMethod) {
+    lines.unshift({ label: "Selling method", value: product.sellingMethod.replace(/_/g, " ") });
+  }
+
+  if (unitSize) {
+    lines.push({ label: "Unit size", value: unitSize });
+  }
+
+  if (product.unitsAvailable) {
+    lines.push({ label: "Units available", value: marketplaceQuantityLine({ ...product, totalQuantityValue: undefined, totalQuantityMeasure: undefined }) });
+  }
+
+  if (total) {
+    lines.push({ label: "Total available", value: total });
+  }
+
+  if (minimumOrder) {
+    lines.push({ label: "Minimum order", value: minimumOrder });
+  }
+
+  if (product.supplyFrequency) {
+    lines.push({ label: "Supply frequency", value: product.supplyFrequency });
+  }
+
+  if (product.availableFromDate) {
+    lines.push({ label: "Available from", value: product.availableFromDate });
+  }
+
+  if (product.gradeDescription) {
+    lines.push({ label: "Grade / quality", value: product.gradeDescription });
+  }
+
+  if (product.deliveryDetails) {
+    lines.push({ label: "Pickup or delivery", value: product.deliveryDetails });
+  }
+
+  return lines;
+}
+
+export function marketplaceTradeInformation(product: Product): MarketplaceTradeInformation {
+  const lines = marketplaceTradeLines(product);
+  const optionalFields = [
+    product.sellingMethod,
+    product.sellingUnit,
+    product.unitSizeValue,
+    product.unitsAvailable,
+    product.totalQuantityValue,
+    product.minimumOrderValue,
+    product.supplyFrequency,
+    product.availableFromDate,
+    product.gradeDescription,
+    product.deliveryDetails
+  ];
+  const missingCount = optionalFields.filter((field) => field === undefined || field === null || field === "").length;
+
+  return {
+    lines,
+    missingNote: missingCount >= 4 ? "Additional trade details will be confirmed during your request." : undefined
+  };
 }
 
 export function usesCustomMarketplaceUnit(product: Pick<Product, "sellingUnit">) {

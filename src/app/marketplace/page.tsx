@@ -17,7 +17,7 @@ export const metadata = createPageMetadata({
 const primaryCategories = [
   {
     title: "Fresh Produce",
-    description: "Browse crops, vegetables, fruits, grains, and tubers.",
+    description: "Browse vegetables, fruits, grains, legumes, nuts, and tubers.",
     href: "/marketplace?category=fresh-produce",
     icon: Carrot
   },
@@ -116,7 +116,9 @@ export default async function MarketplacePage() {
                 Tell us the product, quantity, location, and required date. Ghana Growers will review your request and look for suitable farmers, suppliers, or listings.
               </p>
             </div>
-            <ButtonLink href="/submit-buyer-request">Request Sourcing Support</ButtonLink>
+            <Link href="/submit-buyer-request" className="gg-button-primary w-full justify-center text-center sm:w-auto sm:shrink-0">
+              Request Sourcing Support
+            </Link>
           </div>
         </div>
       </section>

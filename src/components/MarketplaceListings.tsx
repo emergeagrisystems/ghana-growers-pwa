@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BadgeCheck, ChevronDown, Filter, MapPin, PackageCheck, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
+import { marketplaceListingImages } from "@/lib/marketplace/images";
 import {
   MARKETPLACE_LISTINGS_PER_PAGE,
   marketplaceResultRange,
@@ -12,6 +13,7 @@ import {
   publicMarketplaceListings,
   type MarketplaceDisplayListing
 } from "@/lib/marketplace/publicListings";
+import { normalizeMarketplaceCategoryFilter } from "@/lib/marketplace/taxonomy";
 import type { FarmerProfile, Product, SupplierProfile } from "@/types";
 
 type MarketplaceListingsProps = {
@@ -44,15 +46,14 @@ const availabilityOptions = [
 ];
 
 const categoryGroupTerms: Record<string, string[]> = {
-  "fresh-produce": ["vegetable", "fruit", "tuber", "cereal", "crop", "produce", "tomato", "onion", "maize", "cassava", "yam", "plantain", "rice"],
+  "fresh-produce": ["vegetable", "fruit", "tuber", "root", "grain", "cereal", "legume", "herb", "spice", "nut", "crop", "produce", "tomato", "onion", "maize", "cassava", "yam", "plantain", "rice", "sorghum", "millet", "wheat", "beans", "cowpea", "soybean", "groundnut", "cashew", "kola"],
   "farm-inputs": ["input", "seed", "fertilizer", "agro", "chemical", "feed"],
   livestock: ["livestock", "poultry", "egg", "goat", "sheep", "cattle", "fish", "animal", "broiler"],
   "tools-equipment": ["tool", "equipment", "tractor", "machinery", "mechanization", "irrigation"]
 };
 
 function listingImages(listing: MarketplaceDisplayListing) {
-  const images = listing.product.images?.length ? listing.product.images : [listing.product.image];
-  return Array.from(new Set(images.filter(Boolean)));
+  return marketplaceListingImages(listing.product);
 }
 
 function filterLabelCount(values: string[]) {
@@ -101,9 +102,6 @@ function SearchControl({ searchTerm, setSearchTerm }: { searchTerm: string; setS
 
 function ListingCard({ listing }: { listing: MarketplaceDisplayListing }) {
   const image = listingImages(listing)[0];
-  const metaLine = listing.supplyFrequency
-    ? `${listing.availability} · ${listing.supplyFrequency}`
-    : listing.availability;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card">
@@ -116,7 +114,7 @@ function ListingCard({ listing }: { listing: MarketplaceDisplayListing }) {
             height={315}
             fallbackKind="marketplace"
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02] sm:aspect-[4/3]"
           />
           {listing.isSellerVerified ? (
             <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2.5 py-1 text-xs font-black text-leaf-700 shadow-sm">
@@ -145,13 +143,19 @@ function ListingCard({ listing }: { listing: MarketplaceDisplayListing }) {
               <span className="text-right font-black text-ink">{listing.priceLine}</span>
             </p>
             <p className="flex items-start justify-between gap-3">
-              <span className="font-semibold text-ink/48">Available</span>
+              <span className="font-semibold text-ink/48">{listing.quantityLabel}</span>
               <span className="text-right font-black text-ink">{listing.quantity}</span>
             </p>
             <p className="flex items-start justify-between gap-3">
-              <span className="font-semibold text-ink/48">Availability</span>
-              <span className="text-right font-black text-leaf-700">{metaLine}</span>
+              <span className="font-semibold text-ink/48">Status</span>
+              <span className="text-right font-black text-leaf-700">{listing.availability}</span>
             </p>
+            {listing.supplyFrequency ? (
+              <p className="flex items-start justify-between gap-3">
+                <span className="font-semibold text-ink/48">Supply frequency</span>
+                <span className="text-right font-black text-ink">{listing.supplyFrequency}</span>
+              </p>
+            ) : null}
           </div>
         </div>
         <Link href={listing.href} className="focus-ring mt-4 inline-flex w-fit items-center text-sm font-black text-leaf-700 transition group-hover:text-leaf-900">
@@ -165,7 +169,7 @@ function ListingCard({ listing }: { listing: MarketplaceDisplayListing }) {
 export function MarketplaceListings({ products, farmers = [], suppliers = [] }: MarketplaceListingsProps) {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") ?? "";
-  const initialCategory = searchParams.get("category") ?? "all";
+  const initialCategory = normalizeMarketplaceCategoryFilter(searchParams.get("category") ?? "all") || "all";
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [category, setCategory] = useState(initialCategory || "all");
   const [region, setRegion] = useState("all");
@@ -258,8 +262,6 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
                   Filters
                   {activeFilterCount > 0 ? <span className="rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-white">{activeFilterCount}</span> : null}
                 </button>
-
-                <p className="text-sm font-semibold text-ink/58">{marketplaceResultRange(page, filteredListings.length)}</p>
 
                 {activeFilterCount > 0 ? (
                   <button

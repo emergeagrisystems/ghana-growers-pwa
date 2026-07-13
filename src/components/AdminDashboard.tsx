@@ -918,7 +918,7 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
   ],
   marketplace: [
     { name: "productName", label: "Product Name", required: true },
-    { name: "category", label: "Category", required: true },
+    { name: "category", label: "Category", type: "select", required: true, options: ["Vegetables", "Fruits", "Grains", "Roots & Tubers", "Legumes", "Herbs & Spices", "Nuts", "Livestock", "Farm Inputs", "Tools & Equipment", "Packaging", "Logistics Services"] },
     { name: "region", label: "Region", required: true },
     { name: "district", label: "District", required: true },
     { name: "sellerFarmer", label: "Seller/Farmer", required: true },

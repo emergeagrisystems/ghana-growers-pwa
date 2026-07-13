@@ -37,6 +37,7 @@ import {
 } from "../src/lib/supplierDirectory";
 import {
   featuredMarketplaceListings,
+  formatMarketplaceLocation,
   marketplaceAvailability,
   marketplaceResultRange,
   marketplaceSupplyFrequency,
@@ -44,12 +45,16 @@ import {
   paginateMarketplaceListings,
   publicMarketplaceListings
 } from "../src/lib/marketplace/publicListings";
+import { marketplaceListingImages } from "../src/lib/marketplace/images";
+import { displayMarketplaceCategory, freshProduceSubcategories, normalizeMarketplaceCategoryFilter } from "../src/lib/marketplace/taxonomy";
 import {
   canonicalMarketplaceTradeFields,
   calculatedMarketplaceTotal,
   formatMarketplaceCurrency,
   marketplacePriceLine,
+  marketplaceQuantityLabel,
   marketplaceQuantityLine,
+  marketplaceTradeInformation,
   marketplaceTradeLines,
   pluralizeMarketplaceUnit,
   reviewedCustomUnitMessage,
@@ -740,6 +745,8 @@ const tests: TestCase[] = [
       assert.equal(pluralizeMarketplaceUnit("crate", 1), "crate");
       assert.equal(pluralizeMarketplaceUnit("crate", 40), "crates");
       assert.equal(marketplaceTradeLines(product).find((line) => line.label === "Minimum order")?.value, "2 sacks");
+      assert.equal(marketplaceTradeLines(product).some((line) => line.label === "Price"), false);
+      assert.equal(marketplaceTradeLines(product).some((line) => line.label === "Status"), false);
     }
   },
   {
@@ -880,8 +887,8 @@ const tests: TestCase[] = [
         unit: "",
         priceAmount: undefined,
         priceRange: undefined,
-        sellingMethod: "packaged_unit",
-        sellingUnit: "sack",
+        sellingMethod: undefined,
+        sellingUnit: undefined,
         unitSizeValue: undefined,
         unitsAvailable: undefined,
         totalQuantityValue: undefined
@@ -889,7 +896,77 @@ const tests: TestCase[] = [
 
       assert.equal(marketplacePriceLine(yellowMaize), "Ask for price");
       assert.equal(marketplaceQuantityLine(yellowMaize), "Ask for quantity");
-      assert.equal(marketplaceTradeLines(yellowMaize).find((line) => line.label === "Total available")?.value, "Ask for details");
+      assert.equal(marketplaceTradeLines(yellowMaize).find((line) => line.label === "Package / unit")?.value, "Ask for unit details");
+      assert.equal(marketplaceTradeLines(yellowMaize).some((line) => line.label === "Total available"), false);
+      assert.equal(marketplaceTradeInformation(yellowMaize).missingNote, "Additional trade details will be confirmed during your request.");
+    }
+  },
+  {
+    name: "Marketplace location formatter deduplicates identical town and region values",
+    run: () => {
+      assert.equal(formatMarketplaceLocation("Klo-Agogo", "Klo-Agogo"), "Klo-Agogo");
+      assert.equal(formatMarketplaceLocation("Klo-Agogo", "Eastern Region"), "Klo-Agogo, Eastern Region");
+      assert.equal(formatMarketplaceLocation("KLO-AGOGO", ""), "Klo-Agogo");
+    }
+  },
+  {
+    name: "Marketplace legacy quantity uses neutral listed quantity label",
+    run: () => {
+      const legacyYellowMaize = marketplaceProductFixture({
+        name: "Yellow Maize",
+        quantity: "50",
+        unit: "kg",
+        sellingMethod: undefined,
+        sellingUnit: undefined,
+        unitsAvailable: undefined,
+        totalQuantityValue: undefined,
+        totalQuantityMeasure: undefined
+      });
+
+      assert.equal(marketplaceQuantityLine(legacyYellowMaize), "50 kg");
+      assert.equal(marketplaceQuantityLabel(legacyYellowMaize), "Listed quantity");
+    }
+  },
+  {
+    name: "Marketplace gallery images render only clean public listing images",
+    run: () => {
+      const images = marketplaceListingImages(marketplaceProductFixture({
+        image: "/images/marketplace/fallback.jpg",
+        images: [
+          "/images/marketplace/maize-1.jpg",
+          "",
+          "/images/marketplace/maize-1.jpg",
+          "/images/marketplace/maize-pending-review.jpg",
+          "/images/marketplace/maize-2.jpg"
+        ]
+      }));
+
+      assert.deepEqual(images, ["/images/marketplace/maize-1.jpg", "/images/marketplace/maize-2.jpg"]);
+      assert.equal(images.length > 1, true);
+    }
+  },
+  {
+    name: "Marketplace detail gallery and request action stay focused",
+    run: () => {
+      const gallery = repoFile("src/components/MarketplaceImageGallery.tsx");
+      const detailPage = repoFile("src/app/marketplace/[id]/page.tsx");
+
+      assert.equal(gallery.includes("images.length > 1"), true);
+      assert.equal(gallery.includes("setActiveImage(image)"), true);
+      assert.equal(gallery.includes("aria-pressed={isActive}"), true);
+      assert.equal((detailPage.match(/<RequestConnectionButton/g) ?? []).length, 1);
+      assert.equal(detailPage.includes("<MarketplaceImageGallery"), true);
+    }
+  },
+  {
+    name: "Marketplace taxonomy displays Grains and keeps legacy Cereals filters compatible",
+    run: () => {
+      assert.equal(displayMarketplaceCategory({ name: "Yellow Maize", category: "Mixed" }), "Grains");
+      assert.equal(displayMarketplaceCategory({ name: "Local Rice", category: "Cereals" }), "Grains");
+      assert.equal(displayMarketplaceCategory({ name: "Groundnuts", category: "Nuts" }), "Legumes");
+      assert.equal(normalizeMarketplaceCategoryFilter("cereals"), "fresh-produce");
+      assert.equal(normalizeMarketplaceCategoryFilter("grains"), "fresh-produce");
+      assert.deepEqual([...freshProduceSubcategories], ["Vegetables", "Fruits", "Grains", "Roots & Tubers", "Legumes", "Herbs & Spices", "Nuts"]);
     }
   },
   {
@@ -900,6 +977,7 @@ const tests: TestCase[] = [
           marketplaceProductFixture({
             id: "yellow-maize-sk-nart",
             name: "Yellow Maize",
+            category: "Mixed",
             quantity: "",
             unit: "",
             priceAmount: undefined,
@@ -919,6 +997,7 @@ const tests: TestCase[] = [
 
       assert.equal(listings.length, 1);
       assert.equal(listings[0].title, "Yellow Maize");
+      assert.equal(listings[0].product.category, "Grains");
       assert.equal(listings[0].priceLine, "Ask for price");
       assert.equal(listings[0].quantity, "Ask for quantity");
     }

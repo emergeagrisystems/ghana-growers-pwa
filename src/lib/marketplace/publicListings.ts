@@ -1,7 +1,8 @@
 import { isPublicFarmerProfile } from "../farmerDirectory";
 import { isFeaturedActive } from "../featured";
 import { cleanSupplierLocation, isPublicSupplierProfile } from "../supplierDirectory";
-import { marketplacePriceLine, marketplaceQuantityLine, usesCustomMarketplaceUnit } from "./trade";
+import { displayMarketplaceCategory } from "./taxonomy";
+import { marketplacePriceLine, marketplaceQuantityLabel, marketplaceQuantityLine, usesCustomMarketplaceUnit } from "./trade";
 import type { FarmerProfile, Product, SupplierProfile } from "../../types";
 
 export const MARKETPLACE_LISTINGS_PER_PAGE = 12;
@@ -17,6 +18,7 @@ export type MarketplaceDisplayListing = {
   title: string;
   sellerName: string;
   location: string;
+  quantityLabel: string;
   quantity: string;
   priceLine: string;
   availability: "Available now" | "Seasonal" | "Ask availability" | "Unavailable";
@@ -60,6 +62,36 @@ export function titleCaseMarketplaceValue(value?: string) {
     })
     .join("")
     .replace(/\bAnd\b/g, "and");
+}
+
+function comparableLocationPart(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\b(region|district|municipal|municipality|metropolitan|metro|assembly)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function formatMarketplaceLocation(...parts: Array<string | null | undefined>) {
+  const normalizedParts = parts
+    .map((part) => titleCaseMarketplaceValue(part ?? ""))
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const uniqueParts: string[] = [];
+
+  for (const part of normalizedParts) {
+    const key = comparableLocationPart(part);
+
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    uniqueParts.push(part);
+  }
+
+  return uniqueParts.join(", ");
 }
 
 export function normalizeMarketplaceQuantity(product: Pick<Product, "quantity" | "unit">) {
@@ -215,16 +247,17 @@ function listingDuplicateKey(listing: MarketplaceDisplayListing) {
 export function toMarketplaceDisplayListing(product: Product, seller: MarketplaceSeller): MarketplaceDisplayListing {
   const sellerName = seller.kind === "farmer" ? seller.profile.farmName : seller.profile.companyName;
   const location = seller.kind === "farmer"
-    ? [titleCaseMarketplaceValue(seller.profile.district), titleCaseMarketplaceValue(seller.profile.region)].filter(Boolean).join(", ")
+    ? formatMarketplaceLocation(seller.profile.district, seller.profile.region)
     : cleanSupplierLocation(seller.profile);
   const availability = marketplaceAvailability(product.available);
   const supplyFrequency = marketplaceSupplyFrequency(product.supplyFrequency) ?? marketplaceSupplyFrequency(product.available);
+  const displayCategory = displayMarketplaceCategory(product);
 
   return {
     product: {
       ...product,
       name: titleCaseMarketplaceValue(product.name),
-      category: titleCaseMarketplaceValue(product.category),
+      category: titleCaseMarketplaceValue(displayCategory),
       location: titleCaseMarketplaceValue(product.location),
       region: titleCaseMarketplaceValue(product.region),
       seller: titleCaseMarketplaceValue(product.seller),
@@ -235,6 +268,7 @@ export function toMarketplaceDisplayListing(product: Product, seller: Marketplac
     title: titleCaseMarketplaceValue(product.name),
     sellerName: titleCaseMarketplaceValue(sellerName),
     location,
+    quantityLabel: marketplaceQuantityLabel(product),
     quantity: marketplaceQuantityLine(product),
     priceLine: marketplacePriceLine(product),
     availability,

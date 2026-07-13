@@ -41,6 +41,9 @@ const categories: BuyCategory[] = [
   { id: "fruits", label: "Fruits", group: "produce", description: "Seasonal fruit supply from farmers and aggregators.", href: "/marketplace?search=fruits&category=fresh-produce", icon: Sprout },
   { id: "grains", label: "Grains", group: "produce", description: "Maize, rice and other grains.", href: "/marketplace?search=maize&category=fresh-produce", icon: Wheat },
   { id: "roots-tubers", label: "Roots & Tubers", group: "produce", description: "Cassava, yam and other staple crops.", href: "/marketplace?search=yam%20cassava&category=fresh-produce", icon: Shovel },
+  { id: "legumes", label: "Legumes", group: "produce", description: "Beans, cowpea, soybeans and groundnuts.", href: "/marketplace?search=beans%20groundnuts&category=fresh-produce", icon: Sprout },
+  { id: "herbs-spices", label: "Herbs & Spices", group: "produce", description: "Fresh or dried agricultural herbs and spices.", href: "/marketplace?search=herbs%20spices&category=fresh-produce", icon: Carrot },
+  { id: "nuts", label: "Nuts", group: "produce", description: "Cashew, kola, shea nuts and similar crops.", href: "/marketplace?search=cashew%20kola%20shea&category=fresh-produce", icon: PackageCheck },
   { id: "livestock", label: "Livestock", group: "produce", description: "Find livestock and animal products.", href: "/marketplace?search=livestock&category=livestock", icon: Beef },
   { id: "seeds", label: "Seeds", group: "inputs", description: "Find seed suppliers and planting material.", href: "/supplier-directory?search=seeds", icon: Sprout },
   { id: "fertilizer", label: "Fertilizer", group: "inputs", description: "Source fertilizer and soil fertility suppliers.", href: "/supplier-directory?search=fertilizer", icon: PackageCheck },
@@ -54,7 +57,7 @@ const categoryGroups = [
   {
     id: "produce" as const,
     title: "Farm-Fresh Produce",
-    description: "Browse crops, livestock and fresh harvests.",
+    description: "Browse crops, legumes, nuts, livestock and fresh harvests.",
     categories: categories.filter((category) => category.group === "produce")
   },
   {

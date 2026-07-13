@@ -15,16 +15,34 @@ export const productCategories: ProductCategory[] = [
     image: "/images/crops/pineapple.jpg"
   },
   {
-    slug: "cereals",
-    name: "Cereals",
-    description: "Maize, rice, sorghum, millet, and grain aggregation opportunities.",
+    slug: "grains",
+    name: "Grains",
+    description: "Maize, rice, sorghum, millet, wheat, and similar grain crops.",
     image: "/images/marketplace/farm-activity-1.jpg"
   },
   {
-    slug: "tubers",
-    name: "Tubers",
+    slug: "roots-tubers",
+    name: "Roots & Tubers",
     description: "Yam, cassava, cocoyam, sweet potato, and processed options.",
     image: "/images/crops/yam.jpg"
+  },
+  {
+    slug: "legumes",
+    name: "Legumes",
+    description: "Beans, cowpea, soybeans, groundnuts, pigeon peas, and similar crops.",
+    image: "/images/marketplace/ghana-market-1.jpg"
+  },
+  {
+    slug: "herbs-spices",
+    name: "Herbs & Spices",
+    description: "Culinary herbs, spice crops, and confirmed fresh or dried herbs and spices.",
+    image: "/images/marketplace/ghana-market-2.jpg"
+  },
+  {
+    slug: "nuts",
+    name: "Nuts",
+    description: "Cashew, kola, shea nuts, and similar confirmed nut products.",
+    image: "/images/marketplace/produce-packaging.jpg"
   },
   {
     slug: "livestock",
@@ -101,7 +119,7 @@ export const products: Product[] = [
   {
     id: "maize-techiman",
     name: "Yellow Maize",
-    category: "Cereals",
+    category: "Grains",
     location: "Techiman",
     region: "Bono East Region",
     seller: "Techiman Grain Cooperative",
@@ -120,7 +138,7 @@ export const products: Product[] = [
   {
     id: "cassava-kintampo",
     name: "Fresh Cassava",
-    category: "Tubers",
+    category: "Roots & Tubers",
     location: "Kintampo North",
     region: "Bono East Region",
     seller: "Northern Root Crops Network",
@@ -137,7 +155,7 @@ export const products: Product[] = [
   {
     id: "yam-tamale",
     name: "Pona Yam",
-    category: "Tubers",
+    category: "Roots & Tubers",
     location: "Tamale Metropolitan",
     region: "Northern Region",
     seller: "Savelugu Yam Producers",
@@ -189,7 +207,7 @@ export const products: Product[] = [
   {
     id: "rice-avaime",
     name: "Local Rice",
-    category: "Cereals",
+    category: "Grains",
     location: "Aveyime",
     region: "Volta Region",
     seller: "Aveyime Rice Growers",
