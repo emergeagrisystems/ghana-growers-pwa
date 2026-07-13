@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SafeImage } from "@/components/SafeImage";
 import { marketplaceListingImages } from "@/lib/marketplace/images";
 import type { Product } from "@/types";
@@ -15,6 +15,12 @@ export function MarketplaceImageGallery({ product, title, sellerName }: Marketpl
   const images = useMemo(() => marketplaceListingImages(product), [product]);
   const [activeImage, setActiveImage] = useState(images[0] ?? product.image);
   const resolvedActiveImage = images.includes(activeImage) ? activeImage : images[0] ?? product.image;
+
+  useEffect(() => {
+    if (activeImage !== resolvedActiveImage) {
+      setActiveImage(resolvedActiveImage);
+    }
+  }, [activeImage, resolvedActiveImage]);
 
   return (
     <div>

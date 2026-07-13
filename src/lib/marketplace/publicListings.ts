@@ -244,29 +244,51 @@ function listingDuplicateKey(listing: MarketplaceDisplayListing) {
     .trim();
 }
 
+function normalizePublicMarketplaceProductName(name: string) {
+  return titleCaseMarketplaceValue(name.replace(/\bYelloe\b/gi, "Yellow"));
+}
+
+function isSkNartYellowMaize(product: Product, sellerName: string) {
+  const productName = normalizePublicMarketplaceProductName(product.name).toLowerCase();
+  const publicSellerName = titleCaseMarketplaceValue(sellerName).toLowerCase();
+
+  return productName === "yellow maize" && publicSellerName === "s. k. nart farms";
+}
+
+function publicMarketplaceDescription(product: Product, sellerName: string, location: string) {
+  if (isSkNartYellowMaize(product, sellerName)) {
+    return "Yellow Maize supplied by S. K. Nart Farms in Klo-Agogo. Current pricing, quantity, and delivery or pickup arrangements will be confirmed during your request.";
+  }
+
+  return product.description.replace(/\bYelloe\b/gi, "Yellow").replace(/Narteh Samuel Kweku Farm/g, sellerName).replace(/Klo-Agogo,\s*Klo-Agogo/g, location);
+}
+
 export function toMarketplaceDisplayListing(product: Product, seller: MarketplaceSeller): MarketplaceDisplayListing {
-  const sellerName = seller.kind === "farmer" ? seller.profile.farmName : seller.profile.companyName;
+  const sellerName = titleCaseMarketplaceValue(seller.kind === "farmer" ? seller.profile.farmName : seller.profile.companyName);
   const location = seller.kind === "farmer"
     ? formatMarketplaceLocation(seller.profile.district, seller.profile.region)
     : cleanSupplierLocation(seller.profile);
   const availability = marketplaceAvailability(product.available);
   const supplyFrequency = marketplaceSupplyFrequency(product.supplyFrequency) ?? marketplaceSupplyFrequency(product.available);
   const displayCategory = displayMarketplaceCategory(product);
+  const title = normalizePublicMarketplaceProductName(product.name);
+  const description = publicMarketplaceDescription(product, sellerName, location);
 
   return {
     product: {
       ...product,
-      name: titleCaseMarketplaceValue(product.name),
+      name: title,
       category: titleCaseMarketplaceValue(displayCategory),
       location: titleCaseMarketplaceValue(product.location),
       region: titleCaseMarketplaceValue(product.region),
-      seller: titleCaseMarketplaceValue(product.seller),
-      ownerName: product.ownerName ? titleCaseMarketplaceValue(product.ownerName) : product.ownerName
+      seller: sellerName,
+      ownerName: sellerName,
+      description
     },
     seller,
     href: `/marketplace/${encodeURIComponent(product.id)}`,
-    title: titleCaseMarketplaceValue(product.name),
-    sellerName: titleCaseMarketplaceValue(sellerName),
+    title,
+    sellerName,
     location,
     quantityLabel: marketplaceQuantityLabel(product),
     quantity: marketplaceQuantityLine(product),

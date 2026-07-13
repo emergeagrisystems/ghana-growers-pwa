@@ -953,6 +953,7 @@ const tests: TestCase[] = [
 
       assert.equal(gallery.includes("images.length > 1"), true);
       assert.equal(gallery.includes("setActiveImage(image)"), true);
+      assert.equal(gallery.includes("const isActive = image === resolvedActiveImage"), true);
       assert.equal(gallery.includes("aria-pressed={isActive}"), true);
       assert.equal((detailPage.match(/<RequestConnectionButton/g) ?? []).length, 1);
       assert.equal(detailPage.includes("<MarketplaceImageGallery"), true);
@@ -1000,6 +1001,52 @@ const tests: TestCase[] = [
       assert.equal(listings[0].product.category, "Grains");
       assert.equal(listings[0].priceLine, "Ask for price");
       assert.equal(listings[0].quantity, "Ask for quantity");
+    }
+  },
+  {
+    name: "Marketplace Yellow Maize public copy uses approved farm name",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "yellow-maize-sk-nart",
+            name: "Yelloe Maize",
+            category: "Mixed",
+            location: "Klo-Agogo",
+            region: "Klo-Agogo",
+            quantity: "50",
+            unit: "Kg",
+            priceAmount: undefined,
+            priceRange: undefined,
+            sellingMethod: undefined,
+            sellingUnit: undefined,
+            unitsAvailable: undefined,
+            totalQuantityValue: undefined,
+            farmerSlug: "s-k-nart-farms",
+            ownerName: "Narteh Samuel Kweku Farm",
+            seller: "Narteh Samuel Kweku Farm",
+            description: "Yelloe Maize supplied by Narteh Samuel Kweku Farm in Klo-Agogo. Contact Ghana Growers to confirm current availability, quantity, pricing and delivery arrangements."
+          })
+        ],
+        [farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", district: "Klo-Agogo", region: "Klo-Agogo", source: "Tally Import", verificationStatus: "Verified" })],
+        []
+      );
+
+      assert.equal(listings.length, 1);
+      assert.equal(listings[0].title, "Yellow Maize");
+      assert.equal(listings[0].product.name, "Yellow Maize");
+      assert.equal(listings[0].sellerName, "S. K. Nart Farms");
+      assert.equal(listings[0].product.seller, "S. K. Nart Farms");
+      assert.equal(listings[0].product.ownerName, "S. K. Nart Farms");
+      assert.equal(listings[0].location, "Klo-Agogo");
+      assert.equal(listings[0].product.category, "Grains");
+      assert.equal(listings[0].priceLine, "Ask for price");
+      assert.equal(listings[0].quantityLabel, "Listed quantity");
+      assert.equal(listings[0].quantity, "50 kg");
+      assert.equal(
+        listings[0].product.description,
+        "Yellow Maize supplied by S. K. Nart Farms in Klo-Agogo. Current pricing, quantity, and delivery or pickup arrangements will be confirmed during your request."
+      );
     }
   },
   {
