@@ -4,6 +4,8 @@ import { MarketplaceListings } from "@/components/MarketplaceListings";
 import { Beef, Boxes, Carrot, PackageCheck } from "lucide-react";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
+import { publicMarketplaceListings } from "@/lib/marketplace/publicListings";
+import type { FarmerProfile, SupplierProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +43,39 @@ const primaryCategories = [
   }
 ];
 
+function uniqueProfiles<T extends FarmerProfile | SupplierProfile>(profiles: T[]) {
+  const seen = new Set<string>();
+
+  return profiles.filter((profile) => {
+    const key = profile.id ?? profile.slug;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 export default async function MarketplacePage() {
   const [products, farmers, suppliers] = await Promise.all([
     getMarketplaceListingsData(),
     getFarmersData(),
     getSuppliersData()
   ]);
+  const publicListings = publicMarketplaceListings(products, farmers, suppliers);
+  const publicProducts = publicListings.map((listing) => listing.product);
+  const publicFarmers = uniqueProfiles(
+    publicListings
+      .filter((listing) => listing.seller.kind === "farmer")
+      .map((listing) => listing.seller.profile as FarmerProfile)
+  );
+  const publicSuppliers = uniqueProfiles(
+    publicListings
+      .filter((listing) => listing.seller.kind === "supplier")
+      .map((listing) => listing.seller.profile as SupplierProfile)
+  );
 
   return (
     <>
@@ -105,7 +134,7 @@ export default async function MarketplacePage() {
         </div>
       </section>
 
-      <MarketplaceListings products={products} farmers={farmers} suppliers={suppliers} />
+      <MarketplaceListings products={publicProducts} farmers={publicFarmers} suppliers={publicSuppliers} />
 
       <section className="bg-white py-8 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
