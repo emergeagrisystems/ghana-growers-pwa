@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
+import { findPlantingAdvisorGuidance, plantingAdvisorCrops } from "@/lib/farmmate/planting-advisor-specialist";
 
 type ToolKey = "ask" | "doctor" | "calendar" | "planting";
 
@@ -47,6 +48,9 @@ function CropCalendarExperience() {
 }
 
 function PlantingAdvisorExperience() {
+  const [selectedCrop, setSelectedCrop] = useState("Maize");
+  const selectedGuidance = findPlantingAdvisorGuidance(selectedCrop) ?? plantingAdvisorCrops.find((guidance) => guidance.crop === "Maize") ?? null;
+
   return (
     <article id="planting-advisor" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
       <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
@@ -57,10 +61,10 @@ function PlantingAdvisorExperience() {
       <div className="mt-5 grid gap-3">
         <label className="grid gap-2 text-sm font-black text-ink">
           Crop
-          <select className="gg-field min-h-12">
-            <option>Maize</option>
-            <option>Tomato</option>
-            <option>Yam</option>
+          <select className="gg-field min-h-12" value={selectedCrop} onChange={(event) => setSelectedCrop(event.target.value)}>
+            {plantingAdvisorCrops.map((guidance) => (
+              <option key={guidance.crop}>{guidance.crop}</option>
+            ))}
           </select>
         </label>
         <label className="grid gap-2 text-sm font-black text-ink">
@@ -74,7 +78,11 @@ function PlantingAdvisorExperience() {
       </div>
       <div className="mt-4 rounded-md bg-leaf-50 p-4">
         <p className="text-sm font-black text-leaf-700">Planting guidance</p>
-        <p className="mt-1 text-sm leading-6 text-ink/68">Plant after two steady rains and avoid waterlogged soil.</p>
+        <p className="mt-1 text-sm leading-6 text-ink/68">
+          {selectedGuidance
+            ? `${selectedGuidance.suitablePlantingConditions[0]} ${selectedGuidance.whenToDelayPlanting[0]}`
+            : "Choose a crop and check soil moisture, drainage and planting material before planting."}
+        </p>
       </div>
     </article>
   );

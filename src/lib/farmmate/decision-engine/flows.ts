@@ -446,7 +446,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
         id: "planting-crop-type",
         question: "What type of crop are you interested in?",
         requiredForConfidence: true,
-        options: ["Vegetables", "Staples", "Root/tuber crops", "I am not sure"]
+        options: ["Vegetables", "Staples like maize", "Root and tuber crops", "I am not sure"]
       },
       {
         id: "planting-region",
@@ -486,7 +486,7 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       nextBestAction: {
         id: "choose-crop-type",
         label: "Choose crop type",
-        instruction: "Choose whether you want vegetables, staples, root or tuber crops, or need help deciding.",
+        instruction: "Choose whether you want vegetables, staples like maize, root and tuber crops, or need help deciding.",
         actionType: "ask-follow-up"
       }
     },

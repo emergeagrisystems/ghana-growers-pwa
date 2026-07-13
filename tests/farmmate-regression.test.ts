@@ -62,6 +62,7 @@ import {
 } from "../src/lib/marketplace/trade";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
+import { plantingAdvisorCrops, plantingAdvisorReasoningOrder } from "../src/lib/farmmate/planting-advisor-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
   buildCropDoctorAskFarmMatePrompt,
@@ -2036,6 +2037,39 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "planting advisor follows required reasoning journey",
+    run: () => {
+      assert.deepEqual(plantingAdvisorReasoningOrder, [
+        "crop-or-crop-choice",
+        "region",
+        "month-or-season",
+        "rain-or-irrigation-availability",
+        "land-preparation-status",
+        "recommendation",
+        "next-best-action"
+      ]);
+    }
+  },
+  {
+    name: "planting advisor includes required crop guidance",
+    run: () => {
+      const requiredCrops = ["Maize", "Tomato", "Pepper", "Cassava", "Yam", "Plantain", "Onion", "Okra", "Cucumber", "Garden eggs"];
+      const availableCrops = plantingAdvisorCrops.map((guidance) => guidance.crop);
+
+      assert.equal(plantingAdvisorCrops.length >= 10, true);
+      for (const crop of requiredCrops) {
+        const guidance = plantingAdvisorCrops.find((item) => item.crop === crop);
+
+        assert.equal(availableCrops.includes(crop), true);
+        assert.equal(Boolean(guidance?.suitablePlantingConditions.length), true);
+        assert.equal(Boolean(guidance?.spacingGuidance.length), true);
+        assert.equal(Boolean(guidance?.waterRainfallNeeds.length), true);
+        assert.equal(Boolean(guidance?.whenToDelayPlanting.length), true);
+        assert.equal(Boolean(guidance?.nextBestAction), true);
+      }
+    }
+  },
+  {
     name: "what should I plant this month routes to planting",
     run: () => {
       const router = routeFarmMateQuestion("What should I plant this month?");
@@ -2093,7 +2127,7 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse("What should I plant this month?", routeFarmMateQuestion("What should I plant this month?"));
 
       assert.equal(response.flow?.followUpQuestions[0]?.question, "What type of crop are you interested in?");
-      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Vegetables", "Staples", "Root/tuber crops", "I am not sure"]);
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Vegetables", "Staples like maize", "Root and tuber crops", "I am not sure"]);
     }
   },
   {
@@ -2105,6 +2139,7 @@ const tests: TestCase[] = [
       assert.equal(text.includes("rain is coming today"), false);
       assert.equal(text.includes("market price"), false);
       assert.equal(text.includes("guaranteed profit"), false);
+      assert.equal(text.includes("guaranteed yield"), false);
       assert.equal(text.includes("local planting context"), true);
     }
   },
@@ -2157,6 +2192,7 @@ const tests: TestCase[] = [
       assert.equal(payload.specialistContext?.crop, "Pepper");
       assert.equal(payload.specialistContext?.noLiveWeatherRule?.toLowerCase().includes("do not invent exact local weather"), true);
       assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
+      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("guaranteed yield"), true);
       assert.equal(payload.specialistContext?.spacingGuidance?.some((line) => line.toLowerCase().includes("45 to 60 cm")), true);
     }
   },

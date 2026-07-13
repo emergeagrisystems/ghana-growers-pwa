@@ -109,7 +109,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           whenToDelayPlanting: plantingContext.whenToDelayPlanting,
           nextBestAction: plantingContext.nextBestAction,
           noLiveWeatherRule: "Do not invent exact local weather or forecast details. Use farmer-provided rain, irrigation and soil context only.",
-          noMarketRule: "Do not invent seed availability, market prices or guaranteed profit."
+          noMarketRule: "Do not invent seed availability, market prices, guaranteed profit or guaranteed yield."
         }
       : null,
     decisionFlow: input.brain.flow ?? null,
@@ -127,7 +127,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For unsure rain answers, say: \"Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.\"",
       "For rain expected answers, say: \"Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.\"",
       "For clear spray conditions, say: \"Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.\"",
-      "For planting decisions, do not invent exact local weather, seed availability, market prices, or guaranteed profit.",
+      "For planting decisions, do not invent exact local weather, seed availability, market prices, guaranteed profit, or guaranteed yield.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

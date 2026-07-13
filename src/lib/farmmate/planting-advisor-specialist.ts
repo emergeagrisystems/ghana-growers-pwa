@@ -20,6 +20,16 @@ export type PlantingAdvisorQuestionType =
   | "tomato-transplant"
   | "general-planting";
 
+export const plantingAdvisorReasoningOrder = [
+  "crop-or-crop-choice",
+  "region",
+  "month-or-season",
+  "rain-or-irrigation-availability",
+  "land-preparation-status",
+  "recommendation",
+  "next-best-action"
+] as const;
+
 export const plantingAdvisorCrops: PlantingAdvisorCropGuidance[] = [
   {
     crop: "Maize",
