@@ -13,6 +13,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const allowedKinds = new Set<SubmissionKind>(["listing", "buyer-request"]);
 const allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"]);
@@ -24,7 +25,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  return NextResponse.json(await getPublicSubmissions());
+  return NextResponse.json(await getPublicSubmissions(), {
+    headers: {
+      "Cache-Control": "no-store, max-age=0"
+    }
+  });
 }
 
 export async function PATCH(request: Request) {

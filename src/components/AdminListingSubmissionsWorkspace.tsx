@@ -10,15 +10,23 @@ import type { Product } from "@/types";
 
 const statuses: SubmissionStatus[] = ["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"];
 
-export function AdminListingSubmissionsWorkspace({ currentAdmin }: { currentAdmin: AdminUser }) {
-  const [submissions, setSubmissions] = useState<ListingSubmission[]>([]);
+export function AdminListingSubmissionsWorkspace({
+  currentAdmin,
+  initialSubmissions = [],
+  initialError = ""
+}: {
+  currentAdmin: AdminUser;
+  initialSubmissions?: ListingSubmission[];
+  initialError?: string;
+}) {
+  const [submissions, setSubmissions] = useState<ListingSubmission[]>(initialSubmissions);
   const [activeStatus, setActiveStatus] = useState<SubmissionStatus | "All">("New");
   const [selectedId, setSelectedId] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [sellerMessage, setSellerMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
   const [notice, setNotice] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialSubmissions.length && !initialError);
 
   const filtered = useMemo(
     () => activeStatus === "All" ? submissions : submissions.filter((submission) => submission.status === activeStatus),
@@ -142,6 +150,7 @@ export function AdminListingSubmissionsWorkspace({ currentAdmin }: { currentAdmi
           </div>
 
           {loading ? <p className="mt-5 text-sm font-semibold text-ink/60">Loading submissions...</p> : null}
+          {error ? <p className="mt-5 rounded-md bg-red-50 p-4 text-sm font-bold text-tomato">{error}</p> : null}
           <div className="mt-5 grid gap-3">
             {filtered.map((submission) => (
               <button

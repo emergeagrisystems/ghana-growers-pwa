@@ -759,18 +759,28 @@ export async function createBuyerRequestSubmission(body: Record<string, unknown>
 
 export async function getPublicSubmissions() {
   const listingQuery =
-    "select=id,submission_reference,product_name,marketplace_pathway,subcategory,variety,category,quantity,unit,selling_method,selling_unit,custom_unit_label,custom_unit_reviewed,unit_size_value,unit_size_measure,unit_size_approximate,price_amount,price_currency,price_basis,units_available,total_quantity_value,total_quantity_measure,minimum_order_value,minimum_order_unit,availability,supply_frequency,available_from_date,grade_description,delivery_details,pickup_location,delivery_available,additional_notes,region,district,seller_name,seller_contact_name,seller_type,phone_number,whatsapp_number,whatsapp_same_as_phone,existing_member,description,image_url,image_urls,main_image_path,seller_match_status,matched_farmer_id,matched_supplier_id,assigned_reviewer,admin_notes,seller_message,status_history,published_listing_id,published_at,published_by,approved_at,approved_by,source,status,created_at,updated_at&order=created_at.desc&limit=500";
+    "select=*&order=created_at.desc&limit=500";
   const buyerQuery =
     "select=id,product_needed,quantity,company_name,phone_number,region,district,buyer_name,buyer_type,whatsapp_number,preferred_delivery,deadline,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
   const [listings, buyerRequests] = await Promise.all([
     selectSupabaseRecords<ListingSubmission>("listing_submissions", listingQuery),
     selectSupabaseRecords<BuyerRequestSubmission>("buyer_request_applications", buyerQuery)
   ]);
+  const error = listings.error || buyerRequests.error;
+
+  if (error) {
+    console.warn("Admin submission queue read failed", {
+      listingStatus: listings.status,
+      buyerRequestStatus: buyerRequests.status,
+      listingError: listings.error,
+      buyerRequestError: buyerRequests.error
+    });
+  }
 
   return {
     listings: listings.data ?? [],
     buyerRequests: buyerRequests.data ?? [],
-    error: listings.error || buyerRequests.error
+    error
   };
 }
 

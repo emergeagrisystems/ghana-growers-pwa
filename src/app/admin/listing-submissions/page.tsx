@@ -1,7 +1,12 @@
 import { AdminListingSubmissionsWorkspace } from "@/components/AdminListingSubmissionsWorkspace";
 import { adminAccessCookie, getAdminUserFromAccessToken } from "@/lib/adminAuth";
+import { getPublicSubmissions } from "@/lib/publicSubmissions";
+import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Listing Submissions | Ghana Growers Admin",
@@ -9,11 +14,21 @@ export const metadata = {
 };
 
 export default async function AdminListingSubmissionsPage() {
+  noStore();
+
   const currentAdmin = await getAdminUserFromAccessToken(cookies().get(adminAccessCookie)?.value);
 
   if (!currentAdmin) {
     redirect("/admin/login");
   }
 
-  return <AdminListingSubmissionsWorkspace currentAdmin={currentAdmin} />;
+  const submissions = await getPublicSubmissions();
+
+  return (
+    <AdminListingSubmissionsWorkspace
+      currentAdmin={currentAdmin}
+      initialError={submissions.error ?? ""}
+      initialSubmissions={submissions.listings}
+    />
+  );
 }
