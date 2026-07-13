@@ -25,7 +25,7 @@ export function Header() {
     }
 
     if (href === "/sell") {
-      return pathname === "/sell" || pathname.startsWith("/sell/") || pathname.startsWith("/services/farmers") || pathname === "/submit-produce-listing";
+      return pathname === "/sell" || pathname.startsWith("/sell/") || pathname.startsWith("/services/farmers") || pathname === "/submit-listing" || pathname === "/submit-produce-listing";
     }
 
     if (href === "/directory") {

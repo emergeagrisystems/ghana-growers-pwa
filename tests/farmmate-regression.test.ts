@@ -296,19 +296,222 @@ const tests: TestCase[] = [
     run: () => {
       const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
       const route = repoFile("src/app/api/listing-submissions/route.ts");
+      const createListingSection = publicSubmissions.slice(
+        publicSubmissions.indexOf("export async function createListingSubmission"),
+        publicSubmissions.indexOf("function payloadTotalQuantityValue")
+      );
+      const convertListingSection = publicSubmissions.slice(
+        publicSubmissions.indexOf("export async function convertListingSubmission"),
+        publicSubmissions.indexOf("export async function convertBuyerRequestSubmission")
+      );
 
-      assert.equal(route.includes("createListingSubmission(formData)"), true);
+      assert.equal(route.includes("createListingSubmission(formData, clientKey)"), true);
       assert.equal(publicSubmissions.includes('insertSupabaseRecord("listing_submissions"'), true);
       assert.equal(publicSubmissions.includes('selectSupabaseRecords<ListingSubmission>("listing_submissions"'), true);
       assert.equal(publicSubmissions.includes('const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications"'), true);
-      assert.equal(publicSubmissions.includes('insertSupabaseRecord("marketplace_listings"'), true);
-      assert.equal(publicSubmissions.includes("selling_method: submission.selling_method"), true);
-      assert.equal(publicSubmissions.includes("selling_unit: submission.selling_unit"), true);
-      assert.equal(publicSubmissions.includes("custom_unit_label: submission.custom_unit_label"), true);
-      assert.equal(publicSubmissions.includes("price_amount: submission.price_amount"), true);
-      assert.equal(publicSubmissions.includes("units_available: submission.units_available"), true);
-      assert.equal(publicSubmissions.includes("total_quantity_value: submission.total_quantity_value"), true);
+      assert.equal(publicSubmissions.includes('callSupabaseRpc<{ listing_id?: string; slug?: string; reused?: boolean }>("publish_listing_submission"'), true);
+      assert.equal(publicSubmissions.includes('insertSupabaseRecord("marketplace_listings"'), false);
+      assert.equal(createListingSection.includes('insertSupabaseRecord("marketplace_listings"'), false);
+      assert.equal(publicSubmissions.includes("sellingMethod: submission.selling_method"), true);
+      assert.equal(publicSubmissions.includes("sellingUnit: submission.selling_unit"), true);
+      assert.equal(publicSubmissions.includes("customUnitLabel: submission.custom_unit_label"), true);
+      assert.equal(publicSubmissions.includes("priceAmount: submission.price_amount"), true);
+      assert.equal(publicSubmissions.includes("unitsAvailable: submission.units_available"), true);
+      assert.equal(publicSubmissions.includes("totalQuantityValue: submission.total_quantity_value"), true);
       assert.equal(publicSubmissions.includes("record_source: \"public_submission\""), true);
+      assert.equal(convertListingSection.includes("whatsapp_number: submission.whatsapp_number"), false);
+    }
+  },
+  {
+    name: "Submit Listing page uses the approved public route and pending-review copy",
+    run: () => {
+      const page = repoFile("src/app/submit-listing/page.tsx");
+      const oldPage = repoFile("src/app/submit-produce-listing/page.tsx");
+      const sitemap = repoFile("src/app/sitemap.ts");
+      const sellPage = repoFile("src/app/sell/page.tsx");
+      const marketplacePage = repoFile("src/app/marketplace/page.tsx");
+
+      assert.equal(page.includes('title: "Submit a Listing"'), true);
+      assert.equal(page.includes("Tell us what you are selling. Ghana Growers will review the information before your listing appears publicly."), true);
+      assert.equal(page.includes("Submit Produce Listing"), false);
+      assert.equal(page.includes("fresh produce, livestock, farm inputs, tools and equipment"), true);
+      assert.equal(oldPage.includes('redirect("/submit-listing")'), true);
+      assert.equal(sitemap.includes('"/submit-listing"'), true);
+      assert.equal(sitemap.includes('"/submit-produce-listing"'), false);
+      assert.equal(sellPage.includes('href: "/submit-listing"'), true);
+      assert.equal(marketplacePage.includes('href="/submit-listing"'), true);
+    }
+  },
+  {
+    name: "Public Submit Listing form is guided, mobile-first, and preserves product pathways",
+    run: () => {
+      const form = repoFile("src/components/SubmitProduceListingForm.tsx");
+
+      assert.equal(form.includes('const steps = ["Seller details", "Product details", "Price and quantity", "Availability", "Photos", "Review"]'), true);
+      assert.equal(form.includes("Step {step + 1} of {steps.length}"), true);
+      assert.equal(form.includes("Back"), true);
+      assert.equal(form.includes("Continue"), true);
+      assert.equal(form.includes('region: ""'), true);
+      assert.equal(form.includes('existingMember: ""'), true);
+      assert.equal(form.includes('sellerType: ""'), true);
+      assert.equal(form.includes('placeholder="Select region"'), true);
+      assert.equal(form.includes("Are you already part of the Ghana Growers network?"), true);
+      assert.equal(form.includes("Example: +233 24 000 0000"), true);
+      assert.equal(form.includes("values.existingMember && values.sellerType"), true);
+      assert.equal(form.includes('next.sellerType = value === "Farm Inputs"'), false);
+      assert.equal(form.includes("Submit for Review"), true);
+      assert.equal(form.includes('fetch("/api/listing-submissions"'), true);
+      assert.equal(form.includes('marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"]'), true);
+      assert.equal(form.includes("Agricultural Services"), false);
+      assert.equal(form.includes('sellingMethod: "packaged_unit" | "weight" | "count" | "livestock" | "volume"'), true);
+      assert.equal(form.includes('"volume" | "other"'), false);
+      assert.equal(form.includes("customUnitLabel"), true);
+      assert.equal(form.includes("Same as phone number"), true);
+      assert.equal(form.includes("Upload clear photos of the actual product you are selling."), true);
+      assert.equal(form.includes("URL.createObjectURL(file)"), true);
+      assert.equal(form.includes("setAdditionalImages"), true);
+      assert.equal(form.includes("values.confirmation"), true);
+    }
+  },
+  {
+    name: "Public listing submissions use private images, neutral uncertainty, and abuse safeguards",
+    run: () => {
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+      const route = repoFile("src/app/api/listing-submissions/route.ts");
+
+      assert.equal(publicSubmissions.includes('bucket: "listing-submissions"'), true);
+      assert.equal(publicSubmissions.includes("publicUrl: false"), true);
+      assert.equal(publicSubmissions.includes("Upload JPG, PNG, or WEBP images only."), true);
+      assert.equal(publicSubmissions.includes("5 * 1024 * 1024"), true);
+      assert.equal(publicSubmissions.includes(".slice(0, 5)"), true);
+      assert.equal(publicSubmissions.includes("companyWebsite"), true);
+      assert.equal(publicSubmissions.includes("new Map"), false);
+      assert.equal(publicSubmissions.includes("listingSubmissionAttempts"), false);
+      assert.equal(publicSubmissions.includes("createHmac"), true);
+      assert.equal(publicSubmissions.includes("process.env.LISTING_SUBMISSION_RATE_LIMIT_SECRET"), true);
+      assert.equal(publicSubmissions.includes("process.env.SUBMISSION_RATE_LIMIT_SECRET"), false);
+      assert.equal(publicSubmissions.includes("local-development-listing-submission-secret"), false);
+      assert.equal(publicSubmissions.includes("Listing submissions are temporarily unavailable. Please try again later."), true);
+      assert.equal(publicSubmissions.includes("submissionRateLimitKey"), true);
+      assert.equal(publicSubmissions.includes('callSupabaseRpc<RateLimitResult>("consume_listing_submission_rate_limit"'), true);
+      assert.equal(publicSubmissions.includes("hashedRequestFingerprint"), true);
+      assert.equal(publicSubmissions.includes("duplicateListingSubmissionWarning"), true);
+      assert.equal(publicSubmissions.includes("submission_dedupe_key"), true);
+      assert.equal(publicSubmissions.includes("duplicateInsertError"), true);
+      assert.equal(publicSubmissions.includes("quantityConfirmedLater"), false);
+      assert.equal(publicSubmissions.includes("payloadTotalQuantityValue(formData)"), true);
+      assert.equal(publicSubmissions.includes("unitSizeValue * unitsAvailable"), true);
+      assert.equal(publicSubmissions.includes("custom_unit_reviewed: false"), true);
+      assert.equal(publicSubmissions.includes("copyApprovedSubmissionImages"), true);
+      assert.equal(publicSubmissions.includes('bucket: "marketplace"'), true);
+      assert.equal(publicSubmissions.includes("approved-submissions"), true);
+      assert.equal(publicSubmissions.includes("pending-submissions/${randomUUID()}"), true);
+      assert.equal(publicSubmissions.includes("deleteSupabaseStorageObject"), true);
+      assert.equal(publicSubmissions.includes("listing_submission_publication_cleanup_queue"), true);
+      assert.equal(route.includes("x-forwarded-for"), true);
+      assert.equal(route.includes("Your listing is not live yet. Ghana Growers will review the details and contact you if more information is needed."), true);
+    }
+  },
+  {
+    name: "Listing submission review migration adds private review workflow safely",
+    run: () => {
+      const migration = repoFile("supabase/migrations/033_listing_submission_review_workflow.sql");
+      const anonGrant = migration.slice(
+        migration.indexOf("grant insert ("),
+        migration.indexOf(") on public.listing_submissions to anon;")
+      );
+
+      assert.equal(migration.includes("begin;"), true);
+      assert.equal(migration.includes("commit;"), true);
+      assert.equal(migration.includes("add column if not exists submission_reference text"), true);
+      assert.equal(migration.includes("add column if not exists status_history jsonb"), true);
+      assert.equal(migration.includes("add column if not exists published_listing_id uuid"), true);
+      assert.equal(migration.includes("add column if not exists source_submission_id uuid references public.listing_submissions(id) on delete set null"), true);
+      assert.equal(migration.includes("add column if not exists submission_dedupe_key text"), true);
+      assert.equal(migration.includes("add column if not exists source text not null default 'public_submission'"), true);
+      assert.equal(migration.includes("'Needs Information', 'Under Review', 'Approved', 'Published', 'Paused', 'Rejected', 'Expired'"), true);
+      assert.equal(migration.includes("listing_submissions_phone_idx"), true);
+      assert.equal(migration.includes("listing_submissions_dedupe_open_idx"), true);
+      assert.equal(migration.includes("marketplace_listings_source_submission_idx"), true);
+      assert.equal(migration.includes("revoke all on table public.listing_submissions from anon"), true);
+      assert.equal(migration.includes("grant insert ("), true);
+      assert.equal(anonGrant.includes("status_history"), false);
+      assert.equal(anonGrant.includes("published_listing_id"), false);
+      assert.equal(anonGrant.includes("image_urls"), false);
+      assert.equal(anonGrant.includes("source"), false);
+      assert.equal(anonGrant.includes("submission_dedupe_key"), false);
+      assert.equal(/grant\s+select\s+on\s+public\.listing_submissions\s+to\s+anon/i.test(migration), false);
+      assert.equal(migration.includes("create policy \"Allow public listing submission insert\""), true);
+      assert.equal(migration.includes("insert into storage.buckets"), true);
+      assert.equal(migration.includes("'listing-submissions'"), true);
+      assert.equal(migration.includes("false,"), true);
+      assert.equal(migration.includes("Service role manages listing submission images"), true);
+      assert.equal(migration.includes("create table if not exists public.listing_submission_rate_limits"), true);
+      assert.equal(migration.includes("alter table public.listing_submission_rate_limits enable row level security"), true);
+      assert.equal(migration.includes("consume_listing_submission_rate_limit"), true);
+      assert.equal(migration.includes("security definer\nset search_path = ''"), true);
+      assert.equal(migration.includes("revoke all on function public.consume_listing_submission_rate_limit(text, integer, integer) from anon"), true);
+      assert.equal(migration.includes("create table if not exists public.listing_submission_publication_cleanup_queue"), true);
+      assert.equal(migration.includes("create or replace function public.publish_listing_submission"), true);
+      assert.equal(migration.includes("for update"), true);
+      assert.equal(migration.includes("grant execute on function public.publish_listing_submission(uuid, text, text[]) to service_role"), true);
+      assert.equal(migration.includes("revoke all on function public.publish_listing_submission(uuid, text, text[]) from anon"), true);
+      assert.equal(migration.includes("revoke all on function public.slugify_marketplace_listing(text) from anon"), true);
+      assert.equal(migration.includes("revoke all on function public.slugify_marketplace_listing(text) from authenticated"), true);
+      assert.equal(migration.includes("whatsapp_number"), true);
+    }
+  },
+  {
+    name: "Dedicated admin listing-submission workspace supports review and publication actions",
+    run: () => {
+      const page = repoFile("src/app/admin/listing-submissions/page.tsx");
+      const workspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
+      const api = repoFile("src/app/api/admin/submissions/route.ts");
+      const imageApi = repoFile("src/app/api/admin/listing-submissions/images/route.ts");
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+
+      assert.equal(page.includes("AdminListingSubmissionsWorkspace"), true);
+      assert.equal(page.includes("getAdminUserFromAccessToken"), true);
+      assert.equal(page.includes('redirect("/admin/login")'), true);
+      assert.equal(workspace.includes("Public listing review workspace"), true);
+      assert.equal(workspace.includes("Needs Information"), true);
+      assert.equal(workspace.includes("Mark Under Review"), true);
+      assert.equal(workspace.includes("Request More Information"), true);
+      assert.equal(workspace.includes("Save Draft"), true);
+      assert.equal(workspace.includes("Approve and Publish"), true);
+      assert.equal(workspace.includes("Mark Sold Out"), true);
+      assert.equal(workspace.includes("Internal notes"), true);
+      assert.equal(workspace.includes("Seller-facing message"), true);
+      assert.equal(workspace.includes('Public {kind === "card" ? "card" : "detail"} preview'), true);
+      assert.equal(workspace.includes("/api/admin/listing-submissions/images"), true);
+      assert.equal(api.includes("convertListingSubmission"), true);
+      assert.equal(api.includes('allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"])'), true);
+      assert.equal(imageApi.includes("requireAdminUser"), true);
+      assert.equal(imageApi.includes('bucket: "listing-submissions"'), true);
+      assert.equal(imageApi.includes("Cache-Control"), true);
+      assert.equal(publicSubmissions.includes('["Published", "Converted"].includes(submission.status) || submission.published_listing_id'), true);
+      assert.equal(publicSubmissions.includes("downloadSupabaseStorageObject"), true);
+      assert.equal(publicSubmissions.includes("copyApprovedSubmissionImages"), true);
+      assert.equal(publicSubmissions.includes("publicPath = `approved-submissions/${submission.id}/${index + 1}-"), true);
+      assert.equal(publicSubmissions.includes('callSupabaseRpc<{ listing_id?: string; slug?: string; reused?: boolean }>("publish_listing_submission"'), true);
+      assert.equal(publicSubmissions.includes("cleanupStoragePaths(\"marketplace\""), true);
+      assert.equal(publicSubmissions.includes("recordPublicationCleanup"), true);
+      assert.equal(publicSubmissions.includes("status_history"), true);
+      assert.equal(publicSubmissions.includes("p_admin_email: adminEmail"), true);
+    }
+  },
+  {
+    name: "Admin-assisted marketplace listing creation remains separate from public submissions",
+    run: () => {
+      const adminListings = repoFile("src/app/api/admin/marketplace-listings/route.ts");
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+
+      assert.equal(adminListings.includes('table: "marketplace_listings"'), true);
+      assert.equal(adminListings.includes('record_source: payload.recordSource || "admin"'), true);
+      assert.equal(adminListings.includes("canonicalMarketplaceTradeFields"), true);
+      assert.equal(adminListings.includes("validateMarketplaceTradeInput"), true);
+      assert.equal(publicSubmissions.includes("public_submission"), true);
+      assert.equal(publicSubmissions.includes("whatsapp_assisted"), false);
     }
   },
   {

@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const allowedKinds = new Set<SubmissionKind>(["listing", "buyer-request"]);
-const allowedStatuses = new Set<SubmissionStatus>(["Under Review", "Approved", "Rejected"]);
+const allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"]);
 
 export async function GET(request: Request) {
   const adminUser = await requireAdminUser(request);
@@ -39,6 +39,9 @@ export async function PATCH(request: Request) {
     id?: string;
     status?: SubmissionStatus;
     entityName?: string;
+    adminNotes?: string;
+    sellerMessage?: string;
+    currentHistory?: Array<Record<string, unknown>> | null;
   };
 
   if (!body.kind || !allowedKinds.has(body.kind) || !body.id || !body.status || !allowedStatuses.has(body.status)) {
@@ -50,7 +53,10 @@ export async function PATCH(request: Request) {
     id: body.id,
     status: body.status,
     adminEmail: adminUser.email,
-    entityName: body.entityName || body.id
+    entityName: body.entityName || body.id,
+    adminNotes: body.adminNotes,
+    sellerMessage: body.sellerMessage,
+    currentHistory: body.currentHistory
   });
 
   if (update.error) {
@@ -76,7 +82,7 @@ export async function POST(request: Request) {
     const insert = await convertListingSubmission(body.submission as ListingSubmission, adminUser.email);
 
     if (insert.error) {
-      return NextResponse.json({ error: "Could not convert listing submission." }, { status: insert.status });
+      return NextResponse.json({ error: insert.error || "Could not convert listing submission." }, { status: insert.status });
     }
 
     return NextResponse.json({ ok: true, record: insert.data });

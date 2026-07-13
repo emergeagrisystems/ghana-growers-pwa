@@ -14,7 +14,7 @@ const sellerActions = [
   {
     title: "Sell Your Harvest",
     description: "Sell fruits, vegetables, grains, roots, tubers, livestock, or other farm produce.",
-    href: "/join/farmer",
+    href: "/submit-listing",
     cta: "Start Selling",
     targetId: "sell-harvest",
     shortcutLabel: "Go to Sell Your Harvest option",
@@ -24,7 +24,7 @@ const sellerActions = [
   {
     title: "Sell Farm Inputs & Tools",
     description: "List seeds, fertilizer, tools, equipment, packaging, or farm supplies.",
-    href: "/become-a-supplier",
+    href: "/submit-listing",
     cta: "Become a Supplier",
     targetId: "sell-inputs-tools",
     shortcutLabel: "Go to Sell Farm Inputs and Tools option",

@@ -63,6 +63,7 @@ export default async function MarketplacePage() {
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
               <ButtonLink href="/submit-buyer-request" variant="secondary">Request Sourcing Support</ButtonLink>
+              <ButtonLink href="/submit-listing" variant="secondary">Submit a Listing</ButtonLink>
             </div>
           </div>
         </div>
@@ -108,7 +109,7 @@ export default async function MarketplacePage() {
 
       <section className="bg-white py-8 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 rounded-md border border-earth-500/25 bg-earth-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-4 rounded-md border border-earth-500/25 bg-earth-50 p-5 lg:grid-cols-[1fr_auto_auto] lg:items-center">
             <div>
               <p className="gg-eyebrow">Can&apos;t find what you need?</p>
               <h2 className="mt-1 text-xl font-black text-ink">Ask Ghana Growers to help source it.</h2>
@@ -118,6 +119,9 @@ export default async function MarketplacePage() {
             </div>
             <Link href="/submit-buyer-request" className="gg-button-primary w-full justify-center text-center sm:w-auto sm:shrink-0">
               Request Sourcing Support
+            </Link>
+            <Link href="/submit-listing" className="gg-button-secondary w-full justify-center text-center sm:w-auto sm:shrink-0">
+              Submit a Listing
             </Link>
           </div>
         </div>

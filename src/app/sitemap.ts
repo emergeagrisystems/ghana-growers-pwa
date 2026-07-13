@@ -27,7 +27,7 @@ const publicRoutes = [
   "/join/buyer",
   "/become-a-supplier",
   "/submit-buyer-request",
-  "/submit-produce-listing",
+  "/submit-listing",
   "/market-intelligence"
 ];
 
