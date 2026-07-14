@@ -82,6 +82,20 @@ export type ListingSubmission = {
 
 type ProductSellingMethod = "packaged_unit" | "weight" | "count" | "livestock" | "volume";
 
+const listingSellerCategoryOptions: Record<ListingSubmission["seller_type"], string[]> = {
+  Farmer: ["Fresh Produce", "Livestock"],
+  Supplier: ["Farm Inputs", "Tools & Equipment"]
+};
+const listingCategoriesWithRequiredSubcategory = ["Fresh Produce", "Farm Inputs", "Tools & Equipment"];
+
+function listingCategoryMatchesSellerType(sellerType: ListingSubmission["seller_type"], category: string) {
+  return listingSellerCategoryOptions[sellerType]?.includes(category) ?? false;
+}
+
+function listingCategoryRequiresSubcategory(category: string) {
+  return listingCategoriesWithRequiredSubcategory.includes(category);
+}
+
 export type BuyerRequestSubmission = {
   id: string;
   product_needed: string;
@@ -646,6 +660,14 @@ export async function createListingSubmission(formData: FormData, clientKey = "p
 
   if (missing || !["Farmer", "Supplier"].includes(payload.seller_type)) {
     return { status: 400, error: "Please complete all required listing fields." };
+  }
+
+  if (!listingCategoryMatchesSellerType(payload.seller_type, payload.marketplace_pathway)) {
+    return { status: 400, error: "Please select a category that matches your seller type." };
+  }
+
+  if (listingCategoryRequiresSubcategory(payload.marketplace_pathway) && !payload.subcategory) {
+    return { status: 400, error: "Please select a subcategory to continue." };
   }
 
   const validationErrors = validateMarketplaceTradeInput({

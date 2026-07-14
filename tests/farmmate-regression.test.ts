@@ -611,11 +611,18 @@ const tests: TestCase[] = [
       assert.equal(form.includes('placeholder="Select region"'), true);
       assert.equal(form.includes("Are you already part of the Ghana Growers network?"), true);
       assert.equal(form.includes("Example: +233 24 000 0000"), true);
-      assert.equal(form.includes("values.existingMember && values.sellerType"), true);
+      assert.equal(form.includes('message: "Please select a seller type to continue."'), true);
       assert.equal(form.includes('next.sellerType = value === "Farm Inputs"'), false);
       assert.equal(form.includes("Submit for Review"), true);
       assert.equal(form.includes('fetch("/api/listing-submissions"'), true);
       assert.equal(form.includes('marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"]'), true);
+      assert.equal(form.includes('Farmer: "Farmer / Producer"'), true);
+      assert.equal(form.includes('Supplier: "Input or Equipment Supplier"'), true);
+      assert.equal(form.includes('Farmer: ["Fresh Produce", "Livestock"]'), true);
+      assert.equal(form.includes('Supplier: ["Farm Inputs", "Tools & Equipment"]'), true);
+      assert.equal(form.includes("categoryOptionsForSellerType(values.sellerType)"), true);
+      assert.equal(form.includes("if (allowedCategories.length && !allowedCategories.includes(current.marketplacePathway))"), true);
+      assert.equal(form.includes('next.marketplacePathway = "";'), true);
       assert.equal(form.includes('label="Category"'), true);
       assert.equal(form.includes("Main marketplace pathway"), false);
       assert.equal(form.includes('subcategory: ""'), true);
@@ -624,6 +631,15 @@ const tests: TestCase[] = [
       assert.equal(form.includes('"Seeds & Seedlings"'), true);
       assert.equal(form.includes('"Fertilizers & Soil Inputs"'), true);
       assert.equal(form.includes('"Other Farm Inputs"'), true);
+      assert.equal(form.includes('"Sprayers"'), true);
+      assert.equal(form.includes('"Irrigation Equipment"'), true);
+      assert.equal(form.includes("Not sure? Maize \\u2192 Grains"), true);
+      assert.equal(form.includes("Tomato seeds \\u2192 Seeds & Seedlings"), true);
+      assert.equal(form.includes("Knapsack sprayer \\u2192 Sprayers"), true);
+      assert.equal(form.includes('disabled={!currentStepValid || isSubmitting}'), false);
+      assert.equal(form.includes('disabled={isSubmitting}'), true);
+      assert.equal(form.includes('message: "Please select a subcategory to continue."'), true);
+      assert.equal(form.includes("focusField(validation.field)"), true);
       assert.equal(form.includes('values.marketplacePathway === "Fresh Produce" ? [...freshProduceSubcategories] : [values.marketplacePathway]'), false);
       assert.equal(form.includes("Agricultural Services"), false);
       assert.equal(form.includes('sellingMethod: "packaged_unit" | "weight" | "count" | "livestock" | "volume"'), true);
@@ -680,6 +696,12 @@ const tests: TestCase[] = [
     run: () => {
       const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
 
+      assert.equal(publicSubmissions.includes('Farmer: ["Fresh Produce", "Livestock"]'), true);
+      assert.equal(publicSubmissions.includes('Supplier: ["Farm Inputs", "Tools & Equipment"]'), true);
+      assert.equal(publicSubmissions.includes("listingCategoryMatchesSellerType(payload.seller_type, payload.marketplace_pathway)"), true);
+      assert.equal(publicSubmissions.includes("Please select a category that matches your seller type."), true);
+      assert.equal(publicSubmissions.includes("listingCategoryRequiresSubcategory(payload.marketplace_pathway) && !payload.subcategory"), true);
+      assert.equal(publicSubmissions.includes("Please select a subcategory to continue."), true);
       assert.equal(publicSubmissions.includes("submittedSubcategory.toLowerCase() === marketplacePathway.toLowerCase() ? \"\" : submittedSubcategory"), true);
       assert.equal(publicSubmissions.includes("category: subcategory || marketplacePathway"), true);
       assert.equal(publicSubmissions.includes("subcategory,"), true);

@@ -10,6 +10,15 @@ import type { Product } from "@/types";
 const fieldClass = "gg-field min-h-11";
 const steps = ["Seller details", "Product details", "Price and quantity", "Availability", "Photos", "Review"] as const;
 const marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"] as const;
+type SellerTypeOption = "Farmer" | "Supplier";
+const sellerTypeLabels: Record<SellerTypeOption, string> = {
+  Farmer: "Farmer / Producer",
+  Supplier: "Input or Equipment Supplier"
+};
+const sellerCategoryOptions: Record<SellerTypeOption, readonly string[]> = {
+  Farmer: ["Fresh Produce", "Livestock"],
+  Supplier: ["Farm Inputs", "Tools & Equipment"]
+};
 const farmInputSubcategories = [
   "Seeds & Seedlings",
   "Fertilizers & Soil Inputs",
@@ -21,7 +30,21 @@ const farmInputSubcategories = [
 ] as const;
 const marketplaceSubcategories: Partial<Record<typeof marketplacePathways[number], readonly string[]>> = {
   "Fresh Produce": freshProduceSubcategories,
-  "Farm Inputs": farmInputSubcategories
+  "Farm Inputs": farmInputSubcategories,
+  "Tools & Equipment": [
+    "Hand Tools",
+    "Sprayers",
+    "Irrigation Equipment",
+    "Farm Machinery",
+    "Spare Parts & Accessories",
+    "Post-Harvest Equipment",
+    "Other Tools & Equipment"
+  ]
+};
+const categoryHelpText: Partial<Record<typeof marketplacePathways[number], string>> = {
+  "Fresh Produce": "Not sure? Maize \u2192 Grains \u00b7 Groundnuts \u2192 Legumes \u00b7 Yam/Cassava \u2192 Roots & Tubers",
+  "Farm Inputs": "Tomato seeds \u2192 Seeds & Seedlings \u00b7 NPK \u2192 Fertilizers & Soil Inputs \u00b7 Pesticide \u2192 Crop Protection",
+  "Tools & Equipment": "Knapsack sprayer \u2192 Sprayers \u00b7 Water pump \u2192 Irrigation Equipment"
 };
 const availabilityOptions = ["Available now", "Seasonal", "Ask availability", "Unavailable"];
 const frequencyOptions = ["One-time", "Weekly", "Monthly", "On request"];
@@ -120,7 +143,7 @@ const initialState: ListingFormState = {
   existingMember: "",
   sellerType: "",
   productName: "",
-  marketplacePathway: "Fresh Produce",
+  marketplacePathway: "",
   subcategory: "",
   variety: "",
   description: "",
@@ -157,6 +180,7 @@ export function SubmitProduceListingForm() {
   const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [success, setSuccess] = useState<{ message: string; reference?: string } | null>(null);
   const [error, setError] = useState("");
+  const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const calculatedTotal = useMemo(
@@ -167,6 +191,23 @@ export function SubmitProduceListingForm() {
   const photoFiles = [mainImage, ...additionalImages].filter((file): file is File => Boolean(file));
 
   function update<K extends keyof ListingFormState>(key: K, value: ListingFormState[K]) {
+    setError("");
+    setInvalidFields((currentInvalidFields) => {
+      if (!currentInvalidFields.size) {
+        return currentInvalidFields;
+      }
+
+      const nextInvalidFields = new Set(currentInvalidFields);
+      nextInvalidFields.delete(String(key));
+
+      if (key === "sellerType" || key === "marketplacePathway") {
+        nextInvalidFields.delete("marketplacePathway");
+        nextInvalidFields.delete("subcategory");
+      }
+
+      return nextInvalidFields;
+    });
+
     setValues((current) => {
       const next = { ...current, [key]: value };
 
@@ -182,12 +223,36 @@ export function SubmitProduceListingForm() {
         next.subcategory = "";
       }
 
+      if (key === "sellerType") {
+        const allowedCategories = categoryOptionsForSellerType(String(value));
+
+        if (allowedCategories.length && !allowedCategories.includes(current.marketplacePathway)) {
+          next.marketplacePathway = "";
+          next.subcategory = "";
+        }
+      }
+
       if (key === "sellingUnit") {
         next.minimumOrderUnit = String(value);
       }
 
       return next;
     });
+  }
+
+  function handleContinue() {
+    const validation = validateStepDetails(step, values, mainImage);
+
+    if (!validation.valid) {
+      setError(validation.message ?? "Please complete the required fields to continue.");
+      setInvalidFields(new Set(validation.field ? [validation.field] : []));
+      focusField(validation.field);
+      return;
+    }
+
+    setError("");
+    setInvalidFields(new Set());
+    setStep((current) => Math.min(steps.length - 1, current + 1));
   }
 
   function applySellingChoice(choiceValue: string) {
@@ -283,7 +348,7 @@ export function SubmitProduceListingForm() {
 
       <div className="mt-5">
         {step === 0 ? <SellerStep values={values} update={update} /> : null}
-        {step === 1 ? <ProductStep values={values} update={update} /> : null}
+        {step === 1 ? <ProductStep values={values} update={update} invalidFields={invalidFields} /> : null}
         {step === 2 ? <TradeStep values={values} update={update} calculatedTotal={calculatedTotal.label} onSellingChoice={applySellingChoice} /> : null}
         {step === 3 ? <AvailabilityStep values={values} update={update} /> : null}
         {step === 4 ? (
@@ -313,8 +378,8 @@ export function SubmitProduceListingForm() {
         {step < steps.length - 1 ? (
           <button
             type="button"
-            disabled={!currentStepValid || isSubmitting}
-            onClick={() => setStep((current) => Math.min(steps.length - 1, current + 1))}
+            disabled={isSubmitting}
+            onClick={handleContinue}
             className="gg-button-primary justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-55"
           >
             Continue
@@ -343,21 +408,34 @@ function SellerStep({ values, update }: StepProps) {
       </div>
       <SelectField label="Region" value={values.region} onChange={(value) => update("region", value)} options={ghanaRegions} required placeholder="Select region" />
       <TextField label="District or town" value={values.district} onChange={(value) => update("district", value)} required />
-      <RadioGroup label="Are you already part of the Ghana Growers network?" value={values.existingMember} options={["Yes", "No", "Not sure"]} onChange={(value) => update("existingMember", value as ListingFormState["existingMember"])} required />
-      <RadioGroup label="Seller type" value={values.sellerType} options={["Farmer", "Supplier"]} onChange={(value) => update("sellerType", value as ListingFormState["sellerType"])} required />
+      <RadioGroup fieldName="existingMember" label="Are you already part of the Ghana Growers network?" value={values.existingMember} options={["Yes", "No", "Not sure"]} onChange={(value) => update("existingMember", value as ListingFormState["existingMember"])} required />
+      <RadioGroup fieldName="sellerType" label="Seller type" value={values.sellerType} options={["Farmer", "Supplier"]} labels={sellerTypeLabels} onChange={(value) => update("sellerType", value as ListingFormState["sellerType"])} required />
     </div>
   );
 }
 
-function ProductStep({ values, update }: StepProps) {
+function ProductStep({ values, update, invalidFields }: StepProps & { invalidFields: Set<string> }) {
+  const categoryOptions = categoryOptionsForSellerType(values.sellerType);
   const subcategoryOptions = subcategoryOptionsFor(values.marketplacePathway);
+  const categoryHelp = categoryHelpFor(values.marketplacePathway);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <TextField label="Product/listing title" value={values.productName} onChange={(value) => update("productName", value)} placeholder="Example: Yellow maize, tomato crates, fertilizer" required />
-      <SelectField label="Category" value={values.marketplacePathway} onChange={(value) => update("marketplacePathway", value)} options={[...marketplacePathways]} required />
+      <TextField fieldName="productName" invalid={invalidFields.has("productName")} label="Product/listing title" value={values.productName} onChange={(value) => update("productName", value)} placeholder="Example: Yellow maize, tomato crates, fertilizer" required />
+      <SelectField
+        fieldName="marketplacePathway"
+        invalid={invalidFields.has("marketplacePathway")}
+        label="Category"
+        value={values.marketplacePathway}
+        onChange={(value) => update("marketplacePathway", value)}
+        options={categoryOptions}
+        required
+        placeholder={values.sellerType ? "Select category" : "Select seller type first"}
+      />
       {subcategoryOptions.length ? (
         <SelectField
+          fieldName="subcategory"
+          invalid={invalidFields.has("subcategory")}
           label="Subcategory"
           value={values.subcategory}
           onChange={(value) => update("subcategory", value)}
@@ -370,11 +448,17 @@ function ProductStep({ values, update }: StepProps) {
       <TextField label="Grade or quality notes" value={values.gradeDescription} onChange={(value) => update("gradeDescription", value)} placeholder="Optional, e.g. dried, sorted, mature" />
       <label className="grid gap-2 text-sm font-bold text-ink/75 md:col-span-2">
         Short description
-        <textarea required value={values.description} onChange={(event) => update("description", event.target.value)} className={`${fieldClass} min-h-28`} placeholder="Tell buyers what you are selling. Do not add private contact details here." />
+        <textarea
+          required
+          data-field="description"
+          aria-invalid={invalidFields.has("description") ? true : undefined}
+          value={values.description}
+          onChange={(event) => update("description", event.target.value)}
+          className={`${fieldClass} min-h-28 ${invalidFields.has("description") ? "border-red-400 ring-2 ring-red-100" : ""}`}
+          placeholder="Tell buyers what you are selling. Do not add private contact details here."
+        />
       </label>
-      <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold leading-6 text-ink/62 md:col-span-2">
-        Examples: maize goes under Grains, groundnuts under Legumes, and yam or cassava under Roots & Tubers.
-      </p>
+      {categoryHelp ? <p className="text-xs font-semibold leading-5 text-ink/55 md:col-span-2">{categoryHelp}</p> : null}
     </div>
   );
 }
@@ -579,43 +663,91 @@ type StepProps = {
 };
 
 function validateStep(step: number, values: ListingFormState, mainImage: File | null) {
+  return validateStepDetails(step, values, mainImage).valid;
+}
+
+function validateStepDetails(step: number, values: ListingFormState, mainImage: File | null): { valid: boolean; message?: string; field?: string } {
   if (step === 0) {
-    return Boolean(values.farmBusinessName && values.contactPerson && values.phoneNumber && (values.whatsappSameAsPhone || values.whatsappNumber) && values.region && values.district && values.existingMember && values.sellerType);
+    if (!values.farmBusinessName) return { valid: false, message: "Please enter your farm or business name to continue.", field: "farmBusinessName" };
+    if (!values.contactPerson) return { valid: false, message: "Please enter a contact person to continue.", field: "contactPerson" };
+    if (!values.phoneNumber) return { valid: false, message: "Please enter a phone number to continue.", field: "phoneNumber" };
+    if (!values.whatsappSameAsPhone && !values.whatsappNumber) return { valid: false, message: "Please enter a WhatsApp number or mark it as same as phone.", field: "whatsappNumber" };
+    if (!values.region) return { valid: false, message: "Please select a region to continue.", field: "region" };
+    if (!values.district) return { valid: false, message: "Please enter your district or town to continue.", field: "district" };
+    if (!values.existingMember) return { valid: false, message: "Please answer whether you are already part of the Ghana Growers network.", field: "existingMember" };
+    if (!values.sellerType) return { valid: false, message: "Please select a seller type to continue.", field: "sellerType" };
+    return { valid: true };
   }
 
   if (step === 1) {
+    const categoryOptions = categoryOptionsForSellerType(values.sellerType);
     const subcategoryOptions = subcategoryOptionsFor(values.marketplacePathway);
-    return Boolean(values.productName && values.marketplacePathway && (!subcategoryOptions.length || values.subcategory) && values.description);
+    if (!values.productName) return { valid: false, message: "Please enter a product or listing title to continue.", field: "productName" };
+    if (!values.marketplacePathway || !categoryOptions.includes(values.marketplacePathway)) {
+      return { valid: false, message: "Please select a category to continue.", field: "marketplacePathway" };
+    }
+    if (subcategoryOptions.length && !values.subcategory) {
+      return { valid: false, message: "Please select a subcategory to continue.", field: "subcategory" };
+    }
+    if (!values.description) return { valid: false, message: "Please add a short description to continue.", field: "description" };
+    return { valid: true };
   }
 
   if (step === 2) {
     const hasUnit = values.sellingUnit !== "other" || values.customUnitLabel;
     const hasQuantity = values.quantityConfirmedLater || (isDirectQuantityValues(values) ? values.totalQuantityValue : values.unitsAvailable);
 
-    return Boolean(values.sellingMethod && hasUnit && hasQuantity);
+    if (!values.sellingMethod) return { valid: false, message: "Please select how you sell this product.", field: "sellingMethod" };
+    if (!hasUnit) return { valid: false, message: "Please enter the unit name to continue.", field: "customUnitLabel" };
+    if (!hasQuantity) return { valid: false, message: "Please enter how many you have available, or ask Ghana Growers to confirm quantity.", field: "unitsAvailable" };
+    return { valid: true };
   }
 
   if (step === 3) {
-    return Boolean(values.availability && values.supplyFrequency && values.pickupLocation);
+    if (!values.availability) return { valid: false, message: "Please select availability status to continue.", field: "availability" };
+    if (!values.supplyFrequency) return { valid: false, message: "Please select supply frequency to continue.", field: "supplyFrequency" };
+    if (!values.pickupLocation) return { valid: false, message: "Please enter a pickup location to continue.", field: "pickupLocation" };
+    return { valid: true };
   }
 
   if (step === 4) {
-    return Boolean(mainImage);
+    if (!mainImage) return { valid: false, message: "Please upload one clear product photo to continue.", field: "mainImage" };
+    return { valid: true };
   }
 
-  return values.confirmation;
+  return { valid: Boolean(values.confirmation), message: values.confirmation ? undefined : "Please confirm the information before submitting.", field: "confirmation" };
 }
 
 function selectedSellingChoice(values: ListingFormState) {
   return sellingChoices.find((choice) => choice.method === values.sellingMethod && choice.unit === values.sellingUnit) ?? sellingChoices[0];
 }
 
+function categoryOptionsForSellerType(sellerType: string) {
+  return [...(sellerCategoryOptions[sellerType as SellerTypeOption] ?? [])];
+}
+
 function subcategoryOptionsFor(pathway: string) {
   return [...(marketplaceSubcategories[pathway as typeof marketplacePathways[number]] ?? [])];
 }
 
+function categoryHelpFor(pathway: string) {
+  return categoryHelpText[pathway as typeof marketplacePathways[number]] ?? "";
+}
+
 function sizeMeasureOptionsForChoice(choice: Pick<SellingChoice, "unit">) {
   return sizeMeasureOptionsByUnit[choice.unit] ?? [...sizeMeasureOptions];
+}
+
+function focusField(field?: string) {
+  if (!field || typeof window === "undefined") {
+    return;
+  }
+
+  window.setTimeout(() => {
+    const target = document.querySelector<HTMLElement>(`[data-field="${field}"]`);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.focus();
+  }, 0);
 }
 
 function isDirectQuantityChoice(choice: Pick<SellingChoice, "method" | "unit">) {
@@ -717,7 +849,9 @@ function TextField({
   required = false,
   disabled = false,
   placeholder,
-  helper
+  helper,
+  fieldName,
+  invalid = false
 }: {
   label: string;
   value: string;
@@ -727,11 +861,15 @@ function TextField({
   disabled?: boolean;
   placeholder?: string;
   helper?: string;
+  fieldName?: string;
+  invalid?: boolean;
 }) {
   return (
     <label className="grid gap-2 text-sm font-bold text-ink/75">
       {label}
       <input
+        data-field={fieldName}
+        aria-invalid={invalid ? true : undefined}
         required={required}
         disabled={disabled}
         type={type}
@@ -740,14 +878,14 @@ function TextField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className={fieldClass}
+        className={`${fieldClass} ${invalid ? "border-red-400 ring-2 ring-red-100" : ""}`}
       />
       {helper ? <span className="text-xs font-semibold text-earth-700">{helper}</span> : null}
     </label>
   );
 }
 
-function SelectField({ label, value, onChange, options, labels, required = false, placeholder }: {
+function SelectField({ label, value, onChange, options, labels, required = false, placeholder, fieldName, invalid = false }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -755,11 +893,20 @@ function SelectField({ label, value, onChange, options, labels, required = false
   labels?: Record<string, string>;
   required?: boolean;
   placeholder?: string;
+  fieldName?: string;
+  invalid?: boolean;
 }) {
   return (
     <label className="grid gap-2 text-sm font-bold text-ink/75">
       {label}
-      <select required={required} value={value} onChange={(event) => onChange(event.target.value)} className={fieldClass}>
+      <select
+        data-field={fieldName}
+        aria-invalid={invalid ? true : undefined}
+        required={required}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${fieldClass} ${invalid ? "border-red-400 ring-2 ring-red-100" : ""}`}
+      >
         {placeholder ? <option value="" disabled>{placeholder}</option> : null}
         {options.map((option) => <option key={option} value={option}>{labels?.[option] ?? (option === "other" ? "Other (review required)" : option)}</option>)}
       </select>
@@ -767,15 +914,15 @@ function SelectField({ label, value, onChange, options, labels, required = false
   );
 }
 
-function RadioGroup({ label, value, options, onChange, required = false }: { label: string; value: string; options: string[]; onChange: (value: string) => void; required?: boolean }) {
+function RadioGroup({ label, value, options, labels, onChange, required = false, fieldName }: { label: string; value: string; options: string[]; labels?: Record<string, string>; onChange: (value: string) => void; required?: boolean; fieldName?: string }) {
   return (
-    <fieldset className="grid gap-2 text-sm font-bold text-ink/75" aria-required={required}>
+    <fieldset data-field={fieldName} tabIndex={-1} className="grid gap-2 text-sm font-bold text-ink/75" aria-required={required}>
       <legend>{label}</legend>
       <div className="grid gap-2 sm:grid-cols-3">
         {options.map((option) => (
           <label key={option} className="flex min-h-11 items-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-bold text-ink/70">
             <input type="radio" checked={value === option} onChange={() => onChange(option)} className="h-4 w-4 text-leaf-700 focus:ring-leaf-700" />
-            {option}
+            {labels?.[option] ?? option}
           </label>
         ))}
       </div>
