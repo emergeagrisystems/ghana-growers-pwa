@@ -1,6 +1,6 @@
 import { AdminListingSubmissionsWorkspace } from "@/components/AdminListingSubmissionsWorkspace";
 import { adminAccessCookie, getAdminUserFromAccessToken } from "@/lib/adminAuth";
-import { getPublicSubmissions } from "@/lib/publicSubmissions";
+import { getPublicListingSubmissions } from "@/lib/publicSubmissions";
 import { unstable_noStore as noStore } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -22,7 +22,7 @@ export default async function AdminListingSubmissionsPage() {
     redirect("/admin/login");
   }
 
-  const submissions = await getPublicSubmissions();
+  const submissions = await getPublicListingSubmissions();
 
   return (
     <AdminListingSubmissionsWorkspace

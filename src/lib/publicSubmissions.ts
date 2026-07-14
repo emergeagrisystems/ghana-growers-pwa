@@ -757,13 +757,30 @@ export async function createBuyerRequestSubmission(body: Record<string, unknown>
   return insert;
 }
 
-export async function getPublicSubmissions() {
+export async function getPublicListingSubmissions() {
   const listingQuery =
     "select=*&order=created_at.desc&limit=500";
+  const listings = await selectSupabaseRecords<ListingSubmission>("listing_submissions", listingQuery);
+
+  if (listings.error) {
+    console.warn("Admin listing submission queue read failed", {
+      listingStatus: listings.status,
+      listingError: listings.error
+    });
+  }
+
+  return {
+    listings: listings.data ?? [],
+    error: listings.error,
+    status: listings.status
+  };
+}
+
+export async function getPublicSubmissions() {
   const buyerQuery =
     "select=id,product_needed,quantity,company_name,phone_number,region,district,buyer_name,buyer_type,whatsapp_number,preferred_delivery,deadline,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
   const [listings, buyerRequests] = await Promise.all([
-    selectSupabaseRecords<ListingSubmission>("listing_submissions", listingQuery),
+    getPublicListingSubmissions(),
     selectSupabaseRecords<BuyerRequestSubmission>("buyer_request_applications", buyerQuery)
   ]);
   const error = listings.error || buyerRequests.error;
@@ -778,7 +795,7 @@ export async function getPublicSubmissions() {
   }
 
   return {
-    listings: listings.data ?? [],
+    listings: listings.listings,
     buyerRequests: buyerRequests.data ?? [],
     error
   };

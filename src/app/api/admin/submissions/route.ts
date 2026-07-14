@@ -3,6 +3,7 @@ import { requireAdminUser } from "@/lib/adminAuth";
 import {
   convertBuyerRequestSubmission,
   convertListingSubmission,
+  getPublicListingSubmissions,
   getPublicSubmissions,
   updateSubmissionStatus,
   type BuyerRequestSubmission,
@@ -25,7 +26,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  return NextResponse.json(await getPublicSubmissions(), {
+  const searchParams = new URL(request.url).searchParams;
+  const kind = searchParams.get("kind");
+
+  return NextResponse.json(kind === "listing" ? await getPublicListingSubmissions() : await getPublicSubmissions(), {
     headers: {
       "Cache-Control": "no-store, max-age=0"
     }

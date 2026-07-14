@@ -490,12 +490,13 @@ const tests: TestCase[] = [
       assert.equal(page.includes('export const dynamic = "force-dynamic"'), true);
       assert.equal(page.includes("export const revalidate = 0"), true);
       assert.equal(page.includes("noStore()"), true);
-      assert.equal(page.includes("getPublicSubmissions"), true);
+      assert.equal(page.includes("getPublicListingSubmissions"), true);
       assert.equal(page.includes("initialSubmissions={submissions.listings}"), true);
       assert.equal(workspace.includes("Public listing review workspace"), true);
       assert.equal(workspace.includes("initialSubmissions = []"), true);
       assert.equal(workspace.includes("useState<ListingSubmission[]>(initialSubmissions)"), true);
       assert.equal(workspace.includes("initialError = \"\""), true);
+      assert.equal(workspace.includes("/api/admin/submissions?kind=listing"), true);
       assert.equal(workspace.includes("No submissions in this status."), true);
       assert.equal(workspace.includes("Needs Information"), true);
       assert.equal(workspace.includes("Mark Under Review"), true);
@@ -509,6 +510,8 @@ const tests: TestCase[] = [
       assert.equal(workspace.includes("/api/admin/listing-submissions/images"), true);
       assert.equal(api.includes("requireAdminUser"), true);
       assert.equal(api.includes("convertListingSubmission"), true);
+      assert.equal(api.includes('searchParams.get("kind")'), true);
+      assert.equal(api.includes("kind === \"listing\" ? await getPublicListingSubmissions() : await getPublicSubmissions()"), true);
       assert.equal(api.includes("export const revalidate = 0"), true);
       assert.equal(api.includes('"Cache-Control": "no-store, max-age=0"'), true);
       assert.equal(api.includes('allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"])'), true);
@@ -516,6 +519,8 @@ const tests: TestCase[] = [
       assert.equal(imageApi.includes('bucket: "listing-submissions"'), true);
       assert.equal(imageApi.includes("Cache-Control"), true);
       assert.equal(publicSubmissions.includes('selectSupabaseRecords<ListingSubmission>("listing_submissions", listingQuery)'), true);
+      assert.equal(publicSubmissions.includes("export async function getPublicListingSubmissions()"), true);
+      assert.equal(publicSubmissions.includes("Admin listing submission queue read failed"), true);
       assert.equal(publicSubmissions.includes('"select=*&order=created_at.desc&limit=500"'), true);
       assert.equal(publicSubmissions.includes("Admin submission queue read failed"), true);
       assert.equal(publicSubmissions.includes('["Published", "Converted"].includes(submission.status) || submission.published_listing_id'), true);
@@ -527,6 +532,30 @@ const tests: TestCase[] = [
       assert.equal(publicSubmissions.includes("recordPublicationCleanup"), true);
       assert.equal(publicSubmissions.includes("status_history"), true);
       assert.equal(publicSubmissions.includes("p_admin_email: adminEmail"), true);
+    }
+  },
+  {
+    name: "Admin listing-submission workspace is independent of missing buyer request applications table",
+    run: () => {
+      const page = repoFile("src/app/admin/listing-submissions/page.tsx");
+      const workspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
+      const api = repoFile("src/app/api/admin/submissions/route.ts");
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+
+      assert.equal(page.includes("getPublicListingSubmissions"), true);
+      assert.equal(page.includes("getPublicSubmissions"), false);
+      assert.equal(workspace.includes("/api/admin/submissions?kind=listing"), true);
+      assert.equal(workspace.includes("buyer_request_applications"), false);
+      assert.equal(api.includes("getPublicListingSubmissions"), true);
+      assert.equal(api.includes("kind === \"listing\" ? await getPublicListingSubmissions() : await getPublicSubmissions()"), true);
+      assert.equal(publicSubmissions.includes("export async function getPublicListingSubmissions()"), true);
+      assert.equal(publicSubmissions.includes("buyer_request_applications"), true);
+      const listingOnlyHelper = publicSubmissions.slice(
+        publicSubmissions.indexOf("export async function getPublicListingSubmissions()"),
+        publicSubmissions.indexOf("export async function getPublicSubmissions()")
+      );
+      assert.equal(listingOnlyHelper.includes("listing_submissions"), true);
+      assert.equal(listingOnlyHelper.includes("buyer_request_applications"), false);
     }
   },
   {

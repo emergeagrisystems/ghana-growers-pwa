@@ -48,7 +48,7 @@ export function AdminListingSubmissionsWorkspace({
 
   async function loadSubmissions() {
     setLoading(true);
-    const response = await fetch("/api/admin/submissions", { cache: "no-store" }).catch(() => null);
+    const response = await fetch("/api/admin/submissions?kind=listing", { cache: "no-store" }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { listings?: ListingSubmission[]; error?: string } | null;
 
     setLoading(false);
