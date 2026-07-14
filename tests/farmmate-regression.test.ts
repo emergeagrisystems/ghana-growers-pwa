@@ -924,7 +924,7 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes('updateLeadRequestStatus(selectedProduceRequest, "Negotiating")'), true);
       assert.equal(adminDashboard.includes("Start Sourcing"), true);
       assert.equal(adminDashboard.includes("No produce requests match this search or status filter."), true);
-      assert.equal(adminDashboard.includes("submissions.buyerRequests.map((request) => {"), true);
+      assert.equal(adminDashboard.includes("const legacySubmissionCases = submissions.buyerRequests.map(sourcingCaseFromBuyerSubmission);"), true);
       assert.equal(adminDashboard.includes("buyer_request_applications"), false);
 
       assert.equal(leadAdminRoute.includes("requireAdminUser"), true);
@@ -933,6 +933,39 @@ const tests: TestCase[] = [
       assert.equal(leadAdminRoute.includes("export const revalidate = 0"), true);
       assert.equal(leadAdminRoute.includes('"Cache-Control": "no-store, max-age=0"'), true);
       assert.equal(leadAdminRoute.includes("[admin:lead-requests] Could not load lead requests"), true);
+    }
+  },
+  {
+    name: "Start Sourcing moves unified lead into Matches without duplicate request records",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const leadAdminRoute = repoFile("src/app/api/admin/lead-requests/route.ts");
+
+      assert.equal(adminDashboard.includes("function sourcingCaseFromLead(lead: LeadRequestRecord)"), true);
+      assert.equal(adminDashboard.includes('if (status !== "Negotiating")'), true);
+      assert.equal(adminDashboard.includes('case_source: "lead_request"'), true);
+      assert.equal(adminDashboard.includes("const sourcingCaseRequests = useMemo"), true);
+      assert.equal(adminDashboard.includes(".map(sourcingCaseFromLead)"), true);
+      assert.equal(adminDashboard.includes("const legacySubmissionCases = submissions.buyerRequests.map(sourcingCaseFromBuyerSubmission);"), true);
+      assert.equal(adminDashboard.includes("return [...leadCases, ...legacySubmissionCases];"), true);
+      assert.equal(adminDashboard.includes("status: defaultSourcingCaseStatus(request)"), true);
+      assert.equal(adminDashboard.includes('return "Active Sourcing";'), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(selectedProduceRequest, "Negotiating")'), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Negotiating")'), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Completed")'), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Lost")'), true);
+      assert.equal(adminDashboard.includes("produceRequestFilterTitle(produceRequestStatusFilter)"), true);
+      assert.equal(adminDashboard.includes("Sourcing cases could not be loaded. Please refresh and try again."), true);
+      assert.equal(adminDashboard.includes("Public Listing Snapshot"), true);
+      assert.equal(adminDashboard.includes("sourcingCaseLinkedSource(selectedSourcingCase.request)"), true);
+      assert.equal(adminDashboard.includes("seller private contact details are not exposed here"), false);
+      assert.equal(adminDashboard.includes("Seller private contact details are not exposed here."), true);
+      assert.equal(adminDashboard.includes("buyer_request_applications"), false);
+      assert.equal(adminDashboard.includes("sourcing_cases"), false);
+
+      assert.equal(adminDashboard.includes('body: JSON.stringify({ id: lead.id, status })'), true);
+      assert.equal(leadAdminRoute.includes("const id = typeof body.id === \"string\" ? body.id.trim() : \"\";"), true);
+      assert.equal(leadAdminRoute.includes("updateLeadRequestStatus({ id, status: body.status, adminEmail: adminUser.email })"), true);
     }
   },
   {

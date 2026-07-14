@@ -290,7 +290,7 @@ type SourcingQueueFilter =
   | "Waiting Farmer"
   | "Waiting Supplier"
   | "High Priority";
-type SourcingCaseStatus = "New" | "Reviewing" | "Matching Farmers" | "Matching Suppliers" | "Waiting Buyer" | "Completed" | "Closed";
+type SourcingCaseStatus = "New" | "Reviewing" | "Active Sourcing" | "Matching Farmers" | "Matching Suppliers" | "Waiting Buyer" | "Completed" | "Closed";
 type EditorialDecisionState = {
   launchStatus: LaunchEditorialStatus;
   homepageCandidate: boolean;
@@ -389,6 +389,18 @@ type BuyerRequestSubmissionRecord = {
   status: SubmissionStatus;
   created_at: string;
   updated_at: string;
+};
+type SourcingCaseRecord = BuyerRequestSubmissionRecord & {
+  case_source: "lead_request" | "buyer_request_submission";
+  lead_request_status?: LeadRequestStatus | "Closed";
+  request_source?: LeadRequestSource | null;
+  source_type?: LeadRequestRecord["source_type"];
+  source_name?: string | null;
+  linked_source?: string | null;
+  marketplace_listing_id?: string | null;
+  farmer_profile_id?: string | null;
+  supplier_profile_id?: string | null;
+  listing_snapshot?: LeadRequestSnapshot | null;
 };
 type FarmerLinkedMarketplaceListing = {
   id: string;
@@ -566,7 +578,7 @@ const supplierLaunchChecklistItems: SupplierChecklistItem[] = [
   "Regions served",
   "Registration reviewed"
 ];
-const sourcingCaseStatuses: SourcingCaseStatus[] = ["New", "Reviewing", "Matching Farmers", "Matching Suppliers", "Waiting Buyer", "Completed", "Closed"];
+const sourcingCaseStatuses: SourcingCaseStatus[] = ["New", "Reviewing", "Active Sourcing", "Matching Farmers", "Matching Suppliers", "Waiting Buyer", "Completed", "Closed"];
 const sourcingQueueFilters: SourcingQueueFilter[] = ["All", "New", "Overdue", "Due Today", "Assigned To Me", "Completed", "Waiting Buyer", "Waiting Farmer", "Waiting Supplier", "High Priority"];
 
 const statusStyles: Record<AdminStatus, string> = {
@@ -2699,6 +2711,60 @@ function sourcingStatusFromSubmission(status: SubmissionStatus): SourcingCaseSta
   return "New";
 }
 
+function sourcingCaseFromLead(lead: LeadRequestRecord): SourcingCaseRecord | null {
+  const status = normalizeLeadStatus(lead.status);
+
+  if (status !== "Negotiating") {
+    return null;
+  }
+
+  const deliveryLocation = leadRequestLocation(lead);
+
+  return {
+    id: lead.id,
+    product_needed: lead.product_interest,
+    quantity: lead.quantity_needed ?? "",
+    company_name: lead.company_name ?? null,
+    phone_number: lead.phone,
+    region: "",
+    district: deliveryLocation,
+    buyer_name: lead.requester_name,
+    buyer_type: lead.company_name ? "Company Buyer" : "Buyer",
+    whatsapp_number: lead.whatsapp,
+    preferred_delivery: deliveryLocation,
+    deadline: lead.required_by ?? "",
+    notes: lead.message,
+    status: "Approved",
+    created_at: lead.created_at,
+    updated_at: lead.created_at,
+    case_source: "lead_request",
+    lead_request_status: lead.status,
+    request_source: lead.request_source,
+    source_type: lead.source_type,
+    source_name: lead.source_name,
+    linked_source: leadRequestLinkedSource(lead),
+    marketplace_listing_id: lead.marketplace_listing_id ?? null,
+    farmer_profile_id: lead.farmer_profile_id ?? null,
+    supplier_profile_id: lead.supplier_profile_id ?? null,
+    listing_snapshot: lead.listing_snapshot ?? null
+  };
+}
+
+function sourcingCaseFromBuyerSubmission(request: BuyerRequestSubmissionRecord): SourcingCaseRecord {
+  return {
+    ...request,
+    case_source: "buyer_request_submission"
+  };
+}
+
+function defaultSourcingCaseStatus(caseItem: SourcingCaseRecord): SourcingCaseStatus {
+  if (caseItem.case_source === "lead_request") {
+    return "Active Sourcing";
+  }
+
+  return sourcingStatusFromSubmission(caseItem.status);
+}
+
 function dateAtStart(value?: string | null) {
   const date = value ? new Date(value) : null;
 
@@ -2733,7 +2799,7 @@ function sourcingSla(submittedAt?: string | null) {
   };
 }
 
-function sourcingPriority(caseItem: BuyerRequestSubmissionRecord, state: SourcingCaseState) {
+function sourcingPriority(caseItem: SourcingCaseRecord, state: SourcingCaseState) {
   const today = dateAtStart(new Date().toISOString());
   const requestDeadline = dateAtStart(caseItem.deadline);
   const sla = sourcingSla(caseItem.created_at);
@@ -2756,6 +2822,10 @@ function sourcingPriority(caseItem: BuyerRequestSubmissionRecord, state: Sourcin
 function sourcingRecommendedAction(state: SourcingCaseState) {
   if (state.status === "New") {
     return "Contact Buyer";
+  }
+
+  if (state.status === "Active Sourcing") {
+    return "Review Matches";
   }
 
   if (state.status === "Reviewing") {
@@ -2781,7 +2851,7 @@ function sourcingRecommendedAction(state: SourcingCaseState) {
   return "Review Case";
 }
 
-function sourcingTimeline(caseItem: BuyerRequestSubmissionRecord, state: SourcingCaseState) {
+function sourcingTimeline(caseItem: SourcingCaseRecord, state: SourcingCaseState) {
   return [
     { label: "Request received", detail: caseItem.created_at ? new Date(caseItem.created_at).toLocaleDateString() : "Date not captured", complete: true },
     { label: "Buyer contacted", detail: state.status !== "New" ? "Contact started" : "Waiting for first response", complete: state.status !== "New" },
@@ -3032,6 +3102,22 @@ function leadMatchesProduceRequestStatus(lead: LeadRequestRecord, filter: Produc
   return filter === "All" || leadReviewStatusLabel(lead.status) === filter;
 }
 
+function produceRequestFilterTitle(filter: ProduceRequestStatusFilter) {
+  if (filter === "Pending Review") {
+    return "Awaiting review";
+  }
+
+  if (filter === "Active Sourcing") {
+    return "Active sourcing";
+  }
+
+  if (filter === "All") {
+    return "All private requests";
+  }
+
+  return filter;
+}
+
 function leadStatusClass(status: LeadRequestStatus) {
   if (status === "New") {
     return "bg-earth-50 text-earth-700";
@@ -3111,6 +3197,30 @@ function leadRequestSearchValue(lead: LeadRequestRecord) {
     lead.listing_snapshot?.listedQuantity,
     lead.listing_snapshot?.availability
   ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function sourcingCaseLocation(caseItem: SourcingCaseRecord) {
+  if (caseItem.case_source === "lead_request") {
+    return caseItem.preferred_delivery || caseItem.district || "Not supplied";
+  }
+
+  return [caseItem.district, caseItem.region].filter(Boolean).join(", ") || "Not supplied";
+}
+
+function sourcingCaseSourceLabel(caseItem: SourcingCaseRecord) {
+  if (caseItem.case_source === "lead_request") {
+    return leadRequestSourceLabel(caseItem.request_source);
+  }
+
+  return "Legacy buyer request";
+}
+
+function sourcingCaseLinkedSource(caseItem: SourcingCaseRecord) {
+  if (caseItem.case_source === "lead_request") {
+    return caseItem.linked_source ?? caseItem.source_name ?? "Not linked";
+  }
+
+  return "Buyer request submission";
 }
 
 function topLeadSourcesByKind(leads: LeadRequestRecord[], sourceTypes: LeadRequestRecord["source_type"][]) {
@@ -3242,7 +3352,7 @@ function supplierMatchScore(request: AnalyticsRecord, supplier: AnalyticsRecord)
   return productScore + adminLocationScore(request, supplier);
 }
 
-function buyerApplicationMatchSummary(application: BuyerRequestSubmissionRecord, analytics: AnalyticsData) {
+function buyerApplicationMatchSummary(application: BuyerRequestSubmissionRecord | SourcingCaseRecord, analytics: AnalyticsData) {
   const request = {
     id: application.id,
     product_needed: application.product_needed,
@@ -4067,11 +4177,19 @@ export function AdminDashboard({
     listings: submissions.listings.filter((submission) => submission.status === "New").length,
     buyerRequests: submissions.buyerRequests.filter((submission) => submission.status === "New").length
   }), [submissions]);
+  const sourcingCaseRequests = useMemo(() => {
+    const leadCases = leadRequests
+      .map(sourcingCaseFromLead)
+      .filter((caseItem): caseItem is SourcingCaseRecord => Boolean(caseItem));
+    const legacySubmissionCases = submissions.buyerRequests.map(sourcingCaseFromBuyerSubmission);
+
+    return [...leadCases, ...legacySubmissionCases];
+  }, [leadRequests, submissions.buyerRequests]);
   const sourcingCases = useMemo(
     () =>
-      submissions.buyerRequests.map((request) => {
+      sourcingCaseRequests.map((request) => {
         const state = sourcingCaseStates[request.id] ?? {
-          status: sourcingStatusFromSubmission(request.status),
+          status: defaultSourcingCaseStatus(request),
           owner: "",
           notes: ""
         };
@@ -4080,7 +4198,7 @@ export function AdminDashboard({
 
         return { request, state, matches, priority };
       }),
-    [analyticsData, leadRequests, sourcingCaseStates, submissions.buyerRequests, whatsappLeads]
+    [analyticsData, leadRequests, sourcingCaseRequests, sourcingCaseStates, whatsappLeads]
   );
   const filteredSourcingCases = useMemo(() => sourcingCases.filter((caseItem) => {
     if (sourcingQueueFilter === "All") {
@@ -6051,7 +6169,7 @@ export function AdminDashboard({
     : notice;
   const visibleApplicationDiagnostics = applicationDiagnostics[applicationTab]?.join(" ") ?? "";
 
-  async function updateLeadRequestStatus(lead: LeadRequestRecord, status: LeadRequestStatus) {
+  async function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus) {
     const response = await fetch("/api/admin/lead-requests", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -6071,7 +6189,7 @@ export function AdminDashboard({
 
     setLeadRequests((current) => current.map((item) => (item.id === lead.id ? { ...item, status } : item)));
     setLeadRequestError("");
-    setNotice(`${lead.requester_name} lead marked ${status}.`);
+    setNotice(`${"requester_name" in lead ? lead.requester_name : lead.buyer_name} lead marked ${status}.`);
     void loadActivity();
     void loadAnalytics();
   }
@@ -6313,7 +6431,7 @@ export function AdminDashboard({
   }
 
   function updateSourcingCaseState(caseId: string, updater: (current: SourcingCaseState) => SourcingCaseState) {
-    const request = submissions.buyerRequests.find((item) => item.id === caseId);
+    const request = sourcingCaseRequests.find((item) => item.id === caseId);
 
     if (!request) {
       return;
@@ -6321,7 +6439,7 @@ export function AdminDashboard({
 
     setSourcingCaseStates((current) => {
       const existing = current[caseId] ?? {
-        status: sourcingStatusFromSubmission(request.status),
+        status: defaultSourcingCaseStatus(request),
         owner: "",
         notes: ""
       };
@@ -6333,8 +6451,28 @@ export function AdminDashboard({
     });
   }
 
-  async function setSourcingCaseStatus(caseItem: BuyerRequestSubmissionRecord, status: SourcingCaseStatus) {
+  async function setSourcingCaseStatus(caseItem: SourcingCaseRecord, status: SourcingCaseStatus) {
     updateSourcingCaseState(caseItem.id, (current) => ({ ...current, status }));
+
+    if (caseItem.case_source === "lead_request") {
+      if (status === "Completed") {
+        await updateLeadRequestStatus(caseItem, "Completed");
+        return;
+      }
+
+      if (status === "Closed") {
+        await updateLeadRequestStatus(caseItem, "Lost");
+        return;
+      }
+
+      if (status === "Reviewing") {
+        await updateLeadRequestStatus(caseItem, "Contacted");
+        return;
+      }
+
+      await updateLeadRequestStatus(caseItem, "Negotiating");
+      return;
+    }
 
     if (status === "Reviewing") {
       await updateSubmissionStatus(caseItem, "Under Review", "buyer-request");
@@ -6349,7 +6487,7 @@ export function AdminDashboard({
     }
   }
 
-  function contactSourcingBuyer(caseItem: BuyerRequestSubmissionRecord) {
+  function contactSourcingBuyer(caseItem: SourcingCaseRecord) {
     updateSourcingCaseState(caseItem.id, (current) => ({
       ...current,
       status: current.status === "New" ? "Reviewing" : current.status,
@@ -8923,9 +9061,11 @@ export function AdminDashboard({
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Produce Requests</p>
-                        <h3 className="mt-2 text-xl font-black text-ink">Awaiting review</h3>
+                        <h3 className="mt-2 text-xl font-black text-ink">{produceRequestFilterTitle(produceRequestStatusFilter)}</h3>
                       </div>
-                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{produceRequestLeads.length} shown</p>
+                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">
+                        {produceRequestLeads.length} {produceRequestFilterTitle(produceRequestStatusFilter).toLowerCase()} shown
+                      </p>
                     </div>
 
                     <div className="mt-5 grid gap-3">
@@ -9462,9 +9602,13 @@ export function AdminDashboard({
               </div>
             ) : isMatchOpportunitiesSection ? (
               <div className="grid min-w-0 gap-5 p-5">
+                {leadRequestError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
+                ) : null}
+
                 <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-4">
                   {[
-                    ["Awaiting Review", sourcingCases.filter((caseItem) => caseItem.state.status === "New").length],
+                    ["Active Sourcing", sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length],
                     ["Overdue Requests", sourcingCases.filter((caseItem) => caseItem.priority.label === "Overdue").length],
                     ["Average Response", sourcingCases.some((caseItem) => caseItem.priority.label === "Overdue") ? "Needs review" : "On track"],
                     ["Completed Today", sourcingCases.filter((caseItem) => caseItem.state.status === "Completed").length]
@@ -9545,7 +9689,7 @@ export function AdminDashboard({
                       })}
                       {filteredSourcingCases.length === 0 ? (
                         <p className="rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/58 ring-1 ring-leaf-900/10">
-                          No sourcing cases match this filter.
+                          {leadRequestError ? "Sourcing cases could not be loaded. Please refresh and try again." : "No sourcing cases match this filter."}
                         </p>
                       ) : null}
                     </div>
@@ -9558,7 +9702,7 @@ export function AdminDashboard({
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Case Review</p>
                           <h3 className="mt-2 text-3xl font-black text-ink">{selectedSourcingCase.request.product_needed}</h3>
                           <p className="mt-2 text-sm font-semibold text-ink/60">
-                            {selectedSourcingCase.request.buyer_name} needs sourcing support in {selectedSourcingCase.request.district}, {selectedSourcingCase.request.region}.
+                            {selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
                           </p>
                         </div>
 
@@ -9570,7 +9714,7 @@ export function AdminDashboard({
                             <LeadDetailItem label="Company" value={selectedSourcingCase.request.company_name || "Not supplied"} />
                             <LeadDetailItem label="Phone" value={selectedSourcingCase.request.phone_number} />
                             <LeadDetailItem label="WhatsApp" value={selectedSourcingCase.request.whatsapp_number} />
-                            <LeadDetailItem label="Location" value={`${selectedSourcingCase.request.district}, ${selectedSourcingCase.request.region}`} />
+                            <LeadDetailItem label="Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
                           </dl>
                         </section>
 
@@ -9579,9 +9723,11 @@ export function AdminDashboard({
                           <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             <LeadDetailItem label="Products Requested" value={selectedSourcingCase.request.product_needed} />
                             <LeadDetailItem label="Quantity" value={selectedSourcingCase.request.quantity || "Not supplied"} />
-                            <LeadDetailItem label="Preferred Delivery Region" value={selectedSourcingCase.request.preferred_delivery || `${selectedSourcingCase.request.district}, ${selectedSourcingCase.request.region}`} />
+                            <LeadDetailItem label="Delivery Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
                             <LeadDetailItem label="Required Delivery Date" value={selectedSourcingCase.request.deadline || "Not supplied"} />
-                            <LeadDetailItem label="Budget" value="Not supplied" />
+                            <LeadDetailItem label="Request Source" value={sourcingCaseSourceLabel(selectedSourcingCase.request)} />
+                            <LeadDetailItem label="Linked Listing / Profile" value={sourcingCaseLinkedSource(selectedSourcingCase.request)} />
+                            <LeadDetailItem label="Operational Status" value={selectedSourcingCase.state.status} />
                             <LeadDetailItem label="Submitted" value={selectedSourcingCase.request.created_at ? new Date(selectedSourcingCase.request.created_at).toLocaleDateString() : "Not captured"} />
                           </dl>
                           <div className="mt-4 rounded-md bg-leaf-50 p-4">
@@ -9589,6 +9735,23 @@ export function AdminDashboard({
                             <p className="mt-2 text-sm font-semibold leading-6 text-ink/65">{selectedSourcingCase.request.notes || "No additional notes were supplied."}</p>
                           </div>
                         </section>
+
+                        {selectedSourcingCase.request.listing_snapshot ? (
+                          <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                            <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Public Listing Snapshot</h4>
+                            <p className="mt-1 text-xs font-semibold leading-5 text-ink/50">
+                              Public listing context only. Seller private contact details are not exposed here.
+                            </p>
+                            <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                              <LeadDetailItem label="Product" value={selectedSourcingCase.request.listing_snapshot.product ?? selectedSourcingCase.request.product_needed} />
+                              <LeadDetailItem label="Seller / Profile" value={selectedSourcingCase.request.listing_snapshot.seller ?? selectedSourcingCase.request.source_name ?? "Not captured"} />
+                              <LeadDetailItem label="Location" value={selectedSourcingCase.request.listing_snapshot.location ?? "Not captured"} />
+                              <LeadDetailItem label="Price / Package" value={selectedSourcingCase.request.listing_snapshot.pricePackage ?? "Not captured"} />
+                              <LeadDetailItem label="Listed Quantity" value={selectedSourcingCase.request.listing_snapshot.listedQuantity ?? "Not captured"} />
+                              <LeadDetailItem label="Availability" value={selectedSourcingCase.request.listing_snapshot.availability ?? "Not captured"} />
+                            </dl>
+                          </section>
+                        ) : null}
 
                         <section className="rounded-md border border-leaf-900/10 bg-white p-4">
                           <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Suggested Matches</h4>
@@ -9619,7 +9782,7 @@ export function AdminDashboard({
                             <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Previous Sourcing Requests</h4>
                             <div className="mt-4 grid gap-2">
                               {submissions.buyerRequests
-                                .filter((request) => request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number))
+                                .filter((request) => selectedSourcingCase.request.case_source === "buyer_request_submission" && request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number))
                                 .slice(0, 4)
                                 .map((request) => (
                                   <div key={request.id} className="rounded-md bg-leaf-50 p-3">
@@ -9627,7 +9790,7 @@ export function AdminDashboard({
                                     <p className="mt-1 text-xs font-semibold text-ink/55">{request.status} - {request.created_at ? new Date(request.created_at).toLocaleDateString() : "No date"}</p>
                                   </div>
                                 ))}
-                              {submissions.buyerRequests.filter((request) => request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number)).length === 0 ? (
+                              {submissions.buyerRequests.filter((request) => selectedSourcingCase.request.case_source === "buyer_request_submission" && request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number)).length === 0 ? (
                                 <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No previous sourcing requests from this buyer.</p>
                               ) : null}
                             </div>
