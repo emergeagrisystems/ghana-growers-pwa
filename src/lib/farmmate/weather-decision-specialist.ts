@@ -10,6 +10,29 @@ export type WeatherDecisionTask =
   | "wet-leaves"
   | "waterlogged-soil";
 
+export const weatherDecisionRainChanceThresholds = {
+  high: 70,
+  medium: 40
+} as const;
+
+export type WeatherDecisionRainChanceBand = "high" | "medium" | "low" | "unknown";
+
+export function weatherDecisionRainChanceBand(rainChancePercent?: number): WeatherDecisionRainChanceBand {
+  if (typeof rainChancePercent !== "number" || !Number.isFinite(rainChancePercent)) {
+    return "unknown";
+  }
+
+  if (rainChancePercent >= weatherDecisionRainChanceThresholds.high) {
+    return "high";
+  }
+
+  if (rainChancePercent >= weatherDecisionRainChanceThresholds.medium) {
+    return "medium";
+  }
+
+  return "low";
+}
+
 export type WeatherDecisionGuidance = {
   task: WeatherDecisionTask;
   handles: string;

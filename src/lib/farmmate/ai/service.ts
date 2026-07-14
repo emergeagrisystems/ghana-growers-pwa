@@ -156,6 +156,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For weather decisions, do not invent live weather or forecast details.",
       "For weather decisions with live daily weather context, do not turn daily rain chance into exact 4 to 6 hour rain timing.",
       "For weather decisions, use complete sentences. Never end mid-phrase.",
+      "For high live rain chance, say: \"Do not spray now unless you can personally confirm there will be no rain for the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.\"",
       "For unsure rain answers, say: \"Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.\"",
       "For rain expected answers, say: \"Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.\"",
       "For clear spray conditions, say: \"Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.\"",

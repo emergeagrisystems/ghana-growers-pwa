@@ -1,5 +1,6 @@
 import type { FarmMateLocalResponseCard } from "./ai";
 import type { WeatherDecisionSummary } from "./weather";
+import { weatherDecisionRainChanceBand } from "./weather-decision-specialist";
 
 const FALLBACK_MESSAGE = "FarmMate AI is temporarily limited, but you can still use the local guidance.";
 const SUMMARY_SEPARATOR = " · ";
@@ -100,9 +101,14 @@ function liveWeatherLine(weatherContext: WeatherDecisionSummary) {
 function liveWeatherCards(weatherContext: WeatherDecisionSummary, answers: FarmMateFollowUpAnswer[]): FarmMateLocalResponseCard[] {
   const text = answerText(answers);
   const rainChance = weatherContext.rainChancePercent;
-  const highRainChance = typeof rainChance === "number" && rainChance >= 60;
-  const lowRainChance = typeof rainChance === "number" && rainChance <= 25;
-  const mediumRainChance = typeof rainChance === "number" && !highRainChance && !lowRainChance;
+  const rainAnswer =
+    answers.find((answer) => answer.question?.toLowerCase().includes("rain"))?.answer.toLowerCase() ?? "";
+  const rainBand = weatherDecisionRainChanceBand(rainChance);
+  const highRainChance = rainBand === "high";
+  const lowRainChance = rainBand === "low";
+  const mediumRainChance = rainBand === "medium";
+  const rainExpectedSoon = text.includes("rain is expected");
+  const rainUnsure = text.includes("not sure about rain") || rainAnswer.includes("i am not sure");
   const windy = text.includes("windy") || text.includes("wind is strong") || (typeof weatherContext.windSpeedKph === "number" && weatherContext.windSpeedKph >= 25);
   const windUnsure = text.includes("not sure about the wind");
   const calmWind = text.includes("wind is calm") || (typeof weatherContext.windSpeedKph === "number" && weatherContext.windSpeedKph < 25);
@@ -110,6 +116,39 @@ function liveWeatherCards(weatherContext: WeatherDecisionSummary, answers: FarmM
   const wetLeaves = text.includes("leaves are wet");
   const leavesUnsure = text.includes("not sure if leaves are dry");
   const dailyCaveat = "Because this is a daily forecast, confirm the next few hours before spraying.";
+
+  if (highRainChance) {
+    return [
+      {
+        title: "What I think",
+        body: [
+          liveWeatherLine(weatherContext),
+          "Do not spray now unless you can personally confirm there will be no rain for the next 4 to 6 hours. Spray only when leaves are dry and wind is calm."
+        ]
+      },
+      {
+        title: "What to do now",
+        body: ["The forecast shows a high chance of rain today, but daily forecasts do not always show the exact next-hour timing."]
+      },
+      { title: "Next step", body: ["Check the next 4 to 6 hours before spraying."] }
+    ];
+  }
+
+  if (rainExpectedSoon) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Do not spray now."] },
+      { title: "What to do now", body: ["Wait until after the rain and spray only when leaves are dry and wind is calm."] },
+      { title: "Next step", body: ["Check the crop after the rain before spraying."] }
+    ];
+  }
+
+  if (rainUnsure) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Don't spray yet."] },
+      { title: "What to do now", body: ["First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm."] },
+      { title: "Next step", body: ["Confirm the rain window before spraying."] }
+    ];
+  }
 
   if (wetLeaves) {
     return [

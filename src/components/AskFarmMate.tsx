@@ -45,7 +45,9 @@ function conversationalOption(questionId: string, option: string) {
   const optionLabels: Record<string, Record<string, string>> = {
     "rain-window": {
       "Yes, rain is expected": "Rain is expected soon",
+      "Yes, rain is expected soon": "Rain is expected soon",
       "No rain expected": "No rain expected soon",
+      "No rain expected soon": "No rain expected soon",
       "I am not sure": "I am not sure about rain"
     },
     "leaf-wetness": {

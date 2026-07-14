@@ -7,7 +7,7 @@ import { assessPlantHealthQuestion, PlantHealthAssessment } from "../plant-healt
 import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertilizer-specialist";
 import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantingAdvisorQuestionType } from "../planting-advisor-specialist";
 import { findHarvestPostHarvestGuidance, harvestPostHarvestOpeningForQuestion, harvestPostHarvestQuestionType } from "../harvest-postharvest-specialist";
-import { findWeatherDecisionGuidance, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
+import { findWeatherDecisionGuidance, weatherDecisionRainChanceBand, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
 import type { WeatherDecisionSummary } from "../weather";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
@@ -489,14 +489,21 @@ function weatherTemperatureContextLine(weatherContext: WeatherDecisionSummary) {
 }
 
 function weatherSprayFollowUps(flow: DecisionFlow, weatherContext: WeatherDecisionSummary): FollowUpQuestion[] {
+  const rainQuestion = flow.followUpQuestions.find((followUp) => followUp.id === "rain-window");
   const leafQuestion = flow.followUpQuestions.find((followUp) => followUp.id === "leaf-wetness");
   const windQuestion = flow.followUpQuestions.find((followUp) => followUp.id === "wind-level");
+  const rainBand = weatherDecisionRainChanceBand(weatherContext.rainChancePercent);
   const followUps: FollowUpQuestion[] = [];
 
-  if (leafQuestion) {
+  if (rainBand === "high") {
+    return followUps;
+  }
+
+  if (rainBand === "medium" && rainQuestion) {
     followUps.push({
-      ...leafQuestion,
-      question: "Are the leaves dry now?"
+      ...rainQuestion,
+      question: "Can you confirm whether rain is expected in the next 4 to 6 hours?",
+      options: ["Yes, rain is expected soon", "No rain expected soon", "I am not sure"]
     });
   }
 
@@ -504,6 +511,13 @@ function weatherSprayFollowUps(flow: DecisionFlow, weatherContext: WeatherDecisi
     followUps.push({
       ...windQuestion,
       question: "Is the wind calm where you are?"
+    });
+  }
+
+  if (leafQuestion) {
+    followUps.push({
+      ...leafQuestion,
+      question: "Are the leaves dry now?"
     });
   }
 
@@ -515,25 +529,26 @@ function weatherContextRecommendation(weatherContext: WeatherDecisionSummary) {
   const rainLine = weatherRainContextLine(weatherContext);
   const temperatureLine = weatherTemperatureContextLine(weatherContext);
   const contextLines = [rainLine, temperatureLine].filter(Boolean);
-  const hasHighRainChance = typeof rainChance === "number" && rainChance >= 60;
-  const hasLowRainChance = typeof rainChance === "number" && rainChance <= 25;
-  const hasMediumRainChance = typeof rainChance === "number" && !hasHighRainChance && !hasLowRainChance;
+  const rainBand = weatherDecisionRainChanceBand(rainChance);
 
-  if (hasHighRainChance) {
+  if (rainBand === "high") {
     return {
-      summary: `${rainLine} Do not spray unless you can confirm no rain for the next 4 to 6 hours.`,
-      recommendedAction: "Delay spraying for now unless you can confirm no rain for the next 4 to 6 hours, leaves are dry and wind is calm.",
+      confidence: "high" as const,
+      summary: `${rainLine} Do not spray now unless you can personally confirm there will be no rain for the next 4 to 6 hours.`,
+      recommendedAction: "Do not spray now unless you can personally confirm there will be no rain for the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.",
       guidance: [
-        "Because this is a daily forecast, confirm the next few hours before spraying.",
+        "The forecast shows a high chance of rain today, but daily forecasts do not always show the exact next-hour timing.",
         "Spray only when leaves are dry and wind is calm.",
         "Follow the product label for any crop protection product."
       ],
+      nextBestAction: "Check the next 4 to 6 hours before spraying.",
       reasoning: contextLines
     };
   }
 
-  if (hasMediumRainChance) {
+  if (rainBand === "medium") {
     return {
+      confidence: "medium" as const,
       summary: `${rainLine} Be cautious because this is a daily forecast, not an exact next-hour forecast.`,
       recommendedAction: "Confirm the next 4 to 6 hours before spraying, then check that leaves are dry and wind is calm.",
       guidance: [
@@ -541,12 +556,14 @@ function weatherContextRecommendation(weatherContext: WeatherDecisionSummary) {
         "Wait if clouds build or rain looks likely soon.",
         "Follow the product label for any crop protection product."
       ],
+      nextBestAction: "Confirm whether rain is expected in the next 4 to 6 hours before spraying.",
       reasoning: contextLines
     };
   }
 
   return {
-    summary: hasLowRainChance
+    confidence: "medium" as const,
+    summary: rainBand === "low"
       ? `${rainLine} Spraying may be possible only if field conditions are also suitable.`
       : `${rainLine} Field checks are still needed before spraying.`,
     recommendedAction: "Check leaf dryness and wind before spraying; do not rely on the daily forecast alone.",
@@ -555,6 +572,7 @@ function weatherContextRecommendation(weatherContext: WeatherDecisionSummary) {
       "Spray only when leaves are dry and wind is calm.",
       "Avoid spraying during hot midday sun."
     ],
+    nextBestAction: "Check wind and leaf dryness before spraying.",
     reasoning: contextLines
   };
 }
@@ -579,6 +597,7 @@ function applyWeatherContextToFlow(question: string, flow: DecisionFlow, weather
     followUpQuestions: weatherSprayFollowUps(flow, weatherContext),
     recommendation: {
       ...flow.recommendation,
+      confidence: contextRecommendation.confidence,
       summary: contextRecommendation.summary,
       reasoning: contextRecommendation.reasoning.map((line, index) => ({
         id: `live-weather-context-${index + 1}`,
@@ -590,7 +609,7 @@ function applyWeatherContextToFlow(question: string, flow: DecisionFlow, weather
       nextBestAction: {
         id: "confirm-field-conditions",
         label: "Confirm field conditions",
-        instruction: "Confirm the next few hours, leaf dryness and wind before spraying.",
+        instruction: contextRecommendation.nextBestAction,
         actionType: "take-farm-action"
       }
     }

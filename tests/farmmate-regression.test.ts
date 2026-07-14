@@ -2231,7 +2231,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "weather spray question uses live weather context before generic rain questions",
+    name: "medium live rain chance asks next-hour confirmation before field checks",
     run: () => {
       const weatherContext = sampleWeatherContext({ rainChancePercent: 58, summaryNote: "Check field conditions before spraying." });
       const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
@@ -2239,16 +2239,16 @@ const tests: TestCase[] = [
 
       assert.equal(response.weatherContext?.rainChancePercent, 58);
       assert.equal(text.includes("58% chance of rain today"), true);
-      assert.notEqual(response.flow?.followUpQuestions[0]?.id, "rain-window");
-      assert.equal(response.flow?.followUpQuestions[0]?.id, "leaf-wetness");
-      assert.equal(response.flow?.followUpQuestions[0]?.question, "Are the leaves dry now?");
+      assert.equal(response.flow?.followUpQuestions[0]?.id, "rain-window");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Can you confirm whether rain is expected in the next 4 to 6 hours?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, rain is expected soon", "No rain expected soon", "I am not sure"]);
     }
   },
   {
     name: "weather spray flow asks wind condition only when live wind is missing",
     run: () => {
-      const contextWithWind = sampleWeatherContext({ windSpeedKph: 12 });
-      const contextWithoutWind = sampleWeatherContext();
+      const contextWithWind = sampleWeatherContext({ rainChancePercent: 10, windSpeedKph: 12 });
+      const contextWithoutWind = sampleWeatherContext({ rainChancePercent: 10 });
       delete contextWithoutWind.windSpeedKph;
       const withWind = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext: contextWithWind });
       const withoutWind = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext: contextWithoutWind });
@@ -2558,16 +2558,57 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "high rain chance skips leaf dryness question",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 100, windSpeedKph: 12 });
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(response.flow?.followUpQuestions.length, 0);
+      assert.equal(response.confidence, "high");
+      assert.equal(text.includes("100% chance of rain today"), true);
+      assert.equal(text.includes("are the leaves dry now"), false);
+      assert.equal(text.includes("do not spray now unless you can personally confirm"), true);
+    }
+  },
+  {
     name: "high live rain chance gives cautious do-not-spray guidance",
     run: () => {
       const weatherContext = sampleWeatherContext({ rainChancePercent: 70, windSpeedKph: 12 });
-      const answers = [{ question: "Are the leaves dry now?", answer: "Leaves are dry" }];
+      const answers: Array<{ question: string; answer: string }> = [];
       const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers, weatherContext);
       const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
 
       assert.equal(text.includes("70% chance of rain today"), true);
-      assert.equal(text.includes("do not spray unless you can confirm no rain for the next 4 to 6 hours"), true);
+      assert.equal(text.includes("do not spray now unless you can personally confirm there will be no rain for the next 4 to 6 hours"), true);
       assert.equal(text.includes("daily forecast"), true);
+      assert.deepEqual(cards?.find((card) => card.title === "Next step")?.body, ["Check the next 4 to 6 hours before spraying."]);
+    }
+  },
+  {
+    name: "medium live rain chance asks 4 to 6 hour rain confirmation",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 40, windSpeedKph: 12 });
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+
+      assert.equal(response.flow?.followUpQuestions[0]?.id, "rain-window");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Can you confirm whether rain is expected in the next 4 to 6 hours?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, rain is expected soon", "No rain expected soon", "I am not sure"]);
+    }
+  },
+  {
+    name: "low live rain chance asks only missing wind and leaf checks",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 30 });
+      delete weatherContext.windSpeedKph;
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+
+      assert.deepEqual(
+        response.flow?.followUpQuestions.map((question) => question.id),
+        ["wind-level", "leaf-wetness"]
+      );
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Is the wind calm where you are?");
+      assert.equal(response.flow?.followUpQuestions[1]?.question, "Are the leaves dry now?");
     }
   },
   {
@@ -2582,6 +2623,31 @@ const tests: TestCase[] = [
       assert.equal(text.includes("spraying may be suitable"), true);
       assert.equal(text.includes("follow the product label"), true);
       assert.equal(text.includes("avoid spraying during hot midday sun"), true);
+    }
+  },
+  {
+    name: "live weather answer does not claim checked wind when wind was not asked",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 70 });
+      delete weatherContext.windSpeedKph;
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", [], weatherContext);
+      const text = cards?.flatMap((card) => card.body).join(" ").toLowerCase() ?? "";
+
+      assert.equal(text.includes("the wind is calm"), false);
+      assert.equal(text.includes("your wind is calm"), false);
+      assert.equal(text.includes("wind is calm"), true);
+    }
+  },
+  {
+    name: "daily rain chance is not treated as exact hourly timing",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 100 });
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", [], weatherContext);
+      const text = cards?.flatMap((card) => card.body).join(" ").toLowerCase() ?? "";
+
+      assert.equal(text.includes("daily forecasts do not always show the exact next-hour timing"), true);
+      assert.equal(text.includes("rain will start"), false);
+      assert.equal(text.includes("rain starts at"), false);
     }
   },
   {
