@@ -248,6 +248,30 @@ function assertNoDeveloperLanguage(response: FarmMateBrainResponse) {
   assert.equal(text.includes("low confidence"), false);
 }
 
+function assertExactlyOneNextBestAction(response: FarmMateBrainResponse) {
+  const nextBestActionSections = response.sections.filter((section) => section.title === "Next Best Action");
+
+  assert.equal(nextBestActionSections.length, 1);
+  assert.equal(nextBestActionSections[0].body.length, 1);
+  assert.equal(Boolean(response.nextBestAction.instruction), true);
+}
+
+function assertPracticalSafeAnswer(question: string) {
+  const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+  const text = responseText(response).toLowerCase();
+
+  assertExactlyOneNextBestAction(response);
+  assertNoDeveloperLanguage(response);
+  assert.equal(text.includes("i can help"), false);
+  assert.equal(text.includes("tell the farmer"), false);
+  assert.equal(text.includes("guaranteed profit"), false);
+  assert.equal(text.includes("guaranteed yield"), false);
+  assert.equal(text.includes("buyer availability"), false);
+  assert.equal(text.includes("current market price"), false);
+  assert.equal(text.includes("rain is coming today"), false);
+  assert.equal(text.includes("weather shows"), false);
+}
+
 function usageEvent(tool: "ask_farmmate" | "crop_doctor", createdAt: string): FarmMateUsageEvent {
   return { tool, createdAt };
 }
@@ -320,6 +344,114 @@ const tests: TestCase[] = [
       for (const [question, specialist] of expectedRoutes) {
         assert.equal(routeFarmMateQuestion(question).selectedSpecialist, specialist);
       }
+    }
+  },
+  {
+    name: "Sprint 29 specialist audit routes all launch examples",
+    run: () => {
+      const expectedRoutes = [
+        ["My tomato leaves are yellow", "crop_health"],
+        ["My cassava leaves are curling", "crop_health"],
+        ["My maize has holes in the leaves", "crop_health"],
+        ["Best fertilizer for maize", "fertilizer"],
+        ["What NPK for pepper?", "fertilizer"],
+        ["Can I use compost for tomatoes?", "fertilizer"],
+        ["Can I spray today?", "weather_decision"],
+        ["Can I apply fertilizer before rain?", "weather_decision"],
+        ["Should I irrigate today?", "weather_decision"],
+        ["Can I plant tomatoes now?", "planting"],
+        ["What should I plant this month?", "planting"],
+        ["Best spacing for pepper?", "planting"],
+        ["When should I harvest maize?", "harvest_postharvest"],
+        ["How do I store cassava?", "harvest_postharvest"],
+        ["How do I pack tomatoes for transport?", "harvest_postharvest"],
+        ["I uploaded a crop photo. What should I check next?", "crop_doctor"],
+        ["I uploaded a cassava photo. What should I do next?", "crop_doctor"]
+      ] as const;
+
+      for (const [question, specialist] of expectedRoutes) {
+        assert.equal(routeFarmMateQuestion(question).selectedSpecialist, specialist, question);
+      }
+    }
+  },
+  {
+    name: "Sprint 29 topic changes reset without specialist leakage",
+    run: () => {
+      const fertilizerState: ConversationState = {
+        activeTopic: "fertilizer",
+        activeCropName: "Maize",
+        activeSpecialist: "fertilizer",
+        waitingForFollowUp: true,
+        turns: [{ message: "Best fertilizer for maize", topic: "fertilizer", cropName: "Maize", specialist: "fertilizer" }]
+      };
+      const cropDoctorState: ConversationState = {
+        activeTopic: "crop_doctor",
+        activeCropName: "Tomato",
+        activeSpecialist: "crop_doctor",
+        waitingForFollowUp: true,
+        turns: [{ message: "I uploaded a tomato crop photo", topic: "crop_doctor", cropName: "Tomato", specialist: "crop_doctor" }]
+      };
+      const harvestState: ConversationState = {
+        activeTopic: "harvest_postharvest",
+        activeCropName: "Maize",
+        activeSpecialist: "harvest_postharvest",
+        waitingForFollowUp: true,
+        turns: [{ message: "When should I harvest maize?", topic: "harvest_postharvest", cropName: "Maize", specialist: "harvest_postharvest" }]
+      };
+
+      const tomatoToMaizeFertilizer = manageFarmMateConversation("Best fertilizer for maize", plantHealthTomatoState);
+      assert.equal(tomatoToMaizeFertilizer.action, "reset");
+      assert.equal(tomatoToMaizeFertilizer.cropName, "Maize");
+      assert.equal(tomatoToMaizeFertilizer.specialist, "fertilizer");
+
+      const fertilizerToWeather = manageFarmMateConversation("Can I spray today?", fertilizerState);
+      assert.equal(fertilizerToWeather.action, "reset");
+      assert.equal(fertilizerToWeather.specialist, "weather_decision");
+
+      const cropDoctorToHarvest = manageFarmMateConversation("How do I store cassava?", cropDoctorState);
+      assert.equal(cropDoctorToHarvest.action, "reset");
+      assert.equal(cropDoctorToHarvest.cropName, "Cassava");
+      assert.equal(cropDoctorToHarvest.specialist, "harvest_postharvest");
+
+      const harvestToPlantHealth = manageFarmMateConversation("My pepper flowers are dropping", harvestState);
+      assert.equal(harvestToPlantHealth.action, "reset");
+      assert.equal(harvestToPlantHealth.cropName, "Pepper");
+      assert.equal(harvestToPlantHealth.specialist, "crop_health");
+      assert.notEqual(harvestToPlantHealth.specialist, "harvest_postharvest");
+    }
+  },
+  {
+    name: "Sprint 29 final responses stay practical and safe across specialists",
+    run: () => {
+      const questions = [
+        "My tomato leaves are yellow",
+        "My cassava leaves are curling",
+        "Best fertilizer for maize",
+        "Can I spray today?",
+        "Can I plant tomatoes now?",
+        "When should I harvest maize?",
+        "How do I store cassava?"
+      ];
+
+      for (const question of questions) {
+        assertPracticalSafeAnswer(question);
+      }
+
+      const fertilizerText = responseText(buildFarmMateResponse("Best fertilizer for maize", routeFarmMateQuestion("Best fertilizer for maize"))).toLowerCase();
+      const plantingText = responseText(buildFarmMateResponse("What should I plant this month?", routeFarmMateQuestion("What should I plant this month?"))).toLowerCase();
+      const harvestText = responseText(buildFarmMateResponse("How do I store cassava?", routeFarmMateQuestion("How do I store cassava?"))).toLowerCase();
+      const plantHealthText = responseText(buildFarmMateResponse("My tomato leaves are yellow", routeFarmMateQuestion("My tomato leaves are yellow"))).toLowerCase();
+
+      assert.equal(/\b\d+(?:\.\d+)?\s?(?:kg|g|ml|l)\b/.test(fertilizerText), false);
+      assert.equal(fertilizerText.includes("heavy rain"), true);
+      assert.equal(plantingText.includes("market price"), false);
+      assert.equal(plantingText.includes("guaranteed"), false);
+      assert.equal(harvestText.includes("shelf life"), false);
+      assert.equal(harvestText.includes("buyer availability"), false);
+      assert.equal(harvestText.includes("hot sun"), true);
+      assert.equal(harvestText.includes("rotten"), true);
+      assert.equal(plantHealthText.includes("chemical solution"), true);
+      assert.equal(plantHealthText.indexOf("prevention") < plantHealthText.indexOf("chemical solution"), true);
     }
   },
   {

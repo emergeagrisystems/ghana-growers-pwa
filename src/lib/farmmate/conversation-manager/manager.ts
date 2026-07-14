@@ -61,7 +61,29 @@ const topicRules: TopicRule[] = [
   {
     topic: "plant_health",
     specialist: "crop_health",
-    keywords: ["leaves", "yellow", "spots", "wilting", "wilt", "holes", "pests", "pest", "disease", "blight", "curling", "stunted", "not growing", "flower drop", "fruit drop", "root"]
+    keywords: [
+      "leaves",
+      "yellow",
+      "spots",
+      "wilting",
+      "wilt",
+      "holes",
+      "pests",
+      "pest",
+      "disease",
+      "blight",
+      "curling",
+      "stunted",
+      "not growing",
+      "flower drop",
+      "flower dropping",
+      "flowers dropping",
+      "flowers are dropping",
+      "fruit drop",
+      "fruit dropping",
+      "fruits dropping",
+      "root"
+    ]
   }
 ];
 

@@ -157,3 +157,58 @@ Safety rules:
 
 V1 limitation:
 - FarmMate does not yet have live local weather or market demand inside the local Brain. Planting advice must use farmer-provided rain, irrigation, region and field preparation context, and avoid claiming a crop is the guaranteed best, most profitable or highest-yield choice.
+
+## Crop Doctor Follow-up Specialist
+
+Handles structured handoffs from Crop Doctor photo checks.
+
+Example questions:
+- I uploaded a crop photo. What should I check next?
+- I uploaded a cassava photo. What should I do next?
+
+Routing rules:
+- Structured Crop Doctor handoff context takes priority over text-only keyword routing.
+- Crop Doctor handoffs should stay inside crop photo, symptom and plant-health guidance.
+- If the handoff includes pest signs, ask about leaf undersides, insects, webbing and spread.
+- If the handoff includes nutrient or soil stress, only then ask nutrient, compost or soil-moisture questions.
+
+Safety rules:
+- Do not guarantee a diagnosis from a photo.
+- Do not assume tomato when crop is unknown.
+- Do not route a Crop Doctor handoff into fertilizer, planting or compost unless the image result clearly supports that issue category.
+- Use neutral wording when the crop is not confirmed.
+
+## Launch QA Stabilization
+
+Current specialist list:
+- Plant Health
+- Crop Doctor
+- Fertilizer
+- Weather Decision
+- Planting Advisor
+- Harvest & Post-Harvest
+
+Routing rules checked for launch:
+- Plant symptoms such as yellow leaves, cassava leaf curl and maize leaf holes route to Plant Health.
+- Fertilizer, NPK and compost questions route to Fertilizer unless the main decision is rain timing.
+- Spraying, fertilizer-before-rain and irrigation questions route to Weather Decision.
+- Planting now, crop choice and spacing questions route to Planting Advisor.
+- Harvest timing, storage and transport questions route to Harvest & Post-Harvest.
+- Crop photo handoffs route to Crop Doctor and preserve the crop/photo context.
+
+Common failure cases to guard:
+- Old crop context leaking into a new crop question.
+- Old specialist context leaking into a new topic.
+- Crop Doctor handoffs falling into fertilizer or planting because of unrelated words.
+- Weather flows pretending live weather is known.
+- Fertilizer answers inventing exact dosages.
+- Harvest answers inventing shelf life, prices or buyer availability.
+- Planting answers inventing weather, prices, profit or guaranteed yield.
+- Plant Health answers jumping to chemicals before prevention and field checks.
+
+Launch readiness checks:
+- Every final response must have exactly one next best action.
+- Confidence labels remain internal.
+- Answers must be short, practical and farmer-facing.
+- Follow-up answers already provided should not be asked again.
+- Local FarmMate Brain output remains the source of truth; the OpenAI layer only explains the approved local context.
