@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     readTable("marketplace_listings", "select=id,slug,product_name,category,region,district,seller_name,seller_type,owner_type,owner_id,owner_name,quantity,unit,selling_method,selling_unit,custom_unit_label,custom_unit_reviewed,unit_size_value,unit_size_measure,unit_size_approximate,price_amount,price_currency,price_basis,units_available,total_quantity_value,total_quantity_measure,minimum_order_value,minimum_order_unit,whatsapp_number,status,availability,supply_frequency,available_from_date,grade_description,delivery_details,record_source,price_range,description,internal_operations_notes,image_url,image_urls,is_featured,featured_until,featured_note,created_at&limit=1000"),
     readTable("buyer_requests", "select=id,product_needed,region,district,buyer_name,buyer_type,whatsapp_number,status,verification_status&limit=1000"),
     readTable("whatsapp_leads", "select=id,source_type,source_id,source_name,created_at&order=created_at.desc&limit=1000"),
-    readTable("lead_requests", "select=id,source_type,source_id,source_name,product_interest,status,created_at&order=created_at.desc&limit=1000"),
+    readTable("lead_requests", "select=id,source_type,source_id,source_name,product_interest,status,request_source,marketplace_listing_id,farmer_profile_id,supplier_profile_id,created_at&order=created_at.desc&limit=1000"),
     readTable("crop_health_reports", "select=id,created_at&limit=1000"),
     readTable("market_prices", "select=id,product,region,market,trend&limit=1000")
   ]);

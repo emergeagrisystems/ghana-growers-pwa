@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from "node:crypto";
 import { logAdminActivity, type AdminActionType } from "@/lib/adminActivity";
+import { createGenericSourcingLeadRequest } from "@/lib/leadRequests";
 import { canonicalMarketplaceTradeFields, reviewedCustomUnitMessage, validateMarketplaceTradeInput, type MarketplaceNumericInput } from "@/lib/marketplace/trade";
 import {
   callSupabaseRpc,
@@ -770,54 +771,8 @@ function payloadTotalQuantityValue(formData: FormData) {
   return String(unitSizeValue * unitsAvailable);
 }
 
-export async function createBuyerRequestSubmission(body: Record<string, unknown>) {
-  if (clean(body.companyWebsite)) {
-    return { status: 400, error: "Submission could not be accepted." };
-  }
-
-  const payload = {
-    product_needed: clean(body.productNeeded),
-    quantity: clean(body.quantityNeeded || body.quantity),
-    company_name: clean(body.companyName) || null,
-    phone_number: clean(body.phoneNumber),
-    region: clean(body.region),
-    district: clean(body.district),
-    buyer_name: clean(body.buyerName),
-    buyer_type: clean(body.buyerType) || "Buyer",
-    whatsapp_number: clean(body.whatsappNumber),
-    preferred_delivery: clean(body.preferredDelivery) || null,
-    deadline: clean(body.deadline),
-    notes: clean(body.additionalNotes || body.notes)
-  };
-  const required = ["product_needed", "quantity", "phone_number", "region", "district", "buyer_name", "whatsapp_number", "deadline"];
-
-  if (isSpam(payload, required)) {
-    return { status: 400, error: "Submission cannot be empty." };
-  }
-
-  const missing = required.find((field) => !payload[field as keyof typeof payload]);
-
-  if (missing) {
-    return { status: 400, error: "Please complete all required buyer request fields." };
-  }
-
-  const insert = await insertSupabaseRecord("buyer_request_applications", {
-    ...payload,
-    status: "New"
-  });
-
-  if (!insert.error) {
-    const insertedRecord = insert.data as { id?: string } | undefined;
-    await logAdminActivity({
-      adminEmail: "public-submission@ghana-growers",
-      actionType: "Create",
-      entityType: "Buyer Request Application",
-      entityId: insertedRecord?.id,
-      entityName: payload.product_needed
-    });
-  }
-
-  return insert;
+export async function createBuyerRequestSubmission(body: Record<string, unknown>, clientKey = "public") {
+  return createGenericSourcingLeadRequest(body, clientKey);
 }
 
 export async function getPublicListingSubmissions() {
@@ -849,26 +804,19 @@ export async function getPublicListingSubmissions() {
 }
 
 export async function getPublicSubmissions() {
-  const buyerQuery =
-    "select=id,product_needed,quantity,company_name,phone_number,region,district,buyer_name,buyer_type,whatsapp_number,preferred_delivery,deadline,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
-  const [listings, buyerRequests] = await Promise.all([
-    getPublicListingSubmissions(),
-    selectSupabaseRecords<BuyerRequestSubmission>("buyer_request_applications", buyerQuery)
-  ]);
-  const error = listings.error || buyerRequests.error;
+  const listings = await getPublicListingSubmissions();
+  const error = listings.error;
 
   if (error) {
     console.warn("Admin submission queue read failed", {
       listingStatus: listings.status,
-      buyerRequestStatus: buyerRequests.status,
-      listingError: listings.error,
-      buyerRequestError: buyerRequests.error
+      listingError: listings.error
     });
   }
 
   return {
     listings: listings.listings,
-    buyerRequests: buyerRequests.data ?? [],
+    buyerRequests: [],
     error
   };
 }
@@ -892,7 +840,14 @@ export async function updateSubmissionStatus({
   sellerMessage?: string;
   currentHistory?: Array<Record<string, unknown>> | null;
 }) {
-  const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications";
+  if (kind === "buyer-request") {
+    return {
+      status: 410,
+      error: "Buyer sourcing requests are now reviewed through Lead Requests."
+    };
+  }
+
+  const table = "listing_submissions";
   const existingListingSubmission = kind === "listing" ? await findListingSubmissionLifecycleRecord(id) : undefined;
 
   if (existingListingSubmission?.error) {

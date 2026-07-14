@@ -179,6 +179,19 @@ type WhatsAppLeadRecord = {
   created_at: string;
 };
 type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
+type LeadRequestSource = "marketplace_listing" | "farmer_profile" | "supplier_profile" | "generic_sourcing" | "legacy";
+type LeadRequestSnapshot = {
+  product?: string;
+  seller?: string;
+  location?: string;
+  pricePackage?: string;
+  listedQuantity?: string;
+  quantityLabel?: string;
+  availability?: string;
+  category?: string;
+  source?: string;
+  marketplaceListingId?: string;
+};
 type FeaturedEnquiryStatus = "New" | "Contacted" | "Approved" | "Rejected" | "Closed";
 type LeadRequestRecord = {
   id: string;
@@ -190,11 +203,21 @@ type LeadRequestRecord = {
   product_interest: string;
   quantity_needed: string | null;
   message: string | null;
-  source_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Supplier Listing";
+  source_type: "Farmer" | "Supplier" | "Marketplace Listing" | "Supplier Listing" | "Buyer Request";
   source_id: string;
   source_name: string;
   source_page: string | null;
   status: LeadRequestStatus | "Closed";
+  request_source?: LeadRequestSource | null;
+  marketplace_listing_id?: string | null;
+  farmer_profile_id?: string | null;
+  supplier_profile_id?: string | null;
+  source_slug?: string | null;
+  company_name?: string | null;
+  whatsapp_same_as_phone?: boolean | null;
+  delivery_location?: string | null;
+  required_by?: string | null;
+  listing_snapshot?: LeadRequestSnapshot | null;
 };
 type FeaturedEnquiryRecord = {
   id: string;
@@ -2958,8 +2981,28 @@ function relativeActivityTime(value: string) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-function sourceLabel(sourceType: WhatsAppLeadRecord["source_type"]) {
+function sourceLabel(sourceType: WhatsAppLeadRecord["source_type"] | LeadRequestRecord["source_type"]) {
   return sourceType === "Floating WhatsApp" ? "Floating Button" : sourceType;
+}
+
+function leadRequestSourceLabel(source?: LeadRequestSource | null) {
+  if (source === "marketplace_listing") {
+    return "Marketplace listing request";
+  }
+
+  if (source === "farmer_profile") {
+    return "Farmer profile request";
+  }
+
+  if (source === "supplier_profile") {
+    return "Supplier profile request";
+  }
+
+  if (source === "generic_sourcing") {
+    return "Generic sourcing request";
+  }
+
+  return "Legacy request";
 }
 
 const leadPipelineStatuses: LeadRequestStatus[] = ["New", "Contacted", "Negotiating", "Completed", "Lost"];
@@ -8882,13 +8925,31 @@ export function AdminDashboard({
                         <dl className="mt-5 grid gap-3 sm:grid-cols-2">
                           <LeadDetailItem label="Phone" value={selectedLead.phone} />
                           <LeadDetailItem label="WhatsApp" value={selectedLead.whatsapp} />
-                          <LeadDetailItem label="Location" value={selectedLead.location} />
+                          <LeadDetailItem label="Company" value={selectedLead.company_name ?? "Not provided"} />
+                          <LeadDetailItem label="Delivery Location" value={selectedLead.delivery_location ?? selectedLead.location} />
+                          <LeadDetailItem label="Required By" value={selectedLead.required_by ?? "Not specified"} />
                           <LeadDetailItem label="Quantity" value={selectedLead.quantity_needed ?? "Not specified"} />
                           <LeadDetailItem label="Product / Service" value={selectedLead.product_interest} />
-                          <LeadDetailItem label="Source Type" value={selectedLead.source_type} />
+                          <LeadDetailItem label="Request Source" value={leadRequestSourceLabel(selectedLead.request_source)} />
+                          <LeadDetailItem label="Source Type" value={sourceLabel(selectedLead.source_type)} />
+                          <LeadDetailItem label="Linked Listing / Profile" value={selectedLead.marketplace_listing_id ?? selectedLead.farmer_profile_id ?? selectedLead.supplier_profile_id ?? selectedLead.source_slug ?? selectedLead.source_id} />
                           <LeadDetailItem label="Assigned Farmer / Supplier" value={selectedLead.source_name} />
                           <LeadDetailItem label="Source Page" value={selectedLead.source_page ?? "Not captured"} />
                         </dl>
+
+                        {selectedLead.listing_snapshot ? (
+                          <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Public listing/profile snapshot</p>
+                            <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                              <LeadDetailItem label="Product" value={selectedLead.listing_snapshot.product ?? selectedLead.product_interest} />
+                              <LeadDetailItem label="Seller / Profile" value={selectedLead.listing_snapshot.seller ?? selectedLead.source_name} />
+                              <LeadDetailItem label="Location" value={selectedLead.listing_snapshot.location ?? "Not captured"} />
+                              <LeadDetailItem label="Price / Package" value={selectedLead.listing_snapshot.pricePackage ?? "Not captured"} />
+                              <LeadDetailItem label="Listed Quantity" value={selectedLead.listing_snapshot.listedQuantity ?? "Not captured"} />
+                              <LeadDetailItem label="Availability" value={selectedLead.listing_snapshot.availability ?? "Not captured"} />
+                            </dl>
+                          </div>
+                        ) : null}
 
                         <div className="mt-5 rounded-md bg-leaf-50 p-4">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Message</p>

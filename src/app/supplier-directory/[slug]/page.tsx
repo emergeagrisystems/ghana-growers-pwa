@@ -218,7 +218,9 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
               sourceType="Supplier"
               sourceId={supplier.slug}
               sourceName={supplier.companyName}
+              requestSource="supplier_profile"
               productInterest={supplier.productsServices.slice(0, 3).join(", ")}
+              productOptions={supplier.productsServices}
               className="mt-5 w-full"
               helperText="Ghana Growers reviews your request before helping route the connection."
             />
@@ -341,7 +343,16 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                               sourceType="Supplier Listing"
                               sourceId={listing.id}
                               sourceName={`${supplier.companyName} - ${listing.name}`}
+                              requestSource="marketplace_listing"
                               productInterest={listing.name}
+                              listingSummary={{
+                                product: listing.name,
+                                seller: supplier.companyName,
+                                location: `${supplier.district}, ${supplier.region}`,
+                                pricePackage: listing.priceRange || "Ask for price",
+                                listedQuantity: `${listing.quantity} ${listing.unit}`.trim(),
+                                availability: listing.available
+                              }}
                               className="mt-4 w-full"
                             />
                           </div>

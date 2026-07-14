@@ -46,9 +46,10 @@ export default async function FarmerDirectoryPage({ searchParams }: FarmerDirect
           <RequestConnectionButton
             label="Request Produce"
             ariaLabel="Request produce through Ghana Growers"
-            sourceType="Farmer"
-            sourceId="general-produce-request"
+            sourceType="Buyer Request"
+            sourceId="generic-sourcing"
             sourceName="General Produce Request"
+            requestSource="generic_sourcing"
             productInterest="Fresh produce"
             className="bg-earth-500 text-ink hover:bg-earth-700 hover:text-white"
           />

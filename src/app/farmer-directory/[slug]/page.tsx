@@ -433,7 +433,16 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                           sourceType="Marketplace Listing"
                           sourceId={listing.id}
                           sourceName={listing.name}
+                          requestSource="marketplace_listing"
                           productInterest={listing.name}
+                          listingSummary={{
+                            product: listing.name,
+                            seller: farmer.farmName,
+                            location: location.hero,
+                            pricePackage: formatPrice(listing.priceRange),
+                            listedQuantity: formatQuantity(listing.quantity, listing.unit),
+                            availability: listing.available
+                          }}
                           className="mt-4 w-full"
                         />
                       </div>
@@ -449,7 +458,9 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                   sourceType="Farmer"
                   sourceId={farmer.slug}
                   sourceName={farmer.farmName}
+                  requestSource="farmer_profile"
                   productInterest={products.slice(0, 3).join(", ")}
+                  productOptions={products}
                   className="mt-4"
                   helperText="Ghana Growers can confirm whether this farmer has produce available now."
                 />
@@ -511,7 +522,9 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
           sourceType="Farmer"
           sourceId={farmer.slug}
           sourceName={farmer.farmName}
+          requestSource="farmer_profile"
           productInterest={products.slice(0, 3).join(", ")}
+          productOptions={products}
           className="w-full"
         />
       </div>
@@ -541,7 +554,9 @@ function RequestProduceCard({ farmerSlug, farmName, products }: { farmerSlug: st
         sourceType="Farmer"
         sourceId={farmerSlug}
         sourceName={farmName}
+        requestSource="farmer_profile"
         productInterest={products.slice(0, 3).join(", ")}
+        productOptions={products}
         className="mt-5 w-full"
       />
       <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">

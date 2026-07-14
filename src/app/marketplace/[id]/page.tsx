@@ -115,7 +115,16 @@ export default async function MarketplaceListingPage({ params }: MarketplaceList
                   sourceType={listing.seller.kind === "supplier" || (listing.seller.kind === "submission" && listing.seller.sellerType === "Supplier") ? "Supplier Listing" : "Marketplace Listing"}
                   sourceId={listing.product.id}
                   sourceName={listing.title}
+                  requestSource="marketplace_listing"
                   productInterest={listing.title}
+                  listingSummary={{
+                    product: listing.title,
+                    seller: listing.sellerName,
+                    location: listing.location || "Ghana",
+                    pricePackage: listing.priceLine,
+                    listedQuantity: listing.quantity,
+                    availability: listing.availability
+                  }}
                   className="w-full"
                   helperText="Ghana Growers reviews your request before helping route the connection."
                 />

@@ -561,7 +561,8 @@ const tests: TestCase[] = [
       assert.equal(route.includes("createListingSubmission(formData, clientKey)"), true);
       assert.equal(publicSubmissions.includes('insertSupabaseRecord("listing_submissions"'), true);
       assert.equal(publicSubmissions.includes('selectSupabaseRecords<ListingSubmission>("listing_submissions"'), true);
-      assert.equal(publicSubmissions.includes('const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications"'), true);
+      assert.equal(publicSubmissions.includes('const table = "listing_submissions"'), true);
+      assert.equal(publicSubmissions.includes("Buyer sourcing requests are now reviewed through Lead Requests."), true);
       assert.equal(publicSubmissions.includes('callSupabaseRpc<{ listing_id?: string; slug?: string; reused?: boolean }>("publish_listing_submission"'), true);
       assert.equal(publicSubmissions.includes('insertSupabaseRecord("marketplace_listings"'), false);
       assert.equal(createListingSection.includes('insertSupabaseRecord("marketplace_listings"'), false);
@@ -802,13 +803,105 @@ const tests: TestCase[] = [
       assert.equal(api.includes("getPublicListingSubmissions"), true);
       assert.equal(api.includes("kind === \"listing\" ? await getPublicListingSubmissions() : await getPublicSubmissions()"), true);
       assert.equal(publicSubmissions.includes("export async function getPublicListingSubmissions()"), true);
-      assert.equal(publicSubmissions.includes("buyer_request_applications"), true);
+      assert.equal(publicSubmissions.includes("buyer_request_applications"), false);
       const listingOnlyHelper = publicSubmissions.slice(
         publicSubmissions.indexOf("export async function getPublicListingSubmissions()"),
         publicSubmissions.indexOf("export async function getPublicSubmissions()")
       );
       assert.equal(listingOnlyHelper.includes("listing_submissions"), true);
       assert.equal(listingOnlyHelper.includes("buyer_request_applications"), false);
+    }
+  },
+  {
+    name: "Unified buyer enquiries use private lead_requests instead of new request tables",
+    run: () => {
+      const migration = repoFile("supabase/migrations/034_unified_buyer_enquiries.sql");
+      const precheck = repoFile("supabase/review/precheck_034_unified_buyer_enquiries.sql");
+      const verify = repoFile("supabase/review/verify_034_unified_buyer_enquiries.sql");
+      const leadRequests = repoFile("src/lib/leadRequests.ts");
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+      const leadRoute = repoFile("src/app/api/lead-requests/route.ts");
+      const buyerRoute = repoFile("src/app/api/buyer-request-submissions/route.ts");
+      const modal = repoFile("src/components/RequestConnectionButton.tsx");
+      const marketplaceDetail = repoFile("src/app/marketplace/[id]/page.tsx");
+      const farmerProfile = repoFile("src/app/farmer-directory/[slug]/page.tsx");
+      const supplierProfile = repoFile("src/app/supplier-directory/[slug]/page.tsx");
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const snapshotSection = leadRequests.slice(
+        leadRequests.indexOf("const snapshot: LeadRequestSnapshot"),
+        leadRequests.indexOf("return {", leadRequests.indexOf("const snapshot: LeadRequestSnapshot"))
+      );
+
+      assert.equal(migration.includes("begin;"), true);
+      assert.equal(migration.includes("commit;"), true);
+      assert.equal(migration.includes("create table if not exists public.lead_requests"), true);
+      assert.equal(migration.includes("alter table public.lead_requests"), true);
+      assert.equal(migration.includes("create table if not exists public.connection_requests"), false);
+      assert.equal(migration.includes("create table if not exists public.buyer_request_applications"), false);
+      assert.equal(migration.includes("status in ('New', 'Contacted', 'Negotiating', 'Completed', 'Lost')"), true);
+      assert.equal(migration.includes("request_source in ('marketplace_listing', 'farmer_profile', 'supplier_profile', 'generic_sourcing', 'legacy')"), true);
+      assert.equal(migration.includes("source_type in ('Farmer', 'Supplier', 'Marketplace Listing', 'Supplier Listing', 'Buyer Request')"), true);
+      assert.equal(migration.includes("references public.marketplace_listings(id)"), true);
+      assert.equal(migration.includes("references public.farmers(id)"), true);
+      assert.equal(migration.includes("references public.suppliers(id)"), true);
+      assert.equal(migration.includes("alter table public.lead_requests enable row level security"), true);
+      assert.equal(migration.includes("revoke all on table public.lead_requests from anon"), true);
+      assert.equal(/grant\s+select\s+on\s+public\.lead_requests\s+to\s+anon/i.test(migration), false);
+      assert.equal(migration.includes("create table if not exists public.lead_request_rate_limits"), true);
+      assert.equal(migration.includes("security definer\nset search_path = ''"), true);
+      assert.equal(migration.includes("revoke all on function public.consume_lead_request_rate_limit(text, integer, integer) from anon"), true);
+      assert.equal(migration.includes("grant execute on function public.consume_lead_request_rate_limit(text, integer, integer) to service_role"), true);
+      assert.equal(precheck.includes("to_regclass('public.lead_requests') is not null as lead_requests_exists"), true);
+      assert.equal(precheck.includes("public.lead_requests is absent; migration 034 will create it."), true);
+      assert.equal(precheck.includes("query_to_xml"), true);
+      assert.equal(precheck.includes("rows that would violate proposed source_type constraint"), true);
+      assert.equal(verify.includes("lead_requests_exists"), true);
+      assert.equal(verify.includes("lead_request_rate_limits_exists"), true);
+      assert.equal(verify.includes("has_table_privilege('anon', 'public.lead_requests', 'select')"), true);
+      assert.equal(verify.includes("has_function_privilege('anon', 'public.consume_lead_request_rate_limit(text, integer, integer)', 'execute')"), true);
+
+      assert.equal(leadRequests.includes("process.env.LEAD_REQUEST_RATE_LIMIT_SECRET"), true);
+      assert.equal(leadRequests.includes("local-development-lead-request-secret"), false);
+      assert.equal(leadRequests.includes("createHmac"), true);
+      assert.equal(leadRequests.includes('callSupabaseRpc<RateLimitResult>("consume_lead_request_rate_limit"'), true);
+      assert.equal(leadRequests.includes("leadRequestRateLimitKey"), true);
+      assert.equal(leadRequests.includes("leadRequestDedupeKey"), true);
+      assert.equal(leadRequests.includes("duplicateLeadRequestWarning"), true);
+      assert.equal(leadRequests.includes("isMarketplaceListingPublicStatus(product)"), true);
+      assert.equal(leadRequests.includes("isDemoMarketplaceListing(product)"), true);
+      assert.equal(leadRequests.includes("submissionStatus !== \"Published\""), true);
+      assert.equal(leadRequests.includes("trustedProductSelection"), true);
+      assert.equal(snapshotSection.includes("whatsapp"), false);
+      assert.equal(snapshotSection.includes("phone"), false);
+
+      assert.equal(publicSubmissions.includes("createGenericSourcingLeadRequest(body, clientKey)"), true);
+      assert.equal(publicSubmissions.includes("buyer_request_applications"), false);
+      assert.equal(leadRoute.includes("x-forwarded-for"), true);
+      assert.equal(buyerRoute.includes("createBuyerRequestSubmission(body, clientKey(request))"), true);
+      assert.equal(buyerRoute.includes("x-forwarded-for"), true);
+
+      assert.equal(modal.includes("Request This Listing"), true);
+      assert.equal(modal.includes("Delivery Location"), true);
+      assert.equal(modal.includes("Company Name (optional)"), true);
+      assert.equal(modal.includes("WhatsApp is the same as phone number"), true);
+      assert.equal(modal.includes("Required by / Deadline (optional)"), true);
+      assert.equal(modal.includes("Example: 5 bags, 20 crates, or 100 kg."), true);
+      assert.equal(modal.includes('formData.getAll("productInterest")'), true);
+      assert.equal(modal.includes("readOnly={readOnly}"), true);
+
+      assert.equal(marketplaceDetail.includes('requestSource="marketplace_listing"'), true);
+      assert.equal(marketplaceDetail.includes("listingSummary={{"), true);
+      assert.equal(farmerProfile.includes('requestSource="farmer_profile"'), true);
+      assert.equal(farmerProfile.includes("productOptions={products}"), true);
+      assert.equal(supplierProfile.includes('requestSource="supplier_profile"'), true);
+      assert.equal(supplierProfile.includes("productOptions={supplier.productsServices}"), true);
+      assert.equal(supplierProfile.includes('requestSource="marketplace_listing"'), true);
+
+      assert.equal(adminDashboard.includes("leadRequestSourceLabel"), true);
+      assert.equal(adminDashboard.includes("selectedLead.company_name"), true);
+      assert.equal(adminDashboard.includes("selectedLead.delivery_location"), true);
+      assert.equal(adminDashboard.includes("selectedLead.listing_snapshot"), true);
+      assert.equal(adminDashboard.includes("Linked Listing / Profile"), true);
     }
   },
   {
