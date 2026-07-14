@@ -198,7 +198,17 @@ export function isDemoMarketplaceListing(product: Product, seller?: MarketplaceS
 }
 
 function isPublishedPublicSubmissionListing(product: Product) {
-  return Boolean((product.sourceSubmissionId || product.recordSource === "public_submission") && (product.seller || product.ownerName));
+  const isPublicSubmission = product.sourceSubmissionId || product.recordSource === "public_submission";
+
+  if (!isPublicSubmission) {
+    return false;
+  }
+
+  if (product.sourceSubmissionId && product.sourceSubmissionStatus !== "Published") {
+    return false;
+  }
+
+  return Boolean(product.seller || product.ownerName);
 }
 
 function publicSubmissionSeller(product: Product): MarketplaceSeller | undefined {
@@ -335,6 +345,10 @@ export function publicMarketplaceListings(products: Product[], farmers: FarmerPr
 
   for (const product of products) {
     if (!isMarketplaceListingPublicStatus(product)) {
+      continue;
+    }
+
+    if ((product.sourceSubmissionId || product.recordSource === "public_submission") && !isPublishedPublicSubmissionListing(product)) {
       continue;
     }
 

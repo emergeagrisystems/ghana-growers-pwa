@@ -141,6 +141,69 @@ function statusHistoryEntry(status: SubmissionStatus, actor: string, note?: stri
   };
 }
 
+type ListingSubmissionLifecycleRecord = Pick<ListingSubmission, "id" | "status" | "published_listing_id" | "status_history" | "product_name">;
+
+export function marketplaceStatusForSubmissionStatus(status: SubmissionStatus) {
+  return status === "Published" ? "Active" : "Archived";
+}
+
+function linkedMarketplaceListingFilter(submissionId: string, publishedListingId?: string | null) {
+  return publishedListingId
+    ? `or=(id.eq.${encodeURIComponent(publishedListingId)},source_submission_id.eq.${encodeURIComponent(submissionId)})`
+    : `source_submission_id=eq.${encodeURIComponent(submissionId)}`;
+}
+
+async function findListingSubmissionLifecycleRecord(id: string) {
+  const result = await selectSupabaseRecords<ListingSubmissionLifecycleRecord>(
+    "listing_submissions",
+    `select=id,status,published_listing_id,status_history,product_name&id=eq.${encodeURIComponent(id)}&limit=1`
+  );
+
+  if (result.error) {
+    return { status: result.status, error: result.error };
+  }
+
+  return { status: result.status, data: result.data?.[0] };
+}
+
+export async function syncLinkedMarketplaceListingForSubmissionStatus({
+  submissionId,
+  publishedListingId,
+  status
+}: {
+  submissionId: string;
+  publishedListingId?: string | null;
+  status: SubmissionStatus;
+}) {
+  return updateSupabaseRecord("marketplace_listings", linkedMarketplaceListingFilter(submissionId, publishedListingId), {
+    status: marketplaceStatusForSubmissionStatus(status),
+    updated_at: new Date().toISOString()
+  });
+}
+
+async function reconcileLinkedMarketplaceListingsForSubmissions(submissions: ListingSubmission[]) {
+  const submissionsWithLinkedListings = submissions.filter(
+    (submission) => submission.published_listing_id || submission.status === "Published"
+  );
+
+  for (const submission of submissionsWithLinkedListings) {
+    const sync = await syncLinkedMarketplaceListingForSubmissionStatus({
+      submissionId: submission.id,
+      publishedListingId: submission.published_listing_id,
+      status: submission.status
+    });
+
+    if (sync.error) {
+      return {
+        status: sync.status,
+        error: `Could not synchronize linked marketplace listing for submission ${submission.id}.`
+      };
+    }
+  }
+
+  return { status: 200 };
+}
+
 const listingSubmissionWindowSeconds = 10 * 60;
 const maxListingSubmissionsPerWindow = 3;
 
@@ -767,6 +830,15 @@ export async function getPublicListingSubmissions() {
       listingStatus: listings.status,
       listingError: listings.error
     });
+  } else if (listings.data?.length) {
+    const lifecycleSync = await reconcileLinkedMarketplaceListingsForSubmissions(listings.data);
+
+    if (lifecycleSync.error) {
+      console.warn("Admin listing submission lifecycle sync failed", {
+        lifecycleStatus: lifecycleSync.status,
+        lifecycleError: lifecycleSync.error
+      });
+    }
   }
 
   return {
@@ -821,6 +893,15 @@ export async function updateSubmissionStatus({
   currentHistory?: Array<Record<string, unknown>> | null;
 }) {
   const table = kind === "listing" ? "listing_submissions" : "buyer_request_applications";
+  const existingListingSubmission = kind === "listing" ? await findListingSubmissionLifecycleRecord(id) : undefined;
+
+  if (existingListingSubmission?.error) {
+    return {
+      status: existingListingSubmission.status,
+      error: "Could not load the listing submission before updating its status."
+    };
+  }
+
   const payload: Record<string, unknown> = {
     status,
     updated_at: new Date().toISOString()
@@ -844,9 +925,39 @@ export async function updateSubmissionStatus({
     }
   }
 
+  if (kind === "listing" && status !== "Published" && existingListingSubmission?.data) {
+    const linkedListingUpdate = await syncLinkedMarketplaceListingForSubmissionStatus({
+      submissionId: id,
+      publishedListingId: existingListingSubmission.data.published_listing_id,
+      status
+    });
+
+    if (linkedListingUpdate.error) {
+      return {
+        status: linkedListingUpdate.status,
+        error: "Could not update the linked marketplace listing status."
+      };
+    }
+  }
+
   const update = await updateSupabaseRecord(table, `id=eq.${encodeURIComponent(id)}`, {
     ...payload
   });
+
+  if (!update.error && kind === "listing" && status === "Published" && existingListingSubmission?.data) {
+    const linkedListingUpdate = await syncLinkedMarketplaceListingForSubmissionStatus({
+      submissionId: id,
+      publishedListingId: existingListingSubmission.data.published_listing_id,
+      status
+    });
+
+    if (linkedListingUpdate.error) {
+      return {
+        status: linkedListingUpdate.status,
+        error: "Submission was marked Published, but the linked marketplace listing could not be reactivated."
+      };
+    }
+  }
 
   if (!update.error) {
     await logAdminActivity({
@@ -862,7 +973,35 @@ export async function updateSubmissionStatus({
 }
 
 export async function convertListingSubmission(submission: ListingSubmission, adminEmail: string) {
-  if (["Published", "Converted"].includes(submission.status) || submission.published_listing_id) {
+  if (submission.published_listing_id) {
+    const reactivated = await updateSubmissionStatus({
+      kind: "listing",
+      id: submission.id,
+      status: "Published",
+      adminEmail,
+      entityName: submission.product_name,
+      adminNotes: submission.admin_notes ?? undefined,
+      sellerMessage: submission.seller_message ?? undefined,
+      currentHistory: submission.status_history
+    });
+
+    if (reactivated.error) {
+      return {
+        status: reactivated.status,
+        error: "Could not reactivate the linked marketplace listing."
+      };
+    }
+
+    return {
+      status: 200,
+      data: {
+        listing_id: submission.published_listing_id,
+        reused: true
+      }
+    };
+  }
+
+  if (["Published", "Converted"].includes(submission.status)) {
     return { status: 409, error: "This listing submission has already been published." };
   }
 
@@ -919,6 +1058,21 @@ export async function convertListingSubmission(submission: ListingSubmission, ad
     }
 
     return { status: rpc.status, error: "Could not publish the listing. No marketplace listing was created." };
+  }
+
+  if (rpc.data?.listing_id) {
+    const linkedListingUpdate = await syncLinkedMarketplaceListingForSubmissionStatus({
+      submissionId: submission.id,
+      publishedListingId: rpc.data.listing_id,
+      status: "Published"
+    });
+
+    if (linkedListingUpdate.error) {
+      return {
+        status: linkedListingUpdate.status,
+        error: "The listing was published, but the marketplace status could not be confirmed as Active."
+      };
+    }
   }
 
   await logAdminActivity({

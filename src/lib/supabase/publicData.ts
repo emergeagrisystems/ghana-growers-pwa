@@ -118,6 +118,12 @@ type SupabaseListing = {
   created_at: string;
 };
 
+type SupabaseListingSubmissionStatus = {
+  id: string;
+  status: string;
+  published_listing_id: string | null;
+};
+
 function normalizeListingImages(imageUrls: unknown, imageUrl?: string | null) {
   const galleryImages = Array.isArray(imageUrls)
     ? imageUrls
@@ -572,13 +578,20 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
   };
 }
 
-function mapListing(row: SupabaseListing): Product {
+function mapListing(
+  row: SupabaseListing,
+  submissionStatusByListingId = new Map<string, string>(),
+  submissionStatusBySubmissionId = new Map<string, string>()
+): Product {
   const productName = productDisplayName(row.product_name);
   const ownerType = row.owner_type === "Supplier" || row.owner_type === "Admin" ? row.owner_type : "Farmer";
   const ownerName = row.owner_name || row.seller_name;
   const listingImages = normalizeListingImages(row.image_urls, row.image_url);
   const coverImage = listingImages[0] ?? productImageForListing(productName, row.category);
   const isPublicSubmissionListing = Boolean(row.source_submission_id || row.record_source === "public_submission");
+  const sourceSubmissionStatus = row.source_submission_id
+    ? submissionStatusBySubmissionId.get(row.source_submission_id)
+    : submissionStatusByListingId.get(row.id);
 
   return {
     id: row.slug ?? row.id,
@@ -612,6 +625,7 @@ function mapListing(row: SupabaseListing): Product {
     deliveryDetails: row.delivery_details ?? undefined,
     recordSource: row.record_source ?? undefined,
     sourceSubmissionId: row.source_submission_id ?? undefined,
+    sourceSubmissionStatus,
     image: coverImage,
     images: listingImages.length ? listingImages : [coverImage],
     available: row.availability,
@@ -714,7 +728,22 @@ export async function getMarketplaceListingsData() {
   const demoFarmerSlugs = new Set(fallbackFarmers.filter(isDemoSeedFarmerProfile).map((farmer) => farmer.slug));
   const publicFallbackProducts = fallbackProducts.filter((product) => !product.farmerSlug || !demoFarmerSlugs.has(product.farmerSlug));
 
-  return rows.length > 0 ? featuredSort(rows.map(mapListing)) : allowDemoPublicData() ? publicFallbackProducts : [];
+  if (!rows.length) {
+    return allowDemoPublicData() ? publicFallbackProducts : [];
+  }
+
+  const publicSubmissionRows = rows.filter((row) => row.source_submission_id || row.record_source === "public_submission");
+  const submissionStatuses = publicSubmissionRows.length
+    ? await fetchRows<SupabaseListingSubmissionStatus>("listing_submissions", "id,status,published_listing_id", "created_at.desc")
+    : [];
+  const submissionStatusBySubmissionId = new Map(submissionStatuses.map((submission) => [submission.id, submission.status]));
+  const submissionStatusByListingId = new Map(
+    submissionStatuses
+      .filter((submission) => submission.published_listing_id)
+      .map((submission) => [submission.published_listing_id as string, submission.status])
+  );
+
+  return featuredSort(rows.map((row) => mapListing(row, submissionStatusByListingId, submissionStatusBySubmissionId)));
 }
 
 export async function getBuyerRequestsData() {

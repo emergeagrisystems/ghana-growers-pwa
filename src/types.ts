@@ -45,6 +45,7 @@ export type Product = {
   deliveryDetails?: string;
   recordSource?: string;
   sourceSubmissionId?: string;
+  sourceSubmissionStatus?: string;
   image: string;
   images?: string[];
   available: string;

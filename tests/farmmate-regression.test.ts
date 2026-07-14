@@ -221,6 +221,7 @@ function marketplaceProductFixture(overrides: Partial<Product> = {}): Product {
     deliveryDetails: overrides.deliveryDetails,
     recordSource: overrides.recordSource,
     sourceSubmissionId: overrides.sourceSubmissionId,
+    sourceSubmissionStatus: overrides.sourceSubmissionStatus,
     image: overrides.image ?? "/images/marketplace/fresh-tomatoes.jpg",
     images: overrides.images,
     available: overrides.available ?? "Available Now",
@@ -721,7 +722,18 @@ const tests: TestCase[] = [
       assert.equal(publicSubmissions.includes("Admin listing submission queue read failed"), true);
       assert.equal(publicSubmissions.includes('"select=*&order=created_at.desc&limit=500"'), true);
       assert.equal(publicSubmissions.includes("Admin submission queue read failed"), true);
-      assert.equal(publicSubmissions.includes('["Published", "Converted"].includes(submission.status) || submission.published_listing_id'), true);
+      assert.equal(publicSubmissions.includes("marketplaceStatusForSubmissionStatus"), true);
+      assert.equal(publicSubmissions.includes('status === "Published" ? "Active" : "Archived"'), true);
+      assert.equal(publicSubmissions.includes("syncLinkedMarketplaceListingForSubmissionStatus"), true);
+      assert.equal(publicSubmissions.includes("reconcileLinkedMarketplaceListingsForSubmissions"), true);
+      assert.equal(publicSubmissions.includes("linkedMarketplaceListingFilter"), true);
+      assert.equal(publicSubmissions.includes("source_submission_id=eq."), true);
+      assert.equal(publicSubmissions.includes("source_submission_id.eq."), true);
+      assert.equal(publicSubmissions.includes('if (kind === "listing" && status !== "Published"'), true);
+      assert.equal(publicSubmissions.includes('if (!update.error && kind === "listing" && status === "Published"'), true);
+      assert.equal(publicSubmissions.includes("submission.published_listing_id"), true);
+      assert.equal(publicSubmissions.includes("Could not reactivate the linked marketplace listing."), true);
+      assert.equal(publicSubmissions.includes("Admin listing submission lifecycle sync failed"), true);
       assert.equal(publicSubmissions.includes("downloadSupabaseStorageObject"), true);
       assert.equal(publicSubmissions.includes("copyApprovedSubmissionImages"), true);
       assert.equal(publicSubmissions.includes("publicPath = `approved-submissions/${submission.id}/${index + 1}-"), true);
@@ -1147,6 +1159,18 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Marketplace data loader carries linked submission status for public filtering",
+    run: () => {
+      const publicData = repoFile("src/lib/supabase/publicData.ts");
+      const publicListings = repoFile("src/lib/marketplace/publicListings.ts");
+
+      assert.equal(publicData.includes("type SupabaseListingSubmissionStatus"), true);
+      assert.equal(publicData.includes('fetchRows<SupabaseListingSubmissionStatus>("listing_submissions", "id,status,published_listing_id"'), true);
+      assert.equal(publicData.includes("sourceSubmissionStatus"), true);
+      assert.equal(publicListings.includes('product.sourceSubmissionStatus !== "Published"'), true);
+    }
+  },
+  {
     name: "Published public listing submission appears without matched farmer profile",
     run: () => {
       const listings = publicMarketplaceListings(
@@ -1163,6 +1187,7 @@ const tests: TestCase[] = [
             farmerSlug: "okra-seller-farm",
             recordSource: "public_submission",
             sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+            sourceSubmissionStatus: "Published",
             status: "Active",
             whatsappNumber: "233555123456",
             internalOperationsNotes: "Private admin note"
@@ -1196,6 +1221,7 @@ const tests: TestCase[] = [
           ownerType: "Farmer",
           recordSource: "public_submission",
           sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          sourceSubmissionStatus: "Published",
           status: "Active"
         }),
         marketplaceProductFixture({
@@ -1209,6 +1235,7 @@ const tests: TestCase[] = [
           ownerType: "Farmer",
           recordSource: "public_submission",
           sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          sourceSubmissionStatus: "Published",
           status: "Active"
         })
       ];
@@ -1228,7 +1255,8 @@ const tests: TestCase[] = [
             name: "Okra",
             recordSource: "public_submission",
             sourceSubmissionId: "new-submission",
-            status: "New",
+            sourceSubmissionStatus: "New",
+            status: "Active",
             ownerName: "New Seller Farm"
           }),
           marketplaceProductFixture({
@@ -1236,7 +1264,8 @@ const tests: TestCase[] = [
             name: "Okra",
             recordSource: "public_submission",
             sourceSubmissionId: "under-review-submission",
-            status: "Under Review",
+            sourceSubmissionStatus: "Under Review",
+            status: "Active",
             ownerName: "Review Seller Farm"
           })
         ],
@@ -1245,6 +1274,114 @@ const tests: TestCase[] = [
       );
 
       assert.deepEqual(listings, []);
+    }
+  },
+  {
+    name: "Published to Paused hides linked public listing without deleting it",
+    run: () => {
+      const okra = marketplaceProductFixture({
+        id: "4d4970af-9035-4ef7-b0ec-5d24e4db730a",
+        name: "Okra",
+        recordSource: "public_submission",
+        sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+        sourceSubmissionStatus: "Paused",
+        status: "Active",
+        ownerName: "Okra Seller Farm"
+      });
+
+      assert.deepEqual(publicMarketplaceListings([okra], [], []), []);
+    }
+  },
+  {
+    name: "Admin listing queue reconciles stale linked marketplace status",
+    run: () => {
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+
+      assert.equal(publicSubmissions.includes("const submissionsWithLinkedListings = submissions.filter"), true);
+      assert.equal(publicSubmissions.includes('submission.published_listing_id || submission.status === "Published"'), true);
+      assert.equal(publicSubmissions.includes("await syncLinkedMarketplaceListingForSubmissionStatus({"), true);
+      assert.equal(publicSubmissions.includes("status: submission.status"), true);
+      assert.equal(publicSubmissions.includes("const lifecycleSync = await reconcileLinkedMarketplaceListingsForSubmissions(listings.data)"), true);
+    }
+  },
+  {
+    name: "Paused to Published reactivates the same linked listing in public payload",
+    run: () => {
+      const okra = marketplaceProductFixture({
+        id: "4d4970af-9035-4ef7-b0ec-5d24e4db730a",
+        name: "Okra",
+        recordSource: "public_submission",
+        sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+        sourceSubmissionStatus: "Published",
+        status: "Active",
+        ownerName: "Okra Seller Farm"
+      });
+      const listings = publicMarketplaceListings([okra], [], []);
+
+      assert.equal(listings.length, 1);
+      assert.equal(listings[0].product.id, "4d4970af-9035-4ef7-b0ec-5d24e4db730a");
+      assert.equal(listings[0].title, "Okra");
+    }
+  },
+  {
+    name: "Repeated public-submission transitions do not create duplicate public rows",
+    run: () => {
+      const products = [
+        marketplaceProductFixture({
+          id: "4d4970af-9035-4ef7-b0ec-5d24e4db730a",
+          name: "Okra",
+          recordSource: "public_submission",
+          sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          sourceSubmissionStatus: "Published",
+          status: "Active",
+          ownerName: "Okra Seller Farm"
+        }),
+        marketplaceProductFixture({
+          id: "4d4970af-9035-4ef7-b0ec-5d24e4db730a",
+          name: "Okra",
+          recordSource: "public_submission",
+          sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          sourceSubmissionStatus: "Published",
+          status: "Active",
+          ownerName: "Okra Seller Farm"
+        })
+      ];
+
+      assert.equal(publicMarketplaceListings(products, [], []).length, 1);
+    }
+  },
+  {
+    name: "Post-publication inactive submission statuses remain private and leave unrelated listings visible",
+    run: () => {
+      const inactiveSubmissionStatuses = ["Rejected", "Expired", "Approved", "Needs Information"] as const;
+      const products = [
+        ...inactiveSubmissionStatuses.map((sourceSubmissionStatus) =>
+          marketplaceProductFixture({
+            id: `okra-${sourceSubmissionStatus.toLowerCase().replace(/\s+/g, "-")}`,
+            name: "Okra",
+            recordSource: "public_submission",
+            sourceSubmissionId: `submission-${sourceSubmissionStatus}`,
+            sourceSubmissionStatus,
+            status: "Active",
+            ownerName: "Okra Seller Farm"
+          })
+        ),
+        marketplaceProductFixture({
+          id: "yellow-maize",
+          name: "Yellow Maize",
+          category: "Grains",
+          farmerSlug: "s-k-nart-farms",
+          ownerName: "S. K. Nart Farms",
+          status: "Active"
+        })
+      ];
+      const listings = publicMarketplaceListings(
+        products,
+        [farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", verificationStatus: "Verified", source: "Tally Import" })],
+        []
+      );
+
+      assert.deepEqual(listings.map((listing) => listing.title), ["Yellow Maize"]);
     }
   },
   {
