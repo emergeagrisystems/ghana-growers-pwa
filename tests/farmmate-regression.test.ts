@@ -1022,6 +1022,109 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Admin navigation groups preserve routes in a collapsible hierarchy",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const expectedGroups = [
+        "Today",
+        "Buyer Requests",
+        "Network",
+        "Marketplace",
+        "Trust & Content",
+        "Reports",
+        "Settings"
+      ];
+      const expectedItems = [
+        "Operations Center",
+        "Notifications",
+        "Review Requests",
+        "Active Sourcing",
+        "Follow-ups",
+        "Completed Requests",
+        "Farmer Applications",
+        "Supplier Applications",
+        "Members",
+        "Directories",
+        "Listings",
+        "Categories",
+        "Featured Listings",
+        "Verification",
+        "GG Standard",
+        "Featured Members",
+        "Stories",
+        "Homepage",
+        "Photography",
+        "Learning",
+        "Reports",
+        "Analytics",
+        "Launch Readiness",
+        "Users",
+        "Roles",
+        "Permissions",
+        "Integrations"
+      ];
+
+      for (const group of expectedGroups) {
+        assert.equal(adminDashboard.includes(`group: "${group}"`), true);
+      }
+
+      for (const item of expectedItems) {
+        assert.equal(adminDashboard.includes(`label: "${item}"`), true);
+      }
+
+      assert.equal(adminDashboard.includes("expandedNavigationGroup"), true);
+      assert.equal(adminDashboard.includes("aria-expanded={isExpanded}"), true);
+      assert.equal(adminDashboard.includes("openAdminNavigationItem(item, group.group)"), true);
+      assert.equal(adminDashboard.includes('analyticsView: "operations"'), true);
+      assert.equal(adminDashboard.includes('analyticsView: "analytics"'), true);
+      assert.equal(adminDashboard.includes('applicationTab: "farmer"'), true);
+      assert.equal(adminDashboard.includes('applicationTab: "supplier"'), true);
+      assert.equal(adminDashboard.includes('produceRequestStatusFilter: "Pending Review"'), true);
+      assert.equal(adminDashboard.includes('sourcingQueueFilter: "All"'), true);
+    }
+  },
+  {
+    name: "Operations Center stays focused on source-of-truth operational queues",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+
+      assert.equal(adminDashboard.includes("Requests needing review"), true);
+      assert.equal(adminDashboard.includes("Private buyer enquiries waiting for a first admin decision."), true);
+      assert.equal(adminDashboard.includes("Active sourcing cases"), true);
+      assert.equal(adminDashboard.includes("Requests already moved into sourcing and match review."), true);
+      assert.equal(adminDashboard.includes("Follow-ups due"), true);
+      assert.equal(adminDashboard.includes("Contacted or overdue requests needing an admin follow-up."), true);
+      assert.equal(adminDashboard.includes("Listing submissions awaiting review"), true);
+      assert.equal(adminDashboard.includes("Public listing submissions waiting for review or publishing."), true);
+      assert.equal(adminDashboard.includes('leadStatusCount(leadRequests, "New")'), true);
+      assert.equal(adminDashboard.includes('leadStatusCount(leadRequests, "Negotiating")'), true);
+      assert.equal(adminDashboard.includes('leadStatusCount(leadRequests, "Contacted")'), true);
+      assert.equal(adminDashboard.includes("submissions.listings.filter((submission) => [\"New\", \"Needs Information\", \"Under Review\", \"Approved\"].includes(submission.status)).length"), true);
+      assert.equal(adminDashboard.includes("Quick Actions"), false);
+      assert.equal(adminDashboard.includes("Today's Progress"), false);
+      assert.equal(adminDashboard.includes("Platform Health"), false);
+    }
+  },
+  {
+    name: "Request connection modal closes only after confirmed server success",
+    run: () => {
+      const modal = repoFile("src/components/RequestConnectionButton.tsx");
+
+      assert.equal(modal.includes("submitLockedRef"), true);
+      assert.equal(modal.includes("if (isSubmitting || submitLockedRef.current)"), true);
+      assert.equal(modal.includes("setError(result?.error ?? \"Could not submit your request. Please try again.\")"), true);
+      assert.equal(modal.includes("setIsOpen(false);"), true);
+      assert.equal(modal.includes("closeTimerRef.current = window.setTimeout"), true);
+      assert.equal(modal.includes("Request received"), true);
+      assert.equal(modal.includes("Ghana Growers will review it before connecting anyone."), true);
+      assert.equal(modal.includes("This window will close in a moment."), true);
+      assert.equal(modal.includes("role=\"status\" aria-live=\"polite\""), true);
+      assert.equal(modal.includes("disabled={isSubmitting || Boolean(success)}"), true);
+      assert.equal(modal.includes("form.reset()"), true);
+      assert.equal(modal.includes("submitLockedRef.current = false"), true);
+    }
+  },
+  {
     name: "Admin-assisted marketplace listing creation remains separate from public submissions",
     run: () => {
       const adminListings = repoFile("src/app/api/admin/marketplace-listings/route.ts");

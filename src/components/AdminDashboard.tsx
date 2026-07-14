@@ -67,6 +67,7 @@ type AdminSectionId =
   | "success-stories"
   | "market-prices";
 type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn" | "success-stories";
+type AdminAnalyticsView = "operations" | "analytics";
 
 type AdminRow = {
   id: string;
@@ -803,89 +804,95 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "market-prices", label: "Market Prices", icon: ChartLine }
 ];
 
+type AdminNavigationItem = {
+  key: string;
+  id: AdminSectionId;
+  label: string;
+  analyticsView?: AdminAnalyticsView;
+  applicationTab?: ApplicationKind;
+  produceRequestStatusFilter?: ProduceRequestStatusFilter;
+  sourcingQueueFilter?: SourcingQueueFilter;
+};
+
 const operationsNavigation: Array<{
   group: string;
-  icon: string;
-  items: Array<{ id: AdminSectionId; label: string }>;
+  items: AdminNavigationItem[];
 }> = [
   {
     group: "Today",
-    icon: "Home",
     items: [
-      { id: "analytics", label: "Operations Center" },
-      { id: "whatsapp-leads", label: "Notifications" }
+      { key: "today-operations", id: "analytics", label: "Operations Center", analyticsView: "operations" },
+      { key: "today-notifications", id: "whatsapp-leads", label: "Notifications" }
     ]
   },
   {
-    group: "Sourcing",
-    icon: "Handshake",
+    group: "Buyer Requests",
     items: [
-      { id: "buyer-requests", label: "Produce Requests" },
-      { id: "match-opportunities", label: "Matches" },
-      { id: "lead-queue", label: "Follow-ups" },
-      { id: "lead-queue", label: "Completed Requests" }
+      { key: "buyer-review", id: "buyer-requests", label: "Review Requests", produceRequestStatusFilter: "Pending Review" },
+      { key: "buyer-active-sourcing", id: "match-opportunities", label: "Active Sourcing", sourcingQueueFilter: "All" },
+      { key: "buyer-follow-ups", id: "lead-queue", label: "Follow-ups" },
+      { key: "buyer-completed", id: "lead-queue", label: "Completed Requests" }
     ]
   },
   {
     group: "Network",
-    icon: "Sprout",
     items: [
-      { id: "applications", label: "Farmer Applications" },
-      { id: "applications", label: "Supplier Applications" },
-      { id: "farmers", label: "Members" },
-      { id: "suppliers", label: "Directories" }
+      { key: "network-farmer-applications", id: "applications", label: "Farmer Applications", applicationTab: "farmer" },
+      { key: "network-supplier-applications", id: "applications", label: "Supplier Applications", applicationTab: "supplier" },
+      { key: "network-members", id: "farmers", label: "Members" },
+      { key: "network-directories", id: "suppliers", label: "Directories" }
     ]
   },
   {
     group: "Marketplace",
-    icon: "Basket",
     items: [
-      { id: "marketplace", label: "Listings" },
-      { id: "marketplace", label: "Categories" },
-      { id: "featured-enquiries", label: "Featured Listings" }
+      { key: "marketplace-listings", id: "marketplace", label: "Listings" },
+      { key: "marketplace-categories", id: "marketplace", label: "Categories" },
+      { key: "marketplace-featured-listings", id: "featured-enquiries", label: "Featured Listings" }
     ]
   },
   {
-    group: "Trust",
-    icon: "Shield",
+    group: "Trust & Content",
     items: [
-      { id: "verifications", label: "Verification" },
-      { id: "verifications", label: "GG Standard" },
-      { id: "featured-enquiries", label: "Featured Members" },
-      { id: "farmers", label: "Founding Members" }
+      { key: "trust-verification", id: "verifications", label: "Verification" },
+      { key: "trust-gg-standard", id: "verifications", label: "GG Standard" },
+      { key: "trust-featured-members", id: "featured-enquiries", label: "Featured Members" },
+      { key: "trust-stories", id: "success-stories", label: "Stories" },
+      { key: "trust-homepage", id: "learn", label: "Homepage" },
+      { key: "trust-photography", id: "submissions", label: "Photography" },
+      { key: "trust-learning", id: "learn", label: "Learning" }
     ]
   },
   {
-    group: "Content",
-    icon: "Story",
+    group: "Reports",
     items: [
-      { id: "success-stories", label: "Stories" },
-      { id: "learn", label: "Homepage" },
-      { id: "submissions", label: "Photography" },
-      { id: "learn", label: "Learning" }
-    ]
-  },
-  {
-    group: "Business",
-    icon: "Reports",
-    items: [
-      { id: "analytics", label: "Reports" },
-      { id: "analytics", label: "Analytics" },
-      { id: "launch-checklist", label: "Launch Readiness" }
+      { key: "reports-reports", id: "analytics", label: "Reports", analyticsView: "analytics" },
+      { key: "reports-analytics", id: "analytics", label: "Analytics", analyticsView: "analytics" },
+      { key: "reports-launch-readiness", id: "launch-checklist", label: "Launch Readiness" }
     ]
   },
   {
     group: "Settings",
-    icon: "Settings",
     items: [
-      { id: "launch-checklist", label: "Users" },
-      { id: "launch-checklist", label: "Roles" },
-      { id: "launch-checklist", label: "Permissions" },
-      { id: "launch-checklist", label: "Integrations" },
-      { id: "launch-checklist", label: "Configuration" }
+      { key: "settings-users", id: "launch-checklist", label: "Users" },
+      { key: "settings-roles", id: "launch-checklist", label: "Roles" },
+      { key: "settings-permissions", id: "launch-checklist", label: "Permissions" },
+      { key: "settings-integrations", id: "launch-checklist", label: "Integrations" }
     ]
   }
 ];
+
+function defaultNavigationItem(section: AdminSectionId) {
+  return operationsNavigation.flatMap((group) => group.items).find((item) => item.id === section) ?? {
+    key: `workspace-${section}`,
+    id: section,
+    label: sections.find((item) => item.id === section)?.label ?? "Workspace"
+  };
+}
+
+function groupForNavigationKey(key: string) {
+  return operationsNavigation.find((group) => group.items.some((item) => item.key === key))?.group ?? operationsNavigation[0].group;
+}
 
 const quickActions: Array<{
   label: string;
@@ -3817,7 +3824,11 @@ export function AdminDashboard({
   initialSection?: AdminSectionId;
   sitePrelaunchActive?: boolean;
 }) {
+  const initialNavigationItem = defaultNavigationItem(initialSection);
   const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
+  const [activeNavigationKey, setActiveNavigationKey] = useState(initialNavigationItem.key);
+  const [expandedNavigationGroup, setExpandedNavigationGroup] = useState(() => groupForNavigationKey(initialNavigationItem.key));
+  const [analyticsView, setAnalyticsView] = useState<AdminAnalyticsView>(initialNavigationItem.analyticsView ?? "operations");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ImportAdminStatus>("All");
   const [farmerSourceFilter, setFarmerSourceFilter] = useState<FarmerSourceFilter>("All");
@@ -4345,112 +4356,62 @@ export function AdminDashboard({
   const pendingTaskItems = useMemo(() => pendingTasks(rowsBySection, whatsappLeads.length), [rowsBySection, whatsappLeads.length]);
   const operationsPriorityQueue = useMemo(() => {
     const newLeads = leadStatusCount(leadRequests, "New");
-    const overdueSourcingRequests = sourcingCases.filter((caseItem) => caseItem.priority.label === "Overdue").length;
-    const buyerRequestsWaiting = sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length + newLeads;
-    const farmerApplicationsWaiting = newApplicationCounts.farmers;
-    const supplierApplicationsWaiting = newApplicationCounts.suppliers;
-    const listingsWaiting = newSubmissionCounts.listings + submissions.listings.filter((submission) => submission.status === "Approved").length;
-    const ggStandardWaiting = [...rowsBySection.farmers, ...rowsBySection.suppliers].filter((row) => row.ggStandardStatus === "Pending").length;
+    const requestsNeedingReview = newLeads + submissions.buyerRequests.filter((request) => request.status === "New").length;
+    const activeSourcingCases = sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length;
+    const followUpsDue = leadStatusCount(leadRequests, "Contacted") + sourcingCases.filter((caseItem) => caseItem.state.status === "Waiting Buyer" || caseItem.priority.label === "Overdue").length;
+    const listingsAwaitingReview = submissions.listings.filter((submission) => ["New", "Needs Information", "Under Review", "Approved"].includes(submission.status)).length;
 
     return [
       {
-        label: "Produce Requests Awaiting Review",
-        value: buyerRequestsWaiting,
+        label: "Requests needing review",
+        value: requestsNeedingReview,
+        explanation: "Private buyer enquiries waiting for a first admin decision.",
         oldest: oldestOperationalItem([
           ...leadRequests.filter((lead) => normalizeLeadStatus(lead.status) === "New").map((lead) => ({ name: lead.product_interest, date: lead.created_at })),
           ...submissions.buyerRequests.filter((request) => request.status === "New").map((request) => ({ name: request.product_needed, date: request.created_at }))
         ]),
-        target: "Respond within 1 business day",
         tone: "border-l-tomato",
         section: "buyer-requests" as AdminSectionId,
-        action: "Review Queue",
+        action: "Review requests",
         icon: PackageCheck
       },
       {
-        label: "Overdue Requests",
-        value: overdueSourcingRequests,
-        oldest: overdueSourcingRequests > 0 ? "Needs same-day follow-up" : "No overdue sourcing cases",
-        target: "Protect buyer trust",
-        tone: "border-l-tomato",
+        label: "Active sourcing cases",
+        value: activeSourcingCases,
+        explanation: "Requests already moved into sourcing and match review.",
+        oldest: activeSourcingCases > 0 ? "Review matches and next action" : "No active sourcing cases",
+        tone: "border-l-leaf-700",
         section: "match-opportunities" as AdminSectionId,
-        action: "Open Sourcing Queue",
+        action: "Open active sourcing",
         icon: Clock3
       },
       {
-        label: "Farmer Applications",
-        value: farmerApplicationsWaiting,
-        oldest: oldestOperationalItem(applications.farmer.filter(applicationNeedsReview).map((application) => ({
-          name: application.business_or_farm_name || application.name,
-          date: application.created_at
-        }))),
-        target: "Review before publishing",
+        label: "Follow-ups due",
+        value: followUpsDue,
+        explanation: "Contacted or overdue requests needing an admin follow-up.",
+        oldest: followUpsDue > 0 ? "Check buyer or supply follow-up" : "No follow-ups due",
         tone: "border-l-earth-500",
-        section: "applications" as AdminSectionId,
-        action: "Review Farmers",
-        icon: Sprout
+        section: "lead-queue" as AdminSectionId,
+        action: "Review follow-ups",
+        icon: MessageCircle
       },
       {
-        label: "Supplier Applications",
-        value: supplierApplicationsWaiting,
-        oldest: oldestOperationalItem(applications.supplier.filter(applicationNeedsReview).map((application) => ({
-          name: application.business_or_farm_name || application.name,
-          date: application.created_at
-        }))),
-        target: "Review business details",
-        tone: "border-l-earth-500",
-        section: "applications" as AdminSectionId,
-        action: "Review Suppliers",
-        icon: Truck
-      },
-      {
-        label: "Listings Ready for Publishing",
-        value: listingsWaiting,
+        label: "Listing submissions awaiting review",
+        value: listingsAwaitingReview,
+        explanation: "Public listing submissions waiting for review or publishing.",
         oldest: oldestOperationalItem(submissions.listings.filter((submission) => submission.status === "New" || submission.status === "Approved").map((submission) => ({
           name: submission.product_name,
           date: submission.created_at
         }))),
-        target: "Check owner, image, availability",
         tone: "border-l-harvest-500",
         section: "submissions" as AdminSectionId,
-        action: "Publish Listings",
+        action: "Review listings",
         icon: Store
-      },
-      {
-        label: "GG Standard Reviews",
-        value: ggStandardWaiting,
-        oldest: ggStandardWaiting > 0 ? "Members awaiting status" : "No pending standard reviews",
-        target: "Confirm commitment framework",
-        tone: "border-l-leaf-700",
-        section: "verifications" as AdminSectionId,
-        action: "Review Trust",
-        icon: ShieldCheck
       }
     ];
-  }, [applications.farmer, applications.supplier, leadRequests, newApplicationCounts, newSubmissionCounts, rowsBySection.farmers, rowsBySection.suppliers, sourcingCases, submissions.buyerRequests, submissions.listings]);
+  }, [leadRequests, sourcingCases, submissions.buyerRequests, submissions.listings]);
   const operationsWaitingCount = operationsPriorityQueue.reduce((total, item) => total + item.value, 0);
   const operationsEstimatedMinutes = Math.max(15, Math.min(120, operationsWaitingCount * 6 + leadStatusCount(leadRequests, "Negotiating") * 4));
-  const operationsQuickActions = useMemo(() => [
-    { label: "Add Listing", section: "marketplace" as AdminSectionId, form: "marketplace" as AdminFormId, icon: Store },
-    { label: "Add Farmer", section: "farmers" as AdminSectionId, form: "farmers" as AdminFormId, icon: Sprout },
-    { label: "Add Supplier", section: "suppliers" as AdminSectionId, form: "suppliers" as AdminFormId, icon: Truck },
-    { label: "Create Story", section: "success-stories" as AdminSectionId, form: "success-stories" as AdminFormId, icon: Star },
-    { label: "Upload Photos", section: "submissions" as AdminSectionId, icon: UploadCloud }
-  ], []);
-  const operationsProgress = useMemo(() => [
-    { label: "Farmers Approved", value: applications.farmer.filter((application) => application.status === "Approved" || application.status === "Converted").length, icon: Sprout },
-    { label: "Suppliers Approved", value: applications.supplier.filter((application) => application.status === "Approved" || application.status === "Converted").length, icon: Truck },
-    { label: "Listings Published", value: submissions.listings.filter((submission) => submission.status === "Converted").length, icon: Store },
-    { label: "Completed Today", value: sourcingCases.filter((caseItem) => caseItem.state.status === "Completed").length + leadStatusCount(leadRequests, "Completed"), icon: PackageCheck },
-    { label: "Stories Published", value: rowsBySection["success-stories"].filter((story) => story.status === "Published" || story.status === "Active").length, icon: Star }
-  ], [applications.farmer, applications.supplier, leadRequests, rowsBySection, sourcingCases, submissions.listings]);
-  const operationsHealth = useMemo(() => [
-    { label: "Average Response Time", value: sourcingCases.some((caseItem) => caseItem.priority.label === "Overdue") ? "Needs review" : "On track" },
-    { label: "Produce Requests Waiting", value: sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length + leadStatusCount(leadRequests, "New") },
-    { label: "Applications Waiting", value: newApplicationCounts.farmers + newApplicationCounts.suppliers + newApplicationCounts.buyers },
-    { label: "Verification Queue", value: rowsBySection.verifications.filter((row) => row.status === "Pending").length },
-    { label: "Listings Missing Photos", value: submissions.listings.filter((submission) => !submission.image_url).length },
-    { label: "Platform Status", value: sitePrelaunchActive ? "Pre-launch" : "Public" }
-  ], [leadRequests, newApplicationCounts, rowsBySection.verifications, sitePrelaunchActive, sourcingCases, submissions.listings]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
@@ -5802,16 +5763,34 @@ export function AdminDashboard({
     void loadAdminFarmers();
   }
 
-  function runQuickAction(section: AdminSectionId, intent: string) {
-    setActiveSection(section);
+  function openAdminNavigationItem(item: AdminNavigationItem, groupName = groupForNavigationKey(item.key)) {
+    setActiveSection(item.id);
+    setActiveNavigationKey(item.key);
+    setExpandedNavigationGroup(groupName);
+    setAnalyticsView(item.analyticsView ?? "operations");
     setSearchTerm("");
-    setStatusFilter(section === "verifications" ? "Pending" : "All");
-    setProduceRequestStatusFilter("All");
-    setNotice(`${intent} Phase 1 actions are mock controls until a database is connected.`);
+    setStatusFilter(item.id === "verifications" ? "Pending" : "All");
+    setProduceRequestStatusFilter(item.produceRequestStatusFilter ?? "All");
+    setSourcingQueueFilter(item.sourcingQueueFilter ?? "All");
+    if (item.applicationTab) {
+      setApplicationTab(item.applicationTab);
+    }
+  }
+
+  function openAdminSection(section: AdminSectionId, intent?: string) {
+    const item = defaultNavigationItem(section);
+    openAdminNavigationItem(item);
+    if (intent) {
+      setNotice(`${intent} Phase 1 actions are mock controls until a database is connected.`);
+    }
+  }
+
+  function runQuickAction(section: AdminSectionId, intent: string) {
+    openAdminSection(section, intent);
   }
 
   function openAdminForm(formId: AdminFormId, mode: "add" | "edit", row?: AdminRow) {
-    setActiveSection(formId);
+    openAdminSection(formId);
     setSearchTerm("");
     setStatusFilter("All");
     const rawValues = formValuesForRow(formId, row);
@@ -5859,7 +5838,7 @@ export function AdminDashboard({
       imageUrls: marketplaceGalleryValue([])
     };
 
-    setActiveSection("marketplace");
+    openAdminSection("marketplace");
     setSearchTerm("");
     setStatusFilter("All");
     setFormValues(nextValues);
@@ -5893,7 +5872,7 @@ export function AdminDashboard({
       status: "Draft"
     };
 
-    setActiveSection("success-stories");
+    openAdminSection("success-stories");
     setSearchTerm("");
     setStatusFilter("All");
     setFormValues(nextValues);
@@ -6239,6 +6218,8 @@ export function AdminDashboard({
   const activeSectionLabel = sections.find((section) => section.id === activeSection)?.label ?? "Admin";
   const activeSectionFormId = formIdForSection(activeSection);
   const isAnalyticsSection = activeSection === "analytics";
+  const isOperationsLanding = isAnalyticsSection && analyticsView === "operations";
+  const isAnalyticsReportsSection = isAnalyticsSection && analyticsView === "analytics";
   const isLaunchChecklistSection = activeSection === "launch-checklist";
   const isFarmerImportSection = activeSection === "farmer-import";
   const isApplicationsSection = activeSection === "applications";
@@ -6250,8 +6231,8 @@ export function AdminDashboard({
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
   const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
   const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
-  const sectionEyebrow = isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
-  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
+  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
+  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
     ? "Review one farmer, make one decision, then continue to the next application."
     : isSupplierReviewWorkspace
@@ -6742,52 +6723,53 @@ export function AdminDashboard({
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
             Workspaces
           </div>
-          <nav className="mt-5 grid gap-7">
-            {operationsNavigation.map((group) => (
-              <div key={group.group}>
-                <p className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-ink/40">
-                  {group.icon} {group.group}
-                </p>
-                <div className="mt-2.5 grid gap-1.5">
-                  {group.items.map((item) => {
-                    const isActive =
-                      item.id === activeSection &&
-                      (item.id !== "applications" ||
-                        (applicationTab === "farmer" && item.label === "Farmer Applications") ||
-                        (applicationTab === "supplier" && item.label === "Supplier Applications") ||
-                        (applicationTab === "buyer" && item.label === "Buyer Applications"));
+          <nav className="mt-5 grid gap-2">
+            {operationsNavigation.map((group) => {
+              const isExpanded = expandedNavigationGroup === group.group;
+              const groupHasActiveItem = group.items.some((item) => item.key === activeNavigationKey);
 
-                    return (
-                      <button
-                        key={`${group.group}-${item.label}`}
-                        type="button"
-                        onClick={() => {
-                          setActiveSection(item.id);
-                          setSearchTerm("");
-                          setStatusFilter("All");
-                          setProduceRequestStatusFilter("All");
-                          if (item.label.includes("Supplier Application")) {
-                            setApplicationTab("supplier");
-                          } else if (item.label.includes("Farmer Application")) {
-                            setApplicationTab("farmer");
-                          }
-                        }}
-                        className={`rounded-md px-3.5 py-2 text-left text-sm font-black transition ${
-                          isActive ? "bg-leaf-700 text-white" : "bg-white text-ink/68 hover:text-leaf-800"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
+              return (
+                <div key={group.group} className="rounded-md bg-white ring-1 ring-leaf-900/10">
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={`admin-nav-${group.group.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
+                    onClick={() => setExpandedNavigationGroup((current) => (current === group.group ? "" : group.group))}
+                    className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-3 text-left text-sm font-black transition ${
+                      groupHasActiveItem ? "text-leaf-800" : "text-ink/68 hover:text-leaf-800"
+                    }`}
+                  >
+                    <span>{group.group}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true" />
+                  </button>
+                  {isExpanded ? (
+                    <div id={`admin-nav-${group.group.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`} className="grid gap-1 px-2 pb-2">
+                      {group.items.map((item) => {
+                        const isActive = item.key === activeNavigationKey;
+
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => openAdminNavigationItem(item, group.group)}
+                            className={`rounded px-3 py-2 text-left text-sm font-black transition ${
+                              isActive ? "bg-leaf-700 text-white" : "text-ink/62 hover:bg-leaf-50 hover:text-leaf-800"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </nav>
         </aside>
 
         <div className="order-1 min-w-0 lg:order-none">
-          {isAnalyticsSection ? (
+          {isOperationsLanding ? (
             <section className="grid min-w-0 gap-6">
               <div className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Operations Center</p>
@@ -6828,8 +6810,8 @@ export function AdminDashboard({
                             </span>
                             <div className="min-w-0">
                               <h4 className="break-words text-base font-black leading-tight text-ink">{item.label}</h4>
-                              <p className="mt-2 text-sm font-semibold leading-5 text-ink/58">Oldest: {item.oldest}</p>
-                              <p className="mt-1 text-xs font-black uppercase tracking-wide text-earth-700">{item.target}</p>
+                              <p className="mt-2 text-sm font-semibold leading-5 text-ink/58">{item.explanation}</p>
+                              <p className="mt-1 text-xs font-black uppercase tracking-wide text-earth-700">{item.oldest}</p>
                             </div>
                           </div>
                           <span className="rounded-full bg-leaf-50 px-3 py-1 text-sm font-black text-leaf-800 sm:shrink-0">{item.value}</span>
@@ -6846,82 +6828,10 @@ export function AdminDashboard({
                   })}
                 </div>
               </section>
-
-              <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Quick Actions</p>
-                    <h3 className="mt-2 text-2xl font-black text-ink">Common work</h3>
-                  </div>
-                  <PlusCircle className="hidden h-5 w-5 text-leaf-700 sm:block" aria-hidden="true" />
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  {operationsQuickActions.map((action) => {
-                    const Icon = action.icon;
-
-                    return (
-                      <button
-                        key={action.label}
-                        type="button"
-                        onClick={() => {
-                          if (action.form) {
-                            openAdminForm(action.form, "add");
-                            setNotice(`${action.label} opened from Operations Center.`);
-                            return;
-                          }
-
-                          runQuickAction(action.section, `${action.label} opened from Operations Center.`);
-                        }}
-                        className="flex min-h-24 flex-col items-start justify-between rounded-md bg-white p-4 text-left text-sm font-black text-ink shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-0.5 hover:ring-leaf-700/30"
-                      >
-                        <span className="grid h-10 w-10 place-items-center rounded-md bg-leaf-50 text-leaf-700">
-                          <Icon className="h-5 w-5" aria-hidden="true" />
-                        </span>
-                        {action.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className="grid gap-4 xl:grid-cols-[1fr_0.8fr]">
-                <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Today&apos;s Progress</p>
-                  <h3 className="mt-2 text-2xl font-black text-ink">Completed operational work</h3>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {operationsProgress.map((item) => {
-                      const Icon = item.icon;
-
-                      return (
-                        <div key={item.label} className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-black text-ink/62">{item.label}</p>
-                            <Icon className="h-4 w-4 text-leaf-700" aria-hidden="true" />
-                          </div>
-                          <p className="mt-3 text-3xl font-black text-ink">{item.value}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">Platform Health</p>
-                  <h3 className="mt-2 text-2xl font-black text-ink">Keep an eye on</h3>
-                  <div className="mt-5 grid gap-3">
-                    {operationsHealth.map((item) => (
-                      <div key={item.label} className="flex items-center justify-between gap-4 rounded-md bg-leaf-50 px-4 py-3 ring-1 ring-leaf-900/10">
-                        <p className="text-sm font-black text-ink/62">{item.label}</p>
-                        <p className="text-sm font-black text-ink">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
             </section>
           ) : null}
 
-          {!isAnalyticsSection ? (
+          {!isOperationsLanding ? (
           <>
           <section className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
             <div className="border-b border-leaf-900/10 p-5">
@@ -6931,7 +6841,7 @@ export function AdminDashboard({
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{sectionTitle}</h2>
                   <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-ink/58">{sectionNotice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isBuyerRequestsSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
+                {!isAnalyticsReportsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isBuyerRequestsSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -7027,7 +6937,7 @@ export function AdminDashboard({
               </div>
             </div>
 
-            {isAnalyticsSection ? (
+            {isAnalyticsReportsSection ? (
               <div className="grid gap-6 p-5">
                 {analyticsError ? (
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{analyticsError}</div>

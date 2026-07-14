@@ -29,6 +29,8 @@ type RequestConnectionButtonProps = {
 };
 
 const successMessage = "Thank you. Ghana Growers has received your request and will review it before connecting anyone.";
+const successTitle = "Request received";
+const successBody = "Ghana Growers will review it before connecting anyone.";
 
 export function RequestConnectionButton({
   sourceType,
@@ -48,11 +50,15 @@ export function RequestConnectionButton({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [pageConfirmation, setPageConfirmation] = useState("");
   const [phoneValue, setPhoneValue] = useState("");
   const [whatsappValue, setWhatsappValue] = useState("");
   const [sameAsPhone, setSameAsPhone] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const confirmationTimerRef = useRef<number | null>(null);
+  const submitLockedRef = useRef(false);
   const safeId = `${sourceType}-${sourceId}`.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
   const isListingRequest = requestSource === "marketplace_listing" || sourceType === "Marketplace Listing" || sourceType === "Supplier Listing";
   const modalTitle = isListingRequest ? "Request This Listing" : "Request Connection";
@@ -61,6 +67,15 @@ export function RequestConnectionButton({
 
   useEffect(() => {
     setIsMounted(true);
+
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      if (confirmationTimerRef.current) {
+        window.clearTimeout(confirmationTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -116,16 +131,30 @@ export function RequestConnectionButton({
   }, [isOpen]);
 
   function closeModal() {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    if (!isSubmitting) {
+      submitLockedRef.current = false;
+    }
     setIsOpen(false);
+    setSuccess("");
   }
 
   async function submitLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSubmitting || submitLockedRef.current) {
+      return;
+    }
+
     const form = event.currentTarget;
     const formData = new FormData(form);
     const selectedProducts = formData.getAll("productInterest").map(String).map((value) => value.trim()).filter(Boolean);
     const requestedProduct = selectedProducts.length > 0 ? selectedProducts.join(", ") : selectedProduct;
 
+    submitLockedRef.current = true;
     setIsSubmitting(true);
     setError("");
     setSuccess("");
@@ -156,6 +185,7 @@ export function RequestConnectionButton({
     setIsSubmitting(false);
 
     if (!response?.ok) {
+      submitLockedRef.current = false;
       setError(result?.error ?? "Could not submit your request. Please try again.");
       return;
     }
@@ -165,6 +195,15 @@ export function RequestConnectionButton({
     setWhatsappValue("");
     setSameAsPhone(false);
     setSuccess(result?.message ?? successMessage);
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsOpen(false);
+      setSuccess("");
+      submitLockedRef.current = false;
+      setPageConfirmation(`${successTitle}. ${successBody}`);
+      confirmationTimerRef.current = window.setTimeout(() => {
+        setPageConfirmation("");
+      }, 3600);
+    }, 1600);
   }
 
   return (
@@ -186,6 +225,11 @@ export function RequestConnectionButton({
           {label}
         </button>
         {helperText ? <p className="text-xs font-semibold leading-5 text-ink/55">{helperText}</p> : null}
+        {pageConfirmation ? (
+          <p role="status" aria-live="polite" className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black leading-5 text-leaf-800 ring-1 ring-leaf-700/15">
+            {pageConfirmation}
+          </p>
+        ) : null}
       </div>
 
       {isMounted && isOpen ? createPortal(
@@ -221,6 +265,17 @@ export function RequestConnectionButton({
               </button>
             </div>
 
+            {success ? (
+              <div className="grid gap-4 p-5" role="status" aria-live="polite">
+                <div className="rounded-md bg-leaf-50 p-5 text-center ring-1 ring-leaf-700/15">
+                  <p className="text-sm font-black uppercase tracking-wide text-earth-700">{successTitle}</p>
+                  <h3 className="mt-2 text-2xl font-black text-ink">{successBody}</h3>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-ink/60">
+                    This window will close in a moment.
+                  </p>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={submitLead} className="grid gap-4 p-5">
               <input name="companyWebsite" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
 
@@ -303,13 +358,14 @@ export function RequestConnectionButton({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(success)}
                   className="gg-button-primary"
                 >
                   {isSubmitting ? "Submitting..." : "Submit Request"}
                 </button>
               </div>
             </form>
+            )}
           </section>
         </div>,
         document.body
