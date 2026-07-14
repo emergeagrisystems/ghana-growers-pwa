@@ -2742,7 +2742,7 @@ function sourcingCaseFromLead(lead: LeadRequestRecord): SourcingCaseRecord | nul
     request_source: lead.request_source,
     source_type: lead.source_type,
     source_name: lead.source_name,
-    linked_source: leadRequestLinkedSource(lead),
+    linked_source: lead.source_slug ?? lead.marketplace_listing_id ?? lead.farmer_profile_id ?? lead.supplier_profile_id ?? lead.source_id,
     marketplace_listing_id: lead.marketplace_listing_id ?? null,
     farmer_profile_id: lead.farmer_profile_id ?? null,
     supplier_profile_id: lead.supplier_profile_id ?? null,
@@ -2833,11 +2833,11 @@ function sourcingRecommendedAction(state: SourcingCaseState) {
   }
 
   if (state.status === "Matching Farmers") {
-    return "Assign Farmer";
+    return "Review Farmer Match";
   }
 
   if (state.status === "Matching Suppliers") {
-    return "Assign Supplier";
+    return "Review Supplier Match";
   }
 
   if (state.status === "Waiting Buyer") {
@@ -2851,13 +2851,33 @@ function sourcingRecommendedAction(state: SourcingCaseState) {
   return "Review Case";
 }
 
-function sourcingTimeline(caseItem: SourcingCaseRecord, state: SourcingCaseState) {
+function sourcingTimeline(caseItem: SourcingCaseRecord, state: SourcingCaseState, activityRows: AdminActivityRecord[]) {
+  const buyerContacted = sourcingCaseHasActivity({
+    caseId: caseItem.id,
+    activityRows,
+    action: "Contact"
+  });
+  const matchReviewed = sourcingCaseHasActivity({
+    caseId: caseItem.id,
+    activityRows,
+    action: "Review"
+  });
+  const availabilityConfirmed = sourcingCaseHasActivity({
+    caseId: caseItem.id,
+    activityRows,
+    action: "Approve",
+    marker: "availability"
+  });
+  const completed = caseItem.case_source === "lead_request"
+    ? normalizeLeadStatus(caseItem.lead_request_status ?? "New") === "Completed"
+    : state.status === "Completed";
+
   return [
     { label: "Request received", detail: caseItem.created_at ? new Date(caseItem.created_at).toLocaleDateString() : "Date not captured", complete: true },
-    { label: "Buyer contacted", detail: state.status !== "New" ? "Contact started" : "Waiting for first response", complete: state.status !== "New" },
-    { label: "Farmers matched", detail: ["Matching Farmers", "Waiting Buyer", "Completed", "Closed"].includes(state.status) ? "Potential farmers identified" : "Not started", complete: ["Matching Farmers", "Waiting Buyer", "Completed", "Closed"].includes(state.status) },
-    { label: "Availability confirmed", detail: state.status === "Completed" ? "Supply confirmed" : "Pending confirmation", complete: state.status === "Completed" },
-    { label: "Completed", detail: state.status === "Completed" ? "Case completed" : "Still open", complete: state.status === "Completed" }
+    { label: "Buyer contacted", detail: buyerContacted ? "Buyer contact recorded" : "Not recorded", complete: buyerContacted },
+    { label: "Farmers/Suppliers matched", detail: matchReviewed ? "Match review recorded" : "Not started", complete: matchReviewed },
+    { label: "Availability confirmed", detail: availabilityConfirmed ? "Availability confirmed" : "Not confirmed", complete: availabilityConfirmed },
+    { label: "Completed", detail: completed ? "Case completed" : "Still open", complete: completed }
   ];
 }
 
@@ -3167,6 +3187,17 @@ function leadStatusCount(leads: LeadRequestRecord[], status: LeadRequestStatus) 
 }
 
 function leadRequestLinkedSource(lead: LeadRequestRecord) {
+  const snapshotProduct = lead.listing_snapshot?.product;
+  const snapshotSeller = lead.listing_snapshot?.seller ? publicSellerDisplayName(lead.listing_snapshot.seller) : "";
+
+  if (snapshotProduct && snapshotSeller) {
+    return `${snapshotProduct} — ${snapshotSeller}`;
+  }
+
+  if (snapshotProduct) {
+    return snapshotProduct;
+  }
+
   return lead.marketplace_listing_id ?? lead.farmer_profile_id ?? lead.supplier_profile_id ?? lead.source_slug ?? lead.source_id;
 }
 
@@ -3217,10 +3248,73 @@ function sourcingCaseSourceLabel(caseItem: SourcingCaseRecord) {
 
 function sourcingCaseLinkedSource(caseItem: SourcingCaseRecord) {
   if (caseItem.case_source === "lead_request") {
-    return caseItem.linked_source ?? caseItem.source_name ?? "Not linked";
+    const snapshotProduct = caseItem.listing_snapshot?.product ?? caseItem.source_name ?? "";
+    const snapshotSeller = caseItem.listing_snapshot?.seller ? publicSellerDisplayName(caseItem.listing_snapshot.seller) : "";
+    const sourceName = caseItem.source_name ? publicSellerDisplayName(caseItem.source_name) : "";
+
+    if (snapshotProduct && snapshotSeller) {
+      return `${snapshotProduct} — ${snapshotSeller}`;
+    }
+
+    return snapshotProduct || sourceName || caseItem.linked_source || "Not linked";
   }
 
   return "Buyer request submission";
+}
+
+function sourcingCaseHref(caseItem: SourcingCaseRecord) {
+  if (caseItem.case_source !== "lead_request") {
+    return "";
+  }
+
+  if (caseItem.request_source === "marketplace_listing" && (caseItem.marketplace_listing_id || caseItem.linked_source)) {
+    return `/marketplace/${caseItem.linked_source ?? caseItem.marketplace_listing_id}`;
+  }
+
+  if (caseItem.request_source === "farmer_profile" && caseItem.linked_source) {
+    return `/farmer-directory/${caseItem.linked_source}`;
+  }
+
+  if (caseItem.request_source === "supplier_profile" && caseItem.linked_source) {
+    return `/supplier-directory/${caseItem.linked_source}`;
+  }
+
+  return "";
+}
+
+function publicSellerDisplayName(value: string) {
+  return /narteh\s+samuel\s+kweku/i.test(value) ? "S. K. Nart Farms" : value;
+}
+
+function sourcingCaseActivityRows(caseId: string, activityRows: AdminActivityRecord[]) {
+  return activityRows.filter(
+    (activity) =>
+      activity.entity_type === "Match Opportunity" &&
+      Boolean(activity.entity_id) &&
+      (activity.entity_id === caseId || activity.entity_id?.startsWith(`${caseId}:`))
+  );
+}
+
+function sourcingCaseCommunicationRows(caseId: string, activityRows: AdminActivityRecord[]) {
+  return sourcingCaseActivityRows(caseId, activityRows).filter((activity) => activity.action_type === "Contact");
+}
+
+function sourcingCaseHasActivity({
+  caseId,
+  activityRows,
+  action,
+  marker
+}: {
+  caseId: string;
+  activityRows: AdminActivityRecord[];
+  action: AdminActivityRecord["action_type"];
+  marker?: string;
+}) {
+  return sourcingCaseActivityRows(caseId, activityRows).some(
+    (activity) =>
+      activity.action_type === action &&
+      (!marker || activity.entity_id === `${caseId}:${marker}` || activity.entity_name.toLowerCase().includes(marker.toLowerCase()))
+  );
 }
 
 function topLeadSourcesByKind(leads: LeadRequestRecord[], sourceTypes: LeadRequestRecord["source_type"][]) {
@@ -4436,7 +4530,7 @@ export function AdminDashboard({
     () => [
       { label: "Total Leads", value: leadRequests.length, icon: MessageCircle },
       { label: "New Leads", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed },
-      { label: "Negotiating", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle },
+      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle },
       { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck },
       { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X }
     ],
@@ -6487,17 +6581,96 @@ export function AdminDashboard({
     }
   }
 
-  function contactSourcingBuyer(caseItem: SourcingCaseRecord) {
+  async function recordSourcingCaseActivity({
+    action,
+    caseItem,
+    matchId,
+    entityName
+  }: {
+    action: "Review" | "Contact";
+    caseItem: SourcingCaseRecord;
+    matchId?: string;
+    entityName: string;
+  }) {
+    const activityId = matchId ?? caseItem.id;
+    const alreadyRecorded = sourcingCaseHasActivity({
+      caseId: caseItem.id,
+      activityRows,
+      action,
+      marker: activityId === caseItem.id ? undefined : activityId.replace(`${caseItem.id}:`, "")
+    });
+
+    if (alreadyRecorded) {
+      return true;
+    }
+
+    const response = await fetch("/api/admin/matches/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        matchId: activityId,
+        entityName
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+
+    if (!response?.ok) {
+      setLeadRequestError(result?.error ?? "Could not record sourcing activity.");
+      return false;
+    }
+
+    setLeadRequestError("");
+    void loadActivity();
+    return true;
+  }
+
+  async function contactSourcingBuyer(caseItem: SourcingCaseRecord) {
+    const recorded = await recordSourcingCaseActivity({
+      action: "Contact",
+      caseItem,
+      entityName: `Buyer contact recorded for ${caseItem.product_needed}`
+    });
+
+    if (!recorded) {
+      return;
+    }
+
     updateSourcingCaseState(caseItem.id, (current) => ({
       ...current,
-      status: current.status === "New" ? "Reviewing" : current.status,
       owner: current.owner || currentAdmin.email
     }));
     setNotice(`Contact ${caseItem.buyer_name} about ${caseItem.product_needed}.`);
+    window.open(
+      whatsappUrl(caseItem.whatsapp_number || caseItem.phone_number, `Hello ${caseItem.buyer_name}, Ghana Growers is reviewing your sourcing request for ${caseItem.product_needed}.`),
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   function assignSourcingOwner(caseId: string) {
     updateSourcingCaseState(caseId, (current) => ({ ...current, owner: currentAdmin.email }));
+  }
+
+  async function reviewSourcingMatches(caseItem: SourcingCaseRecord, matchType: "farmer" | "supplier") {
+    const label = matchType === "farmer" ? "Farmer" : "Supplier";
+    const recorded = await recordSourcingCaseActivity({
+      action: "Review",
+      caseItem,
+      matchId: `${caseItem.id}:${matchType}-match`,
+      entityName: `${label} match reviewed for ${caseItem.product_needed}`
+    });
+
+    if (!recorded) {
+      return;
+    }
+
+    updateSourcingCaseState(caseItem.id, (current) => ({
+      ...current,
+      status: matchType === "farmer" ? "Matching Farmers" : "Matching Suppliers",
+      owner: current.owner || currentAdmin.email
+    }));
+    setNotice(`${label} match review recorded for ${caseItem.product_needed}.`);
   }
 
   function updateManualLaunchStatus(label: ManualLaunchChecklistItem, status: LaunchStatus) {
@@ -9238,7 +9411,7 @@ export function AdminDashboard({
                         return (
                           <div key={status}>
                             <div className="flex items-center justify-between gap-3 text-sm">
-                              <span className="font-black text-ink">{index + 1}. {status}</span>
+                              <span className="font-black text-ink">{index + 1}. {leadReviewStatusLabel(status)}</span>
                               <span className="font-black text-leaf-700">{value}</span>
                             </div>
                             <div className="mt-2 h-2 overflow-hidden rounded-full bg-leaf-50">
@@ -9348,7 +9521,7 @@ export function AdminDashboard({
                           <LeadDetailItem label="Product / Service" value={selectedLead.product_interest} />
                           <LeadDetailItem label="Request Source" value={leadRequestSourceLabel(selectedLead.request_source)} />
                           <LeadDetailItem label="Source Type" value={sourceLabel(selectedLead.source_type)} />
-                          <LeadDetailItem label="Linked Listing / Profile" value={selectedLead.marketplace_listing_id ?? selectedLead.farmer_profile_id ?? selectedLead.supplier_profile_id ?? selectedLead.source_slug ?? selectedLead.source_id} />
+                          <LeadDetailItem label="Linked Listing / Profile" value={leadRequestLinkedSource(selectedLead)} />
                           <LeadDetailItem label="Assigned Farmer / Supplier" value={selectedLead.source_name} />
                           <LeadDetailItem label="Source Page" value={selectedLead.source_page ?? "Not captured"} />
                         </dl>
@@ -9358,7 +9531,7 @@ export function AdminDashboard({
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Public listing/profile snapshot</p>
                             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                               <LeadDetailItem label="Product" value={selectedLead.listing_snapshot.product ?? selectedLead.product_interest} />
-                              <LeadDetailItem label="Seller / Profile" value={selectedLead.listing_snapshot.seller ?? selectedLead.source_name} />
+                              <LeadDetailItem label="Seller / Profile" value={selectedLead.listing_snapshot.seller ? publicSellerDisplayName(selectedLead.listing_snapshot.seller) : selectedLead.source_name} />
                               <LeadDetailItem label="Location" value={selectedLead.listing_snapshot.location ?? "Not captured"} />
                               <LeadDetailItem label="Price / Package" value={selectedLead.listing_snapshot.pricePackage ?? "Not captured"} />
                               <LeadDetailItem label="Listed Quantity" value={selectedLead.listing_snapshot.listedQuantity ?? "Not captured"} />
@@ -9377,7 +9550,7 @@ export function AdminDashboard({
                             Mark Contacted
                           </button>
                           <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
-                            Mark Negotiating
+                            Mark Active Sourcing
                           </button>
                           <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Completed")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
                             Mark Completed
@@ -9678,7 +9851,9 @@ export function AdminDashboard({
                             <p className="mt-3 text-sm font-black text-ink">{caseItem.request.product_needed}</p>
                             <p className="mt-1 text-xs font-semibold text-ink/55">{caseItem.request.quantity || "Quantity not supplied"}</p>
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${caseItem.priority.tone}`}>{caseItem.priority.label}</span>
+                              {caseItem.priority.label !== "New" ? (
+                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${caseItem.priority.tone}`}>{caseItem.priority.label}</span>
+                              ) : null}
                               <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">{caseItem.state.status}</span>
                             </div>
                             <p className="mt-2 text-[11px] font-black uppercase tracking-wide text-ink/40">
@@ -9726,7 +9901,21 @@ export function AdminDashboard({
                             <LeadDetailItem label="Delivery Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
                             <LeadDetailItem label="Required Delivery Date" value={selectedSourcingCase.request.deadline || "Not supplied"} />
                             <LeadDetailItem label="Request Source" value={sourcingCaseSourceLabel(selectedSourcingCase.request)} />
-                            <LeadDetailItem label="Linked Listing / Profile" value={sourcingCaseLinkedSource(selectedSourcingCase.request)} />
+                            <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                              <dt className="text-xs font-black uppercase tracking-wide text-ink/40">Linked Listing / Profile</dt>
+                              <dd className="mt-1 break-words text-sm font-semibold leading-6 text-ink/72">
+                                {sourcingCaseHref(selectedSourcingCase.request) ? (
+                                  <Link
+                                    href={sourcingCaseHref(selectedSourcingCase.request)}
+                                    className="font-black text-leaf-700 underline-offset-4 transition hover:text-leaf-900 hover:underline focus:outline-none focus:ring-2 focus:ring-leaf-600/20"
+                                  >
+                                    {sourcingCaseLinkedSource(selectedSourcingCase.request)}
+                                  </Link>
+                                ) : (
+                                  sourcingCaseLinkedSource(selectedSourcingCase.request)
+                                )}
+                              </dd>
+                            </div>
                             <LeadDetailItem label="Operational Status" value={selectedSourcingCase.state.status} />
                             <LeadDetailItem label="Submitted" value={selectedSourcingCase.request.created_at ? new Date(selectedSourcingCase.request.created_at).toLocaleDateString() : "Not captured"} />
                           </dl>
@@ -9744,7 +9933,7 @@ export function AdminDashboard({
                             </p>
                             <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                               <LeadDetailItem label="Product" value={selectedSourcingCase.request.listing_snapshot.product ?? selectedSourcingCase.request.product_needed} />
-                              <LeadDetailItem label="Seller / Profile" value={selectedSourcingCase.request.listing_snapshot.seller ?? selectedSourcingCase.request.source_name ?? "Not captured"} />
+                              <LeadDetailItem label="Seller / Profile" value={selectedSourcingCase.request.listing_snapshot.seller ? publicSellerDisplayName(selectedSourcingCase.request.listing_snapshot.seller) : selectedSourcingCase.request.source_name ?? "Not captured"} />
                               <LeadDetailItem label="Location" value={selectedSourcingCase.request.listing_snapshot.location ?? "Not captured"} />
                               <LeadDetailItem label="Price / Package" value={selectedSourcingCase.request.listing_snapshot.pricePackage ?? "Not captured"} />
                               <LeadDetailItem label="Listed Quantity" value={selectedSourcingCase.request.listing_snapshot.listedQuantity ?? "Not captured"} />
@@ -9766,13 +9955,13 @@ export function AdminDashboard({
                           <div className="rounded-md border border-leaf-900/10 bg-white p-4">
                             <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Communication History</h4>
                             <div className="mt-4 grid gap-3">
-                              {activityRows.filter((activity) => activity.entity_id === selectedSourcingCase.request.id).slice(0, 4).map((activity) => (
+                              {sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows).slice(0, 4).map((activity) => (
                                 <div key={activity.id} className="rounded-md bg-leaf-50 p-3">
                                   <p className="text-sm font-black text-ink">{activity.action_type}</p>
                                   <p className="mt-1 text-xs font-semibold text-ink/55">{relativeActivityTime(activity.created_at)} by {activity.admin_email}</p>
                                 </div>
                               ))}
-                              {activityRows.filter((activity) => activity.entity_id === selectedSourcingCase.request.id).length === 0 ? (
+                              {sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows).length === 0 ? (
                                 <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No communication has been recorded yet.</p>
                               ) : null}
                             </div>
@@ -9800,7 +9989,7 @@ export function AdminDashboard({
                         <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
                           <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Timeline</h4>
                           <div className="mt-4 grid gap-3">
-                            {sourcingTimeline(selectedSourcingCase.request, selectedSourcingCase.state).map((item) => (
+                            {sourcingTimeline(selectedSourcingCase.request, selectedSourcingCase.state, activityRows).map((item) => (
                               <div key={item.label} className="flex gap-3 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                 <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.complete ? "bg-leaf-700" : "bg-earth-500"}`} />
                                 <div>
@@ -9883,33 +10072,51 @@ export function AdminDashboard({
                             onChange={(event) => void setSourcingCaseStatus(selectedSourcingCase.request, event.target.value as SourcingCaseStatus)}
                             className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                           >
-                            {sourcingCaseStatuses.map((status) => (
-                              <option key={status} value={status}>{status}</option>
-                            ))}
+                            {sourcingCaseStatuses
+                              .filter((status) => selectedSourcingCase.request.case_source !== "lead_request" || status !== "New")
+                              .map((status) => (
+                                <option key={status} value={status}>
+                                  {selectedSourcingCase.request.case_source === "lead_request" && status === "Closed" ? "Lost" : status}
+                                </option>
+                              ))}
                           </select>
                         </label>
 
                         <div className="grid gap-2">
-                          <button type="button" onClick={() => void setSourcingCaseStatus(selectedSourcingCase.request, "Matching Farmers")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
-                            Assign Farmer
+                          <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "farmer")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
+                            Review Farmer Matches
                           </button>
-                          <button type="button" onClick={() => void setSourcingCaseStatus(selectedSourcingCase.request, "Matching Suppliers")} className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
-                            Assign Supplier
+                          <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "supplier")} className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
+                            Review Supplier Matches
                           </button>
-                          <a
-                            href={whatsappUrl(selectedSourcingCase.request.whatsapp_number || selectedSourcingCase.request.phone_number, `Hello ${selectedSourcingCase.request.buyer_name}, Ghana Growers is reviewing your sourcing request for ${selectedSourcingCase.request.product_needed}.`)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={() => contactSourcingBuyer(selectedSourcingCase.request)}
+                          <button
+                            type="button"
+                            onClick={() => void contactSourcingBuyer(selectedSourcingCase.request)}
                             className="rounded-md bg-white px-4 py-3 text-center text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
                           >
                             Contact Buyer
-                          </a>
-                          <button type="button" onClick={() => void setSourcingCaseStatus(selectedSourcingCase.request, "Completed")} className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400">
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("Mark this sourcing request as completed? This will not send any message.")) {
+                                void setSourcingCaseStatus(selectedSourcingCase.request, "Completed");
+                              }
+                            }}
+                            className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400"
+                          >
                             Complete Request
                           </button>
-                          <button type="button" onClick={() => void setSourcingCaseStatus(selectedSourcingCase.request, "Closed")} className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80">
-                            Close Request
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("Mark this sourcing request as lost? This will not send any message.")) {
+                                void setSourcingCaseStatus(selectedSourcingCase.request, "Closed");
+                              }
+                            }}
+                            className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80"
+                          >
+                            Mark Lost
                           </button>
                         </div>
                       </div>

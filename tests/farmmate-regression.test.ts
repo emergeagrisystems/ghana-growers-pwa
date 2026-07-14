@@ -969,6 +969,59 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Sourcing lifecycle timeline reflects recorded actions only",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+
+      assert.equal(adminDashboard.includes('"Contact started"'), false);
+      assert.equal(adminDashboard.includes('"Waiting for first response"'), false);
+      assert.equal(adminDashboard.includes('state.status !== "New"'), false);
+      assert.equal(adminDashboard.includes('detail: buyerContacted ? "Buyer contact recorded" : "Not recorded"'), true);
+      assert.equal(adminDashboard.includes('detail: matchReviewed ? "Match review recorded" : "Not started"'), true);
+      assert.equal(adminDashboard.includes('detail: availabilityConfirmed ? "Availability confirmed" : "Not confirmed"'), true);
+      assert.equal(adminDashboard.includes('sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows)'), true);
+      assert.equal(adminDashboard.includes('activity.action_type === "Contact"'), true);
+      assert.equal(adminDashboard.includes('action: "Contact"'), true);
+      assert.equal(adminDashboard.includes('action: "Review"'), true);
+    }
+  },
+  {
+    name: "Sourcing actions are explicit, idempotent, and use human-readable listing context",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const matchActivityRoute = repoFile("src/app/api/admin/matches/activity/route.ts");
+
+      assert.equal(adminDashboard.includes('caseItem.priority.label !== "New"'), true);
+      assert.equal(adminDashboard.includes('return "Active Sourcing";'), true);
+      assert.equal(adminDashboard.includes('leadReviewStatusLabel(status)'), true);
+      assert.equal(adminDashboard.includes('Review Farmer Matches'), true);
+      assert.equal(adminDashboard.includes('Review Supplier Matches'), true);
+      assert.equal(adminDashboard.includes('Mark Lost'), true);
+      assert.equal(adminDashboard.includes('Close Request'), false);
+      assert.equal(adminDashboard.includes('Mark Negotiating'), false);
+      assert.equal(adminDashboard.includes('window.confirm("Mark this sourcing request as completed? This will not send any message.")'), true);
+      assert.equal(adminDashboard.includes('window.confirm("Mark this sourcing request as lost? This will not send any message.")'), true);
+      assert.equal(adminDashboard.includes('href={whatsappUrl(selectedSourcingCase.request.whatsapp_number'), false);
+      assert.equal(adminDashboard.includes('window.open('), true);
+      assert.equal(adminDashboard.includes('publicSellerDisplayName'), true);
+      assert.equal(adminDashboard.includes('"S. K. Nart Farms"'), true);
+      assert.equal(adminDashboard.includes('`${snapshotProduct} — ${snapshotSeller}`'), true);
+      assert.equal(adminDashboard.includes('sourcingCaseHref(selectedSourcingCase.request)'), true);
+      assert.equal(adminDashboard.includes('status === "Closed" ? "Lost" : status'), true);
+      assert.equal(adminDashboard.includes("seller private contact details are not exposed here"), false);
+      assert.equal(adminDashboard.includes("Seller private contact details are not exposed here."), true);
+
+      assert.equal(matchActivityRoute.includes('const matchActions: AdminActionType[] = ["View", "Review", "Contact", "Close"];'), true);
+      assert.equal(matchActivityRoute.includes("selectSupabaseRecords"), true);
+      assert.equal(matchActivityRoute.includes("`entity_id=eq.${encodeURIComponent(matchId)}`"), true);
+      assert.equal(matchActivityRoute.includes("`action_type=eq.${encodeURIComponent(body.action)}`"), true);
+      assert.equal(matchActivityRoute.includes("entity_name=eq."), false);
+      assert.equal(matchActivityRoute.includes("duplicate: true"), true);
+      assert.equal(matchActivityRoute.includes("if (!logged.ok)"), true);
+      assert.equal(matchActivityRoute.includes("requireAdminUser"), true);
+    }
+  },
+  {
     name: "Admin-assisted marketplace listing creation remains separate from public submissions",
     run: () => {
       const adminListings = repoFile("src/app/api/admin/marketplace-listings/route.ts");

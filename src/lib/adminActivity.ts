@@ -68,13 +68,16 @@ export async function logAdminActivity({
       entity_id: entityId || null,
       entity_name: cleanName
     });
+
+    return { ok: true as const };
   } catch {
     // Activity logging should never block the admin action itself.
+    return { ok: false as const };
   }
 }
 
 export async function getRecentAdminActivity(limit = 25) {
-  const safeLimit = Math.min(Math.max(limit, 1), 25);
+  const safeLimit = Math.min(Math.max(limit, 1), 250);
 
   return selectSupabaseRecords<AdminActivityLog>(
     "admin_activity_log",
