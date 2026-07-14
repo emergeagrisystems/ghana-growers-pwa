@@ -4,6 +4,7 @@ import { getRecentLeadRequests, updateLeadRequestStatus, type LeadRequestStatus 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const adminUser = await requireAdminUser(request);
@@ -15,10 +16,18 @@ export async function GET(request: Request) {
   const leads = await getRecentLeadRequests(250);
 
   if (leads.error) {
+    console.error("[admin:lead-requests] Could not load lead requests", {
+      status: leads.status,
+      error: leads.error
+    });
     return NextResponse.json({ error: "Could not load lead requests." }, { status: leads.status });
   }
 
-  return NextResponse.json({ leads: leads.data ?? [] });
+  return NextResponse.json({ leads: leads.data ?? [] }, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0"
+    }
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -38,6 +47,10 @@ export async function PATCH(request: Request) {
   const update = await updateLeadRequestStatus({ id, status: body.status, adminEmail: adminUser.email });
 
   if (update.error) {
+    console.error("[admin:lead-requests] Could not update lead request status", {
+      status: update.status,
+      error: update.error
+    });
     return NextResponse.json({ error: update.error }, { status: update.status });
   }
 

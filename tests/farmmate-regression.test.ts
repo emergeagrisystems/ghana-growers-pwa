@@ -905,6 +905,37 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Admin Produce Requests workspace reads unified lead_requests queue",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const leadAdminRoute = repoFile("src/app/api/admin/lead-requests/route.ts");
+
+      assert.equal(adminDashboard.includes('const isBuyerRequestsSection = activeSection === "buyer-requests";'), true);
+      assert.equal(adminDashboard.includes("const produceRequestLeads = useMemo"), true);
+      assert.equal(adminDashboard.includes("leadRequests.filter((lead) => {"), true);
+      assert.equal(adminDashboard.includes("leadMatchesProduceRequestStatus(lead, produceRequestStatusFilter)"), true);
+      assert.equal(adminDashboard.includes('leadReviewStatusLabel(status)'), true);
+      assert.equal(adminDashboard.includes('section: "buyer-requests" as AdminSectionId'), true);
+      assert.equal(adminDashboard.includes("Private Enquiry Workspace"), true);
+      assert.equal(adminDashboard.includes("Review private produce requests"), true);
+      assert.equal(adminDashboard.includes("selectedProduceRequest.listing_snapshot"), true);
+      assert.equal(adminDashboard.includes("Seller private contact details are not exposed here."), true);
+      assert.equal(adminDashboard.includes("leadRequestLinkedSource(selectedProduceRequest)"), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(selectedProduceRequest, "Negotiating")'), true);
+      assert.equal(adminDashboard.includes("Start Sourcing"), true);
+      assert.equal(adminDashboard.includes("No produce requests match this search or status filter."), true);
+      assert.equal(adminDashboard.includes("submissions.buyerRequests.map((request) => {"), true);
+      assert.equal(adminDashboard.includes("buyer_request_applications"), false);
+
+      assert.equal(leadAdminRoute.includes("requireAdminUser"), true);
+      assert.equal(leadAdminRoute.includes("getRecentLeadRequests(250)"), true);
+      assert.equal(leadAdminRoute.includes('export const dynamic = "force-dynamic"'), true);
+      assert.equal(leadAdminRoute.includes("export const revalidate = 0"), true);
+      assert.equal(leadAdminRoute.includes('"Cache-Control": "no-store, max-age=0"'), true);
+      assert.equal(leadAdminRoute.includes("[admin:lead-requests] Could not load lead requests"), true);
+    }
+  },
+  {
     name: "Admin-assisted marketplace listing creation remains separate from public submissions",
     run: () => {
       const adminListings = repoFile("src/app/api/admin/marketplace-listings/route.ts");

@@ -180,6 +180,7 @@ type WhatsAppLeadRecord = {
 };
 type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
 type LeadRequestSource = "marketplace_listing" | "farmer_profile" | "supplier_profile" | "generic_sourcing" | "legacy";
+type ProduceRequestStatusFilter = "All" | "Pending Review" | "Contacted" | "Active Sourcing" | "Completed" | "Lost";
 type LeadRequestSnapshot = {
   product?: string;
   seller?: string;
@@ -3007,9 +3008,28 @@ function leadRequestSourceLabel(source?: LeadRequestSource | null) {
 
 const leadPipelineStatuses: LeadRequestStatus[] = ["New", "Contacted", "Negotiating", "Completed", "Lost"];
 const leadFunnelStatuses: LeadRequestStatus[] = ["New", "Contacted", "Negotiating", "Completed"];
+const produceRequestStatusFilters: ProduceRequestStatusFilter[] = ["All", "Pending Review", "Contacted", "Active Sourcing", "Completed", "Lost"];
 
 function normalizeLeadStatus(status: LeadRequestRecord["status"]): LeadRequestStatus {
   return status === "Closed" ? "Completed" : status;
+}
+
+function leadReviewStatusLabel(status: LeadRequestRecord["status"]) {
+  const normalized = normalizeLeadStatus(status);
+
+  if (normalized === "New") {
+    return "Pending Review";
+  }
+
+  if (normalized === "Negotiating") {
+    return "Active Sourcing";
+  }
+
+  return normalized;
+}
+
+function leadMatchesProduceRequestStatus(lead: LeadRequestRecord, filter: ProduceRequestStatusFilter) {
+  return filter === "All" || leadReviewStatusLabel(lead.status) === filter;
 }
 
 function leadStatusClass(status: LeadRequestStatus) {
@@ -3058,6 +3078,39 @@ function featuredFollowUpMessage(enquiry: FeaturedEnquiryRecord) {
 
 function leadStatusCount(leads: LeadRequestRecord[], status: LeadRequestStatus) {
   return leads.filter((lead) => normalizeLeadStatus(lead.status) === status).length;
+}
+
+function leadRequestLinkedSource(lead: LeadRequestRecord) {
+  return lead.marketplace_listing_id ?? lead.farmer_profile_id ?? lead.supplier_profile_id ?? lead.source_slug ?? lead.source_id;
+}
+
+function leadRequestLocation(lead: LeadRequestRecord) {
+  return lead.delivery_location ?? lead.location ?? lead.listing_snapshot?.location ?? "Not supplied";
+}
+
+function leadRequestSearchValue(lead: LeadRequestRecord) {
+  return [
+    lead.requester_name,
+    lead.company_name,
+    lead.phone,
+    lead.whatsapp,
+    lead.product_interest,
+    lead.quantity_needed,
+    lead.message,
+    lead.location,
+    lead.delivery_location,
+    lead.required_by,
+    lead.source_name,
+    leadRequestSourceLabel(lead.request_source),
+    leadReviewStatusLabel(lead.status),
+    leadRequestLinkedSource(lead),
+    lead.listing_snapshot?.product,
+    lead.listing_snapshot?.seller,
+    lead.listing_snapshot?.location,
+    lead.listing_snapshot?.pricePackage,
+    lead.listing_snapshot?.listedQuantity,
+    lead.listing_snapshot?.availability
+  ].filter(Boolean).join(" ").toLowerCase();
 }
 
 function topLeadSourcesByKind(leads: LeadRequestRecord[], sourceTypes: LeadRequestRecord["source_type"][]) {
@@ -3594,6 +3647,7 @@ export function AdminDashboard({
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [produceRequestStatusFilter, setProduceRequestStatusFilter] = useState<ProduceRequestStatusFilter>("All");
   const [featuredEnquiries, setFeaturedEnquiries] = useState<FeaturedEnquiryRecord[]>([]);
   const [featuredEnquiryError, setFeaturedEnquiryError] = useState("");
   const [selectedFeaturedEnquiryId, setSelectedFeaturedEnquiryId] = useState<string | null>(null);
@@ -3766,7 +3820,7 @@ export function AdminDashboard({
   }, [loadWhatsAppLeads]);
 
   const loadLeadRequests = useCallback(async () => {
-    const response = await fetch("/api/admin/lead-requests").catch(() => null);
+    const response = await fetch("/api/admin/lead-requests", { cache: "no-store" }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { leads?: LeadRequestRecord[]; error?: string } | null;
 
     if (!response?.ok) {
@@ -4096,7 +4150,7 @@ export function AdminDashboard({
         ]),
         target: "Respond within 1 business day",
         tone: "border-l-tomato",
-        section: "match-opportunities" as AdminSectionId,
+        section: "buyer-requests" as AdminSectionId,
         action: "Review Queue",
         icon: PackageCheck
       },
@@ -4179,12 +4233,12 @@ export function AdminDashboard({
   ], [applications.farmer, applications.supplier, leadRequests, rowsBySection, sourcingCases, submissions.listings]);
   const operationsHealth = useMemo(() => [
     { label: "Average Response Time", value: sourcingCases.some((caseItem) => caseItem.priority.label === "Overdue") ? "Needs review" : "On track" },
-    { label: "Produce Requests Waiting", value: sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length },
+    { label: "Produce Requests Waiting", value: sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length + leadStatusCount(leadRequests, "New") },
     { label: "Applications Waiting", value: newApplicationCounts.farmers + newApplicationCounts.suppliers + newApplicationCounts.buyers },
     { label: "Verification Queue", value: rowsBySection.verifications.filter((row) => row.status === "Pending").length },
     { label: "Listings Missing Photos", value: submissions.listings.filter((submission) => !submission.image_url).length },
     { label: "Platform Status", value: sitePrelaunchActive ? "Pre-launch" : "Public" }
-  ], [newApplicationCounts, rowsBySection.verifications, sitePrelaunchActive, sourcingCases, submissions.listings]);
+  ], [leadRequests, newApplicationCounts, rowsBySection.verifications, sitePrelaunchActive, sourcingCases, submissions.listings]);
   const leadSourceTotals = useMemo(() => sourceTypeTotals(whatsappLeads), [whatsappLeads]);
   const topLeadSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const analyticsFallback = useMemo(() => localAnalyticsFallback(whatsappLeads, leadRequests), [whatsappLeads, leadRequests]);
@@ -4231,6 +4285,30 @@ export function AdminDashboard({
   }, [analytics, buyerApplicationProducts, submissions.buyerRequests]);
   const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
   const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
+  const produceRequestLeads = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    return leadRequests.filter((lead) => {
+      const matchesStatus = leadMatchesProduceRequestStatus(lead, produceRequestStatusFilter);
+      const matchesSearch = !query || leadRequestSearchValue(lead).includes(query);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [leadRequests, produceRequestStatusFilter, searchTerm]);
+  const selectedProduceRequest = useMemo(
+    () => produceRequestLeads.find((lead) => lead.id === selectedLeadId) ?? produceRequestLeads[0] ?? null,
+    [produceRequestLeads, selectedLeadId]
+  );
+  const produceRequestMetricCards = useMemo(
+    () => [
+      { label: "Pending Review", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed },
+      { label: "Contacted", value: leadStatusCount(leadRequests, "Contacted"), icon: MessageCircle },
+      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: PackageCheck },
+      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck },
+      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X }
+    ],
+    [leadRequests]
+  );
   const selectedLead = useMemo(() => leadRequests.find((lead) => lead.id === selectedLeadId) ?? leadRequests[0] ?? null, [leadRequests, selectedLeadId]);
   const selectedFeaturedEnquiry = useMemo(
     () => featuredEnquiries.find((enquiry) => enquiry.id === selectedFeaturedEnquiryId) ?? featuredEnquiries[0] ?? null,
@@ -5516,6 +5594,7 @@ export function AdminDashboard({
     setActiveSection(section);
     setSearchTerm("");
     setStatusFilter(section === "verifications" ? "Pending" : "All");
+    setProduceRequestStatusFilter("All");
     setNotice(`${intent} Phase 1 actions are mock controls until a database is connected.`);
   }
 
@@ -5954,16 +6033,19 @@ export function AdminDashboard({
   const isSubmissionsSection = activeSection === "submissions";
   const isWhatsAppLeadsSection = activeSection === "whatsapp-leads";
   const isLeadQueueSection = activeSection === "lead-queue";
+  const isBuyerRequestsSection = activeSection === "buyer-requests";
   const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
   const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
   const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
-  const sectionEyebrow = isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
-  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
+  const sectionEyebrow = isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
+  const sectionTitle = isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
     ? "Review one farmer, make one decision, then continue to the next application."
     : isSupplierReviewWorkspace
       ? "Review one supplier, make one decision, then continue to the next application."
+    : isBuyerRequestsSection
+      ? "Review private buyer enquiries from marketplace listings, directory profiles, and generic sourcing forms."
     : isMatchOpportunitiesSection
       ? "Help buyers source produce by reviewing one case, choosing matches, and deciding the next action."
     : notice;
@@ -6372,6 +6454,7 @@ export function AdminDashboard({
                           setActiveSection(item.id);
                           setSearchTerm("");
                           setStatusFilter("All");
+                          setProduceRequestStatusFilter("All");
                           if (item.label.includes("Supplier Application")) {
                             setApplicationTab("supplier");
                           } else if (item.label.includes("Farmer Application")) {
@@ -6537,7 +6620,7 @@ export function AdminDashboard({
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{sectionTitle}</h2>
                   <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-ink/58">{sectionNotice}</p>
                 </div>
-                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
+                {!isAnalyticsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isBuyerRequestsSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -8764,6 +8847,199 @@ export function AdminDashboard({
                     ) : null}
                   </div>
                 )}
+              </div>
+            ) : isBuyerRequestsSection ? (
+              <div className="grid gap-6 p-5">
+                {leadRequestError ? (
+                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
+                ) : null}
+
+                <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-earth-700">Unified Buyer Enquiries</p>
+                      <h3 className="mt-2 text-2xl font-black text-ink">Review private produce requests</h3>
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-ink/65">
+                        Marketplace listing requests, directory connection requests, and generic sourcing requests all appear here before any sourcing action starts.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void loadLeadRequests();
+                        void loadAnalytics();
+                      }}
+                      className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                    >
+                      Refresh Requests
+                    </button>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+                    <label className="relative block">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
+                      <input
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        placeholder="Search buyer, product, listing, location, phone..."
+                        className="w-full rounded-md border border-leaf-900/10 bg-white py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      />
+                    </label>
+                    <label className="grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45 lg:min-w-56">
+                      Status
+                      <select
+                        value={produceRequestStatusFilter}
+                        onChange={(event) => setProduceRequestStatusFilter(event.target.value as ProduceRequestStatusFilter)}
+                        className="min-h-11 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                      >
+                        {produceRequestStatusFilters.map((filter) => (
+                          <option key={filter} value={filter}>{filter === "All" ? "All statuses" : filter}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </section>
+
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {produceRequestMetricCards.map((card) => {
+                    const Icon = card.icon;
+
+                    return (
+                      <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-black text-ink/60">{card.label}</p>
+                          <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                            <Icon className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                        </div>
+                        <p className="mt-3 text-3xl font-black text-ink">{card.value}</p>
+                      </div>
+                    );
+                  })}
+                </section>
+
+                <section className="grid gap-5 xl:grid-cols-[0.95fr_1.25fr]">
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-wide text-earth-700">Produce Requests</p>
+                        <h3 className="mt-2 text-xl font-black text-ink">Awaiting review</h3>
+                      </div>
+                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{produceRequestLeads.length} shown</p>
+                    </div>
+
+                    <div className="mt-5 grid gap-3">
+                      {produceRequestLeads.map((lead) => {
+                        const status = normalizeLeadStatus(lead.status);
+                        const isSelected = selectedProduceRequest?.id === lead.id;
+
+                        return (
+                          <button
+                            key={lead.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedLeadId(lead.id);
+                              setNotice(`Viewing produce request from ${lead.requester_name}.`);
+                            }}
+                            className={`rounded-md border p-4 text-left transition ${
+                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <h4 className="font-black text-ink">{lead.product_interest}</h4>
+                                <p className="mt-1 text-sm font-semibold text-ink/60">{lead.requester_name}</p>
+                              </div>
+                              <span className={`rounded-full px-3 py-1 text-xs font-black ${leadStatusClass(status)}`}>{leadReviewStatusLabel(status)}</span>
+                            </div>
+                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                              <p className="font-semibold text-ink/58">Source: {leadRequestSourceLabel(lead.request_source)}</p>
+                              <p className="font-semibold text-ink/58">Quantity: {lead.quantity_needed ?? "Not specified"}</p>
+                              <p className="font-semibold text-ink/58">Delivery: {leadRequestLocation(lead)}</p>
+                              <p className="font-semibold text-ink/58">Date: {relativeActivityTime(lead.created_at)}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {produceRequestLeads.length === 0 && !leadRequestError ? (
+                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No produce requests match this search or status filter.</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                    {selectedProduceRequest ? (
+                      <>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-sm font-black uppercase tracking-wide text-earth-700">Request Detail</p>
+                            <h3 className="mt-2 text-2xl font-black text-ink">{selectedProduceRequest.product_interest}</h3>
+                            <p className="mt-1 text-sm font-semibold text-ink/58">
+                              {selectedProduceRequest.requester_name} - {relativeActivityTime(selectedProduceRequest.created_at)}
+                            </p>
+                          </div>
+                          <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${leadStatusClass(normalizeLeadStatus(selectedProduceRequest.status))}`}>
+                            {leadReviewStatusLabel(selectedProduceRequest.status)}
+                          </span>
+                        </div>
+
+                        <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          <LeadDetailItem label="Buyer" value={selectedProduceRequest.requester_name} />
+                          <LeadDetailItem label="Company" value={selectedProduceRequest.company_name ?? "Not provided"} />
+                          <LeadDetailItem label="Phone" value={selectedProduceRequest.phone} />
+                          <LeadDetailItem label="WhatsApp" value={selectedProduceRequest.whatsapp} />
+                          <LeadDetailItem label="Request Source" value={leadRequestSourceLabel(selectedProduceRequest.request_source)} />
+                          <LeadDetailItem label="Linked Listing / Profile" value={leadRequestLinkedSource(selectedProduceRequest)} />
+                          <LeadDetailItem label="Product" value={selectedProduceRequest.product_interest} />
+                          <LeadDetailItem label="Quantity" value={selectedProduceRequest.quantity_needed ?? "Not specified"} />
+                          <LeadDetailItem label="Delivery Location" value={leadRequestLocation(selectedProduceRequest)} />
+                          <LeadDetailItem label="Required By" value={selectedProduceRequest.required_by ?? "Not specified"} />
+                          <LeadDetailItem label="Current Status" value={leadReviewStatusLabel(selectedProduceRequest.status)} />
+                          <LeadDetailItem label="Submitted" value={selectedProduceRequest.created_at ? new Date(selectedProduceRequest.created_at).toLocaleString() : "Not captured"} />
+                        </dl>
+
+                        {selectedProduceRequest.listing_snapshot ? (
+                          <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Public listing/profile snapshot</p>
+                            <p className="mt-1 text-xs font-semibold leading-5 text-ink/50">
+                              Public listing context only. Seller private contact details are not exposed here.
+                            </p>
+                            <dl className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                              <LeadDetailItem label="Product" value={selectedProduceRequest.listing_snapshot.product ?? selectedProduceRequest.product_interest} />
+                              <LeadDetailItem label="Seller / Profile" value={selectedProduceRequest.listing_snapshot.seller ?? selectedProduceRequest.source_name} />
+                              <LeadDetailItem label="Location" value={selectedProduceRequest.listing_snapshot.location ?? "Not captured"} />
+                              <LeadDetailItem label="Price / Package" value={selectedProduceRequest.listing_snapshot.pricePackage ?? "Not captured"} />
+                              <LeadDetailItem label="Listed Quantity" value={selectedProduceRequest.listing_snapshot.listedQuantity ?? "Not captured"} />
+                              <LeadDetailItem label="Availability" value={selectedProduceRequest.listing_snapshot.availability ?? "Not captured"} />
+                            </dl>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Message</p>
+                          <p className="mt-2 text-sm leading-6 text-ink/68">{selectedProduceRequest.message || "No message was provided with this request."}</p>
+                        </div>
+
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                            Mark Contacted
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
+                            Start Sourcing
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Completed")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                            Mark Completed
+                          </button>
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Lost")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                            Mark Lost
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select a produce request to view buyer details, listing context, and review actions.</p>
+                    )}
+                  </div>
+                </section>
               </div>
             ) : isLeadQueueSection ? (
               <div className="grid gap-6 p-5">
