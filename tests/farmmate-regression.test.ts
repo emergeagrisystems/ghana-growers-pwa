@@ -2459,6 +2459,48 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "FarmMate launch QA document covers public routes and V1 limitations",
+    run: () => {
+      const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md");
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const learnPage = repoFile("src/app/learn/page.tsx");
+      const challengePage = repoFile("src/app/learn/challenges/soil-health/page.tsx");
+      const soilChallenge = repoFile("src/components/SoilHealthChallenge.tsx");
+
+      ["/farmer-hub", "/learn", "/learn/challenges/soil-health"].forEach((route) => {
+        assert.equal(launchQa.includes(route), true, route);
+      });
+      [
+        "Today's Farm Summary",
+        "Live Weather",
+        "Ask FarmMate",
+        "Crop Doctor Vision",
+        "Crop Calendar",
+        "Planting Advisor",
+        "Soil Health Challenge"
+      ].forEach((tool) => {
+        assert.equal(launchQa.includes(tool), true, tool);
+      });
+      [
+        "No farmer login yet",
+        "Crop Doctor is AI guidance, not a guaranteed diagnosis",
+        "Live weather is location-based but not personalized to saved farms yet",
+        "Market prices are not included in V1",
+        "Exact farm records/history are not saved in V1"
+      ].forEach((limitation) => {
+        assert.equal(launchQa.includes(limitation), true, limitation);
+      });
+
+      assert.equal(farmerHub.includes("FarmMateWeatherFoundation"), true);
+      assert.equal(farmerHub.includes("FarmTools"), true);
+      assert.equal(learnPage.includes("LearnHub"), true);
+      assert.equal(challengePage.includes("SoilHealthChallenge"), true);
+      assert.equal(soilChallenge.includes("LEARN_CHALLENGE_STORAGE_KEY"), true);
+      assert.equal(soilChallenge.includes("/farmer-hub?tool=ask"), true);
+      assert.equal(soilChallenge.includes("Start Day 1"), true);
+    }
+  },
+  {
     name: "maize question resolves maize",
     run: () => {
       const response = buildFarmMateResponse("My maize is not growing well", routeFarmMateQuestion("My maize is not growing well"));
