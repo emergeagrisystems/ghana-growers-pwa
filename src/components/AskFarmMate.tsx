@@ -21,8 +21,13 @@ import { FARM_MATE_EXHAUSTED_LEARN_CTA, FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA, typ
 
 const suggestions = [
   "Can I spray today?",
-  "Tomato leaves turning yellow",
-  "Best fertilizer for maize"
+  "My tomato leaves are yellow",
+  "Best fertilizer for maize",
+  "Can I plant tomatoes now?",
+  "When should I harvest maize?",
+  "How do I store cassava?",
+  "How do I pack tomatoes for transport?",
+  "What should I check from my crop photo?"
 ];
 
 type FollowUpAnswer = {
@@ -642,17 +647,20 @@ export function AskFarmMate({
           />
         </label>
 
-        <div className="flex flex-wrap gap-2" aria-label="Suggested questions">
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => setQuestion(suggestion)}
-              className="min-h-11 rounded-md border border-leaf-900/15 bg-white px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-            >
-              {suggestion}
-            </button>
-          ))}
+        <div className="grid gap-2">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/50">Popular questions</p>
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0" aria-label="Suggested questions">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => setQuestion(suggestion)}
+                className="min-h-11 shrink-0 rounded-md border border-leaf-900/15 bg-white px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:shrink"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button

@@ -260,6 +260,67 @@ function repoFile(path: string) {
 
 const tests: TestCase[] = [
   {
+    name: "Ask FarmMate starter suggestions cover major specialists",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const expectedSuggestions = [
+        "Can I spray today?",
+        "My tomato leaves are yellow",
+        "Best fertilizer for maize",
+        "Can I plant tomatoes now?",
+        "When should I harvest maize?",
+        "How do I store cassava?",
+        "How do I pack tomatoes for transport?",
+        "What should I check from my crop photo?"
+      ];
+
+      for (const suggestion of expectedSuggestions) {
+        assert.equal(component.includes(`"${suggestion}"`), true);
+      }
+
+      assert.equal(component.includes("Popular questions"), true);
+      assert.equal(component.includes("Tomato leaves turning yellow"), false);
+    }
+  },
+  {
+    name: "Ask FarmMate suggestion click only populates the input",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(component.includes("onClick={() => setQuestion(suggestion)}"), true);
+      assert.equal(component.includes("onClick={() => askFarmMate"), false);
+    }
+  },
+  {
+    name: "Ask FarmMate suggestions use compact horizontal mobile scrolling",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(component.includes("overflow-x-auto"), true);
+      assert.equal(component.includes("sm:flex-wrap"), true);
+      assert.equal(component.includes("shrink-0"), true);
+    }
+  },
+  {
+    name: "Ask FarmMate starter suggestions route to expected specialists",
+    run: () => {
+      const expectedRoutes = [
+        ["Can I spray today?", "weather_decision"],
+        ["My tomato leaves are yellow", "crop_health"],
+        ["Best fertilizer for maize", "fertilizer"],
+        ["Can I plant tomatoes now?", "planting"],
+        ["When should I harvest maize?", "harvest_postharvest"],
+        ["How do I store cassava?", "harvest_postharvest"],
+        ["How do I pack tomatoes for transport?", "harvest_postharvest"],
+        ["What should I check from my crop photo?", "crop_doctor"]
+      ] as const;
+
+      for (const [question, specialist] of expectedRoutes) {
+        assert.equal(routeFarmMateQuestion(question).selectedSpecialist, specialist);
+      }
+    }
+  },
+  {
     name: "Listing submissions reconciliation migration creates the missing public queue safely",
     run: () => {
       const migration = repoFile("supabase/migrations/031_reconcile_listing_submissions.sql");
