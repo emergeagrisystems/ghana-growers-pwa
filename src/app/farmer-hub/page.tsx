@@ -1,14 +1,7 @@
-import {
-  CloudRain,
-  CloudSun,
-  GraduationCap,
-  ShieldCheck,
-  Sprout,
-  Sun
-} from "lucide-react";
+import { GraduationCap, ShieldCheck, Sprout, Sun } from "lucide-react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
-import { FarmMateDailySummary } from "@/components/FarmMateDailySummary";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
+import { FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
 import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -18,12 +11,6 @@ export const metadata = createPageMetadata({
     "Your AI-powered farming companion by Ghana Growers, with daily farming recommendations, weather outlook, crop planning tools, and learning tips for Ghanaian farmers.",
   path: "/farmer-hub"
 });
-
-const weatherForecast = [
-  { day: "Today", condition: "Warm, cloudy", temp: "29°C", rain: "35% chance of rain", icon: CloudSun },
-  { day: "Tomorrow", condition: "Light rain", temp: "27°C", rain: "65% chance of rain", icon: CloudRain },
-  { day: "Day After Tomorrow", condition: "Sunny breaks", temp: "30°C", rain: "20% chance of rain", icon: Sun }
-];
 
 const featuredLearningTip = "Mulch young tomato plants to keep soil moist and reduce weeds during dry spells.";
 
@@ -58,33 +45,7 @@ export default function FarmerHubPage() {
               </span>
             </div>
 
-            <FarmMateDailySummary />
-
-            <div className="mt-4 rounded-md bg-leaf-50 p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
-                  <CloudSun className="text-leaf-700" size={18} aria-hidden="true" />
-                  <h3 className="gg-eyebrow text-leaf-700">3-day forecast</h3>
-                </div>
-                <p className="text-xs font-bold text-ink/55">Set your location for live weather guidance.</p>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {weatherForecast.map((day) => {
-                  const WeatherIcon = day.icon;
-
-                  return (
-                  <div key={day.day} className="flex min-h-36 flex-col items-center justify-center rounded-md bg-white px-2 py-4 text-center shadow-sm ring-1 ring-leaf-900/5 sm:min-h-40 sm:px-3">
-                    <div className="flex items-center justify-center gap-1.5 text-ink/70">
-                      <WeatherIcon size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
-                      <p className="text-[0.72rem] font-bold leading-tight sm:text-xs">{day.day}</p>
-                    </div>
-                    <p className="mt-5 text-[2.125rem] font-bold leading-none text-leaf-900 sm:text-4xl">{day.temp}</p>
-                    <p className="mt-5 text-[0.7rem] font-bold leading-4 text-ink/58 sm:text-xs">{day.rain}</p>
-                  </div>
-                  );
-                })}
-              </div>
-            </div>
+            <FarmMateWeatherFoundation />
           </article>
         </div>
       </section>

@@ -63,6 +63,16 @@ import {
 } from "../src/lib/marketplace/trade";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
+import {
+  FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY,
+  FARM_MATE_WEATHER_LOCATION_STORAGE_KEY,
+  FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE,
+  mapOpenMeteoForecast,
+  supportedFarmMateWeatherLocations,
+  validateFarmMateWeatherRequest,
+  weatherDecisionSummaryForForecast,
+  type WeatherDecisionSummary
+} from "../src/lib/farmmate/weather";
 import { plantingAdvisorCrops, plantingAdvisorReasoningOrder } from "../src/lib/farmmate/planting-advisor-specialist";
 import { harvestPostHarvestCrops, harvestPostHarvestReasoningOrder } from "../src/lib/farmmate/harvest-postharvest-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
@@ -132,6 +142,37 @@ function weatherAiInput(answer: string) {
     brain,
     farmerAnswers,
     localStructuredResponse: weatherGuidedRecommendationCards(brain.flow?.id, farmerAnswers) ?? []
+  };
+}
+
+function sampleWeatherData() {
+  return {
+    current: {
+      temperature_2m: 29.4,
+      relative_humidity_2m: 78,
+      wind_speed_10m: 12,
+      time: "2026-07-14T08:00"
+    },
+    daily: {
+      time: ["2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17"],
+      temperature_2m_max: [31.2, 29.8, 30.5, 28.4],
+      temperature_2m_min: [24.1, 23.6, 24.2, 23.1],
+      precipitation_probability_max: [70, 25, 10, 80],
+      wind_speed_10m_max: [18, 28, 12, 20]
+    }
+  };
+}
+
+function sampleWeatherContext(overrides: Partial<WeatherDecisionSummary> = {}): WeatherDecisionSummary {
+  return {
+    locationName: overrides.locationName ?? "Accra / Greater Accra",
+    sourceLabel: overrides.sourceLabel ?? "Open-Meteo",
+    lastUpdatedAt: overrides.lastUpdatedAt ?? "2026-07-14T08:00:00.000Z",
+    rainChancePercent: overrides.rainChancePercent ?? 70,
+    windSpeedKph: overrides.windSpeedKph ?? 18,
+    farmingNotes: overrides.farmingNotes ?? ["Avoid spraying before rain.", "Check drainage in low areas."],
+    summaryNote: overrides.summaryNote ?? "Avoid spraying before rain.",
+    liveWeatherAvailable: overrides.liveWeatherAvailable ?? true
   };
 }
 
@@ -2050,6 +2091,148 @@ const tests: TestCase[] = [
         assert.equal(text.includes("rain will come"), false);
         assert.equal(text.includes("rain is coming"), false);
       }
+    }
+  },
+  {
+    name: "weather route validates supported location and coordinate input",
+    run: () => {
+      const validLocation = validateFarmMateWeatherRequest({ locationKey: "accra" });
+      const validCoordinates = validateFarmMateWeatherRequest({ latitude: 5.6, longitude: -0.18, label: "Current farm area" });
+      const invalidLocation = validateFarmMateWeatherRequest({ locationKey: "unknown-place" });
+      const invalidCoordinates = validateFarmMateWeatherRequest({ latitude: 120, longitude: -0.18 });
+      const routeSource = repoFile("src/app/api/farmmate/weather/route.ts");
+
+      assert.equal(validLocation.ok, true);
+      assert.equal(validCoordinates.ok, true);
+      assert.equal(invalidLocation.ok, false);
+      assert.equal(invalidCoordinates.ok, false);
+      assert.equal(routeSource.includes("validateFarmMateWeatherRequest"), true);
+      assert.equal(routeSource.includes("getFarmMateWeatherForecast"), true);
+    }
+  },
+  {
+    name: "weather forecast mapping returns exactly 3 days",
+    run: () => {
+      const location = supportedFarmMateWeatherLocations.find((item) => item.key === "accra");
+      assert.ok(location);
+      const forecast = mapOpenMeteoForecast(sampleWeatherData(), location);
+
+      assert.ok(forecast);
+      assert.equal(forecast.days.length, 3);
+      assert.equal(forecast.today.label, "Today");
+      assert.equal(forecast.tomorrow.label, "Tomorrow");
+      assert.equal(forecast.dayAfterTomorrow.label, "Day after tomorrow");
+      assert.equal(forecast.sourceLabel, "Open-Meteo");
+    }
+  },
+  {
+    name: "unavailable weather does not crash Farmer Hub",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+
+      assert.equal(FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE.includes("Live weather is temporarily unavailable"), true);
+      assert.equal(component.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
+      assert.equal(component.includes("setForecast(null)"), true);
+      assert.equal(component.includes("window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY)"), true);
+    }
+  },
+  {
+    name: "weather location selector saves selected location only",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+
+      assert.equal(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, "gg-farmmate-weather-location");
+      assert.equal(component.includes("FARM_MATE_WEATHER_LOCATION_STORAGE_KEY"), true);
+      assert.equal(component.includes("setItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY"), true);
+      assert.equal(component.includes("window.localStorage.removeItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY)"), true);
+      assert.equal(component.includes("latitude: position.coords.latitude"), true);
+      assert.equal(component.includes("FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY"), true);
+    }
+  },
+  {
+    name: "live weather UI removes demo forecast wording",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      const combined = `${farmerHub}\n${component}`.toLowerCase();
+
+      assert.equal(combined.includes("demo forecast"), false);
+      assert.equal(combined.includes("set your location for live weather guidance"), false);
+      assert.equal(combined.includes("live weather:"), true);
+    }
+  },
+  {
+    name: "weather guidance is transparent when data is unavailable",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      const routeSource = repoFile("src/app/api/farmmate/weather/route.ts");
+
+      assert.equal(component.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
+      assert.equal(routeSource.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
+      assert.equal(component.includes("Weather guidance"), true);
+    }
+  },
+  {
+    name: "high rain chance creates avoid spraying guidance",
+    run: () => {
+      const location = supportedFarmMateWeatherLocations[0];
+      const forecast = mapOpenMeteoForecast(sampleWeatherData(), location);
+
+      assert.ok(forecast);
+      assert.equal(forecast.today.rainChancePercent, 70);
+      assert.equal(forecast.today.farmingNote, "Avoid spraying before rain.");
+      assert.equal(forecast.decisionSummary.farmingNotes.includes("Check drainage in low areas."), true);
+    }
+  },
+  {
+    name: "high wind creates avoid spraying in wind guidance",
+    run: () => {
+      const summary = weatherDecisionSummaryForForecast({
+        location: supportedFarmMateWeatherLocations[0],
+        sourceLabel: "Open-Meteo",
+        lastUpdatedAt: "2026-07-14T08:00:00.000Z",
+        today: {
+          date: "2026-07-14",
+          label: "Today",
+          rainChancePercent: 20,
+          windSpeedKph: 30,
+          farmingNote: "Avoid spraying in strong wind."
+        }
+      });
+
+      assert.equal(summary.summaryNote, "Avoid spraying in strong wind.");
+      assert.equal(summary.farmingNotes.includes("Wait for calmer wind before spraying."), true);
+    }
+  },
+  {
+    name: "Weather Decision Specialist still asks questions when no weather context exists",
+    run: () => {
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(response.weatherContext, undefined);
+      assert.equal(response.flow?.id, "can-i-spray-today");
+      assert.equal(text.includes("does not have live weather"), true);
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Is rain expected in the next 4 to 6 hours?");
+    }
+  },
+  {
+    name: "OpenAI payload includes live weather context when available",
+    run: () => {
+      const weatherContext = sampleWeatherContext();
+      const brain = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion: "Can I spray today?",
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { specialistContext?: { liveWeatherContext?: WeatherDecisionSummary; noLiveWeatherRule?: string } };
+
+      assert.equal(brain.weatherContext?.locationName, "Accra / Greater Accra");
+      assert.equal(payload.specialistContext?.liveWeatherContext?.summaryNote, "Avoid spraying before rain.");
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.includes("provided live weather context"), true);
     }
   },
   {

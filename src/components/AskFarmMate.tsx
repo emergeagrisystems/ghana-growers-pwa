@@ -19,6 +19,7 @@ import {
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import { FARM_MATE_EXHAUSTED_LEARN_CTA, FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
+import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 
 const suggestions = [
   "Can I spray today?",
@@ -365,6 +366,25 @@ function logConversationDecision(message: string, state: ConversationState, deci
   console.info("FarmMate selected specialist:", selectedSpecialist ?? decision.specialist ?? "none");
 }
 
+function storedWeatherContextForFarmMate(): WeatherDecisionSummary | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+    const parsed = stored ? (JSON.parse(stored) as Partial<WeatherDecisionSummary>) : null;
+
+    if (!parsed?.liveWeatherAvailable || !parsed.locationName || !Array.isArray(parsed.farmingNotes)) {
+      return undefined;
+    }
+
+    return parsed as WeatherDecisionSummary;
+  } catch {
+    return undefined;
+  }
+}
+
 export function AskFarmMate({
   prefillQuestion,
   cropDoctorHandoff,
@@ -566,7 +586,11 @@ export function AskFarmMate({
     }
 
     window.setTimeout(() => {
-      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, { previousCropName, cropDoctorContext: handoffContext ?? undefined });
+      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, {
+        previousCropName,
+        cropDoctorContext: handoffContext ?? undefined,
+        weatherContext: routerResult.selectedSpecialist === "weather_decision" ? storedWeatherContextForFarmMate() : undefined
+      });
       const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
 
       logBrainContext(trimmedQuestion, farmMateResponse);

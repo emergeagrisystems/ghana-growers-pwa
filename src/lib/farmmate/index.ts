@@ -19,6 +19,7 @@ export * from "./crop-doctor-demo";
 export * from "./crop-doctor-vision";
 export * from "./conversation-ui";
 export * from "./daily-summary";
+export * as farmMateWeather from "./weather";
 export * as farmMateDecisionEngine from "./decision-engine";
 export * as farmMateConversationManager from "./conversation-manager";
 export * as farmMateAi from "./ai";

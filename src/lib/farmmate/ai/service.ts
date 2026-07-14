@@ -59,9 +59,13 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "fertilizer" || input.brain.flow?.intent === "fertilizer"
       ? findFertilizerGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
       : null;
-  const weatherContext =
+  const weatherGuidance =
     input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions"
       ? findWeatherDecisionGuidance(weatherTaskFromQuestion(input.farmerQuestion))
+      : null;
+  const liveWeatherContext =
+    input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions"
+      ? input.brain.weatherContext ?? null
       : null;
   const plantingContext =
     input.brain.routerResult?.selectedSpecialist === "planting" || input.brain.flow?.intent === "planting"
@@ -88,16 +92,19 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           sustainabilityNotes: fertilizerContext.sustainabilityNotes,
           extensionOfficerTriggers: fertilizerContext.extensionOfficerTriggers
         }
-      : weatherContext
+      : weatherGuidance
       ? {
           specialist: "weather_decision",
-          task: weatherContext.task,
-          handles: weatherContext.handles,
-          checks: weatherContext.checks,
-          actions: weatherContext.actions,
-          safetyWarnings: weatherContext.safetyWarnings,
-          sustainabilityNotes: weatherContext.sustainabilityNotes,
-          noLiveWeatherRule: "Do not invent live rain, wind, temperature or forecast details. Ask the farmer to check conditions when weather data is missing."
+          task: weatherGuidance.task,
+          handles: weatherGuidance.handles,
+          checks: weatherGuidance.checks,
+          actions: weatherGuidance.actions,
+          safetyWarnings: weatherGuidance.safetyWarnings,
+          sustainabilityNotes: weatherGuidance.sustainabilityNotes,
+          liveWeatherContext,
+          noLiveWeatherRule: liveWeatherContext
+            ? "Use only the provided live weather context. Do not add other forecast details or pretend certainty beyond that source."
+            : "Do not invent live rain, wind, temperature or forecast details. Ask the farmer to check conditions when weather data is missing."
         }
       : plantingContext
       ? {

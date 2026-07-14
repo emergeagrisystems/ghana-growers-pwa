@@ -8,6 +8,7 @@ import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertili
 import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantingAdvisorQuestionType } from "../planting-advisor-specialist";
 import { findHarvestPostHarvestGuidance, harvestPostHarvestOpeningForQuestion, harvestPostHarvestQuestionType } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
+import type { WeatherDecisionSummary } from "../weather";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
 import type { CropDoctorHandoffContext } from "../crop-doctor-vision";
@@ -37,11 +38,13 @@ export type FarmMateBrainResponse = {
   nextBestAction: DecisionFlow["recommendation"]["nextBestAction"];
   shouldShowCropDoctorAction: boolean;
   cropDoctorContext?: CropDoctorHandoffContext;
+  weatherContext?: WeatherDecisionSummary;
 };
 
 export type FarmMateBrainOptions = {
   previousCropName?: string;
   cropDoctorContext?: CropDoctorHandoffContext;
+  weatherContext?: WeatherDecisionSummary;
 };
 
 const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
@@ -444,16 +447,24 @@ function fertilizerContextLines(flow: DecisionFlow | undefined, resolvedCrop?: s
   ];
 }
 
-function weatherContextLines(question: string, flow: DecisionFlow | undefined) {
+function weatherContextLines(question: string, flow: DecisionFlow | undefined, weatherContext?: WeatherDecisionSummary) {
   if (!flow || flow.intent !== "weather-decisions") {
     return [];
   }
 
   const guidance = findWeatherDecisionGuidance(weatherTaskFromQuestion(question));
 
+  if (weatherContext?.liveWeatherAvailable) {
+    return [
+      `Selected weather context: ${weatherContext.locationName}.`,
+      `Weather guidance: ${weatherContext.summaryNote}`,
+      "Use the live weather context as support, but field conditions still matter."
+    ].slice(0, 3);
+  }
+
   return [
-    ...(guidance ? [`Farmer task: ${guidance.handles}`, ...guidance.checks.slice(0, 2)] : []),
-    "FarmMate does not have live weather in this local decision flow, so it must ask the farmer to check rain, wind and leaf or soil wetness."
+    "FarmMate does not have live weather in this local decision flow, so it must ask the farmer to check rain, wind and leaf or soil wetness.",
+    ...(guidance ? [`Farmer task: ${guidance.handles}`, ...guidance.checks.slice(0, 1)] : [])
   ].slice(0, 3);
 }
 
@@ -567,7 +578,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const isPlantingFlow = flow.intent === "planting";
   const isHarvestFlow = flow.intent === "harvest";
   const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
-  const weatherContext = weatherContextLines(question, flow);
+  const weatherContext = weatherContextLines(question, flow, options.weatherContext);
   const plantingContext = plantingContextLines(flow, resolvedCrop);
   const harvestPostHarvestContext = harvestPostHarvestContextLines(flow, resolvedCrop);
 
@@ -580,6 +591,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
     shouldShowCropDoctorAction,
     nextBestAction: flow.recommendation.nextBestAction,
     cropDoctorContext: options.cropDoctorContext,
+    weatherContext: options.weatherContext,
     sections: [
       {
         title: "Direct answer",
