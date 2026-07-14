@@ -1776,25 +1776,32 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Marketplace structured package totals calculate and format separately",
+    name: "Marketplace maize sacks calculate farmer-friendly commercial lines",
     run: () => {
       const product = marketplaceProductFixture({
         sellingMethod: "packaged_unit",
         sellingUnit: "sack",
         unitSizeValue: "50",
         unitSizeMeasure: "kg",
+        unitSizeApproximate: true,
         priceAmount: "700",
         priceCurrency: "GHS",
-        unitsAvailable: "20",
-        totalQuantityValue: "1000",
+        unitsAvailable: "10",
+        totalQuantityValue: "500",
         totalQuantityMeasure: "kg",
         minimumOrderValue: "2",
         minimumOrderUnit: "sack"
       });
 
-      assert.equal(calculatedMarketplaceTotal(product), "1,000 kg");
-      assert.equal(marketplacePriceLine(product), "GH₵700 per 50 kg sack");
-      assert.equal(marketplaceQuantityLine(product), "20 sacks available · 1,000 kg total");
+      assert.equal(calculatedMarketplaceTotal(product), "500 kg");
+      assert.equal(marketplacePriceLine(product), "GH\u20b5700 per 50 kg sack");
+      assert.equal(marketplaceQuantityLine(product), "10 sacks available \u00b7 approximately 500 kg total");
+      assert.equal(pluralizeMarketplaceUnit("sack", 1), "sack");
+      assert.equal(pluralizeMarketplaceUnit("sack", 2), "sacks");
+      assert.equal(pluralizeMarketplaceUnit("tray", 1), "tray");
+      assert.equal(pluralizeMarketplaceUnit("tray", 2), "trays");
+      assert.equal(pluralizeMarketplaceUnit("bunch", 1), "bunch");
+      assert.equal(pluralizeMarketplaceUnit("bunch", 2), "bunches");
       assert.equal(pluralizeMarketplaceUnit("crate", 1), "crate");
       assert.equal(pluralizeMarketplaceUnit("crate", 40), "crates");
       assert.equal(marketplaceTradeLines(product).find((line) => line.label === "Minimum order")?.value, "2 sacks");
@@ -1821,8 +1828,41 @@ const tests: TestCase[] = [
       });
 
       assert.equal(calculatedMarketplaceTotal(product), "1,000 kg");
-      assert.equal(marketplacePriceLine(product), "GH₵250 per 25 kg crate");
-      assert.equal(marketplaceQuantityLine(product), "40 crates available \u00b7 approx. 1,000 kg total");
+      assert.equal(marketplacePriceLine(product), "GH\u20b5250 per 25 kg crate");
+      assert.equal(marketplaceQuantityLine(product), "40 crates available \u00b7 approximately 1,000 kg total");
+    }
+  },
+  {
+    name: "Marketplace tray of eggs displays package size and approximate total naturally",
+    run: () => {
+      const product = marketplaceProductFixture({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "tray",
+        unitSizeValue: "30",
+        unitSizeMeasure: "eggs",
+        unitSizeApproximate: true,
+        priceAmount: "60",
+        priceCurrency: "GHS",
+        unitsAvailable: "20",
+        totalQuantityValue: "600",
+        totalQuantityMeasure: "eggs"
+      });
+      const fields = canonicalMarketplaceTradeFields({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "tray",
+        unitSizeValue: "30",
+        unitSizeMeasure: "eggs",
+        unitsAvailable: "20",
+        unitSizeApproximate: true,
+        priceAmount: "60",
+        priceCurrency: "GHS"
+      });
+
+      assert.equal(marketplacePriceLine(product), "GH\u20b560 per tray of 30 eggs");
+      assert.equal(marketplaceQuantityLine(product), "20 trays available \u00b7 approximately 600 eggs total");
+      assert.equal(fields.total_quantity_value, 600);
+      assert.equal(fields.total_quantity_measure, "eggs");
+      assert.equal(fields.price_basis, "tray");
     }
   },
   {
@@ -1841,8 +1881,9 @@ const tests: TestCase[] = [
       });
 
       assert.equal(calculatedMarketplaceTotal(product), "");
-      assert.equal(marketplacePriceLine(product), "GH₵14 per kg");
+      assert.equal(marketplacePriceLine(product), "GH\u20b514 per kg");
       assert.equal(marketplaceQuantityLine(product), "1,000 kg available");
+      assert.equal(marketplaceTradeLines(product).some((line) => line.label === "Approximate size"), false);
     }
   },
   {
@@ -1868,10 +1909,10 @@ const tests: TestCase[] = [
       });
 
       assert.equal(calculatedMarketplaceTotal(countProduct), "");
-      assert.equal(marketplacePriceLine(countProduct), "GH₵30 per bunch");
+      assert.equal(marketplacePriceLine(countProduct), "GH\u20b530 per bunch");
       assert.equal(marketplaceQuantityLine(countProduct), "80 bunches available");
       assert.equal(calculatedMarketplaceTotal(livestockProduct), "");
-      assert.equal(marketplacePriceLine(livestockProduct), "GH₵900 per goat");
+      assert.equal(marketplacePriceLine(livestockProduct), "GH\u20b5900 per goat");
       assert.equal(marketplaceQuantityLine(livestockProduct), "12 goats available");
     }
   },
@@ -1894,7 +1935,7 @@ const tests: TestCase[] = [
       });
 
       assert.equal(calculatedMarketplaceTotal(product), "200 litres");
-      assert.equal(marketplacePriceLine(product), "GH₵150 per litres");
+      assert.equal(marketplacePriceLine(product), "GH\u20b5150 per litre");
       assert.equal(marketplaceQuantityLine(product), "10 containers available \u00b7 200 litres total");
     }
   },
@@ -2115,8 +2156,8 @@ const tests: TestCase[] = [
         minimumOrderUnit: "sack"
       }), []);
 
-      assert.equal(validateMarketplaceTradeInput({ priceAmount: "-1" }).includes("Price cannot be negative."), true);
-      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "count", sellingUnit: "tray", unitsAvailable: "0" }).includes("Units available must be greater than zero."), true);
+      assert.equal(validateMarketplaceTradeInput({ priceAmount: "-1" }).includes("Price must be greater than zero."), true);
+      assert.equal(validateMarketplaceTradeInput({ sellingMethod: "count", sellingUnit: "tray", unitsAvailable: "0" }).includes("Available quantity must be greater than zero."), true);
       assert.equal(validateMarketplaceTradeInput({ sellingMethod: "packaged_unit", sellingUnit: "sack", unitsAvailable: "5", minimumOrderValue: "6", minimumOrderUnit: "sack" }).includes("Minimum order cannot be greater than available units."), true);
       assert.equal(validateMarketplaceTradeInput({ sellingMethod: "packaged_unit", sellingUnit: "sack", unitsAvailable: "5", minimumOrderValue: "2", minimumOrderUnit: "kg" }).includes("Minimum order unit must match the available stock unit."), true);
       assert.equal(validateMarketplaceTradeInput({ priceAmount: "12abc" }).includes("Price must be a valid number."), true);
@@ -2125,6 +2166,21 @@ const tests: TestCase[] = [
       assert.equal(validateMarketplaceTradeInput({ sellingMethod: "other" as never }).includes("Selling method is not supported."), true);
       assert.equal(validateMarketplaceTradeInput({ sellingUnit: "other" }).includes("Custom units need a clear label."), true);
       assert.equal(validateMarketplaceTradeInput({ sellingUnit: "other", customUnitLabel: "paint bucket" }).includes(reviewedCustomUnitMessage), true);
+    }
+  },
+  {
+    name: "Marketplace minimum order remains optional for complete farmer listings",
+    run: () => {
+      const errors = validateMarketplaceTradeInput({
+        sellingMethod: "packaged_unit",
+        sellingUnit: "sack",
+        unitSizeValue: "50",
+        unitSizeMeasure: "kg",
+        unitsAvailable: "10",
+        priceAmount: "700"
+      });
+
+      assert.deepEqual(errors, []);
     }
   },
   {
@@ -2138,7 +2194,7 @@ const tests: TestCase[] = [
         unitsAvailable: "20.5",
         minimumOrderValue: "2",
         minimumOrderUnit: "sack"
-      }).includes("Units available must be a whole number for this selling method."), true);
+      }).includes("Available quantity must be a whole number for this selling format."), true);
       assert.equal(validateMarketplaceTradeInput({
         sellingMethod: "packaged_unit",
         sellingUnit: "sack",
@@ -2153,7 +2209,7 @@ const tests: TestCase[] = [
         sellingUnit: "piece",
         unitsAvailable: "3.5",
         minimumOrderValue: "1"
-      }).includes("Units available must be a whole number for this selling method."), true);
+      }).includes("Available quantity must be a whole number for this selling format."), true);
       assert.equal(validateMarketplaceTradeInput({
         sellingMethod: "livestock",
         sellingUnit: "goat",
@@ -2194,7 +2250,7 @@ const tests: TestCase[] = [
         unitSizeValue: "20",
         unitSizeMeasure: "kg",
         unitsAvailable: "10"
-      }).includes("Volume listings need litres or gallons as the unit size measure."), true);
+      }).includes("Volume listings need litres, gallons, or a count measure as the unit size measure."), true);
       assert.equal(validateMarketplaceTradeInput({
         sellingMethod: "livestock",
         sellingUnit: "crate",
@@ -2208,7 +2264,53 @@ const tests: TestCase[] = [
         unitSizeMeasure: "litres",
         unitsAvailable: "10.25",
         minimumOrderValue: "1"
-      }).includes("Units available must be a whole number for this selling method."), true);
+      }).includes("Available quantity must be a whole number for this selling format."), true);
+      assert.deepEqual(validateMarketplaceTradeInput({
+        sellingMethod: "volume",
+        sellingUnit: "litres",
+        totalQuantityValue: "125.5",
+        totalQuantityMeasure: "litres",
+        priceBasis: "litres",
+        minimumOrderValue: "5.5",
+        minimumOrderUnit: "litres"
+      }), []);
+    }
+  },
+  {
+    name: "Submit listing form uses farmer-friendly trade questions and live preview",
+    run: () => {
+      const form = repoFile("src/components/SubmitProduceListingForm.tsx");
+
+      assert.equal(form.includes("How do you sell this product?"), true);
+      assert.equal(form.includes("What is the price for one?"), true);
+      assert.equal(form.includes("Approximately how much or how many are in one?"), true);
+      assert.equal(form.includes("How many do you have available?"), true);
+      assert.equal(form.includes("Do buyers need to order at least a certain amount?"), true);
+      assert.equal(form.includes("Your listing will show"), true);
+      assert.equal(form.includes('value: "tray"'), true);
+      assert.equal(form.includes('unitSizeMeasure: "eggs"'), true);
+      assert.equal(form.includes('method: "packaged_unit"'), true);
+      assert.equal(form.includes("No minimum order"), true);
+      assert.equal(form.includes("Packaged unit"), false);
+      assert.equal(form.includes("Direct weight"), false);
+      assert.equal(form.includes("Unit size"), false);
+      assert.equal(form.includes("Units available"), false);
+    }
+  },
+  {
+    name: "Admin listing tools show human-readable trade labels without technical currency text",
+    run: () => {
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const workspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
+
+      assert.equal(dashboard.includes("Selling format"), true);
+      assert.equal(dashboard.includes("Packaged item such as sack, crate or tray"), true);
+      assert.equal(dashboard.includes("Unit buyers order"), true);
+      assert.equal(dashboard.includes("Approximate amount in one"), true);
+      assert.equal(dashboard.includes("How many units are available?"), true);
+      assert.equal(dashboard.includes("Optional minimum order"), true);
+      assert.equal(dashboard.includes("Price Amount"), false);
+      assert.equal(workspace.includes('[\"Available\", marketplaceQuantityLine(product)]'), true);
     }
   },
   {
@@ -2239,7 +2341,7 @@ const tests: TestCase[] = [
       assert.equal(packageFields.price_basis, "sack");
       assert.equal(packageFields.total_quantity_value, 1000);
       assert.equal(weightFields.price_basis, "kg");
-      assert.equal(formatMarketplaceCurrency("700", "GHS"), "GH₵700");
+      assert.equal(formatMarketplaceCurrency("700", "GHS"), "GH\u20b5700");
     }
   },
   {

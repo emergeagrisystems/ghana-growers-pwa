@@ -520,6 +520,7 @@ type FormField = {
   required?: boolean;
   helper?: string;
   options?: string[];
+  optionLabels?: Record<string, string>;
   bucket?: "farmers" | "suppliers" | "marketplace" | "stories";
   advanced?: boolean;
 };
@@ -968,20 +969,20 @@ const formConfigs: Record<AdminFormId, FormField[]> = {
     { name: "ownerType", label: "Owner Type", type: "select", required: true, options: ["Farmer", "Supplier", "Admin"] },
     { name: "ownerId", label: "Owner ID", helper: "Auto-filled when creating a listing from a farmer review.", advanced: true },
     { name: "ownerName", label: "Owner Name", required: true, helper: "Use the farmer, supplier, or Ghana Growers owner name shown publicly." },
-    { name: "sellingMethod", label: "Selling Method", type: "select", required: true, options: ["packaged_unit", "weight", "count", "livestock", "volume"] },
-    { name: "sellingUnit", label: "Selling Unit", required: true, helper: "Examples: sack, crate, kg, tonne, goat, tray, carton." },
-    { name: "customUnitLabel", label: "Custom Unit Label", helper: "Required only when Selling Unit is Other." },
-    { name: "customUnitReviewed", label: "Custom Unit Reviewed", type: "select", options: ["false", "true"] },
-    { name: "unitSizeValue", label: "Unit Size / Net Weight" },
-    { name: "unitSizeMeasure", label: "Unit Size Measure", helper: "Examples: kg, tonnes, litres, gallons." },
-    { name: "unitSizeApproximate", label: "Unit Size Is Approximate", type: "select", options: ["false", "true"] },
-    { name: "priceAmount", label: "Price Amount (GH₵)" },
+    { name: "sellingMethod", label: "Selling format", type: "select", required: true, options: ["packaged_unit", "weight", "count", "livestock", "volume"], optionLabels: { packaged_unit: "Packaged item such as sack, crate or tray", weight: "Sold by weight", count: "Sold by piece or count", livestock: "Livestock by head", volume: "Sold by litre or container" } },
+    { name: "sellingUnit", label: "Unit buyers order", required: true, helper: "Examples: sack, crate, kg, tonne, head, tray, carton, or other." },
+    { name: "customUnitLabel", label: "Custom unit label", helper: "Required only when the unit is other." },
+    { name: "customUnitReviewed", label: "Custom unit reviewed", type: "select", options: ["false", "true"], optionLabels: { false: "No", true: "Yes" } },
+    { name: "unitSizeValue", label: "Approximate amount in one" },
+    { name: "unitSizeMeasure", label: "Measure inside one", helper: "Examples: kg, eggs, pieces, bottles, litres, gallons." },
+    { name: "unitSizeApproximate", label: "Amount is approximate", type: "select", options: ["false", "true"], optionLabels: { false: "No", true: "Yes" } },
+    { name: "priceAmount", label: "Price" },
     { name: "priceCurrency", label: "Price Currency", helper: "Use GHS unless another confirmed currency is required." },
-    { name: "unitsAvailable", label: "Units Available", helper: "Number of sacks, crates, animals, pieces, or containers." },
-    { name: "totalQuantityValue", label: "Total Available Quantity", helper: "Use only when confirmed or calculated from unit size x units available." },
-    { name: "totalQuantityMeasure", label: "Total Quantity Measure" },
-    { name: "minimumOrderValue", label: "Minimum Order" },
-    { name: "minimumOrderUnit", label: "Minimum Order Unit" },
+    { name: "unitsAvailable", label: "How many units are available?", helper: "Number of sacks, crates, trays, heads, pieces, or containers." },
+    { name: "totalQuantityValue", label: "Calculated or direct total", helper: "Use direct kg/tonne/litre total, or the calculated total from unit size x units available." },
+    { name: "totalQuantityMeasure", label: "Total measure" },
+    { name: "minimumOrderValue", label: "Optional minimum order" },
+    { name: "minimumOrderUnit", label: "Minimum order unit" },
     { name: "quantity", label: "Legacy Quantity", advanced: true },
     { name: "unit", label: "Legacy Unit", advanced: true },
     { name: "priceRange", label: "Legacy Price Text", helper: "Use structured price fields where possible.", advanced: true },
@@ -11298,7 +11299,7 @@ export function AdminDashboard({
                               <option value="">Select {field.label.toLowerCase()}</option>
                               {field.options?.map((option) => (
                                 <option key={option} value={option}>
-                                  {option}
+                                  {field.optionLabels?.[option] ?? option}
                                 </option>
                               ))}
                             </select>

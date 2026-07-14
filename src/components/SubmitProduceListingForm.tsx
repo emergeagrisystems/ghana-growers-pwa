@@ -4,16 +4,45 @@ import { ArrowLeft, ArrowRight, CheckCircle2, ImagePlus, Send, X } from "lucide-
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
 import { freshProduceSubcategories } from "@/lib/marketplace/taxonomy";
-import { formatMarketplaceMeasure, reviewedCustomUnitMessage } from "@/lib/marketplace/trade";
+import { formatMarketplaceMeasure, marketplacePriceLine, marketplaceQuantityLine, marketplaceTradeLines, reviewedCustomUnitMessage } from "@/lib/marketplace/trade";
+import type { Product } from "@/types";
 
 const fieldClass = "gg-field min-h-11";
 const steps = ["Seller details", "Product details", "Price and quantity", "Availability", "Photos", "Review"] as const;
 const marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"] as const;
-const packagedUnits = ["sack", "bag", "crate", "tray", "carton", "basket", "box", "other"];
-const countUnits = ["bunch", "piece", "tray", "plant", "seedling", "other"];
-const volumeUnits = ["litres", "gallons", "container", "other"];
 const availabilityOptions = ["Available now", "Seasonal", "Ask availability", "Unavailable"];
 const frequencyOptions = ["One-time", "Weekly", "Monthly", "On request"];
+const sizeMeasureOptions = ["kg", "g", "tonnes", "litres", "gallons", "pieces", "eggs", "bottles", "bunches", "heads", "other"];
+
+type SellingChoice = {
+  value: string;
+  label: string;
+  method: ListingFormState["sellingMethod"];
+  unit: string;
+  unitSizeMeasure: string;
+  totalQuantityMeasure: string;
+  needsSize: boolean;
+  priceExample: string;
+  sizeExample?: string;
+  quantityExample: string;
+};
+
+const sellingChoices: SellingChoice[] = [
+  { value: "sack", label: "Sack", method: "packaged_unit", unit: "sack", unitSizeMeasure: "kg", totalQuantityMeasure: "kg", needsSize: true, priceExample: "Example: GH\u20b5700 per sack", sizeExample: "Example: 50 kg in one sack", quantityExample: "Example: 10 sacks" },
+  { value: "bag", label: "Bag", method: "packaged_unit", unit: "bag", unitSizeMeasure: "kg", totalQuantityMeasure: "kg", needsSize: true, priceExample: "Example: GH\u20b5250 per bag", sizeExample: "Example: 25 kg in one bag", quantityExample: "Example: 20 bags" },
+  { value: "crate", label: "Crate", method: "packaged_unit", unit: "crate", unitSizeMeasure: "bottles", totalQuantityMeasure: "bottles", needsSize: true, priceExample: "Example: GH\u20b5120 per crate", sizeExample: "Example: 12 bottles in one crate", quantityExample: "Example: 15 crates" },
+  { value: "basket", label: "Basket", method: "packaged_unit", unit: "basket", unitSizeMeasure: "kg", totalQuantityMeasure: "kg", needsSize: true, priceExample: "Example: GH\u20b580 per basket", sizeExample: "Example: 12 kg in one basket", quantityExample: "Example: 8 baskets" },
+  { value: "carton", label: "Carton", method: "packaged_unit", unit: "carton", unitSizeMeasure: "pieces", totalQuantityMeasure: "pieces", needsSize: true, priceExample: "Example: GH\u20b5150 per carton", sizeExample: "Example: 24 pieces in one carton", quantityExample: "Example: 10 cartons" },
+  { value: "box", label: "Box", method: "packaged_unit", unit: "box", unitSizeMeasure: "pieces", totalQuantityMeasure: "pieces", needsSize: true, priceExample: "Example: GH\u20b5100 per box", sizeExample: "Example: 20 pieces in one box", quantityExample: "Example: 12 boxes" },
+  { value: "tray", label: "Tray", method: "packaged_unit", unit: "tray", unitSizeMeasure: "eggs", totalQuantityMeasure: "eggs", needsSize: true, priceExample: "Example: GH\u20b560 per tray", sizeExample: "Example: 30 eggs in one tray", quantityExample: "Example: 20 trays" },
+  { value: "bunch", label: "Bunch", method: "packaged_unit", unit: "bunch", unitSizeMeasure: "pieces", totalQuantityMeasure: "pieces", needsSize: true, priceExample: "Example: GH\u20b535 per bunch", sizeExample: "Example: 8 plantains in one bunch", quantityExample: "Example: 50 bunches" },
+  { value: "piece", label: "Piece", method: "count", unit: "piece", unitSizeMeasure: "", totalQuantityMeasure: "", needsSize: false, priceExample: "Example: GH\u20b55 per piece", quantityExample: "Example: 100 pieces" },
+  { value: "kg", label: "Kilogram", method: "weight", unit: "kg", unitSizeMeasure: "", totalQuantityMeasure: "kg", needsSize: false, priceExample: "Example: GH\u20b514 per kg", quantityExample: "Example: 500 kg" },
+  { value: "tonnes", label: "Tonne", method: "weight", unit: "tonnes", unitSizeMeasure: "", totalQuantityMeasure: "tonnes", needsSize: false, priceExample: "Example: GH\u20b54,000 per tonne", quantityExample: "Example: 2 tonnes" },
+  { value: "litres", label: "Litre", method: "volume", unit: "litres", unitSizeMeasure: "", totalQuantityMeasure: "litres", needsSize: false, priceExample: "Example: GH\u20b530 per litre", quantityExample: "Example: 200 litres" },
+  { value: "head", label: "Head", method: "livestock", unit: "head", unitSizeMeasure: "", totalQuantityMeasure: "", needsSize: false, priceExample: "Example: GH\u20b5900 per head", quantityExample: "Example: 12 head" },
+  { value: "other", label: "Other", method: "packaged_unit", unit: "other", unitSizeMeasure: "kg", totalQuantityMeasure: "kg", needsSize: true, priceExample: "Example: GH\u20b570 per unit", sizeExample: "Example: 10 kg in one local basket", quantityExample: "Example: 10 units" }
+];
 
 type ListingFormState = {
   farmBusinessName: string;
@@ -77,7 +106,7 @@ const initialState: ListingFormState = {
   customUnitLabel: "",
   unitSizeValue: "",
   unitSizeMeasure: "kg",
-  unitSizeApproximate: false,
+  unitSizeApproximate: true,
   priceAmount: "",
   priceConfirmedLater: false,
   unitsAvailable: "",
@@ -129,20 +158,31 @@ export function SubmitProduceListingForm() {
         next.subcategory = value === "Fresh Produce" ? "Vegetables" : String(value);
       }
 
-      if (key === "sellingMethod") {
-        const method = String(value);
-        next.sellingUnit = method === "packaged_unit" ? "sack" : method === "weight" ? "kg" : method === "volume" ? "litres" : method === "livestock" ? "goat" : "piece";
-        next.minimumOrderUnit = next.sellingUnit;
-        next.unitSizeMeasure = method === "volume" ? "litres" : "kg";
-        next.totalQuantityMeasure = method === "volume" ? "litres" : method === "weight" ? "kg" : "";
-      }
-
       if (key === "sellingUnit") {
         next.minimumOrderUnit = String(value);
       }
 
       return next;
     });
+  }
+
+  function applySellingChoice(choiceValue: string) {
+    const choice = sellingChoices.find((item) => item.value === choiceValue) ?? sellingChoices[0];
+
+    setValues((current) => ({
+      ...current,
+      sellingMethod: choice.method,
+      sellingUnit: choice.unit,
+      customUnitLabel: choice.unit === "other" ? current.customUnitLabel : "",
+      unitSizeValue: choice.needsSize ? current.unitSizeValue : "",
+      unitSizeMeasure: choice.unitSizeMeasure,
+      unitSizeApproximate: choice.needsSize ? true : false,
+      totalQuantityValue: isDirectQuantityChoice(choice) ? current.totalQuantityValue : "",
+      totalQuantityMeasure: choice.totalQuantityMeasure,
+      unitsAvailable: isDirectQuantityChoice(choice) ? "" : current.unitsAvailable,
+      minimumOrderUnit: choice.unit,
+      priceBasis: choice.unit
+    }));
   }
 
   function onAdditionalImages(event: ChangeEvent<HTMLInputElement>) {
@@ -220,7 +260,7 @@ export function SubmitProduceListingForm() {
       <div className="mt-5">
         {step === 0 ? <SellerStep values={values} update={update} /> : null}
         {step === 1 ? <ProductStep values={values} update={update} /> : null}
-        {step === 2 ? <TradeStep values={values} update={update} calculatedTotal={calculatedTotal.label} /> : null}
+        {step === 2 ? <TradeStep values={values} update={update} calculatedTotal={calculatedTotal.label} onSellingChoice={applySellingChoice} /> : null}
         {step === 3 ? <AvailabilityStep values={values} update={update} /> : null}
         {step === 4 ? (
           <PhotosStep
@@ -310,86 +350,101 @@ function ProductStep({ values, update }: StepProps) {
   );
 }
 
-function TradeStep({ values, update, calculatedTotal }: StepProps & { calculatedTotal: string }) {
+function TradeStep({ values, update, calculatedTotal, onSellingChoice }: StepProps & { calculatedTotal: string; onSellingChoice: (choiceValue: string) => void }) {
+  const selectedChoice = selectedSellingChoice(values);
+  const unitLabel = displayUnitLabel(values);
+  const usesDirectQuantity = isDirectQuantityValues(values);
+  const quantityValue = usesDirectQuantity ? values.totalQuantityValue : values.unitsAvailable;
+  const quantityChange = (value: string) => {
+    if (usesDirectQuantity) {
+      update("totalQuantityValue", value);
+      return;
+    }
+
+    update("unitsAvailable", value);
+  };
+  const minimumHelper = values.minimumOrderValue ? `Minimum ${values.minimumOrderValue} ${unitLabel}` : "Leave blank if there is no minimum order.";
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <SelectField
-        label="How is the product sold?"
-        value={values.sellingMethod}
-        onChange={(value) => update("sellingMethod", value as ListingFormState["sellingMethod"])}
-        options={["packaged_unit", "weight", "count", "livestock", "volume"]}
-        labels={{ packaged_unit: "Packaged unit", weight: "Direct weight", count: "Count or piece", livestock: "Livestock per animal", volume: "Volume" }}
+        label="How do you sell this product?"
+        value={selectedChoice.value}
+        onChange={onSellingChoice}
+        options={sellingChoices.map((choice) => choice.value)}
+        labels={Object.fromEntries(sellingChoices.map((choice) => [choice.value, choice.label]))}
         required
       />
 
-      {values.sellingMethod === "packaged_unit" ? (
+      {values.sellingUnit === "other" ? (
+        <TextField
+          label="What do you call this unit?"
+          value={values.customUnitLabel}
+          onChange={(value) => update("customUnitLabel", value)}
+          required
+          placeholder="Example: olonka, paint rubber, maxi bag"
+          helper={reviewedCustomUnitMessage}
+        />
+      ) : null}
+
+      <TextField
+        label="What is the price for one?"
+        type="number"
+        value={values.priceAmount}
+        onChange={(value) => update("priceAmount", value)}
+        disabled={values.priceConfirmedLater}
+        placeholder={selectedChoice.priceExample}
+      />
+      <Checkbox label="Ask for price" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
+
+      {selectedChoice.needsSize ? (
         <>
-          <SelectField label="Package/container type" value={values.sellingUnit} onChange={(value) => update("sellingUnit", value)} options={packagedUnits} required />
-          {values.sellingUnit === "other" ? <TextField label="Custom unit label" value={values.customUnitLabel} onChange={(value) => update("customUnitLabel", value)} required helper={reviewedCustomUnitMessage} /> : null}
-          <TextField label="Unit size" type="number" value={values.unitSizeValue} onChange={(value) => update("unitSizeValue", value)} required />
-          <SelectField label="Unit-size measure" value={values.unitSizeMeasure} onChange={(value) => update("unitSizeMeasure", value)} options={["kg", "tonnes", "litres", "gallons"]} required />
-          <Checkbox label="Unit size is approximate" checked={values.unitSizeApproximate} onChange={(checked) => update("unitSizeApproximate", checked)} />
-          <TextField label="Price per package (optional)" type="number" value={values.priceAmount} onChange={(value) => update("priceAmount", value)} disabled={values.priceConfirmedLater} />
-          <Checkbox label="Price will be confirmed" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
-          <TextField label="Number of packages available" type="number" value={values.unitsAvailable} onChange={(value) => update("unitsAvailable", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Minimum order in packages" type="number" value={values.minimumOrderValue} onChange={(value) => update("minimumOrderValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <Checkbox label="Ask Ghana Growers to help confirm quantity details" checked={values.quantityConfirmedLater} onChange={(checked) => update("quantityConfirmedLater", checked)} />
+          <TextField
+            label="Approximately how much or how many are in one?"
+            type="number"
+            value={values.unitSizeValue}
+            onChange={(value) => update("unitSizeValue", value)}
+            placeholder={selectedChoice.sizeExample}
+          />
+          <SelectField
+            label="Measure inside one"
+            value={values.unitSizeMeasure}
+            onChange={(value) => {
+              update("unitSizeMeasure", value);
+              update("totalQuantityMeasure", value);
+            }}
+            options={sizeMeasureOptions}
+          />
+          <Checkbox label="This amount is approximate" checked={values.unitSizeApproximate} onChange={(checked) => update("unitSizeApproximate", checked)} />
         </>
       ) : null}
 
-      {values.sellingMethod === "weight" ? (
-        <>
-          <SelectField label="Weight measure" value={values.sellingUnit} onChange={(value) => { update("sellingUnit", value); update("totalQuantityMeasure", value); update("minimumOrderUnit", value); }} options={["kg", "tonnes"]} required />
-          <TextField label="Total weight available" type="number" value={values.totalQuantityValue} onChange={(value) => update("totalQuantityValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Price per kg or tonne (optional)" type="number" value={values.priceAmount} onChange={(value) => update("priceAmount", value)} disabled={values.priceConfirmedLater} />
-          <TextField label="Minimum order weight" type="number" value={values.minimumOrderValue} onChange={(value) => update("minimumOrderValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <Checkbox label="Price will be confirmed" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
-          <Checkbox label="Quantity details will be confirmed" checked={values.quantityConfirmedLater} onChange={(checked) => update("quantityConfirmedLater", checked)} />
-        </>
-      ) : null}
+      <TextField
+        label="How many do you have available?"
+        type="number"
+        value={quantityValue}
+        onChange={quantityChange}
+        disabled={values.quantityConfirmedLater}
+        placeholder={selectedChoice.quantityExample}
+      />
+      <Checkbox label="Ask Ghana Growers to help confirm quantity details" checked={values.quantityConfirmedLater} onChange={(checked) => update("quantityConfirmedLater", checked)} />
 
-      {values.sellingMethod === "count" ? (
-        <>
-          <SelectField label="Item unit" value={values.sellingUnit} onChange={(value) => update("sellingUnit", value)} options={countUnits} required />
-          {values.sellingUnit === "other" ? <TextField label="Custom unit label" value={values.customUnitLabel} onChange={(value) => update("customUnitLabel", value)} required helper={reviewedCustomUnitMessage} /> : null}
-          <TextField label="Price per item (optional)" type="number" value={values.priceAmount} onChange={(value) => update("priceAmount", value)} disabled={values.priceConfirmedLater} />
-          <TextField label="Number available" type="number" value={values.unitsAvailable} onChange={(value) => update("unitsAvailable", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Minimum order" type="number" value={values.minimumOrderValue} onChange={(value) => update("minimumOrderValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <Checkbox label="Price will be confirmed" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
-          <Checkbox label="Quantity details will be confirmed" checked={values.quantityConfirmedLater} onChange={(checked) => update("quantityConfirmedLater", checked)} />
-        </>
-      ) : null}
-
-      {values.sellingMethod === "livestock" ? (
-        <>
-          <TextField label="Animal type" value={values.sellingUnit} onChange={(value) => update("sellingUnit", value)} placeholder="Goat, sheep, cattle, poultry" required />
-          <TextField label="Price per animal/head (optional)" type="number" value={values.priceAmount} onChange={(value) => update("priceAmount", value)} disabled={values.priceConfirmedLater} />
-          <TextField label="Number available" type="number" value={values.unitsAvailable} onChange={(value) => update("unitsAvailable", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Minimum number" type="number" value={values.minimumOrderValue} onChange={(value) => update("minimumOrderValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Approximate weight range" value={values.unitSizeValue} onChange={(value) => update("unitSizeValue", value)} placeholder="Optional, e.g. 18-25 kg" />
-          <TextField label="Health/condition note" value={values.gradeDescription} onChange={(value) => update("gradeDescription", value)} placeholder="Optional" />
-          <Checkbox label="Price will be confirmed" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
-        </>
-      ) : null}
-
-      {values.sellingMethod === "volume" ? (
-        <>
-          <SelectField label="Unit/container" value={values.sellingUnit} onChange={(value) => update("sellingUnit", value)} options={volumeUnits} required />
-          {values.sellingUnit === "other" ? <TextField label="Custom unit label" value={values.customUnitLabel} onChange={(value) => update("customUnitLabel", value)} required helper={reviewedCustomUnitMessage} /> : null}
-          <TextField label="Unit volume" type="number" value={values.unitSizeValue} onChange={(value) => update("unitSizeValue", value)} required />
-          <SelectField label="Volume measure" value={values.unitSizeMeasure} onChange={(value) => update("unitSizeMeasure", value)} options={["litres", "gallons"]} required />
-          <TextField label="Price per unit (optional)" type="number" value={values.priceAmount} onChange={(value) => update("priceAmount", value)} disabled={values.priceConfirmedLater} />
-          <TextField label="Units available" type="number" value={values.unitsAvailable} onChange={(value) => update("unitsAvailable", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <TextField label="Minimum order" type="number" value={values.minimumOrderValue} onChange={(value) => update("minimumOrderValue", value)} required={!values.quantityConfirmedLater} disabled={values.quantityConfirmedLater} />
-          <Checkbox label="Price will be confirmed" checked={values.priceConfirmedLater} onChange={(checked) => update("priceConfirmedLater", checked)} />
-        </>
-      ) : null}
+      <TextField
+        label="Do buyers need to order at least a certain amount?"
+        type="number"
+        value={values.minimumOrderValue}
+        onChange={(value) => update("minimumOrderValue", value)}
+        disabled={values.quantityConfirmedLater}
+        placeholder={`Optional, e.g. 2 ${unitLabel}`}
+        helper={minimumHelper}
+      />
 
       {calculatedTotal ? (
         <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-3 text-sm font-bold text-ink/70 md:col-span-2">
-          Calculated by Ghana Growers: {values.unitSizeValue || "Unit size"} {values.unitSizeMeasure} x {values.unitsAvailable || "units"} = {calculatedTotal} total
+          Calculated by Ghana Growers: {values.unitsAvailable || "0"} {unitLabel} x {values.unitSizeValue || "0"} {values.unitSizeMeasure} = {calculatedTotal} total
         </div>
       ) : null}
+      <CommercialSummary values={values} />
     </div>
   );
 }
@@ -446,17 +501,22 @@ function PhotosStep({ mainImage, additionalImages, setMainImage, onAdditionalIma
 }
 
 function ReviewStep({ values, photos, calculatedTotal, update }: StepProps & { photos: File[]; calculatedTotal: string }) {
+  const product = listingPreviewProduct(values);
+  const tradeLines = marketplaceTradeLines(product);
+  const sizeLine = tradeLines.find((line) => line.label === "Approximate size" || line.label === "Size per unit")?.value;
+  const totalLine = tradeLines.find((line) => line.label === "Calculated total")?.value;
+  const minimumOrder = tradeLines.find((line) => line.label === "Minimum order")?.value;
   const rows = [
     ["Seller", values.farmBusinessName],
     ["Contact", values.contactPerson],
     ["Product", values.productName],
     ["Category", `${values.marketplacePathway} / ${values.subcategory}`],
-    ["Selling method", values.sellingMethod.replace(/_/g, " ")],
-    ["Package/unit", values.sellingUnit === "other" ? values.customUnitLabel : values.sellingUnit],
-    ["Price", values.priceConfirmedLater || !values.priceAmount ? "Price will be confirmed" : `GHS ${values.priceAmount}`],
-    ["Quantity", values.quantityConfirmedLater ? "Quantity details will be confirmed" : values.unitsAvailable || values.totalQuantityValue],
-    ["Calculated total", calculatedTotal || "Not applicable"],
-    ["Minimum order", values.minimumOrderValue || "To be confirmed"],
+    ["Selling format", displayUnitLabel(values)],
+    ["Price", marketplacePriceLine(product)],
+    ["Approximate size", sizeLine ?? "Not supplied"],
+    ["Available", values.quantityConfirmedLater ? "Quantity details will be confirmed" : marketplaceQuantityLine(product)],
+    ["Calculated total", totalLine ?? (calculatedTotal || "Not applicable")],
+    ["Minimum order", minimumOrder ? `Minimum ${minimumOrder}` : "No minimum order"],
     ["Availability", values.availability],
     ["Frequency", values.supplyFrequency],
     ["Location", `${values.district}, ${values.region}`],
@@ -498,10 +558,9 @@ function validateStep(step: number, values: ListingFormState, mainImage: File | 
 
   if (step === 2) {
     const hasUnit = values.sellingUnit !== "other" || values.customUnitLabel;
-    const hasQuantity = values.quantityConfirmedLater || values.unitsAvailable || values.totalQuantityValue;
-    const hasMinimum = values.quantityConfirmedLater || values.minimumOrderValue;
+    const hasQuantity = values.quantityConfirmedLater || (isDirectQuantityValues(values) ? values.totalQuantityValue : values.unitsAvailable);
 
-    return Boolean(values.sellingMethod && hasUnit && hasQuantity && hasMinimum);
+    return Boolean(values.sellingMethod && hasUnit && hasQuantity);
   }
 
   if (step === 3) {
@@ -513,6 +572,81 @@ function validateStep(step: number, values: ListingFormState, mainImage: File | 
   }
 
   return values.confirmation;
+}
+
+function selectedSellingChoice(values: ListingFormState) {
+  return sellingChoices.find((choice) => choice.method === values.sellingMethod && choice.unit === values.sellingUnit) ?? sellingChoices[0];
+}
+
+function isDirectQuantityChoice(choice: Pick<SellingChoice, "method" | "unit">) {
+  return choice.method === "weight" || (choice.method === "volume" && ["litres", "gallons"].includes(choice.unit));
+}
+
+function isDirectQuantityValues(values: Pick<ListingFormState, "sellingMethod" | "sellingUnit">) {
+  return values.sellingMethod === "weight" || (values.sellingMethod === "volume" && ["litres", "gallons"].includes(values.sellingUnit));
+}
+
+function displayUnitLabel(values: Pick<ListingFormState, "sellingUnit" | "customUnitLabel">) {
+  if (values.sellingUnit === "other") {
+    return values.customUnitLabel || "custom unit";
+  }
+
+  return values.sellingUnit;
+}
+
+function listingPreviewProduct(values: ListingFormState): Product {
+  const calculated = calculateTotal(values.sellingMethod, values.unitSizeValue, values.unitsAvailable, values.unitSizeMeasure, values.unitSizeApproximate);
+  const directQuantity = isDirectQuantityValues(values);
+
+  return {
+    id: "preview",
+    name: values.productName || "Your product",
+    category: values.subcategory || values.marketplacePathway,
+    location: values.district,
+    region: values.region,
+    seller: values.farmBusinessName,
+    description: values.description,
+    quantity: "",
+    unit: "",
+    sellingMethod: values.sellingMethod,
+    sellingUnit: values.sellingUnit,
+    customUnitLabel: values.customUnitLabel || undefined,
+    customUnitReviewed: values.sellingUnit !== "other",
+    unitSizeValue: values.unitSizeValue || undefined,
+    unitSizeMeasure: values.unitSizeMeasure || undefined,
+    unitSizeApproximate: values.unitSizeApproximate,
+    priceAmount: values.priceConfirmedLater ? undefined : values.priceAmount || undefined,
+    priceCurrency: "GHS",
+    priceBasis: values.sellingUnit,
+    unitsAvailable: directQuantity || values.quantityConfirmedLater ? undefined : values.unitsAvailable || undefined,
+    totalQuantityValue: values.quantityConfirmedLater ? undefined : calculated.value || (directQuantity ? values.totalQuantityValue : undefined),
+    totalQuantityMeasure: values.quantityConfirmedLater ? undefined : calculated.measure || (directQuantity ? values.totalQuantityMeasure : undefined),
+    minimumOrderValue: values.minimumOrderValue || undefined,
+    minimumOrderUnit: values.minimumOrderUnit || values.sellingUnit,
+    supplyFrequency: values.supplyFrequency,
+    availableFromDate: values.availableFromDate,
+    gradeDescription: values.gradeDescription,
+    deliveryDetails: values.deliveryDetails,
+    image: "",
+    available: values.availability,
+    datePosted: ""
+  };
+}
+
+function CommercialSummary({ values }: { values: ListingFormState }) {
+  const product = listingPreviewProduct(values);
+  const minimumOrder = marketplaceTradeLines(product).find((line) => line.label === "Minimum order")?.value;
+
+  return (
+    <div className="rounded-md border border-leaf-900/10 bg-white p-4 text-sm shadow-sm md:col-span-2">
+      <p className="text-xs font-black uppercase tracking-wide text-earth-700">Your listing will show</p>
+      <div className="mt-3 grid gap-1.5">
+        <p className="font-black text-ink">{marketplacePriceLine(product)}</p>
+        <p className="font-semibold text-ink/70">{values.quantityConfirmedLater ? "Ask for quantity" : marketplaceQuantityLine(product)}</p>
+        {minimumOrder ? <p className="font-semibold text-ink/70">Minimum {minimumOrder}</p> : <p className="font-semibold text-ink/50">No minimum order</p>}
+      </div>
+    </div>
+  );
 }
 
 function calculateTotal(sellingMethod: string, unitSizeValue: string, unitsAvailable: string, unitSizeMeasure: string, approximate: boolean) {
@@ -531,7 +665,7 @@ function calculateTotal(sellingMethod: string, unitSizeValue: string, unitsAvail
   return {
     value: String(total),
     measure: unitSizeMeasure,
-    label: `${approximate ? "approx. " : ""}${formatMarketplaceMeasure(String(total), unitSizeMeasure)}`
+    label: `${approximate ? "approximately " : ""}${formatMarketplaceMeasure(String(total), unitSizeMeasure)}`
   };
 }
 

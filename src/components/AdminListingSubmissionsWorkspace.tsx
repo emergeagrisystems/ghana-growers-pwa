@@ -359,7 +359,7 @@ function tradeRows(submission: ListingSubmission): Array<[string, string]> {
 
   return [
     ["Price", marketplacePriceLine(product)],
-    ["Quantity", marketplaceQuantityLine(product)],
+    ["Available", marketplaceQuantityLine(product)],
     ...trade.lines.map((line): [string, string] => [line.label, line.value])
   ];
 }

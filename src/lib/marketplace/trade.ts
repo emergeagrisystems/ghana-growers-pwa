@@ -57,6 +57,8 @@ const strictNumberPattern = /^-?(?:\d+|\d*\.\d+)$/;
 const wholeNumberMethods = ["packaged_unit", "count", "livestock", "volume"];
 const weightMeasures = ["kg", "tonnes"];
 const volumeMeasures = ["litres", "gallons"];
+const directVolumeMeasures = ["litres", "gallons"];
+const countSizeMeasures = ["pieces", "eggs", "bottles", "bunches", "heads"];
 const packagedUnitLabels = ["sack", "bag", "crate", "basket", "tray", "carton", "box", "bunch", "other"];
 const countUnitLabels = ["piece", "head", "bunch", "tuber", "plant", "seedling", "other"];
 const livestockBlockedPackageUnits = ["sack", "bag", "crate", "basket", "tray", "carton", "box"];
@@ -70,20 +72,52 @@ const pluralUnits: Record<string, string> = {
   carton: "cartons",
   container: "containers",
   crate: "crates",
+  egg: "eggs",
+  eggs: "eggs",
   gallon: "gallons",
+  gallons: "gallons",
+  g: "g",
   goat: "goats",
   head: "head",
+  heads: "heads",
+  kg: "kg",
   litre: "litres",
+  litres: "litres",
   liter: "litres",
+  liters: "litres",
   piece: "pieces",
+  pieces: "pieces",
   plant: "plants",
   sack: "sacks",
   seedling: "seedlings",
   tray: "trays",
-  tuber: "tubers"
+  tuber: "tubers",
+  tonne: "tonnes",
+  tonnes: "tonnes"
+};
+
+const singularUnits: Record<string, string> = {
+  bottles: "bottle",
+  bunches: "bunch",
+  eggs: "egg",
+  gallons: "gallon",
+  heads: "head",
+  litres: "litre",
+  pieces: "piece",
+  tonnes: "tonne"
 };
 
 const measureAliases: Record<string, string> = {
+  bottle: "bottles",
+  bottles: "bottles",
+  bunch: "bunches",
+  bunches: "bunches",
+  egg: "eggs",
+  eggs: "eggs",
+  head: "heads",
+  heads: "heads",
+  piece: "pieces",
+  pieces: "pieces",
   kilogram: "kg",
   kilograms: "kg",
   kilo: "kg",
@@ -157,7 +191,7 @@ export function formatMarketplaceMeasure(value?: MarketplaceNumericInput, measur
     return "";
   }
 
-  return `${formatNumber(number)} ${unit}`;
+  return `${formatNumber(number)} ${pluralizeMarketplaceUnit(unit, number) || unit}`;
 }
 
 function formatMarketplaceCount(value?: MarketplaceNumericInput, unit?: string) {
@@ -181,10 +215,34 @@ export function pluralizeMarketplaceUnit(unit?: string, countValue?: Marketplace
   const count = marketplaceNumericValue(countValue);
 
   if (count === 1) {
-    return clean;
+    return singularUnits[clean] ?? clean;
   }
 
   return pluralUnits[clean] ?? `${clean}s`;
+}
+
+function isDirectVolumeUnit(unit?: string) {
+  return directVolumeMeasures.includes(cleanUnit(unit));
+}
+
+function isCountSizeMeasure(measure?: string) {
+  return countSizeMeasures.includes(cleanUnit(measure));
+}
+
+function packagePriceBasis(unit: string, unitSize: string, unitSizeMeasure?: string) {
+  const unitLabel = pluralizeMarketplaceUnit(unit, 1);
+
+  if (!unitSize) {
+    return unitLabel;
+  }
+
+  return isCountSizeMeasure(unitSizeMeasure)
+    ? `${unitLabel} of ${unitSize}`
+    : `${unitSize} ${unitLabel}`;
+}
+
+function priceBasisLabel(unit?: string) {
+  return pluralizeMarketplaceUnit(unit, 1);
 }
 
 export function formatMarketplaceCurrency(value?: MarketplaceNumericInput, currency = "GHS") {
@@ -252,7 +310,7 @@ export function calculatedMarketplaceTotal(input: Pick<Product, "sellingMethod" 
 }
 
 function approximatePrefix(product: Pick<Product, "unitSizeApproximate">) {
-  return product.unitSizeApproximate ? "approx. " : "";
+  return product.unitSizeApproximate ? "approximately " : "";
 }
 
 export function marketplacePriceLine(product: Product) {
@@ -267,13 +325,13 @@ export function marketplacePriceLine(product: Product) {
 
   if (product.sellingMethod === "packaged_unit" && unit) {
     return unitSize
-      ? `${price} per ${unitSize} ${pluralizeMarketplaceUnit(unit, 1)}`
+      ? `${price} per ${packagePriceBasis(unit, unitSize, product.unitSizeMeasure)}`
       : `${price} per ${pluralizeMarketplaceUnit(unit, 1)}`;
   }
 
   if (product.sellingMethod === "weight" || product.sellingMethod === "volume") {
     const basis = deriveMarketplacePriceBasis(product);
-    return basis ? `${price} per ${basis}` : `${price} per unit`;
+    return basis ? `${price} per ${priceBasisLabel(basis)}` : `${price} per unit`;
   }
 
   if (product.sellingMethod === "livestock") {
@@ -290,14 +348,21 @@ export function marketplacePriceLine(product: Product) {
 export function marketplaceQuantityLine(product: Product) {
   const total = storedMarketplaceTotal(product);
 
-  if ((product.sellingMethod === "packaged_unit" || product.sellingMethod === "volume") && product.unitsAvailable && effectiveMarketplaceUnit(product)) {
+  if (product.sellingMethod === "packaged_unit" && product.unitsAvailable && effectiveMarketplaceUnit(product)) {
     const unitsCount = marketplaceNumericValue(product.unitsAvailable);
     const unitLabel = pluralizeMarketplaceUnit(effectiveMarketplaceUnit(product), unitsCount);
     const unitsLine = unitsCount !== undefined ? `${formatNumber(unitsCount)} ${unitLabel} available` : "Ask for quantity";
     return total ? `${unitsLine} \u00b7 ${approximatePrefix(product)}${total} total` : unitsLine;
   }
 
-  if (product.sellingMethod === "weight" && product.totalQuantityValue && product.totalQuantityMeasure) {
+  if (product.sellingMethod === "volume" && product.unitsAvailable && effectiveMarketplaceUnit(product) && !isDirectVolumeUnit(product.sellingUnit)) {
+    const unitsCount = marketplaceNumericValue(product.unitsAvailable);
+    const unitLabel = pluralizeMarketplaceUnit(effectiveMarketplaceUnit(product), unitsCount);
+    const unitsLine = unitsCount !== undefined ? `${formatNumber(unitsCount)} ${unitLabel} available` : "Ask for quantity";
+    return total ? `${unitsLine} \u00b7 ${approximatePrefix(product)}${total} total` : unitsLine;
+  }
+
+  if ((product.sellingMethod === "weight" || product.sellingMethod === "volume") && product.totalQuantityValue && product.totalQuantityMeasure) {
     return `${formatMarketplaceMeasure(product.totalQuantityValue, product.totalQuantityMeasure)} available`;
   }
 
@@ -312,11 +377,15 @@ export function marketplaceQuantityLine(product: Product) {
 }
 
 export function marketplaceQuantityLabel(product: Product) {
-  if ((product.sellingMethod === "packaged_unit" || product.sellingMethod === "volume") && product.unitsAvailable && effectiveMarketplaceUnit(product)) {
+  if (product.sellingMethod === "packaged_unit" && product.unitsAvailable && effectiveMarketplaceUnit(product)) {
     return "Quantity available";
   }
 
-  if (product.sellingMethod === "weight" && product.totalQuantityValue && product.totalQuantityMeasure) {
+  if (product.sellingMethod === "volume" && product.unitsAvailable && effectiveMarketplaceUnit(product) && !isDirectVolumeUnit(product.sellingUnit)) {
+    return "Quantity available";
+  }
+
+  if ((product.sellingMethod === "weight" || product.sellingMethod === "volume") && product.totalQuantityValue && product.totalQuantityMeasure) {
     return "Quantity available";
   }
 
@@ -345,19 +414,22 @@ export function marketplaceTradeLines(product: Product): MarketplaceTradeLine[] 
   ];
 
   if (product.sellingMethod) {
-    lines.unshift({ label: "Selling method", value: product.sellingMethod.replace(/_/g, " ") });
+    lines.unshift({ label: "Selling format", value: packageUnit || product.sellingMethod.replace(/_/g, " ") });
   }
 
   if (unitSize) {
-    lines.push({ label: "Unit size", value: unitSize });
+    lines.push({
+      label: product.unitSizeApproximate ? "Approximate size" : "Size per unit",
+      value: packageUnit ? `${unitSize} per ${pluralizeMarketplaceUnit(packageUnit, 1)}` : unitSize
+    });
   }
 
   if (product.unitsAvailable) {
-    lines.push({ label: "Units available", value: marketplaceQuantityLine({ ...product, totalQuantityValue: undefined, totalQuantityMeasure: undefined }) });
+    lines.push({ label: "Available", value: marketplaceQuantityLine({ ...product, totalQuantityValue: undefined, totalQuantityMeasure: undefined }) });
   }
 
   if (total) {
-    lines.push({ label: "Total available", value: total });
+    lines.push({ label: "Calculated total", value: `${approximatePrefix(product)}${total}` });
   }
 
   if (minimumOrder) {
@@ -425,11 +497,12 @@ export function validateMarketplaceTradeInput(input: MarketplaceTradeValidationI
   const units = marketplaceNumericValue(input.unitsAvailable);
   const total = marketplaceNumericValue(input.totalQuantityValue);
   const minimum = marketplaceNumericValue(input.minimumOrderValue);
+  const requiresWholeUnitCount = wholeNumberMethods.includes(method ?? "") && !(method === "volume" && isDirectVolumeUnit(input.sellingUnit));
 
   for (const [label, value] of [
     ["Price", input.priceAmount],
-    ["Unit size", input.unitSizeValue],
-    ["Units available", input.unitsAvailable],
+    ["Amount in one", input.unitSizeValue],
+    ["Available quantity", input.unitsAvailable],
     ["Total quantity", input.totalQuantityValue],
     ["Minimum order", input.minimumOrderValue]
   ] as const) {
@@ -442,35 +515,31 @@ export function validateMarketplaceTradeInput(input: MarketplaceTradeValidationI
     errors.push("Selling method is not supported.");
   }
 
-  if (price !== undefined && price < 0) {
-    errors.push("Price cannot be negative.");
+  if (price !== undefined && price <= 0) {
+    errors.push("Price must be greater than zero.");
   }
 
   if (unitSize !== undefined && unitSize <= 0) {
-    errors.push("Unit size must be greater than zero.");
+    errors.push("Amount in one must be greater than zero.");
   }
 
-  if (units !== undefined && units < 0) {
-    errors.push("Units available cannot be negative.");
+  if (units !== undefined && units <= 0) {
+    errors.push("Available quantity must be greater than zero.");
   }
 
-  if (total !== undefined && total < 0) {
-    errors.push("Total quantity cannot be negative.");
+  if (total !== undefined && total <= 0) {
+    errors.push("Total quantity must be greater than zero.");
   }
 
   if (minimum !== undefined && minimum <= 0) {
     errors.push("Minimum order must be greater than zero.");
   }
 
-  if ((method === "packaged_unit" || method === "count" || method === "livestock" || method === "volume") && input.unitsAvailable && units === 0) {
-    errors.push("Units available must be greater than zero.");
+  if (requiresWholeUnitCount && units !== undefined && !isWholeNumber(units)) {
+    errors.push("Available quantity must be a whole number for this selling format.");
   }
 
-  if (wholeNumberMethods.includes(method ?? "") && units !== undefined && !isWholeNumber(units)) {
-    errors.push("Units available must be a whole number for this selling method.");
-  }
-
-  if (wholeNumberMethods.includes(method ?? "") && minimum !== undefined && !isWholeNumber(minimum)) {
+  if (requiresWholeUnitCount && minimum !== undefined && !isWholeNumber(minimum)) {
     errors.push("Minimum order must be a whole number for this selling method.");
   }
 
@@ -479,16 +548,16 @@ export function validateMarketplaceTradeInput(input: MarketplaceTradeValidationI
       errors.push("Minimum order cannot be greater than available units.");
     }
 
-    if (total !== undefined && method === "weight" && minimum > total && sameUnit(input.minimumOrderUnit, input.totalQuantityMeasure)) {
+    if (total !== undefined && (method === "weight" || (method === "volume" && isDirectVolumeUnit(input.sellingUnit))) && minimum > total && sameUnit(input.minimumOrderUnit, input.totalQuantityMeasure)) {
       errors.push("Minimum order cannot be greater than total available quantity.");
     }
 
     if (
       ((units !== undefined && ["packaged_unit", "count", "livestock", "volume"].includes(method ?? "")) ||
-        (total !== undefined && method === "weight")) &&
+        (total !== undefined && (method === "weight" || (method === "volume" && isDirectVolumeUnit(input.sellingUnit))))) &&
       input.minimumOrderUnit &&
-      (method === "weight" ? input.totalQuantityMeasure : input.sellingUnit) &&
-      !sameUnit(input.minimumOrderUnit, method === "weight" ? input.totalQuantityMeasure : input.sellingUnit)
+      ((method === "weight" || (method === "volume" && isDirectVolumeUnit(input.sellingUnit))) ? input.totalQuantityMeasure : input.sellingUnit) &&
+      !sameUnit(input.minimumOrderUnit, (method === "weight" || (method === "volume" && isDirectVolumeUnit(input.sellingUnit))) ? input.totalQuantityMeasure : input.sellingUnit)
     ) {
       errors.push("Minimum order unit must match the available stock unit.");
     }
@@ -550,8 +619,8 @@ export function validateMarketplaceTradeInput(input: MarketplaceTradeValidationI
     const totalMeasure = cleanUnit(input.totalQuantityMeasure);
     const priceBasis = cleanUnit(input.priceBasis);
 
-    if (input.unitSizeMeasure && !volumeMeasures.includes(unitSizeMeasure)) {
-      errors.push("Volume listings need litres or gallons as the unit size measure.");
+    if (input.unitSizeMeasure && ![...volumeMeasures, ...countSizeMeasures].includes(unitSizeMeasure)) {
+      errors.push("Volume listings need litres, gallons, or a count measure as the unit size measure.");
     }
 
     if (input.sellingUnit && weightMeasures.includes(sellingUnit)) {
@@ -583,12 +652,17 @@ export function canonicalMarketplaceTradeFields(input: MarketplaceTradeValidatio
   let totalQuantityValue: number | null = null;
   let totalQuantityMeasure: string | null = null;
 
-  if ((method === "packaged_unit" || method === "volume") && unitSize !== undefined && units !== undefined && unitSize > 0 && units > 0 && unitSizeMeasure) {
+  if ((method === "packaged_unit" || (method === "volume" && !isDirectVolumeUnit(sellingUnit ?? undefined))) && unitSize !== undefined && units !== undefined && unitSize > 0 && units > 0 && unitSizeMeasure) {
     totalQuantityValue = Number((unitSize * units).toFixed(3));
     totalQuantityMeasure = unitSizeMeasure;
   }
 
   if (method === "weight" && enteredTotal !== undefined) {
+    totalQuantityValue = enteredTotal;
+    totalQuantityMeasure = cleanText(input.totalQuantityMeasure) || cleanUnit(sellingUnit ?? undefined) || null;
+  }
+
+  if (method === "volume" && isDirectVolumeUnit(sellingUnit ?? undefined) && enteredTotal !== undefined) {
     totalQuantityValue = enteredTotal;
     totalQuantityMeasure = cleanText(input.totalQuantityMeasure) || cleanUnit(sellingUnit ?? undefined) || null;
   }
