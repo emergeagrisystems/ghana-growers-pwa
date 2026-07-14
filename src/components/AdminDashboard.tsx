@@ -319,6 +319,7 @@ type SourcingCaseState = {
   owner: string;
   notes: string;
 };
+type SourcingCaseTab = "Overview" | "Matches" | "Activity";
 type ApplicationRecord = {
   id: string;
   name: string;
@@ -3871,6 +3872,8 @@ export function AdminDashboard({
   const [analyticsError, setAnalyticsError] = useState("");
   const [closedMatchIds, setClosedMatchIds] = useState<string[]>([]);
   const [selectedSourcingCaseId, setSelectedSourcingCaseId] = useState<string>("");
+  const [selectedSourcingCaseTab, setSelectedSourcingCaseTab] = useState<SourcingCaseTab>("Overview");
+  const [showSourcingCaseDetailMobile, setShowSourcingCaseDetailMobile] = useState(false);
   const [sourcingQueueFilter, setSourcingQueueFilter] = useState<SourcingQueueFilter>("All");
   const [sourcingCaseStates, setSourcingCaseStates] = useState<Record<string, SourcingCaseState>>({});
   const [applications, setApplications] = useState<Record<ApplicationKind, ApplicationRecord[]>>({
@@ -5773,6 +5776,7 @@ export function AdminDashboard({
     setStatusFilter(item.id === "verifications" ? "Pending" : "All");
     setProduceRequestStatusFilter(item.produceRequestStatusFilter ?? "All");
     setSourcingQueueFilter(item.sourcingQueueFilter ?? "All");
+    setShowSourcingCaseDetailMobile(false);
     if (item.applicationTab) {
       setApplicationTab(item.applicationTab);
     }
@@ -6726,8 +6730,8 @@ export function AdminDashboard({
           </div>
           <nav className="mt-5 grid gap-2">
             {operationsNavigation.map((group) => {
-              const isExpanded = expandedNavigationGroup === group.group;
               const groupHasActiveItem = group.items.some((item) => item.key === activeNavigationKey);
+              const isExpanded = expandedNavigationGroup === group.group || groupHasActiveItem;
 
               return (
                 <div key={group.group} className="rounded-md bg-white ring-1 ring-leaf-900/10">
@@ -9690,14 +9694,14 @@ export function AdminDashboard({
                   <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
                 ) : null}
 
-                <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-4">
+                <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-3 sm:grid-cols-2 xl:grid-cols-4">
                   {[
                     ["Active Sourcing", sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length],
                     ["Overdue Requests", sourcingCases.filter((caseItem) => caseItem.priority.label === "Overdue").length],
                     ["Average Response", sourcingCases.some((caseItem) => caseItem.priority.label === "Overdue") ? "Needs review" : "On track"],
                     ["Completed Today", sourcingCases.filter((caseItem) => caseItem.state.status === "Completed").length]
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                    <div key={label} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                       <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
                       <p className="mt-2 text-xl font-black text-ink">{value}</p>
                     </div>
@@ -9716,7 +9720,10 @@ export function AdminDashboard({
                     Show cases
                     <select
                       value={sourcingQueueFilter}
-                      onChange={(event) => setSourcingQueueFilter(event.target.value as SourcingQueueFilter)}
+                      onChange={(event) => {
+                        setSourcingQueueFilter(event.target.value as SourcingQueueFilter);
+                        setShowSourcingCaseDetailMobile(false);
+                      }}
                       className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
                     >
                       {sourcingQueueFilters.map((filter) => (
@@ -9726,8 +9733,8 @@ export function AdminDashboard({
                   </label>
                 </section>
 
-                <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[270px_minmax(520px,1fr)_300px] 2xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-                  <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] lg:items-start">
+                  <aside className={`${showSourcingCaseDetailMobile ? "hidden lg:block" : "block"} rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:sticky lg:top-24 lg:self-start`}>
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Queue</p>
@@ -9745,7 +9752,11 @@ export function AdminDashboard({
                           <button
                             key={caseItem.request.id}
                             type="button"
-                            onClick={() => setSelectedSourcingCaseId(caseItem.request.id)}
+                            onClick={() => {
+                              setSelectedSourcingCaseId(caseItem.request.id);
+                              setSelectedSourcingCaseTab("Overview");
+                              setShowSourcingCaseDetailMobile(true);
+                            }}
                             className={`rounded-md border border-l-4 p-3 text-left transition ${
                               isSelected
                                 ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
@@ -9781,137 +9792,279 @@ export function AdminDashboard({
                     </div>
                   </aside>
 
-                  <div className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className={`${showSourcingCaseDetailMobile ? "block" : "hidden lg:block"} min-w-0 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5`}>
                     {selectedSourcingCase ? (
-                      <div className="grid gap-6">
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Case Review</p>
-                          <h3 className="mt-2 text-3xl font-black text-ink">{selectedSourcingCase.request.product_needed}</h3>
-                          <p className="mt-2 text-sm font-semibold text-ink/60">
-                            {selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
-                          </p>
-                        </div>
+                      (() => {
+                        const sla = sourcingSla(selectedSourcingCase.request.created_at);
+                        const communicationRows = sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows);
+                        const previousSourcingRequests = submissions.buyerRequests.filter((request) =>
+                          selectedSourcingCase.request.case_source === "buyer_request_submission" &&
+                          request.id !== selectedSourcingCase.request.id &&
+                          (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number)
+                        );
+                        const linkedSourceHref = sourcingCaseHref(selectedSourcingCase.request);
+                        const linkedSourceLabel = sourcingCaseLinkedSource(selectedSourcingCase.request);
 
-                        <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                          <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Details</h4>
-                          <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <LeadDetailItem label="Buyer" value={selectedSourcingCase.request.buyer_name} />
-                            <LeadDetailItem label="Buyer Type" value={selectedSourcingCase.request.buyer_type || "Buyer"} />
-                            <LeadDetailItem label="Company" value={selectedSourcingCase.request.company_name || "Not supplied"} />
-                            <LeadDetailItem label="Phone" value={selectedSourcingCase.request.phone_number} />
-                            <LeadDetailItem label="WhatsApp" value={selectedSourcingCase.request.whatsapp_number} />
-                            <LeadDetailItem label="Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
-                          </dl>
-                        </section>
-
-                        <section className="rounded-md border border-leaf-900/10 bg-white p-4">
-                          <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Request Details</h4>
-                          <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            <LeadDetailItem label="Products Requested" value={selectedSourcingCase.request.product_needed} />
-                            <LeadDetailItem label="Quantity" value={selectedSourcingCase.request.quantity || "Not supplied"} />
-                            <LeadDetailItem label="Delivery Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
-                            <LeadDetailItem label="Required Delivery Date" value={selectedSourcingCase.request.deadline || "Not supplied"} />
-                            <LeadDetailItem label="Request Source" value={sourcingCaseSourceLabel(selectedSourcingCase.request)} />
-                            <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
-                              <dt className="text-xs font-black uppercase tracking-wide text-ink/40">Linked Listing / Profile</dt>
-                              <dd className="mt-1 break-words text-sm font-semibold leading-6 text-ink/72">
-                                {sourcingCaseHref(selectedSourcingCase.request) ? (
-                                  <Link
-                                    href={sourcingCaseHref(selectedSourcingCase.request)}
-                                    className="font-black text-leaf-700 underline-offset-4 transition hover:text-leaf-900 hover:underline focus:outline-none focus:ring-2 focus:ring-leaf-600/20"
-                                  >
-                                    {sourcingCaseLinkedSource(selectedSourcingCase.request)}
-                                  </Link>
-                                ) : (
-                                  sourcingCaseLinkedSource(selectedSourcingCase.request)
-                                )}
-                              </dd>
-                            </div>
-                            <LeadDetailItem label="Operational Status" value={selectedSourcingCase.state.status} />
-                            <LeadDetailItem label="Submitted" value={selectedSourcingCase.request.created_at ? new Date(selectedSourcingCase.request.created_at).toLocaleDateString() : "Not captured"} />
-                          </dl>
-                          <div className="mt-4 rounded-md bg-leaf-50 p-4">
-                            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Additional Notes</p>
-                            <p className="mt-2 text-sm font-semibold leading-6 text-ink/65">{selectedSourcingCase.request.notes || "No additional notes were supplied."}</p>
-                          </div>
-                        </section>
-
-                        {selectedSourcingCase.request.listing_snapshot ? (
-                          <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                            <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Public Listing Snapshot</h4>
-                            <p className="mt-1 text-xs font-semibold leading-5 text-ink/50">
-                              Public listing context only. Seller private contact details are not exposed here.
-                            </p>
-                            <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                              <LeadDetailItem label="Product" value={selectedSourcingCase.request.listing_snapshot.product ?? selectedSourcingCase.request.product_needed} />
-                              <LeadDetailItem label="Seller / Profile" value={selectedSourcingCase.request.listing_snapshot.seller ? publicSellerDisplayName(selectedSourcingCase.request.listing_snapshot.seller) : selectedSourcingCase.request.source_name ?? "Not captured"} />
-                              <LeadDetailItem label="Location" value={selectedSourcingCase.request.listing_snapshot.location ?? "Not captured"} />
-                              <LeadDetailItem label="Price / Package" value={selectedSourcingCase.request.listing_snapshot.pricePackage ?? "Not captured"} />
-                              <LeadDetailItem label="Listed Quantity" value={selectedSourcingCase.request.listing_snapshot.listedQuantity ?? "Not captured"} />
-                              <LeadDetailItem label="Availability" value={selectedSourcingCase.request.listing_snapshot.availability ?? "Not captured"} />
-                            </dl>
-                          </section>
-                        ) : null}
-
-                        <section className="rounded-md border border-leaf-900/10 bg-white p-4">
-                          <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Suggested Matches</h4>
-                          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-                            <MatchPreview title="Farmers" records={selectedSourcingCase.matches.farmers} nameKeys={["farm_name", "farmer_name"]} />
-                            <MatchPreview title="Suppliers" records={selectedSourcingCase.matches.suppliers} nameKeys={["company_name", "category"]} />
-                            <MatchPreview title="Marketplace Listings" records={selectedSourcingCase.matches.listings} nameKeys={["product_name"]} />
-                          </div>
-                        </section>
-
-                        <section className="grid gap-4 lg:grid-cols-2">
-                          <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                            <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Communication History</h4>
-                            <div className="mt-4 grid gap-3">
-                              {sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows).slice(0, 4).map((activity) => (
-                                <div key={activity.id} className="rounded-md bg-leaf-50 p-3">
-                                  <p className="text-sm font-black text-ink">{activity.action_type}</p>
-                                  <p className="mt-1 text-xs font-semibold text-ink/55">{relativeActivityTime(activity.created_at)} by {activity.admin_email}</p>
-                                </div>
-                              ))}
-                              {sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows).length === 0 ? (
-                                <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No communication has been recorded yet.</p>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <div className="rounded-md border border-leaf-900/10 bg-white p-4">
-                            <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Previous Sourcing Requests</h4>
-                            <div className="mt-4 grid gap-2">
-                              {submissions.buyerRequests
-                                .filter((request) => selectedSourcingCase.request.case_source === "buyer_request_submission" && request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number))
-                                .slice(0, 4)
-                                .map((request) => (
-                                  <div key={request.id} className="rounded-md bg-leaf-50 p-3">
-                                    <p className="text-sm font-black text-ink">{request.product_needed}</p>
-                                    <p className="mt-1 text-xs font-semibold text-ink/55">{request.status} - {request.created_at ? new Date(request.created_at).toLocaleDateString() : "No date"}</p>
+                        return (
+                          <div className="grid gap-5">
+                            <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                              <button
+                                type="button"
+                                onClick={() => setShowSourcingCaseDetailMobile(false)}
+                                className="mb-4 inline-flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 lg:hidden"
+                              >
+                                Back to cases
+                              </button>
+                              <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">Selected Case</p>
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <h3 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{selectedSourcingCase.request.product_needed}</h3>
+                                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                      {selectedSourcingCase.state.status === "Closed" ? "Lost" : selectedSourcingCase.state.status}
+                                    </span>
                                   </div>
-                                ))}
-                              {submissions.buyerRequests.filter((request) => selectedSourcingCase.request.case_source === "buyer_request_submission" && request.id !== selectedSourcingCase.request.id && (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number)).length === 0 ? (
-                                <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No previous sourcing requests from this buyer.</p>
-                              ) : null}
-                            </div>
-                          </div>
-                        </section>
-
-                        <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                          <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Timeline</h4>
-                          <div className="mt-4 grid gap-3">
-                            {sourcingTimeline(selectedSourcingCase.request, selectedSourcingCase.state, activityRows).map((item) => (
-                              <div key={item.label} className="flex gap-3 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
-                                <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.complete ? "bg-leaf-700" : "bg-earth-500"}`} />
-                                <div>
-                                  <p className="text-sm font-black text-ink">{item.label}</p>
-                                  <p className="mt-1 text-xs font-semibold text-ink/55">{item.detail}</p>
+                                  <p className="mt-2 text-sm font-semibold leading-6 text-ink/60">
+                                    {selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
+                                  </p>
+                                </div>
+                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Primary next action</p>
+                                  <p className="mt-1 text-sm font-black text-ink">{sourcingRecommendedAction(selectedSourcingCase.state)}</p>
                                 </div>
                               </div>
-                            ))}
+
+                              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">Owner</p>
+                                  <p className="mt-1 text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
+                                    className="mt-2 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                                  >
+                                    Assign to Me
+                                  </button>
+                                </div>
+                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">SLA / Response Deadline</p>
+                                  <p className="mt-1 text-sm font-semibold text-ink/65">{sla.deadline.toLocaleString()}</p>
+                                  <p className={`mt-2 rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
+                                    {sla.hoursRemaining < 0 ? `${Math.abs(sla.hoursRemaining)} hours overdue` : `${sla.hoursRemaining} hours remaining`}
+                                  </p>
+                                </div>
+                                <label className="grid gap-2 rounded-md bg-white p-3 text-xs font-black uppercase tracking-wide text-ink/45 ring-1 ring-leaf-900/10">
+                                  Operational Status
+                                  <select
+                                    value={selectedSourcingCase.state.status}
+                                    onChange={(event) => void setSourcingCaseStatus(selectedSourcingCase.request, event.target.value as SourcingCaseStatus)}
+                                    className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                  >
+                                    {sourcingCaseStatuses
+                                      .filter((status) => selectedSourcingCase.request.case_source !== "lead_request" || status !== "New")
+                                      .map((status) => (
+                                        <option key={status} value={status}>
+                                          {selectedSourcingCase.request.case_source === "lead_request" && status === "Closed" ? "Lost" : status}
+                                        </option>
+                                      ))}
+                                  </select>
+                                </label>
+                              </div>
+
+                              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                                <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "farmer")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
+                                  Review Farmer Matches
+                                </button>
+                                <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "supplier")} className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50">
+                                  Review Supplier Matches
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void contactSourcingBuyer(selectedSourcingCase.request)}
+                                  className="rounded-md bg-white px-4 py-3 text-center text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                >
+                                  Contact Buyer
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm("Mark this sourcing request as completed? This will not send any message.")) {
+                                      void setSourcingCaseStatus(selectedSourcingCase.request, "Completed");
+                                    }
+                                  }}
+                                  className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400"
+                                >
+                                  Complete Request
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm("Mark this sourcing request as lost? This will not send any message.")) {
+                                      void setSourcingCaseStatus(selectedSourcingCase.request, "Closed");
+                                    }
+                                  }}
+                                  className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80"
+                                >
+                                  Mark Lost
+                                </button>
+                              </div>
+                            </section>
+
+                            <div className="flex gap-2 overflow-x-auto border-b border-leaf-900/10 pb-2" role="tablist" aria-label="Sourcing case details">
+                              {(["Overview", "Matches", "Activity"] as SourcingCaseTab[]).map((tab) => (
+                                <button
+                                  key={tab}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={selectedSourcingCaseTab === tab}
+                                  onClick={() => setSelectedSourcingCaseTab(tab)}
+                                  className={`min-h-10 rounded-md px-4 py-2 text-sm font-black transition ${
+                                    selectedSourcingCaseTab === tab
+                                      ? "bg-leaf-700 text-white"
+                                      : "bg-leaf-50 text-ink/62 ring-1 ring-leaf-900/10 hover:bg-white hover:text-leaf-800"
+                                  }`}
+                                >
+                                  {tab}
+                                </button>
+                              ))}
+                            </div>
+
+                            {selectedSourcingCaseTab === "Overview" ? (
+                              <div className="grid gap-4">
+                                <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer and Request Overview</h4>
+                                  <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    <LeadDetailItem label="Buyer / Company" value={selectedSourcingCase.request.company_name ? `${selectedSourcingCase.request.buyer_name} - ${selectedSourcingCase.request.company_name}` : selectedSourcingCase.request.buyer_name} />
+                                    <LeadDetailItem label="Buyer Type" value={selectedSourcingCase.request.buyer_type || "Buyer"} />
+                                    <LeadDetailItem label="Phone" value={selectedSourcingCase.request.phone_number} />
+                                    <LeadDetailItem label="WhatsApp" value={selectedSourcingCase.request.whatsapp_number} />
+                                    <LeadDetailItem label="Requested Product" value={selectedSourcingCase.request.product_needed} />
+                                    <LeadDetailItem label="Requested Quantity" value={selectedSourcingCase.request.quantity || "Not supplied"} />
+                                    <LeadDetailItem label="Delivery Location" value={sourcingCaseLocation(selectedSourcingCase.request)} />
+                                    <LeadDetailItem label="Required By" value={selectedSourcingCase.request.deadline || "Not supplied"} />
+                                    <LeadDetailItem label="Request Source" value={sourcingCaseSourceLabel(selectedSourcingCase.request)} />
+                                    <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                      <dt className="text-xs font-black uppercase tracking-wide text-ink/40">Linked Listing / Profile</dt>
+                                      <dd className="mt-1 break-words text-sm font-semibold leading-6 text-ink/72">
+                                        {linkedSourceHref ? (
+                                          <Link
+                                            href={linkedSourceHref}
+                                            className="font-black text-leaf-700 underline-offset-4 transition hover:text-leaf-900 hover:underline focus:outline-none focus:ring-2 focus:ring-leaf-600/20"
+                                          >
+                                            {linkedSourceLabel}
+                                          </Link>
+                                        ) : (
+                                          linkedSourceLabel
+                                        )}
+                                      </dd>
+                                    </div>
+                                    <LeadDetailItem label="Submitted" value={selectedSourcingCase.request.created_at ? new Date(selectedSourcingCase.request.created_at).toLocaleDateString() : "Not captured"} />
+                                  </dl>
+                                  <div className="mt-4 rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Message</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-ink/65">{selectedSourcingCase.request.notes || "No additional notes were supplied."}</p>
+                                  </div>
+                                </section>
+
+                                {selectedSourcingCase.request.listing_snapshot ? (
+                                  <details className="rounded-md border border-leaf-900/10 bg-white p-4" open>
+                                    <summary className="cursor-pointer text-sm font-black uppercase tracking-wide text-earth-700">Public Listing Snapshot</summary>
+                                    <p className="mt-2 text-xs font-semibold leading-5 text-ink/50">
+                                      Public listing context only. Seller private contact details are not exposed here.
+                                    </p>
+                                    <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                      <LeadDetailItem label="Product" value={selectedSourcingCase.request.listing_snapshot.product ?? selectedSourcingCase.request.product_needed} />
+                                      <LeadDetailItem label="Seller / Profile" value={selectedSourcingCase.request.listing_snapshot.seller ? publicSellerDisplayName(selectedSourcingCase.request.listing_snapshot.seller) : selectedSourcingCase.request.source_name ?? "Not captured"} />
+                                      <LeadDetailItem label="Location" value={selectedSourcingCase.request.listing_snapshot.location ?? "Not captured"} />
+                                      <LeadDetailItem label="Price / Package" value={selectedSourcingCase.request.listing_snapshot.pricePackage ?? "Not captured"} />
+                                      <LeadDetailItem label="Listed Quantity" value={selectedSourcingCase.request.listing_snapshot.listedQuantity ?? "Not captured"} />
+                                      <LeadDetailItem label="Availability" value={selectedSourcingCase.request.listing_snapshot.availability ?? "Not captured"} />
+                                    </dl>
+                                  </details>
+                                ) : null}
+                              </div>
+                            ) : null}
+
+                            {selectedSourcingCaseTab === "Matches" ? (
+                              <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Suggested and Assigned Matches</h4>
+                                <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
+                                  Review possible supply matches here. This does not contact any buyer, farmer, or supplier automatically.
+                                </p>
+                                <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                                  <MatchPreview title="Recommended Farmers" records={selectedSourcingCase.matches.farmers} nameKeys={["farm_name", "farmer_name"]} />
+                                  <MatchPreview title="Recommended Suppliers" records={selectedSourcingCase.matches.suppliers} nameKeys={["company_name", "category"]} />
+                                  <MatchPreview title="Linked Marketplace Listings" records={selectedSourcingCase.matches.listings} nameKeys={["product_name"]} />
+                                </div>
+                              </section>
+                            ) : null}
+
+                            {selectedSourcingCaseTab === "Activity" ? (
+                              <div className="grid gap-4">
+                                <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                  <label className="grid gap-2 text-sm font-black text-ink">
+                                    Internal Notes
+                                    <textarea
+                                      value={selectedSourcingCase.state.notes}
+                                      onChange={(event) => updateSourcingCaseState(selectedSourcingCase.request.id, (current) => ({ ...current, notes: event.target.value }))}
+                                      rows={4}
+                                      className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
+                                      placeholder="Record sourcing context, calls, availability, and next steps."
+                                    />
+                                  </label>
+                                </section>
+
+                                <section className="grid gap-4 xl:grid-cols-2">
+                                  <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                    <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Communication History</h4>
+                                    <div className="mt-4 grid gap-3">
+                                      {communicationRows.slice(0, 4).map((activity) => (
+                                        <div key={activity.id} className="rounded-md bg-leaf-50 p-3">
+                                          <p className="text-sm font-black text-ink">{activity.action_type}</p>
+                                          <p className="mt-1 text-xs font-semibold text-ink/55">{relativeActivityTime(activity.created_at)} by {activity.admin_email}</p>
+                                        </div>
+                                      ))}
+                                      {communicationRows.length === 0 ? (
+                                        <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No communication has been recorded yet.</p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+
+                                  <div className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                    <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Previous Sourcing Requests</h4>
+                                    <div className="mt-4 grid gap-2">
+                                      {previousSourcingRequests.slice(0, 4).map((request) => (
+                                        <div key={request.id} className="rounded-md bg-leaf-50 p-3">
+                                          <p className="text-sm font-black text-ink">{request.product_needed}</p>
+                                          <p className="mt-1 text-xs font-semibold text-ink/55">{request.status} - {request.created_at ? new Date(request.created_at).toLocaleDateString() : "No date"}</p>
+                                        </div>
+                                      ))}
+                                      {previousSourcingRequests.length === 0 ? (
+                                        <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No previous sourcing requests from this buyer.</p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </section>
+
+                                <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Timeline</h4>
+                                  <div className="mt-4 grid gap-3">
+                                    {sourcingTimeline(selectedSourcingCase.request, selectedSourcingCase.state, activityRows).map((item) => (
+                                      <div key={item.label} className="flex gap-3 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                        <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.complete ? "bg-leaf-700" : "bg-earth-500"}`} />
+                                        <div>
+                                          <p className="text-sm font-black text-ink">{item.label}</p>
+                                          <p className="mt-1 text-xs font-semibold text-ink/55">{item.detail}</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
+                              </div>
+                            ) : null}
                           </div>
-                        </section>
-                      </div>
+                        );
+                      })()
                     ) : (
                       <div className="grid min-h-[420px] place-items-center rounded-md bg-leaf-50 p-8 text-center">
                         <div>
@@ -9924,119 +10077,6 @@ export function AdminDashboard({
                       </div>
                     )}
                   </div>
-
-                  <aside className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
-                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Decision Center</p>
-                    {selectedSourcingCase ? (
-                      <div className="mt-4 grid gap-4">
-                        <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
-                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Next Action</p>
-                          <p className="mt-2 text-xl font-black text-ink">{sourcingRecommendedAction(selectedSourcingCase.state)}</p>
-                        </div>
-
-                        <label className="grid gap-2 text-sm font-black text-ink">
-                          Internal Notes
-                          <textarea
-                            value={selectedSourcingCase.state.notes}
-                            onChange={(event) => updateSourcingCaseState(selectedSourcingCase.request.id, (current) => ({ ...current, notes: event.target.value }))}
-                            rows={6}
-                            className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                            placeholder="Record sourcing context, calls, availability, and next steps."
-                          />
-                        </label>
-
-                        <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
-                          <p className="text-xs font-black uppercase tracking-wide text-earth-700">Owner</p>
-                          <p className="mt-2 text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
-                          <button
-                            type="button"
-                            onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
-                            className="mt-3 w-full rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
-                          >
-                            Assign to Me
-                          </button>
-                        </div>
-
-                        <div className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
-                          {(() => {
-                            const sla = sourcingSla(selectedSourcingCase.request.created_at);
-
-                            return (
-                              <>
-                                <p className="text-xs font-black uppercase tracking-wide text-earth-700">SLA Timer</p>
-                                <div className="mt-3 grid gap-2 text-sm font-semibold text-ink/65">
-                                  <p>Submitted: {selectedSourcingCase.request.created_at ? new Date(selectedSourcingCase.request.created_at).toLocaleString() : "Not captured"}</p>
-                                  <p>Response deadline: {sla.deadline.toLocaleString()}</p>
-                                </div>
-                                <p className={`mt-3 rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
-                                  {sla.hoursRemaining < 0 ? `${Math.abs(sla.hoursRemaining)} hours overdue` : `${sla.hoursRemaining} hours remaining`}
-                                </p>
-                              </>
-                            );
-                          })()}
-                        </div>
-
-                        <label className="grid gap-2 text-xs font-black uppercase tracking-wide text-ink/45">
-                          Status
-                          <select
-                            value={selectedSourcingCase.state.status}
-                            onChange={(event) => void setSourcingCaseStatus(selectedSourcingCase.request, event.target.value as SourcingCaseStatus)}
-                            className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                          >
-                            {sourcingCaseStatuses
-                              .filter((status) => selectedSourcingCase.request.case_source !== "lead_request" || status !== "New")
-                              .map((status) => (
-                                <option key={status} value={status}>
-                                  {selectedSourcingCase.request.case_source === "lead_request" && status === "Closed" ? "Lost" : status}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-
-                        <div className="grid gap-2">
-                          <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "farmer")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
-                            Review Farmer Matches
-                          </button>
-                          <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "supplier")} className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white">
-                            Review Supplier Matches
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void contactSourcingBuyer(selectedSourcingCase.request)}
-                            className="rounded-md bg-white px-4 py-3 text-center text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
-                          >
-                            Contact Buyer
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (window.confirm("Mark this sourcing request as completed? This will not send any message.")) {
-                                void setSourcingCaseStatus(selectedSourcingCase.request, "Completed");
-                              }
-                            }}
-                            className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400"
-                          >
-                            Complete Request
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (window.confirm("Mark this sourcing request as lost? This will not send any message.")) {
-                                void setSourcingCaseStatus(selectedSourcingCase.request, "Closed");
-                              }
-                            }}
-                            className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80"
-                          >
-                            Mark Lost
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-4 rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/58">
-                        Select a sourcing case to decide the next action.
-                      </p>
-                    )}
-                  </aside>
                 </section>
               </div>
             ) : (

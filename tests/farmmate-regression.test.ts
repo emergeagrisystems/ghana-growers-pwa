@@ -1063,6 +1063,33 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Admin Sourcing Queue uses two columns, case header actions, and tabs",
+    run: () => {
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+
+      assert.equal(adminDashboard.includes('type SourcingCaseTab = "Overview" | "Matches" | "Activity";'), true);
+      assert.equal(adminDashboard.includes('const [selectedSourcingCaseTab, setSelectedSourcingCaseTab]'), true);
+      assert.equal(adminDashboard.includes('const [showSourcingCaseDetailMobile, setShowSourcingCaseDetailMobile]'), true);
+      assert.equal(adminDashboard.includes("lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]"), true);
+      assert.equal(adminDashboard.includes("xl:grid-cols-[270px_minmax(520px,1fr)_300px]"), false);
+      assert.equal(adminDashboard.includes('aria-label="Sourcing case details"'), true);
+      assert.equal(adminDashboard.includes('(["Overview", "Matches", "Activity"] as SourcingCaseTab[])'), true);
+      assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Overview"'), true);
+      assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Matches"'), true);
+      assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Activity"'), true);
+      assert.equal(adminDashboard.includes("Primary next action"), true);
+      assert.equal(adminDashboard.includes("SLA / Response Deadline"), true);
+      assert.equal(adminDashboard.includes("Suggested and Assigned Matches"), true);
+      assert.equal(adminDashboard.includes("Buyer and Request Overview"), true);
+      assert.equal(adminDashboard.includes("Communication History"), true);
+      assert.equal(adminDashboard.includes("Back to cases"), true);
+      assert.equal(adminDashboard.includes("setShowSourcingCaseDetailMobile(true)"), true);
+      assert.equal(adminDashboard.includes("setShowSourcingCaseDetailMobile(false)"), true);
+      assert.equal(adminDashboard.includes('seller private contact details are not exposed here'), false);
+      assert.equal(adminDashboard.includes("Seller private contact details are not exposed here."), true);
+    }
+  },
+  {
     name: "Admin navigation groups preserve routes in a collapsible hierarchy",
     run: () => {
       const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
@@ -1114,6 +1141,7 @@ const tests: TestCase[] = [
       }
 
       assert.equal(adminDashboard.includes("expandedNavigationGroup"), true);
+      assert.equal(adminDashboard.includes("const isExpanded = expandedNavigationGroup === group.group || groupHasActiveItem;"), true);
       assert.equal(adminDashboard.includes("aria-expanded={isExpanded}"), true);
       assert.equal(adminDashboard.includes("openAdminNavigationItem(item, group.group)"), true);
       assert.equal(adminDashboard.includes('analyticsView: "operations"'), true);
