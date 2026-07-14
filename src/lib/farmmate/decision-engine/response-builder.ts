@@ -15,7 +15,7 @@ import type { CropDoctorHandoffContext } from "../crop-doctor-vision";
 import type { FarmMateSpecialist, RouterResult } from "../router";
 import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector";
 import { farmMateDecisionFlows } from "./flows";
-import { DecisionFlow, FarmerIntent } from "./types";
+import { DecisionFlow, FarmerIntent, FollowUpQuestion } from "./types";
 
 export type FarmMateResponseSection =
   | "Direct answer"
@@ -458,7 +458,7 @@ function weatherContextLines(question: string, flow: DecisionFlow | undefined, w
     return [
       `Selected weather context: ${weatherContext.locationName}.`,
       `Weather guidance: ${weatherContext.summaryNote}`,
-      "Use the live weather context as support, but field conditions still matter."
+      "This is a daily forecast, so confirm the next few hours and field conditions before spraying."
     ].slice(0, 3);
   }
 
@@ -466,6 +466,135 @@ function weatherContextLines(question: string, flow: DecisionFlow | undefined, w
     "FarmMate does not have live weather in this local decision flow, so it must ask the farmer to check rain, wind and leaf or soil wetness.",
     ...(guidance ? [`Farmer task: ${guidance.handles}`, ...guidance.checks.slice(0, 1)] : [])
   ].slice(0, 3);
+}
+
+function weatherRainContextLine(weatherContext: WeatherDecisionSummary) {
+  if (typeof weatherContext.rainChancePercent === "number") {
+    return `FarmMate is seeing a ${weatherContext.rainChancePercent}% chance of rain today for ${weatherContext.locationName}.`;
+  }
+
+  return `FarmMate has live weather context for ${weatherContext.locationName}.`;
+}
+
+function weatherTemperatureContextLine(weatherContext: WeatherDecisionSummary) {
+  if (typeof weatherContext.temperatureMinC === "number" && typeof weatherContext.temperatureMaxC === "number") {
+    return `Today's temperature range is ${weatherContext.temperatureMinC}-${weatherContext.temperatureMaxC}°C.`;
+  }
+
+  if (typeof weatherContext.temperatureMaxC === "number") {
+    return `Today's high temperature is about ${weatherContext.temperatureMaxC}°C.`;
+  }
+
+  return "";
+}
+
+function weatherSprayFollowUps(flow: DecisionFlow, weatherContext: WeatherDecisionSummary): FollowUpQuestion[] {
+  const leafQuestion = flow.followUpQuestions.find((followUp) => followUp.id === "leaf-wetness");
+  const windQuestion = flow.followUpQuestions.find((followUp) => followUp.id === "wind-level");
+  const followUps: FollowUpQuestion[] = [];
+
+  if (leafQuestion) {
+    followUps.push({
+      ...leafQuestion,
+      question: "Are the leaves dry now?"
+    });
+  }
+
+  if (typeof weatherContext.windSpeedKph !== "number" && windQuestion) {
+    followUps.push({
+      ...windQuestion,
+      question: "Is the wind calm where you are?"
+    });
+  }
+
+  return followUps;
+}
+
+function weatherContextRecommendation(weatherContext: WeatherDecisionSummary) {
+  const rainChance = weatherContext.rainChancePercent;
+  const rainLine = weatherRainContextLine(weatherContext);
+  const temperatureLine = weatherTemperatureContextLine(weatherContext);
+  const contextLines = [rainLine, temperatureLine].filter(Boolean);
+  const hasHighRainChance = typeof rainChance === "number" && rainChance >= 60;
+  const hasLowRainChance = typeof rainChance === "number" && rainChance <= 25;
+  const hasMediumRainChance = typeof rainChance === "number" && !hasHighRainChance && !hasLowRainChance;
+
+  if (hasHighRainChance) {
+    return {
+      summary: `${rainLine} Do not spray unless you can confirm no rain for the next 4 to 6 hours.`,
+      recommendedAction: "Delay spraying for now unless you can confirm no rain for the next 4 to 6 hours, leaves are dry and wind is calm.",
+      guidance: [
+        "Because this is a daily forecast, confirm the next few hours before spraying.",
+        "Spray only when leaves are dry and wind is calm.",
+        "Follow the product label for any crop protection product."
+      ],
+      reasoning: contextLines
+    };
+  }
+
+  if (hasMediumRainChance) {
+    return {
+      summary: `${rainLine} Be cautious because this is a daily forecast, not an exact next-hour forecast.`,
+      recommendedAction: "Confirm the next 4 to 6 hours before spraying, then check that leaves are dry and wind is calm.",
+      guidance: [
+        "Use the daily forecast as a warning sign, not as exact timing.",
+        "Wait if clouds build or rain looks likely soon.",
+        "Follow the product label for any crop protection product."
+      ],
+      reasoning: contextLines
+    };
+  }
+
+  return {
+    summary: hasLowRainChance
+      ? `${rainLine} Spraying may be possible only if field conditions are also suitable.`
+      : `${rainLine} Field checks are still needed before spraying.`,
+    recommendedAction: "Check leaf dryness and wind before spraying; do not rely on the daily forecast alone.",
+    guidance: [
+      "Because this is a daily forecast, confirm the next few hours before spraying.",
+      "Spray only when leaves are dry and wind is calm.",
+      "Avoid spraying during hot midday sun."
+    ],
+    reasoning: contextLines
+  };
+}
+
+function applyWeatherContextToFlow(question: string, flow: DecisionFlow, weatherContext?: WeatherDecisionSummary): DecisionFlow {
+  if (!weatherContext?.liveWeatherAvailable || flow.intent !== "weather-decisions") {
+    return flow;
+  }
+
+  if (weatherTaskFromQuestion(question) !== "spraying" || flow.id !== "can-i-spray-today") {
+    return flow;
+  }
+
+  const contextRecommendation = weatherContextRecommendation(weatherContext);
+
+  return {
+    ...flow,
+    requiredInformation: {
+      ...flow.requiredInformation,
+      recentWeather: `Live daily forecast context available for ${weatherContext.locationName}`
+    },
+    followUpQuestions: weatherSprayFollowUps(flow, weatherContext),
+    recommendation: {
+      ...flow.recommendation,
+      summary: contextRecommendation.summary,
+      reasoning: contextRecommendation.reasoning.map((line, index) => ({
+        id: `live-weather-context-${index + 1}`,
+        observation: line,
+        interpretation: "This live weather context supports the decision, but exact field checks still matter."
+      })),
+      recommendedAction: contextRecommendation.recommendedAction,
+      guidance: contextRecommendation.guidance,
+      nextBestAction: {
+        id: "confirm-field-conditions",
+        label: "Confirm field conditions",
+        instruction: "Confirm the next few hours, leaf dryness and wind before spraying.",
+        actionType: "take-farm-action"
+      }
+    }
+  };
 }
 
 function plantingContextLines(flow: DecisionFlow | undefined, resolvedCrop?: string) {
@@ -566,7 +695,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const matchedFlow = options.cropDoctorContext
     ? cropDoctorContextToDecisionFlow(options.cropDoctorContext, intent)
     : findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
-  const flow = matchedFlow ?? fallbackFlow(intent);
+  const flow = matchedFlow ? applyWeatherContextToFlow(question, matchedFlow, options.weatherContext) : fallbackFlow(intent);
   const knowledge = knowledgeLines(flow, intent, resolvedCrop);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
   const shouldShowCropDoctorAction = flow.recommendation.nextBestAction.actionType === "use-crop-doctor";
@@ -586,7 +715,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
     intent,
     routerResult,
     resolvedCrop,
-    flow: matchedFlow,
+    flow: matchedFlow ? flow : undefined,
     confidence: flow.recommendation.confidence,
     shouldShowCropDoctorAction,
     nextBestAction: flow.recommendation.nextBestAction,

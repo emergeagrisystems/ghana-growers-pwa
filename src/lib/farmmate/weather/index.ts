@@ -22,6 +22,8 @@ export type WeatherDecisionSummary = {
   sourceLabel: string;
   lastUpdatedAt: string;
   rainChancePercent?: number;
+  temperatureMinC?: number;
+  temperatureMaxC?: number;
   windSpeedKph?: number;
   farmingNotes: string[];
   summaryNote: string;
@@ -214,6 +216,8 @@ export function weatherDecisionSummaryForForecast(forecast: Pick<FarmMateWeather
     sourceLabel: forecast.sourceLabel,
     lastUpdatedAt: forecast.lastUpdatedAt,
     rainChancePercent: forecast.today.rainChancePercent,
+    temperatureMinC: forecast.today.temperatureMinC,
+    temperatureMaxC: forecast.today.temperatureMaxC,
     windSpeedKph: forecast.today.windSpeedKph,
     farmingNotes: notes.slice(0, 3),
     summaryNote: notes[0],

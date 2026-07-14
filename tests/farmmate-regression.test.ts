@@ -169,6 +169,8 @@ function sampleWeatherContext(overrides: Partial<WeatherDecisionSummary> = {}): 
     sourceLabel: overrides.sourceLabel ?? "Open-Meteo",
     lastUpdatedAt: overrides.lastUpdatedAt ?? "2026-07-14T08:00:00.000Z",
     rainChancePercent: overrides.rainChancePercent ?? 70,
+    temperatureMinC: overrides.temperatureMinC ?? 24,
+    temperatureMaxC: overrides.temperatureMaxC ?? 31,
     windSpeedKph: overrides.windSpeedKph ?? 18,
     farmingNotes: overrides.farmingNotes ?? ["Avoid spraying before rain.", "Check drainage in low areas."],
     summaryNote: overrides.summaryNote ?? "Avoid spraying before rain.",
@@ -2217,6 +2219,46 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Ask FarmMate stores and reads selected weather context",
+    run: () => {
+      const weatherWidget = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(weatherWidget.includes("FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY"), true);
+      assert.equal(weatherWidget.includes("storedWeatherContextFromForecast(data.forecast)"), true);
+      assert.equal(askFarmMate.includes("storedWeatherContextForFarmMate()"), true);
+      assert.equal(askFarmMate.includes("weatherContext: routerResult.selectedSpecialist === \"weather_decision\""), true);
+    }
+  },
+  {
+    name: "weather spray question uses live weather context before generic rain questions",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 58, summaryNote: "Check field conditions before spraying." });
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(response.weatherContext?.rainChancePercent, 58);
+      assert.equal(text.includes("58% chance of rain today"), true);
+      assert.notEqual(response.flow?.followUpQuestions[0]?.id, "rain-window");
+      assert.equal(response.flow?.followUpQuestions[0]?.id, "leaf-wetness");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Are the leaves dry now?");
+    }
+  },
+  {
+    name: "weather spray flow asks wind condition only when live wind is missing",
+    run: () => {
+      const contextWithWind = sampleWeatherContext({ windSpeedKph: 12 });
+      const contextWithoutWind = sampleWeatherContext();
+      delete contextWithoutWind.windSpeedKph;
+      const withWind = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext: contextWithWind });
+      const withoutWind = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext: contextWithoutWind });
+
+      assert.equal(withWind.flow?.followUpQuestions.some((question) => question.id === "wind-level"), false);
+      assert.equal(withoutWind.flow?.followUpQuestions.some((question) => question.id === "wind-level"), true);
+      assert.equal(withoutWind.flow?.followUpQuestions.find((question) => question.id === "wind-level")?.question, "Is the wind calm where you are?");
+    }
+  },
+  {
     name: "OpenAI payload includes live weather context when available",
     run: () => {
       const weatherContext = sampleWeatherContext();
@@ -2232,7 +2274,9 @@ const tests: TestCase[] = [
 
       assert.equal(brain.weatherContext?.locationName, "Accra / Greater Accra");
       assert.equal(payload.specialistContext?.liveWeatherContext?.summaryNote, "Avoid spraying before rain.");
-      assert.equal(payload.specialistContext?.noLiveWeatherRule?.includes("provided live weather context"), true);
+      assert.equal(payload.specialistContext?.liveWeatherContext?.temperatureMaxC, 31);
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.includes("daily forecast"), true);
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.includes("Do not invent exact rain timing"), true);
     }
   },
   {
@@ -2511,6 +2555,33 @@ const tests: TestCase[] = [
       assert.equal(text.includes("wait until after the rain"), true);
       assert.equal(text.includes("leaves are dry and wind is calm"), true);
       assert.equal(body.includes("do not spray now. wait until after the rain and spray only when leaves are dry and wind is calm."), true);
+    }
+  },
+  {
+    name: "high live rain chance gives cautious do-not-spray guidance",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 70, windSpeedKph: 12 });
+      const answers = [{ question: "Are the leaves dry now?", answer: "Leaves are dry" }];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers, weatherContext);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+
+      assert.equal(text.includes("70% chance of rain today"), true);
+      assert.equal(text.includes("do not spray unless you can confirm no rain for the next 4 to 6 hours"), true);
+      assert.equal(text.includes("daily forecast"), true);
+    }
+  },
+  {
+    name: "low live rain chance plus dry leaves and calm wind gives cautious suitable guidance",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ rainChancePercent: 10, windSpeedKph: 10, summaryNote: "Good time to inspect crops early." });
+      const answers = [{ question: "Are the leaves dry now?", answer: "Leaves are dry" }];
+      const cards = weatherGuidedRecommendationCards("can-i-spray-today", answers, weatherContext);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n").toLowerCase() ?? "";
+
+      assert.equal(text.includes("10% chance of rain today"), true);
+      assert.equal(text.includes("spraying may be suitable"), true);
+      assert.equal(text.includes("follow the product label"), true);
+      assert.equal(text.includes("avoid spraying during hot midday sun"), true);
     }
   },
   {

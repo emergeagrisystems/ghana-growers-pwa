@@ -103,7 +103,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           sustainabilityNotes: weatherGuidance.sustainabilityNotes,
           liveWeatherContext,
           noLiveWeatherRule: liveWeatherContext
-            ? "Use only the provided live weather context. Do not add other forecast details or pretend certainty beyond that source."
+            ? "Use only the provided live weather context. If it contains a daily rain chance, say it is a daily forecast and tell the farmer to confirm the next few hours before spraying. Do not invent exact rain timing, wind, humidity or forecast details."
             : "Do not invent live rain, wind, temperature or forecast details. Ask the farmer to check conditions when weather data is missing."
         }
       : plantingContext
@@ -154,6 +154,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "Use the farmer's answers when explaining the recommendation.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
       "For weather decisions, do not invent live weather or forecast details.",
+      "For weather decisions with live daily weather context, do not turn daily rain chance into exact 4 to 6 hour rain timing.",
       "For weather decisions, use complete sentences. Never end mid-phrase.",
       "For unsure rain answers, say: \"Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.\"",
       "For rain expected answers, say: \"Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.\"",

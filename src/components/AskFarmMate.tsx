@@ -267,7 +267,25 @@ function clarificationResponse(): FarmMateLocalResponseCard[] {
   ];
 }
 
-function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean) {
+function weatherContextIntro(response?: FarmMateBrainResponse | null) {
+  const weatherContext = response?.weatherContext;
+
+  if (!weatherContext?.liveWeatherAvailable || response?.flow?.intent !== "weather-decisions") {
+    return null;
+  }
+
+  const lead =
+    typeof weatherContext.rainChancePercent === "number"
+      ? `FarmMate is seeing a ${weatherContext.rainChancePercent}% chance of rain today for ${weatherContext.locationName}.`
+      : `FarmMate has live weather for ${weatherContext.locationName}.`;
+
+  return {
+    lead,
+    detail: "Because this is a daily forecast, confirm the next few hours before spraying."
+  };
+}
+
+function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean, response?: FarmMateBrainResponse | null) {
   if (localCards.some((card) => card.body.some((line) => line.toLowerCase().includes("buy produce")))) {
     return {
       lead: "Buying through Ghana Growers",
@@ -289,6 +307,12 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
     };
   }
 
+  const weatherIntro = weatherContextIntro(response);
+
+  if (weatherIntro) {
+    return weatherIntro;
+  }
+
   return {
     lead: "Let's narrow this down.",
     detail: "I will ask one quick question at a time."
@@ -296,7 +320,7 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
 }
 
 function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
-  const weatherCards = weatherGuidedRecommendationCards(response.flow?.id, answers);
+  const weatherCards = weatherGuidedRecommendationCards(response.flow?.id, answers, response.weatherContext);
 
   if (weatherCards) {
     return weatherCards;
@@ -352,6 +376,7 @@ function logBrainContext(question: string, response: FarmMateBrainResponse) {
   console.info("FarmMate detected crop:", response.resolvedCrop ?? "none");
   console.info("FarmMate selected specialist:", response.routerResult?.selectedSpecialist ?? "none");
   console.info("FarmMate selected decision flow crop/context:", response.flow?.requiredInformation.crop ?? "none");
+  console.info("FarmMate weather context:", response.weatherContext?.locationName ?? "none");
 }
 
 function logConversationDecision(message: string, state: ConversationState, decision: ConversationDecision, selectedSpecialist?: string) {
@@ -643,7 +668,7 @@ export function AskFarmMate({
   }
 
   const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
-  const intro = responseIntro(localCards, showRecommendation);
+  const intro = responseIntro(localCards, showRecommendation, response);
   const shouldShowLocalGuidance = shouldRenderLocalFarmMateGuidance({
     isGeneratingNaturalAnswer,
     naturalAnswer,

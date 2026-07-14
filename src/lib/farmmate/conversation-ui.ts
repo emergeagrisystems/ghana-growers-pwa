@@ -1,4 +1,5 @@
 import type { FarmMateLocalResponseCard } from "./ai";
+import type { WeatherDecisionSummary } from "./weather";
 
 const FALLBACK_MESSAGE = "FarmMate AI is temporarily limited, but you can still use the local guidance.";
 const SUMMARY_SEPARATOR = " · ";
@@ -81,12 +82,97 @@ export function shouldCompleteWeatherGuidedFlow(flowId: string | undefined, answ
     return true;
   }
 
+  if (answers.length >= 1 && (text.includes("leaves are wet") || text.includes("not sure if leaves are dry"))) {
+    return true;
+  }
+
   return answers.length >= 3;
 }
 
-export function weatherGuidedRecommendationCards(flowId: string | undefined, answers: FarmMateFollowUpAnswer[]): FarmMateLocalResponseCard[] | null {
+function liveWeatherLine(weatherContext: WeatherDecisionSummary) {
+  if (typeof weatherContext.rainChancePercent === "number") {
+    return `FarmMate is seeing a ${weatherContext.rainChancePercent}% chance of rain today for ${weatherContext.locationName}.`;
+  }
+
+  return `FarmMate has live weather for ${weatherContext.locationName}.`;
+}
+
+function liveWeatherCards(weatherContext: WeatherDecisionSummary, answers: FarmMateFollowUpAnswer[]): FarmMateLocalResponseCard[] {
+  const text = answerText(answers);
+  const rainChance = weatherContext.rainChancePercent;
+  const highRainChance = typeof rainChance === "number" && rainChance >= 60;
+  const lowRainChance = typeof rainChance === "number" && rainChance <= 25;
+  const mediumRainChance = typeof rainChance === "number" && !highRainChance && !lowRainChance;
+  const windy = text.includes("windy") || text.includes("wind is strong") || (typeof weatherContext.windSpeedKph === "number" && weatherContext.windSpeedKph >= 25);
+  const windUnsure = text.includes("not sure about the wind");
+  const calmWind = text.includes("wind is calm") || (typeof weatherContext.windSpeedKph === "number" && weatherContext.windSpeedKph < 25);
+  const dryLeaves = text.includes("leaves are dry");
+  const wetLeaves = text.includes("leaves are wet");
+  const leavesUnsure = text.includes("not sure if leaves are dry");
+  const dailyCaveat = "Because this is a daily forecast, confirm the next few hours before spraying.";
+
+  if (wetLeaves) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Do not spray while leaves are wet."] },
+      { title: "What to do now", body: ["Wait for leaves to dry and make sure wind is calm."] },
+      { title: "Next step", body: ["Check leaf dryness again before spraying."] }
+    ];
+  }
+
+  if (windy) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Do not spray now because wind can carry spray away."] },
+      { title: "What to do now", body: ["Wait for calmer wind and dry leaves before spraying."] },
+      { title: "Next step", body: ["Check wind again before spraying."] }
+    ];
+  }
+
+  if (highRainChance) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Do not spray unless you can confirm no rain for the next 4 to 6 hours."] },
+      { title: "What to do now", body: [dailyCaveat, "Spray only when leaves are dry and wind is calm."] },
+      { title: "Next step", body: ["Confirm the next 4 to 6 hours before spraying."] }
+    ];
+  }
+
+  if (leavesUnsure || windUnsure) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Don't spray yet until the missing field checks are clear."] },
+      { title: "What to do now", body: [dailyCaveat, "Spray only when leaves are dry and wind is calm."] },
+      { title: "Next step", body: ["Confirm the missing field condition before spraying."] }
+    ];
+  }
+
+  if (lowRainChance && dryLeaves && calmWind) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Spraying may be suitable if the next few hours stay clear."] },
+      { title: "What to do now", body: ["Follow the product label and avoid spraying during hot midday sun."] },
+      { title: "Next step", body: ["Confirm no rain is likely soon before spraying."] }
+    ];
+  }
+
+  if (mediumRainChance) {
+    return [
+      { title: "What I think", body: [liveWeatherLine(weatherContext), "Be cautious because the forecast is for the day, not the exact next few hours."] },
+      { title: "What to do now", body: [dailyCaveat, "Wait if clouds build or rain looks likely soon."] },
+      { title: "Next step", body: ["Confirm the next 4 to 6 hours before spraying."] }
+    ];
+  }
+
+  return [
+    { title: "What I think", body: [liveWeatherLine(weatherContext), "Field checks still matter before spraying."] },
+    { title: "What to do now", body: [dailyCaveat, "Spray only when leaves are dry and wind is calm."] },
+    { title: "Next step", body: ["Check field conditions before spraying."] }
+  ];
+}
+
+export function weatherGuidedRecommendationCards(flowId: string | undefined, answers: FarmMateFollowUpAnswer[], weatherContext?: WeatherDecisionSummary): FarmMateLocalResponseCard[] | null {
   if (flowId !== "can-i-spray-today") {
     return null;
+  }
+
+  if (weatherContext?.liveWeatherAvailable) {
+    return liveWeatherCards(weatherContext, answers);
   }
 
   const text = answerText(answers);
