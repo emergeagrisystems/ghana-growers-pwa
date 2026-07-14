@@ -146,3 +146,35 @@ export function weatherGuidedRecommendationCards(flowId: string | undefined, ans
     { title: "Next step", body: ["Check the weather window before spraying."] }
   ];
 }
+
+export function harvestPostHarvestGuidedRecommendationCards(flowId: string | undefined, answers: FarmMateFollowUpAnswer[]): FarmMateLocalResponseCard[] | null {
+  if (flowId !== "store-cassava-after-harvest") {
+    return null;
+  }
+
+  const text = answerText(answers);
+  const notHarvested = text.includes("not harvested yet");
+
+  if (!notHarvested) {
+    return null;
+  }
+
+  return [
+    {
+      title: "What I think",
+      body: ["Since the cassava is not harvested yet, avoid lifting more roots than you can use, process, sell or move soon."]
+    },
+    {
+      title: "What to do now",
+      body: [
+        "Leave the rest in the ground until needed.",
+        "Prepare shade and transport before harvesting.",
+        "Harvest carefully to avoid cuts and bruises."
+      ]
+    },
+    {
+      title: "Next step",
+      body: ["Harvest only the quantity you can move soon."]
+    }
+  ];
+}

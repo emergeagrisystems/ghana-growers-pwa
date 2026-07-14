@@ -154,6 +154,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For planting decisions, do not invent exact local weather, seed availability, market prices, guaranteed profit, or guaranteed yield.",
       "For harvest and post-harvest decisions, do not invent market prices, buyer availability, guaranteed sales, or guaranteed shelf life.",
       "For harvest and post-harvest decisions, protect quality with shade, sorting, ventilation and clean containers where possible.",
+      "For cassava storage, if the farmer says cassava is not harvested yet, do not frame the answer as harvested-root storage. Tell them to leave cassava in the ground until needed, plan shade or transport, and harvest only what can be moved soon.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

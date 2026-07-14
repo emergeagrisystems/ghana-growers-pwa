@@ -11,6 +11,7 @@ import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
   farmMateFallbackMessage,
+  harvestPostHarvestGuidedRecommendationCards,
   shouldCompleteWeatherGuidedFlow,
   shouldRenderLocalFarmMateGuidance,
   weatherGuidedRecommendationCards
@@ -298,6 +299,18 @@ function localRecommendationCards(response: FarmMateBrainResponse, answers: Foll
 
   if (weatherCards) {
     return weatherCards;
+  }
+
+  const harvestPostHarvestCards = harvestPostHarvestGuidedRecommendationCards(response.flow?.id, answers);
+
+  if (harvestPostHarvestCards) {
+    return [
+      {
+        title: "Here's what I understand",
+        body: learnedSummary(response, answers)
+      },
+      ...harvestPostHarvestCards
+    ];
   }
 
   return [

@@ -7,6 +7,7 @@ import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
   farmMateFallbackMessage,
+  harvestPostHarvestGuidedRecommendationCards,
   shouldCompleteWeatherGuidedFlow,
   shouldRenderLocalFarmMateGuidance,
   weatherGuidedRecommendationCards
@@ -2219,6 +2220,49 @@ const tests: TestCase[] = [
 
       assert.equal(response.flow?.followUpQuestions[0]?.question, "Has the cassava already been harvested?");
       assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, harvested today", "Yes, harvested yesterday or earlier", "Not harvested yet", "I am not sure"]);
+    }
+  },
+  {
+    name: "cassava not harvested storage answer stays pre-harvest",
+    run: () => {
+      const cards = harvestPostHarvestGuidedRecommendationCards("store-cassava-after-harvest", [
+        { question: "Has the cassava already been harvested?", answer: "Not harvested yet" }
+      ]);
+      const text = cards?.flatMap((card) => [card.title, ...card.body]).join("\n") ?? "";
+      const lowerText = text.toLowerCase();
+
+      assert.equal(Boolean(cards), true);
+      assert.equal(lowerText.includes("not harvested yet"), true);
+      assert.equal(lowerText.includes("leave the rest in the ground"), true);
+      assert.equal(lowerText.includes("prepare shade and transport before harvesting"), true);
+      assert.equal(lowerText.includes("harvest only the quantity you can move soon"), true);
+      assert.equal(lowerText.includes("keep harvested roots in shade"), false);
+      assert.equal(lowerText.includes("separate soft, rotten or mouldy roots"), false);
+    }
+  },
+  {
+    name: "OpenAI payload warns cassava not harvested guidance must not sound post-harvest",
+    run: () => {
+      const farmerQuestion = "How do I store cassava?";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const localStructuredResponse = harvestPostHarvestGuidedRecommendationCards(brain.flow?.id, [
+        { question: "Has the cassava already been harvested?", answer: "Not harvested yet" }
+      ]) ?? [];
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion,
+          brain,
+          farmerAnswers: [{ question: "Has the cassava already been harvested?", answer: "Not harvested yet" }],
+          localStructuredResponse
+        })
+      ) as { responseRules?: string[]; localStructuredResponse?: Array<{ title: string; body: string[] }> };
+      const rules = payload.responseRules?.join(" ").toLowerCase() ?? "";
+      const localText = payload.localStructuredResponse?.flatMap((card) => [card.title, ...card.body]).join(" ").toLowerCase() ?? "";
+
+      assert.equal(rules.includes("cassava is not harvested yet"), true);
+      assert.equal(rules.includes("do not frame the answer as harvested-root storage"), true);
+      assert.equal(localText.includes("leave the rest in the ground"), true);
+      assert.equal(localText.includes("keep harvested roots in shade"), false);
     }
   },
   {
