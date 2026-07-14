@@ -566,13 +566,16 @@ export async function createListingSubmission(formData: FormData, clientKey = "p
   const phoneNumber = cleanPhone(formData.get("phoneNumber"));
   const whatsappSameAsPhone = booleanValue(formData.get("whatsappSameAsPhone"));
   const whatsappNumber = whatsappSameAsPhone ? phoneNumber : cleanPhone(formData.get("whatsappNumber"));
+  const marketplacePathway = clean(formData.get("marketplacePathway"));
+  const submittedSubcategory = clean(formData.get("subcategory"));
+  const subcategory = submittedSubcategory.toLowerCase() === marketplacePathway.toLowerCase() ? "" : submittedSubcategory;
 
   const payload = {
     product_name: clean(formData.get("productName")),
-    marketplace_pathway: clean(formData.get("marketplacePathway")),
-    subcategory: clean(formData.get("subcategory")),
+    marketplace_pathway: marketplacePathway,
+    subcategory,
     variety: clean(formData.get("variety")),
-    category: clean(formData.get("subcategory")) || clean(formData.get("marketplacePathway")),
+    category: subcategory || marketplacePathway,
     selling_method: clean(formData.get("sellingMethod")) as ProductSellingMethod,
     selling_unit: clean(formData.get("sellingUnit")),
     custom_unit_label: clean(formData.get("customUnitLabel")),

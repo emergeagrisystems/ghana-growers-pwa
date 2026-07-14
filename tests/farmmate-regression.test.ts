@@ -616,6 +616,15 @@ const tests: TestCase[] = [
       assert.equal(form.includes("Submit for Review"), true);
       assert.equal(form.includes('fetch("/api/listing-submissions"'), true);
       assert.equal(form.includes('marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"]'), true);
+      assert.equal(form.includes('label="Category"'), true);
+      assert.equal(form.includes("Main marketplace pathway"), false);
+      assert.equal(form.includes('subcategory: ""'), true);
+      assert.equal(form.includes('next.subcategory = "";'), true);
+      assert.equal(form.includes('placeholder="Select subcategory"'), true);
+      assert.equal(form.includes('"Seeds & Seedlings"'), true);
+      assert.equal(form.includes('"Fertilizers & Soil Inputs"'), true);
+      assert.equal(form.includes('"Other Farm Inputs"'), true);
+      assert.equal(form.includes('values.marketplacePathway === "Fresh Produce" ? [...freshProduceSubcategories] : [values.marketplacePathway]'), false);
       assert.equal(form.includes("Agricultural Services"), false);
       assert.equal(form.includes('sellingMethod: "packaged_unit" | "weight" | "count" | "livestock" | "volume"'), true);
       assert.equal(form.includes('"volume" | "other"'), false);
@@ -664,6 +673,16 @@ const tests: TestCase[] = [
       assert.equal(publicSubmissions.includes("listing_submission_publication_cleanup_queue"), true);
       assert.equal(route.includes("x-forwarded-for"), true);
       assert.equal(route.includes("Your listing is not live yet. Ghana Growers will review the details and contact you if more information is needed."), true);
+    }
+  },
+  {
+    name: "Public listing submissions never store parent category as its own subcategory",
+    run: () => {
+      const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
+
+      assert.equal(publicSubmissions.includes("submittedSubcategory.toLowerCase() === marketplacePathway.toLowerCase() ? \"\" : submittedSubcategory"), true);
+      assert.equal(publicSubmissions.includes("category: subcategory || marketplacePathway"), true);
+      assert.equal(publicSubmissions.includes("subcategory,"), true);
     }
   },
   {
@@ -2283,7 +2302,11 @@ const tests: TestCase[] = [
 
       assert.equal(form.includes("How do you sell this product?"), true);
       assert.equal(form.includes("What is the price for one?"), true);
-      assert.equal(form.includes("Approximately how much or how many are in one?"), true);
+      assert.equal(form.includes("Approximately how much or how many are in one ${unitLabel}?"), true);
+      assert.equal(form.includes("Unit inside one"), true);
+      assert.equal(form.includes("Measure inside one"), false);
+      assert.equal(form.includes("sizeMeasureOptionsByUnit"), true);
+      assert.equal(form.includes('tray: ["eggs", "pieces", "other"]'), true);
       assert.equal(form.includes("How many do you have available?"), true);
       assert.equal(form.includes("Do buyers need to order at least a certain amount?"), true);
       assert.equal(form.includes("Your listing will show"), true);

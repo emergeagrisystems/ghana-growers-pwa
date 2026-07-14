@@ -10,9 +10,33 @@ import type { Product } from "@/types";
 const fieldClass = "gg-field min-h-11";
 const steps = ["Seller details", "Product details", "Price and quantity", "Availability", "Photos", "Review"] as const;
 const marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"] as const;
+const farmInputSubcategories = [
+  "Seeds & Seedlings",
+  "Fertilizers & Soil Inputs",
+  "Crop Protection",
+  "Animal Feed",
+  "Irrigation Supplies",
+  "Packaging & Storage",
+  "Other Farm Inputs"
+] as const;
+const marketplaceSubcategories: Partial<Record<typeof marketplacePathways[number], readonly string[]>> = {
+  "Fresh Produce": freshProduceSubcategories,
+  "Farm Inputs": farmInputSubcategories
+};
 const availabilityOptions = ["Available now", "Seasonal", "Ask availability", "Unavailable"];
 const frequencyOptions = ["One-time", "Weekly", "Monthly", "On request"];
 const sizeMeasureOptions = ["kg", "g", "tonnes", "litres", "gallons", "pieces", "eggs", "bottles", "bunches", "heads", "other"];
+const sizeMeasureOptionsByUnit: Record<string, string[]> = {
+  bag: ["kg", "g", "tonnes", "pieces", "other"],
+  basket: ["kg", "pieces", "bunches", "heads", "other"],
+  box: ["pieces", "bottles", "kg", "other"],
+  bunch: ["pieces", "heads", "kg", "other"],
+  carton: ["pieces", "bottles", "kg", "other"],
+  crate: ["bottles", "pieces", "kg", "litres", "other"],
+  sack: ["kg", "g", "tonnes", "pieces", "other"],
+  tray: ["eggs", "pieces", "other"],
+  other: [...sizeMeasureOptions]
+};
 
 type SellingChoice = {
   value: string;
@@ -97,7 +121,7 @@ const initialState: ListingFormState = {
   sellerType: "",
   productName: "",
   marketplacePathway: "Fresh Produce",
-  subcategory: "Vegetables",
+  subcategory: "",
   variety: "",
   description: "",
   gradeDescription: "",
@@ -155,7 +179,7 @@ export function SubmitProduceListingForm() {
       }
 
       if (key === "marketplacePathway") {
-        next.subcategory = value === "Fresh Produce" ? "Vegetables" : String(value);
+        next.subcategory = "";
       }
 
       if (key === "sellingUnit") {
@@ -326,17 +350,22 @@ function SellerStep({ values, update }: StepProps) {
 }
 
 function ProductStep({ values, update }: StepProps) {
+  const subcategoryOptions = subcategoryOptionsFor(values.marketplacePathway);
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <TextField label="Product/listing title" value={values.productName} onChange={(value) => update("productName", value)} placeholder="Example: Yellow maize, tomato crates, fertilizer" required />
-      <SelectField label="Main marketplace pathway" value={values.marketplacePathway} onChange={(value) => update("marketplacePathway", value)} options={[...marketplacePathways]} required />
-      <SelectField
-        label="Subcategory"
-        value={values.subcategory}
-        onChange={(value) => update("subcategory", value)}
-        options={values.marketplacePathway === "Fresh Produce" ? [...freshProduceSubcategories] : [values.marketplacePathway]}
-        required
-      />
+      <SelectField label="Category" value={values.marketplacePathway} onChange={(value) => update("marketplacePathway", value)} options={[...marketplacePathways]} required />
+      {subcategoryOptions.length ? (
+        <SelectField
+          label="Subcategory"
+          value={values.subcategory}
+          onChange={(value) => update("subcategory", value)}
+          options={subcategoryOptions}
+          required
+          placeholder="Select subcategory"
+        />
+      ) : null}
       <TextField label="Variety or product type" value={values.variety} onChange={(value) => update("variety", value)} placeholder="Optional, e.g. Obaatanpa maize" />
       <TextField label="Grade or quality notes" value={values.gradeDescription} onChange={(value) => update("gradeDescription", value)} placeholder="Optional, e.g. dried, sorted, mature" />
       <label className="grid gap-2 text-sm font-bold text-ink/75 md:col-span-2">
@@ -353,6 +382,7 @@ function ProductStep({ values, update }: StepProps) {
 function TradeStep({ values, update, calculatedTotal, onSellingChoice }: StepProps & { calculatedTotal: string; onSellingChoice: (choiceValue: string) => void }) {
   const selectedChoice = selectedSellingChoice(values);
   const unitLabel = displayUnitLabel(values);
+  const unitInsideOptions = sizeMeasureOptionsForChoice(selectedChoice);
   const usesDirectQuantity = isDirectQuantityValues(values);
   const quantityValue = usesDirectQuantity ? values.totalQuantityValue : values.unitsAvailable;
   const quantityChange = (value: string) => {
@@ -400,20 +430,20 @@ function TradeStep({ values, update, calculatedTotal, onSellingChoice }: StepPro
       {selectedChoice.needsSize ? (
         <>
           <TextField
-            label="Approximately how much or how many are in one?"
+            label={`Approximately how much or how many are in one ${unitLabel}?`}
             type="number"
             value={values.unitSizeValue}
             onChange={(value) => update("unitSizeValue", value)}
             placeholder={selectedChoice.sizeExample}
           />
           <SelectField
-            label="Measure inside one"
+            label="Unit inside one"
             value={values.unitSizeMeasure}
             onChange={(value) => {
               update("unitSizeMeasure", value);
               update("totalQuantityMeasure", value);
             }}
-            options={sizeMeasureOptions}
+            options={unitInsideOptions}
           />
           <Checkbox label="This amount is approximate" checked={values.unitSizeApproximate} onChange={(checked) => update("unitSizeApproximate", checked)} />
         </>
@@ -506,11 +536,12 @@ function ReviewStep({ values, photos, calculatedTotal, update }: StepProps & { p
   const sizeLine = tradeLines.find((line) => line.label === "Approximate size" || line.label === "Size per unit")?.value;
   const totalLine = tradeLines.find((line) => line.label === "Calculated total")?.value;
   const minimumOrder = tradeLines.find((line) => line.label === "Minimum order")?.value;
+  const categoryLabel = values.subcategory ? `${values.marketplacePathway} / ${values.subcategory}` : values.marketplacePathway;
   const rows = [
     ["Seller", values.farmBusinessName],
     ["Contact", values.contactPerson],
     ["Product", values.productName],
-    ["Category", `${values.marketplacePathway} / ${values.subcategory}`],
+    ["Category", categoryLabel],
     ["Selling format", displayUnitLabel(values)],
     ["Price", marketplacePriceLine(product)],
     ["Approximate size", sizeLine ?? "Not supplied"],
@@ -553,7 +584,8 @@ function validateStep(step: number, values: ListingFormState, mainImage: File | 
   }
 
   if (step === 1) {
-    return Boolean(values.productName && values.marketplacePathway && values.subcategory && values.description);
+    const subcategoryOptions = subcategoryOptionsFor(values.marketplacePathway);
+    return Boolean(values.productName && values.marketplacePathway && (!subcategoryOptions.length || values.subcategory) && values.description);
   }
 
   if (step === 2) {
@@ -576,6 +608,14 @@ function validateStep(step: number, values: ListingFormState, mainImage: File | 
 
 function selectedSellingChoice(values: ListingFormState) {
   return sellingChoices.find((choice) => choice.method === values.sellingMethod && choice.unit === values.sellingUnit) ?? sellingChoices[0];
+}
+
+function subcategoryOptionsFor(pathway: string) {
+  return [...(marketplaceSubcategories[pathway as typeof marketplacePathways[number]] ?? [])];
+}
+
+function sizeMeasureOptionsForChoice(choice: Pick<SellingChoice, "unit">) {
+  return sizeMeasureOptionsByUnit[choice.unit] ?? [...sizeMeasureOptions];
 }
 
 function isDirectQuantityChoice(choice: Pick<SellingChoice, "method" | "unit">) {
