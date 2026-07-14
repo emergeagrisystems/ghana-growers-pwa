@@ -252,29 +252,337 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     safetyRules: [decisionEngineSafetyRules[2]]
   },
   {
+    id: "when-should-i-harvest-maize",
+    question: "When should I harvest maize?",
+    intent: "harvest",
+    possibleCauses: ["Maize maturity is not confirmed", "Rain may affect drying", "Storage or drying plan is unknown"],
+    requiredInformation: {
+      crop: "Maize",
+      growthStage: "Maturity unknown",
+      recentWeather: "Rain risk if harvest is close",
+      farmPracticeContext: ["Harvest timing", "Drying", "Storage preparation"]
+    },
+    followUpQuestions: [
+      {
+        id: "maize-harvest-stage",
+        question: "What stage is the maize at?",
+        requiredForConfidence: true,
+        options: ["Cobs are still green", "Husks are drying", "Grains are hard", "I am not sure"]
+      },
+      {
+        id: "maize-rain-risk",
+        question: "Is rain likely before you can dry or store the maize?",
+        requiredForConfidence: false,
+        options: ["Yes, rain is likely", "No rain expected", "I am not sure"]
+      },
+      {
+        id: "maize-drying-plan",
+        question: "Do you have a clean dry place for the harvested maize?",
+        requiredForConfidence: true,
+        options: ["Yes, clean dry place", "No dry place ready", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Maize is safer to harvest when husks are dry and grains are hard, then dried properly before storage.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "maize-hard-grain",
+          observation: "Hard grains and drying husks show harvest readiness.",
+          interpretation: "Soft or green maize may not store well."
+        },
+        {
+          id: "maize-storage-risk",
+          observation: "Damp maize can mould in storage.",
+          interpretation: "Drying and clean storage matter before bagging."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Harvest maize when grains are hard and husks are dry; keep it off bare ground and dry it well before storage.",
+      guidance: [
+        "Check grain hardness before harvesting.",
+        "Do not bag damp maize.",
+        "Separate mouldy or insect-damaged cobs."
+      ],
+      nextBestAction: {
+        id: "check-maize-harvest-stage",
+        label: "Check maize stage",
+        instruction: "Check whether maize grains are hard and husks are drying before harvesting.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "tomatoes-ready-for-harvest",
+    question: "How do I know tomatoes are ready?",
+    intent: "harvest",
+    possibleCauses: ["Buyer ripeness preference is unknown", "Transport distance affects harvest stage", "Fruit firmness and colour need checking"],
+    requiredInformation: {
+      crop: "Tomato",
+      growthStage: "Harvest readiness",
+      farmPracticeContext: ["Maturity signs", "Sorting", "Transport quality"]
+    },
+    followUpQuestions: [
+      {
+        id: "tomato-ripeness-stage",
+        question: "What colour and firmness are the tomatoes?",
+        requiredForConfidence: true,
+        options: ["Firm-ripe", "Fully ripe", "Mostly green", "Mixed ripeness"]
+      },
+      {
+        id: "tomato-transport-distance",
+        question: "Will the tomatoes travel far before sale or use?",
+        requiredForConfidence: false,
+        options: ["Yes, long distance", "No, nearby", "I am not sure"]
+      },
+      {
+        id: "tomato-damage-check",
+        question: "Are any tomatoes cracked, soft or rotten?",
+        requiredForConfidence: true,
+        options: ["Many damaged", "Only a few damaged", "No clear damage"]
+      }
+    ],
+    recommendation: {
+      summary: "Tomatoes are ready when colour and firmness match the buyer need, but damaged fruit should be sorted out before packing.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "tomato-ripeness-purpose",
+          observation: "Fully ripe tomatoes bruise more easily during transport.",
+          interpretation: "Firm-ripe tomatoes are often safer for longer trips."
+        },
+        {
+          id: "tomato-damage-spread",
+          observation: "Rotten tomatoes can spoil good fruit nearby.",
+          interpretation: "Sorting protects quality and buyer trust."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Harvest tomatoes at the buyer-preferred ripeness, keep them shaded, and separate cracked, soft or rotten fruit.",
+      guidance: [
+        "Do not leave harvested tomatoes in hot sun.",
+        "Sort damaged fruit away from good fruit.",
+        "Use clean crates or shallow containers where possible."
+      ],
+      nextBestAction: {
+        id: "sort-tomato-ripeness",
+        label: "Sort tomatoes",
+        instruction: "Sort tomatoes by ripeness and remove damaged fruit before packing.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "store-cassava-after-harvest",
+    question: "How do I store cassava?",
+    intent: "harvest",
+    possibleCauses: ["Cassava may already be harvested", "Roots can deteriorate quickly", "Rot or damage may spread in a pile"],
+    requiredInformation: {
+      crop: "Cassava",
+      farmPracticeContext: ["Short-term storage", "Sorting", "Quality protection"]
+    },
+    followUpQuestions: [
+      {
+        id: "cassava-harvest-status",
+        question: "Has the cassava already been harvested?",
+        requiredForConfidence: true,
+        options: ["Yes, harvested today", "Yes, harvested yesterday or earlier", "Not harvested yet", "I am not sure"]
+      },
+      {
+        id: "cassava-damage-check",
+        question: "Do any roots look cut, soft, rotten or mouldy?",
+        requiredForConfidence: true,
+        options: ["Yes, damaged roots", "No clear damage", "I am not sure"]
+      },
+      {
+        id: "cassava-use-plan",
+        question: "Can the roots be used, processed or moved soon?",
+        requiredForConfidence: false,
+        options: ["Yes, soon", "No plan yet", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Cassava is best used, processed or sold soon after harvest, with damaged roots separated early.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "cassava-short-storage",
+          observation: "Cassava roots lose quality quickly after harvest.",
+          interpretation: "FarmMate should avoid promising long shelf life."
+        },
+        {
+          id: "cassava-rot-separation",
+          observation: "Soft or rotten roots can affect nearby good roots.",
+          interpretation: "Sorting protects the rest of the harvest."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Keep cassava roots shaded, use or move them soon, and separate any soft, rotten or mouldy roots from healthy roots.",
+      guidance: [
+        "Do not leave harvested roots in hot sun.",
+        "Do not mix rotten or mouldy roots with healthy roots.",
+        "Contact an extension officer or food safety expert if serious rot or contamination is visible."
+      ],
+      nextBestAction: {
+        id: "sort-cassava-roots",
+        label: "Sort cassava roots",
+        instruction: "Separate damaged cassava roots and keep good roots shaded for quick use or movement.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "reduce-post-harvest-losses",
+    question: "How do I reduce losses after harvest?",
+    intent: "harvest",
+    possibleCauses: ["Heat exposure", "Rough handling", "Damaged produce mixed with good produce", "Poor ventilation"],
+    requiredInformation: {
+      farmPracticeContext: ["Loss reduction", "Sorting", "Storage and transport"]
+    },
+    followUpQuestions: [
+      {
+        id: "loss-reduction-produce",
+        question: "Which produce are you handling?",
+        requiredForConfidence: true,
+        options: ["Vegetables", "Roots or tubers", "Grains", "I am not sure"]
+      },
+      {
+        id: "loss-reduction-damage",
+        question: "Do you see rotten, mouldy, bruised or broken produce?",
+        requiredForConfidence: true,
+        options: ["Yes, many", "Only a few", "No clear damage"]
+      },
+      {
+        id: "loss-reduction-storage",
+        question: "Will the produce be stored, transported or sold soon?",
+        requiredForConfidence: false,
+        options: ["Stored", "Transported", "Sold soon", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Most post-harvest loss reduction starts with shade, gentle handling, sorting and clean ventilated containers.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "heat-loss-risk",
+          observation: "Hot sun can reduce freshness after harvest.",
+          interpretation: "Shade protects produce quality."
+        },
+        {
+          id: "damage-loss-risk",
+          observation: "Damaged or rotten produce can reduce the quality of the whole lot.",
+          interpretation: "Sorting early protects buyer trust."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Move produce into shade, sort damaged produce away, and use clean crates or containers with ventilation where possible.",
+      guidance: [
+        "Do not leave harvested produce in hot sun.",
+        "Do not pack wet produce tightly.",
+        "Separate rotten or mouldy produce from healthy produce."
+      ],
+      nextBestAction: {
+        id: "shade-and-sort-produce",
+        label: "Shade and sort",
+        instruction: "Move harvested produce into shade and separate damaged produce from good produce.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "pack-vegetables-for-transport",
+    question: "How do I pack vegetables for transport?",
+    intent: "harvest",
+    possibleCauses: ["Ripeness is unknown", "Containers may be too deep or dirty", "Wet produce may spoil faster"],
+    requiredInformation: {
+      farmPracticeContext: ["Transport preparation", "Packing", "Quality protection"]
+    },
+    followUpQuestions: [
+      {
+        id: "tomato-transport-ripeness",
+        question: "Are the tomatoes fully ripe or firm-ripe?",
+        requiredForConfidence: true,
+        options: ["Fully ripe", "Firm-ripe", "Mixed ripeness", "I am not sure"]
+      },
+      {
+        id: "vegetable-transport-container",
+        question: "What container will you use for transport?",
+        requiredForConfidence: true,
+        options: ["Clean crates", "Sacks or bags", "Mixed containers", "I am not sure"]
+      },
+      {
+        id: "vegetable-transport-wetness",
+        question: "Is the produce dry or wet now?",
+        requiredForConfidence: false,
+        options: ["Dry", "Wet", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Vegetables should be sorted, shaded and packed in clean containers that reduce bruising and allow airflow.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "transport-ripeness-risk",
+          observation: "Fully ripe vegetables bruise more easily during transport.",
+          interpretation: "Ripeness should guide packing and travel distance."
+        },
+        {
+          id: "transport-wetness-risk",
+          observation: "Wet produce packed tightly can spoil faster.",
+          interpretation: "Ventilation and gentle packing protect quality."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Sort damaged produce away, keep vegetables shaded, and pack gently in clean crates or clean ventilated containers where possible.",
+      guidance: [
+        "Do not pack wet produce tightly.",
+        "Do not mix rotten produce with healthy produce.",
+        "Use clean crates or clean containers where possible."
+      ],
+      nextBestAction: {
+        id: "sort-before-transport",
+        label: "Sort before transport",
+        instruction: "Sort damaged vegetables away before packing for transport.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
     id: "harvest-before-rain",
     question: "Can I harvest before rain?",
-    intent: "weather-decisions",
+    intent: "harvest",
     possibleCauses: ["Rain may damage mature produce", "Produce may spoil if harvested wet", "Crop may not be mature enough"],
     requiredInformation: {
+      crop: "Unknown",
       recentWeather: "Rain expectation needed",
       farmPracticeContext: ["Harvest before rain", "Post-harvest loss prevention"]
     },
     followUpQuestions: [
       {
-        id: "weather-rain-expectation",
+        id: "harvest-before-rain-crop",
+        question: "Which crop or produce are you harvesting?",
+        requiredForConfidence: true,
+        options: ["Vegetables", "Roots or tubers", "Grains", "I am not sure"]
+      },
+      {
+        id: "harvest-rain-expectation",
         question: "Is heavy rain expected soon?",
         requiredForConfidence: true,
         options: ["Yes, heavy rain is expected", "No heavy rain expected", "I am not sure"]
       },
       {
-        id: "weather-harvest-maturity",
+        id: "harvest-maturity-check",
         question: "Is the produce mature enough to harvest?",
         requiredForConfidence: true,
         options: ["Mature and ready", "Not fully ready", "I am not sure"]
       },
       {
-        id: "weather-harvest-storage",
+        id: "harvest-storage-check",
         question: "Can you keep the harvested produce dry and shaded?",
         requiredForConfidence: false,
         options: ["Yes, I can keep it dry", "No dry place available", "I am not sure"]

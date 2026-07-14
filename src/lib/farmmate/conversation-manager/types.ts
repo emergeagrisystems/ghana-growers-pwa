@@ -5,6 +5,7 @@ export type ConversationTopic =
   | "marketplace_info"
   | "fertilizer"
   | "weather_decision"
+  | "harvest_postharvest"
   | "planting"
   | "harvest"
   | "crop_doctor"

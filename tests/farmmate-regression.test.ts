@@ -63,6 +63,7 @@ import {
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import { plantingAdvisorCrops, plantingAdvisorReasoningOrder } from "../src/lib/farmmate/planting-advisor-specialist";
+import { harvestPostHarvestCrops, harvestPostHarvestReasoningOrder } from "../src/lib/farmmate/harvest-postharvest-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
   buildCropDoctorAskFarmMatePrompt,
@@ -1805,23 +1806,24 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "harvest before rain routes to weather decision",
+    name: "harvest before rain routes to harvest post-harvest specialist",
     run: () => {
       const router = routeFarmMateQuestion("Can I harvest before rain?");
       const response = buildFarmMateResponse("Can I harvest before rain?", router);
 
-      assert.equal(router.selectedSpecialist, "weather_decision");
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
       assert.equal(response.flow?.id, "harvest-before-rain");
+      assert.equal(response.flow?.intent, "harvest");
     }
   },
   {
-    name: "dry produce outside routes to weather decision",
+    name: "dry produce outside routes to harvest post-harvest specialist",
     run: () => {
       const router = routeFarmMateQuestion("Can I dry produce outside?");
       const response = buildFarmMateResponse("Can I dry produce outside?", router);
 
-      assert.equal(router.selectedSpecialist, "weather_decision");
-      assert.equal(response.flow?.id, "dry-produce-outside");
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
+      assert.equal(response.flow?.id, "reduce-post-harvest-losses");
     }
   },
   {
@@ -1987,9 +1989,9 @@ const tests: TestCase[] = [
   {
     name: "weather recommendation includes one next best action",
     run: () => {
-      const response = buildFarmMateResponse("Can I harvest before rain?", routeFarmMateQuestion("Can I harvest before rain?"));
+      const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));
 
-      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Harvest mature produce first if heavy rain may damage it.");
+      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Confirm no rain is expected for 4 to 6 hours and that wind is calm before spraying.");
       assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
     }
   },
@@ -2034,6 +2036,171 @@ const tests: TestCase[] = [
         ].every((task) => tasks.includes(task as (typeof tasks)[number])),
         true
       );
+    }
+  },
+  {
+    name: "harvest specialist follows required reasoning journey",
+    run: () => {
+      assert.deepEqual(harvestPostHarvestReasoningOrder, [
+        "crop",
+        "growth-or-maturity-signs",
+        "weather-or-rain-risk",
+        "storage-or-transport-plan",
+        "quality-risk",
+        "recommendation",
+        "next-best-action"
+      ]);
+    }
+  },
+  {
+    name: "harvest specialist includes required crop guidance",
+    run: () => {
+      const requiredCrops = ["Maize", "Tomato", "Pepper", "Cassava", "Yam", "Plantain", "Onion", "Okra", "Cucumber", "Garden eggs"];
+
+      assert.equal(harvestPostHarvestCrops.length >= 10, true);
+      for (const crop of requiredCrops) {
+        const guidance = harvestPostHarvestCrops.find((item) => item.crop === crop);
+
+        assert.equal(Boolean(guidance), true);
+        assert.equal(Boolean(guidance?.harvestIndicators.length), true);
+        assert.equal(Boolean(guidance?.handlingTips.length), true);
+        assert.equal(Boolean(guidance?.sortingAndGradingBasics.length), true);
+        assert.equal(Boolean(guidance?.shortTermStorageGuidance.length), true);
+        assert.equal(Boolean(guidance?.nextBestAction), true);
+      }
+    }
+  },
+  {
+    name: "when should I harvest maize routes to harvest post-harvest",
+    run: () => {
+      const router = routeFarmMateQuestion("When should I harvest maize?");
+      const response = buildFarmMateResponse("When should I harvest maize?", router);
+
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
+      assert.equal(response.flow?.id, "when-should-i-harvest-maize");
+      assert.equal(response.resolvedCrop, "Maize");
+    }
+  },
+  {
+    name: "tomato readiness routes to harvest post-harvest",
+    run: () => {
+      const router = routeFarmMateQuestion("How do I know tomatoes are ready?");
+      const response = buildFarmMateResponse("How do I know tomatoes are ready?", router);
+
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
+      assert.equal(response.flow?.id, "tomatoes-ready-for-harvest");
+      assert.equal(response.resolvedCrop, "Tomato");
+    }
+  },
+  {
+    name: "cassava storage routes to harvest post-harvest",
+    run: () => {
+      const router = routeFarmMateQuestion("How do I store cassava?");
+      const response = buildFarmMateResponse("How do I store cassava?", router);
+
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
+      assert.equal(response.flow?.id, "store-cassava-after-harvest");
+      assert.equal(response.resolvedCrop, "Cassava");
+    }
+  },
+  {
+    name: "vegetable transport routes to harvest post-harvest",
+    run: () => {
+      const router = routeFarmMateQuestion("How do I pack vegetables for transport?");
+      const response = buildFarmMateResponse("How do I pack vegetables for transport?", router);
+
+      assert.equal(router.selectedSpecialist, "harvest_postharvest");
+      assert.equal(response.flow?.id, "pack-vegetables-for-transport");
+    }
+  },
+  {
+    name: "harvest flow asks maturity stage first when missing",
+    run: () => {
+      const response = buildFarmMateResponse("When should I harvest maize?", routeFarmMateQuestion("When should I harvest maize?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What stage is the maize at?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Cobs are still green", "Husks are drying", "Grains are hard", "I am not sure"]);
+    }
+  },
+  {
+    name: "storage flow asks whether produce is already harvested",
+    run: () => {
+      const response = buildFarmMateResponse("How do I store cassava?", routeFarmMateQuestion("How do I store cassava?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Has the cassava already been harvested?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, harvested today", "Yes, harvested yesterday or earlier", "Not harvested yet", "I am not sure"]);
+    }
+  },
+  {
+    name: "tomato transport flow asks ripeness stage",
+    run: () => {
+      const response = buildFarmMateResponse("How do I pack tomatoes for transport?", routeFarmMateQuestion("How do I pack tomatoes for transport?"));
+
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "Are the tomatoes fully ripe or firm-ripe?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Fully ripe", "Firm-ripe", "Mixed ripeness", "I am not sure"]);
+    }
+  },
+  {
+    name: "harvest advice warns against leaving produce in hot sun",
+    run: () => {
+      const response = buildFarmMateResponse("How do I reduce losses after harvest?", routeFarmMateQuestion("How do I reduce losses after harvest?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("hot sun"), true);
+      assert.equal(text.includes("shade"), true);
+    }
+  },
+  {
+    name: "storage advice warns against mixing rotten produce with healthy produce",
+    run: () => {
+      const response = buildFarmMateResponse("How do I store cassava?", routeFarmMateQuestion("How do I store cassava?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("rotten"), true);
+      assert.equal(text.includes("healthy roots"), true);
+    }
+  },
+  {
+    name: "harvest advice does not invent market prices or buyers",
+    run: () => {
+      const response = buildFarmMateResponse("How do I reduce losses after harvest?", routeFarmMateQuestion("How do I reduce losses after harvest?"));
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(text.includes("market price"), false);
+      assert.equal(text.includes("buyer is available"), false);
+      assert.equal(text.includes("guaranteed sales"), false);
+      assert.equal(text.includes("guaranteed shelf life"), false);
+    }
+  },
+  {
+    name: "harvest recommendation includes one next best action",
+    run: () => {
+      const response = buildFarmMateResponse("When should I harvest maize?", routeFarmMateQuestion("When should I harvest maize?"));
+
+      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Check whether maize grains are hard and husks are drying before harvesting.");
+      assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
+    }
+  },
+  {
+    name: "OpenAI payload includes harvest post-harvest specialist context",
+    run: () => {
+      const farmerQuestion = "When should I harvest maize?";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion,
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; crop?: string; noMarketRule?: string; harvestIndicators?: string[] } };
+
+      assert.equal(payload.selectedSpecialist, "harvest_postharvest");
+      assert.equal(payload.specialistContext?.specialist, "harvest_postharvest");
+      assert.equal(payload.specialistContext?.crop, "Maize");
+      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
+      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("guaranteed shelf life"), true);
+      assert.equal(payload.specialistContext?.harvestIndicators?.some((line) => line.toLowerCase().includes("husks")), true);
     }
   },
   {

@@ -22,7 +22,12 @@ const topicRules: TopicRule[] = [
   {
     topic: "weather_decision",
     specialist: "weather_decision",
-    keywords: ["spray", "spraying", "rain", "rainfall", "wind", "windy", "weather", "irrigate", "irrigation", "water today", "wet leaves", "dry leaves", "heavy rain", "harvest before rain", "dry produce", "fertilize before rain", "fertilise before rain", "apply fertilizer before rain", "apply fertiliser before rain"]
+    keywords: ["spray", "spraying", "rain", "rainfall", "wind", "windy", "weather", "irrigate", "irrigation", "water today", "wet leaves", "dry leaves", "heavy rain", "fertilize before rain", "fertilise before rain", "apply fertilizer before rain", "apply fertiliser before rain"]
+  },
+  {
+    topic: "harvest_postharvest",
+    specialist: "harvest_postharvest",
+    keywords: ["harvest", "harvesting", "harvest before rain", "ready to harvest", "ready", "mature", "maturity", "store", "storage", "keep fresh", "transport", "pack", "packing", "sort", "sorting", "grade", "grading", "dry maize", "drying", "dry produce", "post harvest", "post-harvest", "spoil", "rotten", "mould", "mold", "shelf life", "losses after harvest", "reduce losses"]
   },
   {
     topic: "planting",
@@ -45,8 +50,8 @@ const topicRules: TopicRule[] = [
   },
   {
     topic: "harvest",
-    specialist: "general_farming",
-    keywords: ["harvest", "ready", "maturity", "ripe", "pick"]
+    specialist: "harvest_postharvest",
+    keywords: ["pick"]
   },
   {
     topic: "crop_doctor",

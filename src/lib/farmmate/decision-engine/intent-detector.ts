@@ -38,7 +38,7 @@ const intentKeywords: Array<{
   {
     intent: "harvest",
     label: "harvest",
-    keywords: ["harvest", "pick", "ready", "mature", "ripe"]
+    keywords: ["harvest", "harvesting", "pick", "ready", "mature", "maturity", "ripe", "store", "storage", "keep fresh", "transport", "pack", "packing", "sort", "sorting", "grading", "drying", "post harvest", "post-harvest", "spoil", "rotten", "mould", "shelf life"]
   },
   {
     intent: "crop-planning",

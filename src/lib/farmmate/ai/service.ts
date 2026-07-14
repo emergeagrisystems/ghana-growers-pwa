@@ -2,6 +2,7 @@ import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
 import { findFertilizerGuidance } from "../fertilizer-specialist";
 import { findPlantingAdvisorGuidance } from "../planting-advisor-specialist";
+import { findHarvestPostHarvestGuidance } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherTaskFromQuestion } from "../weather-decision-specialist";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -66,6 +67,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "planting" || input.brain.flow?.intent === "planting"
       ? findPlantingAdvisorGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
       : null;
+  const harvestPostHarvestContext =
+    input.brain.routerResult?.selectedSpecialist === "harvest_postharvest" || input.brain.flow?.intent === "harvest"
+      ? findHarvestPostHarvestGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
+      : null;
   const payload = {
     instruction:
       "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
@@ -111,6 +116,25 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           noLiveWeatherRule: "Do not invent exact local weather or forecast details. Use farmer-provided rain, irrigation and soil context only.",
           noMarketRule: "Do not invent seed availability, market prices, guaranteed profit or guaranteed yield."
         }
+      : harvestPostHarvestContext
+      ? {
+          specialist: "harvest_postharvest",
+          crop: harvestPostHarvestContext.crop,
+          harvestIndicators: harvestPostHarvestContext.harvestIndicators,
+          signsNotReady: harvestPostHarvestContext.signsNotReady,
+          bestHarvestTimeOfDay: harvestPostHarvestContext.bestHarvestTimeOfDay,
+          handlingTips: harvestPostHarvestContext.handlingTips,
+          sortingAndGradingBasics: harvestPostHarvestContext.sortingAndGradingBasics,
+          shortTermStorageGuidance: harvestPostHarvestContext.shortTermStorageGuidance,
+          transportPreparation: harvestPostHarvestContext.transportPreparation,
+          commonPostHarvestMistakes: harvestPostHarvestContext.commonPostHarvestMistakes,
+          qualityProtectionTips: harvestPostHarvestContext.qualityProtectionTips,
+          whenToHarvestBeforeRain: harvestPostHarvestContext.whenToHarvestBeforeRain,
+          whenToDelayHarvest: harvestPostHarvestContext.whenToDelayHarvest,
+          nextBestAction: harvestPostHarvestContext.nextBestAction,
+          noMarketRule: "Do not invent market prices, buyer availability, guaranteed sales or guaranteed shelf life.",
+          foodSafetyRule: "Do not make food safety claims beyond the provided context. Recommend extension officer or food safety expert support for serious rot, mould or contamination."
+        }
       : null,
     decisionFlow: input.brain.flow ?? null,
     farmerAnswers: input.farmerAnswers,
@@ -128,6 +152,8 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For rain expected answers, say: \"Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.\"",
       "For clear spray conditions, say: \"Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.\"",
       "For planting decisions, do not invent exact local weather, seed availability, market prices, guaranteed profit, or guaranteed yield.",
+      "For harvest and post-harvest decisions, do not invent market prices, buyer availability, guaranteed sales, or guaranteed shelf life.",
+      "For harvest and post-harvest decisions, protect quality with shade, sorting, ventilation and clean containers where possible.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",
       "End with exactly one clear next step."

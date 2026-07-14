@@ -14,7 +14,12 @@ export const farmMateSpecialists: FarmMateSpecialistProfile[] = [
   {
     specialist: "weather_decision",
     title: "Weather Decision",
-    description: "Handles spraying, planting, harvesting and irrigation decisions affected by weather."
+    description: "Handles spraying, planting and irrigation decisions affected by weather."
+  },
+  {
+    specialist: "harvest_postharvest",
+    title: "Harvest and Post-Harvest",
+    description: "Handles harvest timing, maturity signs, sorting, storage, transport, drying and produce quality."
   },
   {
     specialist: "planting",

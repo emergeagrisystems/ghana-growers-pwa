@@ -6,6 +6,7 @@ import { farmMatePests } from "../pests";
 import { assessPlantHealthQuestion, PlantHealthAssessment } from "../plant-health-specialist";
 import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertilizer-specialist";
 import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantingAdvisorQuestionType } from "../planting-advisor-specialist";
+import { findHarvestPostHarvestGuidance, harvestPostHarvestOpeningForQuestion, harvestPostHarvestQuestionType } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
@@ -47,6 +48,7 @@ const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
   crop_health: "crop-health",
   pest_disease: "diseases",
   weather_decision: "weather-decisions",
+  harvest_postharvest: "harvest",
   planting: "planting",
   fertilizer: "fertilizer",
   sustainability: "crop-planning",
@@ -123,6 +125,32 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
     if (weatherTask === "planting-before-rain") {
       return farmMateDecisionFlows.find((flow) => flow.id === "planting-before-rain");
     }
+  }
+
+  if (selectedSpecialist === "harvest_postharvest") {
+    const harvestQuestionType = harvestPostHarvestQuestionType(question);
+
+    if (harvestQuestionType === "maize-harvest") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "when-should-i-harvest-maize");
+    }
+
+    if (harvestQuestionType === "tomato-readiness") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "tomatoes-ready-for-harvest");
+    }
+
+    if (harvestQuestionType === "cassava-storage") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "store-cassava-after-harvest");
+    }
+
+    if (harvestQuestionType === "vegetable-transport") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "pack-vegetables-for-transport");
+    }
+
+    if (harvestQuestionType === "harvest-before-rain") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "harvest-before-rain");
+    }
+
+    return farmMateDecisionFlows.find((flow) => flow.id === "reduce-post-harvest-losses");
   }
 
   if (selectedSpecialist === "planting") {
@@ -450,6 +478,27 @@ function plantingContextLines(flow: DecisionFlow | undefined, resolvedCrop?: str
   ];
 }
 
+function harvestPostHarvestContextLines(flow: DecisionFlow | undefined, resolvedCrop?: string) {
+  if (!flow || flow.intent !== "harvest") {
+    return [];
+  }
+
+  const guidance = findHarvestPostHarvestGuidance(resolvedCrop ?? flow.requiredInformation.crop);
+
+  if (!guidance) {
+    return [
+      "Harvest and post-harvest advice needs crop, maturity signs, weather risk, storage or transport plan and quality risk.",
+      "Share the crop and handling plan so FarmMate can protect quality without guessing."
+    ];
+  }
+
+  return [
+    `Harvest indicators: ${guidance.harvestIndicators.slice(0, 2).join("; ")}.`,
+    `Handling: ${guidance.handlingTips.slice(0, 2).join("; ")}.`,
+    `Quality protection: ${guidance.qualityProtectionTips.slice(0, 2).join("; ")}.`
+  ];
+}
+
 function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   return {
     id: "local-fallback",
@@ -516,9 +565,11 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const isFertilizerFlow = flow.intent === "fertilizer";
   const isWeatherFlow = flow.intent === "weather-decisions";
   const isPlantingFlow = flow.intent === "planting";
+  const isHarvestFlow = flow.intent === "harvest";
   const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
   const weatherContext = weatherContextLines(question, flow);
   const plantingContext = plantingContextLines(flow, resolvedCrop);
+  const harvestPostHarvestContext = harvestPostHarvestContextLines(flow, resolvedCrop);
 
   return {
     intent,
@@ -536,10 +587,13 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
           ...(isFertilizerFlow ? [fertilizerOpeningForQuestion(question)] : []),
           ...(isWeatherFlow ? [weatherOpeningForQuestion(question)] : []),
           ...(isPlantingFlow ? [plantingAdvisorOpeningForQuestion(question)] : []),
+          ...(isHarvestFlow ? [harvestPostHarvestOpeningForQuestion(question)] : []),
           flow.recommendation.summary,
           isLowerConfidence
             ? isPlantingFlow
               ? "I need a little more planting context before giving firm timing advice."
+              : isHarvestFlow
+              ? "I need a little more harvest or handling context before giving firm timing advice."
               : "I am not fully certain yet, so I will ask a few checks before suggesting treatment."
             : isWeatherFlow
             ? "Use the farmer's own rain, wind and field checks before acting."
@@ -548,7 +602,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "Why this may happen",
-        body: (weatherContext.length ? weatherContext : fertilizerContext.length ? fertilizerContext : plantingContext.length ? plantingContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
+        body: (weatherContext.length ? weatherContext : fertilizerContext.length ? fertilizerContext : plantingContext.length ? plantingContext : harvestPostHarvestContext.length ? harvestPostHarvestContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "What to check",
@@ -563,6 +617,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
           ...(isWeatherFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isFertilizerFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isPlantingFlow ? flow.recommendation.guidance.slice(0, 2) : []),
+          ...(isHarvestFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(shouldRecommendExtension ? ["If the problem is spreading quickly, speak with a local extension officer for field-specific help."] : []),
           ...(photoWouldHelp ? ["A clear crop photo will help FarmMate avoid guessing."] : []),
           ...(chemicalGuardrail ? [chemicalGuardrail.responseGuidance] : [])
@@ -570,12 +625,18 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "Prevention",
-        body: [
-          "Prevention: reduce avoidable stress before the problem spreads.",
-          "Good farming practice: keep spacing, watering and field hygiene steady.",
-          ...(knowledge.prevention.length ? knowledge.prevention.slice(0, 1) : ["Natural or low-cost option: mulch, scout regularly and remove badly affected plant material where appropriate."]),
-          "Chemical solution: only consider this when appropriate, and follow the label or extension guidance."
-        ].map(farmerSafeLine)
+        body: (isHarvestFlow
+          ? [
+              "Quality protection: reduce post-harvest losses with shade, sorting and gentle handling.",
+              "Good handling: keep clean containers ready and separate damaged produce early.",
+              "Food safety: contact an extension officer or food safety expert for serious rot, mould or contamination."
+            ]
+          : [
+              "Prevention: reduce avoidable stress before the problem spreads.",
+              "Good farming practice: keep spacing, watering and field hygiene steady.",
+              ...(knowledge.prevention.length ? knowledge.prevention.slice(0, 1) : ["Natural or low-cost option: mulch, scout regularly and remove badly affected plant material where appropriate."]),
+              "Chemical solution: only consider this when appropriate, and follow the label or extension guidance."
+            ]).map(farmerSafeLine)
       },
       {
         title: "Next Best Action",

@@ -2,6 +2,7 @@ export type FarmMateSpecialist =
   | "crop_health"
   | "pest_disease"
   | "weather_decision"
+  | "harvest_postharvest"
   | "planting"
   | "fertilizer"
   | "crop_doctor"
