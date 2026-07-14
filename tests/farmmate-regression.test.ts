@@ -220,6 +220,7 @@ function marketplaceProductFixture(overrides: Partial<Product> = {}): Product {
     gradeDescription: overrides.gradeDescription,
     deliveryDetails: overrides.deliveryDetails,
     recordSource: overrides.recordSource,
+    sourceSubmissionId: overrides.sourceSubmissionId,
     image: overrides.image ?? "/images/marketplace/fresh-tomatoes.jpg",
     images: overrides.images,
     available: overrides.available ?? "Available Now",
@@ -509,6 +510,9 @@ const tests: TestCase[] = [
       assert.equal(migration.includes("listing_submissions_phone_idx"), true);
       assert.equal(migration.includes("listing_submissions_dedupe_open_idx"), true);
       assert.equal(migration.includes("marketplace_listings_source_submission_idx"), true);
+      assert.equal(migration.includes("where source_submission_id = p_submission_id"), true);
+      assert.equal(migration.includes("or (v_submission.published_listing_id is not null and id = v_submission.published_listing_id)"), true);
+      assert.equal(migration.includes("'reused', true"), true);
       assert.equal(migration.includes("revoke all on table public.listing_submissions from anon"), true);
       assert.equal(migration.includes("grant insert ("), true);
       assert.equal(anonGrant.includes("status_history"), false);
@@ -1008,6 +1012,107 @@ const tests: TestCase[] = [
       );
 
       assert.deepEqual(listings.map((listing) => listing.product.id), ["active"]);
+    }
+  },
+  {
+    name: "Published public listing submission appears without matched farmer profile",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "okra-public-submission",
+            name: "Okra",
+            category: "Vegetables",
+            location: "Kumasi",
+            region: "Ashanti Region",
+            seller: "Okra Seller Farm",
+            ownerName: "Okra Seller Farm",
+            ownerType: "Farmer",
+            farmerSlug: "okra-seller-farm",
+            recordSource: "public_submission",
+            sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+            status: "Active",
+            whatsappNumber: "233555123456",
+            internalOperationsNotes: "Private admin note"
+          })
+        ],
+        [],
+        []
+      );
+
+      assert.equal(listings.length, 1);
+      assert.equal(listings[0].title, "Okra");
+      assert.equal(listings[0].seller.kind, "submission");
+      assert.equal(listings[0].sellerName, "Okra Seller Farm");
+      assert.equal(listings[0].product.sourceSubmissionId, "6da0f5fc-0307-438f-bc0e-e9da83949d83");
+      assert.equal(listings[0].product.whatsappNumber, undefined);
+      assert.equal(listings[0].product.internalOperationsNotes, undefined);
+    }
+  },
+  {
+    name: "Public listing submission remains single and idempotent in public payload",
+    run: () => {
+      const products = [
+        marketplaceProductFixture({
+          id: "okra-public-submission",
+          name: "Okra",
+          category: "Vegetables",
+          location: "Kumasi",
+          region: "Ashanti Region",
+          seller: "Okra Seller Farm",
+          ownerName: "Okra Seller Farm",
+          ownerType: "Farmer",
+          recordSource: "public_submission",
+          sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          status: "Active"
+        }),
+        marketplaceProductFixture({
+          id: "okra-public-submission-duplicate",
+          name: "Okra",
+          category: "Vegetables",
+          location: "Kumasi",
+          region: "Ashanti Region",
+          seller: "Okra Seller Farm",
+          ownerName: "Okra Seller Farm",
+          ownerType: "Farmer",
+          recordSource: "public_submission",
+          sourceSubmissionId: "6da0f5fc-0307-438f-bc0e-e9da83949d83",
+          status: "Active"
+        })
+      ];
+      const listings = publicMarketplaceListings(products, [], []);
+
+      assert.equal(listings.length, 1);
+      assert.deepEqual(listings.map((listing) => listing.title), ["Okra"]);
+    }
+  },
+  {
+    name: "Pending and under-review listing submissions remain private",
+    run: () => {
+      const listings = publicMarketplaceListings(
+        [
+          marketplaceProductFixture({
+            id: "okra-new-submission",
+            name: "Okra",
+            recordSource: "public_submission",
+            sourceSubmissionId: "new-submission",
+            status: "New",
+            ownerName: "New Seller Farm"
+          }),
+          marketplaceProductFixture({
+            id: "okra-under-review-submission",
+            name: "Okra",
+            recordSource: "public_submission",
+            sourceSubmissionId: "under-review-submission",
+            status: "Under Review",
+            ownerName: "Review Seller Farm"
+          })
+        ],
+        [],
+        []
+      );
+
+      assert.deepEqual(listings, []);
     }
   },
   {

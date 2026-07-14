@@ -9,7 +9,8 @@ export const MARKETPLACE_LISTINGS_PER_PAGE = 12;
 
 export type MarketplaceSeller =
   | { kind: "farmer"; profile: FarmerProfile }
-  | { kind: "supplier"; profile: SupplierProfile };
+  | { kind: "supplier"; profile: SupplierProfile }
+  | { kind: "submission"; sellerType: "Farmer" | "Supplier"; sellerName: string; location: string; verificationStatus?: string };
 
 export type MarketplaceDisplayListing = {
   product: Product;
@@ -196,6 +197,24 @@ export function isDemoMarketplaceListing(product: Product, seller?: MarketplaceS
   return demoSourcePattern.test(searchable) || knownDemoSellerPattern.test(searchable);
 }
 
+function isPublishedPublicSubmissionListing(product: Product) {
+  return Boolean((product.sourceSubmissionId || product.recordSource === "public_submission") && (product.seller || product.ownerName));
+}
+
+function publicSubmissionSeller(product: Product): MarketplaceSeller | undefined {
+  if (!isPublishedPublicSubmissionListing(product)) {
+    return undefined;
+  }
+
+  return {
+    kind: "submission",
+    sellerType: product.ownerType === "Supplier" ? "Supplier" : "Farmer",
+    sellerName: titleCaseMarketplaceValue(product.ownerName || product.seller),
+    location: formatMarketplaceLocation(product.location, product.region),
+    verificationStatus: product.verificationStatus
+  };
+}
+
 export function findMarketplaceSeller(product: Product, farmers: FarmerProfile[], suppliers: SupplierProfile[]): MarketplaceSeller | undefined {
   const publicFarmers = farmers.filter(isPublicFarmerProfile);
   const publicSuppliers = suppliers.filter(isMarketplaceSupplierPublic);
@@ -207,7 +226,7 @@ export function findMarketplaceSeller(product: Product, farmers: FarmerProfile[]
 
   if (product.ownerType === "Supplier") {
     const supplier = (product.ownerId ? supplierById.get(product.ownerId) : undefined) ?? supplierBySlug.get(ownerSlug);
-    return supplier ? { kind: "supplier", profile: supplier } : undefined;
+    return supplier ? { kind: "supplier", profile: supplier } : publicSubmissionSeller(product);
   }
 
   const farmer =
@@ -221,10 +240,10 @@ export function findMarketplaceSeller(product: Product, farmers: FarmerProfile[]
 
   if (!product.ownerType) {
     const supplier = supplierBySlug.get(ownerSlug);
-    return supplier ? { kind: "supplier", profile: supplier } : undefined;
+    return supplier ? { kind: "supplier", profile: supplier } : publicSubmissionSeller(product);
   }
 
-  return undefined;
+  return publicSubmissionSeller(product);
 }
 
 function listingDuplicateKey(listing: MarketplaceDisplayListing) {
@@ -264,15 +283,20 @@ function publicMarketplaceDescription(product: Product, sellerName: string, loca
 }
 
 export function toMarketplaceDisplayListing(product: Product, seller: MarketplaceSeller): MarketplaceDisplayListing {
-  const sellerName = titleCaseMarketplaceValue(seller.kind === "farmer" ? seller.profile.farmName : seller.profile.companyName);
+  const sellerName = titleCaseMarketplaceValue(
+    seller.kind === "farmer" ? seller.profile.farmName : seller.kind === "supplier" ? seller.profile.companyName : seller.sellerName
+  );
   const location = seller.kind === "farmer"
     ? formatMarketplaceLocation(seller.profile.district, seller.profile.region)
-    : cleanSupplierLocation(seller.profile);
+    : seller.kind === "supplier"
+      ? cleanSupplierLocation(seller.profile)
+      : seller.location;
   const availability = marketplaceAvailability(product.available);
   const supplyFrequency = marketplaceSupplyFrequency(product.supplyFrequency) ?? marketplaceSupplyFrequency(product.available);
   const displayCategory = displayMarketplaceCategory(product);
   const title = normalizePublicMarketplaceProductName(product.name);
   const description = publicMarketplaceDescription(product, sellerName, location);
+  const isPublicSubmission = isPublishedPublicSubmissionListing(product);
 
   return {
     product: {
@@ -283,7 +307,9 @@ export function toMarketplaceDisplayListing(product: Product, seller: Marketplac
       region: titleCaseMarketplaceValue(product.region),
       seller: sellerName,
       ownerName: sellerName,
-      description
+      description,
+      whatsappNumber: isPublicSubmission ? undefined : product.whatsappNumber,
+      internalOperationsNotes: isPublicSubmission ? undefined : product.internalOperationsNotes
     },
     seller,
     href: `/marketplace/${encodeURIComponent(product.id)}`,
@@ -297,7 +323,9 @@ export function toMarketplaceDisplayListing(product: Product, seller: Marketplac
     supplyFrequency,
     isSellerVerified: seller.kind === "farmer"
       ? seller.profile.verificationStatus === "Verified" || seller.profile.trust?.status === "Verified"
-      : seller.profile.verificationStatus === "Verified" || seller.profile.trust?.status === "Verified"
+      : seller.kind === "supplier"
+        ? seller.profile.verificationStatus === "Verified" || seller.profile.trust?.status === "Verified"
+        : seller.verificationStatus === "Verified"
   };
 }
 

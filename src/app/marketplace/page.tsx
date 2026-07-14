@@ -67,14 +67,10 @@ export default async function MarketplacePage() {
   const publicListings = publicMarketplaceListings(products, farmers, suppliers);
   const publicProducts = publicListings.map((listing) => listing.product);
   const publicFarmers = uniqueProfiles(
-    publicListings
-      .filter((listing) => listing.seller.kind === "farmer")
-      .map((listing) => listing.seller.profile as FarmerProfile)
+    publicListings.flatMap((listing) => listing.seller.kind === "farmer" ? [listing.seller.profile as FarmerProfile] : [])
   );
   const publicSuppliers = uniqueProfiles(
-    publicListings
-      .filter((listing) => listing.seller.kind === "supplier")
-      .map((listing) => listing.seller.profile as SupplierProfile)
+    publicListings.flatMap((listing) => listing.seller.kind === "supplier" ? [listing.seller.profile as SupplierProfile] : [])
   );
 
   return (

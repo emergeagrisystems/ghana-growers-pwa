@@ -104,6 +104,7 @@ type SupabaseListing = {
   grade_description?: string | null;
   delivery_details?: string | null;
   record_source?: string | null;
+  source_submission_id?: string | null;
   description?: string | null;
   image_url: string | null;
   image_urls?: string[] | null;
@@ -577,6 +578,7 @@ function mapListing(row: SupabaseListing): Product {
   const ownerName = row.owner_name || row.seller_name;
   const listingImages = normalizeListingImages(row.image_urls, row.image_url);
   const coverImage = listingImages[0] ?? productImageForListing(productName, row.category);
+  const isPublicSubmissionListing = Boolean(row.source_submission_id || row.record_source === "public_submission");
 
   return {
     id: row.slug ?? row.id,
@@ -609,6 +611,7 @@ function mapListing(row: SupabaseListing): Product {
     gradeDescription: row.grade_description ?? undefined,
     deliveryDetails: row.delivery_details ?? undefined,
     recordSource: row.record_source ?? undefined,
+    sourceSubmissionId: row.source_submission_id ?? undefined,
     image: coverImage,
     images: listingImages.length ? listingImages : [coverImage],
     available: row.availability,
@@ -622,7 +625,7 @@ function mapListing(row: SupabaseListing): Product {
     }),
     featuredUntil: row.featured_until ?? undefined,
     featuredNote: row.featured_note ?? undefined,
-    whatsappNumber: row.whatsapp_number ?? "233000000000",
+    whatsappNumber: isPublicSubmissionListing ? undefined : row.whatsapp_number ?? "233000000000",
     farmerSlug: ownerType === "Farmer" ? slugify(ownerName) : undefined,
     ownerType,
     ownerId: row.owner_id ?? undefined,

@@ -44,6 +44,7 @@ export type Product = {
   gradeDescription?: string;
   deliveryDetails?: string;
   recordSource?: string;
+  sourceSubmissionId?: string;
   image: string;
   images?: string[];
   available: string;

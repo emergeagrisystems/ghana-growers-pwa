@@ -47,7 +47,9 @@ export default async function MarketplaceListingPage({ params }: MarketplaceList
 
   const profileHref = listing.seller.kind === "farmer"
     ? `/farmer-directory/${listing.seller.profile.slug}`
-    : `/supplier-directory/${listing.seller.profile.slug}`;
+    : listing.seller.kind === "supplier"
+      ? `/supplier-directory/${listing.seller.profile.slug}`
+      : "";
   const tradeInformation = marketplaceTradeInformation(listing.product);
 
   return (
@@ -90,9 +92,13 @@ export default async function MarketplaceListingPage({ params }: MarketplaceList
 
             <div className="mt-6 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
               <p className="text-xs font-black uppercase tracking-wide text-earth-700">Seller</p>
-              <Link href={profileHref} className="focus-ring mt-2 inline-block rounded-md text-lg font-black text-leaf-700 transition hover:text-leaf-900 sm:text-xl">
-                {listing.sellerName}
-              </Link>
+              {profileHref ? (
+                <Link href={profileHref} className="focus-ring mt-2 inline-block rounded-md text-lg font-black text-leaf-700 transition hover:text-leaf-900 sm:text-xl">
+                  {listing.sellerName}
+                </Link>
+              ) : (
+                <p className="mt-2 text-lg font-black text-ink sm:text-xl">{listing.sellerName}</p>
+              )}
               <p className="mt-2 flex items-start gap-2 text-sm font-semibold leading-6 text-ink/62">
                 <MapPin className="mt-1 h-4 w-4 shrink-0 text-leaf-700" aria-hidden="true" />
                 {listing.location || "Ghana"}
@@ -106,7 +112,7 @@ export default async function MarketplaceListingPage({ params }: MarketplaceList
               <div className="mt-5">
                 <RequestConnectionButton
                   label="Request this listing"
-                  sourceType={listing.seller.kind === "supplier" ? "Supplier Listing" : "Marketplace Listing"}
+                  sourceType={listing.seller.kind === "supplier" || (listing.seller.kind === "submission" && listing.seller.sellerType === "Supplier") ? "Supplier Listing" : "Marketplace Listing"}
                   sourceId={listing.product.id}
                   sourceName={listing.title}
                   productInterest={listing.title}
