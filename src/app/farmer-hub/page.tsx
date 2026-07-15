@@ -1,4 +1,5 @@
 import { GraduationCap, ShieldCheck, Sprout, Sun } from "lucide-react";
+import Link from "next/link";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
 import { FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
@@ -74,6 +75,15 @@ export default function FarmerHubPage() {
             </div>
           </div>
         </article>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-bold text-ink/62">Testing GG FarmMate?</p>
+          <Link href="/farmer-hub/feedback" className="inline-flex font-black text-leaf-700 transition hover:text-leaf-900">
+            Share feedback
+          </Link>
+        </div>
       </section>
     </main>
   );

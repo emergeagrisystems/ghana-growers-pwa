@@ -109,6 +109,11 @@ import {
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
+import {
+  farmMatePilotHelpfulnessOptions,
+  farmMatePilotWouldUseAgainOptions,
+  sanitizeFarmMatePilotFeedback
+} from "../src/lib/farmmate/pilot-feedback";
 import type { FarmerProfile, Product, SupplierProfile } from "../src/types";
 
 type TestCase = {
@@ -4787,6 +4792,115 @@ const tests: TestCase[] = [
         }),
         true
       );
+    }
+  },
+  {
+    name: "FarmMate pilot feedback CTA and page render",
+    run: () => {
+      const hubPage = repoFile("src/app/farmer-hub/page.tsx");
+      const feedbackPage = repoFile("src/app/farmer-hub/feedback/page.tsx");
+
+      assert.equal(hubPage.includes("Testing GG FarmMate?"), true);
+      assert.equal(hubPage.includes("Share feedback"), true);
+      assert.equal(hubPage.includes('href="/farmer-hub/feedback"'), true);
+      assert.equal(feedbackPage.includes("FarmMatePilotFeedbackForm"), true);
+      assert.equal(feedbackPage.includes("Help improve GG FarmMate"), true);
+      assert.equal(feedbackPage.includes("Please do not share phone numbers or exact farm locations here."), true);
+    }
+  },
+  {
+    name: "FarmMate pilot feedback form includes required options and states",
+    run: () => {
+      const form = repoFile("src/components/FarmMatePilotFeedbackForm.tsx");
+
+      assert.equal(farmMatePilotHelpfulnessOptions.map((option) => option.value).join(","), "yes,partly,not_yet");
+      assert.equal(farmMatePilotWouldUseAgainOptions.map((option) => option.value).join(","), "yes,maybe,no");
+      assert.equal(form.includes('name="testedFeature"'), true);
+      assert.equal(form.includes('name="helpfulness"'), true);
+      assert.equal(form.includes('name="wouldUseAgain"'), true);
+      assert.equal(form.includes('fetch("/api/farmmate/feedback"'), true);
+      assert.equal(form.includes("farmMatePilotFeedbackSuccessMessage"), true);
+      assert.equal(form.includes("farmMatePilotFeedbackUnavailableMessage"), true);
+      assert.equal(form.includes("Back to GG FarmMate"), true);
+      assert.equal(form.includes('href={farmMatePilotFeedbackContactPath}'), true);
+    }
+  },
+  {
+    name: "FarmMate pilot feedback validation rejects missing required fields",
+    run: () => {
+      assert.equal(sanitizeFarmMatePilotFeedback({ helpfulness: "yes", wouldUseAgain: "yes" }).ok, false);
+      assert.equal(sanitizeFarmMatePilotFeedback({ testedFeature: "Ask FarmMate", wouldUseAgain: "yes" }).ok, false);
+      assert.equal(sanitizeFarmMatePilotFeedback({ testedFeature: "Ask FarmMate", helpfulness: "yes" }).ok, false);
+    }
+  },
+  {
+    name: "FarmMate pilot feedback validation trims and sanitizes text fields",
+    run: () => {
+      const result = sanitizeFarmMatePilotFeedback({
+        nameOrNickname: "  Ama  ",
+        region: "  Eastern   Region  ",
+        mainCrop: "<b>Maize</b>",
+        testedFeature: "  Asked about   spraying  ",
+        helpfulness: "Not yet",
+        confusion: "  <script>alert(1)</script> confusing  ",
+        improvement: "  Make   answers shorter  ",
+        wouldUseAgain: "Maybe"
+      });
+
+      assert.equal(result.ok, true);
+      if (result.ok) {
+        assert.equal(result.data.nameOrNickname, "Ama");
+        assert.equal(result.data.region, "Eastern Region");
+        assert.equal(result.data.mainCrop, "Maize");
+        assert.equal(result.data.testedFeature, "Asked about spraying");
+        assert.equal(result.data.helpfulness, "not_yet");
+        assert.equal(result.data.confusion?.includes("<script>"), false);
+        assert.equal(result.data.improvement, "Make answers shorter");
+        assert.equal(result.data.wouldUseAgain, "maybe");
+      }
+    }
+  },
+  {
+    name: "FarmMate pilot feedback API stores server-side and fails safely",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/feedback/route.ts");
+      const helper = repoFile("src/lib/farmmate/pilot-feedback.ts");
+
+      assert.equal(route.includes("sanitizeFarmMatePilotFeedback"), true);
+      assert.equal(route.includes("storeFarmMatePilotFeedback"), true);
+      assert.equal(route.includes("feedback_temporarily_unavailable"), true);
+      assert.equal(route.includes("console.warn"), true);
+      assert.equal(helper.includes('insertSupabaseRecord("farmmate_pilot_feedback"'), true);
+      assert.equal(helper.includes("name_or_nickname"), true);
+      assert.equal(helper.includes("would_use_again"), true);
+    }
+  },
+  {
+    name: "FarmMate pilot feedback migration is server-write only",
+    run: () => {
+      const migration = repoFile("supabase/migrations/035_farmmate_pilot_feedback.sql");
+
+      assert.equal(migration.includes("create table if not exists public.farmmate_pilot_feedback"), true);
+      assert.equal(migration.includes("tested_feature text not null"), true);
+      assert.equal(migration.includes("helpfulness text not null check (helpfulness in ('yes', 'partly', 'not_yet'))"), true);
+      assert.equal(migration.includes("would_use_again text not null check (would_use_again in ('yes', 'maybe', 'no'))"), true);
+      assert.equal(migration.includes("farmmate_pilot_feedback_created_idx"), true);
+      assert.equal(migration.includes("alter table public.farmmate_pilot_feedback enable row level security"), true);
+      assert.equal(migration.includes("revoke all on table public.farmmate_pilot_feedback from anon"), true);
+      assert.equal(migration.includes("grant all on table public.farmmate_pilot_feedback to service_role"), true);
+      assert.equal(migration.includes("Feedback is submitted server-side only"), true);
+    }
+  },
+  {
+    name: "FarmMate pilot testing documentation explains scope and limitations",
+    run: () => {
+      const docs = repoFile("docs/FARMMATE_PILOT_TESTING.md");
+
+      assert.equal(docs.includes("5-10 farmers"), true);
+      assert.equal(docs.includes("Crop Doctor gives guidance, not a guaranteed diagnosis."), true);
+      assert.equal(docs.includes("Market Prices are not included in V1."), true);
+      assert.equal(docs.includes("Farm history is not saved yet."), true);
+      assert.equal(docs.includes("public.farmmate_pilot_feedback"), true);
     }
   }
 ];
