@@ -53,6 +53,50 @@ const categoryHelpText: Partial<Record<typeof marketplacePathways[number], strin
   "Farm Inputs": "Tomato seeds \u2192 Seeds & Seedlings \u00b7 NPK \u2192 Fertilizers & Soil Inputs \u00b7 Pesticide \u2192 Crop Protection",
   "Tools & Equipment": "Knapsack sprayer \u2192 Sprayers \u00b7 Water pump \u2192 Irrigation Equipment"
 };
+type ProductDetailCopy = {
+  primaryLabel: string;
+  primaryPlaceholder: string;
+  secondaryLabel: string;
+  secondaryPlaceholder: string;
+  descriptionPlaceholder: string;
+};
+const defaultProductDetailCopy: ProductDetailCopy = {
+  primaryLabel: "Variety or product type",
+  primaryPlaceholder: "Example: Product variety or type",
+  secondaryLabel: "Quality or product notes \u2014 Optional",
+  secondaryPlaceholder: "Example: Condition, grade, or other useful details",
+  descriptionPlaceholder: "Tell buyers what you are selling. Do not add private contact details here."
+};
+const productDetailCopy: Record<typeof marketplacePathways[number], ProductDetailCopy> = {
+  "Fresh Produce": {
+    primaryLabel: "Variety or crop type",
+    primaryPlaceholder: "Example: Obaatanpa maize, Roma tomato",
+    secondaryLabel: "Grade or quality notes \u2014 Optional",
+    secondaryPlaceholder: "Example: Dried, sorted, mature",
+    descriptionPlaceholder: "Describe the produce, quality, and anything buyers should know. Do not add private contact details here."
+  },
+  Livestock: {
+    primaryLabel: "Breed or animal type",
+    primaryPlaceholder: "Example: Broiler chickens, West African Dwarf goats",
+    secondaryLabel: "Age, condition or health notes \u2014 Optional",
+    secondaryPlaceholder: "Example: 12 weeks old, healthy, vaccinated",
+    descriptionPlaceholder: "Describe the animals, their condition, and anything buyers should know. Do not add private contact details here."
+  },
+  "Farm Inputs": {
+    primaryLabel: "Brand or input type",
+    primaryPlaceholder: "Example: NPK 15-15-15, hybrid tomato seeds",
+    secondaryLabel: "Formulation or product details \u2014 Optional",
+    secondaryPlaceholder: "Example: 50 kg bag, certified seed, unopened",
+    descriptionPlaceholder: "Describe the input, pack size, condition, and anything buyers should know. Do not add private contact details here."
+  },
+  "Tools & Equipment": {
+    primaryLabel: "Equipment type or model",
+    primaryPlaceholder: "Example: Knapsack sprayer, Honda WB30 water pump",
+    secondaryLabel: "Condition or specifications \u2014 Optional",
+    secondaryPlaceholder: "Example: New, used, 16-litre capacity, petrol-powered",
+    descriptionPlaceholder: "Describe the equipment, condition, key specifications, and anything buyers should know. Do not add private contact details here."
+  }
+};
 const availabilityOptions = ["Available now", "Seasonal", "Ask availability", "Unavailable"];
 const frequencyOptions = ["One-time", "Weekly", "Monthly", "On request"];
 const sizeMeasureOptions = ["kg", "g", "tonnes", "litres", "gallons", "pieces", "eggs", "bottles", "bunches", "heads", "other"];
@@ -420,6 +464,7 @@ function ProductStep({ values, update, invalidFields }: StepProps & { invalidFie
   const categoryOptions = categoryOptionsForSellerType(values.sellerType);
   const subcategoryOptions = subcategoryOptionsFor(values.marketplacePathway);
   const categoryHelp = categoryHelpFor(values.marketplacePathway);
+  const detailCopy = productDetailCopy[values.marketplacePathway as typeof marketplacePathways[number]] ?? defaultProductDetailCopy;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -446,8 +491,8 @@ function ProductStep({ values, update, invalidFields }: StepProps & { invalidFie
           placeholder="Select subcategory"
         />
       ) : null}
-      <TextField label="Variety or product type" value={values.variety} onChange={(value) => update("variety", value)} placeholder="Optional, e.g. Obaatanpa maize" />
-      <TextField label="Grade or quality notes" value={values.gradeDescription} onChange={(value) => update("gradeDescription", value)} placeholder="Optional, e.g. dried, sorted, mature" />
+      <TextField label={detailCopy.primaryLabel} value={values.variety} onChange={(value) => update("variety", value)} placeholder={detailCopy.primaryPlaceholder} />
+      <TextField label={detailCopy.secondaryLabel} value={values.gradeDescription} onChange={(value) => update("gradeDescription", value)} placeholder={detailCopy.secondaryPlaceholder} />
       <label className="grid gap-2 text-sm font-bold text-ink/75 md:col-span-2">
         Short description
         <textarea
@@ -457,7 +502,7 @@ function ProductStep({ values, update, invalidFields }: StepProps & { invalidFie
           value={values.description}
           onChange={(event) => update("description", event.target.value)}
           className={`${fieldClass} min-h-28 ${invalidFields.has("description") ? "border-red-400 ring-2 ring-red-100" : ""}`}
-          placeholder="Tell buyers what you are selling. Do not add private contact details here."
+          placeholder={detailCopy.descriptionPlaceholder}
         />
       </label>
       {categoryHelp ? <p className="text-xs font-semibold leading-5 text-ink/55 md:col-span-2">{categoryHelp}</p> : null}
