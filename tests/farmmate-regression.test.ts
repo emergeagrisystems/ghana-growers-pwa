@@ -616,13 +616,15 @@ const tests: TestCase[] = [
       assert.equal(form.includes("Submit for Review"), true);
       assert.equal(form.includes('fetch("/api/listing-submissions"'), true);
       assert.equal(form.includes('marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"]'), true);
-      assert.equal(form.includes('Farmer: "Farmer / Producer"'), true);
-      assert.equal(form.includes('Supplier: "Input or Equipment Supplier"'), true);
+      assert.equal(form.includes('title: "Farmer / Producer"'), true);
+      assert.equal(form.includes('description: "Produce or livestock"'), true);
+      assert.equal(form.includes('title: "Supplier"'), true);
+      assert.equal(form.includes('description: "Farm inputs or equipment"'), true);
+      assert.equal(form.includes('Supplier: "Input or Equipment Supplier"'), false);
       assert.equal(form.includes('Farmer: ["Fresh Produce", "Livestock"]'), true);
       assert.equal(form.includes('Supplier: ["Farm Inputs", "Tools & Equipment"]'), true);
       assert.equal(form.includes("categoryOptionsForSellerType(values.sellerType)"), true);
-      assert.equal(form.includes("if (allowedCategories.length && !allowedCategories.includes(current.marketplacePathway))"), true);
-      assert.equal(form.includes('next.marketplacePathway = "";'), true);
+      assert.equal(form.includes('const marketplacePathway = allowedCategories.includes(values.marketplacePathway) ? values.marketplacePathway : "";'), true);
       assert.equal(form.includes('label="Category"'), true);
       assert.equal(form.includes("Main marketplace pathway"), false);
       assert.equal(form.includes('subcategory: ""'), true);
@@ -640,6 +642,14 @@ const tests: TestCase[] = [
       assert.equal(form.includes('disabled={isSubmitting}'), true);
       assert.equal(form.includes('message: "Please select a subcategory to continue."'), true);
       assert.equal(form.includes("focusField(validation.field)"), true);
+      assert.equal(form.includes("function SellerTypeCardGroup"), true);
+      assert.equal(form.includes("sm:grid-cols-2"), true);
+      assert.equal(form.includes('name="sellerType"'), true);
+      assert.equal(form.includes("checkedSellerTypeFromDom"), true);
+      assert.equal(form.includes("valuesForStepValidation(step, values)"), true);
+      assert.equal(form.includes("restoreListingFormDraft"), true);
+      assert.equal(form.includes("normalizeListingFormDraft"), true);
+      assert.equal(form.includes("window.sessionStorage"), true);
       assert.equal(form.includes('values.marketplacePathway === "Fresh Produce" ? [...freshProduceSubcategories] : [values.marketplacePathway]'), false);
       assert.equal(form.includes("Agricultural Services"), false);
       assert.equal(form.includes('sellingMethod: "packaged_unit" | "weight" | "count" | "livestock" | "volume"'), true);
@@ -650,6 +660,30 @@ const tests: TestCase[] = [
       assert.equal(form.includes("URL.createObjectURL(file)"), true);
       assert.equal(form.includes("setAdditionalImages"), true);
       assert.equal(form.includes("values.confirmation"), true);
+    }
+  },
+  {
+    name: "Submit Listing seller type controls category flow and draft state",
+    run: () => {
+      const form = repoFile("src/components/SubmitProduceListingForm.tsx");
+
+      assert.equal(form.includes('sellerType: ""'), true);
+      assert.equal(form.includes('const sellerCategoryOptions: Record<SellerTypeOption, readonly string[]>'), true);
+      assert.equal(form.includes('Farmer: ["Fresh Produce", "Livestock"]'), true);
+      assert.equal(form.includes('Supplier: ["Farm Inputs", "Tools & Equipment"]'), true);
+      assert.equal(form.includes('function normalizeListingFormSellerCategory(values: ListingFormState): ListingFormState'), true);
+      assert.equal(form.includes('const sellerType = isSellerTypeOption(values.sellerType) ? values.sellerType : "";'), true);
+      assert.equal(form.includes('const marketplacePathway = allowedCategories.includes(values.marketplacePathway) ? values.marketplacePathway : "";'), true);
+      assert.equal(form.includes('const subcategory = subcategoryOptions.length && subcategoryOptions.includes(values.subcategory) ? values.subcategory : "";'), true);
+      assert.equal(form.includes('return applyListingFormUpdate(values, "sellerType", sellerType);'), true);
+      assert.equal(form.includes('window.sessionStorage.getItem(submitListingDraftStorageKey)'), true);
+      assert.equal(form.includes('window.sessionStorage.setItem(submitListingDraftStorageKey, JSON.stringify(values))'), true);
+      assert.equal(form.includes("clearListingFormDraft()"), true);
+      assert.equal(form.includes('setStep((current) => Math.min(steps.length - 1, current + 1))'), true);
+      assert.equal(form.includes('setStep((current) => Math.max(0, current - 1))'), true);
+      assert.equal(form.includes("Input or Equipment Supplier"), false);
+      assert.equal(form.includes("Farm inputs or equipment"), true);
+      assert.equal(form.includes("Produce or livestock"), true);
     }
   },
   {

@@ -10,10 +10,17 @@ import type { Product } from "@/types";
 const fieldClass = "gg-field min-h-11";
 const steps = ["Seller details", "Product details", "Price and quantity", "Availability", "Photos", "Review"] as const;
 const marketplacePathways = ["Fresh Produce", "Farm Inputs", "Livestock", "Tools & Equipment"] as const;
+const submitListingDraftStorageKey = "ghana-growers-submit-listing-draft-v1";
 type SellerTypeOption = "Farmer" | "Supplier";
-const sellerTypeLabels: Record<SellerTypeOption, string> = {
-  Farmer: "Farmer / Producer",
-  Supplier: "Input or Equipment Supplier"
+const sellerTypeCards: Record<SellerTypeOption, { title: string; description: string }> = {
+  Farmer: {
+    title: "Farmer / Producer",
+    description: "Produce or livestock"
+  },
+  Supplier: {
+    title: "Supplier",
+    description: "Farm inputs or equipment"
+  }
 };
 const sellerCategoryOptions: Record<SellerTypeOption, readonly string[]> = {
   Farmer: ["Fresh Produce", "Livestock"],
@@ -176,6 +183,7 @@ const initialState: ListingFormState = {
 export function SubmitProduceListingForm() {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<ListingFormState>(initialState);
+  const [isDraftReady, setIsDraftReady] = useState(false);
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [success, setSuccess] = useState<{ message: string; reference?: string } | null>(null);
@@ -189,6 +197,24 @@ export function SubmitProduceListingForm() {
   );
   const currentStepValid = validateStep(step, values, mainImage);
   const photoFiles = [mainImage, ...additionalImages].filter((file): file is File => Boolean(file));
+
+  useEffect(() => {
+    const draft = restoreListingFormDraft();
+
+    if (draft) {
+      setValues(draft);
+    }
+
+    setIsDraftReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftReady || success) {
+      return;
+    }
+
+    saveListingFormDraft(values);
+  }, [isDraftReady, success, values]);
 
   function update<K extends keyof ListingFormState>(key: K, value: ListingFormState[K]) {
     setError("");
@@ -208,40 +234,12 @@ export function SubmitProduceListingForm() {
       return nextInvalidFields;
     });
 
-    setValues((current) => {
-      const next = { ...current, [key]: value };
-
-      if (key === "whatsappSameAsPhone" && value === true) {
-        next.whatsappNumber = current.phoneNumber;
-      }
-
-      if (key === "phoneNumber" && current.whatsappSameAsPhone) {
-        next.whatsappNumber = String(value);
-      }
-
-      if (key === "marketplacePathway") {
-        next.subcategory = "";
-      }
-
-      if (key === "sellerType") {
-        const allowedCategories = categoryOptionsForSellerType(String(value));
-
-        if (allowedCategories.length && !allowedCategories.includes(current.marketplacePathway)) {
-          next.marketplacePathway = "";
-          next.subcategory = "";
-        }
-      }
-
-      if (key === "sellingUnit") {
-        next.minimumOrderUnit = String(value);
-      }
-
-      return next;
-    });
+    setValues((current) => applyListingFormUpdate(current, key, value));
   }
 
   function handleContinue() {
-    const validation = validateStepDetails(step, values, mainImage);
+    const nextValues = valuesForStepValidation(step, values);
+    const validation = validateStepDetails(step, nextValues, mainImage);
 
     if (!validation.valid) {
       setError(validation.message ?? "Please complete the required fields to continue.");
@@ -252,6 +250,9 @@ export function SubmitProduceListingForm() {
 
     setError("");
     setInvalidFields(new Set());
+    if (nextValues !== values) {
+      setValues(nextValues);
+    }
     setStep((current) => Math.min(steps.length - 1, current + 1));
   }
 
@@ -325,6 +326,7 @@ export function SubmitProduceListingForm() {
       reference: result.reference,
       message: result.message ?? "Your listing is not live yet. Ghana Growers will review the details and contact you if more information is needed."
     });
+    clearListingFormDraft();
     setStep(5);
   }
 
@@ -409,7 +411,7 @@ function SellerStep({ values, update }: StepProps) {
       <SelectField label="Region" value={values.region} onChange={(value) => update("region", value)} options={ghanaRegions} required placeholder="Select region" />
       <TextField label="District or town" value={values.district} onChange={(value) => update("district", value)} required />
       <RadioGroup fieldName="existingMember" label="Are you already part of the Ghana Growers network?" value={values.existingMember} options={["Yes", "No", "Not sure"]} onChange={(value) => update("existingMember", value as ListingFormState["existingMember"])} required />
-      <RadioGroup fieldName="sellerType" label="Seller type" value={values.sellerType} options={["Farmer", "Supplier"]} labels={sellerTypeLabels} onChange={(value) => update("sellerType", value as ListingFormState["sellerType"])} required />
+      <SellerTypeCardGroup value={values.sellerType} onChange={(value) => update("sellerType", value)} />
     </div>
   );
 }
@@ -666,6 +668,132 @@ function validateStep(step: number, values: ListingFormState, mainImage: File | 
   return validateStepDetails(step, values, mainImage).valid;
 }
 
+function isSellerTypeOption(value: string): value is SellerTypeOption {
+  return value === "Farmer" || value === "Supplier";
+}
+
+function normalizeListingFormSellerCategory(values: ListingFormState): ListingFormState {
+  const sellerType = isSellerTypeOption(values.sellerType) ? values.sellerType : "";
+  const allowedCategories = categoryOptionsForSellerType(sellerType);
+  const marketplacePathway = allowedCategories.includes(values.marketplacePathway) ? values.marketplacePathway : "";
+  const subcategoryOptions = subcategoryOptionsFor(marketplacePathway);
+  const subcategory = subcategoryOptions.length && subcategoryOptions.includes(values.subcategory) ? values.subcategory : "";
+
+  return {
+    ...values,
+    sellerType,
+    marketplacePathway,
+    subcategory
+  };
+}
+
+function applyListingFormUpdate<K extends keyof ListingFormState>(current: ListingFormState, key: K, value: ListingFormState[K]): ListingFormState {
+  const next = { ...current, [key]: value };
+
+  if (key === "whatsappSameAsPhone" && value === true) {
+    next.whatsappNumber = current.phoneNumber;
+  }
+
+  if (key === "phoneNumber" && current.whatsappSameAsPhone) {
+    next.whatsappNumber = String(value);
+  }
+
+  if (key === "marketplacePathway") {
+    next.subcategory = "";
+  }
+
+  if (key === "sellerType") {
+    return normalizeListingFormSellerCategory(next);
+  }
+
+  if (key === "sellingUnit") {
+    next.minimumOrderUnit = String(value);
+  }
+
+  return next;
+}
+
+function checkedSellerTypeFromDom(fallback: ListingFormState["sellerType"]) {
+  if (typeof document === "undefined") {
+    return fallback;
+  }
+
+  const selected = document.querySelector<HTMLInputElement>('input[name="sellerType"]:checked')?.value ?? fallback;
+  return isSellerTypeOption(selected) ? selected : fallback;
+}
+
+function valuesForStepValidation(step: number, values: ListingFormState) {
+  if (step !== 0) {
+    return values;
+  }
+
+  const sellerType = checkedSellerTypeFromDom(values.sellerType);
+
+  if (sellerType === values.sellerType) {
+    return values;
+  }
+
+  return applyListingFormUpdate(values, "sellerType", sellerType);
+}
+
+function normalizeListingFormDraft(input: unknown): ListingFormState | null {
+  if (!input || typeof input !== "object") {
+    return null;
+  }
+
+  const draft = input as Partial<ListingFormState>;
+  const next = { ...initialState } as Record<keyof ListingFormState, string | boolean>;
+
+  (Object.keys(initialState) as Array<keyof ListingFormState>).forEach((key) => {
+    const value = draft[key];
+
+    if (typeof initialState[key] === "boolean") {
+      next[key] = value === true;
+      return;
+    }
+
+    if (typeof value === "string") {
+      next[key] = value;
+    }
+  });
+
+  return normalizeListingFormSellerCategory(next as ListingFormState);
+}
+
+function restoreListingFormDraft() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const stored = window.sessionStorage.getItem(submitListingDraftStorageKey);
+    return stored ? normalizeListingFormDraft(JSON.parse(stored)) : null;
+  } catch {
+    window.sessionStorage.removeItem(submitListingDraftStorageKey);
+    return null;
+  }
+}
+
+function saveListingFormDraft(values: ListingFormState) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(submitListingDraftStorageKey, JSON.stringify(values));
+  } catch {
+    // Draft recovery is helpful but non-critical.
+  }
+}
+
+function clearListingFormDraft() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(submitListingDraftStorageKey);
+}
+
 function validateStepDetails(step: number, values: ListingFormState, mainImage: File | null): { valid: boolean; message?: string; field?: string } {
   if (step === 0) {
     if (!values.farmBusinessName) return { valid: false, message: "Please enter your farm or business name to continue.", field: "farmBusinessName" };
@@ -914,6 +1042,44 @@ function SelectField({ label, value, onChange, options, labels, required = false
   );
 }
 
+function SellerTypeCardGroup({ value, onChange }: { value: ListingFormState["sellerType"]; onChange: (value: SellerTypeOption) => void }) {
+  return (
+    <fieldset data-field="sellerType" tabIndex={-1} className="grid gap-2 text-sm font-bold text-ink/75 md:col-span-2" aria-required="true">
+      <legend>Seller type</legend>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(["Farmer", "Supplier"] as SellerTypeOption[]).map((option) => {
+          const card = sellerTypeCards[option];
+          const isSelected = value === option;
+
+          return (
+            <label
+              key={option}
+              className={`flex min-h-20 cursor-pointer items-start gap-3 rounded-md border bg-white p-4 text-left transition ${
+                isSelected
+                  ? "border-leaf-700 shadow-sm ring-2 ring-leaf-600/20"
+                  : "border-leaf-900/10 hover:border-leaf-700/35 hover:bg-leaf-50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="sellerType"
+                value={option}
+                checked={isSelected}
+                onChange={() => onChange(option)}
+                className="mt-1 h-4 w-4 shrink-0 text-leaf-700 focus:ring-leaf-700"
+              />
+              <span className="grid gap-1">
+                <span className="text-base font-black leading-5 text-ink">{card.title}</span>
+                <span className="text-sm font-semibold leading-5 text-ink/58">{card.description}</span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 function RadioGroup({ label, value, options, labels, onChange, required = false, fieldName }: { label: string; value: string; options: string[]; labels?: Record<string, string>; onChange: (value: string) => void; required?: boolean; fieldName?: string }) {
   return (
     <fieldset data-field={fieldName} tabIndex={-1} className="grid gap-2 text-sm font-bold text-ink/75" aria-required={required}>
@@ -921,7 +1087,7 @@ function RadioGroup({ label, value, options, labels, onChange, required = false,
       <div className="grid gap-2 sm:grid-cols-3">
         {options.map((option) => (
           <label key={option} className="flex min-h-11 items-center gap-2 rounded-md border border-leaf-900/10 bg-white px-3 py-2 text-sm font-bold text-ink/70">
-            <input type="radio" checked={value === option} onChange={() => onChange(option)} className="h-4 w-4 text-leaf-700 focus:ring-leaf-700" />
+            <input type="radio" name={fieldName} value={option} checked={value === option} onChange={() => onChange(option)} className="h-4 w-4 text-leaf-700 focus:ring-leaf-700" />
             {labels?.[option] ?? option}
           </label>
         ))}
