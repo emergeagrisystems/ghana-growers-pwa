@@ -138,11 +138,11 @@ export default function SellPage() {
       </section>
 
       <section className="bg-white px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl rounded-md border border-leaf-900/10 bg-leaf-900 p-4 text-white shadow-soft sm:p-5">
+        <div className="brand-surface-dark mx-auto max-w-7xl rounded-md border border-earth-100/15 p-4 shadow-soft sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-black">How selling works</h2>
-              <p className="mt-1 text-sm font-semibold text-white/72">
+              <p className="brand-body mt-1 text-sm font-semibold">
                 Ghana Growers reviews seller details before listings or profiles go live.
               </p>
             </div>
@@ -154,7 +154,7 @@ export default function SellPage() {
                   </span>
                   <span>
                     <span className="block text-sm font-black">{title as string}</span>
-                    <span className="mt-0.5 block text-xs font-semibold leading-5 text-white/68">{description as string}</span>
+                    <span className="brand-body mt-0.5 block text-xs font-semibold leading-5">{description as string}</span>
                   </span>
                 </div>
               ))}
@@ -203,10 +203,10 @@ export default function SellPage() {
       </section>
 
       <section className="bg-white px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-md border border-leaf-900/10 bg-[#143A1F] p-5 text-white shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="brand-surface-dark mx-auto flex max-w-7xl flex-col gap-4 rounded-md border border-earth-100/15 p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <h2 className="text-2xl font-black">Ready to reach more buyers?</h2>
-            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/72">
+            <p className="brand-body mt-2 max-w-2xl text-sm font-semibold leading-6">
               Join the Ghana Growers Network and create your seller profile.
             </p>
           </div>

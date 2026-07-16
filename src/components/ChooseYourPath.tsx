@@ -54,7 +54,7 @@ const toneClasses = {
 
 export function ChooseYourPath() {
   return (
-    <section className="bg-[#143A1F] py-12 text-white sm:py-14" aria-labelledby="choose-your-path-title">
+    <section className="brand-surface-dark py-12 sm:py-14" aria-labelledby="choose-your-path-title">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[18rem] text-center sm:max-w-3xl">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-500">Start here</p>

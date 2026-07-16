@@ -260,7 +260,7 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
                 >
                   <Filter className="h-4 w-4" aria-hidden="true" />
                   Filters
-                  {activeFilterCount > 0 ? <span className="rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-white">{activeFilterCount}</span> : null}
+                  {activeFilterCount > 0 ? <span className="rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-earth-50">{activeFilterCount}</span> : null}
                 </button>
 
                 {activeFilterCount > 0 ? (
@@ -310,7 +310,7 @@ export function MarketplaceListings({ products, farmers = [], suppliers = [] }: 
                         aria-current={pageNumber === paginated.currentPage ? "page" : undefined}
                         className={`focus-ring grid h-10 min-w-10 place-items-center rounded-md px-3 text-sm font-black transition ${
                           pageNumber === paginated.currentPage
-                            ? "bg-leaf-700 text-white"
+                            ? "bg-leaf-700 text-earth-50"
                             : "border border-leaf-900/10 bg-white text-leaf-700 hover:bg-leaf-50"
                         }`}
                       >

@@ -99,7 +99,7 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
 
   return (
     <article className="bg-white">
-      <section className="bg-[#ECE7D1] py-8 sm:py-10">
+      <section className="bg-earth-50 py-8 sm:py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <ButtonLink href="/learn" variant="secondary">
             <span className="inline-flex items-center gap-2">

@@ -103,7 +103,7 @@ function TodayFarmSnapshot({ weather, isActive, onOpenWeather }: { weather?: Sna
       onClick={onOpenWeather}
       aria-pressed={isActive}
       className={`focus-ring mb-3 block w-full rounded-md border p-3 text-left transition ${
-        isActive ? "border-leaf-700 bg-[#ECE7D1] shadow-sm" : "border-leaf-900/10 bg-[#ECE7D1] hover:border-leaf-700"
+        isActive ? "border-leaf-700 bg-earth-50 shadow-sm" : "border-leaf-900/10 bg-earth-50 hover:border-leaf-700"
       }`}
     >
       <p className="text-xs font-black uppercase tracking-[0.12em] text-earth-700">Today&apos;s Farm Snapshot</p>
@@ -155,7 +155,7 @@ function DailyInsightCards({ weather }: { weather?: SnapshotWeather }) {
         return (
           <article key={insight.title} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[#ECE7D1] text-leaf-700">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-earth-50 text-leaf-700">
                 <Icon size={19} aria-hidden="true" />
               </span>
               <h3 className="font-black text-ink">{insight.title}</h3>

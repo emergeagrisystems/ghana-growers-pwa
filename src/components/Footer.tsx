@@ -18,7 +18,7 @@ const legalLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-leaf-900 text-white">
+    <footer className="brand-surface-dark border-t border-earth-100/15">
       <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.95fr_1.1fr] lg:items-start lg:px-8">
         <div className="max-w-md">
           <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-md text-xl font-black">
@@ -27,7 +27,7 @@ export function Footer() {
             </span>
             Ghana Growers
           </Link>
-          <p className="mt-3 text-sm leading-6 text-white/76">
+          <p className="brand-body mt-3 text-sm leading-6">
             Connecting farmers, suppliers and buyers across Ghana.
           </p>
         </div>
@@ -39,7 +39,7 @@ export function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="focus-ring rounded-md border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm font-bold text-white/78 transition duration-200 hover:border-earth-500/45 hover:bg-white/[0.08] hover:text-earth-500"
+                className="focus-ring rounded-md border border-earth-100/15 bg-earth-50/[0.04] px-3 py-2.5 text-sm font-bold text-earth-100 transition duration-200 hover:border-earth-500/45 hover:bg-earth-50/[0.08] hover:text-earth-500"
               >
                 {link.title}
               </Link>
@@ -48,15 +48,15 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3.5 text-xs text-white/58 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+      <div className="border-t border-earth-100/15">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3.5 text-xs text-earth-100/75 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="grid gap-1">
             <p>&copy; {new Date().getFullYear()} Ghana Growers</p>
             <p>A Product of Emerge Agri Systems (E.A.Sy.)</p>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {legalLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="font-semibold text-white/65 hover:text-earth-500">
+              <Link key={link.href} href={link.href} className="font-semibold text-earth-100/85 hover:text-earth-500">
                 {link.title}
               </Link>
             ))}

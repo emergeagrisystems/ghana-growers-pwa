@@ -97,7 +97,7 @@ export default function PartnerPage() {
           </div>
 
           <div className="grid gap-6">
-            <section className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+            <section className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
               <PackageCheck className="text-leaf-700" size={26} aria-hidden="true" />
               <p className="gg-eyebrow mt-4">Ways To Partner</p>
               <h2 className="mt-2 text-2xl font-black text-ink">Make the platform more useful with real records and real demand.</h2>

@@ -66,7 +66,7 @@ export default function GGStandardPage() {
         </div>
       </section>
 
-      <section className="bg-[#ECE7D1] py-12 sm:py-16">
+      <section className="bg-earth-50 py-12 sm:py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.68fr_0.32fr] lg:items-start lg:px-8">
           <div>
             <p className="gg-eyebrow">How it works</p>

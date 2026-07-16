@@ -163,11 +163,11 @@ export default function BuyPage() {
       </section>
 
       <section className="bg-white px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl rounded-md border border-leaf-900/10 bg-leaf-900 p-4 text-white shadow-soft sm:p-5">
+        <div className="brand-surface-dark mx-auto max-w-7xl rounded-md border border-earth-100/15 p-4 shadow-soft sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-black">How buying works</h2>
-              <p className="mt-1 text-sm font-semibold text-white/72">No payment is required at the request stage.</p>
+              <p className="brand-body mt-1 text-sm font-semibold">No payment is required at the request stage.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {howBuyingWorks.map((step) => {
@@ -289,7 +289,7 @@ export default function BuyPage() {
         </div>
       </section>
 
-      <section className="bg-leaf-900 px-4 py-10 text-white sm:px-6 sm:py-12 lg:px-8">
+      <section className="brand-surface-dark px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[1fr_0.85fr]">
           <div className="rounded-md border border-white/10 bg-white p-5 text-ink shadow-soft sm:p-6">
             <h2 className="text-2xl font-black">Can&apos;t find what you need?</h2>

@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
 
       <section className="bg-white py-12 sm:py-16">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.28fr_0.72fr] lg:px-8">
-          <aside className="h-fit rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+          <aside className="h-fit rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
             <LockKeyhole className="text-leaf-700" size={28} aria-hidden="true" />
             <h2 className="mt-4 text-xl font-black text-ink">Plain-language privacy note</h2>
             <p className="mt-3 text-sm leading-7 text-ink/68">

@@ -61,7 +61,7 @@ export default function ContactPage() {
                 Ghana Growers is the public agricultural platform operated by Emerge Agri Systems. Use this contact page for farmer, buyer, supplier, verification, and partnership enquiries.
               </p>
             </div>
-            <div className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+            <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
               <h2 className="text-lg font-black text-ink">Response expectation</h2>
               <p className="mt-2 text-sm leading-7 text-ink/66">
                 We normally respond within 1-2 business days. If your enquiry is about a buyer request, farmer profile, supplier registration, or trust issue, include the name, product, region, and phone or WhatsApp number where possible.

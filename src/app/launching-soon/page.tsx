@@ -56,7 +56,7 @@ const benefitCards = [
 
 export default function LaunchingSoonPage() {
   return (
-    <div className="min-h-screen bg-[#ECE7D1]">
+    <div className="min-h-screen bg-earth-50">
       <PrelaunchHeader />
       <main>
         <section>

@@ -270,7 +270,7 @@ export function CropHealthCheck() {
           />
         </label>
 
-        <div className="rounded-md bg-[#ECE7D1] p-4 sm:p-5">
+        <div className="rounded-md bg-earth-50 p-4 sm:p-5">
           <button
             type="button"
             disabled={!selectedFile || isLoading}

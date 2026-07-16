@@ -107,7 +107,7 @@ export default function VerificationProcessPage() {
         </div>
       </section>
 
-      <section className="bg-[#ECE7D1] py-12 sm:py-16">
+      <section className="bg-earth-50 py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="gg-eyebrow">Verification statuses</p>
           <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Pending, under review, verified, and rejected</h2>

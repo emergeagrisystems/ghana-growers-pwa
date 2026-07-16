@@ -10,28 +10,48 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          forest: "rgb(var(--gg-forest-trust) / <alpha-value>)",
+          ivory: "rgb(var(--gg-morning-ivory) / <alpha-value>)",
+          cream: "rgb(var(--gg-soft-cream) / <alpha-value>)",
+          gold: "rgb(var(--gg-harvest-gold) / <alpha-value>)",
+          ink: "rgb(var(--gg-forest-ink) / <alpha-value>)",
+          grower: "rgb(var(--gg-grower-green) / <alpha-value>)",
+          sage: "rgb(var(--gg-leaf-sage) / <alpha-value>)",
+          mist: "rgb(var(--gg-morning-mist) / <alpha-value>)",
+          cocoa: "rgb(var(--gg-cocoa-earth) / <alpha-value>)",
+          border: "rgb(var(--gg-border-mist) / <alpha-value>)",
+          danger: "rgb(var(--gg-signal-red) / <alpha-value>)",
+          surface: "rgb(var(--gg-functional-white) / <alpha-value>)"
+        },
         leaf: {
-          50: "#EEF3E8",
-          100: "#DDE8D2",
-          500: "#4E7A3D",
-          600: "#143A1F",
-          700: "#143A1F",
-          900: "#143A1F"
+          50: "rgb(var(--gg-morning-mist) / <alpha-value>)",
+          100: "rgb(var(--gg-border-mist) / <alpha-value>)",
+          300: "rgb(var(--gg-leaf-sage) / <alpha-value>)",
+          500: "rgb(var(--gg-grower-green) / <alpha-value>)",
+          600: "rgb(var(--gg-forest-trust) / <alpha-value>)",
+          700: "rgb(var(--gg-forest-trust) / <alpha-value>)",
+          800: "rgb(var(--gg-forest-trust) / <alpha-value>)",
+          900: "rgb(var(--gg-forest-trust) / <alpha-value>)"
         },
         earth: {
-          50: "#F7F6EF",
-          100: "#F2E6C2",
-          500: "#E1B75A",
-          700: "#9A6D1F"
+          50: "rgb(var(--gg-morning-ivory) / <alpha-value>)",
+          100: "rgb(var(--gg-soft-cream) / <alpha-value>)",
+          300: "rgb(var(--gg-soft-cream) / <alpha-value>)",
+          400: "rgb(var(--gg-harvest-gold) / <alpha-value>)",
+          500: "rgb(var(--gg-harvest-gold) / <alpha-value>)",
+          600: "rgb(var(--gg-harvest-gold) / <alpha-value>)",
+          700: "rgb(var(--gg-cocoa-earth) / <alpha-value>)",
+          800: "rgb(var(--gg-cocoa-earth) / <alpha-value>)"
         },
         cocoa: {
-          50: "#F3ECE4",
-          500: "#6B4A2F",
-          700: "#553922"
+          50: "rgb(var(--gg-morning-ivory) / <alpha-value>)",
+          500: "rgb(var(--gg-cocoa-earth) / <alpha-value>)",
+          700: "rgb(var(--gg-cocoa-earth) / <alpha-value>)"
         },
-        mist: "#EEF3E8",
-        tomato: "#d94b35",
-        ink: "#162016"
+        mist: "rgb(var(--gg-morning-mist) / <alpha-value>)",
+        tomato: "rgb(var(--gg-signal-red) / <alpha-value>)",
+        ink: "rgb(var(--gg-forest-ink) / <alpha-value>)"
       },
       boxShadow: {
         soft: "0 18px 50px rgba(20, 58, 31, 0.12)",

@@ -74,14 +74,14 @@ export default async function HomePage() {
             <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:flex-wrap">
               <Link
                 href="/marketplace"
-                className="focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#143A1F] px-6 py-3 text-center text-sm font-black leading-none text-white shadow-sm transition duration-200 ease-out hover:bg-leaf-900 sm:w-auto"
+                className="gg-button-secondary w-full gap-2 text-center leading-none sm:w-auto"
               >
                 <ShoppingBasket size={17} aria-hidden="true" className="shrink-0" />
                 Explore Marketplace
               </Link>
               <Link
                 href="/sell"
-                className="focus-ring inline-flex min-h-12 w-full items-center justify-center rounded-md bg-[#D6A84A] px-6 py-3 text-center text-sm font-black leading-none text-ink shadow-sm transition duration-200 ease-out hover:bg-earth-700 hover:text-white sm:w-auto"
+                className="gg-button-primary w-full text-center leading-none sm:w-auto"
               >
                 Sell Your Harvest
               </Link>
@@ -145,7 +145,7 @@ export default async function HomePage() {
 
       <MarketplaceCategoryShowcase />
 
-      <section className="bg-[#F7F6EF] py-10 sm:py-12 lg:py-16" aria-labelledby="how-ghana-growers-works">
+      <section className="bg-earth-50 py-10 sm:py-12 lg:py-16" aria-labelledby="how-ghana-growers-works">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="gg-eyebrow text-earth-700/70">How It Works</p>
@@ -217,18 +217,18 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-b border-white/10 bg-leaf-900 py-12 text-white sm:py-16 lg:py-20">
+      <section className="brand-surface-dark border-b border-earth-100/15 py-12 sm:py-16 lg:py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <p className="gg-eyebrow text-earth-500">Join the Network</p>
           <h2 className="mt-4 text-2xl font-black leading-tight sm:text-4xl lg:text-5xl">Build trusted agricultural connections across Ghana.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/72 sm:mt-5 sm:text-lg">
+          <p className="brand-body mx-auto mt-4 max-w-2xl text-base leading-7 sm:mt-5 sm:text-lg">
             Register as a farmer, buyer, supplier, or service provider. Ghana Growers will review your details before your profile, listing, or request is published.
           </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row">
-            <Link href="/join" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-black text-leaf-900 shadow-sm transition duration-200 ease-out hover:bg-earth-50 sm:min-h-12">
+            <Link href="/join" className="gg-button-primary min-h-11 sm:min-h-12">
               Join the Network
             </Link>
-            <Link href="/contact" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-white/35 px-6 py-3 text-sm font-black text-white transition duration-200 ease-out hover:border-earth-500 hover:text-earth-500 sm:min-h-12">
+            <Link href="/contact" className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-earth-100/45 px-6 py-3 text-sm font-black text-earth-50 transition duration-200 ease-out hover:border-earth-500 hover:text-earth-500 sm:min-h-12">
               Send us a message
             </Link>
           </div>

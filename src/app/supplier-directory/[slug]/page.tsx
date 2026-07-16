@@ -162,7 +162,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
 
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
+      <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[0.56fr_1.38fr_0.66fr] lg:items-center lg:px-8 lg:py-12">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">

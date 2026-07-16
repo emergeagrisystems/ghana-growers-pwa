@@ -65,7 +65,7 @@ export default function AboutPage() {
               The platform is not a shortcut around good judgement. It gives farmers, buyers, suppliers, and partners a clearer starting point before they discuss quantity, price, quality, delivery, and payment.
             </p>
           </div>
-          <aside className="rounded-md border border-leaf-900/10 bg-[#ECE7D1] p-5 shadow-sm">
+          <aside className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
             <MapPin className="text-leaf-700" size={28} aria-hidden="true" />
             <h2 className="mt-4 text-xl font-black text-ink">Built for Ghana</h2>
             <p className="mt-3 text-sm leading-7 text-ink/68">
@@ -93,7 +93,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="bg-[#ECE7D1] py-12 sm:py-16">
+      <section className="bg-earth-50 py-12 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="gg-eyebrow">Why Ghana Growers Was Created</p>
           <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Agricultural connections need better information.</h2>

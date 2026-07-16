@@ -297,7 +297,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   ]);
   return (
     <>
-      <section className="border-b border-leaf-900/10 bg-[#ECE7D1]">
+      <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-6 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:px-8 lg:py-9">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">

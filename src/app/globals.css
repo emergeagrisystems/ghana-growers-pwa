@@ -4,15 +4,31 @@
 
 :root {
   color-scheme: light;
-  --gg-primary-green: #143A1F;
-  --gg-secondary-green: #4E7A3D;
-  --gg-accent-gold: #E1B75A;
-  --gg-cream-bg: #F7F6EF;
-  --gg-morning-mist: #EEF3E8;
-  --gg-cocoa-earth: #6B4A2F;
-  --gg-dark-text: #162016;
-  --gg-white-card: #ffffff;
-  --gg-border: rgba(20, 58, 31, 0.1);
+  /* Approved Ghana Growers palette. RGB channels preserve Tailwind opacity modifiers. */
+  --gg-forest-trust: 20 58 31;
+  --gg-morning-ivory: 247 246 239;
+  --gg-soft-cream: 213 218 208;
+  --gg-harvest-gold: 223 174 74;
+  --gg-forest-ink: 22 32 22;
+  --gg-grower-green: 46 125 50;
+  --gg-leaf-sage: 111 143 95;
+  --gg-morning-mist: 238 243 232;
+  --gg-cocoa-earth: 107 74 47;
+  --gg-border-mist: 221 228 212;
+  --gg-signal-red: 194 59 52;
+  --gg-functional-white: 255 255 255;
+
+  /* Semantic roles used by CSS and non-Tailwind surfaces. */
+  --gg-brand-background: rgb(var(--gg-forest-trust));
+  --gg-brand-heading: rgb(var(--gg-morning-ivory));
+  --gg-brand-body: rgb(var(--gg-soft-cream));
+  --gg-page-background: rgb(var(--gg-morning-ivory));
+  --gg-section-background: rgb(var(--gg-morning-mist));
+  --gg-surface: rgb(var(--gg-functional-white));
+  --gg-text: rgb(var(--gg-forest-ink));
+  --gg-heading: rgb(var(--gg-forest-trust));
+  --gg-action: rgb(var(--gg-harvest-gold));
+  --gg-border: rgb(var(--gg-border-mist));
   --gg-shadow: 0 14px 40px rgba(20, 58, 31, 0.08);
   --gg-shadow-hover: 0 18px 50px rgba(20, 58, 31, 0.12);
   --gg-radius: 12px;
@@ -27,8 +43,8 @@ html {
 }
 
 body {
-  background: var(--gg-cream-bg);
-  color: #162016;
+  background: var(--gg-page-background);
+  color: var(--gg-text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   max-width: 100%;
   overflow-x: hidden;
@@ -52,16 +68,34 @@ h3 {
 }
 
 ::selection {
-  background: #E1B75A;
-  color: #162016;
+  background: var(--gg-action);
+  color: var(--gg-text);
 }
 
 .ghana-grid {
-  background: var(--gg-cream-bg);
+  background: var(--gg-page-background);
 }
 
 .focus-ring {
-  @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600;
+  --gg-focus: rgb(var(--gg-forest-trust));
+}
+
+.brand-surface-dark .focus-ring {
+  --gg-focus: rgb(var(--gg-harvest-gold));
+}
+
+.focus-ring:focus-visible {
+  outline: 3px solid var(--gg-focus);
+  outline-offset: 3px;
+}
+
+.brand-surface-dark {
+  background-color: var(--gg-brand-background);
+  color: var(--gg-brand-heading);
+}
+
+.brand-surface-dark .brand-body {
+  color: var(--gg-brand-body);
 }
 
 @layer components {
@@ -82,11 +116,11 @@ h3 {
   }
 
   .gg-button-primary {
-    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-600 px-6 py-3 text-sm font-black text-white shadow-sm transition duration-200 ease-out hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25;
+    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-transparent bg-earth-500 px-6 py-3 text-sm font-black text-ink shadow-sm transition duration-200 ease-out hover:border-leaf-900 hover:shadow-card active:translate-y-px active:shadow-none disabled:cursor-not-allowed disabled:border-transparent disabled:bg-earth-500/45 disabled:text-ink/55 disabled:shadow-none;
   }
 
   .gg-button-secondary {
-    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-earth-500 px-6 py-3 text-sm font-black text-ink shadow-sm transition duration-200 ease-out hover:bg-earth-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60;
+    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-leaf-900 bg-leaf-900 px-6 py-3 text-sm font-black text-earth-50 shadow-sm transition duration-200 ease-out hover:bg-ink active:translate-y-px active:shadow-none disabled:cursor-not-allowed disabled:border-leaf-900/35 disabled:bg-leaf-900/35 disabled:text-earth-50/70 disabled:shadow-none;
   }
 
   .gg-text-link {
@@ -151,7 +185,7 @@ h3 {
   }
 
   .gg-icon-marketplace {
-    @apply bg-leaf-600 text-white ring-leaf-900/10;
+    @apply bg-leaf-600 text-earth-50 ring-leaf-900/10;
   }
 
   .gg-icon-farmer-hub {
