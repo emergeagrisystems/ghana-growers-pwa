@@ -70,7 +70,7 @@ export function MarketplaceCategoryShowcase() {
               key={category.title}
               href={category.href}
               aria-label={`${category.action}: ${category.title}`}
-              className="focus-ring group flex h-full min-w-0 gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-3 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:bg-white hover:shadow-soft"
+              className="focus-ring group flex h-full min-w-0 gap-4 rounded-md border border-leaf-900/10 bg-earth-50 p-3 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:border-leaf-600/25 hover:bg-earth-100/55 hover:shadow-soft"
             >
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md border border-white bg-white sm:h-24 sm:w-24">
                 <SafeImage

@@ -74,7 +74,7 @@ export function ChooseYourPath() {
             return (
               <article
                 key={card.title}
-                className={`choose-path-card group flex h-full flex-col rounded-md border border-white/70 bg-white p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
+                className={`choose-path-card group flex h-full flex-col rounded-md border border-earth-100/80 bg-earth-50 p-5 text-ink shadow-soft transition duration-300 ease-out hover:-translate-y-1 ${tone.ring} sm:p-6`}
                 style={{ animation: `choosePathFadeUp 560ms ease-out ${index * 90}ms both` }}
               >
                 <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-md ${tone.icon}`}>

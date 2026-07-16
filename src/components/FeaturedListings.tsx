@@ -151,7 +151,7 @@ export function FeaturedListings({
                   return (
                     <article
                       key={farmer.slug}
-                      className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card"
+                      className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-earth-50 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card"
                     >
                       <div className="relative">
                         {hasRealPhoto ? (
@@ -217,7 +217,7 @@ export function FeaturedListings({
                 return (
                 <article
                   key={farmer.slug}
-                  className={`relative overflow-hidden rounded-md bg-white shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft ${compact ? "border border-leaf-900/10 p-3.5" : "border border-earth-500/40 p-5"}`}
+                  className={`relative overflow-hidden rounded-md bg-earth-50 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft ${compact ? "border border-leaf-900/10 p-3.5" : "border border-earth-500/40 p-5"}`}
                 >
                   {compact ? null : (
                     <div className="flex items-start justify-between gap-4">
@@ -270,7 +270,7 @@ export function FeaturedListings({
                 const trust = normalizeTrust(supplier.trust);
 
                 return (
-                <article key={supplier.slug} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-white p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
+                <article key={supplier.slug} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.suppliers} />
                     <div className="gg-icon gg-icon-logistics h-10 w-10 shrink-0">
@@ -321,7 +321,7 @@ export function FeaturedListings({
 
           {showBuyerRequests
             ? featuredBuyerRequests.slice(0, limit).map((request) => (
-                <article key={request.id} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-white p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
+                <article key={request.id} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
                     <div className="gg-icon gg-icon-marketplace h-10 w-10 shrink-0">

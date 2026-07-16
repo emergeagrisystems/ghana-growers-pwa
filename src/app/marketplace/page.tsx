@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ButtonLink } from "@/components/ButtonLink";
 import { MarketplaceListings } from "@/components/MarketplaceListings";
 import { Beef, Boxes, Carrot, PackageCheck } from "lucide-react";
 import { createPageMetadata } from "@/lib/seo";
@@ -77,18 +76,20 @@ export default async function MarketplacePage() {
     <>
       <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8 lg:py-11">
-          <div className="max-w-4xl">
-            <p className="gg-eyebrow">Marketplace</p>
-            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
-              Ghana Growers Marketplace
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-              Browse reviewed farm produce, livestock, inputs, and tools from farmers and suppliers across Ghana.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <ButtonLink href="#marketplace-listings">Browse Listings</ButtonLink>
-              <ButtonLink href="/submit-buyer-request" variant="secondary">Request Sourcing Support</ButtonLink>
-              <ButtonLink href="/submit-listing" variant="secondary">Submit a Listing</ButtonLink>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,28rem)] lg:items-end lg:gap-10">
+            <div className="max-w-3xl">
+              <p className="gg-eyebrow">Marketplace</p>
+              <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
+                Ghana Growers Marketplace
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
+                Browse reviewed farm produce, livestock, inputs, and tools from farmers and suppliers across Ghana.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:flex-col lg:items-stretch lg:justify-end">
+              <Link href="#marketplace-listings" className="gg-button-primary w-full justify-center sm:w-auto lg:w-full">Browse Listings</Link>
+              <Link href="/submit-buyer-request" className="gg-button-secondary w-full justify-center sm:w-auto lg:w-full">Request Sourcing Support</Link>
+              <Link href="/submit-listing" className="gg-button-secondary w-full justify-center sm:w-auto lg:w-full">Submit a Listing</Link>
             </div>
           </div>
         </div>
@@ -112,7 +113,7 @@ export default async function MarketplacePage() {
                 <Link
                   key={category.href}
                   href={category.href}
-                  className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:bg-white hover:shadow-card"
+                  className="focus-ring rounded-md border border-leaf-900/10 bg-leaf-50 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:bg-earth-50 hover:shadow-card"
                 >
                   <span className="flex items-start gap-3">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">

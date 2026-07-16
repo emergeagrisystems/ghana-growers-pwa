@@ -104,7 +104,7 @@ function ListingCard({ listing }: { listing: MarketplaceDisplayListing }) {
   const image = listingImages(listing)[0];
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card">
+    <article className="group flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-earth-50 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card">
       <Link href={listing.href} className="focus-ring block" aria-label={`View listing for ${listing.title}`}>
         <div className="relative overflow-hidden bg-leaf-50">
           <SafeImage

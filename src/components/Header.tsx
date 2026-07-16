@@ -86,7 +86,7 @@ export function Header() {
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={`focus-ring inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-bold transition duration-200 hover:bg-earth-50/10 hover:text-earth-50 ${
-                  isActive(item.href) ? "bg-earth-50 text-leaf-900 ring-1 ring-earth-100/25" : "text-earth-100"
+                  isActive(item.href) ? "bg-earth-100 text-leaf-900 ring-1 ring-earth-50/30 hover:bg-earth-100 hover:text-leaf-900" : "text-earth-100"
                 }`}
               >
                 {item.title}
@@ -141,7 +141,7 @@ export function Header() {
                   onClick={() => closeMenu({ restoreFocus: true })}
                   aria-current={isActive(item.href) ? "page" : undefined}
                   className={`focus-ring block min-h-11 rounded-md px-3 py-2.5 font-bold transition hover:bg-earth-50/10 ${
-                    isActive(item.href) ? "bg-earth-50 text-leaf-900 ring-1 ring-earth-100/25" : "text-earth-100"
+                    isActive(item.href) ? "bg-earth-100 text-leaf-900 ring-1 ring-earth-50/30 hover:bg-earth-100 hover:text-leaf-900" : "text-earth-100"
                   }`}
                 >
                   {item.title}

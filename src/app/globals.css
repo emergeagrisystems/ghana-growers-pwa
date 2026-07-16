@@ -124,7 +124,7 @@ h3 {
   }
 
   .gg-text-link {
-    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition duration-200 ease-out hover:bg-leaf-50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-earth-50 px-6 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition duration-200 ease-out hover:bg-earth-100 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .gg-badge {

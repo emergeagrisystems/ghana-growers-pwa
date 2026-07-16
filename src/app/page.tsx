@@ -120,7 +120,7 @@ export default async function HomePage() {
                   <Link
                     key={tool.title}
                     href="/farmer-hub"
-                    className={`focus-ring group flex flex-col rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-leaf-700/30 hover:shadow-card sm:h-full lg:p-5 ${
+                    className={`focus-ring group flex flex-col rounded-md border border-leaf-900/10 bg-earth-100/45 p-4 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:border-leaf-700/30 hover:bg-earth-50 hover:shadow-card sm:h-full lg:p-5 ${
                       isCenteredTabletCard ? "sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-md lg:col-span-1 lg:max-w-none" : ""
                     }`}
                   >
@@ -162,7 +162,7 @@ export default async function HomePage() {
               const Icon = step.icon;
 
               return (
-                <article key={step.title} className="flex flex-col rounded-md border border-leaf-900/10 bg-white p-4 shadow-card sm:h-full lg:p-5">
+                <article key={step.title} className="flex flex-col rounded-md border border-leaf-900/10 bg-earth-100/45 p-4 shadow-card sm:h-full lg:p-5">
                   <div className="flex items-center justify-between gap-4">
                     <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                       <Icon size={22} aria-hidden="true" />
