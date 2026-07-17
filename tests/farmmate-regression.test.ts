@@ -4291,6 +4291,51 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Crop Doctor renders Take Photo and Choose Photo actions",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(cropDoctor.includes("Take a photo of the affected crop, or choose one from your phone."), true);
+      assert.equal(cropDoctor.includes("Take Photo"), true);
+      assert.equal(cropDoctor.includes("Choose Photo"), true);
+      assert.equal(cropDoctor.includes('aria-label="Take Photo"'), true);
+      assert.equal(cropDoctor.includes('aria-label="Choose Photo"'), true);
+    }
+  },
+  {
+    name: "Take Photo input accepts images and requests rear camera capture",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const cameraInput = cropDoctor.match(/<input\s*\r?\n\s+ref={cameraInputRef}[\s\S]*?\/>/)?.[0] ?? "";
+
+      assert.notEqual(cameraInput, "");
+      assert.equal(cropDoctor.includes('const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",")'), true);
+      assert.equal(cameraInput.includes("accept={CROP_DOCTOR_IMAGE_ACCEPT}"), true);
+      assert.equal(cameraInput.includes('capture="environment"'), true);
+      assert.equal(cropDoctor.includes("cameraInputRef.current?.click()"), true);
+    }
+  },
+  {
+    name: "Choose Photo input accepts images without forcing capture",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const pickerInput = cropDoctor.match(/<input\s*\r?\n\s+ref={galleryInputRef}[\s\S]*?\/>/)?.[0] ?? "";
+
+      assert.notEqual(pickerInput, "");
+      assert.equal(pickerInput.includes("accept={CROP_DOCTOR_IMAGE_ACCEPT}"), true);
+      assert.equal(pickerInput.includes("capture="), false);
+      assert.equal(cropDoctor.includes("galleryInputRef.current?.click()"), true);
+    }
+  },
+  {
+    name: "Crop Doctor accepts supported image validation types",
+    run: () => {
+      assert.equal(validateCropDoctorImage({ type: "image/jpeg", size: CROP_DOCTOR_MAX_IMAGE_BYTES }).ok, true);
+      assert.equal(validateCropDoctorImage({ type: "image/png", size: 128_000 }).ok, true);
+      assert.equal(validateCropDoctorImage({ type: "image/webp", size: 128_000 }).ok, true);
+    }
+  },
+  {
     name: "Crop Doctor rejects unsupported file type",
     run: () => {
       const result = validateCropDoctorImage({ type: "application/pdf", size: 128_000 });
@@ -4307,6 +4352,30 @@ const tests: TestCase[] = [
       assert.equal(result.ok, false);
       assert.equal(result.reason, "file_too_large");
       assert.equal(result.message, CROP_DOCTOR_TOO_LARGE_MESSAGE);
+    }
+  },
+  {
+    name: "Crop Doctor image preview still appears after selection",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(cropDoctor.includes("setSelectedImage(URL.createObjectURL(file))"), true);
+      assert.equal(cropDoctor.includes("setSelectedFile(file)"), true);
+      assert.equal(cropDoctor.includes("setFileName(file.name)"), true);
+      assert.equal(cropDoctor.includes("Selected crop preview"), true);
+      assert.equal(cropDoctor.includes('fileName || "Crop photo selected"'), true);
+    }
+  },
+  {
+    name: "Crop Doctor Analyse Crop flow still submits the selected image",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(cropDoctor.includes("Analyse Crop"), true);
+      assert.equal(cropDoctor.includes('formData.append("image", selectedFile)'), true);
+      assert.equal(cropDoctor.includes('fetch("/api/farmmate/crop-doctor"'), true);
+      assert.equal(cropDoctor.includes("shouldDisableCropDoctorAnalysis(credits)"), true);
+      assert.equal(cropDoctor.includes("buildCropDoctorHandoffContext(diagnosis)"), true);
     }
   },
   {

@@ -3,11 +3,12 @@
 import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   buildCropDoctorHandoffContext,
   cropDoctorResultBadge,
   cropDoctorResultHeadline,
+  CROP_DOCTOR_ACCEPTED_IMAGE_TYPES,
   type CropDoctorHandoffContext,
   type CropDoctorVisionResult
 } from "@/lib/farmmate/crop-doctor-vision";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/farmmate/usage";
 
 type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
+const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",");
 
 function logCropDoctorCreditState(detail: {
   anonymousDeviceId: string;
@@ -45,6 +47,8 @@ function logCropDoctorCreditState(detail: {
 }
 
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (handoff: CropDoctorHandoffContext | string) => void }) {
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
@@ -149,6 +153,14 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       setCreditMessage("");
       setShowAskFarmMateFallback(false);
     }
+  }
+
+  function openCameraCapture() {
+    cameraInputRef.current?.click();
+  }
+
+  function openImagePicker() {
+    galleryInputRef.current?.click();
   }
 
   async function analyseCrop() {
@@ -263,26 +275,68 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         </div>
       </div>
 
-      <label
-        htmlFor="crop-doctor-upload"
+      <div
         aria-disabled={isUploadDisabled}
         className={`mt-5 grid min-h-44 place-items-center rounded-md border-2 border-dashed p-5 text-center transition ${
           isUploadDisabled
             ? "cursor-not-allowed border-ink/10 bg-ink/5 opacity-75"
-            : "cursor-pointer border-leaf-700/20 bg-leaf-50 hover:border-leaf-700/45 hover:bg-white"
+            : "border-leaf-700/20 bg-leaf-50 hover:border-leaf-700/45 hover:bg-white"
         }`}
       >
-        <input id="crop-doctor-upload" type="file" accept="image/*" className="sr-only" onChange={handleImageChange} disabled={isUploadDisabled} />
         <div>
           <UploadCloud className={`mx-auto ${isUploadDisabled ? "text-ink/35" : "text-leaf-700"}`} size={32} aria-hidden="true" />
-          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Take photo or choose photo"}</p>
+          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Take a crop photo"}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
             {isUploadDisabled
               ? "You can still ask FarmMate for guidance while you wait."
-              : "JPG, PNG, or WEBP under 5 MB. Ghana Growers does not permanently store this photo in V1."}
+              : "Take a photo of the affected crop, or choose one from your phone."}
+          </p>
+          <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+            <input
+              ref={cameraInputRef}
+              id="crop-doctor-camera-capture"
+              type="file"
+              accept={CROP_DOCTOR_IMAGE_ACCEPT}
+              capture="environment"
+              className="sr-only"
+              onChange={handleImageChange}
+              disabled={isUploadDisabled}
+              aria-label="Take Photo"
+            />
+            <button
+              type="button"
+              onClick={openCameraCapture}
+              disabled={isUploadDisabled}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+            >
+              <Camera size={18} aria-hidden="true" />
+              Take Photo
+            </button>
+            <input
+              ref={galleryInputRef}
+              id="crop-doctor-photo-picker"
+              type="file"
+              accept={CROP_DOCTOR_IMAGE_ACCEPT}
+              className="sr-only"
+              onChange={handleImageChange}
+              disabled={isUploadDisabled}
+              aria-label="Choose Photo"
+            />
+            <button
+              type="button"
+              onClick={openImagePicker}
+              disabled={isUploadDisabled}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+            >
+              <ImagePlus size={18} aria-hidden="true" />
+              Choose Photo
+            </button>
+          </div>
+          <p className="mt-3 text-xs font-bold leading-5 text-ink/48">
+            JPG, PNG, or WEBP under 5 MB. On desktop, Take Photo may open the normal file picker if camera capture is not supported.
           </p>
         </div>
-      </label>
+      </div>
 
       {selectedImage ? (
         <div className="mt-5">
