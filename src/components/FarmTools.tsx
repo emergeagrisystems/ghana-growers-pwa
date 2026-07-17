@@ -248,12 +248,12 @@ export function FarmTools() {
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section className="mt-8">
       <div className="mb-5">
         <h2 className="gg-section-title">Choose a farm tool</h2>
       </div>
 
-      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-4">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0">
         {tools.map((tool) => {
           const Icon = tool.icon;
           return (
@@ -261,12 +261,12 @@ export function FarmTools() {
               key={tool.key}
               type="button"
               onClick={() => openTool(tool.key)}
-              className="flex min-h-60 min-w-[82vw] snap-start flex-col items-start rounded-md border border-leaf-900/10 bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:min-w-[44vw] md:min-w-0"
+              className="flex min-h-48 min-w-[82vw] snap-start flex-col items-start rounded-md border border-leaf-900/10 bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:min-w-[44vw] md:min-w-0"
             >
               <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                 <Icon size={24} aria-hidden="true" />
               </span>
-              <h3 className="mt-6 gg-card-title">{tool.title}</h3>
+              <h3 className="mt-5 gg-card-title">{tool.title}</h3>
               <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">{tool.description}</p>
               <span className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900">
                 {tool.action}

@@ -415,6 +415,7 @@ const tests: TestCase[] = [
 
       assert.equal(farmerHub.includes('href="/farmer-hub/feedback"'), true);
       assert.equal(farmerHub.includes('href="/learn'), false);
+      assert.equal(farmerHub.includes("Learn Something Today"), false);
       assert.equal(feedbackPage.includes('href="/farmer-hub"'), true);
       assert.equal(feedbackPage.includes("Back to GG FarmMate"), true);
       assert.equal(feedbackPage.includes("FarmMatePilotFeedbackForm"), true);
@@ -2856,6 +2857,79 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "FarmMate pilot homepage is tool-first on desktop",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+
+      assert.equal(farmerHub.includes("lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.46fr)]"), true);
+      assert.equal(farmerHub.indexOf("<FarmMateHeroActions />") < farmerHub.indexOf("<FarmTools />"), true);
+      assert.equal(farmerHub.indexOf("<FarmTools />") < farmerHub.indexOf("<FarmMateWeatherFoundation />"), true);
+      assert.equal(farmTools.includes('className="mt-8"'), true);
+      assert.equal(farmTools.includes("md:grid md:grid-cols-2"), true);
+      assert.equal(farmTools.includes("min-h-48"), true);
+      assert.equal(farmTools.includes("lg:grid-cols-4"), false);
+    }
+  },
+  {
+    name: "large dark-green Farm Summary card is no longer rendered",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const summary = repoFile("src/components/FarmMateDailySummary.tsx");
+
+      assert.equal(farmerHub.includes("Today&apos;s Farm Summary"), false);
+      assert.equal(summary.includes("bg-leaf-600"), false);
+      assert.equal(summary.includes("text-white"), false);
+      assert.equal(summary.includes("Today at a glance"), true);
+    }
+  },
+  {
+    name: "Today at a glance renders compact field weather and tip content",
+    run: () => {
+      const summary = repoFile("src/components/FarmMateDailySummary.tsx");
+      const weatherWidget = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+
+      assert.equal(summary.includes('aria-label="Today at a glance"'), true);
+      assert.equal(summary.includes("Field note"), true);
+      assert.equal(summary.includes("Weather note"), true);
+      assert.equal(summary.includes("Practical tip"), true);
+      assert.equal(summary.includes("summary.mainRecommendation"), true);
+      assert.equal(summary.includes("weatherNote || summary.rainOutlookNote"), true);
+      assert.equal(summary.includes("summary.todaysTip"), true);
+      assert.equal(summary.includes("summary.warning"), false);
+      assert.equal(weatherWidget.indexOf('aria-label="Detailed 3-day weather forecast"') < weatherWidget.indexOf("<FarmMateDailySummary weatherNote={weatherNote} />"), true);
+    }
+  },
+  {
+    name: "mobile FarmMate order puts actions and tools before weather summary and feedback",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const actionsIndex = farmerHub.indexOf("<FarmMateHeroActions />");
+      const toolsIndex = farmerHub.indexOf("<FarmTools />");
+      const weatherIndex = farmerHub.indexOf("<FarmMateWeatherFoundation />");
+      const feedbackIndex = farmerHub.indexOf('href="/farmer-hub/feedback"');
+
+      assert.ok(actionsIndex > 0);
+      assert.ok(toolsIndex > actionsIndex);
+      assert.ok(weatherIndex > toolsIndex);
+      assert.ok(feedbackIndex > weatherIndex);
+    }
+  },
+  {
+    name: "FarmMate hero action buttons still open Ask FarmMate and Crop Doctor",
+    run: () => {
+      const actions = repoFile("src/components/FarmMateHeroActions.tsx");
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+
+      assert.equal(actions.includes('openFarmMateTool("ask")'), true);
+      assert.equal(actions.includes('openFarmMateTool("doctor")'), true);
+      assert.equal(farmTools.includes('tool === "ask"'), true);
+      assert.equal(farmTools.includes('tool === "doctor"'), true);
+      assert.equal(farmTools.includes("<AskFarmMate"), true);
+      assert.equal(farmTools.includes("<CropDoctor"), true);
+    }
+  },
+  {
     name: "weather guidance is transparent when data is unavailable",
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
@@ -3027,25 +3101,21 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "FarmMate launch QA document covers public routes and V1 limitations",
+    name: "FarmMate launch QA document covers pilot routes and V1 limitations",
     run: () => {
       const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md");
       const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
-      const learnPage = repoFile("src/app/learn/page.tsx");
-      const challengePage = repoFile("src/app/learn/challenges/soil-health/page.tsx");
-      const soilChallenge = repoFile("src/components/SoilHealthChallenge.tsx");
 
-      ["/farmer-hub", "/learn", "/learn/challenges/soil-health"].forEach((route) => {
+      ["/farmer-hub", "/farmer-hub/feedback"].forEach((route) => {
         assert.equal(launchQa.includes(route), true, route);
       });
       [
-        "Today's Farm Summary",
+        "Today at a glance",
         "Live Weather",
         "Ask FarmMate",
         "Crop Doctor Vision",
         "Crop Calendar",
-        "Planting Advisor",
-        "Soil Health Challenge"
+        "Planting Advisor"
       ].forEach((tool) => {
         assert.equal(launchQa.includes(tool), true, tool);
       });
@@ -3061,11 +3131,7 @@ const tests: TestCase[] = [
 
       assert.equal(farmerHub.includes("FarmMateWeatherFoundation"), true);
       assert.equal(farmerHub.includes("FarmTools"), true);
-      assert.equal(learnPage.includes("LearnHub"), true);
-      assert.equal(challengePage.includes("SoilHealthChallenge"), true);
-      assert.equal(soilChallenge.includes("LEARN_CHALLENGE_STORAGE_KEY"), true);
-      assert.equal(soilChallenge.includes("/farmer-hub?tool=ask"), true);
-      assert.equal(soilChallenge.includes("Start Day 1"), true);
+      assert.equal(launchQa.includes("Learn and Soil Health Challenge"), false);
     }
   },
   {

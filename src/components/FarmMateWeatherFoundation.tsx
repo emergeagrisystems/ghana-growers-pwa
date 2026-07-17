@@ -185,10 +185,8 @@ export function FarmMateWeatherFoundation() {
   }
 
   return (
-    <>
-      <FarmMateDailySummary weatherNote={weatherNote} />
-
-      <div className="mt-4 rounded-md bg-leaf-50 p-3">
+    <div className="grid gap-4">
+      <div className="rounded-md border border-leaf-900/10 bg-white/95 p-4 shadow-soft">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-2">
             <CloudSun className="text-leaf-700" size={18} aria-hidden="true" />
@@ -268,6 +266,7 @@ export function FarmMateWeatherFoundation() {
           </div>
         )}
       </div>
-    </>
+      <FarmMateDailySummary weatherNote={weatherNote} />
+    </div>
   );
 }

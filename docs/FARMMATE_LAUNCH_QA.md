@@ -5,8 +5,7 @@ GG FarmMate is ready for controlled public farmer testing when the routes, tools
 ## Tested Routes
 
 - `/farmer-hub`
-- `/learn`
-- `/learn/challenges/soil-health`
+- `/farmer-hub/feedback`
 
 Route checks:
 
@@ -18,11 +17,12 @@ Route checks:
 
 ## Core Tools
 
-### Today's Farm Summary
+### Today at a glance
 
 - Uses local date-based daily guidance.
 - Greeting never says "Good night".
 - Evening and night guidance avoids morning-only actions.
+- Renders as a compact support card, not the page hero.
 - Does not claim live weather when weather data is unavailable.
 
 ### Live Weather
@@ -59,14 +59,6 @@ Route checks:
 
 - Local specialist guidance for planting timing, crop choice, spacing, nursery/transplanting, and land preparation.
 - Does not pretend to know exact local weather, prices, or profit.
-
-### Learn and Soil Health Challenge
-
-- `/learn` acts as the Farmer Improvement Center.
-- The Soil Health Challenge starts at Day 1.
-- Progress saves to localStorage on the device.
-- Refresh preserves challenge progress.
-- FarmMate links open `/farmer-hub?tool=ask` safely.
 
 ## Specialist Test Matrix
 
