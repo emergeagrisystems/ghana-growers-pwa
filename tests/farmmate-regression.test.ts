@@ -99,8 +99,8 @@ import {
   isCountableFarmMateSubmission,
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
   CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE,
-  FARM_MATE_EXHAUSTED_LEARN_CTA,
-  FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA,
+  FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE,
+  FARM_MATE_FEEDBACK_CTA,
   cropDoctorCreditMessage,
   farmMateCreditLine,
   formatRefreshIn,
@@ -109,6 +109,14 @@ import {
   usageTrackingUnavailableDecision,
   type FarmMateUsageEvent
 } from "../src/lib/farmmate/usage";
+import {
+  isControlledPrelaunchRoute,
+  isProtectedFarmMatePilotPage,
+  isPublicFarmMatePilotPage,
+  isPublicFarmMatePilotRoute,
+  PROTECTED_FARMMATE_PILOT_PAGES,
+  PUBLIC_FARMMATE_PILOT_PAGES
+} from "../src/lib/farmmate/pilot-access";
 import {
   farmMatePilotHelpfulnessOptions,
   farmMatePilotWouldUseAgainOptions,
@@ -334,6 +342,77 @@ function repoFile(path: string) {
 }
 
 const tests: TestCase[] = [
+  {
+    name: "FarmMate pilot exposes only the two requested public pages and FarmMate APIs",
+    run: () => {
+      assert.deepEqual(PUBLIC_FARMMATE_PILOT_PAGES, ["/farmer-hub", "/farmer-hub/feedback"]);
+      assert.equal(isPublicFarmMatePilotPage("/farmer-hub"), true);
+      assert.equal(isPublicFarmMatePilotPage("/farmer-hub/feedback"), true);
+      assert.equal(isPublicFarmMatePilotRoute("/api/farmmate/ask"), true);
+      assert.equal(isPublicFarmMatePilotRoute("/api/farmmate/crop-doctor"), true);
+      assert.equal(isPublicFarmMatePilotRoute("/api/waitlist"), false);
+      assert.equal(isPublicFarmMatePilotPage("/farmer-hub/unfinished"), false);
+    }
+  },
+  {
+    name: "unfinished site pages remain protected during the FarmMate pilot",
+    run: () => {
+      assert.deepEqual(PROTECTED_FARMMATE_PILOT_PAGES, [
+        "/",
+        "/learn",
+        "/learn/challenges/soil-health",
+        "/buy",
+        "/sell",
+        "/directory",
+        "/marketplace",
+        "/join",
+        "/about"
+      ]);
+
+      PROTECTED_FARMMATE_PILOT_PAGES.forEach((route) => {
+        assert.equal(isProtectedFarmMatePilotPage(route), true, route);
+        assert.equal(isPublicFarmMatePilotRoute(route), false, route);
+        assert.equal(isControlledPrelaunchRoute(route), false, route);
+      });
+
+      const middleware = repoFile("src/middleware.ts");
+      assert.equal(middleware.includes("isPublicFarmMatePilotRoute(pathname)"), true);
+      assert.equal(middleware.includes("isControlledPrelaunchRoute(pathname)"), true);
+      assert.equal(middleware.includes('pathname.startsWith("/api")'), false);
+    }
+  },
+  {
+    name: "pilot header contains only FarmMate navigation and links its logo to FarmMate",
+    run: () => {
+      const header = repoFile("src/components/Header.tsx");
+      const pilotHeader = header.slice(header.indexOf("function PilotHeader"), header.indexOf("export function Header"));
+
+      assert.equal(pilotHeader.includes('href="/farmer-hub"'), true);
+      assert.equal(pilotHeader.includes('href="/farmer-hub/feedback"'), true);
+      assert.equal(pilotHeader.includes("Ghana Growers"), true);
+      assert.equal(pilotHeader.includes("GG FarmMate"), true);
+      assert.equal(pilotHeader.includes("Share feedback"), true);
+      ["/buy", "/sell", "/directory", "/marketplace", "/join", "Join the Network", "/about", "/contact", "/learn"].forEach((link) => {
+        assert.equal(pilotHeader.includes(link), false, link);
+      });
+    }
+  },
+  {
+    name: "FarmMate and feedback pages use the pilot shell without unfinished links",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const feedbackPage = repoFile("src/app/farmer-hub/feedback/page.tsx");
+      const manifest = JSON.parse(repoFile("public/manifest.json")) as { start_url?: string };
+
+      assert.equal(farmerHub.includes('href="/farmer-hub/feedback"'), true);
+      assert.equal(farmerHub.includes('href="/learn'), false);
+      assert.equal(feedbackPage.includes('href="/farmer-hub"'), true);
+      assert.equal(feedbackPage.includes("Back to GG FarmMate"), true);
+      assert.equal(feedbackPage.includes("FarmMatePilotFeedbackForm"), true);
+      assert.equal(feedbackPage.includes("Header"), false);
+      assert.equal(manifest.start_url, "/farmer-hub");
+    }
+  },
   {
     name: "Ask FarmMate starter suggestions cover major specialists",
     run: () => {
@@ -3884,28 +3963,28 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "exhausted Ask FarmMate message keeps refresh time and points to Learn",
+    name: "exhausted Ask FarmMate message points farmers to feedback",
     run: () => {
       const message = askFarmMateCreditMessage({ reason: "credits_exhausted", refreshInText: "6h 20m" });
 
-      assert.equal(message.includes("You've used your free FarmMate AI questions for now"), true);
-      assert.equal(message.includes("Your credits refresh in 6h 20m"), true);
-      assert.equal(message.includes("While you wait, continue learning practical farming tips."), true);
-      assert.equal(message.includes("FarmMate tools and learning tips"), false);
+      assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
+      assert.equal(message.includes("continue using GG FarmMate when your credits refresh"), true);
+      assert.equal(message.includes("share feedback"), true);
+      assert.equal(message.includes("Learn"), false);
     }
   },
   {
-    name: "exhausted Ask FarmMate state exposes Open Learn CTA",
+    name: "exhausted Ask FarmMate state exposes Share feedback CTA",
     run: () => {
-      assert.equal(FARM_MATE_EXHAUSTED_LEARN_CTA.label, "Open Learn");
-      assert.equal(FARM_MATE_EXHAUSTED_LEARN_CTA.href, "/learn");
-    }
-  },
-  {
-    name: "exhausted Ask FarmMate state exposes Soil Health Challenge CTA",
-    run: () => {
-      assert.equal(FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.label, "Start Soil Health Challenge");
-      assert.equal(FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.href, "/learn/challenges/soil-health");
+      assert.equal(FARM_MATE_FEEDBACK_CTA.label, "Share feedback");
+      assert.equal(FARM_MATE_FEEDBACK_CTA.href, "/farmer-hub/feedback");
+
+      const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      assert.equal(askFarmMate.includes("FARM_MATE_FEEDBACK_CTA"), true);
+      assert.equal(cropDoctor.includes("FARM_MATE_FEEDBACK_CTA"), true);
+      assert.equal(askFarmMate.includes('href="/learn'), false);
+      assert.equal(cropDoctor.includes('href="/learn'), false);
     }
   },
   {
@@ -4092,7 +4171,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "exhausted Crop Doctor credits show refresh message",
+    name: "exhausted Crop Doctor credits show feedback message",
     run: () => {
       const now = new Date("2026-07-09T12:00:00.000Z");
       const events = [
@@ -4102,8 +4181,9 @@ const tests: TestCase[] = [
       const decision = getFarmMateCreditDecision("crop_doctor", events, now);
       const message = cropDoctorCreditMessage(decision);
 
-      assert.equal(message.includes("You've used your free Crop Doctor checks for now."), true);
-      assert.equal(message.includes("Your credits refresh in"), true);
+      assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
+      assert.equal(message.includes("credits refresh"), true);
+      assert.equal(message.includes("share feedback"), true);
       assert.equal(message.includes("soon"), false);
       assert.equal(message.includes("temporarily limited"), false);
     }
@@ -4152,11 +4232,11 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "unknown Crop Doctor reset time renders within 12 hours",
+    name: "unknown Crop Doctor reset time still uses pilot feedback message",
     run: () => {
       const message = cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: formatRefreshIn(null) });
 
-      assert.equal(message, "You've used your free Crop Doctor checks for now. Your credits refresh within 12 hours.");
+      assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
       assert.equal(message.includes("soon"), false);
     }
   },

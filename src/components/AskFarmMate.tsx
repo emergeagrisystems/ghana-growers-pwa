@@ -18,7 +18,7 @@ import {
 } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
-import { FARM_MATE_EXHAUSTED_LEARN_CTA, FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
+import { FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 
 const suggestions = [
@@ -824,16 +824,10 @@ export function AskFarmMate({
                     {shouldShowCreditActions ? (
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Link
-                          href={FARM_MATE_EXHAUSTED_LEARN_CTA.href}
+                          href={FARM_MATE_FEEDBACK_CTA.href}
                           className="inline-flex min-h-10 items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                         >
-                          {FARM_MATE_EXHAUSTED_LEARN_CTA.label}
-                        </Link>
-                        <Link
-                          href={FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.href}
-                          className="inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-                        >
-                          {FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA.label}
+                          {FARM_MATE_FEEDBACK_CTA.label}
                         </Link>
                       </div>
                     ) : null}

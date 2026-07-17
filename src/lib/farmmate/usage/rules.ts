@@ -128,19 +128,13 @@ export const CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT =
 export const CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE =
   "Crop Doctor AI is temporarily limited, but you can still ask FarmMate for guidance.";
 
-export const FARM_MATE_EXHAUSTED_LEARN_CTA = {
-  label: "Open Learn",
-  href: "/learn"
-} as const;
+export const FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE =
+  "You can continue using GG FarmMate when your credits refresh. If something was confusing, please share feedback.";
 
-export const FARM_MATE_SOIL_HEALTH_CHALLENGE_CTA = {
-  label: "Start Soil Health Challenge",
-  href: "/learn/challenges/soil-health"
+export const FARM_MATE_FEEDBACK_CTA = {
+  label: "Share feedback",
+  href: "/farmer-hub/feedback"
 } as const;
-
-function refreshPhrase(refreshInText: string) {
-  return refreshInText.startsWith("within ") ? `refresh ${refreshInText}` : `refresh in ${refreshInText}`;
-}
 
 export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCreditStatus | null) {
   if (!status) {
@@ -177,7 +171,7 @@ export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "
     return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
   }
 
-  return `You've used your free Crop Doctor checks for now. Your credits ${refreshPhrase(decision.refreshInText)}.`;
+  return FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE;
 }
 
 export function askFarmMateCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
@@ -189,7 +183,7 @@ export function askFarmMateCreditMessage(decision: Pick<FarmMateCreditDecision, 
     return "FarmMate is still catching up. Please wait a few seconds before asking again.";
   }
 
-  return `You've used your free FarmMate AI questions for now. Your credits ${refreshPhrase(decision.refreshInText)}. While you wait, continue learning practical farming tips.`;
+  return FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE;
 }
 
 export function shouldDisableCropDoctorAnalysis(status?: FarmMateCreditStatus | null) {

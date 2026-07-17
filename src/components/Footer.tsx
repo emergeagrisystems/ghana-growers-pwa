@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Sprout } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 const quickLinks = [
   { title: "Buy", href: "/buy" },
@@ -17,6 +21,12 @@ const legalLinks = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (isPublicFarmMatePilotPage(pathname)) {
+    return null;
+  }
+
   return (
     <footer className="brand-surface-dark border-t border-earth-100/15">
       <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.95fr_1.1fr] lg:items-start lg:px-8">

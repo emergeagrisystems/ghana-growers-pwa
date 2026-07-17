@@ -14,7 +14,7 @@ import {
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import {
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
-  FARM_MATE_EXHAUSTED_LEARN_CTA,
+  FARM_MATE_FEEDBACK_CTA,
   cropDoctorCreditMessage,
   shouldDisableCropDoctorAnalysis,
   shouldDisableCropDoctorUpload,
@@ -328,10 +328,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
                   Ask FarmMate instead
                 </button>
                 <Link
-                  href={FARM_MATE_EXHAUSTED_LEARN_CTA.href}
+                  href={FARM_MATE_FEEDBACK_CTA.href}
                   className="inline-flex min-h-10 items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                 >
-                  {FARM_MATE_EXHAUSTED_LEARN_CTA.label}
+                  {FARM_MATE_FEEDBACK_CTA.label}
                 </Link>
               </div>
             ) : null}

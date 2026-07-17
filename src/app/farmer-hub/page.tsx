@@ -69,9 +69,6 @@ export default function FarmerHubPage() {
             <div>
               <h2 className="gg-card-title">Learn Something Today</h2>
               <p className="mt-3 text-base font-bold leading-7 text-ink/72">{featuredLearningTip}</p>
-              <a href="/learn/make-your-own-compost-for-healthy-soil" className="mt-4 inline-flex text-sm font-black text-leaf-700">
-                Read guide
-              </a>
             </div>
           </div>
         </article>

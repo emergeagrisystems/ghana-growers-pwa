@@ -2,7 +2,7 @@
   "name": "Ghana Growers",
   "short_name": "Growers",
   "description": "Connect with Ghana farmers, buyers, and agricultural suppliers.",
-  "start_url": "/",
+  "start_url": "/farmer-hub",
   "display": "standalone",
   "background_color": "#fffaf0",
   "theme_color": "#477d22",

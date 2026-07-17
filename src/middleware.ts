@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isControlledPrelaunchRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
 
 const PREVIEW_COOKIE = "ghana_growers_dev_preview";
 
@@ -13,30 +14,12 @@ function isPublicAsset(pathname: string) {
     pathname.startsWith("/icons") ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
-    pathname === "/favicon.ico" ||
-    /\.[a-zA-Z0-9]+$/.test(pathname)
+    pathname === "/favicon.ico"
   );
 }
 
 function isAllowedPrelaunchRoute(pathname: string) {
-  return (
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/") ||
-    pathname.startsWith("/api") ||
-    pathname === "/launching-soon" ||
-    pathname === "/dev-preview" ||
-    pathname.startsWith("/dev-preview/") ||
-    pathname === "/become-a-supplier" ||
-    pathname === "/supplier-registration" ||
-    pathname === "/join" ||
-    pathname === "/join/farmer" ||
-    pathname === "/join/buyer" ||
-    pathname === "/farmer-hub" ||
-    pathname === "/submit-buyer-request" ||
-    pathname === "/submit-listing" ||
-    pathname === "/submit-produce-listing" ||
-    isPublicAsset(pathname)
-  );
+  return isPublicFarmMatePilotRoute(pathname) || isControlledPrelaunchRoute(pathname) || isPublicAsset(pathname);
 }
 
 export function middleware(request: NextRequest) {

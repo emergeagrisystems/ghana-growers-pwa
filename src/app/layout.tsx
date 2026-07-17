@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
         />
         <PwaRegister />
-        {showPublicShell ? <Header /> : null}
+        <Header showFullNavigation={showPublicShell} />
         <main>{children}</main>
         {showPublicShell ? <Footer /> : null}
         {showPublicShell ? <FloatingWhatsAppButton /> : null}
