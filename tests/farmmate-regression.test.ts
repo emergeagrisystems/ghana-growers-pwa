@@ -64,6 +64,11 @@ import {
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import {
+  cropCalendarFarmMateQuestion,
+  cropCalendarGuides,
+  findCropCalendarGuide
+} from "../src/lib/farmmate/crop-calendar";
+import {
   FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY,
   FARM_MATE_WEATHER_LOCATION_STORAGE_KEY,
   FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE,
@@ -73,7 +78,11 @@ import {
   weatherDecisionSummaryForForecast,
   type WeatherDecisionSummary
 } from "../src/lib/farmmate/weather";
-import { plantingAdvisorCrops, plantingAdvisorReasoningOrder } from "../src/lib/farmmate/planting-advisor-specialist";
+import {
+  plantingAdvisorCrops,
+  plantingAdvisorFarmMateQuestion,
+  plantingAdvisorReasoningOrder
+} from "../src/lib/farmmate/planting-advisor-specialist";
 import { harvestPostHarvestCrops, harvestPostHarvestReasoningOrder } from "../src/lib/farmmate/harvest-postharvest-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
@@ -3728,6 +3737,92 @@ const tests: TestCase[] = [
         assert.equal(Boolean(guidance?.whenToDelayPlanting.length), true);
         assert.equal(Boolean(guidance?.nextBestAction), true);
       }
+    }
+  },
+  {
+    name: "Planting Advisor pilot result exposes practical selected-crop guidance",
+    run: () => {
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+      const requiredLabels = [
+        "Crop",
+        "Region",
+        "Planting suitability",
+        "Best planting period or season note",
+        "Spacing guidance",
+        "Soil preparation",
+        "Water/rain condition",
+        "What to avoid",
+        "Next step"
+      ];
+
+      requiredLabels.forEach((label) => assert.equal(farmTools.includes(`label=\"${label}\"`), true, label));
+      assert.equal(farmTools.includes("selectedGuidance.spacingGuidance[0]"), true);
+      assert.equal(farmTools.includes("selectedGuidance.soilPreparation[0]"), true);
+      assert.equal(farmTools.includes("selectedGuidance.whenToDelayPlanting[0]"), true);
+      assert.equal(farmTools.includes("selectedGuidance.nextBestAction"), true);
+      assert.equal(farmTools.includes("Local timing can vary by district"), true);
+    }
+  },
+  {
+    name: "Crop Calendar supports pilot crops with practical timelines",
+    run: () => {
+      const requiredCrops = ["Maize", "Tomato", "Pepper", "Cassava", "Yam", "Plantain", "Onion", "Okra", "Cucumber", "Garden eggs"];
+      const availableCrops = cropCalendarGuides.map((guide) => guide.crop);
+
+      assert.deepEqual(availableCrops, requiredCrops);
+      cropCalendarGuides.forEach((guide) => {
+        assert.equal(guide.stages.length >= 5, true, guide.crop);
+        assert.equal(guide.stages.every((stage) => Boolean(stage.timing && stage.stage && stage.guidance)), true, guide.crop);
+      });
+      assert.equal(findCropCalendarGuide("garden eggs")?.crop, "Garden eggs");
+    }
+  },
+  {
+    name: "Crop Calendar renders an interactive cautious timeline",
+    run: () => {
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+      const calendarData = repoFile("src/lib/farmmate/crop-calendar.ts");
+
+      assert.equal(farmTools.includes("Select crop"), true);
+      assert.equal(farmTools.includes("Select region"), true);
+      assert.equal(farmTools.includes("Planting month or season"), true);
+      assert.equal(farmTools.includes("selectedGuide.stages.map"), true);
+      assert.equal(farmTools.includes("crop timeline"), true);
+      assert.equal(farmTools.includes("Typical guide"), true);
+      assert.equal(farmTools.includes("not a guaranteed planting or harvest date"), true);
+      assert.equal(calendarData.includes("Mar-Jun"), false);
+      assert.equal(calendarData.includes("guaranteed yield"), false);
+      assert.equal(calendarData.includes("market price"), false);
+    }
+  },
+  {
+    name: "planning tool handoffs use the selected crop and region",
+    run: () => {
+      assert.equal(
+        plantingAdvisorFarmMateQuestion("Maize", "Northern"),
+        "I am planning to grow Maize in Northern. What should I check before planting?"
+      );
+      assert.equal(
+        cropCalendarFarmMateQuestion("Tomato", "Greater Accra"),
+        "I am following the crop calendar for Tomato in Greater Accra. What should I watch for next?"
+      );
+
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+      assert.equal(farmTools.includes("plantingAdvisorFarmMateQuestion(selectedGuidance.crop, selectedRegion)"), true);
+      assert.equal(farmTools.includes("cropCalendarFarmMateQuestion(selectedGuide.crop, selectedRegion)"), true);
+      assert.equal(farmTools.match(/Ask FarmMate about this/g)?.length, 2);
+    }
+  },
+  {
+    name: "planning modal content remains mobile-first and prevents sideways overflow",
+    run: () => {
+      const farmTools = repoFile("src/components/FarmTools.tsx");
+
+      assert.equal(farmTools.includes("overflow-x-hidden overflow-y-auto"), true);
+      assert.equal(farmTools.includes("min-w-0 max-w-2xl"), true);
+      assert.equal(farmTools.includes("gg-field min-h-12 w-full max-w-full"), true);
+      assert.equal(farmTools.includes("min-h-11 w-full"), true);
+      assert.equal(farmTools.includes("sm:grid-cols-2"), true);
     }
   },
   {

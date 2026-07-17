@@ -171,6 +171,10 @@ export function findPlantingAdvisorGuidance(cropName?: string | null) {
   return plantingAdvisorCrops.find((guidance) => guidance.crop.toLowerCase() === cropName.toLowerCase());
 }
 
+export function plantingAdvisorFarmMateQuestion(crop: string, region: string) {
+  return `I am planning to grow ${crop} in ${region}. What should I check before planting?`;
+}
+
 export function plantingAdvisorQuestionType(question: string): PlantingAdvisorQuestionType {
   const normalized = question.toLowerCase();
 
