@@ -2797,6 +2797,65 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "mobile weather shows compact day temperature and rain rows",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      const mobileForecast = component.slice(
+        component.indexOf('aria-label="Compact 3-day weather forecast"'),
+        component.indexOf('aria-label="Detailed 3-day weather forecast"')
+      );
+      const forecast = mapOpenMeteoForecast(sampleWeatherData(), supportedFarmMateWeatherLocations[0]);
+
+      assert.ok(forecast);
+      assert.equal(forecast.currentTemperatureC, 29);
+      assert.equal(forecast.tomorrow.temperatureMaxC, 30);
+      assert.equal(component.includes('className="mt-3 grid gap-1.5 sm:hidden"'), true);
+      assert.equal(mobileForecast.includes("day.label"), true);
+      assert.equal(mobileForecast.includes("mainTemperatureLine(day"), true);
+      assert.equal(mobileForecast.includes("forecast.currentTemperatureC"), true);
+      assert.equal(mobileForecast.includes("rainLine(day)"), true);
+      assert.equal(mobileForecast.includes("temperatureLine(day)"), false);
+    }
+  },
+  {
+    name: "mobile weather does not repeat long farming notes",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+
+      assert.equal(component.includes("day.farmingNote"), false);
+      assert.equal(component.includes("<FarmMateDailySummary weatherNote={weatherNote} />"), true);
+      assert.equal(component.match(/weatherNote=\{weatherNote\}/g)?.length, 1);
+    }
+  },
+  {
+    name: "desktop weather keeps compact detailed forecast cards",
+    run: () => {
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      const desktopForecast = component.slice(component.indexOf('aria-label="Detailed 3-day weather forecast"'));
+
+      assert.equal(component.includes('className="mt-3 hidden grid-cols-3 gap-2 sm:grid"'), true);
+      assert.equal(desktopForecast.includes("day.label"), true);
+      assert.equal(desktopForecast.includes("temperatureLine(day)"), true);
+      assert.equal(desktopForecast.includes("rainLine(day)"), true);
+      assert.equal(desktopForecast.includes("min-h-28"), true);
+    }
+  },
+  {
+    name: "FarmMate hero clarifies and preserves both mobile actions",
+    run: () => {
+      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
+      const actions = repoFile("src/components/FarmMateHeroActions.tsx");
+
+      assert.equal(farmerHub.includes("Ask FarmMate for farming advice, or upload a crop photo when something looks wrong."), true);
+      assert.equal(actions.includes('openFarmMateTool("ask")'), true);
+      assert.equal(actions.includes('openFarmMateTool("doctor")'), true);
+      assert.equal(actions.includes("Ask FarmMate"), true);
+      assert.equal(actions.includes("Upload Crop Photo"), true);
+      assert.equal(actions.match(/min-h-\[4\.25rem\] w-full/g)?.length, 2);
+      assert.equal(actions.match(/sm:min-h-12 sm:w-auto/g)?.length, 2);
+    }
+  },
+  {
     name: "weather guidance is transparent when data is unavailable",
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");

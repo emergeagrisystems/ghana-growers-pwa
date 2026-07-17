@@ -30,7 +30,7 @@ export default function FarmerHubPage() {
               GG FarmMate
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">
-              Your daily farming companion for crop questions, farm planning, weather-aware decisions, and practical learning.
+              Ask FarmMate for farming advice, or upload a crop photo when something looks wrong.
             </p>
             <FarmMateHeroActions />
           </div>

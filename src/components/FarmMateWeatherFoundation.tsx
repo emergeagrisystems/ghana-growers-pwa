@@ -42,6 +42,12 @@ function temperatureLine(day: FarmMateWeatherForecast["days"][number]) {
   return "--";
 }
 
+function mainTemperatureLine(day: FarmMateWeatherForecast["days"][number], currentTemperatureC?: number) {
+  const temperature = currentTemperatureC ?? day.temperatureMaxC ?? day.temperatureMinC;
+
+  return typeof temperature === "number" ? `${temperature}\u00b0C` : "--";
+}
+
 function rainLine(day: FarmMateWeatherForecast["days"][number]) {
   return typeof day.rainChancePercent === "number" ? `${day.rainChancePercent}% chance of rain` : "Rain chance unavailable";
 }
@@ -224,24 +230,35 @@ export function FarmMateWeatherFoundation() {
         </div>
 
         {isLoading ? (
-          <div className="mt-3 flex min-h-32 items-center justify-center rounded-md bg-white text-sm font-black text-ink/60 shadow-sm ring-1 ring-leaf-900/5">
+          <div className="mt-3 flex min-h-24 items-center justify-center rounded-md bg-white text-sm font-black text-ink/60 shadow-sm ring-1 ring-leaf-900/5 sm:min-h-28">
             <Loader2 className="mr-2 animate-spin text-leaf-700" size={18} aria-hidden="true" />
             Loading live weather...
           </div>
         ) : forecast ? (
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {forecast.days.map((day) => (
-              <div key={day.date} className="flex min-h-36 flex-col items-center justify-center rounded-md bg-white px-2 py-4 text-center shadow-sm ring-1 ring-leaf-900/5 sm:min-h-40 sm:px-3">
-                <div className="flex items-center justify-center gap-1.5 text-ink/70">
-                  <Sun size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
-                  <p className="text-[0.72rem] font-bold leading-tight sm:text-xs">{day.label}</p>
+          <>
+            <div className="mt-3 grid gap-1.5 sm:hidden" aria-label="Compact 3-day weather forecast">
+              {forecast.days.map((day, index) => (
+                <div key={day.date} className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-md bg-white px-3 py-2.5 shadow-sm ring-1 ring-leaf-900/5">
+                  <p className="min-w-0 text-xs font-black leading-4 text-ink/72">{day.label}</p>
+                  <p className="text-sm font-black text-leaf-900">{mainTemperatureLine(day, index === 0 ? forecast.currentTemperatureC : undefined)}</p>
+                  <p className="text-right text-[0.68rem] font-bold leading-4 text-ink/58">{rainLine(day)}</p>
                 </div>
-                <p className="mt-4 text-[1.7rem] font-bold leading-none text-leaf-900 sm:text-[2.125rem]">{temperatureLine(day)}</p>
-                <p className="mt-4 text-[0.68rem] font-bold leading-4 text-ink/58 sm:text-xs">{rainLine(day)}</p>
-                <p className="mt-2 text-[0.66rem] font-bold leading-4 text-leaf-700 sm:text-[0.7rem]">{day.farmingNote}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <div className="mt-3 hidden grid-cols-3 gap-2 sm:grid" aria-label="Detailed 3-day weather forecast">
+              {forecast.days.map((day) => (
+                <div key={day.date} className="flex min-h-28 flex-col items-center justify-center rounded-md bg-white px-3 py-3 text-center shadow-sm ring-1 ring-leaf-900/5">
+                  <div className="flex items-center justify-center gap-1.5 text-ink/70">
+                    <Sun size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
+                    <p className="text-xs font-bold leading-tight">{day.label}</p>
+                  </div>
+                  <p className="mt-3 text-2xl font-bold leading-none text-leaf-900">{temperatureLine(day)}</p>
+                  <p className="mt-3 text-xs font-bold leading-4 text-ink/58">{rainLine(day)}</p>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="mt-3 rounded-md bg-white px-4 py-4 text-sm font-bold leading-6 text-ink/66 shadow-sm ring-1 ring-leaf-900/5">
             <div className="flex gap-2">
