@@ -831,7 +831,7 @@ const operationsNavigation: Array<{
     group: "Buyer Requests",
     items: [
       { key: "buyer-review", id: "buyer-requests", label: "Review Requests", produceRequestStatusFilter: "Pending Review" },
-      { key: "buyer-active-sourcing", id: "match-opportunities", label: "Active Sourcing", sourcingQueueFilter: "All" },
+      { key: "buyer-matches", id: "match-opportunities", label: "Matches", sourcingQueueFilter: "All" },
       { key: "buyer-follow-ups", id: "lead-queue", label: "Follow-ups" },
       { key: "buyer-completed", id: "lead-queue", label: "Completed Requests" }
     ]
@@ -2826,38 +2826,6 @@ function sourcingPriority(caseItem: SourcingCaseRecord, state: SourcingCaseState
   }
 
   return { label: "New", tone: "bg-leaf-50 text-leaf-800", dot: "bg-leaf-700" };
-}
-
-function sourcingRecommendedAction(state: SourcingCaseState) {
-  if (state.status === "New") {
-    return "Contact Buyer";
-  }
-
-  if (state.status === "Active Sourcing") {
-    return "Review Matches";
-  }
-
-  if (state.status === "Reviewing") {
-    return "Request More Information";
-  }
-
-  if (state.status === "Matching Farmers") {
-    return "Review Farmer Match";
-  }
-
-  if (state.status === "Matching Suppliers") {
-    return "Review Supplier Match";
-  }
-
-  if (state.status === "Waiting Buyer") {
-    return "Follow Up With Buyer";
-  }
-
-  if (state.status === "Completed") {
-    return "Close Case";
-  }
-
-  return "Review Case";
 }
 
 function sourcingTimeline(caseItem: SourcingCaseRecord, state: SourcingCaseState, activityRows: AdminActivityRecord[]) {
@@ -9691,7 +9659,19 @@ export function AdminDashboard({
             ) : isMatchOpportunitiesSection ? (
               <div className="grid min-w-0 gap-5 p-5">
                 {leadRequestError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
+                  <div className="flex flex-col gap-3 rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700 sm:flex-row sm:items-center sm:justify-between">
+                    <span>{leadRequestError}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void loadLeadRequests();
+                        void loadAnalytics();
+                      }}
+                      className="inline-flex min-h-10 w-fit items-center justify-center rounded-md bg-white px-4 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-700/15 transition hover:bg-earth-100"
+                    >
+                      Retry
+                    </button>
+                  </div>
                 ) : null}
 
                 <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -9773,9 +9753,6 @@ export function AdminDashboard({
                             <p className="mt-3 text-sm font-black text-ink">{caseItem.request.product_needed}</p>
                             <p className="mt-1 text-xs font-semibold text-ink/55">{caseItem.request.quantity || "Quantity not supplied"}</p>
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              {caseItem.priority.label !== "New" ? (
-                                <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${caseItem.priority.tone}`}>{caseItem.priority.label}</span>
-                              ) : null}
                               <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">{caseItem.state.status}</span>
                             </div>
                             <p className="mt-2 text-[11px] font-black uppercase tracking-wide text-ink/40">
@@ -9813,38 +9790,39 @@ export function AdminDashboard({
                                 onClick={() => setShowSourcingCaseDetailMobile(false)}
                                 className="mb-4 inline-flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 lg:hidden"
                               >
-                                Back to cases
+                                Back to sourcing cases
                               </button>
                               <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
                                 <div className="min-w-0">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Selected Case</p>
                                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                                    <h3 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{selectedSourcingCase.request.product_needed}</h3>
-                                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
-                                      {selectedSourcingCase.state.status === "Closed" ? "Lost" : selectedSourcingCase.state.status}
-                                    </span>
+                                    <h3 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{linkedSourceLabel !== "Not linked" ? linkedSourceLabel : selectedSourcingCase.request.product_needed}</h3>
                                   </div>
                                   <p className="mt-2 text-sm font-semibold leading-6 text-ink/60">
-                                    {selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
+                                    {selectedSourcingCase.request.company_name ? `${selectedSourcingCase.request.buyer_name} — ${selectedSourcingCase.request.company_name}` : selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
                                   </p>
                                 </div>
                                 <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
-                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Primary next action</p>
-                                  <p className="mt-1 text-sm font-black text-ink">{sourcingRecommendedAction(selectedSourcingCase.state)}</p>
+                                  <p className="text-xs font-black uppercase tracking-wide text-ink/45">Primary action</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedSourcingCaseTab("Matches")}
+                                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600/25"
+                                  >
+                                    Review Matches
+                                  </button>
                                 </div>
                               </div>
 
-                              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer / Company</p>
+                                  <p className="mt-1 text-sm font-black text-ink">{selectedSourcingCase.request.buyer_name}</p>
+                                  <p className="mt-1 text-xs font-semibold text-ink/55">{selectedSourcingCase.request.company_name || "No company supplied"}</p>
+                                </div>
                                 <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Owner</p>
                                   <p className="mt-1 text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
-                                  <button
-                                    type="button"
-                                    onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
-                                    className="mt-2 rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
-                                  >
-                                    Assign to Me
-                                  </button>
                                 </div>
                                 <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">SLA / Response Deadline</p>
@@ -9852,6 +9830,11 @@ export function AdminDashboard({
                                   <p className={`mt-2 rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
                                     {sla.hoursRemaining < 0 ? `${Math.abs(sla.hoursRemaining)} hours overdue` : `${sla.hoursRemaining} hours remaining`}
                                   </p>
+                                </div>
+                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">Request Source</p>
+                                  <p className="mt-1 text-sm font-black text-ink">{sourcingCaseSourceLabel(selectedSourcingCase.request)}</p>
+                                  <p className="mt-1 break-words text-xs font-semibold text-ink/55">{linkedSourceLabel}</p>
                                 </div>
                                 <label className="grid gap-2 rounded-md bg-white p-3 text-xs font-black uppercase tracking-wide text-ink/45 ring-1 ring-leaf-900/10">
                                   Operational Status
@@ -9872,11 +9855,12 @@ export function AdminDashboard({
                               </div>
 
                               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                                <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "farmer")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
-                                  Review Farmer Matches
-                                </button>
-                                <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "supplier")} className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50">
-                                  Review Supplier Matches
+                                <button
+                                  type="button"
+                                  onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
+                                  className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                >
+                                  Assign to Me
                                 </button>
                                 <button
                                   type="button"
@@ -9986,17 +9970,42 @@ export function AdminDashboard({
                             ) : null}
 
                             {selectedSourcingCaseTab === "Matches" ? (
-                              <section className="rounded-md border border-leaf-900/10 bg-white p-4">
-                                <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Suggested and Assigned Matches</h4>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
-                                  Review possible supply matches here. This does not contact any buyer, farmer, or supplier automatically.
-                                </p>
-                                <div className="mt-4 grid gap-3 lg:grid-cols-3">
-                                  <MatchPreview title="Recommended Farmers" records={selectedSourcingCase.matches.farmers} nameKeys={["farm_name", "farmer_name"]} />
-                                  <MatchPreview title="Recommended Suppliers" records={selectedSourcingCase.matches.suppliers} nameKeys={["company_name", "category"]} />
-                                  <MatchPreview title="Linked Marketplace Listings" records={selectedSourcingCase.matches.listings} nameKeys={["product_name"]} />
-                                </div>
-                              </section>
+                              <div className="grid gap-4">
+                                <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                    <div>
+                                      <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Suggested and Assigned Matches</h4>
+                                      <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">
+                                        Review possible supply matches here. This does not contact any buyer, farmer, or supplier automatically.
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
+                                      <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "farmer")} className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800">
+                                        Review Farmer Matches
+                                      </button>
+                                      <button type="button" onClick={() => void reviewSourcingMatches(selectedSourcingCase.request, "supplier")} className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50">
+                                        Review Supplier Matches
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                                    <MatchPreview title="Recommended Farmers" records={selectedSourcingCase.matches.farmers} nameKeys={["farm_name", "farmer_name"]} />
+                                    <MatchPreview title="Recommended Suppliers" records={selectedSourcingCase.matches.suppliers} nameKeys={["company_name", "category"]} />
+                                    <MatchPreview title="Marketplace Listing Matches" records={selectedSourcingCase.matches.listings} nameKeys={["product_name"]} />
+                                  </div>
+                                </section>
+
+                                <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 md:grid-cols-2">
+                                  <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Assigned / Selected Matches</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">No matches have been assigned yet.</p>
+                                  </div>
+                                  <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Availability Confirmation</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-ink/58">Not confirmed yet.</p>
+                                  </div>
+                                </section>
+                              </div>
                             ) : null}
 
                             {selectedSourcingCaseTab === "Activity" ? (
@@ -10058,6 +10067,21 @@ export function AdminDashboard({
                                         </div>
                                       </div>
                                     ))}
+                                  </div>
+                                </section>
+
+                                <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Additional Activity</h4>
+                                  <div className="mt-4 grid gap-3">
+                                    {sourcingCaseActivityRows(selectedSourcingCase.request.id, activityRows).filter((activity) => activity.action_type !== "Contact").slice(0, 5).map((activity) => (
+                                      <div key={activity.id} className="rounded-md bg-leaf-50 p-3">
+                                        <p className="text-sm font-black text-ink">{activity.action_type}</p>
+                                        <p className="mt-1 text-xs font-semibold text-ink/55">{relativeActivityTime(activity.created_at)} by {activity.admin_email}</p>
+                                      </div>
+                                    ))}
+                                    {sourcingCaseActivityRows(selectedSourcingCase.request.id, activityRows).filter((activity) => activity.action_type !== "Contact").length === 0 ? (
+                                      <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No additional activity has been recorded.</p>
+                                    ) : null}
                                   </div>
                                 </section>
                               </div>

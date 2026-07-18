@@ -1180,9 +1180,10 @@ const tests: TestCase[] = [
       const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
       const matchActivityRoute = repoFile("src/app/api/admin/matches/activity/route.ts");
 
-      assert.equal(adminDashboard.includes('caseItem.priority.label !== "New"'), true);
+      assert.equal(adminDashboard.includes('caseItem.priority.label !== "New"'), false);
       assert.equal(adminDashboard.includes('return "Active Sourcing";'), true);
       assert.equal(adminDashboard.includes('leadReviewStatusLabel(status)'), true);
+      assert.equal(adminDashboard.includes('Review Matches'), true);
       assert.equal(adminDashboard.includes('Review Farmer Matches'), true);
       assert.equal(adminDashboard.includes('Review Supplier Matches'), true);
       assert.equal(adminDashboard.includes('Mark Lost'), true);
@@ -1225,14 +1226,23 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Overview"'), true);
       assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Matches"'), true);
       assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Activity"'), true);
-      assert.equal(adminDashboard.includes("Primary next action"), true);
+      assert.equal(adminDashboard.includes("Primary action"), true);
+      assert.equal(adminDashboard.includes('onClick={() => setSelectedSourcingCaseTab("Matches")}'), true);
       assert.equal(adminDashboard.includes("SLA / Response Deadline"), true);
+      assert.equal(adminDashboard.includes("Request Source"), true);
+      assert.equal(adminDashboard.includes("Buyer / Company"), true);
       assert.equal(adminDashboard.includes("Suggested and Assigned Matches"), true);
+      assert.equal(adminDashboard.includes("Marketplace Listing Matches"), true);
+      assert.equal(adminDashboard.includes("No matches have been assigned yet."), true);
+      assert.equal(adminDashboard.includes("Availability Confirmation"), true);
       assert.equal(adminDashboard.includes("Buyer and Request Overview"), true);
       assert.equal(adminDashboard.includes("Communication History"), true);
-      assert.equal(adminDashboard.includes("Back to cases"), true);
+      assert.equal(adminDashboard.includes("No additional activity has been recorded."), true);
+      assert.equal(adminDashboard.includes("Back to sourcing cases"), true);
       assert.equal(adminDashboard.includes("setShowSourcingCaseDetailMobile(true)"), true);
       assert.equal(adminDashboard.includes("setShowSourcingCaseDetailMobile(false)"), true);
+      assert.equal(adminDashboard.includes("Sourcing cases could not be loaded. Please refresh and try again."), true);
+      assert.equal(adminDashboard.includes("Retry"), true);
       assert.equal(adminDashboard.includes('seller private contact details are not exposed here'), false);
       assert.equal(adminDashboard.includes("Seller private contact details are not exposed here."), true);
     }
@@ -1254,7 +1264,7 @@ const tests: TestCase[] = [
         "Operations Center",
         "Notifications",
         "Review Requests",
-        "Active Sourcing",
+        "Matches",
         "Follow-ups",
         "Completed Requests",
         "Farmer Applications",
@@ -1292,6 +1302,9 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("const isExpanded = expandedNavigationGroup === group.group || groupHasActiveItem;"), true);
       assert.equal(adminDashboard.includes("aria-expanded={isExpanded}"), true);
       assert.equal(adminDashboard.includes("openAdminNavigationItem(item, group.group)"), true);
+      assert.equal(adminDashboard.includes('key: "buyer-matches", id: "match-opportunities", label: "Matches"'), true);
+      assert.equal(adminDashboard.includes('group: "Buyer Requests"'), true);
+      assert.equal(adminDashboard.includes('const groupHasActiveItem = group.items.some((item) => item.key === activeNavigationKey);'), true);
       assert.equal(adminDashboard.includes('analyticsView: "operations"'), true);
       assert.equal(adminDashboard.includes('analyticsView: "analytics"'), true);
       assert.equal(adminDashboard.includes('applicationTab: "farmer"'), true);
