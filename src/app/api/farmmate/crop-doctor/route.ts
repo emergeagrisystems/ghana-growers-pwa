@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { analyzeCropDoctorImageWithOpenAI } from "@/lib/farmmate/ai";
 import {
   CROP_DOCTOR_FALLBACK_MESSAGE,
+  CROP_DOCTOR_SUPPORTED_CROPS,
+  CROP_DOCTOR_SYMPTOMS,
   validateCropDoctorImage
 } from "@/lib/farmmate/crop-doctor-vision";
 import { cropDoctorCreditMessage, CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE } from "@/lib/farmmate/usage";
@@ -18,10 +20,20 @@ export async function POST(request: Request) {
 
   const image = formData.get("image");
   const anonymousDeviceId = formData.get("anonymousDeviceId");
+  const selectedCrop = typeof formData.get("selectedCrop") === "string" ? String(formData.get("selectedCrop")).trim() : "";
+  const selectedSymptom = typeof formData.get("selectedSymptom") === "string" ? String(formData.get("selectedSymptom")).trim() : "";
 
   if (!(image instanceof File)) {
     return NextResponse.json({ ok: false, reason: "missing_image", message: "Please upload a crop image." }, { status: 400 });
   }
+
+  if (!CROP_DOCTOR_SUPPORTED_CROPS.includes(selectedCrop as (typeof CROP_DOCTOR_SUPPORTED_CROPS)[number])) {
+    return NextResponse.json({ ok: false, reason: "missing_crop", message: "Please select the crop before analysing the photo." }, { status: 400 });
+  }
+
+  const cleanSelectedSymptom = CROP_DOCTOR_SYMPTOMS.includes(selectedSymptom as (typeof CROP_DOCTOR_SYMPTOMS)[number])
+    ? selectedSymptom
+    : "";
 
   const imageValidation = validateCropDoctorImage({ type: image.type, size: image.size });
 
@@ -52,7 +64,9 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await image.arrayBuffer());
   const result = await analyzeCropDoctorImageWithOpenAI({
     mimeType: image.type,
-    base64Image: buffer.toString("base64")
+    base64Image: buffer.toString("base64"),
+    selectedCrop,
+    selectedSymptom: cleanSelectedSymptom || null
   });
 
   if (!result.ok) {

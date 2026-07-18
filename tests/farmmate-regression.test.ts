@@ -90,6 +90,8 @@ import {
   buildCropDoctorHandoffContext,
   cropDoctorResultHasUnsafeLanguage,
   CROP_DOCTOR_MAX_IMAGE_BYTES,
+  CROP_DOCTOR_SUPPORTED_CROPS,
+  CROP_DOCTOR_SYMPTOMS,
   CROP_DOCTOR_TOO_LARGE_MESSAGE,
   cropDoctorResultBadge,
   cropDoctorResultHeading,
@@ -4357,6 +4359,32 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Crop Doctor crop selection renders before analysis",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const cropSelectorIndex = cropDoctor.indexOf("What crop is this?");
+      const analyseIndex = cropDoctor.indexOf("Analyse Crop");
+
+      assert.ok(cropSelectorIndex > 0);
+      assert.ok(analyseIndex > cropSelectorIndex);
+      assert.equal(cropDoctor.includes('id="crop-doctor-selected-crop"'), true);
+      assert.deepEqual(CROP_DOCTOR_SUPPORTED_CROPS, ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Garden eggs", "Not sure"]);
+      assert.equal(cropDoctor.includes("CROP_DOCTOR_SUPPORTED_CROPS.map"), true);
+      assert.equal(cropDoctor.includes("Select crop to analyse"), true);
+    }
+  },
+  {
+    name: "Crop Doctor symptom selection renders",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(cropDoctor.includes("What are you seeing?"), true);
+      assert.equal(cropDoctor.includes('id="crop-doctor-selected-symptom"'), true);
+      assert.deepEqual(CROP_DOCTOR_SYMPTOMS, ["Yellow leaves", "Spots on leaves", "Holes in leaves", "Leaves curling", "Wilting", "Stunted growth", "Fruit problem", "Insects or pests", "Roots or tubers problem", "Not sure"]);
+      assert.equal(cropDoctor.includes("CROP_DOCTOR_SYMPTOMS.map"), true);
+    }
+  },
+  {
     name: "Crop Doctor renders Take Photo and Choose Photo actions",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
@@ -4433,15 +4461,34 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor Analyse Crop flow still submits the selected image",
+    name: "Crop Doctor Analyse Crop flow submits selected image crop and symptom",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+      const vision = repoFile("src/lib/farmmate/ai/vision.ts");
 
       assert.equal(cropDoctor.includes("Analyse Crop"), true);
       assert.equal(cropDoctor.includes('formData.append("image", selectedFile)'), true);
+      assert.equal(cropDoctor.includes('formData.append("selectedCrop", selectedCrop)'), true);
+      assert.equal(cropDoctor.includes('formData.append("selectedSymptom", selectedSymptom)'), true);
       assert.equal(cropDoctor.includes('fetch("/api/farmmate/crop-doctor"'), true);
+      assert.equal(route.includes("selectedCrop"), true);
+      assert.equal(route.includes("selectedSymptom"), true);
+      assert.equal(vision.includes("Farmer-selected crop:"), true);
+      assert.equal(vision.includes("Farmer-selected symptom:"), true);
       assert.equal(cropDoctor.includes("shouldDisableCropDoctorAnalysis(credits)"), true);
       assert.equal(cropDoctor.includes("buildCropDoctorHandoffContext(diagnosis)"), true);
+    }
+  },
+  {
+    name: "Crop Doctor API requires selected crop before analysis",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+
+      assert.equal(route.includes("Please select the crop before analysing the photo."), true);
+      assert.equal(route.includes('reason: "missing_crop"'), true);
+      assert.equal(route.includes("CROP_DOCTOR_SUPPORTED_CROPS.includes"), true);
+      assert.equal(route.indexOf("missing_crop") < route.indexOf("const buffer = Buffer.from"), true);
     }
   },
   {
@@ -4638,7 +4685,7 @@ const tests: TestCase[] = [
     name: "unknown Crop Doctor result does not mention tomato",
     run: () => {
       const result = normalizeCropDoctorVisionResult({
-        crop: null,
+        cropFromImage: null,
         cropConfidence: "low",
         possibleIssue: "Possible crop health issue",
         visibleSigns: ["yellowing on lower leaves"],
@@ -4652,29 +4699,69 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor handoff uses dynamic crop when known",
+    name: "Crop Doctor handoff includes selected crop and symptom",
     run: () => {
       const prompt = buildCropDoctorAskFarmMatePrompt({
+        selectedCrop: "Cassava",
+        selectedSymptom: "Leaves curling",
         crop: "Cassava",
         possibleIssue: "Mosaic disease",
         visibleSigns: ["leaf curling", "pale patches"]
       });
 
-      assert.equal(prompt.includes("cassava photo"), true);
+      assert.equal(prompt.includes("I selected cassava"), true);
+      assert.equal(prompt.includes("showing leaves curling"), true);
       assert.equal(prompt.includes("leaf curling, pale patches"), true);
       assert.equal(prompt.toLowerCase().includes("tomato"), false);
+      assert.equal(prompt.toLowerCase().includes("early blight"), false);
     }
   },
   {
     name: "Crop Doctor handoff uses neutral wording when crop unknown",
     run: () => {
       const prompt = buildCropDoctorAskFarmMatePrompt({
+        selectedCrop: "Not sure",
+        selectedSymptom: "Not sure",
         crop: null,
         possibleIssue: "Possible disease",
         visibleSigns: ["brown spots"]
       });
 
-      assert.equal(prompt, "I uploaded a crop photo. Crop Doctor could not confirm the crop. What should I check next?");
+      assert.equal(prompt, "I uploaded a crop photo but I am not sure of the crop. Crop Doctor saw brown spots. What should I check next?");
+    }
+  },
+  {
+    name: "Photo mismatch uses cautious wording",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Maize",
+        cropFromImage: "Cassava",
+        photoCropMatch: "uncertain",
+        mainFinding: "Possible leaf disease",
+        visibleSigns: ["blurred leaves"]
+      });
+
+      assert.equal(result.selectedCrop, "Maize");
+      assert.equal(result.photoCropMatch, "uncertain");
+      assert.equal(
+        result.mainFinding,
+        "The selected crop is maize, but the photo does not clearly show maize. Please upload a clearer photo of the affected maize plant."
+      );
+    }
+  },
+  {
+    name: "Not sure crop uses cautious crop identification",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Not sure",
+        cropFromImage: "Pepper",
+        visibleSigns: ["curling leaves"]
+      });
+
+      assert.equal(result.selectedCrop, "Not sure");
+      assert.equal(result.cropFromImage, "Pepper");
+      assert.equal(result.photoCropMatch, "uncertain");
+      assert.equal(result.askFarmMatePrompt.includes("not sure of the crop"), true);
     }
   },
   {
@@ -4890,6 +4977,8 @@ const tests: TestCase[] = [
     name: "Crop Doctor no clear known crop handoff is dynamic",
     run: () => {
       const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Cassava",
+        selectedSymptom: "Roots or tubers problem",
         crop: "Cassava",
         cropConfidence: "high",
         resultType: "harvest_or_storage_check",
@@ -4902,7 +4991,7 @@ const tests: TestCase[] = [
 
       assert.equal(
         result.askFarmMatePrompt,
-        "I uploaded a cassava photo. Crop Doctor did not see a clear disease problem, but recommended checking the roots for rot or bad smell. What should I do next?"
+        "I selected cassava and uploaded a crop photo showing roots or tubers problem. Crop Doctor saw harvested roots. What should I check next?"
       );
     }
   },
@@ -4913,13 +5002,27 @@ const tests: TestCase[] = [
 
       assert.equal(prompt.includes("harvest_or_storage_check"), true);
       assert.equal(prompt.includes("do not force a disease diagnosis"), true);
+      assert.equal(prompt.includes("Do not claim a guaranteed diagnosis."), true);
       assert.equal(prompt.includes("Do not invent pesticide dosage"), true);
+      assert.equal(prompt.includes("Do not recommend fungicide or pesticide as the first step"), true);
+    }
+  },
+  {
+    name: "Crop Doctor vision prompt forbids home gardening language",
+    run: () => {
+      const prompt = cropDoctorVisionSystemPrompt();
+
+      assert.equal(prompt.includes("Think like a field crop advisor, not a home gardening assistant."), true);
+      assert.equal(prompt.includes("Avoid home gardening language: pot, houseplant, indoor plant, garden soil, decorative plant."), true);
+      assert.equal(prompt.includes("Use farmer-scale language"), true);
     }
   },
   {
     name: "Crop Doctor main heading uses finding not Crop detected",
     run: () => {
       const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Maize",
+        selectedSymptom: "Spots on leaves",
         crop: "Maize",
         cropConfidence: "high",
         resultType: "possible_disease",
@@ -4937,16 +5040,21 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor crop detected appears as metadata",
+    name: "Crop Doctor result shows selected crop instead of only detected crop",
     run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Maize",
         crop: "Maize",
         mainFinding: "Possible maize rust symptoms",
         visibleSigns: ["orange spots"]
       });
 
-      const metadata = result.crop ? `Crop detected: ${result.crop}` : "Crop not confirmed";
-      assert.equal(metadata, "Crop detected: Maize");
+      const metadata = `Selected crop: ${result.selectedCrop}`;
+      assert.equal(metadata, "Selected crop: Maize");
+      assert.equal(cropDoctor.includes("Selected crop"), true);
+      assert.equal(cropDoctor.includes("Photo check"), true);
+      assert.equal(cropDoctor.includes("Crop detected:"), false);
       assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
     }
   },

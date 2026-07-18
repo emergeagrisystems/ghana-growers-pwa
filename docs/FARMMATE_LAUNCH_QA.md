@@ -44,9 +44,12 @@ Route checks:
 
 ### Crop Doctor Vision
 
-- Uses image guidance as practical support, not guaranteed diagnosis.
+- Crop Doctor is guided photo analysis: farmers should select the crop where possible and optionally choose the symptom before analysis.
+- Uses image guidance as practical support, not a guaranteed diagnosis.
+- One image may not be enough; unclear or mismatched photos should ask for a clearer photo or more field checks.
 - Does not assume tomato for unknown crop photos.
 - Supports result states such as unclear photo, crop not confirmed, no clear problem, disease, pest, nutrient issue, water stress, and harvest/storage check.
+- Serious, spreading, or high-risk crop issues should be confirmed with an agricultural extension officer.
 - Charges credits only after successful analysis.
 - Keeps Crop Doctor to Ask FarmMate handoff inside structured crop/photo context.
 

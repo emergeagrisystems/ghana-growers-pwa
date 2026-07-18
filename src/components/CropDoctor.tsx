@@ -9,6 +9,9 @@ import {
   cropDoctorResultBadge,
   cropDoctorResultHeadline,
   CROP_DOCTOR_ACCEPTED_IMAGE_TYPES,
+  CROP_DOCTOR_SUPPORTED_CROPS,
+  CROP_DOCTOR_SYMPTOMS,
+  type CropDoctorPhotoCropMatch,
   type CropDoctorHandoffContext,
   type CropDoctorVisionResult
 } from "@/lib/farmmate/crop-doctor-vision";
@@ -25,6 +28,18 @@ import {
 
 type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
 const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",");
+
+function photoCropMatchLabel(match: CropDoctorPhotoCropMatch) {
+  if (match === "likely") {
+    return "Looks consistent";
+  }
+
+  if (match === "uncertain") {
+    return "Uncertain";
+  }
+
+  return "Not clear";
+}
 
 function logCropDoctorCreditState(detail: {
   anonymousDeviceId: string;
@@ -55,6 +70,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasDiagnosis, setHasDiagnosis] = useState(false);
   const [diagnosis, setDiagnosis] = useState<CropDoctorVisionResult | null>(null);
+  const [selectedCrop, setSelectedCrop] = useState("");
+  const [selectedSymptom, setSelectedSymptom] = useState("");
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
   const [showAskFarmMateFallback, setShowAskFarmMateFallback] = useState(false);
@@ -62,6 +79,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const isCreditTemporarilyUnavailable = credits?.creditState === "temporarily_unavailable";
   const isAnalysisDisabled = shouldDisableCropDoctorAnalysis(credits);
   const isUploadDisabled = shouldDisableCropDoctorUpload(credits);
+  const isCropSelectionMissing = !selectedCrop;
 
   useEffect(() => {
     return () => {
@@ -163,8 +181,20 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     galleryInputRef.current?.click();
   }
 
+  function resetDiagnosisForFieldContext() {
+    setDiagnosis(null);
+    setHasDiagnosis(false);
+    setIsAnalysing(false);
+  }
+
   async function analyseCrop() {
     if (!selectedImage || !selectedFile || isAnalysing) {
+      return;
+    }
+
+    if (isCropSelectionMissing) {
+      setCreditMessage("Please select the crop before analysing the photo. Choose Not sure if you cannot identify it.");
+      setShowAskFarmMateFallback(false);
       return;
     }
 
@@ -189,6 +219,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     const anonymousDeviceId = getFarmMateAnonymousDeviceId();
     formData.append("anonymousDeviceId", anonymousDeviceId);
     formData.append("image", selectedFile);
+    formData.append("selectedCrop", selectedCrop);
+    formData.append("selectedSymptom", selectedSymptom);
 
     const response = await fetch("/api/farmmate/crop-doctor", {
       method: "POST",
@@ -271,8 +303,50 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           <h2 className="gg-card-title">Crop Doctor</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
           <p className="mt-1 text-xs font-semibold text-ink/42">Free public users get 2 Crop Doctor checks every 12 hours.</p>
-          <p className="mt-2 text-sm leading-6 text-ink/66">Upload a crop photo and get practical next steps.</p>
+          <p className="mt-2 text-sm leading-6 text-ink/66">Select the crop, describe what you see, then upload a crop photo for practical field checks.</p>
         </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+        <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-crop">
+          What crop is this?
+          <select
+            id="crop-doctor-selected-crop"
+            className="gg-field min-h-12 bg-white"
+            value={selectedCrop}
+            onChange={(event) => {
+              setSelectedCrop(event.target.value);
+              resetDiagnosisForFieldContext();
+            }}
+          >
+            <option value="">Select crop</option>
+            {CROP_DOCTOR_SUPPORTED_CROPS.map((crop) => (
+              <option key={crop} value={crop}>
+                {crop}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-symptom">
+          What are you seeing? <span className="font-semibold text-ink/50">(optional)</span>
+          <select
+            id="crop-doctor-selected-symptom"
+            className="gg-field min-h-12 bg-white"
+            value={selectedSymptom}
+            onChange={(event) => {
+              setSelectedSymptom(event.target.value);
+              resetDiagnosisForFieldContext();
+            }}
+          >
+            <option value="">Choose symptom if known</option>
+            {CROP_DOCTOR_SYMPTOMS.map((symptom) => (
+              <option key={symptom} value={symptom}>
+                {symptom}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div
@@ -289,8 +363,9 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
             {isUploadDisabled
               ? "You can still ask FarmMate for guidance while you wait."
-              : "Take a photo of the affected crop, or choose one from your phone."}
+              : "Take a clear photo of the affected part. If possible, also include some healthy leaves or the whole plant."}
           </p>
+          {!isUploadDisabled ? <p className="mt-2 text-xs font-bold text-ink/48">Take a photo of the affected crop, or choose one from your phone.</p> : null}
           <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
             <input
               ref={cameraInputRef}
@@ -351,11 +426,11 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <button
               type="button"
               onClick={analyseCrop}
-              disabled={isAnalysing || isAnalysisDisabled}
+              disabled={isAnalysing || isAnalysisDisabled || isCropSelectionMissing}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               {isAnalysing ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Stethoscope size={18} aria-hidden="true" />}
-              Analyse Crop
+              {isCropSelectionMissing ? "Select crop to analyse" : "Analyse Crop"}
             </button>
           </div>
         </div>
@@ -398,7 +473,6 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               <div>
                 <p className="gg-eyebrow text-leaf-700">Main finding</p>
                 <h3 className="mt-2 gg-card-title">{cropDoctorResultHeadline(diagnosis)}</h3>
-                <p className="mt-2 text-sm font-bold text-ink/62">{diagnosis.crop ? `Crop detected: ${diagnosis.crop}` : "Crop not confirmed"}</p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
@@ -409,9 +483,34 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               Crop Doctor gives guidance from the photo, not a final diagnosis. Confirm serious or spreading problems with an extension officer.
             </p>
 
+            <dl className="mt-4 grid gap-2 rounded-md bg-white p-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="font-black text-ink">Selected crop</dt>
+                <dd className="mt-1 font-semibold text-ink/64">{diagnosis.selectedCrop}</dd>
+              </div>
+              <div>
+                <dt className="font-black text-ink">Photo check</dt>
+                <dd className="mt-1 font-semibold text-ink/64">{photoCropMatchLabel(diagnosis.photoCropMatch)}</dd>
+              </div>
+              {diagnosis.selectedSymptom ? (
+                <div>
+                  <dt className="font-black text-ink">Selected symptom</dt>
+                  <dd className="mt-1 font-semibold text-ink/64">{diagnosis.selectedSymptom}</dd>
+                </div>
+              ) : null}
+              {diagnosis.cropFromImage ? (
+                <div>
+                  <dt className="font-black text-ink">Crop from image</dt>
+                  <dd className="mt-1 font-semibold text-ink/64">{diagnosis.cropFromImage}</dd>
+                </div>
+              ) : null}
+            </dl>
+
             <div className="mt-4 grid gap-3">
               {([
-                ["What to do now", diagnosis.recommendedAction],
+                ["Visible signs", diagnosis.visibleSigns],
+                ["What to check", diagnosis.whatToCheck],
+                ["What to do now", diagnosis.recommendedActions],
                 ["Next step", [diagnosis.nextBestAction]]
               ] as Array<[string, string[]]>).map(([label, items]) => (
                 <div key={label} className="rounded-md bg-white p-3">

@@ -20,6 +20,8 @@ type OpenAIResponsesApiResult = {
 export type CropDoctorVisionInput = {
   mimeType: string;
   base64Image: string;
+  selectedCrop: string;
+  selectedSymptom?: string | null;
 };
 
 export type CropDoctorVisionAiResult =
@@ -88,7 +90,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
               {
                 type: "input_text",
                 text:
-                  "Analyze this crop photo for visible crop health signs or harvest/storage quality. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical."
+                  `Analyze this crop photo for visible field crop health signs or harvest/storage quality. Farmer-selected crop: ${input.selectedCrop || "Not sure"}. Farmer-selected symptom: ${input.selectedSymptom || "Not sure"}. Use the selected crop and symptom as primary context, but mark photoCropMatch uncertain or not_clear if the image does not support it. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical.`
               },
               {
                 type: "input_image",
@@ -120,7 +122,10 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
 
     return {
       ok: true,
-      result: normalizeCropDoctorVisionResult(json)
+      result: normalizeCropDoctorVisionResult(json, {
+        selectedCrop: input.selectedCrop,
+        selectedSymptom: input.selectedSymptom
+      })
     };
   } catch {
     return { ok: false, reason: "openai_request_error", fallback: true };
