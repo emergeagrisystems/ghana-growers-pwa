@@ -581,7 +581,6 @@ const supplierLaunchChecklistItems: SupplierChecklistItem[] = [
   "Regions served",
   "Registration reviewed"
 ];
-const sourcingCaseStatuses: SourcingCaseStatus[] = ["New", "Reviewing", "Active Sourcing", "Matching Farmers", "Matching Suppliers", "Waiting Buyer", "Completed", "Closed"];
 const sourcingQueueFilters: SourcingQueueFilter[] = ["All", "New", "Overdue", "Due Today", "Assigned To Me", "Completed", "Waiting Buyer", "Waiting Farmer", "Waiting Supplier", "High Priority"];
 
 const statusStyles: Record<AdminStatus, string> = {
@@ -2772,6 +2771,22 @@ function defaultSourcingCaseStatus(caseItem: SourcingCaseRecord): SourcingCaseSt
   }
 
   return sourcingStatusFromSubmission(caseItem.status);
+}
+
+function sourcingCaseOperationalStatusLabel(status: SourcingCaseStatus) {
+  if (status === "New") {
+    return "Pending Review";
+  }
+
+  if (status === "Reviewing") {
+    return "Contacted";
+  }
+
+  if (["Active Sourcing", "Matching Farmers", "Matching Suppliers", "Waiting Buyer"].includes(status)) {
+    return "Active Sourcing";
+  }
+
+  return status === "Closed" ? "Lost" : status;
 }
 
 function dateAtStart(value?: string | null) {
@@ -9797,6 +9812,9 @@ export function AdminDashboard({
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Selected Case</p>
                                   <div className="mt-2 flex flex-wrap items-center gap-2">
                                     <h3 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{linkedSourceLabel !== "Not linked" ? linkedSourceLabel : selectedSourcingCase.request.product_needed}</h3>
+                                    <span className="inline-flex max-w-full items-center rounded-full bg-white px-3 py-1 text-center text-xs font-black leading-5 text-leaf-800 ring-1 ring-leaf-900/10">
+                                      {sourcingCaseOperationalStatusLabel(selectedSourcingCase.state.status)}
+                                    </span>
                                   </div>
                                   <p className="mt-2 text-sm font-semibold leading-6 text-ink/60">
                                     {selectedSourcingCase.request.company_name ? `${selectedSourcingCase.request.buyer_name} — ${selectedSourcingCase.request.company_name}` : selectedSourcingCase.request.buyer_name} needs sourcing support in {sourcingCaseLocation(selectedSourcingCase.request)}.
@@ -9814,44 +9832,28 @@ export function AdminDashboard({
                                 </div>
                               </div>
 
-                              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4">
+                                <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer / Company</p>
-                                  <p className="mt-1 text-sm font-black text-ink">{selectedSourcingCase.request.buyer_name}</p>
-                                  <p className="mt-1 text-xs font-semibold text-ink/55">{selectedSourcingCase.request.company_name || "No company supplied"}</p>
+                                  <p className="mt-1 break-words text-sm font-black text-ink">{selectedSourcingCase.request.buyer_name}</p>
+                                  <p className="mt-1 break-words text-xs font-semibold text-ink/55">{selectedSourcingCase.request.company_name || "No company supplied"}</p>
                                 </div>
-                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Owner</p>
-                                  <p className="mt-1 text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
+                                  <p className="mt-1 break-words text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
                                 </div>
-                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">SLA / Response Deadline</p>
-                                  <p className="mt-1 text-sm font-semibold text-ink/65">{sla.deadline.toLocaleString()}</p>
-                                  <p className={`mt-2 rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
+                                  <p className="mt-1 break-words text-sm font-semibold text-ink/65">{sla.deadline.toLocaleString()}</p>
+                                  <p className={`mt-2 break-words rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
                                     {sla.hoursRemaining < 0 ? `${Math.abs(sla.hoursRemaining)} hours overdue` : `${sla.hoursRemaining} hours remaining`}
                                   </p>
                                 </div>
-                                <div className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
+                                <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Request Source</p>
-                                  <p className="mt-1 text-sm font-black text-ink">{sourcingCaseSourceLabel(selectedSourcingCase.request)}</p>
+                                  <p className="mt-1 break-words text-sm font-black text-ink">{sourcingCaseSourceLabel(selectedSourcingCase.request)}</p>
                                   <p className="mt-1 break-words text-xs font-semibold text-ink/55">{linkedSourceLabel}</p>
                                 </div>
-                                <label className="grid gap-2 rounded-md bg-white p-3 text-xs font-black uppercase tracking-wide text-ink/45 ring-1 ring-leaf-900/10">
-                                  Operational Status
-                                  <select
-                                    value={selectedSourcingCase.state.status}
-                                    onChange={(event) => void setSourcingCaseStatus(selectedSourcingCase.request, event.target.value as SourcingCaseStatus)}
-                                    className="min-h-11 rounded-md border border-leaf-900/10 bg-leaf-50 px-3 py-2 text-sm font-black normal-case tracking-normal text-ink outline-none transition focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                                  >
-                                    {sourcingCaseStatuses
-                                      .filter((status) => selectedSourcingCase.request.case_source !== "lead_request" || status !== "New")
-                                      .map((status) => (
-                                        <option key={status} value={status}>
-                                          {selectedSourcingCase.request.case_source === "lead_request" && status === "Closed" ? "Lost" : status}
-                                        </option>
-                                      ))}
-                                  </select>
-                                </label>
                               </div>
 
                               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">

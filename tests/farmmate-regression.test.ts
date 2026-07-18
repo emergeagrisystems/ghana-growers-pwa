@@ -1231,6 +1231,15 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("SLA / Response Deadline"), true);
       assert.equal(adminDashboard.includes("Request Source"), true);
       assert.equal(adminDashboard.includes("Buyer / Company"), true);
+      assert.equal(adminDashboard.includes("Operational Status"), false);
+      assert.equal(adminDashboard.includes("sourcingCaseOperationalStatusLabel(selectedSourcingCase.state.status)"), true);
+      assert.equal(adminDashboard.includes('status === "New"'), true);
+      assert.equal(adminDashboard.includes('return "Pending Review";'), true);
+      assert.equal(adminDashboard.includes('status === "Reviewing"'), true);
+      assert.equal(adminDashboard.includes('return "Contacted";'), true);
+      assert.equal(adminDashboard.includes('return status === "Closed" ? "Lost" : status;'), true);
+      assert.equal(adminDashboard.includes("grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4"), true);
+      assert.equal(adminDashboard.includes("mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5"), false);
       assert.equal(adminDashboard.includes("Suggested and Assigned Matches"), true);
       assert.equal(adminDashboard.includes("Marketplace Listing Matches"), true);
       assert.equal(adminDashboard.includes("No matches have been assigned yet."), true);
