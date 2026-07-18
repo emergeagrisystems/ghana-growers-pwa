@@ -97,6 +97,7 @@ import {
   cropDoctorResultHeading,
   cropDoctorResultHeadline,
   cropDoctorVisionSystemPrompt,
+  normalizeCropDoctorSelectedCrop,
   normalizeCropDoctorVisionResult,
   normalizePossibleIssueWording,
   validateCropDoctorImage
@@ -4435,18 +4436,19 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor crop selection renders before analysis",
+    name: "Crop Doctor crop selection is optional after photo actions",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
-      const cropSelectorIndex = cropDoctor.indexOf("What crop is this?");
-      const analyseIndex = cropDoctor.indexOf("Analyse Crop");
+      const takePhotoIndex = cropDoctor.indexOf("Take Photo");
+      const cropSelectorIndex = cropDoctor.indexOf("Tell FarmMate the crop if you know it");
 
-      assert.ok(cropSelectorIndex > 0);
-      assert.ok(analyseIndex > cropSelectorIndex);
+      assert.ok(takePhotoIndex > 0);
+      assert.ok(cropSelectorIndex > takePhotoIndex);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-crop"'), true);
       assert.deepEqual(CROP_DOCTOR_SUPPORTED_CROPS, ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"]);
-      assert.equal(cropDoctor.includes("CROP_DOCTOR_SUPPORTED_CROPS.map"), true);
-      assert.equal(cropDoctor.includes("Select crop to analyse"), true);
+      assert.equal(cropDoctor.includes("Detect automatically"), true);
+      assert.equal(cropDoctor.includes("cropOptions.map"), true);
+      assert.equal(cropDoctor.includes("Select crop to analyse"), false);
     }
   },
   {
@@ -4455,9 +4457,11 @@ const tests: TestCase[] = [
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
 
       assert.equal(cropDoctor.includes("What are you seeing?"), true);
+      assert.equal(cropDoctor.includes("(optional)"), true);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-symptom"'), true);
       assert.deepEqual(CROP_DOCTOR_SYMPTOMS, ["Yellow leaves", "Spots on leaves", "Holes in leaves", "Leaves curling", "Wilting", "Stunted growth", "Fruit problem", "Insects or pests", "Roots or tubers problem", "Not sure"]);
-      assert.equal(cropDoctor.includes("CROP_DOCTOR_SYMPTOMS.map"), true);
+      assert.equal(cropDoctor.includes("Not sure"), true);
+      assert.equal(cropDoctor.includes("symptomOptions.map"), true);
     }
   },
   {
@@ -4482,6 +4486,7 @@ const tests: TestCase[] = [
       assert.equal(cropDoctor.includes('const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",")'), true);
       assert.equal(cameraInput.includes("accept={CROP_DOCTOR_IMAGE_ACCEPT}"), true);
       assert.equal(cameraInput.includes('capture="environment"'), true);
+      assert.equal(cameraInput.includes("onChange={handleImageChange}"), true);
       assert.equal(cropDoctor.includes("cameraInputRef.current?.click()"), true);
     }
   },
@@ -4494,7 +4499,21 @@ const tests: TestCase[] = [
       assert.notEqual(pickerInput, "");
       assert.equal(pickerInput.includes("accept={CROP_DOCTOR_IMAGE_ACCEPT}"), true);
       assert.equal(pickerInput.includes("capture="), false);
+      assert.equal(pickerInput.includes("onChange={handleImageChange}"), true);
       assert.equal(cropDoctor.includes("galleryInputRef.current?.click()"), true);
+    }
+  },
+  {
+    name: "Take Photo input and Choose Photo input both update selected image state",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const cameraInput = cropDoctor.match(/<input\s*\r?\n\s+ref={cameraInputRef}[\s\S]*?\/>/)?.[0] ?? "";
+      const pickerInput = cropDoctor.match(/<input\s*\r?\n\s+ref={galleryInputRef}[\s\S]*?\/>/)?.[0] ?? "";
+
+      assert.equal(cameraInput.includes("onChange={handleImageChange}"), true);
+      assert.equal(pickerInput.includes("onChange={handleImageChange}"), true);
+      assert.equal(cropDoctor.includes("setSelectedImage(URL.createObjectURL(file))"), true);
+      assert.equal(cropDoctor.includes("if (!file)"), true);
     }
   },
   {
@@ -4537,34 +4556,74 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor Analyse Crop flow submits selected image crop and symptom",
+    name: "Crop Doctor Analyse Crop flow submits selected image with optional crop and symptom",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
       const vision = repoFile("src/lib/farmmate/ai/vision.ts");
 
       assert.equal(cropDoctor.includes("Analyse Crop"), true);
+      assert.equal(cropDoctor.includes("Take or choose a photo first"), true);
       assert.equal(cropDoctor.includes('formData.append("image", selectedFile)'), true);
-      assert.equal(cropDoctor.includes('formData.append("selectedCrop", selectedCrop)'), true);
-      assert.equal(cropDoctor.includes('formData.append("selectedSymptom", selectedSymptom)'), true);
+      assert.equal(cropDoctor.includes('formData.append("selectedCrop", selectedCrop || CROP_DOCTOR_AUTO_DETECT_VALUE)'), true);
+      assert.equal(cropDoctor.includes('formData.append("selectedSymptom", selectedSymptom || "Not sure")'), true);
       assert.equal(cropDoctor.includes('fetch("/api/farmmate/crop-doctor"'), true);
       assert.equal(route.includes("selectedCrop"), true);
       assert.equal(route.includes("selectedSymptom"), true);
       assert.equal(vision.includes("Farmer-selected crop:"), true);
       assert.equal(vision.includes("Farmer-selected symptom:"), true);
       assert.equal(cropDoctor.includes("shouldDisableCropDoctorAnalysis(credits)"), true);
+      assert.equal(cropDoctor.includes("!selectedFile || isAnalysing || isAnalysisDisabled"), true);
       assert.equal(cropDoctor.includes("buildCropDoctorHandoffContext(diagnosis)"), true);
     }
   },
   {
-    name: "Crop Doctor API requires selected crop before analysis",
+    name: "Crop Doctor can analyse with image selected and no crop selected",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+
+      assert.equal(cropDoctor.includes("isCropSelectionMissing"), false);
+      assert.equal(cropDoctor.includes("Please select the crop before analysing"), false);
+      assert.equal(cropDoctor.includes('disabled={isAnalyseButtonDisabled}'), true);
+      assert.equal(cropDoctor.includes('formData.append("selectedCrop", selectedCrop || CROP_DOCTOR_AUTO_DETECT_VALUE)'), true);
+      assert.equal(route.includes("normalizeCropDoctorSelectedCrop(formData.get(\"selectedCrop\"))"), true);
+      assert.equal(normalizeCropDoctorSelectedCrop(null), "Not sure");
+      assert.equal(normalizeCropDoctorSelectedCrop(""), "Not sure");
+      assert.equal(normalizeCropDoctorSelectedCrop("not_sure"), "Not sure");
+      assert.equal(normalizeCropDoctorSelectedCrop("Maize"), "Maize");
+    }
+  },
+  {
+    name: "Crop Doctor API accepts missing selectedCrop",
     run: () => {
       const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
 
-      assert.equal(route.includes("Please select the crop before analysing the photo."), true);
-      assert.equal(route.includes('reason: "missing_crop"'), true);
-      assert.equal(route.includes("CROP_DOCTOR_SUPPORTED_CROPS.includes"), true);
-      assert.equal(route.indexOf("missing_crop") < route.indexOf("const buffer = Buffer.from"), true);
+      assert.equal(route.includes('reason: "missing_crop"'), false);
+      assert.equal(route.includes("Please select the crop before analysing the photo."), false);
+      assert.equal(route.includes("CROP_DOCTOR_SUPPORTED_CROPS.includes"), false);
+      assert.equal(route.includes('selectedCrop = normalizeCropDoctorSelectedCrop(formData.get("selectedCrop"))'), true);
+      assert.equal(route.indexOf("normalizeCropDoctorSelectedCrop") < route.indexOf("const buffer = Buffer.from"), true);
+    }
+  },
+  {
+    name: "Crop Doctor API rejects missing image",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+
+      assert.equal(route.includes('reason: "missing_image"'), true);
+      assert.equal(route.includes("Please upload a crop image."), true);
+      assert.equal(route.indexOf('reason: "missing_image"') < route.indexOf("const imageValidation"), true);
+    }
+  },
+  {
+    name: "Crop Doctor API still validates file type and 5 MB size",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+
+      assert.equal(route.includes("validateCropDoctorImage({ type: image.type, size: image.size })"), true);
+      assert.equal(route.includes('imageValidation.reason === "file_too_large" ? 413 : 400'), true);
+      assert.equal(route.indexOf("validateCropDoctorImage") < route.indexOf("checkFarmMateCreditsForDevice"), true);
     }
   },
   {
@@ -4785,9 +4844,27 @@ const tests: TestCase[] = [
         visibleSigns: ["leaf curling", "pale patches"]
       });
 
-      assert.equal(prompt.includes("I selected cassava"), true);
+      assert.equal(prompt.includes("I selected Cassava"), true);
       assert.equal(prompt.includes("showing leaves curling"), true);
       assert.equal(prompt.includes("leaf curling, pale patches"), true);
+      assert.equal(prompt.toLowerCase().includes("tomato"), false);
+      assert.equal(prompt.toLowerCase().includes("early blight"), false);
+    }
+  },
+  {
+    name: "Crop Doctor handoff works with detected crop",
+    run: () => {
+      const prompt = buildCropDoctorAskFarmMatePrompt({
+        selectedCrop: "Not sure",
+        selectedSymptom: "Not sure",
+        crop: "Maize",
+        cropConfidence: "medium",
+        resultType: "possible_disease",
+        possibleIssue: "Possible disease",
+        visibleSigns: ["orange spots"]
+      });
+
+      assert.equal(prompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
       assert.equal(prompt.toLowerCase().includes("tomato"), false);
       assert.equal(prompt.toLowerCase().includes("early blight"), false);
     }
@@ -4803,7 +4880,7 @@ const tests: TestCase[] = [
         visibleSigns: ["brown spots"]
       });
 
-      assert.equal(prompt, "I uploaded a crop photo but I am not sure of the crop. Crop Doctor saw brown spots. What should I check next?");
+      assert.equal(prompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw brown spots. What should I check next?");
     }
   },
   {
@@ -4836,8 +4913,26 @@ const tests: TestCase[] = [
 
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.cropFromImage, "Pepper");
+      assert.equal(result.photoCropMatch, "not_clear");
+      assert.equal(result.resultType, "crop_not_confirmed");
+      assert.equal(result.askFarmMatePrompt.includes("could not confirm the crop"), true);
+    }
+  },
+  {
+    name: "detected Crop Doctor result is used only with enough crop confidence",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Not sure",
+        cropFromImage: "Pepper",
+        cropConfidence: "medium",
+        resultType: "possible_pest",
+        visibleSigns: ["curling leaves"]
+      });
+
+      assert.equal(result.selectedCrop, "Not sure");
+      assert.equal(result.crop, "Pepper");
       assert.equal(result.photoCropMatch, "uncertain");
-      assert.equal(result.askFarmMatePrompt.includes("not sure of the crop"), true);
+      assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Pepper from my photo and saw curling leaves. What should I check next?");
     }
   },
   {
@@ -5067,7 +5162,7 @@ const tests: TestCase[] = [
 
       assert.equal(
         result.askFarmMatePrompt,
-        "I selected cassava and uploaded a crop photo showing roots or tubers problem. Crop Doctor saw harvested roots. What should I check next?"
+        "I selected Cassava and uploaded a crop photo showing roots or tubers problem. Crop Doctor saw harvested roots. What should I check next?"
       );
     }
   },
@@ -5132,6 +5227,44 @@ const tests: TestCase[] = [
       assert.equal(cropDoctor.includes("Photo check"), true);
       assert.equal(cropDoctor.includes("Crop detected:"), false);
       assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
+    }
+  },
+  {
+    name: "Crop Doctor result shows Detected crop when no crop was selected",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Not sure",
+        cropFromImage: "Maize",
+        cropConfidence: "medium",
+        resultType: "possible_disease",
+        mainFinding: "Possible maize leaf disease",
+        visibleSigns: ["orange spots"]
+      });
+
+      assert.equal(result.selectedCrop, "Not sure");
+      assert.equal(result.crop, "Maize");
+      assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
+      assert.equal(cropDoctor.includes("Detected crop"), true);
+      assert.equal(cropDoctor.includes("diagnosisDetectedCrop"), true);
+    }
+  },
+  {
+    name: "Crop Doctor result shows Crop not confirmed when model is unsure",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Not sure",
+        cropFromImage: null,
+        cropConfidence: "low",
+        visibleSigns: ["blurred leaves"]
+      });
+
+      assert.equal(result.crop, null);
+      assert.equal(result.resultType, "crop_not_confirmed");
+      assert.equal(result.askFarmMatePrompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw blurred leaves. What should I check next?");
+      assert.equal(cropDoctor.includes("Crop not confirmed"), true);
+      assert.equal(cropDoctor.includes("FarmMate could not confirm the crop from this photo."), true);
     }
   },
   {

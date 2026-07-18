@@ -1,5 +1,6 @@
 import {
   cropDoctorVisionSystemPrompt,
+  normalizeCropDoctorSelectedCrop,
   normalizeCropDoctorVisionResult,
   type CropDoctorVisionResult
 } from "../crop-doctor-vision";
@@ -20,7 +21,7 @@ type OpenAIResponsesApiResult = {
 export type CropDoctorVisionInput = {
   mimeType: string;
   base64Image: string;
-  selectedCrop: string;
+  selectedCrop?: string | null;
   selectedSymptom?: string | null;
 };
 
@@ -68,6 +69,12 @@ function parseJsonObject(text: string) {
 
 export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionInput): Promise<CropDoctorVisionAiResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const selectedCrop = normalizeCropDoctorSelectedCrop(input.selectedCrop);
+  const selectedSymptom = input.selectedSymptom?.trim() || "Not sure";
+  const cropInstruction =
+    selectedCrop === "Not sure"
+      ? "The farmer did not identify the crop. Attempt to identify the crop from the photo cautiously, but return crop_not_confirmed if the crop is unclear."
+      : `The farmer says the crop is ${selectedCrop}. Treat this as context only and check whether the image appears consistent with that crop.`;
 
   if (!apiKey) {
     return { ok: false, reason: "missing_api_key", fallback: true };
@@ -90,7 +97,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
               {
                 type: "input_text",
                 text:
-                  `Analyze this crop photo for visible field crop health signs or harvest/storage quality. Farmer-selected crop: ${input.selectedCrop || "Not sure"}. Farmer-selected symptom: ${input.selectedSymptom || "Not sure"}. Use the selected crop and symptom as primary context, but mark photoCropMatch uncertain or not_clear if the image does not support it. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical.`
+                  `Analyze this crop photo for visible field crop health signs or harvest/storage quality. ${cropInstruction} Farmer-selected crop: ${selectedCrop}. Farmer-selected symptom: ${selectedSymptom}. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical.`
               },
               {
                 type: "input_image",
@@ -123,8 +130,8 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
     return {
       ok: true,
       result: normalizeCropDoctorVisionResult(json, {
-        selectedCrop: input.selectedCrop,
-        selectedSymptom: input.selectedSymptom
+        selectedCrop,
+        selectedSymptom
       })
     };
   } catch {

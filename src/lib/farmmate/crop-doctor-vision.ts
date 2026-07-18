@@ -50,6 +50,8 @@ export type CropDoctorHandoffContext = {
 };
 
 export const CROP_DOCTOR_ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const CROP_DOCTOR_AUTO_DETECT_VALUE = "not_sure";
+export const CROP_DOCTOR_NO_SELECTED_CROP = "Not sure";
 export const CROP_DOCTOR_SUPPORTED_CROPS = ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"] as const;
 export const CROP_DOCTOR_SYMPTOMS = [
   "Yellow leaves",
@@ -141,9 +143,24 @@ function cleanList(value: unknown, fallback: string[]) {
   return list.length ? list : fallback;
 }
 
-function cleanSelectedCrop(value: unknown) {
+export function normalizeCropDoctorSelectedCrop(value: unknown) {
   const crop = typeof value === "string" ? value.trim() : "";
-  return CROP_DOCTOR_SUPPORTED_CROPS.includes(crop as (typeof CROP_DOCTOR_SUPPORTED_CROPS)[number]) ? crop : "";
+
+  if (!crop || crop.toLowerCase() === CROP_DOCTOR_AUTO_DETECT_VALUE || crop.toLowerCase() === "detect automatically") {
+    return CROP_DOCTOR_NO_SELECTED_CROP;
+  }
+
+  return CROP_DOCTOR_SUPPORTED_CROPS.includes(crop as (typeof CROP_DOCTOR_SUPPORTED_CROPS)[number])
+    ? crop
+    : CROP_DOCTOR_NO_SELECTED_CROP;
+}
+
+function hasFarmerSelectedCrop(value: unknown) {
+  return normalizeCropDoctorSelectedCrop(value) !== CROP_DOCTOR_NO_SELECTED_CROP;
+}
+
+function cleanSelectedCrop(value: unknown) {
+  return normalizeCropDoctorSelectedCrop(value);
 }
 
 function cleanSelectedSymptom(value: unknown) {
@@ -289,6 +306,7 @@ export function cropDoctorResultBadge(result: Pick<CropDoctorVisionResult, "resu
 
 export function buildCropDoctorAskFarmMatePrompt(
   result: Pick<CropDoctorVisionResult, "selectedCrop" | "selectedSymptom" | "crop" | "visibleSigns" | "possibleIssue"> & {
+    cropConfidence?: CropDoctorConfidence;
     resultType?: CropDoctorResultType;
     nextBestAction?: string;
   }
@@ -296,36 +314,39 @@ export function buildCropDoctorAskFarmMatePrompt(
   const signs = result.visibleSigns.length ? result.visibleSigns.join(", ") : "unclear symptoms";
   const symptom = result.selectedSymptom && result.selectedSymptom !== "Not sure" ? result.selectedSymptom.toLowerCase() : "unclear symptoms";
 
-  if (result.selectedCrop && result.selectedCrop !== "Not sure") {
-    return `I selected ${result.selectedCrop.toLowerCase()} and uploaded a crop photo showing ${symptom}. Crop Doctor saw ${signs}. What should I check next?`;
+  if (hasFarmerSelectedCrop(result.selectedCrop)) {
+    return `I selected ${result.selectedCrop} and uploaded a crop photo showing ${symptom}. Crop Doctor saw ${signs}. What should I check next?`;
   }
 
-  if (!result.crop) {
-    return `I uploaded a crop photo but I am not sure of the crop. Crop Doctor saw ${signs}. What should I check next?`;
+  if (result.crop && result.cropConfidence !== "low" && result.resultType !== "crop_not_confirmed") {
+    return `Crop Doctor detected ${result.crop} from my photo and saw ${signs}. What should I check next?`;
   }
 
-  return `I uploaded a crop photo but I am not sure of the crop. Crop Doctor saw ${signs}. What should I check next?`;
+  return `I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw ${signs}. What should I check next?`;
 }
 
-export function normalizeCropDoctorVisionResult(value: unknown, context: { selectedCrop?: string; selectedSymptom?: string | null } = {}): CropDoctorVisionResult {
+export function normalizeCropDoctorVisionResult(value: unknown, context: { selectedCrop?: string | null; selectedSymptom?: string | null } = {}): CropDoctorVisionResult {
   const source = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-  const selectedCrop = cleanSelectedCrop(context.selectedCrop) || cleanSelectedCrop(source.selectedCrop) || "Not sure";
+  const selectedCrop = Object.prototype.hasOwnProperty.call(context, "selectedCrop")
+    ? cleanSelectedCrop(context.selectedCrop)
+    : cleanSelectedCrop(source.selectedCrop);
   const selectedSymptom = cleanSelectedSymptom(context.selectedSymptom) || cleanSelectedSymptom(source.selectedSymptom);
   const cropFromImage = typeof source.cropFromImage === "string" && source.cropFromImage.trim()
     ? source.cropFromImage.trim()
     : typeof source.crop === "string" && source.crop.trim()
       ? source.crop.trim()
       : null;
-  const crop = selectedCrop !== "Not sure" ? selectedCrop : cropFromImage;
   const visibleSigns = cleanList(source.visibleSigns, ["unclear visible signs"]);
   const issueCategory = cleanIssueCategory(source.issueCategory);
   const possibleIssue = cleanText(source.possibleIssue, "Possible crop health issue");
   let mainFinding = cleanText(source.mainFinding, cleanText(source.whatThisMeans, possibleIssue));
-  const cropConfidence = crop ? cleanConfidence(source.cropConfidence) : "low";
+  const cropConfidence = cropFromImage || selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP ? cleanConfidence(source.cropConfidence) : "low";
+  const confirmedImageCrop = cropFromImage && cropConfidence !== "low" ? cropFromImage : null;
+  const crop = selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP ? selectedCrop : confirmedImageCrop;
   let photoCropMatch = cleanPhotoCropMatch(source.photoCropMatch);
 
-  if (selectedCrop === "Not sure") {
-    photoCropMatch = cropFromImage ? "uncertain" : "not_clear";
+  if (selectedCrop === CROP_DOCTOR_NO_SELECTED_CROP) {
+    photoCropMatch = confirmedImageCrop ? "uncertain" : "not_clear";
   } else if (!cropFromImage) {
     photoCropMatch = source.photoCropMatch ? photoCropMatch : "not_clear";
   } else if (cropFromImage.toLowerCase() === selectedCrop.toLowerCase()) {
@@ -334,11 +355,11 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
     photoCropMatch = "uncertain";
   }
 
-  if (selectedCrop !== "Not sure" && photoCropMatch !== "likely") {
+  if (selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP && photoCropMatch !== "likely") {
     mainFinding = `The selected crop is ${selectedCrop.toLowerCase()}, but the photo does not clearly show ${selectedCrop.toLowerCase()}. Please upload a clearer photo of the affected ${selectedCrop.toLowerCase()} plant.`;
   }
 
-  const resultType = cleanResultType(
+  let resultType = cleanResultType(
     source.resultType,
     inferResultType({
       crop,
@@ -349,6 +370,11 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
       visibleSigns
     })
   );
+
+  if (selectedCrop === CROP_DOCTOR_NO_SELECTED_CROP && !confirmedImageCrop) {
+    resultType = "crop_not_confirmed";
+  }
+
   const result = {
     selectedCrop,
     selectedSymptom,
@@ -446,9 +472,10 @@ Return only valid JSON with these fields:
 selectedCrop, selectedSymptom, photoCropMatch, cropFromImage, resultType, possibleIssue, issueCategory, confidence, visibleSigns, mainFinding, whatToCheck, recommendedActions, prevention, nextBestAction, askFarmMatePrompt.
 
 Rules:
-- Use the farmer-selected crop and selected symptom as primary context.
-- If selectedCrop is "Not sure", try cautious crop identification only and set cropFromImage when visible.
-- Do not guess crop confidently from image alone.
+- If selectedCrop is provided, use it only as farmer-provided context and check whether the image appears consistent with that crop.
+- If selectedCrop is "Not sure", "not_sure", null, or not provided, attempt to identify the crop from the image using cautious wording.
+- If the crop is unclear or the photo is poor, set cropFromImage to null and resultType to "crop_not_confirmed" or "photo_unclear".
+- Do not guess a crop confidently from image alone.
 - Do not use the filename to identify the crop or issue. Use only what is visible in the image.
 - If selected crop and the image appear inconsistent, set photoCropMatch to "uncertain" and say the photo match is uncertain.
 - Use photoCropMatch exactly as one of: likely, uncertain, not_clear.
