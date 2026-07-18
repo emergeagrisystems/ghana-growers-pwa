@@ -178,6 +178,22 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
     if (plantingQuestionType === "tomato-now") {
       return farmMateDecisionFlows.find((flow) => flow.id === "can-i-plant-tomatoes-now");
     }
+
+    if (plantingQuestionType === "melon-clarification") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "plant-melon-clarification");
+    }
+
+    if (plantingQuestionType === "watermelon-planting") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "how-to-plant-watermelon");
+    }
+
+    if (plantingQuestionType === "watermelon-spacing") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "best-spacing-for-watermelon");
+    }
+
+    if (plantingQuestionType === "watermelon-now") {
+      return farmMateDecisionFlows.find((flow) => flow.id === "can-i-plant-watermelon-now");
+    }
   }
 
   if (plantHealthAssessment && ["crop_health", "pest_disease", "general_farming"].includes(selectedSpecialist)) {

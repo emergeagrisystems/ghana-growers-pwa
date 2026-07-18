@@ -18,6 +18,10 @@ export type PlantingAdvisorQuestionType =
   | "pepper-spacing"
   | "maize-timing"
   | "tomato-transplant"
+  | "melon-clarification"
+  | "watermelon-planting"
+  | "watermelon-spacing"
+  | "watermelon-now"
   | "general-planting";
 
 export const plantingAdvisorReasoningOrder = [
@@ -149,6 +153,19 @@ export const plantingAdvisorCrops: PlantingAdvisorCropGuidance[] = [
     nextBestAction: "Prepare a well-drained bed with enough vine space before planting cucumber."
   },
   {
+    crop: "Watermelon",
+    suitablePlantingConditions: ["Warm conditions with reliable moisture.", "Loose soil that drains well.", "Healthy seed and enough vine space are available."],
+    plantingSeasonNotes: ["Plant after steady rains when the soil is moist but not waterlogged.", "Dry-season planting needs reliable irrigation from establishment onward."],
+    spacingGuidance: ["Use local extension spacing where available.", "Many open-field plantings leave about 1 to 1.5 m between plants and 1.5 to 2 m between rows so vines have room."],
+    nurseryTransplantingNotes: ["Watermelon is usually direct-seeded.", "If using seedlings, transplant them gently while young and avoid disturbing roots."],
+    soilPreparation: ["Prepare raised beds or mounds where drainage is weak.", "Add compost or well-rotted organic matter where available.", "Remove weeds before planting."],
+    waterRainfallNeeds: ["Keep soil moisture steady during germination and early growth.", "Avoid waterlogging and do not rely on one uncertain shower.", "Mulch can help reduce moisture loss where practical."],
+    commonPlantingMistakes: ["Crowding vines.", "Planting into waterlogged soil.", "Letting young plants dry out after germination."],
+    sustainablePlantingPractices: ["Rotate away from cucurbit crops where possible.", "Use mulch to protect soil moisture.", "Keep beds well drained and weed early."],
+    whenToDelayPlanting: ["Delay if the soil is waterlogged.", "Delay if steady rain or irrigation is not available.", "Delay if land preparation or seed quality is poor."],
+    nextBestAction: "Check drainage, water availability and vine spacing before planting watermelon."
+  },
+  {
     crop: "Garden eggs",
     suitablePlantingConditions: ["Warm conditions.", "Steady moisture.", "Well-drained soil."],
     plantingSeasonNotes: ["Garden eggs can grow in rainy periods with drainage or dry periods with irrigation."],
@@ -198,6 +215,22 @@ export function plantingAdvisorQuestionType(question: string): PlantingAdvisorQu
     return "tomato-now";
   }
 
+  if (normalized.includes("watermelon")) {
+    if (normalized.includes("spacing")) {
+      return "watermelon-spacing";
+    }
+
+    if (normalized.includes("now")) {
+      return "watermelon-now";
+    }
+
+    return "watermelon-planting";
+  }
+
+  if (normalized.includes("melon")) {
+    return "melon-clarification";
+  }
+
   return "general-planting";
 }
 
@@ -214,6 +247,14 @@ export function plantingAdvisorOpeningForQuestion(question: string) {
 
   if (type === "tomato-transplant") {
     return "Tomato transplanting is safer when seedlings are strong and the field is moist but not waterlogged.";
+  }
+
+  if (type === "melon-clarification") {
+    return "Before I suggest planting steps, I need to confirm which melon you mean.";
+  }
+
+  if (type === "watermelon-planting" || type === "watermelon-spacing" || type === "watermelon-now") {
+    return "Watermelon needs warm conditions, reliable moisture, good drainage and enough room for vines.";
   }
 
   return "Planting advice depends on crop, region, season, water and land preparation.";

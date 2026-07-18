@@ -234,6 +234,31 @@ export const farmMateCrops: FarmMateCrop[] = [
     sustainablePractices: ["mulching", "crop-rotation", "soil-level-watering"]
   },
   {
+    id: "watermelon",
+    name: "Watermelon",
+    suitableRegions: ["ashanti", "eastern", "greater-accra", "northern", "volta", "western"],
+    plantingSeasons: ["After steady rains with good drainage", "Dry season with reliable irrigation"],
+    spacing: "Use local extension spacing where available; many open-field plantings leave about 1 to 1.5 m between plants and 1.5 to 2 m between rows.",
+    soil: {
+      type: "Loose, fertile, well-drained soil with organic matter.",
+      preparation: ["Prepare raised beds or mounds where drainage is weak", "Add compost or well-rotted organic matter", "Remove weeds before planting"]
+    },
+    water: {
+      needs: "Steady moisture for germination and early growth without waterlogging.",
+      guidance: ["Keep young plants moist", "Avoid waterlogging", "Mulch where practical to reduce moisture loss"]
+    },
+    growthStages: [
+      { name: "Establishment", timing: "0-3 weeks", keyCare: ["Protect young plants", "Control weeds", "Keep soil moisture steady"] },
+      { name: "Vine growth and flowering", timing: "3-6 weeks", keyCare: ["Maintain drainage", "Guide vines away from standing water", "Scout for pest signs"] },
+      { name: "Fruit development", timing: "6+ weeks", keyCare: ["Keep fruit off wet soil where practical", "Maintain steady moisture", "Remove badly damaged fruit"] }
+    ],
+    commonPests: ["whitefly", "fruit-borer", "nematodes"],
+    commonDiseases: ["damping-off", "mildew"],
+    nutrientDeficiencies: ["nitrogen-deficiency", "potassium-deficiency"],
+    harvestIndicators: ["Fruit reaches expected size", "The ground spot changes from white to cream or yellow", "The nearest tendril starts drying"],
+    sustainablePractices: ["mulching", "crop-rotation", "soil-level-watering"]
+  },
+  {
     id: "garden-eggs",
     name: "Garden eggs",
     suitableRegions: ["ashanti", "eastern", "greater-accra", "volta", "western"],

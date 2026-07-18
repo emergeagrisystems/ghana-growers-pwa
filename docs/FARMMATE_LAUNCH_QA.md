@@ -62,6 +62,8 @@ Route checks:
 
 - Local specialist guidance for planting timing, crop choice, spacing, nursery/transplanting, and land preparation.
 - Does not pretend to know exact local weather, prices, or profit.
+- Supports practical watermelon planting, spacing, soil-preparation, drainage and water guidance.
+- Clarifies whether an ambiguous "melon" question means watermelon or melon grown for seed before advising.
 
 ## Specialist Test Matrix
 
@@ -75,6 +77,8 @@ Route checks:
 | Can I spray today? | Weather Decision |
 | Can I apply fertilizer before rain? | Weather Decision |
 | Can I plant tomatoes now? | Planting Advisor |
+| How do I plant watermelon? | Planting Advisor |
+| Best spacing for watermelon | Planting Advisor |
 | When should I harvest maize? | Harvest and Post-Harvest |
 | How do I store cassava? | Harvest and Post-Harvest |
 | How do I pack tomatoes for transport? | Harvest and Post-Harvest |

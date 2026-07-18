@@ -3953,6 +3953,58 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "melon and watermelon planting questions route to Planting Advisor",
+    run: () => {
+      const questions = [
+        "How do I plant melon?",
+        "How do I plant watermelon?",
+        "Can I plant melon now?",
+        "Can I plant watermelon now?",
+        "Best spacing for watermelon",
+        "When should I plant melon?",
+        "How do I grow watermelon?"
+      ];
+
+      for (const question of questions) {
+        const router = routeFarmMateQuestion(question);
+        assert.equal(router.selectedSpecialist, "planting", question);
+        assert.notEqual(router.selectedSpecialist, "crop_doctor", question);
+        assert.notEqual(router.selectedSpecialist, "crop_health", question);
+      }
+
+      const melonResponse = buildFarmMateResponse("How do I plant melon?", routeFarmMateQuestion("How do I plant melon?"));
+      assert.equal(melonResponse.flow?.id, "plant-melon-clarification");
+      assert.equal(melonResponse.flow?.followUpQuestions[0]?.question, "Do you mean watermelon or melon grown for seed?");
+      assert.deepEqual(melonResponse.flow?.followUpQuestions[0]?.options, ["Watermelon", "Melon grown for seed", "I am not sure"]);
+
+      assert.equal(buildFarmMateResponse("How do I plant watermelon?", routeFarmMateQuestion("How do I plant watermelon?")).flow?.id, "how-to-plant-watermelon");
+      assert.equal(buildFarmMateResponse("Best spacing for watermelon", routeFarmMateQuestion("Best spacing for watermelon")).flow?.id, "best-spacing-for-watermelon");
+      assert.equal(buildFarmMateResponse("Can I plant watermelon now?", routeFarmMateQuestion("Can I plant watermelon now?")).flow?.id, "can-i-plant-watermelon-now");
+      assert.equal(responseText(melonResponse).toLowerCase().includes("disease"), false);
+    }
+  },
+  {
+    name: "Planting Advisor provides safe Watermelon guidance",
+    run: () => {
+      const watermelon = plantingAdvisorCrops.find((guidance) => guidance.crop === "Watermelon");
+      const watermelonText = JSON.stringify(watermelon).toLowerCase();
+      const cropDoctorVision = repoFile("src/lib/farmmate/crop-doctor-vision.ts");
+
+      assert.equal(Boolean(watermelon?.suitablePlantingConditions.length), true);
+      assert.equal(Boolean(watermelon?.spacingGuidance.length), true);
+      assert.equal(Boolean(watermelon?.soilPreparation.length), true);
+      assert.equal(Boolean(watermelon?.waterRainfallNeeds.length), true);
+      assert.equal(Boolean(watermelon?.commonPlantingMistakes.length), true);
+      assert.equal(Boolean(watermelon?.whenToDelayPlanting.length), true);
+      assert.equal(Boolean(watermelon?.nextBestAction), true);
+      assert.equal(watermelonText.includes("market price"), false);
+      assert.equal(watermelonText.includes("profit"), false);
+      assert.equal(watermelonText.includes("yield"), false);
+      assert.equal(watermelonText.includes("buyer"), false);
+      assert.equal(cropDoctorVision.includes('"Watermelon / melon"'), true);
+    }
+  },
+  {
     name: "what should I plant this month routes to planting",
     run: () => {
       const router = routeFarmMateQuestion("What should I plant this month?");
@@ -4059,7 +4111,7 @@ const tests: TestCase[] = [
   {
     name: "OpenAI payload includes planting specialist context",
     run: () => {
-      const farmerQuestion = "Best spacing for pepper?";
+      const farmerQuestion = "Best spacing for watermelon?";
       const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
       const payload = JSON.parse(
         buildFarmMateVoiceLayerInput({
@@ -4072,11 +4124,11 @@ const tests: TestCase[] = [
 
       assert.equal(payload.selectedSpecialist, "planting");
       assert.equal(payload.specialistContext?.specialist, "planting");
-      assert.equal(payload.specialistContext?.crop, "Pepper");
+      assert.equal(payload.specialistContext?.crop, "Watermelon");
       assert.equal(payload.specialistContext?.noLiveWeatherRule?.toLowerCase().includes("do not invent exact local weather"), true);
       assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
       assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("guaranteed yield"), true);
-      assert.equal(payload.specialistContext?.spacingGuidance?.some((line) => line.toLowerCase().includes("45 to 60 cm")), true);
+      assert.equal(payload.specialistContext?.spacingGuidance?.some((line) => line.toLowerCase().includes("1 to 1.5 m")), true);
     }
   },
   {
@@ -4368,7 +4420,7 @@ const tests: TestCase[] = [
       assert.ok(cropSelectorIndex > 0);
       assert.ok(analyseIndex > cropSelectorIndex);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-crop"'), true);
-      assert.deepEqual(CROP_DOCTOR_SUPPORTED_CROPS, ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Garden eggs", "Not sure"]);
+      assert.deepEqual(CROP_DOCTOR_SUPPORTED_CROPS, ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"]);
       assert.equal(cropDoctor.includes("CROP_DOCTOR_SUPPORTED_CROPS.map"), true);
       assert.equal(cropDoctor.includes("Select crop to analyse"), true);
     }

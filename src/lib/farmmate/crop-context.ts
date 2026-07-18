@@ -10,6 +10,7 @@ const cropAliases: Record<string, string[]> = {
   onion: ["onion", "onions"],
   okra: ["okra"],
   cucumber: ["cucumber", "cucumbers"],
+  watermelon: ["watermelon", "watermelons"],
   "garden-eggs": ["garden eggs", "garden egg", "garden-eggs", "eggplant", "aubergine"]
 };
 

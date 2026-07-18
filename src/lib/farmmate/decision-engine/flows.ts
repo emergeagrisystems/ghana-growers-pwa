@@ -863,6 +863,203 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     safetyRules: [decisionEngineSafetyRules[2]]
   },
   {
+    id: "plant-melon-clarification",
+    question: "How do I plant melon?",
+    intent: "planting",
+    possibleCauses: ["Melon can mean watermelon or melon grown for seed.", "Region, water and land preparation are not known."],
+    requiredInformation: {
+      crop: "Unknown",
+      region: "Unknown",
+      recentWeather: "Rain or irrigation availability needed"
+    },
+    followUpQuestions: [
+      {
+        id: "melon-crop-type",
+        question: "Do you mean watermelon or melon grown for seed?",
+        requiredForConfidence: true,
+        options: ["Watermelon", "Melon grown for seed", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "I can guide you best on watermelon for now. If you mean melon grown for seed, confirm the right variety and local practice before planting.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "melon-crop-meaning",
+          observation: "The word melon can describe more than one crop or purpose.",
+          interpretation: "FarmMate should confirm the crop before giving planting steps."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Confirm whether you mean watermelon or melon grown for seed, then check region, water and drainage before planting.",
+      guidance: ["Do not plant into waterlogged soil.", "Use healthy seed and prepare the land before sowing."],
+      nextBestAction: {
+        id: "confirm-melon-type",
+        label: "Confirm melon type",
+        instruction: "Choose whether you mean watermelon or melon grown for seed.",
+        actionType: "ask-follow-up"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "how-to-plant-watermelon",
+    question: "How do I plant watermelon?",
+    intent: "planting",
+    possibleCauses: ["Region is unknown.", "Rain or irrigation availability is unknown.", "Drainage and vine spacing need checking."],
+    requiredInformation: {
+      crop: "Watermelon",
+      region: "Unknown",
+      recentWeather: "Rain or irrigation availability needed",
+      farmPracticeContext: ["Land preparation", "Drainage", "Vine spacing"]
+    },
+    followUpQuestions: [
+      {
+        id: "watermelon-planting-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "watermelon-planting-water",
+        question: "Do you have steady rain or irrigation for the watermelon?",
+        requiredForConfidence: true,
+        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
+      },
+      {
+        id: "watermelon-planting-land",
+        question: "Is the land well drained, dry, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Well drained", "Dry", "Waterlogged", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Plant watermelon in warm, well-drained soil after steady rain or when reliable irrigation is available. Leave enough room for vines and do not plant into waterlogged soil.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "watermelon-moisture",
+          observation: "Watermelon needs moisture to establish but roots suffer in waterlogged soil.",
+          interpretation: "Water availability and drainage should be checked before planting."
+        },
+        {
+          id: "watermelon-vine-space",
+          observation: "Watermelon vines spread across the field.",
+          interpretation: "Enough spacing helps airflow, weeding and field access."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Prepare a well-drained bed or mound, use healthy seed, and keep about 1 to 1.5 m between plants where local guidance allows.",
+      guidance: ["Use compost or well-rotted organic matter where available.", "Keep young plants moist, but avoid waterlogging.", "Weed early and mulch where practical."],
+      nextBestAction: {
+        id: "check-watermelon-field",
+        label: "Check field readiness",
+        instruction: "Check drainage and confirm steady rain or irrigation before planting watermelon.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "best-spacing-for-watermelon",
+    question: "Best spacing for watermelon",
+    intent: "planting",
+    possibleCauses: ["Watermelon vines need room to spread.", "Field layout and drainage are unknown."],
+    requiredInformation: {
+      crop: "Watermelon",
+      region: "Unknown",
+      farmPracticeContext: ["Watermelon spacing", "Field layout", "Drainage"]
+    },
+    followUpQuestions: [
+      {
+        id: "watermelon-spacing-layout",
+        question: "Are you planting on beds, mounds, ridges, or flat land?",
+        requiredForConfidence: true,
+        options: ["Beds or mounds", "Ridges", "Flat land", "Not sure"]
+      },
+      {
+        id: "watermelon-spacing-drainage",
+        question: "Does the field drain well after rain?",
+        requiredForConfidence: true,
+        options: ["Yes, it drains well", "No, water stays", "I am not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Watermelon needs enough room for vines, airflow and field work. Use local extension spacing where available; many open-field plantings leave about 1 to 1.5 m between plants and 1.5 to 2 m between rows.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "watermelon-spacing-airflow",
+          observation: "Crowded vines hold humidity and make field work harder.",
+          interpretation: "Open spacing supports airflow, weeding and fruit care."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Mark rows before sowing and leave enough vine space for your field system.",
+      guidance: ["Avoid crowding plants.", "Keep drainage open between beds or mounds.", "Use mulch where practical to reduce moisture loss."],
+      nextBestAction: {
+        id: "mark-watermelon-spacing",
+        label: "Mark planting space",
+        instruction: "Mark your rows and plant positions before sowing watermelon.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
+    id: "can-i-plant-watermelon-now",
+    question: "Can I plant watermelon now?",
+    intent: "planting",
+    possibleCauses: ["Region and season are unknown.", "Rain or irrigation availability is unknown.", "Soil moisture and drainage need checking."],
+    requiredInformation: {
+      crop: "Watermelon",
+      region: "Unknown",
+      recentWeather: "Rain or irrigation availability needed",
+      farmPracticeContext: ["Watermelon planting", "Soil moisture", "Drainage"]
+    },
+    followUpQuestions: [
+      {
+        id: "watermelon-now-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]
+      },
+      {
+        id: "watermelon-now-water",
+        question: "Do you have steady rain or irrigation available now?",
+        requiredForConfidence: true,
+        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
+      },
+      {
+        id: "watermelon-now-soil",
+        question: "Is the soil moist, dry, or waterlogged?",
+        requiredForConfidence: true,
+        options: ["Moist", "Dry", "Waterlogged", "Not sure"]
+      }
+    ],
+    recommendation: {
+      summary: "Watermelon may be suitable to plant when the soil is moist but not waterlogged, the field drains well, and you can rely on steady rain or irrigation after sowing.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "watermelon-establishment",
+          observation: "Young watermelon plants need steady moisture to establish.",
+          interpretation: "FarmMate should check water availability and soil condition before recommending planting."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Delay planting if the field is waterlogged or you cannot support young plants with steady rain or irrigation.",
+      guidance: ["Avoid planting after one uncertain shower if the soil is still dry.", "Avoid waterlogged soil.", "Use healthy seed and prepare drainage before sowing."],
+      nextBestAction: {
+        id: "confirm-watermelon-conditions",
+        label: "Check planting conditions",
+        instruction: "Confirm soil moisture, drainage and water availability before planting watermelon.",
+        actionType: "take-farm-action"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[2]]
+  },
+  {
     id: "best-spacing-for-pepper",
     question: "Best spacing for pepper",
     intent: "planting",

@@ -45,7 +45,11 @@ const topicRules: TopicRule[] = [
       "what should i plant",
       "crop to grow",
       "best time to plant",
-      "land preparation"
+      "land preparation",
+      "melon",
+      "watermelon",
+      "grow melon",
+      "grow watermelon"
     ]
   },
   {

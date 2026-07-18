@@ -50,7 +50,7 @@ export type CropDoctorHandoffContext = {
 };
 
 export const CROP_DOCTOR_ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const CROP_DOCTOR_SUPPORTED_CROPS = ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Garden eggs", "Not sure"] as const;
+export const CROP_DOCTOR_SUPPORTED_CROPS = ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"] as const;
 export const CROP_DOCTOR_SYMPTOMS = [
   "Yellow leaves",
   "Spots on leaves",
