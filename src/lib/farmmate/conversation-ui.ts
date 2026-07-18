@@ -8,7 +8,8 @@ const SUMMARY_SEPARATOR = " · ";
 const fillerPatterns = [
   /\bI will keep it short and focused\.?\s*/gi,
   /\bHere is the practical next step\.?\s*/gi,
-  /^I can help\.?\s*/gim
+  /^I can help\.?\s*/gim,
+  /^You mean watermelon\.?\s*Good\.?\s*/gim
 ];
 
 export type AskFarmMateResponseState = {

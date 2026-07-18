@@ -215,7 +215,7 @@ export function plantingAdvisorQuestionType(question: string): PlantingAdvisorQu
     return "tomato-now";
   }
 
-  if (normalized.includes("watermelon")) {
+  if (normalized.includes("watermelon") || normalized.includes("water melon")) {
     if (normalized.includes("spacing")) {
       return "watermelon-spacing";
     }

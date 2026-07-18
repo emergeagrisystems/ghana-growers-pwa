@@ -3962,7 +3962,8 @@ const tests: TestCase[] = [
         "Can I plant watermelon now?",
         "Best spacing for watermelon",
         "When should I plant melon?",
-        "How do I grow watermelon?"
+        "How do I grow watermelon?",
+        "How can I plant water melon?"
       ];
 
       for (const question of questions) {
@@ -3977,10 +3978,33 @@ const tests: TestCase[] = [
       assert.equal(melonResponse.flow?.followUpQuestions[0]?.question, "Do you mean watermelon or melon grown for seed?");
       assert.deepEqual(melonResponse.flow?.followUpQuestions[0]?.options, ["Watermelon", "Melon grown for seed", "I am not sure"]);
 
-      assert.equal(buildFarmMateResponse("How do I plant watermelon?", routeFarmMateQuestion("How do I plant watermelon?")).flow?.id, "how-to-plant-watermelon");
+      const watermelonResponse = buildFarmMateResponse("How do I plant watermelon?", routeFarmMateQuestion("How do I plant watermelon?"));
+      const spacedWatermelonResponse = buildFarmMateResponse("How can I plant water melon?", routeFarmMateQuestion("How can I plant water melon?"));
+      assert.equal(watermelonResponse.flow?.id, "how-to-plant-watermelon");
+      assert.equal(spacedWatermelonResponse.flow?.id, "how-to-plant-watermelon");
+      assert.equal(watermelonResponse.confidence, "medium");
+      assert.equal(watermelonResponse.flow?.followUpQuestions[0]?.question, "Which region are you farming in?");
+      assert.deepEqual(watermelonResponse.flow?.followUpQuestions[0]?.options, ["Greater Accra", "Ashanti", "Eastern", "Northern", "Other region"]);
+      assert.equal(watermelonResponse.flow?.followUpQuestions[1]?.question, "Do you have steady rain or irrigation available?");
+      assert.deepEqual(watermelonResponse.flow?.followUpQuestions[1]?.options, ["Steady rain has started", "I have irrigation", "Not enough water yet", "I am not sure"]);
+      assert.equal(watermelonResponse.flow?.followUpQuestions.length, 2);
+      assert.equal(responseText(watermelonResponse).includes("Next step: Tell me your region"), false);
       assert.equal(buildFarmMateResponse("Best spacing for watermelon", routeFarmMateQuestion("Best spacing for watermelon")).flow?.id, "best-spacing-for-watermelon");
       assert.equal(buildFarmMateResponse("Can I plant watermelon now?", routeFarmMateQuestion("Can I plant watermelon now?")).flow?.id, "can-i-plant-watermelon-now");
       assert.equal(responseText(melonResponse).toLowerCase().includes("disease"), false);
+    }
+  },
+  {
+    name: "melon clarification continues with Watermelon field checks",
+    run: () => {
+      const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(askFarmMate.includes('response?.flow?.id === "plant-melon-clarification" && answer === "Watermelon"'), true);
+      assert.equal(askFarmMate.includes('const watermelonQuestion = "How do I plant watermelon?"'), true);
+      assert.equal(askFarmMate.includes("setResponse(watermelonResponse)"), true);
+      assert.equal(askFarmMate.includes('activeCropName: "Watermelon"'), true);
+      assert.equal(askFarmMate.includes("waitingForFollowUp: true"), true);
+      assert.equal(askFarmMate.includes("followUpIndex + 1 < followUpQuestions.length"), true);
     }
   },
   {
@@ -5254,6 +5278,10 @@ const tests: TestCase[] = [
       assert.equal(cleaned.includes("I can help."), false);
       assert.equal(cleaned.includes("Here is the practical next step"), false);
       assert.equal(cleaned.includes("Next step: Check the soil today."), true);
+
+      const watermelonCleaned = cleanFarmMateFinalAnswer("You mean watermelon. Good.\n\nWhich region are you farming in?");
+      assert.equal(watermelonCleaned.includes("You mean watermelon. Good."), false);
+      assert.equal(watermelonCleaned, "Which region are you farming in?");
     }
   },
   {

@@ -653,6 +653,23 @@ export function AskFarmMate({
 
     setFollowUpAnswers(nextAnswers);
 
+    if (response?.flow?.id === "plant-melon-clarification" && answer === "Watermelon") {
+      const watermelonQuestion = "How do I plant watermelon?";
+      const watermelonResponse = buildFarmMateResponse(watermelonQuestion, routeFarmMateQuestion(watermelonQuestion));
+
+      setResponse(watermelonResponse);
+      setFollowUpIndex(0);
+      setShowRecommendation(false);
+      setConversationState((current) => ({
+        ...current,
+        activeTopic: "planting",
+        activeCropName: "Watermelon",
+        activeSpecialist: "planting",
+        waitingForFollowUp: true
+      }));
+      return;
+    }
+
     const shouldCompleteWeatherFlow = shouldCompleteWeatherGuidedFlow(response?.flow?.id, nextAnswers);
 
     if (!shouldCompleteWeatherFlow && followUpIndex + 1 < followUpQuestions.length) {

@@ -122,14 +122,19 @@ export const farmMateRouterRules: RouterRule[] = [
       "plant tomatoes",
       "melon",
       "watermelon",
+      "water melon",
       "plant melon",
       "plant watermelon",
+      "plant water melon",
       "grow melon",
       "grow watermelon",
+      "grow water melon",
       "melon spacing",
       "watermelon spacing",
+      "water melon spacing",
       "melon planting",
-      "watermelon planting"
+      "watermelon planting",
+      "water melon planting"
     ],
     reason: "The question is about planting choices, timing, spacing or seed establishment.",
     suggestedFallbackSpecialist: "general_farming"

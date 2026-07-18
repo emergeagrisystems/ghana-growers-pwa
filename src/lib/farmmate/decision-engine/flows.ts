@@ -922,15 +922,9 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       },
       {
         id: "watermelon-planting-water",
-        question: "Do you have steady rain or irrigation for the watermelon?",
+        question: "Do you have steady rain or irrigation available?",
         requiredForConfidence: true,
-        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
-      },
-      {
-        id: "watermelon-planting-land",
-        question: "Is the land well drained, dry, or waterlogged?",
-        requiredForConfidence: true,
-        options: ["Well drained", "Dry", "Waterlogged", "Not sure"]
+        options: ["Steady rain has started", "I have irrigation", "Not enough water yet", "I am not sure"]
       }
     ],
     recommendation: {
@@ -1026,15 +1020,9 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       },
       {
         id: "watermelon-now-water",
-        question: "Do you have steady rain or irrigation available now?",
+        question: "Do you have steady rain or irrigation available?",
         requiredForConfidence: true,
-        options: ["Steady rain", "Irrigation available", "Both", "Not sure"]
-      },
-      {
-        id: "watermelon-now-soil",
-        question: "Is the soil moist, dry, or waterlogged?",
-        requiredForConfidence: true,
-        options: ["Moist", "Dry", "Waterlogged", "Not sure"]
+        options: ["Steady rain has started", "I have irrigation", "Not enough water yet", "I am not sure"]
       }
     ],
     recommendation: {

@@ -48,8 +48,10 @@ const topicRules: TopicRule[] = [
       "land preparation",
       "melon",
       "watermelon",
+      "water melon",
       "grow melon",
-      "grow watermelon"
+      "grow watermelon",
+      "grow water melon"
     ]
   },
   {
