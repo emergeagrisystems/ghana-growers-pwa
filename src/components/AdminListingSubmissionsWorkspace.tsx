@@ -3,6 +3,7 @@
 import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, Pause, Send, XCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { adminCountPillClass, adminPrioritySeverity, type AdminPrioritySeverity } from "@/lib/adminPriorityState";
 import { marketplacePriceLine, marketplaceQuantityLine, marketplaceTradeInformation } from "@/lib/marketplace/trade";
 import type { AdminUser } from "@/lib/adminAuth";
 import type { ListingSubmission, SubmissionStatus } from "@/lib/publicSubmissions";
@@ -33,6 +34,13 @@ export function AdminListingSubmissionsWorkspace({
     [activeStatus, submissions]
   );
   const selected = filtered.find((submission) => submission.id === selectedId) ?? filtered[0];
+  const queueSeverity: AdminPrioritySeverity = activeStatus === "Paused"
+    ? "neutral"
+    : adminPrioritySeverity({
+      count: filtered.length,
+      hasDue: ["New", "Needs Information", "Under Review", "Approved"].includes(activeStatus),
+      hasOverdue: activeStatus === "Rejected" || activeStatus === "Expired"
+    });
 
   useEffect(() => {
     void loadSubmissions();
@@ -134,7 +142,13 @@ export function AdminListingSubmissionsWorkspace({
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
         <div className="admin-queue-panel p-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Submission queue</p>
+            <span className={adminCountPillClass(queueSeverity)}>
+              <span className="sr-only">Submissions shown: </span>{filtered.length}
+            </span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
             {(["All", ...statuses] as Array<SubmissionStatus | "All">).map((status) => (
               <button
                 key={status}

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  adminCountPillClass,
+  adminMetricSeverityClass,
+  adminPriorityActionClasses,
+  adminPrioritySeverity
+} from "../src/lib/adminPriorityState";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import {
@@ -1351,6 +1357,46 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("Quick Actions"), false);
       assert.equal(adminDashboard.includes("Today's Progress"), false);
       assert.equal(adminDashboard.includes("Platform Health"), false);
+    }
+  },
+  {
+    name: "Admin queue priority styling follows actual queue state",
+    run: () => {
+      assert.equal(adminPrioritySeverity({ count: 0, hasOverdue: true }), "neutral");
+      assert.equal(adminPrioritySeverity({ count: 4 }), "active");
+      assert.equal(adminPrioritySeverity({ count: 2, hasDue: true }), "due");
+      assert.equal(adminPrioritySeverity({ count: 1, hasDue: true, hasOverdue: true }), "overdue");
+      assert.equal(adminMetricSeverityClass("neutral"), "admin-metric-neutral");
+      assert.equal(adminMetricSeverityClass("active"), "admin-metric-active");
+      assert.equal(adminMetricSeverityClass("due"), "admin-metric-due");
+      assert.equal(adminMetricSeverityClass("overdue"), "admin-metric-overdue");
+      assert.equal(adminCountPillClass("neutral"), "admin-count-pill admin-count-neutral");
+      assert.equal(adminCountPillClass("due"), "admin-count-pill admin-count-due");
+      assert.equal(adminCountPillClass("overdue"), "admin-count-pill admin-count-overdue");
+
+      const actionClasses = adminPriorityActionClasses([
+        { count: 2, severity: "due" },
+        { count: 3, severity: "active" },
+        { count: 1, severity: "overdue" },
+        { count: 0, severity: "neutral" }
+      ]);
+
+      assert.deepEqual(actionClasses, [
+        "admin-action-secondary",
+        "admin-action-secondary",
+        "admin-action-primary",
+        "admin-action-tertiary"
+      ]);
+      assert.equal(actionClasses.filter((className) => className === "admin-action-primary").length, 1);
+
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const listingWorkspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
+      assert.equal(adminDashboard.includes('section: "buyer-requests" as AdminSectionId'), true);
+      assert.equal(adminDashboard.includes('section: "match-opportunities" as AdminSectionId'), true);
+      assert.equal(adminDashboard.includes('section: "lead-queue" as AdminSectionId'), true);
+      assert.equal(adminDashboard.includes('section: "submissions" as AdminSectionId'), true);
+      assert.equal(adminDashboard.includes("runQuickAction(item.section"), true);
+      assert.equal(listingWorkspace.includes("adminCountPillClass(queueSeverity)"), true);
     }
   },
   {

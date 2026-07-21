@@ -40,6 +40,12 @@ import { WHATSAPP_NUMBER } from "@/data/site";
 import successStories from "@/data/successStories.json";
 import { supplierDirectory } from "@/data/suppliers";
 import type { AdminUser } from "@/lib/adminAuth";
+import {
+  adminCountPillClass,
+  adminMetricSeverityClass,
+  adminPriorityActionClasses,
+  adminPrioritySeverity
+} from "@/lib/adminPriorityState";
 import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matching";
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up" | "Published";
@@ -4377,6 +4383,27 @@ export function AdminDashboard({
     () => filteredSourcingCases.find((caseItem) => caseItem.request.id === selectedSourcingCaseId) ?? filteredSourcingCases[0] ?? null,
     [filteredSourcingCases, selectedSourcingCaseId]
   );
+  const sourcingMetricCards = useMemo(() => {
+    const active = sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length;
+    const overdue = sourcingCases.filter((caseItem) => caseItem.priority.label === "Overdue").length;
+    const completed = sourcingCases.filter((caseItem) => caseItem.state.status === "Completed").length;
+
+    return [
+      { label: "Active Sourcing", value: active, severity: adminPrioritySeverity({ count: active }) },
+      { label: "Overdue Requests", value: overdue, severity: adminPrioritySeverity({ count: overdue, hasOverdue: overdue > 0 }) },
+      {
+        label: "Average Response",
+        value: overdue > 0 ? "Needs review" : "On track",
+        severity: adminPrioritySeverity({ count: sourcingCases.length, hasOverdue: overdue > 0 })
+      },
+      { label: "Completed Today", value: completed, severity: adminPrioritySeverity({ count: completed }) }
+    ];
+  }, [sourcingCases]);
+  const filteredSourcingSeverity = adminPrioritySeverity({
+    count: filteredSourcingCases.length,
+    hasDue: filteredSourcingCases.some((caseItem) => caseItem.priority.label === "Due Today"),
+    hasOverdue: filteredSourcingCases.some((caseItem) => caseItem.priority.label === "Overdue")
+  });
   const summaryCards = useMemo(
     () => summarize(rowsBySection, whatsappLeads.length, leadRequests.length, newApplicationCounts, newSubmissionCounts),
     [rowsBySection, whatsappLeads.length, leadRequests.length, newApplicationCounts, newSubmissionCounts]
@@ -4387,10 +4414,10 @@ export function AdminDashboard({
     const newLeads = leadStatusCount(leadRequests, "New");
     const requestsNeedingReview = newLeads + submissions.buyerRequests.filter((request) => request.status === "New").length;
     const activeSourcingCases = sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length;
-    const followUpsDue = leadStatusCount(leadRequests, "Contacted") + sourcingCases.filter((caseItem) => caseItem.state.status === "Waiting Buyer" || caseItem.priority.label === "Overdue").length;
+    const sourcingFollowUps = sourcingCases.filter((caseItem) => caseItem.state.status === "Waiting Buyer" || caseItem.priority.label === "Overdue");
+    const followUpsDue = leadStatusCount(leadRequests, "Contacted") + sourcingFollowUps.length;
     const listingsAwaitingReview = submissions.listings.filter((submission) => ["New", "Needs Information", "Under Review", "Approved"].includes(submission.status)).length;
-
-    return [
+    const queue = [
       {
         label: "Requests needing review",
         value: requestsNeedingReview,
@@ -4399,8 +4426,7 @@ export function AdminDashboard({
           ...leadRequests.filter((lead) => normalizeLeadStatus(lead.status) === "New").map((lead) => ({ name: lead.product_interest, date: lead.created_at })),
           ...submissions.buyerRequests.filter((request) => request.status === "New").map((request) => ({ name: request.product_needed, date: request.created_at }))
         ]),
-        accent: "admin-metric-danger",
-        actionTone: "admin-action-primary",
+        severity: adminPrioritySeverity({ count: requestsNeedingReview, hasDue: requestsNeedingReview > 0 }),
         section: "buyer-requests" as AdminSectionId,
         action: "Review requests",
         icon: PackageCheck
@@ -4410,8 +4436,7 @@ export function AdminDashboard({
         value: activeSourcingCases,
         explanation: "Requests already moved into sourcing and match review.",
         oldest: activeSourcingCases > 0 ? "Review matches and next action" : "No active sourcing cases",
-        accent: "admin-metric-active",
-        actionTone: "admin-action-secondary",
+        severity: adminPrioritySeverity({ count: activeSourcingCases }),
         section: "match-opportunities" as AdminSectionId,
         action: "Open active sourcing",
         icon: Clock3
@@ -4421,8 +4446,11 @@ export function AdminDashboard({
         value: followUpsDue,
         explanation: "Contacted or overdue requests needing an admin follow-up.",
         oldest: followUpsDue > 0 ? "Check buyer or supply follow-up" : "No follow-ups due",
-        accent: "admin-metric-contacted",
-        actionTone: "admin-action-warning",
+        severity: adminPrioritySeverity({
+          count: followUpsDue,
+          hasDue: followUpsDue > 0,
+          hasOverdue: sourcingFollowUps.some((caseItem) => caseItem.priority.label === "Overdue")
+        }),
         section: "lead-queue" as AdminSectionId,
         action: "Review follow-ups",
         icon: MessageCircle
@@ -4435,13 +4463,21 @@ export function AdminDashboard({
           name: submission.product_name,
           date: submission.created_at
         }))),
-        accent: "admin-metric-pending",
-        actionTone: "admin-action-secondary",
+        severity: adminPrioritySeverity({ count: listingsAwaitingReview, hasDue: listingsAwaitingReview > 0 }),
         section: "submissions" as AdminSectionId,
         action: "Review listings",
         icon: Store
       }
     ];
+
+    const actionClasses = adminPriorityActionClasses(queue.map((item) => ({ count: item.value, severity: item.severity })));
+
+    return queue.map((item, index) => ({
+      ...item,
+      accent: adminMetricSeverityClass(item.severity),
+      countTone: adminCountPillClass(item.severity),
+      actionTone: actionClasses[index]
+    }));
   }, [leadRequests, sourcingCases, submissions.buyerRequests, submissions.listings]);
   const operationsWaitingCount = operationsPriorityQueue.reduce((total, item) => total + item.value, 0);
   const operationsEstimatedMinutes = Math.max(15, Math.min(120, operationsWaitingCount * 6 + leadStatusCount(leadRequests, "Negotiating") * 4));
@@ -4505,31 +4541,45 @@ export function AdminDashboard({
     () => produceRequestLeads.find((lead) => lead.id === selectedLeadId) ?? produceRequestLeads[0] ?? null,
     [produceRequestLeads, selectedLeadId]
   );
-  const produceRequestMetricCards = useMemo(
-    () => [
-      { label: "Pending Review", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed },
-      { label: "Contacted", value: leadStatusCount(leadRequests, "Contacted"), icon: MessageCircle },
-      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: PackageCheck },
-      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck },
-      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X }
-    ],
-    [leadRequests]
-  );
+  const produceRequestMetricCards = useMemo(() => {
+    const pendingReview = leadStatusCount(leadRequests, "New");
+    const contacted = leadStatusCount(leadRequests, "Contacted");
+    const activeSourcing = leadStatusCount(leadRequests, "Negotiating");
+    const completed = leadStatusCount(leadRequests, "Completed");
+    const lost = leadStatusCount(leadRequests, "Lost");
+
+    return [
+      { label: "Pending Review", value: pendingReview, icon: CircleDashed, severity: adminPrioritySeverity({ count: pendingReview, hasDue: pendingReview > 0 }) },
+      { label: "Contacted", value: contacted, icon: MessageCircle, severity: adminPrioritySeverity({ count: contacted, hasDue: contacted > 0 }) },
+      { label: "Active Sourcing", value: activeSourcing, icon: PackageCheck, severity: adminPrioritySeverity({ count: activeSourcing }) },
+      { label: "Completed", value: completed, icon: BadgeCheck, severity: adminPrioritySeverity({ count: completed }) },
+      { label: "Lost", value: lost, icon: X, severity: adminPrioritySeverity({ count: lost, hasOverdue: lost > 0 }) }
+    ];
+  }, [leadRequests]);
+  const produceRequestListSeverity = adminPrioritySeverity({
+    count: produceRequestLeads.length,
+    hasDue: produceRequestStatusFilter === "Pending Review" || produceRequestStatusFilter === "Contacted",
+    hasOverdue: produceRequestStatusFilter === "Lost"
+  });
   const selectedLead = useMemo(() => leadRequests.find((lead) => lead.id === selectedLeadId) ?? leadRequests[0] ?? null, [leadRequests, selectedLeadId]);
   const selectedFeaturedEnquiry = useMemo(
     () => featuredEnquiries.find((enquiry) => enquiry.id === selectedFeaturedEnquiryId) ?? featuredEnquiries[0] ?? null,
     [featuredEnquiries, selectedFeaturedEnquiryId]
   );
-  const leadMetricCards = useMemo(
-    () => [
-      { label: "Total Leads", value: leadRequests.length, icon: MessageCircle, accent: "admin-metric-active" },
-      { label: "New Leads", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed, accent: "admin-metric-pending" },
-      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle, accent: "admin-metric-active" },
-      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck, accent: "admin-metric-complete" },
-      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X, accent: "admin-metric-danger" }
-    ],
-    [leadRequests]
-  );
+  const leadMetricCards = useMemo(() => {
+    const newLeads = leadStatusCount(leadRequests, "New");
+    const activeSourcing = leadStatusCount(leadRequests, "Negotiating");
+    const completed = leadStatusCount(leadRequests, "Completed");
+    const lost = leadStatusCount(leadRequests, "Lost");
+
+    return [
+      { label: "Total Leads", value: leadRequests.length, icon: MessageCircle, severity: adminPrioritySeverity({ count: leadRequests.length }) },
+      { label: "New Leads", value: newLeads, icon: CircleDashed, severity: adminPrioritySeverity({ count: newLeads, hasDue: newLeads > 0 }) },
+      { label: "Active Sourcing", value: activeSourcing, icon: MessageCircle, severity: adminPrioritySeverity({ count: activeSourcing }) },
+      { label: "Completed", value: completed, icon: BadgeCheck, severity: adminPrioritySeverity({ count: completed }) },
+      { label: "Lost", value: lost, icon: X, severity: adminPrioritySeverity({ count: lost, hasOverdue: lost > 0 }) }
+    ];
+  }, [leadRequests]);
   const topFarmersByLeads = useMemo(() => topLeadSourcesByKind(leadRequests, ["Farmer"]), [leadRequests]);
   const topSuppliersByLeads = useMemo(() => topLeadSourcesByKind(leadRequests, ["Supplier", "Supplier Listing"]), [leadRequests]);
   const mostRequestedListings = useMemo(() => topLeadSourcesByKind(leadRequests, ["Marketplace Listing", "Supplier Listing"]), [leadRequests]);
@@ -4681,12 +4731,28 @@ export function AdminDashboard({
     return matchesLaunchEditorialFilter(launchEditorialFilter, editorialDecision);
   });
   const visibleFarmerReviewQueue = farmerReviewQueue.filter((farmer) => farmerMatchesQueueSearch(farmer, farmerQueueSearch));
-  const farmerReviewRemaining = farmerReviewQueue.filter((farmer) => farmer.status !== "Active" && farmer.verification_status !== "Verified").length;
+  const remainingFarmerReviewQueue = farmerReviewQueue.filter((farmer) => farmer.status !== "Active" && farmer.verification_status !== "Verified");
+  const farmerReviewRemaining = remainingFarmerReviewQueue.length;
+  const farmerReviewSeverity = adminPrioritySeverity({
+    count: farmerReviewRemaining,
+    hasDue: remainingFarmerReviewQueue.some((farmer) => farmerQueuePriority(farmer).label === "Due Today"),
+    hasOverdue: remainingFarmerReviewQueue.some((farmer) => farmerQueuePriority(farmer).label === "Overdue")
+  });
+  const visibleFarmerReviewSeverity = adminPrioritySeverity({
+    count: visibleFarmerReviewQueue.length,
+    hasDue: visibleFarmerReviewQueue.some((farmer) => farmerQueuePriority(farmer).label === "Due Today"),
+    hasOverdue: visibleFarmerReviewQueue.some((farmer) => farmerQueuePriority(farmer).label === "Overdue")
+  });
   const oldestWaitingFarmer = farmerReviewQueue
     .slice()
     .sort((a, b) => daysSinceDate(b.created_at) - daysSinceDate(a.created_at))[0];
   const oldestWaitingLabel = oldestWaitingFarmer ? farmerWaitingLabel(oldestWaitingFarmer) : "No waiting applications";
   const farmerAverageReviewTime = farmerReviewRemaining > 0 ? "8 min" : "0 min";
+  const farmerReviewMetricCards = [
+    { label: "Applications Remaining", value: farmerReviewRemaining, severity: farmerReviewSeverity },
+    { label: "Average Review Time", value: farmerAverageReviewTime, severity: adminPrioritySeverity({ count: farmerReviewRemaining }) },
+    { label: "Oldest Waiting Application", value: oldestWaitingLabel, severity: farmerReviewSeverity }
+  ];
   const recommendedFarmerAction = reviewingImportedFarmer ? farmerRecommendedAction(reviewingImportedFarmer) : "Select Farmer";
   const reviewingDocuments = reviewingImportedFarmer ? farmerUploadedDocuments(reviewingImportedFarmer) : [];
   const reviewingFarmPhotoUrls = reviewingImportedFarmer ? farmerMediaUrlsByKind(reviewingImportedFarmer, "farm") : [];
@@ -4711,12 +4777,23 @@ export function AdminDashboard({
     reviewingSupplierIndex !== -1 && reviewingSupplierIndex < supplierReviewQueue.length - 1
       ? supplierReviewQueue[reviewingSupplierIndex + 1]
       : null;
-  const supplierReviewRemaining = supplierReviewQueue.filter((supplier) => supplier.status !== "Approved" && supplier.status !== "Converted").length;
+  const remainingSupplierReviewQueue = supplierReviewQueue.filter((supplier) => supplier.status !== "Approved" && supplier.status !== "Converted");
+  const supplierReviewRemaining = remainingSupplierReviewQueue.length;
+  const supplierReviewSeverity = adminPrioritySeverity({
+    count: supplierReviewRemaining,
+    hasDue: remainingSupplierReviewQueue.some((supplier) => supplierQueuePriority(supplier).label === "Due Today"),
+    hasOverdue: remainingSupplierReviewQueue.some((supplier) => supplierQueuePriority(supplier).label === "Overdue")
+  });
   const oldestWaitingSupplier = supplierReviewQueue
     .slice()
     .sort((a, b) => daysSinceDate(b.created_at) - daysSinceDate(a.created_at))[0];
   const oldestWaitingSupplierLabel = oldestWaitingSupplier ? supplierWaitingLabel(oldestWaitingSupplier) : "No waiting applications";
   const supplierAverageReviewTime = supplierReviewRemaining > 0 ? "7 min" : "0 min";
+  const supplierReviewMetricCards = [
+    { label: "Applications Remaining", value: supplierReviewRemaining, severity: supplierReviewSeverity },
+    { label: "Average Review Time", value: supplierAverageReviewTime, severity: adminPrioritySeverity({ count: supplierReviewRemaining }) },
+    { label: "Oldest Waiting Application", value: oldestWaitingSupplierLabel, severity: supplierReviewSeverity }
+  ];
   const recommendedSupplierAction = reviewingSupplier ? supplierRecommendedAction(reviewingSupplier) : "Select Supplier";
   const reviewingSupplierDocuments = reviewingSupplier ? supplierUploadedDocuments(reviewingSupplier) : [];
   const reviewingSupplierReadiness = reviewingSupplier ? supplierReviewReadiness(reviewingSupplier) : [];
@@ -6848,7 +6925,9 @@ export function AdminDashboard({
                               <p className="mt-1 text-xs font-black uppercase tracking-wide text-earth-700">{item.oldest}</p>
                             </div>
                           </div>
-                          <span className="admin-status-badge admin-status-active text-sm sm:shrink-0">{item.value}</span>
+                          <span className={`${item.countTone} text-sm sm:shrink-0`}>
+                            <span className="sr-only">{item.label}: </span>{item.value}
+                          </span>
                         </div>
                         <button
                           type="button"
@@ -7556,14 +7635,10 @@ export function AdminDashboard({
                     </section>
 
                     <section className="admin-context-panel grid gap-3 p-4 sm:grid-cols-3">
-                      {[
-                        ["Applications Remaining", farmerReviewRemaining],
-                        ["Average Review Time", farmerAverageReviewTime],
-                        ["Oldest Waiting Application", oldestWaitingLabel]
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
-                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
-                          <p className="mt-2 text-xl font-black text-ink">{value}</p>
+                      {farmerReviewMetricCards.map((card) => (
+                        <div key={card.label} className={`admin-metric-card ${adminMetricSeverityClass(card.severity)} rounded-md p-4 ring-1 ring-leaf-900/10`}>
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{card.label}</p>
+                          <p className="mt-2 text-xl font-black text-ink">{card.value}</p>
                         </div>
                       ))}
                     </section>
@@ -7575,7 +7650,8 @@ export function AdminDashboard({
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer Queue</p>
                             <h3 className="mt-1 text-xl font-black text-ink">Review next</h3>
                           </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                          <span className={adminCountPillClass(visibleFarmerReviewSeverity)}>
+                            <span className="sr-only">Farmers shown: </span>
                             {visibleFarmerReviewQueue.length}
                           </span>
                         </div>
@@ -8356,14 +8432,10 @@ export function AdminDashboard({
                     </section>
 
                     <section className="admin-context-panel grid gap-3 p-4 sm:grid-cols-3">
-                      {[
-                        ["Applications Remaining", supplierReviewRemaining],
-                        ["Average Review Time", supplierAverageReviewTime],
-                        ["Oldest Waiting Application", oldestWaitingSupplierLabel]
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-md bg-white p-4 ring-1 ring-leaf-900/10">
-                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
-                          <p className="mt-2 text-xl font-black text-ink">{value}</p>
+                      {supplierReviewMetricCards.map((card) => (
+                        <div key={card.label} className={`admin-metric-card ${adminMetricSeverityClass(card.severity)} rounded-md p-4 ring-1 ring-leaf-900/10`}>
+                          <p className="text-xs font-black uppercase tracking-wide text-ink/45">{card.label}</p>
+                          <p className="mt-2 text-xl font-black text-ink">{card.value}</p>
                         </div>
                       ))}
                     </section>
@@ -8375,7 +8447,8 @@ export function AdminDashboard({
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier Queue</p>
                             <h3 className="mt-1 text-xl font-black text-ink">Review next</h3>
                           </div>
-                          <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                          <span className={adminCountPillClass(supplierReviewSeverity)}>
+                            <span className="sr-only">Suppliers shown: </span>
                             {supplierReviewQueue.length}
                           </span>
                         </div>
@@ -9160,7 +9233,7 @@ export function AdminDashboard({
                     const Icon = card.icon;
 
                     return (
-                      <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                      <div key={card.label} className={`admin-metric-card ${adminMetricSeverityClass(card.severity)} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-black text-ink/60">{card.label}</p>
                           <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
@@ -9180,7 +9253,7 @@ export function AdminDashboard({
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Produce Requests</p>
                         <h3 className="mt-2 text-xl font-black text-ink">{produceRequestFilterTitle(produceRequestStatusFilter)}</h3>
                       </div>
-                      <p className="admin-status-badge admin-status-active text-sm">
+                      <p className={`${adminCountPillClass(produceRequestListSeverity)} text-sm`}>
                         {produceRequestLeads.length} {produceRequestFilterTitle(produceRequestStatusFilter).toLowerCase()} shown
                       </p>
                     </div>
@@ -9331,7 +9404,7 @@ export function AdminDashboard({
                     const Icon = card.icon;
 
                     return (
-                      <div key={card.label} className={`admin-metric-card ${card.accent} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
+                      <div key={card.label} className={`admin-metric-card ${adminMetricSeverityClass(card.severity)} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-black text-ink/60">{card.label}</p>
                           <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
@@ -9402,7 +9475,7 @@ export function AdminDashboard({
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads</p>
                         <h3 className="mt-2 text-xl font-black text-ink">Connection pipeline</h3>
                       </div>
-                      <p className="admin-status-badge admin-status-active text-sm">{leadRequests.length} total</p>
+                      <p className={`${adminCountPillClass(adminPrioritySeverity({ count: leadRequests.length }))} text-sm`}>{leadRequests.length} total</p>
                     </div>
                     <div className="mt-5 grid gap-3">
                       {leadRequests.slice(0, 100).map((lead) => {
@@ -9736,15 +9809,10 @@ export function AdminDashboard({
                 ) : null}
 
                 <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    ["Active Sourcing", sourcingCases.filter((caseItem) => !["Completed", "Closed"].includes(caseItem.state.status)).length],
-                    ["Overdue Requests", sourcingCases.filter((caseItem) => caseItem.priority.label === "Overdue").length],
-                    ["Average Response", sourcingCases.some((caseItem) => caseItem.priority.label === "Overdue") ? "Needs review" : "On track"],
-                    ["Completed Today", sourcingCases.filter((caseItem) => caseItem.state.status === "Completed").length]
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
-                      <p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p>
-                      <p className="mt-2 text-xl font-black text-ink">{value}</p>
+                  {sourcingMetricCards.map((card) => (
+                    <div key={card.label} className={`admin-metric-card ${adminMetricSeverityClass(card.severity)} rounded-md p-3 ring-1 ring-leaf-900/10`}>
+                      <p className="text-xs font-black uppercase tracking-wide text-ink/45">{card.label}</p>
+                      <p className="mt-2 text-xl font-black text-ink">{card.value}</p>
                     </div>
                   ))}
                 </section>
@@ -9781,7 +9849,8 @@ export function AdminDashboard({
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Queue</p>
                         <h3 className="mt-1 text-xl font-black text-ink">Sourcing cases</h3>
                       </div>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                      <span className={adminCountPillClass(filteredSourcingSeverity)}>
+                        <span className="sr-only">Sourcing cases shown: </span>
                         {filteredSourcingCases.length}
                       </span>
                     </div>
