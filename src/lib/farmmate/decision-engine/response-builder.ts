@@ -8,6 +8,7 @@ import { fertilizerOpeningForQuestion, findFertilizerGuidance } from "../fertili
 import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantingAdvisorQuestionType } from "../planting-advisor-specialist";
 import { findHarvestPostHarvestGuidance, harvestPostHarvestOpeningForQuestion, harvestPostHarvestQuestionType } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherDecisionRainChanceBand, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
+import { findGeneralAgronomyDecisionFlow, findGeneralAgronomyGuidance } from "../general-agronomy-specialist";
 import type { WeatherDecisionSummary } from "../weather";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
@@ -55,12 +56,13 @@ const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
   planting: "planting",
   fertilizer: "fertilizer",
   sustainability: "crop-planning",
+  general_agronomy: "crop-planning",
   general_farming: "crop-planning"
 };
 
 function selectedSpecialistFromRouter(routerResult?: RouterResult) {
   if (!routerResult || routerResult.confidence === "low") {
-    return "general_farming";
+    return "general_agronomy";
   }
 
   return routerResult.selectedSpecialist;
@@ -194,6 +196,10 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
     if (plantingQuestionType === "watermelon-now") {
       return farmMateDecisionFlows.find((flow) => flow.id === "can-i-plant-watermelon-now");
     }
+  }
+
+  if (selectedSpecialist === "general_agronomy") {
+    return findGeneralAgronomyDecisionFlow(question, Boolean(resolvedCrop));
   }
 
   if (plantHealthAssessment && ["crop_health", "pest_disease", "general_farming"].includes(selectedSpecialist)) {
@@ -674,6 +680,16 @@ function harvestPostHarvestContextLines(flow: DecisionFlow | undefined, resolved
   ];
 }
 
+function generalAgronomyContextLines(question: string, flow: DecisionFlow | undefined, resolvedCrop?: string) {
+  if (!flow || !flow.id.startsWith("general-agronomy-")) {
+    return [];
+  }
+
+  const guidance = findGeneralAgronomyGuidance(question, Boolean(resolvedCrop));
+
+  return guidance?.checks.slice(0, 3) ?? flow.possibleCauses.slice(0, 3);
+}
+
 function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
   return {
     id: "local-fallback",
@@ -741,10 +757,13 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const isWeatherFlow = flow.intent === "weather-decisions";
   const isPlantingFlow = flow.intent === "planting";
   const isHarvestFlow = flow.intent === "harvest";
+  const isGeneralAgronomyFlow = flow.id.startsWith("general-agronomy-");
   const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
   const weatherContext = weatherContextLines(question, flow, options.weatherContext);
   const plantingContext = plantingContextLines(flow, resolvedCrop);
   const harvestPostHarvestContext = harvestPostHarvestContextLines(flow, resolvedCrop);
+  const generalAgronomyContext = generalAgronomyContextLines(question, flow, resolvedCrop);
+  const generalAgronomyGuidance = isGeneralAgronomyFlow ? findGeneralAgronomyGuidance(question, Boolean(resolvedCrop)) : undefined;
 
   return {
     intent,
@@ -770,15 +789,19 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
               ? "I need a little more planting context before giving firm timing advice."
               : isHarvestFlow
               ? "I need a little more harvest or handling context before giving firm timing advice."
+              : isGeneralAgronomyFlow
+              ? "I can use general farming principles, but one more detail will make the next action more useful."
               : "I am not fully certain yet, so I will ask a few checks before suggesting treatment."
             : isWeatherFlow
             ? "Use the farmer's own rain, wind and field checks before acting."
+            : isGeneralAgronomyFlow
+            ? "Adjust the guidance to the crop response, soil condition and local extension advice."
             : "This is a strong local demo match from the FarmMate Decision Engine."
         ].slice(0, 3)
       },
       {
         title: "Why this may happen",
-        body: (weatherContext.length ? weatherContext : fertilizerContext.length ? fertilizerContext : plantingContext.length ? plantingContext : harvestPostHarvestContext.length ? harvestPostHarvestContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
+        body: (weatherContext.length ? weatherContext : fertilizerContext.length ? fertilizerContext : plantingContext.length ? plantingContext : harvestPostHarvestContext.length ? harvestPostHarvestContext : generalAgronomyContext.length ? generalAgronomyContext : knowledge.causes.length ? knowledge.causes : flow.possibleCauses).slice(0, 3).map(farmerSafeLine)
       },
       {
         title: "What to check",
@@ -794,6 +817,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
           ...(isFertilizerFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isPlantingFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isHarvestFlow ? flow.recommendation.guidance.slice(0, 2) : []),
+          ...(isGeneralAgronomyFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(shouldRecommendExtension ? ["If the problem is spreading quickly, speak with a local extension officer for field-specific help."] : []),
           ...(photoWouldHelp ? ["A clear crop photo will help FarmMate avoid guessing."] : []),
           ...(chemicalGuardrail ? [chemicalGuardrail.responseGuidance] : [])
@@ -807,6 +831,12 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
               "Good handling: keep clean containers ready and separate damaged produce early.",
               "Food safety: contact an extension officer or food safety expert for serious rot, mould or contamination."
             ]
+          : isGeneralAgronomyFlow
+          ? (generalAgronomyGuidance?.sustainabilityNotes ?? [
+              "Protect soil health and soil moisture.",
+              "Reduce waste and unnecessary chemical use.",
+              "Protect long-term farm productivity."
+            ]).slice(0, 3)
           : [
               "Prevention: reduce avoidable stress before the problem spreads.",
               "Good farming practice: keep spacing, watering and field hygiene steady.",

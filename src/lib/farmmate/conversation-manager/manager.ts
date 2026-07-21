@@ -30,6 +30,40 @@ const topicRules: TopicRule[] = [
     keywords: ["harvest", "harvesting", "harvest before rain", "ready to harvest", "ready", "mature", "maturity", "store", "storage", "keep fresh", "transport", "pack", "packing", "sort", "sorting", "grade", "grading", "dry maize", "drying", "dry produce", "post harvest", "post-harvest", "spoil", "rotten", "mould", "mold", "shelf life", "losses after harvest", "reduce losses"]
   },
   {
+    topic: "general_agronomy",
+    specialist: "general_agronomy",
+    keywords: [
+      "seed germination",
+      "germination",
+      "nursery management",
+      "nursery",
+      "seedling hardening",
+      "harden seedlings",
+      "harden",
+      "seedling",
+      "transplant shock",
+      "intercropping",
+      "intercrop",
+      "crop rotation",
+      "mulching",
+      "soil structure",
+      "drainage",
+      "weed control",
+      "manage weeds",
+      "weeds",
+      "pruning",
+      "field preparation",
+      "plant stress",
+      "cover crop",
+      "legumes",
+      "identify plant",
+      "what plant is this",
+      "unknown crop",
+      "general farming",
+      "farm practice"
+    ]
+  },
+  {
     topic: "planting",
     specialist: "planting",
     keywords: [
@@ -139,8 +173,8 @@ function isShortFollowUpAnswer(message: string) {
 export function manageFarmMateConversation(message: string, state: ConversationState, context: ConversationManagerContext = {}): ConversationDecision {
   const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(message)?.name;
   const topicMatch = detectTopic(message);
-  const topic = topicMatch?.rule.topic ?? state.activeTopic ?? "general_farming";
-  const specialist = topicMatch?.rule.specialist ?? state.activeSpecialist ?? "general_farming";
+  const topic = topicMatch?.rule.topic ?? state.activeTopic ?? "general_agronomy";
+  const specialist = topicMatch?.rule.specialist ?? state.activeSpecialist ?? "general_agronomy";
   const activeTopic = state.activeTopic;
 
   if (context.source === "crop_doctor") {

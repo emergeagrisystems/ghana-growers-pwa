@@ -187,6 +187,58 @@ Safety rules:
 V1 limitation:
 - FarmMate does not yet have live local weather or market demand inside the local Brain. Planting advice must use farmer-provided rain, irrigation, region and field preparation context, and avoid claiming a crop is the guaranteed best, most profitable or highest-yield choice.
 
+## General Agronomy Specialist
+
+Handles broad farmer questions that do not need a more specific crop-health, fertilizer, weather, planting, harvest or Crop Doctor decision. It covers seed germination, nursery management, seedling hardening, transplant shock, intercropping, crop rotation, mulching, compost use, soil structure, drainage, weeds, pruning, spacing principles, field preparation, plant stress, cover crops, legumes, unknown plants, farm sanitation and practical sustainable farming.
+
+Example questions:
+
+- How do I harden seedlings before transplanting?
+- Can I intercrop maize with cowpea?
+- How do I improve seed germination?
+- How do I manage weeds before planting?
+- How do I improve soil structure?
+- What plant is this?
+
+Routing rules:
+
+- Broad seedling, nursery, soil, weed, pruning, intercropping, rotation, drainage, plant-identification and field-practice questions route to General Agronomy.
+- Clear fertilizer questions remain with Fertilizer.
+- Clear rain, spraying, wind or irrigation decisions remain with Weather Decision.
+- Harvest, storage, drying and transport questions remain with Harvest & Post-Harvest.
+- Planting a crop already supported by the Knowledge Engine remains with Planting Advisor.
+- A request to identify a plant routes to General Agronomy and hands off to Crop Doctor for clear whole-plant and close-up photos.
+
+Reasoning order:
+
+1. Farmer goal
+2. Crop or plant if known
+3. Farm context
+4. Growth stage if relevant
+5. Soil or water condition if relevant
+6. Recommendation
+7. Next best action
+
+Unknown crop behaviour:
+
+- FarmMate does not refuse an unsupported crop or pretend it has crop-specific facts.
+- It says: "I do not have full crop-specific guidance for this crop yet, but I can still help with general farming principles."
+- It then asks one question: "What are you trying to do?"
+- Available goals are Plant it, Treat a problem, Improve growth, Identify the plant, and I am not sure.
+
+Farmer-scale language rules:
+
+- Use field, plot, crop, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material.
+- Do not use home gardening language such as pot, indoor plant, houseplant, decorative plant or balcony garden.
+- Keep ready recommendations to no more than three checks, three actions and one next step.
+- Do not invent local crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages.
+
+Sustainability rules:
+
+- Consider soil health, water conservation, compost and organic matter, crop rotation, waste reduction and long-term field productivity.
+- Recommend observation and the simplest effective field practice before unnecessary chemical use.
+- Keep sustainability practical and tied to the farmer's immediate goal.
+
 ## Crop Doctor Follow-up Specialist
 
 Handles structured handoffs from Crop Doctor photo checks.
@@ -216,12 +268,14 @@ Current specialist list:
 - Weather Decision
 - Planting Advisor
 - Harvest & Post-Harvest
+- General Agronomy
 
 Routing rules checked for launch:
 - Plant symptoms such as yellow leaves, cassava leaf curl and maize leaf holes route to Plant Health.
 - Fertilizer, NPK and compost questions route to Fertilizer unless the main decision is rain timing.
 - Spraying, fertilizer-before-rain and irrigation questions route to Weather Decision.
 - Planting now, crop choice and spacing questions route to Planting Advisor.
+- Seedling hardening, germination, intercropping, weeds, soil structure and plant identification route to General Agronomy unless a more specific specialist clearly applies.
 - Harvest timing, storage and transport questions route to Harvest & Post-Harvest.
 - Crop photo handoffs route to Crop Doctor and preserve the crop/photo context.
 
@@ -233,6 +287,7 @@ Common failure cases to guard:
 - Fertilizer answers inventing exact dosages.
 - Harvest answers inventing shelf life, prices or buyer availability.
 - Planting answers inventing weather, prices, profit or guaranteed yield.
+- General Agronomy answers refusing unknown crops, using home gardening language or inventing crop-specific facts.
 - Plant Health answers jumping to chemicals before prevention and field checks.
 
 Launch readiness checks:

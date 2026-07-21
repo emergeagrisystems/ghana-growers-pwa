@@ -14,6 +14,7 @@ export * from "./fertilizer-specialist";
 export * from "./weather-decision-specialist";
 export * from "./planting-advisor-specialist";
 export * from "./harvest-postharvest-specialist";
+export * from "./general-agronomy-specialist";
 export * from "./farmmate-qa-examples";
 export * from "./crop-doctor-demo";
 export * from "./crop-doctor-vision";

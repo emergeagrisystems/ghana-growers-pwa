@@ -20,6 +20,7 @@ import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router"
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import { FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
+import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
 
 const suggestions = [
   "Can I spray today?",
@@ -29,6 +30,7 @@ const suggestions = [
   "When should I harvest maize?",
   "How do I store cassava?",
   "How do I pack tomatoes for transport?",
+  "How do I improve seed germination?",
   "What should I check from my crop photo?"
 ];
 
@@ -313,6 +315,13 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
 
   if (weatherIntro) {
     return weatherIntro;
+  }
+
+  if (response?.flow?.id === "general-agronomy-unknown-crop") {
+    return {
+      lead: GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
+      detail: "Choose the closest goal below."
+    };
   }
 
   return {

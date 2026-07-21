@@ -47,6 +47,11 @@ export const farmMateSpecialists: FarmMateSpecialistProfile[] = [
     description: "Handles guides, lessons, training and farmer education requests."
   },
   {
+    specialist: "general_agronomy",
+    title: "General Agronomy",
+    description: "Handles seed, nursery, seedlings, weeds, soil, drainage, intercropping, rotation, pruning and broad field-practice questions."
+  },
+  {
     specialist: "general_farming",
     title: "General Farming",
     description: "Handles broad farming questions when no specialist route is clear yet."

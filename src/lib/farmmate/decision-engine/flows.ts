@@ -1,4 +1,5 @@
 import { decisionEngineSafetyRules } from "./safety-rules";
+import { generalAgronomyDecisionFlows } from "../general-agronomy-specialist";
 import { DecisionFlow, SustainabilityPriority } from "./types";
 
 export const sustainabilityPriorityOrder: SustainabilityPriority[] = [
@@ -1662,7 +1663,8 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
       }
     },
     safetyRules: [decisionEngineSafetyRules[0], decisionEngineSafetyRules[2], decisionEngineSafetyRules[3]]
-  }
+  },
+  ...generalAgronomyDecisionFlows
 ];
 
 export function findDecisionFlow(flowId: string) {

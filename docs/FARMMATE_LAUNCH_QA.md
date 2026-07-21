@@ -41,6 +41,9 @@ Route checks:
 - Uses live weather context for weather decisions when available.
 - Does not invent prices, buyers, weather timing, fertilizer dosage, yields, or diagnoses.
 - Keeps final answers short, practical, and focused on one next step.
+- Routes broad seed, nursery, seedling, soil, weed, intercropping, rotation, pruning and plant-identification questions to General Agronomy.
+- Continues with cautious general farming principles when a crop is not yet in the Knowledge Engine.
+- Uses farmer-scale field language and avoids home gardening language.
 
 ### Crop Doctor Vision
 
@@ -79,6 +82,12 @@ Route checks:
 | Can I plant tomatoes now? | Planting Advisor |
 | How do I plant watermelon? | Planting Advisor |
 | Best spacing for watermelon | Planting Advisor |
+| How do I harden seedlings before transplanting? | General Agronomy |
+| Can I intercrop maize with cowpea? | General Agronomy |
+| How do I improve seed germination? | General Agronomy |
+| How do I manage weeds before planting? | General Agronomy |
+| How do I improve soil structure? | General Agronomy |
+| What plant is this? | General Agronomy to Crop Doctor handoff |
 | When should I harvest maize? | Harvest and Post-Harvest |
 | How do I store cassava? | Harvest and Post-Harvest |
 | How do I pack tomatoes for transport? | Harvest and Post-Harvest |
@@ -111,6 +120,7 @@ Crop Doctor:
 - Exact farm records/history are not saved in V1.
 - Crop Calendar and Planting Advisor use local static guidance.
 - FarmMate does not replace an agricultural extension officer for serious outbreaks.
+- Unknown crops receive general agronomy guidance, not invented crop-specific facts.
 
 ## Launch Notes
 
@@ -118,4 +128,6 @@ Crop Doctor:
 - FarmMate Brain remains the source of truth.
 - OpenAI is the natural-language voice layer only.
 - Keep public responses practical, short, and farmer-friendly.
+- Use field, plot, crop, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language.
+- Do not use pot, indoor plant, houseplant, decorative plant or balcony garden language.
 - Keep development/debug information out of the UI.

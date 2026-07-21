@@ -26,11 +26,11 @@ export function routeFarmMateQuestion(question: string, context: FarmMateRouterC
   const normalizedQuestion = normalizeQuestion(question);
   const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(question)?.name;
   const fallbackResult: RouterResult = {
-    selectedSpecialist: "general_farming",
+    selectedSpecialist: "general_agronomy",
     confidence: "low",
     matchedKeywords: [],
     reason: "No specialist keyword matched clearly, so FarmMate should start with general farming guidance and ask for more context.",
-    suggestedFallbackSpecialist: "general_farming",
+    suggestedFallbackSpecialist: "general_agronomy",
     detectedCrop
   };
 
@@ -67,6 +67,18 @@ export function routeFarmMateQuestion(question: string, context: FarmMateRouterC
 
   if (!bestMatch) {
     return fallbackResult;
+  }
+
+  const isCropChoiceQuestion = normalizedQuestion.includes("what should i plant") || normalizedQuestion.includes("crop to grow");
+  const isSupportedMelonClarification = normalizedQuestion.includes("melon");
+
+  if (bestMatch.rule.specialist === "planting" && !detectedCrop && !isCropChoiceQuestion && !isSupportedMelonClarification) {
+    return {
+      ...fallbackResult,
+      confidence: "medium",
+      matchedKeywords: bestMatch.matchedKeywords,
+      reason: "The crop is not confirmed in the Knowledge Engine, so FarmMate should use general agronomy principles before crop-specific planting guidance."
+    };
   }
 
   return {

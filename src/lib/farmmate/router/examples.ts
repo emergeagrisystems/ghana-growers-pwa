@@ -16,7 +16,8 @@ const sampleQuestions: Array<Pick<FarmMateRouterExample, "question" | "expectedS
   { question: "I want to upload photo and diagnose picture", expectedSpecialist: "crop_doctor" },
   { question: "How do I improve soil health with mulching?", expectedSpecialist: "sustainability" },
   { question: "Do you have a training guide?", expectedSpecialist: "learning" },
-  { question: "How can I farm better this season?", expectedSpecialist: "general_farming" }
+  { question: "How do I improve seed germination?", expectedSpecialist: "general_agronomy" },
+  { question: "How can I farm better this season?", expectedSpecialist: "general_agronomy" }
 ];
 
 export const farmMateRouterExamples: FarmMateRouterExample[] = sampleQuestions.map((example) => ({

@@ -9,6 +9,7 @@ export type ConversationTopic =
   | "planting"
   | "harvest"
   | "crop_doctor"
+  | "general_agronomy"
   | "general_farming";
 
 export type ConversationResetReason =

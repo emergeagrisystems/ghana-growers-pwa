@@ -8,6 +8,7 @@ export type FarmMateSpecialist =
   | "crop_doctor"
   | "sustainability"
   | "learning"
+  | "general_agronomy"
   | "general_farming";
 
 export type RouterConfidence = "high" | "medium" | "low";

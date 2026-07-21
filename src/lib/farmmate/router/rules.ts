@@ -23,12 +23,11 @@ export const farmMateRouterRules: RouterRule[] = [
       "not growing",
       "root problem",
       "root rot",
-      "plant stress",
       "crop health",
       "tomato leaves"
     ],
     reason: "The question mentions crop symptoms, plant stress or poor growth.",
-    suggestedFallbackSpecialist: "general_farming"
+    suggestedFallbackSpecialist: "general_agronomy"
   },
   {
     specialist: "pest_disease",
@@ -98,7 +97,53 @@ export const farmMateRouterRules: RouterRule[] = [
       "plant today"
     ],
     reason: "The question depends on weather conditions such as rain, wind, spraying, planting or irrigation timing.",
-    suggestedFallbackSpecialist: "general_farming"
+    suggestedFallbackSpecialist: "general_agronomy"
+  },
+  {
+    specialist: "general_agronomy",
+    keywords: [
+      "seed germination",
+      "germination",
+      "germinate",
+      "nursery management",
+      "nursery",
+      "seedling hardening",
+      "harden seedlings",
+      "hardening seedlings",
+      "harden",
+      "seedling",
+      "transplant shock",
+      "intercropping",
+      "intercrop",
+      "crop rotation",
+      "mulching",
+      "mulch",
+      "compost use",
+      "soil structure",
+      "drainage",
+      "weed control",
+      "manage weeds",
+      "weed management",
+      "weeds",
+      "pruning",
+      "prune",
+      "field preparation",
+      "plant stress",
+      "cover crop",
+      "legumes",
+      "legume",
+      "identify plant",
+      "plant identification",
+      "what plant is this",
+      "unknown crop",
+      "unknown plant",
+      "general farming",
+      "farm practice",
+      "farm sanitation",
+      "spacing principles"
+    ],
+    reason: "The question is about broad agronomy, seedlings, soil, weeds, crop combinations, field preparation or an unknown plant.",
+    suggestedFallbackSpecialist: "general_agronomy"
   },
   {
     specialist: "planting",
@@ -137,7 +182,7 @@ export const farmMateRouterRules: RouterRule[] = [
       "water melon planting"
     ],
     reason: "The question is about planting choices, timing, spacing or seed establishment.",
-    suggestedFallbackSpecialist: "general_farming"
+    suggestedFallbackSpecialist: "general_agronomy"
   },
   {
     specialist: "fertilizer",
@@ -177,12 +222,12 @@ export const farmMateRouterRules: RouterRule[] = [
     specialist: "sustainability",
     keywords: ["mulching", "mulch", "soil health", "crop rotation", "water conservation", "organic", "erosion", "cover crop", "low cost", "sustainable"],
     reason: "The question mentions sustainable practices, prevention, soil health or water conservation.",
-    suggestedFallbackSpecialist: "general_farming"
+    suggestedFallbackSpecialist: "general_agronomy"
   },
   {
     specialist: "learning",
     keywords: ["how do i learn", "guide", "training", "lesson", "teach me", "tutorial", "learn", "course", "explain"],
     reason: "The question asks for learning, training or educational guidance.",
-    suggestedFallbackSpecialist: "general_farming"
+    suggestedFallbackSpecialist: "general_agronomy"
   }
 ];

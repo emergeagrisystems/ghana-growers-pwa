@@ -4,6 +4,12 @@ import { findFertilizerGuidance } from "../fertilizer-specialist";
 import { findPlantingAdvisorGuidance } from "../planting-advisor-specialist";
 import { findHarvestPostHarvestGuidance } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherTaskFromQuestion } from "../weather-decision-specialist";
+import {
+  findGeneralAgronomyGuidance,
+  GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
+  generalAgronomyCoverage,
+  generalAgronomyReasoningOrder
+} from "../general-agronomy-specialist";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -75,6 +81,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "harvest_postharvest" || input.brain.flow?.intent === "harvest"
       ? findHarvestPostHarvestGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
       : null;
+  const generalAgronomyContext =
+    input.brain.routerResult?.selectedSpecialist === "general_agronomy" || input.brain.flow?.id.startsWith("general-agronomy-")
+      ? findGeneralAgronomyGuidance(input.farmerQuestion, Boolean(crop))
+      : null;
   const payload = {
     instruction:
       "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
@@ -142,6 +152,21 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           noMarketRule: "Do not invent market prices, buyer availability, guaranteed sales or guaranteed shelf life.",
           foodSafetyRule: "Do not make food safety claims beyond the provided context. Recommend extension officer or food safety expert support for serious rot, mould or contamination."
         }
+      : generalAgronomyContext
+      ? {
+          specialist: "general_agronomy",
+          task: generalAgronomyContext.task,
+          handles: generalAgronomyCoverage,
+          reasoningOrder: generalAgronomyReasoningOrder,
+          opening: generalAgronomyContext.opening,
+          checks: generalAgronomyContext.checks,
+          actions: generalAgronomyContext.actions,
+          sustainabilityNotes: generalAgronomyContext.sustainabilityNotes,
+          nextBestAction: generalAgronomyContext.nextBestAction,
+          unknownCropRule: GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
+          farmerScaleLanguageRule: "Use field, plot, crop, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language. Never use pot, indoor plant, houseplant, decorative plant or balcony garden language.",
+          noUnsupportedClaimsRule: "Do not invent local crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages. Do not pretend certainty about an unknown plant."
+        }
       : null,
     decisionFlow: input.brain.flow ?? null,
     farmerAnswers: input.farmerAnswers,
@@ -163,6 +188,9 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For planting decisions, do not invent exact local weather, seed availability, market prices, guaranteed profit, or guaranteed yield.",
       "For harvest and post-harvest decisions, do not invent market prices, buyer availability, guaranteed sales, or guaranteed shelf life.",
       "For harvest and post-harvest decisions, protect quality with shade, sorting, ventilation and clean containers where possible.",
+      "For general agronomy, use farmer-scale field language and avoid home gardening language.",
+      "For general agronomy, do not invent crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages.",
+      "For an unknown plant or crop, say crop-specific guidance is limited, continue with general farming principles, and ask one useful question or suggest Crop Doctor.",
       "For cassava storage, if the farmer says cassava is not harvested yet, do not frame the answer as harvested-root storage. Tell them to leave cassava in the ground until needed, plan shade or transport, and harvest only what can be moved soon.",
       "If information is still missing, ask one clear follow-up question.",
       "If Crop Doctor is the next best action, say that a clear photo will help.",

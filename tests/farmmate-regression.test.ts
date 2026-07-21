@@ -84,6 +84,12 @@ import {
   plantingAdvisorReasoningOrder
 } from "../src/lib/farmmate/planting-advisor-specialist";
 import { harvestPostHarvestCrops, harvestPostHarvestReasoningOrder } from "../src/lib/farmmate/harvest-postharvest-specialist";
+import {
+  GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
+  generalAgronomyCoverage,
+  generalAgronomyDecisionFlows,
+  generalAgronomyReasoningOrder
+} from "../src/lib/farmmate/general-agronomy-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
   buildCropDoctorAskFarmMatePrompt,
@@ -438,6 +444,7 @@ const tests: TestCase[] = [
         "When should I harvest maize?",
         "How do I store cassava?",
         "How do I pack tomatoes for transport?",
+        "How do I improve seed germination?",
         "What should I check from my crop photo?"
       ];
 
@@ -479,6 +486,7 @@ const tests: TestCase[] = [
         ["When should I harvest maize?", "harvest_postharvest"],
         ["How do I store cassava?", "harvest_postharvest"],
         ["How do I pack tomatoes for transport?", "harvest_postharvest"],
+        ["How do I improve seed germination?", "general_agronomy"],
         ["What should I check from my crop photo?", "crop_doctor"]
       ] as const;
 
@@ -4176,6 +4184,167 @@ const tests: TestCase[] = [
       assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
       assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("guaranteed yield"), true);
       assert.equal(payload.specialistContext?.spacingGuidance?.some((line) => line.toLowerCase().includes("1 to 1.5 m")), true);
+    }
+  },
+  {
+    name: "General Agronomy routes the required pilot questions",
+    run: () => {
+      const questions = [
+        "How do I harden seedlings before transplanting?",
+        "Can I intercrop maize with cowpea?",
+        "How do I improve seed germination?",
+        "How do I manage weeds before planting?",
+        "How do I manage plant stress?",
+        "What plant is this?"
+      ];
+
+      for (const question of questions) {
+        assert.equal(routeFarmMateQuestion(question).selectedSpecialist, "general_agronomy", question);
+      }
+
+      const decision = manageFarmMateConversation("Can I intercrop maize with cowpea?", emptyState);
+      assert.equal(decision.topic, "general_agronomy");
+      assert.equal(decision.specialist, "general_agronomy");
+    }
+  },
+  {
+    name: "General Agronomy includes the required coverage and reasoning journey",
+    run: () => {
+      const requiredCoverage = [
+        "seed germination",
+        "nursery management",
+        "seedling hardening",
+        "transplant shock",
+        "intercropping",
+        "crop rotation",
+        "mulching",
+        "compost use",
+        "soil structure",
+        "drainage",
+        "weed management",
+        "pruning",
+        "spacing principles",
+        "field preparation",
+        "plant stress",
+        "cover crops",
+        "legumes",
+        "plant identification guidance",
+        "farm sanitation"
+      ];
+
+      requiredCoverage.forEach((topic) => assert.equal(generalAgronomyCoverage.includes(topic as never), true, topic));
+      assert.deepEqual(generalAgronomyReasoningOrder, [
+        "farmer-goal",
+        "crop-or-plant-if-known",
+        "farm-context",
+        "growth-stage-if-relevant",
+        "soil-or-water-condition-if-relevant",
+        "recommendation",
+        "next-best-action"
+      ]);
+    }
+  },
+  {
+    name: "General Agronomy decision flows stay practical and ask one question at a time",
+    run: () => {
+      const hardening = buildFarmMateResponse("How do I harden seedlings before transplanting?", routeFarmMateQuestion("How do I harden seedlings before transplanting?"));
+      const intercropping = buildFarmMateResponse("Can I intercrop maize with cowpea?", routeFarmMateQuestion("Can I intercrop maize with cowpea?"));
+      const germination = buildFarmMateResponse("How do I improve seed germination?", routeFarmMateQuestion("How do I improve seed germination?"));
+      const weeds = buildFarmMateResponse("How do I manage weeds before planting?", routeFarmMateQuestion("How do I manage weeds before planting?"));
+      const soil = buildFarmMateResponse("How do I improve soil structure?", routeFarmMateQuestion("How do I improve soil structure?"));
+      const identification = buildFarmMateResponse("What plant is this?", routeFarmMateQuestion("What plant is this?"));
+
+      assert.equal(hardening.flow?.id, "general-agronomy-seedling-hardening");
+      assert.equal(hardening.flow?.followUpQuestions.length, 0);
+      assert.equal(intercropping.flow?.id, "general-agronomy-intercropping");
+      assert.equal(intercropping.flow?.followUpQuestions.length, 1);
+      assert.equal(intercropping.flow?.followUpQuestions[0]?.question, "What is your main goal?");
+      assert.deepEqual(intercropping.flow?.followUpQuestions[0]?.options, ["Improve soil fertility", "Reduce weeds", "Get two crops from the same field", "I am not sure"]);
+      assert.equal(germination.flow?.id, "general-agronomy-seed-germination");
+      assert.equal(weeds.flow?.id, "general-agronomy-weed-management");
+      assert.equal(soil.flow?.id, "general-agronomy-soil-structure");
+      assert.equal(identification.flow?.id, "general-agronomy-plant-identification");
+      assert.equal(identification.shouldShowCropDoctorAction, true);
+      assert.equal(responseText(identification).includes("Upload a clear photo of the whole plant and close-up leaves using Crop Doctor."), true);
+
+      [hardening, intercropping, germination, weeds, soil, identification].forEach((response) => {
+        assert.equal((response.flow?.followUpQuestions.length ?? 0) <= 1, true);
+        assert.equal((response.sections.find((section) => section.title === "What to check")?.body.length ?? 0) <= 3, true);
+        assert.equal((response.sections.find((section) => section.title === "Recommended action")?.body.length ?? 0) <= 3, true);
+        assert.equal(response.sections.filter((section) => section.title === "Next Best Action").length, 1);
+        assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
+      });
+
+      assert.equal(generalAgronomyDecisionFlows.some((flow) => flow.id === "general-agronomy-seedling-hardening"), true);
+    }
+  },
+  {
+    name: "unknown crop questions continue with cautious general agronomy",
+    run: () => {
+      const question = "How should I grow quinoa on my farm?";
+      const router = routeFarmMateQuestion(question);
+      const response = buildFarmMateResponse(question, router);
+      const text = responseText(response).toLowerCase();
+
+      assert.equal(router.selectedSpecialist, "general_agronomy");
+      assert.equal(response.flow?.id, "general-agronomy-unknown-crop");
+      assert.equal(responseText(response).includes(GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE), true);
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What are you trying to do?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Plant it", "Treat a problem", "Improve growth", "Identify the plant", "I am not sure"]);
+      assert.equal(text.includes("only handles diseases"), false);
+      assert.equal(text.includes("cannot help"), false);
+    }
+  },
+  {
+    name: "General Agronomy uses farmer-scale language and preserves specialist priority",
+    run: () => {
+      const questions = [
+        "How do I harden seedlings before transplanting?",
+        "Can I intercrop maize with cowpea?",
+        "How do I improve seed germination?",
+        "How do I manage weeds before planting?",
+        "How do I improve soil structure?"
+      ];
+      const combined = questions
+        .map((question) => responseText(buildFarmMateResponse(question, routeFarmMateQuestion(question))))
+        .join("\n")
+        .toLowerCase();
+
+      assert.equal(/\bpot\b|indoor plant|houseplant|decorative plant|balcony garden/.test(combined), false);
+      assert.equal(routeFarmMateQuestion("Best fertilizer for maize").selectedSpecialist, "fertilizer");
+      assert.equal(routeFarmMateQuestion("Can I spray today?").selectedSpecialist, "weather_decision");
+      assert.equal(routeFarmMateQuestion("How do I store cassava?").selectedSpecialist, "harvest_postharvest");
+      assert.equal(routeFarmMateQuestion("When should I plant maize?").selectedSpecialist, "planting");
+    }
+  },
+  {
+    name: "OpenAI payload includes General Agronomy context and guardrails",
+    run: () => {
+      const farmerQuestion = "How do I improve seed germination?";
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({ farmerQuestion, brain, farmerAnswers: [], localStructuredResponse: [] })
+      ) as {
+        selectedSpecialist?: string;
+        specialistContext?: {
+          specialist?: string;
+          task?: string;
+          checks?: string[];
+          actions?: string[];
+          unknownCropRule?: string;
+          farmerScaleLanguageRule?: string;
+          noUnsupportedClaimsRule?: string;
+        };
+      };
+
+      assert.equal(payload.selectedSpecialist, "general_agronomy");
+      assert.equal(payload.specialistContext?.specialist, "general_agronomy");
+      assert.equal(payload.specialistContext?.task, "seed-germination");
+      assert.equal(payload.specialistContext?.checks?.length, 3);
+      assert.equal(payload.specialistContext?.actions?.length, 3);
+      assert.equal(payload.specialistContext?.unknownCropRule, GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE);
+      assert.equal(payload.specialistContext?.farmerScaleLanguageRule?.includes("houseplant"), true);
+      assert.equal(payload.specialistContext?.noUnsupportedClaimsRule?.includes("guaranteed yields"), true);
     }
   },
   {
