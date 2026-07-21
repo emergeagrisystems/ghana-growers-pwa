@@ -584,18 +584,18 @@ const supplierLaunchChecklistItems: SupplierChecklistItem[] = [
 const sourcingQueueFilters: SourcingQueueFilter[] = ["All", "New", "Overdue", "Due Today", "Assigned To Me", "Completed", "Waiting Buyer", "Waiting Farmer", "Waiting Supplier", "High Priority"];
 
 const statusStyles: Record<AdminStatus, string> = {
-  Pending: "bg-earth-50 text-earth-700",
-  "Under Review": "bg-leaf-50 text-leaf-700",
-  "Needs Follow-up": "bg-earth-50 text-earth-700",
-  Verified: "bg-leaf-50 text-leaf-700",
-  Rejected: "bg-tomato/10 text-tomato",
-  Active: "bg-white text-leaf-700 ring-1 ring-leaf-900/10",
-  Published: "bg-leaf-50 text-leaf-700",
-  Archived: "bg-ink/10 text-ink/55"
+  Pending: "admin-status-badge admin-status-pending",
+  "Under Review": "admin-status-badge admin-status-active",
+  "Needs Follow-up": "admin-status-badge admin-status-contacted",
+  Verified: "admin-status-badge admin-status-complete",
+  Rejected: "admin-status-badge admin-status-danger",
+  Active: "admin-status-badge admin-status-active",
+  Published: "admin-status-badge admin-status-complete",
+  Archived: "admin-status-badge admin-status-paused"
 };
 const importStatusStyles: Record<ImportAdminStatus, string> = {
   ...statusStyles,
-  "Pending Review": "bg-earth-50 text-earth-700"
+  "Pending Review": "admin-status-badge admin-status-pending"
 };
 
 function statusFromTrust(status?: string): AdminStatus {
@@ -619,12 +619,16 @@ function applicationStatusClass(status: ApplicationStatus | SubmissionStatus) {
     return statusStyles["Under Review"];
   }
 
-  if (status === "Approved" || status === "Converted") {
-    return statusStyles.Active;
+  if (status === "Needs Information") {
+    return statusStyles["Needs Follow-up"];
   }
 
-  if (status === "Published") {
+  if (status === "Approved" || status === "Converted" || status === "Published") {
     return statusStyles.Verified;
+  }
+
+  if (status === "Paused" || status === "Expired") {
+    return statusStyles.Archived;
   }
 
   return statusStyles.Rejected;
@@ -1134,10 +1138,10 @@ function launchStatusFromCount(count: number, target: number): LaunchStatus {
 
 function launchStatusClass(status: LaunchStatus) {
   if (status === "Complete") {
-    return "bg-leaf-50 text-leaf-700";
+    return "admin-status-badge admin-status-complete";
   }
 
-  return "bg-earth-50 text-earth-700";
+  return "admin-status-badge admin-status-pending";
 }
 
 function statusProgress(status: LaunchStatus) {
@@ -2789,6 +2793,28 @@ function sourcingCaseOperationalStatusLabel(status: SourcingCaseStatus) {
   return status === "Closed" ? "Lost" : status;
 }
 
+function sourcingCaseStatusClass(status: SourcingCaseStatus) {
+  const label = sourcingCaseOperationalStatusLabel(status);
+
+  if (label === "Pending Review") {
+    return "admin-status-pending";
+  }
+
+  if (label === "Contacted") {
+    return "admin-status-contacted";
+  }
+
+  if (label === "Active Sourcing") {
+    return "admin-status-active";
+  }
+
+  if (label === "Completed") {
+    return "admin-status-complete";
+  }
+
+  return "admin-status-danger";
+}
+
 function dateAtStart(value?: string | null) {
   const date = value ? new Date(value) : null;
 
@@ -3132,42 +3158,58 @@ function produceRequestFilterTitle(filter: ProduceRequestStatusFilter) {
 
 function leadStatusClass(status: LeadRequestStatus) {
   if (status === "New") {
-    return "bg-earth-50 text-earth-700";
+    return "admin-status-badge admin-status-pending";
   }
 
   if (status === "Contacted") {
-    return "bg-leaf-50 text-leaf-800";
+    return "admin-status-badge admin-status-contacted";
   }
 
   if (status === "Negotiating") {
-    return "bg-white text-leaf-700 ring-1 ring-leaf-900/10";
+    return "admin-status-badge admin-status-active";
   }
 
   if (status === "Completed") {
-    return "bg-leaf-700 text-white";
+    return "admin-status-badge admin-status-complete";
   }
 
-  return "bg-ink/10 text-ink/60";
+  return "admin-status-badge admin-status-danger";
 }
 
 function featuredEnquiryStatusClass(status: FeaturedEnquiryStatus) {
   if (status === "New") {
-    return "bg-earth-50 text-earth-700";
+    return "admin-status-badge admin-status-pending";
   }
 
   if (status === "Contacted") {
-    return "bg-leaf-50 text-leaf-800";
+    return "admin-status-badge admin-status-contacted";
   }
 
   if (status === "Approved") {
-    return "bg-leaf-700 text-white";
+    return "admin-status-badge admin-status-complete";
   }
 
   if (status === "Rejected") {
-    return "bg-tomato/10 text-tomato";
+    return "admin-status-badge admin-status-danger";
   }
 
-  return "bg-ink/10 text-ink/60";
+  return "admin-status-badge admin-status-paused";
+}
+
+function featuredEnquiryMetricAccent(status: FeaturedEnquiryStatus) {
+  if (status === "New") {
+    return "admin-metric-pending";
+  }
+
+  if (status === "Contacted") {
+    return "admin-metric-contacted";
+  }
+
+  if (status === "Approved") {
+    return "admin-metric-complete";
+  }
+
+  return status === "Rejected" ? "admin-metric-danger" : "admin-metric-active";
 }
 
 function featuredFollowUpMessage(enquiry: FeaturedEnquiryRecord) {
@@ -4357,7 +4399,8 @@ export function AdminDashboard({
           ...leadRequests.filter((lead) => normalizeLeadStatus(lead.status) === "New").map((lead) => ({ name: lead.product_interest, date: lead.created_at })),
           ...submissions.buyerRequests.filter((request) => request.status === "New").map((request) => ({ name: request.product_needed, date: request.created_at }))
         ]),
-        tone: "border-l-tomato",
+        accent: "admin-metric-danger",
+        actionTone: "admin-action-primary",
         section: "buyer-requests" as AdminSectionId,
         action: "Review requests",
         icon: PackageCheck
@@ -4367,7 +4410,8 @@ export function AdminDashboard({
         value: activeSourcingCases,
         explanation: "Requests already moved into sourcing and match review.",
         oldest: activeSourcingCases > 0 ? "Review matches and next action" : "No active sourcing cases",
-        tone: "border-l-leaf-700",
+        accent: "admin-metric-active",
+        actionTone: "admin-action-secondary",
         section: "match-opportunities" as AdminSectionId,
         action: "Open active sourcing",
         icon: Clock3
@@ -4377,7 +4421,8 @@ export function AdminDashboard({
         value: followUpsDue,
         explanation: "Contacted or overdue requests needing an admin follow-up.",
         oldest: followUpsDue > 0 ? "Check buyer or supply follow-up" : "No follow-ups due",
-        tone: "border-l-earth-500",
+        accent: "admin-metric-contacted",
+        actionTone: "admin-action-warning",
         section: "lead-queue" as AdminSectionId,
         action: "Review follow-ups",
         icon: MessageCircle
@@ -4390,7 +4435,8 @@ export function AdminDashboard({
           name: submission.product_name,
           date: submission.created_at
         }))),
-        tone: "border-l-harvest-500",
+        accent: "admin-metric-pending",
+        actionTone: "admin-action-secondary",
         section: "submissions" as AdminSectionId,
         action: "Review listings",
         icon: Store
@@ -4476,11 +4522,11 @@ export function AdminDashboard({
   );
   const leadMetricCards = useMemo(
     () => [
-      { label: "Total Leads", value: leadRequests.length, icon: MessageCircle },
-      { label: "New Leads", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed },
-      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle },
-      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck },
-      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X }
+      { label: "Total Leads", value: leadRequests.length, icon: MessageCircle, accent: "admin-metric-active" },
+      { label: "New Leads", value: leadStatusCount(leadRequests, "New"), icon: CircleDashed, accent: "admin-metric-pending" },
+      { label: "Active Sourcing", value: leadStatusCount(leadRequests, "Negotiating"), icon: MessageCircle, accent: "admin-metric-active" },
+      { label: "Completed", value: leadStatusCount(leadRequests, "Completed"), icon: BadgeCheck, accent: "admin-metric-complete" },
+      { label: "Lost", value: leadStatusCount(leadRequests, "Lost"), icon: X, accent: "admin-metric-danger" }
     ],
     [leadRequests]
   );
@@ -6680,8 +6726,8 @@ export function AdminDashboard({
   }
 
   return (
-    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-white">
-      <section className="border-b border-leaf-900/10 bg-leaf-50">
+    <main className="admin-dashboard min-h-screen w-full max-w-full overflow-x-hidden bg-earth-50">
+      <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto max-w-[96rem] px-4 py-8 sm:px-6 2xl:max-w-[110rem]">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Operations</p>
           <div className="mt-3 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -6696,7 +6742,7 @@ export function AdminDashboard({
               <button
                 type="button"
                 onClick={logoutAdmin}
-                className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-ink/65 transition hover:border-leaf-700 hover:text-leaf-800"
+                className="admin-action-secondary"
               >
                 Logout
               </button>
@@ -6706,7 +6752,7 @@ export function AdminDashboard({
       </section>
 
       <div className="mx-auto grid max-w-[96rem] gap-5 px-4 py-5 sm:px-5 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-6 2xl:max-w-[110rem] 2xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="order-2 rounded-md border border-leaf-900/10 bg-leaf-50 px-5 py-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
+        <aside className="admin-queue-panel order-2 px-5 py-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-earth-700">
             <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
             Workspaces
@@ -6717,7 +6763,7 @@ export function AdminDashboard({
               const isExpanded = expandedNavigationGroup === group.group || groupHasActiveItem;
 
               return (
-                <div key={group.group} className="rounded-md bg-white ring-1 ring-leaf-900/10">
+                <div key={group.group} className="admin-nav-group">
                   <button
                     type="button"
                     aria-expanded={isExpanded}
@@ -6740,8 +6786,8 @@ export function AdminDashboard({
                             key={item.key}
                             type="button"
                             onClick={() => openAdminNavigationItem(item, group.group)}
-                            className={`rounded px-3 py-2 text-left text-sm font-black transition ${
-                              isActive ? "bg-leaf-700 text-white" : "text-ink/62 hover:bg-leaf-50 hover:text-leaf-800"
+                            className={`admin-nav-item rounded px-3 py-2 text-left text-sm font-black ${
+                              isActive ? "admin-nav-item-active" : ""
                             }`}
                           >
                             {item.label}
@@ -6759,7 +6805,7 @@ export function AdminDashboard({
         <div className="order-1 min-w-0 lg:order-none">
           {isOperationsLanding ? (
             <section className="grid min-w-0 gap-6">
-              <div className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+              <div className="admin-panel min-w-0 overflow-hidden p-6">
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Operations Center</p>
                 <div className="mt-3 grid min-w-0 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                   <div className="min-w-0">
@@ -6769,7 +6815,7 @@ export function AdminDashboard({
                       Today&apos;s work should take approximately {operationsEstimatedMinutes} minutes.
                     </p>
                   </div>
-                  <div className="min-w-0 rounded-md bg-leaf-50 p-4 text-left ring-1 ring-leaf-900/10 lg:min-w-[260px]">
+                  <div className="admin-context-panel min-w-0 p-4 text-left lg:min-w-[260px]">
                     <p className="text-xs font-black uppercase tracking-wide text-ink/45">Current focus</p>
                     <p className="mt-2 text-2xl font-black text-leaf-800">{operationsWaitingCount}</p>
                     <p className="mt-1 text-sm font-semibold text-ink/60">items waiting for action</p>
@@ -6777,7 +6823,7 @@ export function AdminDashboard({
                 </div>
               </div>
 
-              <section className="overflow-hidden rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+              <section className="admin-panel overflow-hidden p-5">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Today&apos;s Priority Queue</p>
@@ -6790,10 +6836,10 @@ export function AdminDashboard({
                     const Icon = item.icon;
 
                     return (
-                      <article key={item.label} className={`min-w-0 overflow-hidden rounded-md border border-leaf-900/10 border-l-4 ${item.tone} bg-white p-5 shadow-sm`}>
+                      <article key={item.label} className={`admin-metric-card ${item.accent} min-w-0 overflow-hidden rounded-md border border-leaf-900/10 p-5 shadow-sm`}>
                         <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
                           <div className="flex min-w-0 gap-3">
-                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700">
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
                               <Icon className="h-5 w-5" aria-hidden="true" />
                             </span>
                             <div className="min-w-0">
@@ -6802,12 +6848,12 @@ export function AdminDashboard({
                               <p className="mt-1 text-xs font-black uppercase tracking-wide text-earth-700">{item.oldest}</p>
                             </div>
                           </div>
-                          <span className="rounded-full bg-leaf-50 px-3 py-1 text-sm font-black text-leaf-800 sm:shrink-0">{item.value}</span>
+                          <span className="admin-status-badge admin-status-active text-sm sm:shrink-0">{item.value}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => runQuickAction(item.section, `${item.label} opened from today's priority queue.`)}
-                          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 sm:w-auto"
+                          className={`${item.actionTone} mt-5 w-full gap-2 sm:w-auto`}
                         >
                           {item.action} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -6821,7 +6867,7 @@ export function AdminDashboard({
 
           {!isOperationsLanding ? (
           <>
-          <section className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm">
+          <section className="admin-panel min-w-0 overflow-hidden">
             <div className="border-b border-leaf-900/10 p-5">
               <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
@@ -6968,14 +7014,14 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Marketplace Activity</p>
                     <h3 className="mt-2 text-xl font-black text-ink">Listings by category</h3>
                     <div className="mt-5">
                       <SimpleBarList items={listingsByCategory} emptyLabel="No marketplace listing data yet." />
                     </div>
                   </div>
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer Demand</p>
                     <h3 className="mt-2 text-xl font-black text-ink">Buyer requests by product</h3>
                     <div className="mt-5">
@@ -7509,7 +7555,7 @@ export function AdminDashboard({
                       </label>
                     </section>
 
-                    <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-3">
+                    <section className="admin-context-panel grid gap-3 p-4 sm:grid-cols-3">
                       {[
                         ["Applications Remaining", farmerReviewRemaining],
                         ["Average Review Time", farmerAverageReviewTime],
@@ -7523,7 +7569,7 @@ export function AdminDashboard({
                     </section>
 
                     <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[250px_minmax(520px,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-                      <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                      <aside className="admin-queue-panel p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Farmer Queue</p>
@@ -7571,7 +7617,7 @@ export function AdminDashboard({
                                 onClick={() => void openImportedFarmerReview(farmer)}
                                 className={`rounded-md border border-l-4 p-3 text-left transition ${
                                   isSelected
-                                    ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
+                                    ? "admin-selected-row border-leaf-700"
                                     : `border-leaf-900/10 ${priority.tone} hover:bg-white`
                                 }`}
                               >
@@ -7606,7 +7652,7 @@ export function AdminDashboard({
                         </div>
                       </aside>
 
-                      <div className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <div className="admin-panel min-w-0 p-5">
                         {isLoadingFarmerReview ? (
                           <p className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700">
                             Loading full farmer application...
@@ -7967,7 +8013,7 @@ export function AdminDashboard({
                         )}
                       </div>
 
-                      <aside className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                      <aside className="admin-panel p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Decision Center</p>
                         {reviewingImportedFarmer ? (
                           <div className="mt-4 grid gap-4">
@@ -7975,8 +8021,8 @@ export function AdminDashboard({
                               <div
                                 className={`whitespace-pre-line rounded-md px-4 py-3 text-sm font-black ${
                                   farmerReviewMessage.type === "success"
-                                    ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
-                                    : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+                                  ? "admin-feedback-success"
+                                    : "admin-feedback-error"
                                 }`}
                                 role={farmerReviewMessage.type === "error" ? "alert" : "status"}
                               >
@@ -7984,7 +8030,7 @@ export function AdminDashboard({
                               </div>
                             ) : null}
 
-                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                            <div className="admin-recommendation-panel p-4">
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
                               <p className="mt-2 text-xl font-black text-ink">{recommendedFarmerAction}</p>
                               <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
@@ -8004,7 +8050,7 @@ export function AdminDashboard({
                               />
                             </label>
 
-                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                            <div className="admin-context-panel p-4">
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Trust</p>
                               <div className="mt-3 grid gap-2">
                                 {[
@@ -8211,7 +8257,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("verify")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-primary w-full"
                               >
                                 {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Approve & Publish"}
                               </button>
@@ -8219,7 +8265,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("verify-only")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-secondary w-full"
                               >
                                 {pendingFarmerReviewAction === "verify-only" ? "Approving..." : "Approve Only"}
                               </button>
@@ -8227,7 +8273,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-warning w-full"
                               >
                                 {pendingFarmerReviewAction === "needs-follow-up" ? "Requesting..." : "Request Changes"}
                               </button>
@@ -8235,7 +8281,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("reject")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-destructive w-full"
                               >
                                 {pendingFarmerReviewAction === "reject" ? "Rejecting..." : "Reject"}
                               </button>
@@ -8243,7 +8289,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("archive")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-tertiary w-full"
                               >
                                 {pendingFarmerReviewAction === "archive" ? "Archiving..." : "Archive"}
                               </button>
@@ -8251,7 +8297,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("gg-standard")}
                                 disabled={isUpdatingFarmerReview}
-                                className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-warning w-full"
                               >
                                 {pendingFarmerReviewAction === "gg-standard" ? "Approving..." : "Approve GG Standard"}
                               </button>
@@ -8309,7 +8355,7 @@ export function AdminDashboard({
                       </label>
                     </section>
 
-                    <section className="grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 sm:grid-cols-3">
+                    <section className="admin-context-panel grid gap-3 p-4 sm:grid-cols-3">
                       {[
                         ["Applications Remaining", supplierReviewRemaining],
                         ["Average Review Time", supplierAverageReviewTime],
@@ -8323,7 +8369,7 @@ export function AdminDashboard({
                     </section>
 
                     <section className="grid min-h-[720px] min-w-0 gap-5 xl:grid-cols-[250px_minmax(520px,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-                      <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                      <aside className="admin-queue-panel p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Supplier Queue</p>
@@ -8351,7 +8397,7 @@ export function AdminDashboard({
                                 }}
                                 className={`rounded-md border border-l-4 p-3 text-left transition ${
                                   isSelected
-                                    ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
+                                    ? "admin-selected-row border-leaf-700"
                                     : `border-leaf-900/10 ${priority.tone} hover:bg-white`
                                 }`}
                               >
@@ -8390,7 +8436,7 @@ export function AdminDashboard({
                         </div>
                       </aside>
 
-                      <div className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                      <div className="admin-panel min-w-0 p-5">
                         {reviewingSupplier ? (
                           <div className="grid gap-6">
                             <div>
@@ -8550,7 +8596,7 @@ export function AdminDashboard({
                         )}
                       </div>
 
-                      <aside className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
+                      <aside className="admin-panel p-4 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto">
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Decision Center</p>
                         {reviewingSupplier ? (
                           <div className="mt-4 grid gap-4">
@@ -8558,8 +8604,8 @@ export function AdminDashboard({
                               <div
                                 className={`rounded-md px-4 py-3 text-sm font-black ${
                                   supplierReviewMessage.type === "success"
-                                    ? "bg-leaf-50 text-leaf-800 ring-1 ring-leaf-700/15"
-                                    : "bg-tomato/10 text-tomato ring-1 ring-tomato/20"
+                                  ? "admin-feedback-success"
+                                    : "admin-feedback-error"
                                 }`}
                                 role={supplierReviewMessage.type === "error" ? "alert" : "status"}
                               >
@@ -8567,7 +8613,7 @@ export function AdminDashboard({
                               </div>
                             ) : null}
 
-                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                            <div className="admin-recommendation-panel p-4">
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
                               <p className="mt-2 text-xl font-black text-ink">{recommendedSupplierAction}</p>
                               <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
@@ -8587,7 +8633,7 @@ export function AdminDashboard({
                               />
                             </label>
 
-                            <div className="rounded-md bg-leaf-50 p-4 ring-1 ring-leaf-900/10">
+                            <div className="admin-context-panel p-4">
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Trust</p>
                               <div className="mt-3 grid gap-2">
                                 {[
@@ -8760,7 +8806,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-publish")}
                                 disabled={isUpdatingSupplierReview}
-                                className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-primary w-full"
                               >
                                 {pendingSupplierReviewAction === "Approved" ? "Publishing..." : "Approve & Publish"}
                               </button>
@@ -8768,7 +8814,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-only")}
                                 disabled={isUpdatingSupplierReview}
-                                className="rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-secondary w-full"
                               >
                                 {pendingSupplierReviewAction === "Approved" ? "Approving..." : "Approve Only"}
                               </button>
@@ -8776,7 +8822,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "request-changes")}
                                 disabled={isUpdatingSupplierReview}
-                                className="rounded-md bg-earth-50 px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-warning w-full"
                               >
                                 {pendingSupplierReviewAction === "Under Review" ? "Requesting..." : "Request Changes"}
                               </button>
@@ -8784,7 +8830,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "reject")}
                                 disabled={isUpdatingSupplierReview}
-                                className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-destructive w-full"
                               >
                                 {pendingSupplierReviewAction === "Rejected" ? "Rejecting..." : "Reject"}
                               </button>
@@ -8792,7 +8838,7 @@ export function AdminDashboard({
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "archive")}
                                 disabled={isUpdatingSupplierReview}
-                                className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="admin-action-tertiary w-full"
                               >
                                 {pendingSupplierReviewAction === "archive" ? "Archiving..." : "Archive"}
                               </button>
@@ -9128,13 +9174,13 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-5 xl:grid-cols-[0.95fr_1.25fr]">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-queue-panel p-5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Produce Requests</p>
                         <h3 className="mt-2 text-xl font-black text-ink">{produceRequestFilterTitle(produceRequestStatusFilter)}</h3>
                       </div>
-                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">
+                      <p className="admin-status-badge admin-status-active text-sm">
                         {produceRequestLeads.length} {produceRequestFilterTitle(produceRequestStatusFilter).toLowerCase()} shown
                       </p>
                     </div>
@@ -9153,7 +9199,7 @@ export function AdminDashboard({
                               setNotice(`Viewing produce request from ${lead.requester_name}.`);
                             }}
                             className={`rounded-md border p-4 text-left transition ${
-                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                              isSelected ? "admin-selected-row border-leaf-700" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
                             }`}
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -9173,12 +9219,12 @@ export function AdminDashboard({
                         );
                       })}
                       {produceRequestLeads.length === 0 && !leadRequestError ? (
-                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No produce requests match this search or status filter.</p>
+                        <p className="admin-empty-state p-5 text-sm font-semibold">No produce requests match this search or status filter.</p>
                       ) : null}
                     </div>
                   </div>
 
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     {selectedProduceRequest ? (
                       <>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -9210,7 +9256,7 @@ export function AdminDashboard({
                         </dl>
 
                         {selectedProduceRequest.listing_snapshot ? (
-                          <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                          <div className="admin-context-panel mt-5 p-4">
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Public listing/profile snapshot</p>
                             <p className="mt-1 text-xs font-semibold leading-5 text-ink/50">
                               Public listing context only. Seller private contact details are not exposed here.
@@ -9226,28 +9272,28 @@ export function AdminDashboard({
                           </div>
                         ) : null}
 
-                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                        <div className="admin-context-panel mt-5 p-4">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Buyer Message</p>
                           <p className="mt-2 text-sm leading-6 text-ink/68">{selectedProduceRequest.message || "No message was provided with this request."}</p>
                         </div>
 
                         <div className="mt-5 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Contacted")} className="admin-action-secondary px-3 text-xs">
                             Mark Contacted
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Negotiating")} className="admin-action-warning px-3 text-xs">
                             Start Sourcing
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Completed")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Completed")} className="admin-action-primary px-3 text-xs">
                             Mark Completed
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Lost")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedProduceRequest, "Lost")} className="admin-action-destructive px-3 text-xs">
                             Mark Lost
                           </button>
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select a produce request to view buyer details, listing context, and review actions.</p>
+                      <p className="admin-empty-state p-5 text-sm font-semibold">Select a produce request to view buyer details, listing context, and review actions.</p>
                     )}
                   </div>
                 </section>
@@ -9255,10 +9301,10 @@ export function AdminDashboard({
             ) : isLeadQueueSection ? (
               <div className="grid gap-6 p-5">
                 {leadRequestError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{leadRequestError}</div>
+                  <div className="admin-feedback-error p-4 text-sm font-semibold leading-6" role="alert">{leadRequestError}</div>
                 ) : null}
 
-                <section className="rounded-md border border-leaf-900/10 bg-white p-5">
+                <section className="admin-panel p-5">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                       <p className="text-sm font-black uppercase tracking-wide text-earth-700">Lead Pipeline</p>
@@ -9273,7 +9319,7 @@ export function AdminDashboard({
                         void loadLeadRequests();
                         void loadAnalytics();
                       }}
-                      className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                      className="admin-action-secondary"
                     >
                       Refresh Leads
                     </button>
@@ -9285,7 +9331,7 @@ export function AdminDashboard({
                     const Icon = card.icon;
 
                     return (
-                      <div key={card.label} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                      <div key={card.label} className={`admin-metric-card ${card.accent} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-black text-ink/60">{card.label}</p>
                           <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700">
@@ -9299,7 +9345,7 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Conversion Funnel</p>
                     <div className="mt-5 grid gap-3">
                       {leadFunnelStatuses.map((status, index) => {
@@ -9320,7 +9366,7 @@ export function AdminDashboard({
                       })}
                     </div>
                   </div>
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Most Requested Products</p>
                     <div className="mt-5">
                       <SimpleBarList items={mostRequestedProducts} emptyLabel="No product requests have been captured yet." />
@@ -9329,19 +9375,19 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-4 xl:grid-cols-3">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Farmers by Leads</p>
                     <div className="mt-5">
                       <SimpleBarList items={topFarmersByLeads} emptyLabel="No farmer lead data yet." />
                     </div>
                   </div>
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Suppliers by Leads</p>
                     <div className="mt-5">
                       <SimpleBarList items={topSuppliersByLeads} emptyLabel="No supplier lead data yet." />
                     </div>
                   </div>
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Most Requested Listings</p>
                     <div className="mt-5">
                       <SimpleBarList items={mostRequestedListings} emptyLabel="No listing lead data yet." />
@@ -9350,13 +9396,13 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-queue-panel p-5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads</p>
                         <h3 className="mt-2 text-xl font-black text-ink">Connection pipeline</h3>
                       </div>
-                      <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-black text-leaf-800">{leadRequests.length} total</p>
+                      <p className="admin-status-badge admin-status-active text-sm">{leadRequests.length} total</p>
                     </div>
                     <div className="mt-5 grid gap-3">
                       {leadRequests.slice(0, 100).map((lead) => {
@@ -9372,7 +9418,7 @@ export function AdminDashboard({
                               setNotice(`Viewing lead from ${lead.requester_name}.`);
                             }}
                             className={`rounded-md border p-4 text-left transition ${
-                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                              isSelected ? "admin-selected-row border-leaf-700" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
                             }`}
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -9390,12 +9436,12 @@ export function AdminDashboard({
                         );
                       })}
                       {leadRequests.length === 0 && !leadRequestError ? (
-                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No connection requests have been submitted yet.</p>
+                        <p className="admin-empty-state p-5 text-sm font-semibold">No connection requests have been submitted yet.</p>
                       ) : null}
                     </div>
                   </div>
 
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     {selectedLead ? (
                       <>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -9425,7 +9471,7 @@ export function AdminDashboard({
                         </dl>
 
                         {selectedLead.listing_snapshot ? (
-                          <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                          <div className="admin-context-panel mt-5 p-4">
                             <p className="text-xs font-black uppercase tracking-wide text-earth-700">Public listing/profile snapshot</p>
                             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                               <LeadDetailItem label="Product" value={selectedLead.listing_snapshot.product ?? selectedLead.product_interest} />
@@ -9438,28 +9484,28 @@ export function AdminDashboard({
                           </div>
                         ) : null}
 
-                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                        <div className="admin-context-panel mt-5 p-4">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Message</p>
                           <p className="mt-2 text-sm leading-6 text-ink/68">{selectedLead.message || "No message was provided with this lead."}</p>
                         </div>
 
                         <div className="mt-5 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Contacted")} className="admin-action-secondary px-3 text-xs">
                             Mark Contacted
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Negotiating")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-50">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Negotiating")} className="admin-action-warning px-3 text-xs">
                             Mark Active Sourcing
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Completed")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Completed")} className="admin-action-primary px-3 text-xs">
                             Mark Completed
                           </button>
-                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Lost")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                          <button type="button" onClick={() => updateLeadRequestStatus(selectedLead, "Lost")} className="admin-action-destructive px-3 text-xs">
                             Mark Lost
                           </button>
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select a lead to view buyer details and pipeline actions.</p>
+                      <p className="admin-empty-state p-5 text-sm font-semibold">Select a lead to view buyer details and pipeline actions.</p>
                     )}
                   </div>
                 </section>
@@ -9467,12 +9513,12 @@ export function AdminDashboard({
             ) : isFeaturedEnquiriesSection ? (
               <div className="grid gap-6 p-5">
                 {featuredEnquiryError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{featuredEnquiryError}</div>
+                  <div className="admin-feedback-error p-4 text-sm font-semibold leading-6" role="alert">{featuredEnquiryError}</div>
                 ) : null}
 
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                   {(["New", "Contacted", "Approved", "Rejected", "Closed"] as FeaturedEnquiryStatus[]).map((status) => (
-                    <div key={status} className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm">
+                    <div key={status} className={`admin-metric-card ${featuredEnquiryMetricAccent(status)} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
                       <p className="text-sm font-black text-ink/60">{status}</p>
                       <p className="mt-3 text-3xl font-black text-ink">{featuredEnquiries.filter((enquiry) => enquiry.status === status).length}</p>
                     </div>
@@ -9480,7 +9526,7 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-queue-panel p-5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Featured Enquiries</p>
@@ -9489,7 +9535,7 @@ export function AdminDashboard({
                       <button
                         type="button"
                         onClick={() => void loadFeaturedEnquiries()}
-                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-2.5 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
+                        className="admin-action-secondary"
                       >
                         Refresh
                       </button>
@@ -9508,7 +9554,7 @@ export function AdminDashboard({
                               setNotice(`Viewing featured enquiry from ${enquiry.name}.`);
                             }}
                             className={`rounded-md border p-4 text-left transition ${
-                              isSelected ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
+                              isSelected ? "admin-selected-row border-leaf-700" : "border-leaf-900/10 bg-white hover:border-leaf-700 hover:bg-leaf-50"
                             }`}
                           >
                             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -9526,12 +9572,12 @@ export function AdminDashboard({
                         );
                       })}
                       {featuredEnquiries.length === 0 && !featuredEnquiryError ? (
-                        <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No featured placement enquiries have been submitted yet.</p>
+                        <p className="admin-empty-state p-5 text-sm font-semibold">No featured placement enquiries have been submitted yet.</p>
                       ) : null}
                     </div>
                   </div>
 
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
+                  <div className="admin-panel p-5">
                     {selectedFeaturedEnquiry ? (
                       <>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -9554,7 +9600,7 @@ export function AdminDashboard({
                           <LeadDetailItem label="Request" value={selectedFeaturedEnquiry.feature_request} />
                         </dl>
 
-                        <div className="mt-5 rounded-md bg-leaf-50 p-4">
+                        <div className="admin-context-panel mt-5 p-4">
                           <p className="text-xs font-black uppercase tracking-wide text-earth-700">Message</p>
                           <p className="mt-2 text-sm leading-6 text-ink/68">{selectedFeaturedEnquiry.message || "No additional message was provided."}</p>
                         </div>
@@ -9569,7 +9615,7 @@ export function AdminDashboard({
                                 void navigator.clipboard.writeText(featuredFollowUpMessage(selectedFeaturedEnquiry));
                                 setNotice("Featured placement follow-up message copied.");
                               }}
-                              className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white"
+                            className="admin-action-secondary px-3 text-xs"
                             >
                               Copy Message
                             </button>
@@ -9577,7 +9623,7 @@ export function AdminDashboard({
                               href={whatsappUrl(selectedFeaturedEnquiry.whatsapp, featuredFollowUpMessage(selectedFeaturedEnquiry))}
                               target="_blank"
                               rel="noreferrer"
-                              className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800"
+                            className="admin-action-secondary px-3 text-xs"
                             >
                               Open WhatsApp
                             </a>
@@ -9585,22 +9631,22 @@ export function AdminDashboard({
                         </div>
 
                         <div className="mt-5 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Contacted")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white">
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Contacted")} className="admin-action-secondary px-3 text-xs">
                             Mark Contacted
                           </button>
-                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Approved")} className="rounded-md bg-leaf-700 px-3 py-2 text-xs font-black text-white transition hover:bg-leaf-800">
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Approved")} className="admin-action-primary px-3 text-xs">
                             Approve
                           </button>
-                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Rejected")} className="rounded-md bg-white px-3 py-2 text-xs font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato/10">
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Rejected")} className="admin-action-destructive px-3 text-xs">
                             Reject
                           </button>
-                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Closed")} className="rounded-md bg-ink/10 px-3 py-2 text-xs font-black text-ink/65 transition hover:bg-ink hover:text-white">
+                          <button type="button" onClick={() => updateFeaturedEnquiryStatus(selectedFeaturedEnquiry, "Closed")} className="admin-action-tertiary px-3 text-xs">
                             Close
                           </button>
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">Select an enquiry to view details and follow-up actions.</p>
+                      <p className="admin-empty-state p-5 text-sm font-semibold">Select an enquiry to view details and follow-up actions.</p>
                     )}
                   </div>
                 </section>
@@ -9608,15 +9654,15 @@ export function AdminDashboard({
             ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">
                 {whatsappLeadError ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">{whatsappLeadError}</div>
+                  <div className="admin-feedback-error p-4 text-sm font-semibold leading-6" role="alert">{whatsappLeadError}</div>
                 ) : null}
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <div className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                  <div className="admin-context-panel p-4">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Total Clicks</p>
                     <p className="mt-3 text-4xl font-black text-ink">{whatsappLeads.length}</p>
                     <p className="mt-2 text-sm leading-6 text-ink/58">Recent tracked WhatsApp contact clicks.</p>
                   </div>
-                  <div className="rounded-md border border-leaf-900/10 bg-white p-4 lg:col-span-2">
+                  <div className="admin-panel p-4 lg:col-span-2">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads by Source Type</p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {leadSourceTotals.length > 0 ? leadSourceTotals.map((item) => (
@@ -9632,7 +9678,7 @@ export function AdminDashboard({
                 </div>
 
                 <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-                  <section className="rounded-md border border-leaf-900/10 bg-white p-5">
+                  <section className="admin-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Latest Leads</p>
                     <div className="mt-4 divide-y divide-leaf-900/10">
                       {whatsappLeads.slice(0, 25).map((lead) => (
@@ -9652,7 +9698,7 @@ export function AdminDashboard({
                     </div>
                   </section>
 
-                  <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
+                  <section className="admin-context-panel p-5">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Top Clicked Sources</p>
                     <div className="mt-4 grid gap-3">
                       {topLeadSources.map((item) => (
@@ -9729,7 +9775,7 @@ export function AdminDashboard({
                 </section>
 
                 <section className="grid min-w-0 gap-4 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] lg:items-start">
-                  <aside className={`${showSourcingCaseDetailMobile ? "hidden lg:block" : "block"} rounded-md border border-leaf-900/10 bg-leaf-50 p-4 lg:sticky lg:top-24 lg:self-start`}>
+                  <aside className={`${showSourcingCaseDetailMobile ? "hidden lg:block" : "block"} admin-queue-panel p-4 lg:sticky lg:top-24 lg:self-start`}>
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-black uppercase tracking-wide text-earth-700">Queue</p>
@@ -9754,7 +9800,7 @@ export function AdminDashboard({
                             }}
                             className={`rounded-md border border-l-4 p-3 text-left transition ${
                               isSelected
-                                ? "border-leaf-700 border-l-leaf-700 bg-white shadow-sm"
+                                ? "admin-selected-row border-leaf-700"
                                 : "border-leaf-900/10 border-l-leaf-300 bg-white hover:border-leaf-700"
                             }`}
                           >
@@ -9768,7 +9814,9 @@ export function AdminDashboard({
                             <p className="mt-3 text-sm font-black text-ink">{caseItem.request.product_needed}</p>
                             <p className="mt-1 text-xs font-semibold text-ink/55">{caseItem.request.quantity || "Quantity not supplied"}</p>
                             <div className="mt-3 flex flex-wrap gap-1.5">
-                              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-ink/55 ring-1 ring-leaf-900/10">{caseItem.state.status}</span>
+                              <span className={`admin-status-badge ${sourcingCaseStatusClass(caseItem.state.status)} px-2 py-0.5 text-[11px]`}>
+                                {sourcingCaseOperationalStatusLabel(caseItem.state.status)}
+                              </span>
                             </div>
                             <p className="mt-2 text-[11px] font-black uppercase tracking-wide text-ink/40">
                               Submitted {caseItem.request.created_at ? new Date(caseItem.request.created_at).toLocaleDateString() : "No date"}
@@ -9784,7 +9832,7 @@ export function AdminDashboard({
                     </div>
                   </aside>
 
-                  <div className={`${showSourcingCaseDetailMobile ? "block" : "hidden lg:block"} min-w-0 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5`}>
+                  <div className={`${showSourcingCaseDetailMobile ? "block" : "hidden lg:block"} admin-panel min-w-0 p-4 sm:p-5`}>
                     {selectedSourcingCase ? (
                       (() => {
                         const sla = sourcingSla(selectedSourcingCase.request.created_at);
@@ -9799,11 +9847,11 @@ export function AdminDashboard({
 
                         return (
                           <div className="grid gap-5">
-                            <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                            <section className="admin-context-panel p-4">
                               <button
                                 type="button"
                                 onClick={() => setShowSourcingCaseDetailMobile(false)}
-                                className="mb-4 inline-flex min-h-10 items-center rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 lg:hidden"
+                                className="admin-action-secondary mb-4 px-3 text-xs lg:hidden"
                               >
                                 Back to sourcing cases
                               </button>
@@ -9812,7 +9860,7 @@ export function AdminDashboard({
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Selected Case</p>
                                   <div className="mt-2 flex flex-wrap items-center gap-2">
                                     <h3 className="text-2xl font-black leading-tight text-ink sm:text-3xl">{linkedSourceLabel !== "Not linked" ? linkedSourceLabel : selectedSourcingCase.request.product_needed}</h3>
-                                    <span className="inline-flex max-w-full items-center rounded-full bg-white px-3 py-1 text-center text-xs font-black leading-5 text-leaf-800 ring-1 ring-leaf-900/10">
+                                    <span className={`admin-status-badge ${sourcingCaseStatusClass(selectedSourcingCase.state.status)} text-center`}>
                                       {sourcingCaseOperationalStatusLabel(selectedSourcingCase.state.status)}
                                     </span>
                                   </div>
@@ -9825,7 +9873,7 @@ export function AdminDashboard({
                                   <button
                                     type="button"
                                     onClick={() => setSelectedSourcingCaseTab("Matches")}
-                                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 focus:outline-none focus:ring-2 focus:ring-leaf-600/25"
+                                    className="admin-action-primary mt-2 w-full text-sm"
                                   >
                                     Review Matches
                                   </button>
@@ -9860,14 +9908,14 @@ export function AdminDashboard({
                                 <button
                                   type="button"
                                   onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
-                                  className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  className="admin-action-secondary"
                                 >
                                   Assign to Me
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => void contactSourcingBuyer(selectedSourcingCase.request)}
-                                  className="rounded-md bg-white px-4 py-3 text-center text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                                  className="admin-action-secondary text-center"
                                 >
                                   Contact Buyer
                                 </button>
@@ -9878,7 +9926,7 @@ export function AdminDashboard({
                                       void setSourcingCaseStatus(selectedSourcingCase.request, "Completed");
                                     }
                                   }}
-                                  className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400"
+                                  className="admin-action-warning"
                                 >
                                   Complete Request
                                 </button>
@@ -9889,7 +9937,7 @@ export function AdminDashboard({
                                       void setSourcingCaseStatus(selectedSourcingCase.request, "Closed");
                                     }
                                   }}
-                                  className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80"
+                                  className="admin-action-destructive"
                                 >
                                   Mark Lost
                                 </button>
@@ -9904,10 +9952,10 @@ export function AdminDashboard({
                                   role="tab"
                                   aria-selected={selectedSourcingCaseTab === tab}
                                   onClick={() => setSelectedSourcingCaseTab(tab)}
-                                  className={`min-h-10 rounded-md px-4 py-2 text-sm font-black transition ${
+                                  className={`admin-nav-item min-h-10 rounded-md px-4 py-2 text-sm font-black ${
                                     selectedSourcingCaseTab === tab
-                                      ? "bg-leaf-700 text-white"
-                                      : "bg-leaf-50 text-ink/62 ring-1 ring-leaf-900/10 hover:bg-white hover:text-leaf-800"
+                                      ? "admin-nav-item-active"
+                                      : "bg-white ring-1 ring-leaf-900/10"
                                   }`}
                                 >
                                   {tab}
@@ -9917,7 +9965,7 @@ export function AdminDashboard({
 
                             {selectedSourcingCaseTab === "Overview" ? (
                               <div className="grid gap-4">
-                                <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                                <section className="admin-context-panel p-4">
                                   <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Buyer and Request Overview</h4>
                                   <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                                     <LeadDetailItem label="Buyer / Company" value={selectedSourcingCase.request.company_name ? `${selectedSourcingCase.request.buyer_name} - ${selectedSourcingCase.request.company_name}` : selectedSourcingCase.request.buyer_name} />

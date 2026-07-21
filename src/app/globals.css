@@ -203,4 +203,153 @@ h3 {
   .gg-lift-card {
     @apply transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft;
   }
+
+  /* Admin-only semantic color system. Functional blues are reserved for admin status meaning. */
+  .admin-dashboard,
+  .admin-listing-workspace {
+    --admin-info-background: rgb(229 240 238);
+    --admin-info-text: rgb(31 84 80);
+    --admin-contact-background: rgb(237 243 246);
+    --admin-contact-text: rgb(37 75 82);
+  }
+
+  .admin-dashboard :is(button, a, input, textarea, select):focus-visible,
+  .admin-listing-workspace :is(button, a, input, textarea, select):focus-visible {
+    outline: 3px solid rgb(var(--gg-harvest-gold));
+    outline-offset: 3px;
+  }
+
+  .admin-dashboard :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select),
+  .admin-listing-workspace :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+    background-color: rgb(var(--gg-functional-white)) !important;
+    border-color: rgb(var(--gg-border-mist));
+  }
+
+  .admin-panel {
+    @apply rounded-md border border-leaf-900/10 bg-white shadow-sm;
+  }
+
+  .admin-context-panel {
+    @apply rounded-md border border-leaf-700/10 bg-leaf-50 shadow-sm;
+  }
+
+  .admin-queue-panel {
+    @apply rounded-md border border-leaf-900/10 bg-earth-50 shadow-sm;
+  }
+
+  .admin-selected-row {
+    @apply border-l-4 border-leaf-700 bg-white shadow-sm;
+  }
+
+  .admin-nav-group {
+    @apply rounded-md border border-leaf-900/10 bg-white;
+  }
+
+  .admin-nav-item {
+    @apply text-ink/65 transition-colors hover:bg-leaf-50 hover:text-leaf-800;
+  }
+
+  .admin-nav-item-active {
+    @apply bg-leaf-700 text-earth-50 shadow-sm hover:bg-leaf-800 hover:text-earth-50;
+  }
+
+  .admin-status-badge {
+    @apply inline-flex max-w-full items-center rounded-full px-3 py-1 text-xs font-black leading-5 ring-1;
+  }
+
+  .admin-status-pending {
+    @apply bg-earth-50 text-earth-700 ring-earth-500/30;
+  }
+
+  .admin-status-active {
+    background-color: var(--admin-info-background);
+    color: var(--admin-info-text);
+    box-shadow: inset 0 0 0 1px rgb(31 84 80 / 0.16);
+  }
+
+  .admin-status-contacted {
+    background-color: var(--admin-contact-background);
+    color: var(--admin-contact-text);
+    box-shadow: inset 0 0 0 1px rgb(37 75 82 / 0.16);
+  }
+
+  .admin-status-complete {
+    @apply bg-leaf-50 text-leaf-800 ring-leaf-700/15;
+  }
+
+  .admin-status-paused {
+    @apply bg-ink/10 text-ink/65 ring-ink/10;
+  }
+
+  .admin-status-danger {
+    @apply bg-tomato/10 text-tomato ring-tomato/20;
+  }
+
+  .admin-action-primary,
+  .admin-action-secondary,
+  .admin-action-tertiary,
+  .admin-action-warning,
+  .admin-action-destructive {
+    @apply inline-flex min-h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-black transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .admin-action-primary {
+    @apply bg-leaf-700 text-earth-50 shadow-sm hover:bg-leaf-800;
+  }
+
+  .admin-action-secondary {
+    @apply border border-leaf-700/25 bg-white text-leaf-800 hover:bg-leaf-50;
+  }
+
+  .admin-action-tertiary {
+    @apply text-ink/70 hover:bg-ink/5 hover:text-ink;
+  }
+
+  .admin-action-warning {
+    @apply bg-earth-500 text-ink hover:bg-earth-600;
+  }
+
+  .admin-action-destructive {
+    @apply bg-tomato text-earth-50 hover:bg-tomato/90;
+  }
+
+  .admin-metric-card {
+    @apply border-l-4 bg-white;
+  }
+
+  .admin-metric-pending {
+    @apply border-l-earth-500;
+  }
+
+  .admin-metric-active {
+    border-left-color: var(--admin-info-text);
+  }
+
+  .admin-metric-contacted {
+    border-left-color: var(--admin-contact-text);
+  }
+
+  .admin-metric-complete {
+    @apply border-l-leaf-700;
+  }
+
+  .admin-metric-danger {
+    @apply border-l-tomato;
+  }
+
+  .admin-recommendation-panel {
+    @apply rounded-md border border-earth-500/35 bg-earth-50;
+  }
+
+  .admin-feedback-error {
+    @apply rounded-md border border-tomato/25 bg-tomato/10 text-tomato;
+  }
+
+  .admin-feedback-success {
+    @apply rounded-md border border-leaf-700/20 bg-leaf-50 text-leaf-800;
+  }
+
+  .admin-empty-state {
+    @apply rounded-md border border-dashed border-leaf-900/20 bg-white text-ink/65;
+  }
 }

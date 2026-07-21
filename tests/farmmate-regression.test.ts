@@ -1354,6 +1354,45 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Admin color hierarchy stays scoped to protected workspaces",
+    run: () => {
+      const globals = repoFile("src/app/globals.css");
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const listingWorkspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
+      const adminPage = repoFile("src/app/admin/page.tsx");
+      const listingPage = repoFile("src/app/admin/listing-submissions/page.tsx");
+
+      assert.equal(globals.includes(".admin-dashboard,"), true);
+      assert.equal(globals.includes(".admin-listing-workspace"), true);
+      assert.equal(globals.includes(".admin-status-pending"), true);
+      assert.equal(globals.includes(".admin-status-active"), true);
+      assert.equal(globals.includes(".admin-status-contacted"), true);
+      assert.equal(globals.includes(".admin-status-complete"), true);
+      assert.equal(globals.includes(".admin-status-paused"), true);
+      assert.equal(globals.includes(".admin-status-danger"), true);
+      assert.equal(globals.includes(".admin-action-primary"), true);
+      assert.equal(globals.includes(".admin-action-secondary"), true);
+      assert.equal(globals.includes(".admin-action-warning"), true);
+      assert.equal(globals.includes(".admin-action-destructive"), true);
+      assert.equal(globals.includes(".admin-recommendation-panel"), true);
+      assert.equal(globals.includes(".admin-feedback-success"), true);
+      assert.equal(globals.includes(".admin-feedback-error"), true);
+      assert.equal(globals.includes(".admin-empty-state"), true);
+      assert.equal(globals.includes(".admin-dashboard :is(input"), true);
+      assert.equal(adminDashboard.includes('className="admin-dashboard'), true);
+      assert.equal(adminDashboard.includes("admin-nav-item-active"), true);
+      assert.equal(adminDashboard.includes("admin-queue-panel"), true);
+      assert.equal(adminDashboard.includes("admin-selected-row"), true);
+      assert.equal(adminDashboard.includes("admin-recommendation-panel"), true);
+      assert.equal(adminDashboard.includes("sourcingCaseStatusClass"), true);
+      assert.equal(listingWorkspace.includes('className="admin-listing-workspace'), true);
+      assert.equal(listingWorkspace.includes('tone="primary"'), true);
+      assert.equal(listingWorkspace.includes('tone="destructive"'), true);
+      assert.equal(adminPage.includes("getAdminUserFromAccessToken"), true);
+      assert.equal(listingPage.includes("getAdminUserFromAccessToken"), true);
+    }
+  },
+  {
     name: "Request connection modal closes only after confirmed server success",
     run: () => {
       const modal = repoFile("src/components/RequestConnectionButton.tsx");
