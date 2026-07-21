@@ -74,6 +74,7 @@ type AdminSectionId =
   | "market-prices";
 type AdminFormId = "farmers" | "suppliers" | "marketplace" | "buyer-requests" | "market-prices" | "learn" | "success-stories";
 type AdminAnalyticsView = "operations" | "analytics";
+type OptionalQueueLoadState = "idle" | "loading" | "available" | "unavailable" | "error";
 
 type AdminRow = {
   id: string;
@@ -808,7 +809,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "verifications", label: "Verification Queue", icon: ShieldCheck },
   { id: "applications", label: "Applications", icon: ClipboardCheck },
   { id: "submissions", label: "Submissions", icon: ClipboardCheck },
-  { id: "whatsapp-leads", label: "WhatsApp Leads", icon: MessageCircle },
+  { id: "whatsapp-leads", label: "Notifications", icon: MessageCircle },
   { id: "match-opportunities", label: "Match Opportunities", icon: PackageCheck },
   { id: "learn", label: "Learn Articles", icon: BookOpen },
   { id: "success-stories", label: "Success Stories", icon: Star },
@@ -3848,6 +3849,39 @@ function MatchPreview({ title, records, nameKeys }: { title: string; records: An
   );
 }
 
+function AdminOptionalQueueNotice({
+  state,
+  unavailableMessage,
+  error,
+  onRetry
+}: {
+  state: OptionalQueueLoadState;
+  unavailableMessage: string;
+  error: string;
+  onRetry: () => void;
+}) {
+  if (state === "available") {
+    return null;
+  }
+
+  if (state === "error") {
+    return (
+      <div className="admin-feedback-error p-5 text-sm font-semibold leading-6" role="alert">
+        <p>{error}</p>
+        <button type="button" onClick={onRetry} className="admin-action-secondary mt-4">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-empty-state p-5 text-sm font-semibold leading-6" role="status">
+      {state === "unavailable" ? unavailableMessage : "Loading this optional admin queue..."}
+    </div>
+  );
+}
+
 export function AdminDashboard({
   currentAdmin,
   initialSection = "analytics",
@@ -3892,12 +3926,14 @@ export function AdminDashboard({
   const [activityError, setActivityError] = useState("");
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
+  const [whatsappLeadLoadState, setWhatsappLeadLoadState] = useState<OptionalQueueLoadState>("idle");
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [produceRequestStatusFilter, setProduceRequestStatusFilter] = useState<ProduceRequestStatusFilter>("All");
   const [featuredEnquiries, setFeaturedEnquiries] = useState<FeaturedEnquiryRecord[]>([]);
   const [featuredEnquiryError, setFeaturedEnquiryError] = useState("");
+  const [featuredEnquiryLoadState, setFeaturedEnquiryLoadState] = useState<OptionalQueueLoadState>("idle");
   const [selectedFeaturedEnquiryId, setSelectedFeaturedEnquiryId] = useState<string | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsError, setAnalyticsError] = useState("");
@@ -4048,8 +4084,14 @@ export function AdminDashboard({
   }, [loadActivity]);
 
   const loadWhatsAppLeads = useCallback(async () => {
-    const response = await fetch("/api/admin/whatsapp-leads").catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { leads?: WhatsAppLeadRecord[]; error?: string } | null;
+    setWhatsappLeadLoadState("loading");
+    setWhatsappLeadError("");
+    const response = await fetch("/api/admin/whatsapp-leads", { cache: "no-store" }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      leads?: WhatsAppLeadRecord[];
+      availability?: "available" | "unavailable";
+      error?: string;
+    } | null;
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -4057,17 +4099,28 @@ export function AdminDashboard({
         return;
       }
 
-      setWhatsappLeadError(result?.error ?? "WhatsApp leads are unavailable.");
+      setWhatsappLeadLoadState("error");
+      setWhatsappLeadError(result?.error ?? "WhatsApp click activity could not be loaded. Please try again.");
+      return;
+    }
+
+    if (result?.availability === "unavailable") {
+      setWhatsappLeads([]);
+      setWhatsappLeadLoadState("unavailable");
+      setWhatsappLeadError("");
       return;
     }
 
     setWhatsappLeads(result?.leads ?? []);
+    setWhatsappLeadLoadState("available");
     setWhatsappLeadError("");
   }, []);
 
   useEffect(() => {
-    void loadWhatsAppLeads();
-  }, [loadWhatsAppLeads]);
+    if (activeSection === "whatsapp-leads" || (activeSection === "analytics" && analyticsView === "analytics")) {
+      void loadWhatsAppLeads();
+    }
+  }, [activeSection, analyticsView, loadWhatsAppLeads]);
 
   const loadLeadRequests = useCallback(async () => {
     const response = await fetch("/api/admin/lead-requests", { cache: "no-store" }).catch(() => null);
@@ -4098,8 +4151,14 @@ export function AdminDashboard({
   }, [loadLeadRequests]);
 
   const loadFeaturedEnquiries = useCallback(async () => {
-    const response = await fetch("/api/admin/featured-enquiries").catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { enquiries?: FeaturedEnquiryRecord[]; error?: string } | null;
+    setFeaturedEnquiryLoadState("loading");
+    setFeaturedEnquiryError("");
+    const response = await fetch("/api/admin/featured-enquiries", { cache: "no-store" }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as {
+      enquiries?: FeaturedEnquiryRecord[];
+      availability?: "available" | "unavailable";
+      error?: string;
+    } | null;
 
     if (!response?.ok) {
       if (response?.status === 401) {
@@ -4107,19 +4166,31 @@ export function AdminDashboard({
         return;
       }
 
-      setFeaturedEnquiryError(result?.error ?? "Featured enquiries are unavailable.");
+      setFeaturedEnquiryLoadState("error");
+      setFeaturedEnquiryError(result?.error ?? "Featured enquiries could not be loaded. Please try again.");
+      return;
+    }
+
+    if (result?.availability === "unavailable") {
+      setFeaturedEnquiries([]);
+      setSelectedFeaturedEnquiryId(null);
+      setFeaturedEnquiryLoadState("unavailable");
+      setFeaturedEnquiryError("");
       return;
     }
 
     const enquiries = result?.enquiries ?? [];
     setFeaturedEnquiries(enquiries);
     setSelectedFeaturedEnquiryId((current) => current ?? enquiries[0]?.id ?? null);
+    setFeaturedEnquiryLoadState("available");
     setFeaturedEnquiryError("");
   }, []);
 
   useEffect(() => {
-    void loadFeaturedEnquiries();
-  }, [loadFeaturedEnquiries]);
+    if (activeSection === "featured-enquiries") {
+      void loadFeaturedEnquiries();
+    }
+  }, [activeSection, loadFeaturedEnquiries]);
 
   const loadAnalytics = useCallback(async () => {
     const response = await fetch("/api/admin/analytics").catch(() => null);
@@ -4519,14 +4590,24 @@ export function AdminDashboard({
       { label: "New Buyer Requests", value: submissions.buyerRequests.filter((request) => request.status === "New").length, icon: CircleDashed },
       { label: "Published Buyer Requests", value: submissions.buyerRequests.filter((request) => request.status === "Published").length, icon: PackageCheck },
       { label: "Most Requested Products", value: mostRequestedProduct, icon: ChartLine },
-      { label: "WhatsApp leads", value: analytics.whatsappLeads.length, icon: MessageCircle },
+      {
+        label: "WhatsApp contact clicks",
+        value: whatsappLeadLoadState === "available"
+          ? whatsappLeads.length
+          : whatsappLeadLoadState === "error"
+            ? "Load failed"
+            : whatsappLeadLoadState === "unavailable"
+              ? "Not available"
+              : "Loading",
+        icon: MessageCircle
+      },
       { label: "Total leads", value: analytics.leadRequests.length, icon: MessageCircle },
       { label: "Crop health checks", value: analytics.cropHealthReports.length, icon: ClipboardCheck },
       { label: "Market price records", value: analytics.marketPrices.length, icon: ChartLine }
     ];
-  }, [analytics, buyerApplicationProducts, submissions.buyerRequests]);
-  const analyticsLeadSources = useMemo(() => countBy(analytics.whatsappLeads, "source_type"), [analytics.whatsappLeads]);
-  const analyticsTopSources = useMemo(() => topClickedSources(analytics.whatsappLeads as WhatsAppLeadRecord[]), [analytics.whatsappLeads]);
+  }, [analytics, buyerApplicationProducts, submissions.buyerRequests, whatsappLeadLoadState, whatsappLeads.length]);
+  const analyticsLeadSources = useMemo(() => countBy(whatsappLeads, "source_type"), [whatsappLeads]);
+  const analyticsTopSources = useMemo(() => topClickedSources(whatsappLeads), [whatsappLeads]);
   const produceRequestLeads = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
@@ -6342,8 +6423,8 @@ export function AdminDashboard({
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
   const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
   const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
-  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : "Manage Records";
-  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : activeSectionLabel;
+  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : isWhatsAppLeadsSection ? "Optional Analytics" : "Manage Records";
+  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : isWhatsAppLeadsSection ? "Notifications" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
     ? "Review one farmer, make one decision, then continue to the next application."
     : isSupplierReviewWorkspace
@@ -6352,6 +6433,8 @@ export function AdminDashboard({
       ? "Review private buyer enquiries from marketplace listings, directory profiles, and generic sourcing forms."
     : isMatchOpportunitiesSection
       ? "Help buyers source produce by reviewing one case, choosing matches, and deciding the next action."
+    : isWhatsAppLeadsSection
+      ? "Review WhatsApp contact-click analytics. Buyer enquiries remain in Produce Requests."
     : notice;
   const visibleApplicationDiagnostics = applicationDiagnostics[applicationTab]?.join(" ") ?? "";
 
@@ -9585,20 +9668,25 @@ export function AdminDashboard({
               </div>
             ) : isFeaturedEnquiriesSection ? (
               <div className="grid gap-6 p-5">
-                {featuredEnquiryError ? (
-                  <div className="admin-feedback-error p-4 text-sm font-semibold leading-6" role="alert">{featuredEnquiryError}</div>
-                ) : null}
-
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                {featuredEnquiryLoadState !== "available" ? (
+                  <AdminOptionalQueueNotice
+                    state={featuredEnquiryLoadState}
+                    unavailableMessage="Featured enquiry requests are not available yet."
+                    error={featuredEnquiryError}
+                    onRetry={() => void loadFeaturedEnquiries()}
+                  />
+                ) : (
+                  <>
+                    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                   {(["New", "Contacted", "Approved", "Rejected", "Closed"] as FeaturedEnquiryStatus[]).map((status) => (
                     <div key={status} className={`admin-metric-card ${featuredEnquiryMetricAccent(status)} rounded-md border border-leaf-900/10 p-4 shadow-sm`}>
                       <p className="text-sm font-black text-ink/60">{status}</p>
                       <p className="mt-3 text-3xl font-black text-ink">{featuredEnquiries.filter((enquiry) => enquiry.status === status).length}</p>
                     </div>
                   ))}
-                </section>
+                    </section>
 
-                <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+                    <section className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
                   <div className="admin-queue-panel p-5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
@@ -9644,7 +9732,7 @@ export function AdminDashboard({
                           </button>
                         );
                       })}
-                      {featuredEnquiries.length === 0 && !featuredEnquiryError ? (
+                      {featuredEnquiries.length === 0 ? (
                         <p className="admin-empty-state p-5 text-sm font-semibold">No featured placement enquiries have been submitted yet.</p>
                       ) : null}
                     </div>
@@ -9722,21 +9810,29 @@ export function AdminDashboard({
                       <p className="admin-empty-state p-5 text-sm font-semibold">Select an enquiry to view details and follow-up actions.</p>
                     )}
                   </div>
-                </section>
+                    </section>
+                  </>
+                )}
               </div>
             ) : isWhatsAppLeadsSection ? (
               <div className="grid gap-6 p-5">
-                {whatsappLeadError ? (
-                  <div className="admin-feedback-error p-4 text-sm font-semibold leading-6" role="alert">{whatsappLeadError}</div>
-                ) : null}
-                <div className="grid gap-4 lg:grid-cols-3">
+                {whatsappLeadLoadState !== "available" ? (
+                  <AdminOptionalQueueNotice
+                    state={whatsappLeadLoadState}
+                    unavailableMessage="WhatsApp click tracking is not available yet. Buyer enquiries remain available in Produce Requests."
+                    error={whatsappLeadError}
+                    onRetry={() => void loadWhatsAppLeads()}
+                  />
+                ) : (
+                  <>
+                    <div className="grid gap-4 lg:grid-cols-3">
                   <div className="admin-context-panel p-4">
                     <p className="text-sm font-black uppercase tracking-wide text-earth-700">Total Clicks</p>
                     <p className="mt-3 text-4xl font-black text-ink">{whatsappLeads.length}</p>
                     <p className="mt-2 text-sm leading-6 text-ink/58">Recent tracked WhatsApp contact clicks.</p>
                   </div>
                   <div className="admin-panel p-4 lg:col-span-2">
-                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Leads by Source Type</p>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Clicks by Source Type</p>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {leadSourceTotals.length > 0 ? leadSourceTotals.map((item) => (
                         <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-leaf-50 px-3 py-2">
@@ -9744,15 +9840,15 @@ export function AdminDashboard({
                           <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-leaf-700">{item.value}</span>
                         </div>
                       )) : (
-                        <p className="text-sm font-semibold text-ink/58">No lead source data yet.</p>
+                        <p className="text-sm font-semibold text-ink/58">No click source data yet.</p>
                       )}
                     </div>
                   </div>
-                </div>
+                    </div>
 
-                <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
                   <section className="admin-panel p-5">
-                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Latest Leads</p>
+                    <p className="text-sm font-black uppercase tracking-wide text-earth-700">Latest Contact Clicks</p>
                     <div className="mt-4 divide-y divide-leaf-900/10">
                       {whatsappLeads.slice(0, 25).map((lead) => (
                         <div key={lead.id} className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[1fr_auto] sm:items-start">
@@ -9765,8 +9861,8 @@ export function AdminDashboard({
                           <p className="text-xs font-black text-ink/45">{relativeActivityTime(lead.created_at)}</p>
                         </div>
                       ))}
-                      {whatsappLeads.length === 0 && !whatsappLeadError ? (
-                        <p className="rounded-md bg-leaf-50 p-4 text-sm font-semibold text-ink/58">No WhatsApp leads have been recorded yet.</p>
+                      {whatsappLeads.length === 0 ? (
+                        <p className="rounded-md bg-leaf-50 p-4 text-sm font-semibold text-ink/58">No WhatsApp contact clicks have been recorded yet.</p>
                       ) : null}
                     </div>
                   </section>
@@ -9788,7 +9884,9 @@ export function AdminDashboard({
                       ) : null}
                     </div>
                   </section>
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : isMatchOpportunitiesSection ? (
               <div className="grid min-w-0 gap-5 p-5">
