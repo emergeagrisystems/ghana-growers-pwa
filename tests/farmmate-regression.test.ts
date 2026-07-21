@@ -408,7 +408,7 @@ function normalizeAdviceText(text: string) {
 }
 
 function repoFile(path: string) {
-  return readFileSync(join(process.cwd(), path), "utf8");
+  return readFileSync(join(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 }
 
 const tests: TestCase[] = [
@@ -6798,6 +6798,45 @@ const tests: TestCase[] = [
       assert.equal(migration.includes("revoke all on table public.farmmate_pilot_feedback from anon"), true);
       assert.equal(migration.includes("grant all on table public.farmmate_pilot_feedback to service_role"), true);
       assert.equal(migration.includes("Feedback is submitted server-side only"), true);
+    }
+  },
+  {
+    name: "FarmMate pilot feedback hardening removes public grants only",
+    run: () => {
+      const migration = repoFile(
+        "supabase/migrations/20260721223536_harden_farmmate_feedback_privileges.sql"
+      ).toLowerCase();
+      const verification = repoFile("supabase/review/verify_farmmate_feedback_privileges.sql").toLowerCase();
+      const route = repoFile("src/app/api/farmmate/feedback/route.ts");
+      const helper = repoFile("src/lib/farmmate/pilot-feedback.ts");
+      const form = repoFile("src/components/FarmMatePilotFeedbackForm.tsx");
+
+      assert.equal(migration.includes("revoke all privileges on table public.farmmate_pilot_feedback from anon"), true);
+      assert.equal(
+        migration.includes("revoke all privileges on table public.farmmate_pilot_feedback from authenticated"),
+        true
+      );
+      assert.equal(
+        migration.includes("grant all privileges on table public.farmmate_pilot_feedback to service_role"),
+        true
+      );
+      assert.equal(migration.includes("drop table"), false);
+      assert.equal(migration.includes("alter table"), false);
+      assert.equal(migration.includes("delete from"), false);
+      assert.equal(migration.includes("update public."), false);
+      assert.equal(migration.includes("insert into"), false);
+      assert.deepEqual(Array.from(new Set(migration.match(/public\.[a-z_]+/g) ?? [])), [
+        "public.farmmate_pilot_feedback"
+      ]);
+      assert.equal(verification.includes("anon_has_zero_direct_table_grants"), true);
+      assert.equal(verification.includes("authenticated_has_zero_direct_table_grants"), true);
+      assert.equal(verification.includes("service_role_retains_required_privileges"), true);
+      assert.equal(verification.includes("farmmate_pilot_feedback_row_count"), true);
+      assert.equal(verification.includes("existing_no_policy_state_preserved"), true);
+      assert.equal(route.includes("storeFarmMatePilotFeedback"), true);
+      assert.equal(helper.includes('insertSupabaseRecord("farmmate_pilot_feedback"'), true);
+      assert.equal(form.includes('fetch("/api/farmmate/feedback"'), true);
+      assert.equal(form.includes("farmmate_pilot_feedback"), false);
     }
   },
   {
