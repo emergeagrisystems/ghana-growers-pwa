@@ -3,6 +3,7 @@
 import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, Pause, Send, XCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { adminCountPillClass, adminPrioritySeverity, type AdminPrioritySeverity } from "@/lib/adminPriorityState";
 import { marketplacePriceLine, marketplaceQuantityLine, marketplaceTradeInformation } from "@/lib/marketplace/trade";
 import type { AdminUser } from "@/lib/adminAuth";
 import type { ListingSubmission, SubmissionStatus } from "@/lib/publicSubmissions";
@@ -33,6 +34,13 @@ export function AdminListingSubmissionsWorkspace({
     [activeStatus, submissions]
   );
   const selected = filtered.find((submission) => submission.id === selectedId) ?? filtered[0];
+  const queueSeverity: AdminPrioritySeverity = activeStatus === "Paused"
+    ? "neutral"
+    : adminPrioritySeverity({
+      count: filtered.length,
+      hasDue: ["New", "Needs Information", "Under Review", "Approved"].includes(activeStatus),
+      hasOverdue: activeStatus === "Rejected" || activeStatus === "Expired"
+    });
 
   useEffect(() => {
     void loadSubmissions();
@@ -110,7 +118,7 @@ export function AdminListingSubmissionsWorkspace({
   }
 
   return (
-    <main className="min-h-screen bg-earth-50">
+    <main className="admin-listing-workspace min-h-screen bg-earth-50">
       <section className="border-b border-leaf-900/10 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <Link href="/admin" className="focus-ring inline-flex items-center gap-2 rounded-md text-sm font-black text-leaf-700">
@@ -125,7 +133,7 @@ export function AdminListingSubmissionsWorkspace({
                 Review farmer and supplier product submissions before they become public marketplace listings.
               </p>
             </div>
-            <p className="rounded-md bg-leaf-50 px-3 py-2 text-sm font-bold text-ink/65">
+            <p className="admin-context-panel px-3 py-2 text-sm font-bold text-ink/65">
               Reviewer: {currentAdmin.email}
             </p>
           </div>
@@ -133,15 +141,21 @@ export function AdminListingSubmissionsWorkspace({
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[0.82fr_1.18fr] lg:px-8">
-        <div className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-card">
-          <div className="flex flex-wrap gap-2">
+        <div className="admin-queue-panel p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-wide text-earth-700">Submission queue</p>
+            <span className={adminCountPillClass(queueSeverity)}>
+              <span className="sr-only">Submissions shown: </span>{filtered.length}
+            </span>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
             {(["All", ...statuses] as Array<SubmissionStatus | "All">).map((status) => (
               <button
                 key={status}
                 type="button"
                 onClick={() => setActiveStatus(status)}
-                className={`focus-ring rounded-md px-3 py-2 text-xs font-black transition ${
-                  activeStatus === status ? "bg-leaf-700 text-white" : "bg-leaf-50 text-ink/65 hover:bg-white"
+                className={`admin-nav-item focus-ring rounded-md px-3 py-2 text-xs font-black ${
+                  activeStatus === status ? "admin-nav-item-active" : ""
                 }`}
               >
                 {status}
@@ -150,7 +164,7 @@ export function AdminListingSubmissionsWorkspace({
           </div>
 
           {loading ? <p className="mt-5 text-sm font-semibold text-ink/60">Loading submissions...</p> : null}
-          {error ? <p className="mt-5 rounded-md bg-red-50 p-4 text-sm font-bold text-tomato">{error}</p> : null}
+          {error ? <p className="admin-feedback-error mt-5 p-4 text-sm font-bold">{error}</p> : null}
           <div className="mt-5 grid gap-3">
             {filtered.map((submission) => (
               <button
@@ -158,7 +172,7 @@ export function AdminListingSubmissionsWorkspace({
                 type="button"
                 onClick={() => setSelectedId(submission.id)}
                 className={`focus-ring rounded-md border p-4 text-left transition ${
-                  selected?.id === submission.id ? "border-leaf-700/40 bg-leaf-50 shadow-sm" : "border-leaf-900/10 bg-white hover:border-leaf-700/20"
+                  selected?.id === submission.id ? "admin-selected-row border-leaf-700/40" : "border-leaf-900/10 bg-white hover:border-leaf-700/20"
                 }`}
               >
                 <span className="flex items-start justify-between gap-3">
@@ -175,12 +189,12 @@ export function AdminListingSubmissionsWorkspace({
                 </span>
               </button>
             ))}
-            {!filtered.length && !loading ? <p className="rounded-md bg-leaf-50 p-4 text-sm font-semibold text-ink/60">No submissions in this status.</p> : null}
+            {!filtered.length && !loading ? <p className="admin-empty-state p-4 text-sm font-semibold">No submissions in this status.</p> : null}
           </div>
         </div>
 
         {selected ? (
-          <article className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-card sm:p-5">
+          <article className="admin-panel p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-wide text-earth-700">{selected.submission_reference ?? shortReference(selected.id)}</p>
@@ -190,8 +204,8 @@ export function AdminListingSubmissionsWorkspace({
               <StatusPill status={selected.status} />
             </div>
 
-            {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-sm font-bold text-tomato">{error}</p> : null}
-            {notice ? <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-bold text-leaf-700">{notice}</p> : null}
+            {error ? <p className="admin-feedback-error mt-4 p-3 text-sm font-bold">{error}</p> : null}
+            {notice ? <p className="admin-feedback-success mt-4 p-3 text-sm font-bold">{notice}</p> : null}
 
             <div className="mt-5 grid gap-4 xl:grid-cols-2">
               <ReviewPanel title="Seller details" rows={[
@@ -221,7 +235,7 @@ export function AdminListingSubmissionsWorkspace({
               ]} />
             </div>
 
-            <div className="mt-5 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+            <div className="admin-context-panel mt-5 p-4">
               <h3 className="font-black text-ink">Uploaded photos</h3>
               <AdminSubmissionImages submission={selected} />
               <p className="mt-3 text-xs font-semibold text-ink/50">Pending images are private until an admin approves and publishes the listing.</p>
@@ -242,16 +256,16 @@ export function AdminListingSubmissionsWorkspace({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 rounded-md border border-leaf-900/10 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="admin-panel mt-5 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
               <ActionButton icon={ClipboardCheck} label="Mark Under Review" onClick={() => updateStatus(selected, "Under Review")} />
-              <ActionButton icon={AlertTriangle} label="Request More Information" onClick={() => updateStatus(selected, "Needs Information", "More information requested")} />
-              <ActionButton icon={ClipboardCheck} label="Save Draft" onClick={() => updateStatus(selected, selected.status, "Draft saved")} />
+              <ActionButton tone="warning" icon={AlertTriangle} label="Request More Information" onClick={() => updateStatus(selected, "Needs Information", "More information requested")} />
+              <ActionButton tone="tertiary" icon={ClipboardCheck} label="Save Draft" onClick={() => updateStatus(selected, selected.status, "Draft saved")} />
               <ActionButton icon={CheckCircle2} label="Approve" onClick={() => updateStatus(selected, "Approved")} />
-              <ActionButton icon={Send} label="Approve and Publish" strong onClick={() => publishSubmission(selected)} />
-              <ActionButton icon={Pause} label="Pause" onClick={() => updateStatus(selected, "Paused")} />
-              <ActionButton icon={XCircle} label="Reject" onClick={() => updateStatus(selected, "Rejected")} />
-              <ActionButton icon={AlertTriangle} label="Mark Sold Out" onClick={() => updateStatus(selected, "Paused", "Marked sold out for inventory V1")} />
-              <ActionButton icon={XCircle} label="Expire" onClick={() => updateStatus(selected, "Expired")} />
+              <ActionButton tone="primary" icon={Send} label="Approve and Publish" onClick={() => publishSubmission(selected)} />
+              <ActionButton tone="warning" icon={Pause} label="Pause" onClick={() => updateStatus(selected, "Paused")} />
+              <ActionButton tone="destructive" icon={XCircle} label="Reject" onClick={() => updateStatus(selected, "Rejected")} />
+              <ActionButton tone="warning" icon={AlertTriangle} label="Mark Sold Out" onClick={() => updateStatus(selected, "Paused", "Marked sold out for inventory V1")} />
+              <ActionButton tone="destructive" icon={XCircle} label="Expire" onClick={() => updateStatus(selected, "Expired")} />
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -270,7 +284,19 @@ function shortReference(id: string) {
 }
 
 function StatusPill({ status }: { status: SubmissionStatus }) {
-  return <span className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800 ring-1 ring-leaf-700/15">{status}</span>;
+  const tone = status === "New"
+    ? "admin-status-pending"
+    : status === "Needs Information"
+      ? "admin-status-contacted"
+      : status === "Under Review"
+        ? "admin-status-active"
+        : status === "Approved" || status === "Published" || status === "Converted"
+          ? "admin-status-complete"
+          : status === "Paused" || status === "Expired"
+            ? "admin-status-paused"
+            : "admin-status-danger";
+
+  return <span className={`admin-status-badge ${tone}`}>{status}</span>;
 }
 
 function AdminSubmissionImages({ submission }: { submission: ListingSubmission }) {
@@ -301,7 +327,7 @@ function AdminSubmissionImages({ submission }: { submission: ListingSubmission }
 
 function ReviewPanel({ title, rows }: { title: string; rows: Array<[string, string]> }) {
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+    <section className="admin-context-panel p-4">
       <h3 className="font-black text-ink">{title}</h3>
       <div className="mt-3 grid gap-2">
         {rows.map(([label, value]) => (
@@ -373,14 +399,22 @@ function missingWarnings(submission: ListingSubmission) {
   ].filter(Boolean);
 }
 
-function ActionButton({ icon: Icon, label, onClick, strong = false }: { icon: LucideIcon; label: string; onClick: () => void; strong?: boolean }) {
+function ActionButton({
+  icon: Icon,
+  label,
+  onClick,
+  tone = "secondary"
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  tone?: "primary" | "secondary" | "tertiary" | "warning" | "destructive";
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-black transition ${
-        strong ? "bg-leaf-700 text-white hover:bg-leaf-900" : "bg-leaf-50 text-ink/70 ring-1 ring-leaf-900/10 hover:bg-white"
-      }`}
+      className={`admin-action-${tone} focus-ring gap-2 px-3 text-xs`}
     >
       <Icon size={16} aria-hidden="true" />
       {label}
@@ -392,7 +426,7 @@ function PreviewCard({ submission, kind }: { submission: ListingSubmission; kind
   const product = submissionAsProduct(submission);
 
   return (
-    <section className="rounded-md border border-leaf-900/10 bg-white p-4">
+    <section className="admin-panel p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-black text-ink">Public {kind === "card" ? "card" : "detail"} preview</h3>
         <ExternalLink size={16} className="text-ink/35" aria-hidden="true" />
