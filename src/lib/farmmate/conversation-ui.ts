@@ -1,4 +1,5 @@
 import type { FarmMateLocalResponseCard } from "./ai";
+import type { FarmMateBrainResponse } from "./decision-engine";
 import type { WeatherDecisionSummary } from "./weather";
 import { weatherDecisionRainChanceBand } from "./weather-decision-specialist";
 
@@ -53,6 +54,47 @@ export function shouldRenderLocalFarmMateGuidance(state: AskFarmMateResponseStat
   }
 
   return state.localCards.length > 0 && Boolean(state.aiFallbackMessage.trim());
+}
+
+function brainSection(response: FarmMateBrainResponse, title: string) {
+  return response.sections.find((section) => section.title === title)?.body.map((line) => line.trim()).filter(Boolean) ?? [];
+}
+
+export function generalAgronomyRecommendationCards(response: FarmMateBrainResponse): FarmMateLocalResponseCard[] | null {
+  if (!response.flow?.id.startsWith("general-agronomy-")) {
+    return null;
+  }
+
+  const checks = brainSection(response, "What to check").slice(0, 2);
+  const cards: FarmMateLocalResponseCard[] = [
+    {
+      title: "What I think",
+      body: brainSection(response, "Direct answer").slice(0, 1)
+    },
+    {
+      title: "What to do now",
+      body: brainSection(response, "Recommended action").slice(0, 3)
+    }
+  ];
+
+  if (checks.length) {
+    cards.push({ title: "What to check", body: checks });
+  }
+
+  cards.push({
+    title: "Next step",
+    body: brainSection(response, "Next Best Action").slice(0, 1)
+  });
+
+  return cards;
+}
+
+export function shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response: FarmMateBrainResponse | null, showRecommendation: boolean) {
+  return Boolean(
+    !showRecommendation &&
+      response?.flow?.id.startsWith("general-agronomy-") &&
+      response.flow.followUpQuestions.length > 0
+  );
 }
 
 export function compactFollowUpSummary(answers: Array<{ answer: string }>) {

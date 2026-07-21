@@ -6,8 +6,13 @@ function normalizeQuestion(question: string) {
   return question.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
+function keywordMatches(normalizedQuestion: string, keyword: string) {
+  const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`(?:^|\\b)${escapedKeyword}(?:\\b|$)`).test(normalizedQuestion);
+}
+
 function matchedKeywordsForRule(normalizedQuestion: string, rule: RouterRule) {
-  return rule.keywords.filter((keyword) => normalizedQuestion.includes(keyword));
+  return rule.keywords.filter((keyword) => keywordMatches(normalizedQuestion, keyword));
 }
 
 function confidenceFromMatches(matchCount: number): RouterConfidence {

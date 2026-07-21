@@ -46,6 +46,15 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
     return true;
   }
 
+  const isGeneralAgronomy =
+    input.brain.routerResult?.selectedSpecialist === "general_agronomy" || input.brain.flow?.id.startsWith("general-agronomy-");
+
+  if (isGeneralAgronomy) {
+    return !["What I think", "What to do now", "Next step"].every((heading) =>
+      new RegExp(`(?:^|\\n)\\s*(?:#+\\s*)?${heading}\\s*:`, "i").test(trimmed)
+    );
+  }
+
   const isWeatherDecision =
     input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions";
 
@@ -86,8 +95,9 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       ? findGeneralAgronomyGuidance(input.farmerQuestion, Boolean(crop))
       : null;
   const payload = {
-    instruction:
-      "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
+    instruction: generalAgronomyContext
+      ? "Rewrite the local FarmMate Brain response using the exact headings What I think:, What to do now:, optional What to check:, and Next step:. Keep at most three actions, two checks, and one next step. Preserve the approved local guidance and do not add unsupported facts."
+      : "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
     farmerQuestion: input.farmerQuestion,
     detectedIntent: input.brain.intent,
     crop,
@@ -159,12 +169,12 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
           handles: generalAgronomyCoverage,
           reasoningOrder: generalAgronomyReasoningOrder,
           opening: generalAgronomyContext.opening,
-          checks: generalAgronomyContext.checks,
-          actions: generalAgronomyContext.actions,
+          checks: generalAgronomyContext.checks.slice(0, 2),
+          actions: generalAgronomyContext.actions.slice(0, 3),
           sustainabilityNotes: generalAgronomyContext.sustainabilityNotes,
           nextBestAction: generalAgronomyContext.nextBestAction,
           unknownCropRule: GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
-          farmerScaleLanguageRule: "Use field, plot, crop, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language. Never use pot, indoor plant, houseplant, decorative plant or balcony garden language.",
+          farmerScaleLanguageRule: "Use field, plot, crop, seedbed, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language. Never use pot, indoor plant, houseplant, decorative plant, balcony or garden hobby language.",
           noUnsupportedClaimsRule: "Do not invent local crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages. Do not pretend certainty about an unknown plant."
         }
       : null,
@@ -190,6 +200,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For harvest and post-harvest decisions, protect quality with shade, sorting, ventilation and clean containers where possible.",
       "For general agronomy, use farmer-scale field language and avoid home gardening language.",
       "For general agronomy, do not invent crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages.",
+      "For general agronomy, use the exact headings What I think:, What to do now:, optional What to check:, and Next step:.",
+      "For general agronomy, include no more than three actions, no more than two checks, and exactly one next step.",
+      "For general agronomy, give useful general guidance before asking one useful follow-up question.",
+      "When general agronomy crop-specific detail is missing, say: \"This depends on the crop, but the general rule is...\" and continue with approved general guidance.",
       "For an unknown plant or crop, say crop-specific guidance is limited, continue with general farming principles, and ask one useful question or suggest Crop Doctor.",
       "For cassava storage, if the farmer says cassava is not harvested yet, do not frame the answer as harvested-root storage. Tell them to leave cassava in the ground until needed, plan shade or transport, and harvest only what can be moved soon.",
       "If information is still missing, ask one clear follow-up question.",

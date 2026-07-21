@@ -687,7 +687,7 @@ function generalAgronomyContextLines(question: string, flow: DecisionFlow | unde
 
   const guidance = findGeneralAgronomyGuidance(question, Boolean(resolvedCrop));
 
-  return guidance?.checks.slice(0, 3) ?? flow.possibleCauses.slice(0, 3);
+  return guidance?.checks.slice(0, 2) ?? flow.possibleCauses.slice(0, 2);
 }
 
 function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
@@ -764,6 +764,13 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const harvestPostHarvestContext = harvestPostHarvestContextLines(flow, resolvedCrop);
   const generalAgronomyContext = generalAgronomyContextLines(question, flow, resolvedCrop);
   const generalAgronomyGuidance = isGeneralAgronomyFlow ? findGeneralAgronomyGuidance(question, Boolean(resolvedCrop)) : undefined;
+  const generalAgronomyDirectAnswer =
+    isGeneralAgronomyFlow &&
+    !resolvedCrop &&
+    generalAgronomyGuidance?.task !== "unknown-crop" &&
+    generalAgronomyGuidance?.task !== "plant-identification"
+      ? `This depends on the crop, but the general rule is: ${flow.recommendation.summary}`
+      : flow.recommendation.summary;
 
   return {
     intent,
@@ -783,7 +790,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
           ...(isWeatherFlow ? [weatherOpeningForQuestion(question)] : []),
           ...(isPlantingFlow ? [plantingAdvisorOpeningForQuestion(question)] : []),
           ...(isHarvestFlow ? [harvestPostHarvestOpeningForQuestion(question)] : []),
-          flow.recommendation.summary,
+          generalAgronomyDirectAnswer,
           isLowerConfidence
             ? isPlantingFlow
               ? "I need a little more planting context before giving firm timing advice."
@@ -805,7 +812,9 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "What to check",
-        body: isLowerConfidence
+        body: isGeneralAgronomyFlow
+          ? flow.recommendation.reasoning.map((step) => step.observation).slice(0, 2)
+          : isLowerConfidence
           ? flow.followUpQuestions.map((followUp) => followUp.question)
           : flow.recommendation.reasoning.map((step) => step.observation)
       },
@@ -846,7 +855,13 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "Next Best Action",
-        body: [farmerSafeLine(`${flow.recommendation.nextBestAction.label}: ${flow.recommendation.nextBestAction.instruction}`)]
+        body: [
+          farmerSafeLine(
+            isGeneralAgronomyFlow
+              ? flow.recommendation.nextBestAction.instruction
+              : `${flow.recommendation.nextBestAction.label}: ${flow.recommendation.nextBestAction.instruction}`
+          )
+        ]
       }
     ]
   };

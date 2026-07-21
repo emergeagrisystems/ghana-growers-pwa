@@ -44,6 +44,10 @@ Route checks:
 - Routes broad seed, nursery, seedling, soil, weed, intercropping, rotation, pruning and plant-identification questions to General Agronomy.
 - Continues with cautious general farming principles when a crop is not yet in the Knowledge Engine.
 - Uses farmer-scale field language and avoids home gardening language.
+- Structures General Agronomy recommendations as `What I think`, `What to do now`, optional `What to check`, and `Next step`.
+- Gives useful General Agronomy guidance before asking one useful follow-up question.
+- Limits General Agronomy answers to three actions, two useful checks, and one next step.
+- Uses practical field language for advanced farmer questions rather than long theory.
 
 ### Crop Doctor Vision
 
@@ -85,8 +89,11 @@ Route checks:
 | How do I harden seedlings before transplanting? | General Agronomy |
 | Can I intercrop maize with cowpea? | General Agronomy |
 | How do I improve seed germination? | General Agronomy |
+| Why are my seedlings leggy? | General Agronomy |
 | How do I manage weeds before planting? | General Agronomy |
 | How do I improve soil structure? | General Agronomy |
+| How do I improve drainage in waterlogged soil? | General Agronomy |
+| How should I prune pepper? | General Agronomy |
 | What plant is this? | General Agronomy to Crop Doctor handoff |
 | When should I harvest maize? | Harvest and Post-Harvest |
 | How do I store cassava? | Harvest and Post-Harvest |

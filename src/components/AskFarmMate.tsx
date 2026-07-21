@@ -11,8 +11,10 @@ import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
   farmMateFallbackMessage,
+  generalAgronomyRecommendationCards,
   harvestPostHarvestGuidedRecommendationCards,
   shouldCompleteWeatherGuidedFlow,
+  shouldShowGeneralAgronomyGuidanceBeforeFollowUp,
   shouldRenderLocalFarmMateGuidance,
   weatherGuidedRecommendationCards
 } from "@/lib/farmmate/conversation-ui";
@@ -317,6 +319,13 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
     return weatherIntro;
   }
 
+  if (!showRecommendation && response?.flow?.id.startsWith("general-agronomy-") && response.flow.followUpQuestions.length > 0) {
+    return {
+      lead: "",
+      detail: ""
+    };
+  }
+
   if (response?.flow?.id === "general-agronomy-unknown-crop") {
     return {
       lead: GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE,
@@ -331,6 +340,15 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
 }
 
 function localRecommendationCards(response: FarmMateBrainResponse, answers: FollowUpAnswer[]): FarmMateLocalResponseCard[] {
+  const generalAgronomyCards = generalAgronomyRecommendationCards(response);
+
+  if (generalAgronomyCards) {
+    return generalAgronomyCards.map((card) => ({
+      ...card,
+      body: conciseLines(card.body, card.title === "What to check" ? 2 : card.title === "Next step" || card.title === "What I think" ? 1 : 3)
+    }));
+  }
+
   const weatherCards = weatherGuidedRecommendationCards(response.flow?.id, answers, response.weatherContext);
 
   if (weatherCards) {
@@ -627,7 +645,10 @@ export function AskFarmMate({
         cropDoctorContext: handoffContext ?? undefined,
         weatherContext: routerResult.selectedSpecialist === "weather_decision" ? storedWeatherContextForFarmMate() : undefined
       });
-      const shouldShowRecommendation = farmMateResponse.confidence === "high" || !farmMateResponse.flow;
+      const shouldGiveGuidanceBeforeGeneralFollowUp = Boolean(
+        farmMateResponse.flow?.id.startsWith("general-agronomy-") && farmMateResponse.flow.followUpQuestions.length > 0
+      );
+      const shouldShowRecommendation = (farmMateResponse.confidence === "high" || !farmMateResponse.flow) && !shouldGiveGuidanceBeforeGeneralFollowUp;
 
       logBrainContext(trimmedQuestion, farmMateResponse);
       setResponse(farmMateResponse);
@@ -697,6 +718,7 @@ export function AskFarmMate({
 
   const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
   const intro = responseIntro(localCards, showRecommendation, response);
+  const shouldShowGeneralGuidanceBeforeFollowUp = shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response, showRecommendation);
   const shouldShowLocalGuidance = shouldRenderLocalFarmMateGuidance({
     isGeneratingNaturalAnswer,
     naturalAnswer,
@@ -783,6 +805,23 @@ export function AskFarmMate({
               <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
                 {intro.lead ? <p>{intro.lead}</p> : null}
                 {intro.detail ? <p className={intro.lead ? "mt-2" : ""}>{intro.detail}</p> : null}
+              </div>
+            ) : null}
+
+            {shouldShowGeneralGuidanceBeforeFollowUp ? (
+              <div className="space-y-3">
+                {recommendationCards.map((card) => (
+                  <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
+                    <h3 className="text-sm font-black text-ink">{card.title}</h3>
+                    <div className="mt-2 space-y-1">
+                      {card.body.map((line) => (
+                        <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  </section>
+                ))}
               </div>
             ) : null}
 

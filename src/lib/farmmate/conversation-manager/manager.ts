@@ -40,14 +40,24 @@ const topicRules: TopicRule[] = [
       "seedling hardening",
       "harden seedlings",
       "harden",
+      "leggy seedlings",
+      "leggy seedling",
+      "tall weak seedlings",
       "seedling",
+      "seedlings",
       "transplant shock",
       "intercropping",
       "intercrop",
       "crop rotation",
+      "rotate",
       "mulching",
       "soil structure",
       "drainage",
+      "poor drainage",
+      "waterlogged soil",
+      "waterlogged field",
+      "waterlogging",
+      "standing water",
       "weed control",
       "manage weeds",
       "weeds",
@@ -57,6 +67,8 @@ const topicRules: TopicRule[] = [
       "cover crop",
       "legumes",
       "identify plant",
+      "identify this plant",
+      "what is this plant",
       "what plant is this",
       "unknown crop",
       "general farming",
@@ -152,12 +164,17 @@ function normalizeMessage(message: string) {
   return message.toLowerCase().replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function topicKeywordMatches(normalizedMessage: string, keyword: string) {
+  const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`(?:^|\\b)${escapedKeyword}(?:\\b|$)`).test(normalizedMessage);
+}
+
 function detectTopic(message: string) {
   const normalized = normalizeMessage(message);
   const matches = topicRules
     .map((rule) => ({
       rule,
-      matchedKeywords: rule.keywords.filter((keyword) => normalized.includes(keyword))
+      matchedKeywords: rule.keywords.filter((keyword) => topicKeywordMatches(normalized, keyword))
     }))
     .filter((match) => match.matchedKeywords.length > 0)
     .sort((a, b) => b.matchedKeywords.length - a.matchedKeywords.length);

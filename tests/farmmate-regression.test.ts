@@ -7,8 +7,10 @@ import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
   farmMateFallbackMessage,
+  generalAgronomyRecommendationCards,
   harvestPostHarvestGuidedRecommendationCards,
   shouldCompleteWeatherGuidedFlow,
+  shouldShowGeneralAgronomyGuidanceBeforeFollowUp,
   shouldRenderLocalFarmMateGuidance,
   weatherGuidedRecommendationCards
 } from "../src/lib/farmmate/conversation-ui";
@@ -4269,13 +4271,118 @@ const tests: TestCase[] = [
 
       [hardening, intercropping, germination, weeds, soil, identification].forEach((response) => {
         assert.equal((response.flow?.followUpQuestions.length ?? 0) <= 1, true);
-        assert.equal((response.sections.find((section) => section.title === "What to check")?.body.length ?? 0) <= 3, true);
+        assert.equal((response.sections.find((section) => section.title === "What to check")?.body.length ?? 0) <= 2, true);
         assert.equal((response.sections.find((section) => section.title === "Recommended action")?.body.length ?? 0) <= 3, true);
         assert.equal(response.sections.filter((section) => section.title === "Next Best Action").length, 1);
         assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
       });
 
       assert.equal(generalAgronomyDecisionFlows.some((flow) => flow.id === "general-agronomy-seedling-hardening"), true);
+    }
+  },
+  {
+    name: "General Agronomy final answers use the structured farmer format",
+    run: () => {
+      const questions = ["How do I improve seed germination?", "How do I harden seedlings before transplanting?"];
+
+      questions.forEach((question) => {
+        const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+        const cards = generalAgronomyRecommendationCards(response);
+
+        assert.deepEqual(cards?.map((card) => card.title), ["What I think", "What to do now", "What to check", "Next step"]);
+        assert.equal(cards?.find((card) => card.title === "What I think")?.body.length, 1);
+        assert.equal((cards?.find((card) => card.title === "What to do now")?.body.length ?? 0) <= 3, true);
+        assert.equal((cards?.find((card) => card.title === "What to check")?.body.length ?? 0) <= 2, true);
+        assert.equal(cards?.find((card) => card.title === "Next step")?.body.length, 1);
+      });
+    }
+  },
+  {
+    name: "seed germination gives useful guidance before asking the crop",
+    run: () => {
+      const question = "How do I improve seed germination?";
+      const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+      const cards = generalAgronomyRecommendationCards(response) ?? [];
+      const guidance = cards.flatMap((card) => card.body).join(" ").toLowerCase();
+      const followUp = response.flow?.followUpQuestions[0];
+      const askFarmMateSource = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(guidance.includes("clean, undamaged seed"), true);
+      assert.equal(guidance.includes("test a small sample"), true);
+      assert.equal(guidance.includes("whole plot"), true);
+      assert.equal(guidance.includes("fine, moist, well-drained soil"), true);
+      assert.equal(guidance.includes("do not plant too deep"), true);
+      assert.equal(guidance.includes("leave seed exposed"), true);
+      assert.equal(guidance.includes("moisture steady without flooding"), true);
+      assert.equal(guidance.includes("gaps after emergence"), true);
+      assert.equal(followUp?.question, "What crop are you planting?");
+      assert.deepEqual(followUp?.options, ["Maize", "Tomato", "Pepper", "Okra", "Onion", "Watermelon", "Other crop"]);
+      assert.equal(shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response, false), true);
+      assert.equal(guidance.includes("what crop are you planting"), false);
+      assert.equal(askFarmMateSource.indexOf("{shouldShowGeneralGuidanceBeforeFollowUp ?") < askFarmMateSource.indexOf("{!showRecommendation && currentFollowUp ?"), true);
+    }
+  },
+  {
+    name: "seedling hardening guidance covers gradual field preparation",
+    run: () => {
+      const question = "How do I harden seedlings before transplanting?";
+      const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+      const cards = generalAgronomyRecommendationCards(response) ?? [];
+      const guidance = cards.flatMap((card) => card.body).join(" ").toLowerCase();
+      const nextStep = cards.find((card) => card.title === "Next step")?.body.join(" ") ?? "";
+
+      ["gradually over several days", "morning sun", "airflow", "increase exposure slowly", "reduce watering slightly", "do not let seedlings wilt", "avoid sudden full hot sun", "cool hours", "late afternoon or cloudy weather", "water the root zone"].forEach(
+        (detail) => assert.equal(guidance.includes(detail), true, detail)
+      );
+      assert.equal(nextStep, "Start with morning sun and airflow today, then increase exposure gradually before transplanting.");
+      assert.equal(nextStep.toLowerCase().includes("extra morning sun today"), false);
+    }
+  },
+  {
+    name: "common General Agronomy questions select practical local flows",
+    run: () => {
+      const cases = [
+        ["How do I reduce tomato transplant shock?", "general-agronomy-transplant-shock"],
+        ["Why are my seedlings leggy?", "general-agronomy-leggy-seedlings"],
+        ["How do I manage weeds before planting?", "general-agronomy-weed-management"],
+        ["How do I improve soil structure before planting maize?", "general-agronomy-soil-structure"],
+        ["How do I improve drainage in waterlogged soil?", "general-agronomy-drainage"],
+        ["How should I prune pepper?", "general-agronomy-pepper-pruning"],
+        ["Can I rotate maize with cowpea?", "general-agronomy-crop-rotation"],
+        ["What are good compost use practices?", "general-agronomy-mulching-compost"],
+        ["Can you identify this unknown plant?", "general-agronomy-plant-identification"]
+      ] as const;
+
+      cases.forEach(([question, flowId]) => {
+        const router = routeFarmMateQuestion(question);
+        const response = buildFarmMateResponse(question, router);
+
+        assert.equal(router.selectedSpecialist, "general_agronomy", question);
+        assert.equal(response.flow?.id, flowId, question);
+      });
+    }
+  },
+  {
+    name: "General Agronomy answers keep farmer language and unsupported claims out",
+    run: () => {
+      const questions = [
+        "How do I improve seed germination?",
+        "How do I harden seedlings before transplanting?",
+        "Why are my seedlings leggy?",
+        "Can I intercrop maize with cowpea?",
+        "How do I improve drainage in waterlogged soil?",
+        "How should I prune pepper?"
+      ];
+      const combined = questions
+        .map((question) => generalAgronomyRecommendationCards(buildFarmMateResponse(question, routeFarmMateQuestion(question))) ?? [])
+        .flat()
+        .flatMap((card) => card.body)
+        .join(" ")
+        .toLowerCase();
+
+      assert.equal(/\bpot\b|houseplant|indoor plant|balcony|decorative plant|garden hobby/.test(combined), false);
+      assert.equal(/\b\d+(?:\.\d+)?\s*(?:kg|g|ml|litres?|liters?|bags?|grams?)\b/.test(combined), false);
+      assert.equal(/market price|buyer demand|guaranteed (?:yield|profit)/.test(combined), false);
     }
   },
   {
@@ -4325,7 +4432,9 @@ const tests: TestCase[] = [
       const payload = JSON.parse(
         buildFarmMateVoiceLayerInput({ farmerQuestion, brain, farmerAnswers: [], localStructuredResponse: [] })
       ) as {
+        instruction?: string;
         selectedSpecialist?: string;
+        responseRules?: string[];
         specialistContext?: {
           specialist?: string;
           task?: string;
@@ -4340,11 +4449,41 @@ const tests: TestCase[] = [
       assert.equal(payload.selectedSpecialist, "general_agronomy");
       assert.equal(payload.specialistContext?.specialist, "general_agronomy");
       assert.equal(payload.specialistContext?.task, "seed-germination");
-      assert.equal(payload.specialistContext?.checks?.length, 3);
+      assert.equal(payload.specialistContext?.checks?.length, 2);
       assert.equal(payload.specialistContext?.actions?.length, 3);
       assert.equal(payload.specialistContext?.unknownCropRule, GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE);
       assert.equal(payload.specialistContext?.farmerScaleLanguageRule?.includes("houseplant"), true);
       assert.equal(payload.specialistContext?.noUnsupportedClaimsRule?.includes("guaranteed yields"), true);
+      assert.equal(payload.instruction?.includes("What I think:"), true);
+      assert.equal(payload.responseRules?.some((rule) => rule.includes("no more than three actions")), true);
+      assert.equal(payload.responseRules?.some((rule) => rule.includes("useful general guidance before asking")), true);
+      assert.equal(payload.responseRules?.some((rule) => rule.includes("This depends on the crop, but the general rule is")), true);
+
+      const aiInput = { farmerQuestion, brain, farmerAnswers: [], localStructuredResponse: generalAgronomyRecommendationCards(brain) ?? [] };
+      assert.equal(isLikelyIncompleteFarmMateAnswer("Use clean seed and keep the soil moist.", aiInput), true);
+      assert.equal(
+        isLikelyIncompleteFarmMateAnswer(
+          "What I think: Good seed and moisture support germination.\n\nWhat to do now: Test a small sample.\n\nWhat to check: Check drainage.\n\nNext step: Check the seedbed today.",
+          aiInput
+        ),
+        false
+      );
+    }
+  },
+  {
+    name: "General Agronomy documentation records structured answer quality",
+    run: () => {
+      const specialistDocs = repoFile("docs/FARMMATE_SPECIALISTS.md");
+      const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md");
+
+      [specialistDocs, launchQa].forEach((document) => {
+        assert.equal(document.includes("What I think"), true);
+        assert.equal(document.includes("What to do now"), true);
+        assert.equal(document.includes("What to check"), true);
+        assert.equal(document.includes("Next step"), true);
+        assert.equal(document.toLowerCase().includes("useful") && document.toLowerCase().includes("before") && document.toLowerCase().includes("follow-up"), true);
+        assert.equal(document.toLowerCase().includes("practical field"), true);
+      });
     }
   },
   {

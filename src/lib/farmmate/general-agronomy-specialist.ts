@@ -2,6 +2,7 @@ import type { DecisionFlow, FollowUpQuestion } from "./decision-engine/types";
 
 export type GeneralAgronomyTask =
   | "seedling-hardening"
+  | "leggy-seedlings"
   | "intercropping"
   | "seed-germination"
   | "weed-management"
@@ -12,6 +13,7 @@ export type GeneralAgronomyTask =
   | "crop-rotation"
   | "mulching-compost"
   | "drainage"
+  | "pepper-pruning"
   | "pruning-sanitation"
   | "plant-stress"
   | "cover-crops-legumes"
@@ -49,6 +51,7 @@ export const generalAgronomyCoverage = [
   "seed germination",
   "nursery management",
   "seedling hardening",
+  "leggy seedlings",
   "transplant shock",
   "intercropping",
   "crop rotation",
@@ -73,11 +76,29 @@ export const generalAgronomyGuidance: GeneralAgronomyGuidance[] = [
   {
     task: "seedling-hardening",
     question: "How do I harden seedlings before transplanting?",
-    opening: "Harden seedlings gradually so field sun, wind and moisture changes do not shock them.",
-    checks: ["Seedlings are healthy and not overcrowded.", "The nursery has shade that can be reduced gradually.", "The field is moist and ready for transplanting."],
-    actions: ["Over several days, give seedlings a little more sun and airflow each day.", "Reduce watering slightly but do not let seedlings wilt.", "Transplant in cool hours into moist, well-drained soil."],
+    opening: "Harden seedlings gradually over several days so sudden field sun, wind and moisture changes do not shock them.",
+    checks: ["Seedlings are healthy, upright and not overcrowded.", "The field is moist, well drained and ready for transplanting."],
+    actions: [
+      "Start with morning sun and airflow, then increase exposure slowly over several days; avoid sudden full hot sun.",
+      "Reduce watering slightly, but do not let seedlings wilt.",
+      "Transplant during cool hours, preferably late afternoon or cloudy weather, then water the root zone gently."
+    ],
     sustainabilityNotes: ["Raise only healthy planting material.", "Use water carefully during hardening.", "Replace weak seedlings before they waste field space."],
-    nextBestAction: "Start by giving the seedlings a short period of extra morning sun today.",
+    nextBestAction: "Start with morning sun and airflow today, then increase exposure gradually before transplanting.",
+    confidence: "high"
+  },
+  {
+    task: "leggy-seedlings",
+    question: "How do I manage leggy seedlings?",
+    opening: "Tall, weak seedlings often need better light, airflow and spacing before they are moved to the field.",
+    checks: ["Seedlings are stretching or leaning towards the light.", "The seedbed is overcrowded, constantly wet or poorly ventilated."],
+    actions: [
+      "Give the seedlings more morning light and airflow gradually, without moving them suddenly into full hot sun.",
+      "Thin or space overcrowded seedlings so each one receives light.",
+      "Keep the seedbed moist but not waterlogged, and avoid adding more feed until growth is sturdier."
+    ],
+    sustainabilityNotes: ["Keep only healthy planting material.", "Use nursery water carefully.", "Correct overcrowding before weak seedlings take field space."],
+    nextBestAction: "Move the seedlings into better morning light and correct overcrowding today.",
     confidence: "high"
   },
   {
@@ -101,12 +122,24 @@ export const generalAgronomyGuidance: GeneralAgronomyGuidance[] = [
   {
     task: "seed-germination",
     question: "How do I improve seed germination?",
-    opening: "Good germination starts with viable seed, even moisture and suitable planting depth.",
-    checks: ["Seed is clean, undamaged and suitable for the season.", "The seedbed is fine, moist and well drained.", "Seed is not planted too deep or left exposed."],
-    actions: ["Test a small sample before planting the whole field when seed quality is uncertain.", "Keep the seed zone evenly moist without flooding it.", "Check emergence early and record where gaps occur."],
+    opening: "Good germination starts with clean, undamaged seed, a fine well-drained seedbed, steady moisture and suitable planting depth.",
+    checks: ["Use clean, undamaged seed.", "Prepare fine, moist, well-drained soil before sowing."],
+    actions: [
+      "Test a small sample before planting the whole plot.",
+      "Do not plant too deep or leave seed exposed.",
+      "Keep moisture steady without flooding, then check for gaps after emergence."
+    ],
     sustainabilityNotes: ["Avoid wasting weak seed.", "Use compost or organic matter to support soil structure where appropriate.", "Protect the seedbed from erosion and standing water."],
-    nextBestAction: "Check seed quality and soil moisture before sowing the full plot.",
-    confidence: "high"
+    nextBestAction: "Test a small sample and check seedbed moisture before sowing the whole plot.",
+    confidence: "high",
+    followUpQuestions: [
+      {
+        id: "general-agronomy-germination-crop",
+        question: "What crop are you planting?",
+        requiredForConfidence: false,
+        options: ["Maize", "Tomato", "Pepper", "Okra", "Onion", "Watermelon", "Other crop"]
+      }
+    ]
   },
   {
     task: "weed-management",
@@ -154,7 +187,7 @@ export const generalAgronomyGuidance: GeneralAgronomyGuidance[] = [
     question: "How do I reduce transplant shock?",
     opening: "Reduce transplant shock by moving hardened seedlings in cool hours and protecting roots from drying.",
     checks: ["Seedlings were hardened before transplanting.", "Roots remain moist and are not badly damaged.", "The field is moist but not waterlogged."],
-    actions: ["Transplant in the cool morning or late afternoon.", "Water the root zone gently after transplanting.", "Give temporary light shade only when field heat is severe and remove it gradually."],
+    actions: ["Keep roots moist and disturb them as little as possible while moving seedlings.", "Transplant in the cool morning or late afternoon, then water the root zone gently.", "Give temporary light shade only when field heat is severe and remove it gradually."],
     sustainabilityNotes: ["Use healthy seedlings.", "Avoid wasting water through flooding.", "Replace only seedlings that do not recover."],
     nextBestAction: "Check soil moisture and root condition before moving more seedlings.",
     confidence: "high"
@@ -187,6 +220,20 @@ export const generalAgronomyGuidance: GeneralAgronomyGuidance[] = [
     actions: ["Open shallow field drains only where water has a safe outlet.", "Use raised beds or ridges for sensitive crops where practical.", "Do not cultivate or apply inputs while the soil is waterlogged."],
     sustainabilityNotes: ["Protect topsoil from erosion.", "Reduce nutrient runoff.", "Keep natural waterways clear of soil and chemicals."],
     nextBestAction: "Mark the places where water remains longest after rain before opening any channel.",
+    confidence: "high"
+  },
+  {
+    task: "pepper-pruning",
+    question: "How should I prune pepper?",
+    opening: "Prune pepper lightly to remove damaged or diseased growth without stripping healthy leaves that support flowering and fruiting.",
+    checks: ["Pepper plants are established and not badly wilted or water-stressed.", "Tools are clean and the leaves or shoots to remove are clearly damaged, diseased or touching the soil."],
+    actions: [
+      "Use clean, sharp tools and remove damaged, diseased or soil-touching lower growth first.",
+      "Avoid heavy pruning or removing many healthy leaves, flowers or fruiting shoots at once.",
+      "Take diseased material away from healthy pepper plants and clean tools before moving along the row."
+    ],
+    sustainabilityNotes: ["Avoid unnecessary plant injury.", "Reduce disease spread between pepper plants.", "Compost removed material only when it is safe and disease free."],
+    nextBestAction: "Clean the pruning tool and start with only damaged or soil-touching lower growth.",
     confidence: "high"
   },
   {
@@ -266,17 +313,28 @@ function normalizeGeneralAgronomyQuestion(question: string) {
 export function generalAgronomyTaskFromQuestion(question: string, hasKnownCrop = false): GeneralAgronomyTask {
   const normalized = normalizeGeneralAgronomyQuestion(question);
 
-  if (normalized.includes("what plant is this") || normalized.includes("identify plant") || normalized.includes("plant identification")) return "plant-identification";
+  if (
+    normalized.includes("what plant is this") ||
+    normalized.includes("what is this plant") ||
+    normalized.includes("identify plant") ||
+    normalized.includes("identify this plant") ||
+    normalized.includes("identify an unknown plant") ||
+    /\bidentify\b.*\bplant\b/.test(normalized) ||
+    normalized.includes("plant identification")
+  )
+    return "plant-identification";
   if (normalized.includes("harden") || normalized.includes("hardening")) return "seedling-hardening";
+  if (/\bleggy\b.*\bseedlings?\b/.test(normalized) || /\bseedlings?\b.*\bleggy\b/.test(normalized) || normalized.includes("tall weak seedling")) return "leggy-seedlings";
   if (normalized.includes("intercrop") || normalized.includes("intercropping")) return "intercropping";
   if (normalized.includes("germination") || normalized.includes("germinate")) return "seed-germination";
   if (normalized.includes("weed")) return "weed-management";
   if (normalized.includes("soil structure")) return "soil-structure";
   if (normalized.includes("transplant shock")) return "transplant-shock";
   if (normalized.includes("nursery")) return "nursery-management";
-  if (normalized.includes("crop rotation") || normalized.includes("rotate crops")) return "crop-rotation";
-  if (normalized.includes("mulch") || normalized.includes("compost use")) return "mulching-compost";
-  if (normalized.includes("drainage") || normalized.includes("waterlogged field")) return "drainage";
+  if (normalized.includes("crop rotation") || normalized.includes("rotate crops") || /\brotate\b/.test(normalized)) return "crop-rotation";
+  if (normalized.includes("mulch") || normalized.includes("compost use") || normalized.includes("use compost")) return "mulching-compost";
+  if (normalized.includes("drainage") || normalized.includes("poor drainage") || normalized.includes("waterlog") || normalized.includes("standing water")) return "drainage";
+  if (normalized.includes("pepper") && (normalized.includes("pruning") || normalized.includes("prune"))) return "pepper-pruning";
   if (normalized.includes("pruning") || normalized.includes("prune") || normalized.includes("farm sanitation") || normalized.includes("field sanitation")) return "pruning-sanitation";
   if (normalized.includes("plant stress") || normalized.includes("stressed plants")) return "plant-stress";
   if (normalized.includes("cover crop") || normalized.includes("legume")) return "cover-crops-legumes";
@@ -300,7 +358,7 @@ function generalAgronomyFlowFromGuidance(guidance: GeneralAgronomyGuidance): Dec
     id: `general-agronomy-${guidance.task}`,
     question: guidance.question,
     intent: "crop-planning",
-    possibleCauses: guidance.checks.slice(0, 3),
+    possibleCauses: guidance.checks.slice(0, 2),
     requiredInformation: {
       farmPracticeContext: generalAgronomyReasoningOrder.slice(0, 5)
     },
@@ -308,7 +366,7 @@ function generalAgronomyFlowFromGuidance(guidance: GeneralAgronomyGuidance): Dec
     recommendation: {
       summary: guidance.opening,
       confidence: guidance.confidence,
-      reasoning: guidance.checks.slice(0, 3).map((check, index) => ({
+      reasoning: guidance.checks.slice(0, 2).map((check, index) => ({
         id: `general-agronomy-${guidance.task}-check-${index + 1}`,
         observation: check,
         interpretation: "This field check helps FarmMate keep the recommendation practical and cautious."
@@ -328,7 +386,7 @@ function generalAgronomyFlowFromGuidance(guidance: GeneralAgronomyGuidance): Dec
         id: `general-agronomy-${guidance.task}-farmer-scale-language`,
         appliesToIntents: ["crop-planning"],
         trigger: "General agronomy guidance is prepared",
-        requiredResponse: "Use field, plot, crop, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language. Avoid home gardening language.",
+        requiredResponse: "Use field, plot, crop, seedbed, seedling, nursery, affected plants, farm, extension officer, soil moisture, drainage and planting material language. Avoid home gardening and garden hobby language.",
         blocksRecommendation: false
       },
       {
