@@ -274,6 +274,14 @@ Safety rules:
 
 ## Launch QA Stabilization
 
+Pilot feedback rules:
+
+- Pilot farmers can rate completed Ask FarmMate and Crop Doctor answers.
+- Wrong Ask FarmMate answers should be captured with the original question and tool context, including the specialist when available.
+- Crop Doctor feedback should capture available selected or detected crop, symptom and result context.
+- Internal confidence, routing and debug data must remain private.
+- Feedback is important during the public pilot because FarmMate is still learning from real farmer use.
+
 Current specialist list:
 - Plant Health
 - Crop Doctor

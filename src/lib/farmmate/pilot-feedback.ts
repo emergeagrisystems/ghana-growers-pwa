@@ -4,9 +4,7 @@ export const farmMatePilotFeedbackSuccessMessage =
   "Thank you for helping improve GG FarmMate. Your feedback will help us make it more useful for farmers.";
 
 export const farmMatePilotFeedbackUnavailableMessage =
-  "Thanks for testing GG FarmMate. Feedback submission is temporarily unavailable. Please send your feedback to Ghana Growers directly.";
-
-export const farmMatePilotFeedbackContactPath = "/contact";
+  "Thanks for testing GG FarmMate. Feedback submission is temporarily unavailable. Please try again later.";
 
 export const farmMatePilotHelpfulnessOptions = [
   { label: "Yes", value: "yes" },

@@ -60,6 +60,14 @@ Route checks:
 - Charges credits only after successful analysis.
 - Keeps Crop Doctor to Ask FarmMate handoff inside structured crop/photo context.
 
+### Pilot Answer Feedback
+
+- Pilot farmers can rate completed Ask FarmMate and Crop Doctor answers as helpful, not clear, or wrong.
+- Ask FarmMate wrong-answer feedback preserves the original question and tool context, including the specialist when available.
+- Crop Doctor feedback preserves available crop, symptom, and result context without exposing internal debug data.
+- Feedback controls appear only after a result exists and remain usable on small mobile screens.
+- Feedback is important during the public pilot because FarmMate is still learning from real farmer use.
+
 ### Crop Calendar
 
 - Local static planning support.

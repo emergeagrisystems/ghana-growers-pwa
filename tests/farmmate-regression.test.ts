@@ -148,6 +148,19 @@ import {
   farmMatePilotWouldUseAgainOptions,
   sanitizeFarmMatePilotFeedback
 } from "../src/lib/farmmate/pilot-feedback";
+import {
+  FARM_MATE_ANSWER_FEEDBACK_PATH,
+  FARM_MATE_ANSWER_FEEDBACK_STORAGE_KEY,
+  FARM_MATE_PILOT_TRUST_NOTE,
+  farmMateAnswerFeedbackFormPrefill,
+  farmMateAnswerFeedbackOptions,
+  farmMateCleanAnswerForCopy,
+  farmMateWrongAnswerReasons,
+  readFarmMatePreparedAnswerFeedback,
+  sanitizeFarmMatePreparedAnswerFeedback,
+  shouldShowFarmMateAnswerFeedback,
+  storeFarmMatePreparedAnswerFeedback
+} from "../src/lib/farmmate/answer-feedback";
 import type { FarmerProfile, Product, SupplierProfile } from "../src/types";
 
 type TestCase = {
@@ -5918,6 +5931,228 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Ask FarmMate completed answers expose rating and copy controls",
+    run: () => {
+      const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
+      const feedbackControl = repoFile("src/components/FarmMateAnswerFeedback.tsx");
+
+      assert.deepEqual(
+        farmMateAnswerFeedbackOptions.map((option) => option.label),
+        ["Helpful", "Not clear", "Wrong answer"]
+      );
+      assert.equal(askFarmMate.includes('prompt="Was this helpful?"'), true);
+      assert.equal(askFarmMate.includes('wrongButtonLabel="Wrong answer"'), true);
+      assert.equal(askFarmMate.includes('tool: "ask_farmmate"'), true);
+      assert.equal(askFarmMate.includes("originalQuestion: askedQuestion || undefined"), true);
+      assert.equal(askFarmMate.includes("specialist: response?.routerResult?.selectedSpecialist"), true);
+      assert.equal(askFarmMate.includes("answerSnippet: farmMateAnswerSnippet(cleanDisplayedAnswer)"), true);
+      assert.equal(feedbackControl.includes("Send more feedback"), true);
+      assert.equal(feedbackControl.includes("Copy answer"), true);
+      assert.equal(
+        FARM_MATE_PILOT_TRUST_NOTE,
+        "FarmMate is a pilot advisor. For serious or spreading crop problems, confirm with an extension officer."
+      );
+      assert.equal(feedbackControl.includes("{FARM_MATE_PILOT_TRUST_NOTE}"), true);
+    }
+  },
+  {
+    name: "Crop Doctor completed results expose contextual rating controls",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(cropDoctor.includes('prompt="Was this crop check helpful?"'), true);
+      assert.equal(cropDoctor.includes('wrongButtonLabel="Wrong crop/problem"'), true);
+      assert.equal(cropDoctor.includes('tool: "crop_doctor"'), true);
+      assert.equal(cropDoctor.includes("selectedCrop: diagnosisHasSelectedCrop ? diagnosis.selectedCrop : undefined"), true);
+      assert.equal(cropDoctor.includes("detectedCrop: diagnosis.cropFromImage ?? undefined"), true);
+      assert.equal(cropDoctor.includes("selectedSymptom: diagnosisSelectedSymptom ?? undefined"), true);
+      assert.equal(cropDoctor.includes("resultType: diagnosis.resultType"), true);
+      assert.equal(cropDoctor.includes("visibleSignsSnippet: farmMateAnswerSnippet(diagnosis.visibleSigns.join(\"; \"))"), true);
+      assert.ok(cropDoctor.indexOf("{hasDiagnosis && diagnosis ?") < cropDoctor.indexOf("<FarmMateAnswerFeedback"));
+    }
+  },
+  {
+    name: "prepared Ask FarmMate feedback keeps question specialist tool and answer context",
+    run: () => {
+      const values = new Map<string, string>();
+      const storage = {
+        setItem(key: string, value: string) {
+          values.set(key, value);
+        },
+        getItem(key: string) {
+          return values.get(key) ?? null;
+        }
+      };
+      const timestamp = "2026-07-21T09:15:00.000Z";
+
+      assert.equal(
+        storeFarmMatePreparedAnswerFeedback(storage, {
+          tool: "ask_farmmate",
+          timestamp,
+          feedbackType: "not_clear",
+          originalQuestion: "Why are my maize leaves yellow?",
+          specialist: "general_agronomy",
+          answerSnippet: "Check moisture and inspect the newest leaves first."
+        }),
+        true
+      );
+
+      const prepared = readFarmMatePreparedAnswerFeedback(storage);
+      assert.ok(prepared);
+      assert.equal(prepared.tool, "ask_farmmate");
+      assert.equal(prepared.timestamp, timestamp);
+      assert.equal(prepared.originalQuestion, "Why are my maize leaves yellow?");
+      assert.equal(prepared.specialist, "general_agronomy");
+      assert.equal(prepared.answerSnippet, "Check moisture and inspect the newest leaves first.");
+      assert.equal(values.has(FARM_MATE_ANSWER_FEEDBACK_STORAGE_KEY), true);
+
+      const prefill = farmMateAnswerFeedbackFormPrefill(prepared);
+      assert.equal(prefill.helpfulness, "partly");
+      assert.equal(prefill.testedFeature.includes("Tool: Ask FarmMate"), true);
+      assert.equal(prefill.testedFeature.includes("Question: Why are my maize leaves yellow?"), true);
+      assert.equal(prefill.testedFeature.includes("Specialist: general_agronomy"), true);
+      assert.equal(prefill.testedFeature.includes("Answer: Check moisture"), true);
+    }
+  },
+  {
+    name: "prepared Crop Doctor feedback keeps crop symptom result and visible-sign context",
+    run: () => {
+      const prepared = sanitizeFarmMatePreparedAnswerFeedback({
+        tool: "crop_doctor",
+        timestamp: "2026-07-21T09:20:00.000Z",
+        feedbackType: "wrong_answer",
+        wrongReason: "wrong_problem",
+        optionalText: "The spots appeared after heavy rain.",
+        selectedCrop: "Tomato",
+        detectedCrop: "Pepper",
+        selectedSymptom: "Leaf spots",
+        resultType: "possible_issue",
+        visibleSignsSnippet: "Brown circular patches on lower leaves"
+      });
+
+      assert.ok(prepared);
+      const prefill = farmMateAnswerFeedbackFormPrefill(prepared);
+      assert.equal(prefill.helpfulness, "not_yet");
+      assert.equal(prefill.mainCrop, "Tomato");
+      assert.equal(prefill.testedFeature.includes("Tool: Crop Doctor"), true);
+      assert.equal(prefill.testedFeature.includes("Rating: Wrong crop/problem"), true);
+      assert.equal(prefill.testedFeature.includes("Selected crop: Tomato"), true);
+      assert.equal(prefill.testedFeature.includes("Detected crop: Pepper"), true);
+      assert.equal(prefill.testedFeature.includes("Selected symptom: Leaf spots"), true);
+      assert.equal(prefill.testedFeature.includes("Result type: possible_issue"), true);
+      assert.equal(prefill.confusion?.includes("What was wrong: Wrong problem"), true);
+      assert.equal(prefill.confusion?.includes("Visible signs: Brown circular patches"), true);
+      assert.equal(prefill.improvement, "The spots appeared after heavy rain.");
+    }
+  },
+  {
+    name: "wrong-answer flow offers simple reasons and optional detail",
+    run: () => {
+      const feedbackControl = repoFile("src/components/FarmMateAnswerFeedback.tsx");
+
+      assert.deepEqual(
+        farmMateWrongAnswerReasons.map((reason) => reason.label),
+        ["Wrong crop", "Wrong problem", "Not enough detail", "Advice not practical", "Other"]
+      );
+      assert.equal(feedbackControl.includes("What was wrong?"), true);
+      assert.equal(feedbackControl.includes('feedbackType === "wrong_answer"'), true);
+      assert.equal(feedbackControl.includes('onClick={() => prepareFeedback("wrong_answer", reason.value)}'), true);
+      assert.equal(feedbackControl.includes("Add a note"), true);
+      assert.equal(feedbackControl.includes("Optional"), true);
+      assert.equal(feedbackControl.includes("event.target.value.slice(0, 400)"), true);
+    }
+  },
+  {
+    name: "copy answer uses only clean farmer-facing answer text",
+    run: () => {
+      const feedbackControl = repoFile("src/components/FarmMateAnswerFeedback.tsx");
+      const copiedNaturalAnswer = farmMateCleanAnswerForCopy(
+        "Check soil moisture before applying fertilizer.\nMatched keywords: maize, fertilizer\nConfidence: 0.94\nFarmMate router: general_agronomy",
+        []
+      );
+      const copiedLocalAnswer = farmMateCleanAnswerForCopy("", [
+        { title: "Here's what I understand", body: ["Internal summary"] },
+        { title: "Next step", body: ["Check the youngest leaves this morning."] }
+      ]);
+
+      assert.equal(copiedNaturalAnswer, "Check soil moisture before applying fertilizer.");
+      assert.equal(copiedNaturalAnswer.includes("Matched keywords"), false);
+      assert.equal(copiedNaturalAnswer.includes("Confidence"), false);
+      assert.equal(copiedNaturalAnswer.includes("FarmMate router"), false);
+      assert.equal(copiedLocalAnswer.includes("Internal summary"), false);
+      assert.equal(copiedLocalAnswer, "Next step:\nCheck the youngest leaves this morning.");
+      assert.equal(feedbackControl.includes("navigator.clipboard.writeText(copyText)"), true);
+      assert.equal(feedbackControl.includes('? "Copied"'), true);
+    }
+  },
+  {
+    name: "feedback controls wait for a real answer and preserve credit exhaustion",
+    run: () => {
+      const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+
+      assert.equal(shouldShowFarmMateAnswerFeedback("", false), false);
+      assert.equal(shouldShowFarmMateAnswerFeedback("A completed answer", true), false);
+      assert.equal(shouldShowFarmMateAnswerFeedback("A completed answer", false), true);
+      assert.equal(askFarmMate.includes('creditReason !== "credits_exhausted"'), true);
+      assert.equal(askFarmMate.includes("shouldShowFarmMateAnswerFeedback(cleanDisplayedAnswer, isThinking || isGeneratingNaturalAnswer)"), true);
+      assert.equal(askFarmMate.includes("shouldShowLocalGuidance ? recommendationCards : []"), true);
+      assert.equal(askFarmMate.includes('const shouldShowCreditActions = creditReason === "credits_exhausted"'), true);
+      assert.ok(cropDoctor.indexOf("{hasDiagnosis && diagnosis ?") < cropDoctor.indexOf("<FarmMateAnswerFeedback"));
+      assert.equal(cropDoctor.includes("shouldDisableCropDoctorAnalysis(credits)"), true);
+    }
+  },
+  {
+    name: "prepared feedback excludes internal debug and usage data",
+    run: () => {
+      const prepared = sanitizeFarmMatePreparedAnswerFeedback({
+        tool: "ask_farmmate",
+        timestamp: "2026-07-21T09:25:00.000Z",
+        feedbackType: "helpful",
+        originalQuestion: "How should I prepare this soil?",
+        answerSnippet: "Loosen compacted soil and add mature compost.",
+        matchedKeywords: ["soil", "compost"],
+        confidence: 0.98,
+        anonymousDeviceId: "private-device-id",
+        creditsRemaining: 1,
+        rawResponse: { hidden: true }
+      });
+
+      assert.ok(prepared);
+      const serialized = JSON.stringify(prepared);
+      assert.equal(serialized.includes("matchedKeywords"), false);
+      assert.equal(serialized.includes("confidence"), false);
+      assert.equal(serialized.includes("anonymousDeviceId"), false);
+      assert.equal(serialized.includes("creditsRemaining"), false);
+      assert.equal(serialized.includes("rawResponse"), false);
+      assert.deepEqual(Object.keys(prepared).sort(), ["answerSnippet", "feedbackType", "originalQuestion", "timestamp", "tool", "version"]);
+    }
+  },
+  {
+    name: "answer feedback controls wrap safely on small screens",
+    run: () => {
+      const feedbackControl = repoFile("src/components/FarmMateAnswerFeedback.tsx");
+
+      assert.equal(feedbackControl.includes("min-w-0 max-w-full overflow-hidden"), true);
+      assert.equal((feedbackControl.match(/flex-wrap/g) ?? []).length >= 3, true);
+      assert.equal(feedbackControl.includes("min-h-11 max-w-full"), true);
+      assert.equal(feedbackControl.includes("w-full max-w-full resize-y"), true);
+      assert.equal(feedbackControl.includes("whitespace-nowrap"), false);
+    }
+  },
+  {
+    name: "FarmMate pilot documentation records answer feedback context",
+    run: () => {
+      const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md");
+      const specialists = repoFile("docs/FARMMATE_SPECIALISTS.md");
+
+      assert.equal(launchQa.includes("Pilot farmers can rate completed Ask FarmMate and Crop Doctor answers"), true);
+      assert.equal(launchQa.includes("original question and tool context"), true);
+      assert.equal(launchQa.includes("crop, symptom, and result context"), true);
+      assert.equal(specialists.includes("FarmMate is still learning from real farmer use"), true);
+    }
+  },
+  {
     name: "FarmMate pilot feedback CTA and page render",
     run: () => {
       const hubPage = repoFile("src/app/farmer-hub/page.tsx");
@@ -5945,7 +6180,15 @@ const tests: TestCase[] = [
       assert.equal(form.includes("farmMatePilotFeedbackSuccessMessage"), true);
       assert.equal(form.includes("farmMatePilotFeedbackUnavailableMessage"), true);
       assert.equal(form.includes("Back to GG FarmMate"), true);
-      assert.equal(form.includes('href={farmMatePilotFeedbackContactPath}'), true);
+      assert.equal(form.includes('href={farmMatePilotFeedbackContactPath}'), false);
+      assert.equal(form.includes('href="/contact"'), false);
+      assert.equal(form.includes('source !== "answer_feedback"'), true);
+      assert.equal(form.includes("readFarmMatePreparedAnswerFeedback(window.sessionStorage)"), true);
+      assert.equal(form.includes("farmMateAnswerFeedbackFormPrefill(prepared)"), true);
+      assert.equal(form.includes("defaultValue={answerFeedbackPrefill?.testedFeature}"), true);
+      assert.equal(form.includes("defaultChecked={answerFeedbackPrefill?.helpfulness === option.value}"), true);
+      assert.equal(form.includes("window.sessionStorage.removeItem(FARM_MATE_ANSWER_FEEDBACK_STORAGE_KEY)"), true);
+      assert.equal(FARM_MATE_ANSWER_FEEDBACK_PATH, "/farmer-hub/feedback?source=answer_feedback");
     }
   },
   {

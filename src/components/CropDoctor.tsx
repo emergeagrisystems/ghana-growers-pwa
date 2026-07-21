@@ -27,6 +27,8 @@ import {
   type FarmMateCreditDecision,
   type FarmMateCreditStatus
 } from "@/lib/farmmate/usage";
+import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
+import { farmMateAnswerSnippet } from "@/lib/farmmate/answer-feedback";
 
 type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
 const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",");
@@ -513,10 +515,6 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
                 {cropDoctorResultBadge(diagnosis)}
               </span>
             </div>
-            <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-bold leading-6 text-ink/64">
-              Crop Doctor gives guidance from the photo, not a final diagnosis. Confirm serious or spreading problems with an extension officer.
-            </p>
-
             <dl className="mt-4 grid gap-2 rounded-md bg-white p-3 text-sm sm:grid-cols-2">
               {diagnosisHasSelectedCrop ? (
                 <>
@@ -575,6 +573,21 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             >
               Ask FarmMate about this
             </button>
+
+            <FarmMateAnswerFeedback
+              key={`${diagnosis.resultType}-${diagnosis.mainFinding}`}
+              prompt="Was this crop check helpful?"
+              wrongButtonLabel="Wrong crop/problem"
+              context={{
+                tool: "crop_doctor",
+                selectedCrop: diagnosisHasSelectedCrop ? diagnosis.selectedCrop : undefined,
+                detectedCrop: diagnosis.cropFromImage ?? undefined,
+                selectedSymptom: diagnosisSelectedSymptom ?? undefined,
+                resultType: diagnosis.resultType,
+                visibleSignsSnippet: farmMateAnswerSnippet(diagnosis.visibleSigns.join("; ")),
+                answerSnippet: farmMateAnswerSnippet(diagnosis.mainFinding)
+              }}
+            />
           </div>
         ) : null}
       </div>

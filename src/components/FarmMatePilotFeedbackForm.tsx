@@ -1,21 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
-  farmMatePilotFeedbackContactPath,
   farmMatePilotFeedbackSuccessMessage,
   farmMatePilotFeedbackUnavailableMessage,
   farmMatePilotHelpfulnessOptions,
   farmMatePilotWouldUseAgainOptions
 } from "@/lib/farmmate/pilot-feedback";
+import {
+  FARM_MATE_ANSWER_FEEDBACK_STORAGE_KEY,
+  farmMateAnswerFeedbackFormPrefill,
+  readFarmMatePreparedAnswerFeedback,
+  type FarmMateAnswerFeedbackFormPrefill
+} from "@/lib/farmmate/answer-feedback";
 
 type FormStatus = "idle" | "submitting" | "success" | "error" | "unavailable";
 
 export function FarmMatePilotFeedbackForm() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [message, setMessage] = useState("");
+  const [answerFeedbackPrefill, setAnswerFeedbackPrefill] = useState<FarmMateAnswerFeedbackFormPrefill | null>(null);
   const isSubmitting = status === "submitting";
+
+  useEffect(() => {
+    const source = new URLSearchParams(window.location.search).get("source");
+
+    if (source !== "answer_feedback") {
+      return;
+    }
+
+    const prepared = readFarmMatePreparedAnswerFeedback(window.sessionStorage);
+
+    if (prepared) {
+      setAnswerFeedbackPrefill(farmMateAnswerFeedbackFormPrefill(prepared));
+    }
+  }, []);
 
   async function submitFeedback(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,6 +96,7 @@ export function FarmMatePilotFeedbackForm() {
     }
 
     form.reset();
+    window.sessionStorage.removeItem(FARM_MATE_ANSWER_FEEDBACK_STORAGE_KEY);
     setStatus("success");
     setMessage(result?.message ?? farmMatePilotFeedbackSuccessMessage);
   }
@@ -99,6 +120,11 @@ export function FarmMatePilotFeedbackForm() {
 
   return (
     <form onSubmit={submitFeedback} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-card sm:p-6">
+      {answerFeedbackPrefill ? (
+        <p className="mb-5 rounded-md bg-leaf-50 p-3 text-sm font-semibold leading-6 text-ink/68" role="status">
+          Your answer details have been added. Add anything else that will help us understand your feedback.
+        </p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-black text-ink">
           Name or nickname <span className="font-semibold text-ink/50">Optional</span>
@@ -112,12 +138,23 @@ export function FarmMatePilotFeedbackForm() {
 
       <label className="mt-4 grid gap-2 text-sm font-black text-ink">
         Main crop <span className="font-semibold text-ink/50">Optional</span>
-        <input name="mainCrop" className="gg-field min-h-12" />
+        <input
+          key={`main-crop-${answerFeedbackPrefill?.mainCrop ?? ""}`}
+          name="mainCrop"
+          className="gg-field min-h-12"
+          defaultValue={answerFeedbackPrefill?.mainCrop}
+        />
       </label>
 
       <label className="mt-4 grid gap-2 text-sm font-black text-ink">
         What did you test?
-        <textarea name="testedFeature" className="gg-field min-h-28 resize-y" required />
+        <textarea
+          key={`tested-feature-${answerFeedbackPrefill?.testedFeature ?? ""}`}
+          name="testedFeature"
+          className="gg-field min-h-28 resize-y"
+          defaultValue={answerFeedbackPrefill?.testedFeature}
+          required
+        />
       </label>
 
       <fieldset className="mt-5">
@@ -125,7 +162,15 @@ export function FarmMatePilotFeedbackForm() {
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {farmMatePilotHelpfulnessOptions.map((option) => (
             <label key={option.value} className="flex min-h-12 items-center gap-2 rounded-md border border-leaf-900/10 bg-earth-50 px-3 py-2 text-sm font-bold text-ink/72">
-              <input type="radio" name="helpfulness" value={option.value} required className="h-4 w-4 accent-leaf-700" />
+              <input
+                key={`${option.value}-${answerFeedbackPrefill?.helpfulness ?? ""}`}
+                type="radio"
+                name="helpfulness"
+                value={option.value}
+                defaultChecked={answerFeedbackPrefill?.helpfulness === option.value}
+                required
+                className="h-4 w-4 accent-leaf-700"
+              />
               {option.label}
             </label>
           ))}
@@ -134,12 +179,22 @@ export function FarmMatePilotFeedbackForm() {
 
       <label className="mt-5 grid gap-2 text-sm font-black text-ink">
         What confused you?
-        <textarea name="confusion" className="gg-field min-h-24 resize-y" />
+        <textarea
+          key={`confusion-${answerFeedbackPrefill?.confusion ?? ""}`}
+          name="confusion"
+          className="gg-field min-h-24 resize-y"
+          defaultValue={answerFeedbackPrefill?.confusion}
+        />
       </label>
 
       <label className="mt-4 grid gap-2 text-sm font-black text-ink">
         What should we improve?
-        <textarea name="improvement" className="gg-field min-h-24 resize-y" />
+        <textarea
+          key={`improvement-${answerFeedbackPrefill?.improvement ?? ""}`}
+          name="improvement"
+          className="gg-field min-h-24 resize-y"
+          defaultValue={answerFeedbackPrefill?.improvement}
+        />
       </label>
 
       <fieldset className="mt-5">
@@ -158,11 +213,6 @@ export function FarmMatePilotFeedbackForm() {
         {message ? (
           <div className={`rounded-md p-4 text-sm font-semibold leading-6 ${status === "unavailable" ? "bg-earth-50 text-ink/70" : "bg-red-50 text-red-700"}`}>
             <p>{message}</p>
-            {status === "unavailable" ? (
-              <Link href={farmMatePilotFeedbackContactPath} className="mt-2 inline-flex font-black text-leaf-700">
-                Contact Ghana Growers
-              </Link>
-            ) : null}
           </div>
         ) : null}
       </div>

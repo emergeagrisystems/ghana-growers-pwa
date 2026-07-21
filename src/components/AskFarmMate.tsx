@@ -23,6 +23,12 @@ import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate
 import { FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
+import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
+import {
+  farmMateAnswerSnippet,
+  farmMateCleanAnswerForCopy,
+  shouldShowFarmMateAnswerFeedback
+} from "@/lib/farmmate/answer-feedback";
 
 const suggestions = [
   "Can I spray today?",
@@ -726,6 +732,14 @@ export function AskFarmMate({
     aiFallbackMessage,
     isLocalOnlyResponse: localCards.length > 0
   });
+  const cleanDisplayedAnswer = farmMateCleanAnswerForCopy(
+    naturalAnswer,
+    shouldShowLocalGuidance ? recommendationCards : []
+  );
+  const shouldShowAnswerFeedback =
+    showRecommendation &&
+    creditReason !== "credits_exhausted" &&
+    shouldShowFarmMateAnswerFeedback(cleanDisplayedAnswer, isThinking || isGeneratingNaturalAnswer);
   const completedAnswerSummary = compactFollowUpSummary(followUpAnswers);
   const shouldShowIntro = Boolean(intro.lead || intro.detail) && (!showRecommendation || localCards.length > 0) && !isGeneratingNaturalAnswer && !naturalAnswer;
   const shouldShowCreditActions = creditReason === "credits_exhausted";
@@ -923,6 +937,21 @@ export function AskFarmMate({
                     <Camera size={18} aria-hidden="true" />
                     Upload Crop Photo
                   </button>
+                ) : null}
+
+                {shouldShowAnswerFeedback ? (
+                  <FarmMateAnswerFeedback
+                    key={`${askedQuestion}-${cleanDisplayedAnswer.slice(0, 40)}`}
+                    prompt="Was this helpful?"
+                    wrongButtonLabel="Wrong answer"
+                    copyText={cleanDisplayedAnswer}
+                    context={{
+                      tool: "ask_farmmate",
+                      originalQuestion: askedQuestion || undefined,
+                      specialist: response?.routerResult?.selectedSpecialist,
+                      answerSnippet: farmMateAnswerSnippet(cleanDisplayedAnswer)
+                    }}
+                  />
                 ) : null}
               </div>
             ) : null}
