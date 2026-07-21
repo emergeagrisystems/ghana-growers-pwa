@@ -45,7 +45,7 @@ export const unknownCropDiagnosis: CropDoctorDemoDiagnosis = {
 };
 
 export function diagnosisFromFileName(fileName: string): CropDoctorDemoDiagnosis {
-  const detectedCrop = detectFarmMateCropFromQuestion(fileName.replace(/[-_]/g, " "))?.name;
+  const detectedCrop = detectFarmMateCropFromQuestion(fileName.replace(/[-_]/g, " "))?.displayName;
 
   return (detectedCrop && cropDoctorDiagnosisByCrop[detectedCrop]) || unknownCropDiagnosis;
 }

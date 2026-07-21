@@ -738,7 +738,7 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
 }
 
 export function buildFarmMateResponse(question: string, routerResult?: RouterResult, options: FarmMateBrainOptions = {}): FarmMateBrainResponse {
-  const resolvedCrop = options.cropDoctorContext?.crop ?? resolveFarmMateCropForQuestion(question, options.previousCropName)?.name;
+  const resolvedCrop = options.cropDoctorContext?.crop ?? resolveFarmMateCropForQuestion(question, options.previousCropName)?.displayName;
   const intent = {
     ...detectFarmMateIntent(question),
     cropName: resolvedCrop

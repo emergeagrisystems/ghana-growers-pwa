@@ -1,5 +1,6 @@
 import { farmMateRouterRules } from "./rules";
 import { detectFarmMateCropFromQuestion } from "../crop-context";
+import { findFarmMateCropLibraryEntry } from "../crop-library";
 import type { FarmMateRouterContext, RouterConfidence, RouterResult, RouterRule } from "./types";
 
 function normalizeQuestion(question: string) {
@@ -29,7 +30,9 @@ function confidenceFromMatches(matchCount: number): RouterConfidence {
 
 export function routeFarmMateQuestion(question: string, context: FarmMateRouterContext = {}): RouterResult {
   const normalizedQuestion = normalizeQuestion(question);
-  const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(question)?.name;
+  const questionCrop = detectFarmMateCropFromQuestion(question);
+  const detectedCrop = context.crop ?? questionCrop?.displayName;
+  const detectedCropEntry = findFarmMateCropLibraryEntry(detectedCrop);
   const fallbackResult: RouterResult = {
     selectedSpecialist: "general_agronomy",
     confidence: "low",
@@ -77,7 +80,12 @@ export function routeFarmMateQuestion(question: string, context: FarmMateRouterC
   const isCropChoiceQuestion = normalizedQuestion.includes("what should i plant") || normalizedQuestion.includes("crop to grow");
   const isSupportedMelonClarification = normalizedQuestion.includes("melon");
 
-  if (bestMatch.rule.specialist === "planting" && !detectedCrop && !isCropChoiceQuestion && !isSupportedMelonClarification) {
+  if (
+    bestMatch.rule.specialist === "planting" &&
+    (!detectedCrop || !detectedCropEntry?.supportedFor.includes("planting")) &&
+    !isCropChoiceQuestion &&
+    !isSupportedMelonClarification
+  ) {
     return {
       ...fallbackResult,
       confidence: "medium",

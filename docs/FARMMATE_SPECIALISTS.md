@@ -2,6 +2,34 @@
 
 GG FarmMate routes farmer questions to internal specialists before building a recommendation. The specialist decides what kind of reasoning should happen; the Decision Engine then applies local structured guidance.
 
+## Expanded Crop Library
+
+Ask FarmMate and Crop Doctor share a local structured crop library. Each entry records its farmer-facing name, aliases, crop group, useful crop-family context, supported FarmMate tasks, common visible symptoms, common pest or disease patterns, diagnostic cautions, and Ghana relevance where useful.
+
+Supported crop groups:
+
+- Core food crops: maize, cassava, yam, plantain, rice, cowpea, groundnut, and cocoyam.
+- Vegetables: tomato, pepper, onion, okra, garden eggs, aubergine or eggplant, potato, sweet potato, cucumber, watermelon, sweet melon, zucchini, pumpkin, lettuce, cabbage, kale, carrot, beetroot, kontomire, and amaranth.
+- Cash and perennial crops: cocoa, cashew, oil palm, coconut, rubber, and coffee.
+- Fruits: mango, citrus, pineapple, pawpaw, banana, and avocado.
+- Unknown or other: Other crop and Not sure remain valid choices so Crop Doctor can continue cautiously instead of refusing.
+
+Alias handling:
+
+- Farmer wording is normalized before routing. Examples include aubergine, eggplant and brinjal; zucchini and courgette; sweet melon, cantaloupe and honeydew; water melon and water-melon; potato, Irish potato and white potato; cocoa and cacao; pawpaw and papaya; and kontomire, cocoyam leaves and taro leaves.
+- Garden egg wording remains associated with Garden eggs, while aubergine, eggplant and brinjal identify Aubergine / eggplant.
+- Specific names such as sweet melon and water melon are matched before shorter wording. A question that says only "melon" may still need clarification.
+
+Crop-family reasoning:
+
+- Nightshade or Solanaceae context supports tomato, pepper, garden eggs, aubergine or eggplant, and potato.
+- Cucurbit context supports cucumber, watermelon, sweet melon, zucchini, and pumpkin.
+- Brassica context supports cabbage and kale.
+- Root or tuber context supports cassava, yam, cocoyam, potato, sweet potato, carrot, and beetroot.
+- Perennial cash-crop context supports cocoa, cashew, oil palm, coconut, rubber, and coffee.
+- Crop-family patterns are cautious clues only. Similar-looking symptoms in related crops do not confirm the same cause.
+- If exact crop-specific guidance is limited, FarmMate says: "I do not have full crop-specific guidance for this crop yet, but I can still help using general crop-family guidance."
+
 ## Plant Health Specialist
 
 Handles crop symptoms, plant stress and visible field problems.
@@ -29,16 +57,35 @@ Handles guided crop photo analysis after the farmer uploads a field image.
 Workflow rules:
 - Crop Doctor is guided photo analysis, not blind crop detection.
 - Farmers should select the crop where possible before analysis.
+- The crop selector is grouped into Common food crops, Vegetables, Fruits, Cash crops, and Not sure / other.
 - Farmers can optionally select the symptom they are seeing.
 - The selected crop and symptom are primary context for the photo check.
 - If the farmer selects "Not sure", Crop Doctor may identify the crop cautiously but must not sound certain from one image.
 - If the selected crop and image appear inconsistent, say the photo match is uncertain and ask for a clearer photo of the affected crop.
+- A result can show the crop, crop group, cautious photo confidence, main visible signs, what the signs may suggest, what to check next, what to do now, and one next step.
+- Crop photos are used for the current check and are not stored permanently by GG FarmMate.
+
+Unknown crop behaviour:
+
+- If the crop cannot be identified, show "Crop not confirmed."
+- Describe only visible plant features without forcing a disease diagnosis.
+- Ask for a clearer whole-plant photo and a close-up of affected parts.
+- Suggest selecting the crop if the farmer knows it, and keep the Ask FarmMate handoff available.
+- If the crop is recognized but full crop-specific guidance is unavailable, continue with cautious crop-family or general crop-health guidance instead of refusing.
+
+Cash and perennial crop caution:
+
+- Cocoa, cashew, oil palm, coconut, rubber, and coffee use careful perennial-crop wording.
+- For serious or spreading signs, say: "For valuable perennial crops, confirm serious or spreading problems with an extension officer or experienced crop advisor."
+- Do not recommend strong chemicals or exact treatment dosage from a photo.
 
 Safety rules:
 - Crop Doctor does not guarantee diagnosis.
 - One image may not be enough to confirm the crop or issue.
 - Focus on visible symptoms, affected leaves, nearby plants, field conditions and practical checks.
 - Do not invent pesticide dosage.
+- Do not invent fertilizer dosage, yield, profit, market price, or buyer demand.
+- Do not invent a crop-specific disease name when the image and local guidance do not support it.
 - Do not recommend chemicals first.
 - Avoid home gardening language such as pot, houseplant, indoor plant, garden soil or decorative plant.
 - Serious, spreading or high-risk issues should be confirmed with an agricultural extension officer.
@@ -235,7 +282,7 @@ Reasoning order:
 Unknown crop behaviour:
 
 - FarmMate does not refuse an unsupported crop or pretend it has crop-specific facts.
-- It says: "I do not have full crop-specific guidance for this crop yet, but I can still help with general farming principles."
+- It says: "I do not have full crop-specific guidance for this crop yet, but I can still help using general crop-family guidance."
 - It then asks one question: "What are you trying to do?"
 - Available goals are Plant it, Treat a problem, Improve growth, Identify the plant, and I am not sure.
 
@@ -271,6 +318,7 @@ Safety rules:
 - Do not assume tomato when crop is unknown.
 - Do not route a Crop Doctor handoff into fertilizer, planting or compost unless the image result clearly supports that issue category.
 - Use neutral wording when the crop is not confirmed.
+- Preserve the authoritative crop group, crop-family caution, visible-sign context, and valuable-perennial caution in the handoff when available.
 
 ## Launch QA Stabilization
 

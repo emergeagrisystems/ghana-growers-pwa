@@ -8,12 +8,11 @@ import {
   buildCropDoctorHandoffContext,
   cropDoctorResultBadge,
   cropDoctorResultHeadline,
+  cropDoctorSymptomsForCrop,
   CROP_DOCTOR_AUTO_DETECT_VALUE,
   CROP_DOCTOR_ACCEPTED_IMAGE_TYPES,
-  CROP_DOCTOR_SUPPORTED_CROPS,
-  CROP_DOCTOR_SYMPTOMS,
+  CROP_DOCTOR_CROP_GROUPS,
   validateCropDoctorImage,
-  type CropDoctorPhotoCropMatch,
   type CropDoctorHandoffContext,
   type CropDoctorVisionResult
 } from "@/lib/farmmate/crop-doctor-vision";
@@ -32,18 +31,6 @@ import { farmMateAnswerSnippet } from "@/lib/farmmate/answer-feedback";
 
 type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
 const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",");
-
-function photoCropMatchLabel(match: CropDoctorPhotoCropMatch) {
-  if (match === "likely") {
-    return "Looks consistent";
-  }
-
-  if (match === "uncertain") {
-    return "Uncertain";
-  }
-
-  return "Not clear";
-}
 
 function logCropDoctorCreditState(detail: {
   anonymousDeviceId: string;
@@ -83,8 +70,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const isCreditTemporarilyUnavailable = credits?.creditState === "temporarily_unavailable";
   const isAnalysisDisabled = shouldDisableCropDoctorAnalysis(credits);
   const isUploadDisabled = shouldDisableCropDoctorUpload(credits);
-  const cropOptions = CROP_DOCTOR_SUPPORTED_CROPS.filter((crop) => crop !== "Not sure");
-  const symptomOptions = CROP_DOCTOR_SYMPTOMS.filter((symptom) => symptom !== "Not sure");
+  const symptomOptions = cropDoctorSymptomsForCrop(selectedCrop);
   const isAnalyseButtonDisabled = !selectedFile || isAnalysing || isAnalysisDisabled;
   const analyseButtonText = isAnalysing
     ? "FarmMate is checking your crop photo..."
@@ -94,10 +80,6 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         ? "No Crop Doctor checks available"
         : "Analyse Crop";
   const diagnosisHasSelectedCrop = Boolean(diagnosis?.selectedCrop && diagnosis.selectedCrop !== "Not sure");
-  const diagnosisDetectedCrop =
-    diagnosis && !diagnosisHasSelectedCrop && diagnosis.crop && diagnosis.resultType !== "crop_not_confirmed"
-      ? diagnosis.crop
-      : null;
   const diagnosisSelectedSymptom = diagnosis?.selectedSymptom && diagnosis.selectedSymptom !== "Not sure" ? diagnosis.selectedSymptom : null;
 
   useEffect(() => {
@@ -420,18 +402,23 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           Tell FarmMate the crop if you know it
           <select
             id="crop-doctor-selected-crop"
-            className="gg-field min-h-12 bg-white"
+            className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
             value={selectedCrop}
             onChange={(event) => {
               setSelectedCrop(event.target.value);
+              setSelectedSymptom("");
               resetDiagnosisForFieldContext();
             }}
           >
             <option value="">Detect automatically</option>
-            {cropOptions.map((crop) => (
-              <option key={crop} value={crop}>
-                {crop}
-              </option>
+            {CROP_DOCTOR_CROP_GROUPS.map((group) => (
+              <optgroup key={group.group} label={group.label}>
+                {group.crops.map((crop) => (
+                  <option key={crop} value={crop}>
+                    {crop}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -440,7 +427,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           What are you seeing? <span className="font-semibold text-ink/50">(optional)</span>
           <select
             id="crop-doctor-selected-symptom"
-            className="gg-field min-h-12 bg-white"
+            className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
             value={selectedSymptom}
             onChange={(event) => {
               setSelectedSymptom(event.target.value);
@@ -516,21 +503,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               </span>
             </div>
             <dl className="mt-4 grid gap-2 rounded-md bg-white p-3 text-sm sm:grid-cols-2">
-              {diagnosisHasSelectedCrop ? (
-                <>
-                  <div>
-                    <dt className="font-black text-ink">Selected crop</dt>
-                    <dd className="mt-1 font-semibold text-ink/64">{diagnosis.selectedCrop}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-black text-ink">Photo check</dt>
-                    <dd className="mt-1 font-semibold text-ink/64">{photoCropMatchLabel(diagnosis.photoCropMatch)}</dd>
-                  </div>
-                </>
-              ) : diagnosisDetectedCrop ? (
+              {diagnosis.crop ? (
                 <div>
-                  <dt className="font-black text-ink">Detected crop</dt>
-                  <dd className="mt-1 font-semibold text-ink/64">{diagnosisDetectedCrop}</dd>
+                  <dt className="font-black text-ink">Crop</dt>
+                  <dd className="mt-1 font-semibold text-ink/64">{diagnosis.crop}</dd>
                 </div>
               ) : (
                 <div>
@@ -538,6 +514,14 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
                   <dd className="mt-1 font-semibold text-ink/64">FarmMate could not confirm the crop from this photo.</dd>
                 </div>
               )}
+              <div>
+                <dt className="font-black text-ink">Crop group</dt>
+                <dd className="mt-1 font-semibold text-ink/64">{diagnosis.cropGroup ?? "Not confirmed"}</dd>
+              </div>
+              <div>
+                <dt className="font-black text-ink">Photo confidence</dt>
+                <dd className="mt-1 font-semibold text-ink/64">{diagnosis.photoConfidenceLabel}</dd>
+              </div>
               {diagnosisSelectedSymptom ? (
                 <div>
                   <dt className="font-black text-ink">Selected symptom</dt>
@@ -546,10 +530,27 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               ) : null}
             </dl>
 
+            {diagnosis.limitedGuidanceNote ? (
+              <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
+                {diagnosis.limitedGuidanceNote}
+              </p>
+            ) : null}
+            {diagnosis.familyGuidance ? (
+              <p className="mt-2 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
+                {diagnosis.familyGuidance}
+              </p>
+            ) : null}
+            {diagnosis.cashCropCaution ? (
+              <p className="mt-2 rounded-md border border-earth-500/20 bg-earth-50 px-3 py-2 text-sm font-bold leading-6 text-ink/70">
+                {diagnosis.cashCropCaution}
+              </p>
+            ) : null}
+
             <div className="mt-4 grid gap-3">
               {([
-                ["Visible signs", diagnosis.visibleSigns],
-                ["What to check", diagnosis.whatToCheck],
+                ["Main visible signs", diagnosis.visibleSigns],
+                ["What this may suggest", [diagnosis.whatThisMeans]],
+                ["What to check next", diagnosis.whatToCheck],
                 ["What to do now", diagnosis.recommendedActions],
                 ["Next step", [diagnosis.nextBestAction]]
               ] as Array<[string, string[]]>).map(([label, items]) => (

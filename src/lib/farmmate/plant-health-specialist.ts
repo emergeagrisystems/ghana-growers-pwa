@@ -1,4 +1,5 @@
 import type { ConfidenceLevel, FollowUpQuestion, NextBestAction } from "./decision-engine/types";
+import { findFarmMateCropLibraryEntry, farmMateCropFamilyGuidance, type FarmMateCropLibraryEntry } from "./crop-library";
 
 export type PlantHealthSymptomId =
   | "yellow-leaves"
@@ -34,7 +35,7 @@ export type PlantHealthSymptomGroup = {
 
 export type PlantHealthAssessment = {
   symptom: PlantHealthSymptomGroup;
-  crop?: PlantHealthSupportedCrop;
+  crop?: string;
   growthStage: string;
   likelyCauses: string[];
   checks: string[];
@@ -262,6 +263,23 @@ export function isPlantHealthSupportedCrop(cropName?: string): cropName is Plant
   return Boolean(cropName && plantHealthSupportedCrops.includes(cropName as PlantHealthSupportedCrop));
 }
 
+function recognizedPlantHealthCrop(cropName?: string) {
+  const crop = findFarmMateCropLibraryEntry(cropName);
+
+  return crop && crop.cropGroup !== "unknown_other" && crop.supportedFor.includes("plant_health") ? crop : undefined;
+}
+
+function cautiousPlantHealthFamilyGuidance(crop: FarmMateCropLibraryEntry, hasCropSpecificNotes: boolean) {
+  if (hasCropSpecificNotes || !crop.cropFamily) {
+    return undefined;
+  }
+
+  return (
+    farmMateCropFamilyGuidance(crop.displayName) ??
+    `This is a ${crop.cropFamily.toLowerCase()} crop, so related crops may show similar-looking problems, but the exact cause still needs checking.`
+  );
+}
+
 export function assessPlantHealthQuestion(question: string, cropName?: string): PlantHealthAssessment | undefined {
   const symptom = findPlantHealthSymptom(question);
 
@@ -269,13 +287,17 @@ export function assessPlantHealthQuestion(question: string, cropName?: string): 
     return undefined;
   }
 
-  const crop = isPlantHealthSupportedCrop(cropName) ? cropName : undefined;
-  const likelyCauses = symptom.possibleCauses
+  const cropEntry = recognizedPlantHealthCrop(cropName);
+  const crop = cropEntry?.displayName;
+  const cropWithSpecificNotes = isPlantHealthSupportedCrop(crop) ? crop : undefined;
+  const familyGuidance = cropEntry ? cautiousPlantHealthFamilyGuidance(cropEntry, Boolean(cropWithSpecificNotes)) : undefined;
+  const generalCauses = symptom.possibleCauses
     .map((cause) => {
-      const note = crop ? cause.cropNotes?.[crop] : undefined;
+      const note = cropWithSpecificNotes ? cause.cropNotes?.[cropWithSpecificNotes] : undefined;
       return note ? `${cause.cause}: ${note}` : cause.cause;
     })
     .slice(0, 3);
+  const likelyCauses = familyGuidance ? [...generalCauses.slice(0, 2), familyGuidance] : generalCauses;
   const recommendCropDoctor = symptom.recommendCropDoctorWhen.length > 0;
   const recommendExtensionOfficer = symptom.recommendExtensionOfficerWhen.some((rule) => /many|large|whole|quickly|severe|collapsing|dying/i.test(rule));
 

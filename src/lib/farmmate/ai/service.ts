@@ -10,6 +10,14 @@ import {
   generalAgronomyCoverage,
   generalAgronomyReasoningOrder
 } from "../general-agronomy-specialist";
+import {
+  FARM_MATE_CASH_CROP_CAUTION,
+  farmMateCropFamilyGuidance,
+  farmMateCropGroupLabels,
+  farmMateLimitedCropGuidanceNote,
+  findFarmMateCropLibraryEntry,
+  isFarmMateCashPerennialCrop
+} from "../crop-library";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -70,6 +78,23 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
 
 export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   const crop = input.brain.resolvedCrop ?? input.brain.intent.cropName ?? null;
+  const cropLibraryEntry = findFarmMateCropLibraryEntry(crop);
+  const cropLibraryContext = cropLibraryEntry
+    ? {
+        cropKey: cropLibraryEntry.cropKey,
+        displayName: cropLibraryEntry.displayName,
+        aliases: cropLibraryEntry.aliases.slice(0, 8),
+        cropGroup: farmMateCropGroupLabels[cropLibraryEntry.cropGroup],
+        cropFamily: cropLibraryEntry.cropFamily ?? null,
+        supportedFor: cropLibraryEntry.supportedFor,
+        commonSymptoms: cropLibraryEntry.commonSymptoms.slice(0, 8),
+        commonPestDiseasePatterns: cropLibraryEntry.commonPestDiseasePatterns.slice(0, 3),
+        diagnosticCautions: cropLibraryEntry.diagnosticCautions.slice(0, 4),
+        familyGuidance: farmMateCropFamilyGuidance(cropLibraryEntry.displayName) ?? null,
+        limitedGuidanceNote: farmMateLimitedCropGuidanceNote(cropLibraryEntry.displayName) ?? null,
+        cashCropCaution: isFarmMateCashPerennialCrop(cropLibraryEntry.displayName) ? FARM_MATE_CASH_CROP_CAUTION : null
+      }
+    : null;
   const fertilizerContext =
     input.brain.routerResult?.selectedSpecialist === "fertilizer" || input.brain.flow?.intent === "fertilizer"
       ? findFertilizerGuidance(crop ?? input.brain.flow?.requiredInformation.crop)
@@ -101,6 +126,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     farmerQuestion: input.farmerQuestion,
     detectedIntent: input.brain.intent,
     crop,
+    cropLibraryContext,
     selectedSpecialist: input.brain.routerResult?.selectedSpecialist ?? null,
     specialistContext: fertilizerContext
       ? {
@@ -200,6 +226,11 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       "For harvest and post-harvest decisions, protect quality with shade, sorting, ventilation and clean containers where possible.",
       "For general agronomy, use farmer-scale field language and avoid home gardening language.",
       "For general agronomy, do not invent crop-specific facts, market prices, guaranteed yields, or pesticide or fertilizer dosages.",
+      "Recognize the selected crop's aliases, group and family from cropLibraryContext when it is available.",
+      "Use related-crop and crop-family patterns only as cautious context. Never turn them into a confirmed diagnosis.",
+      "If crop-specific guidance is limited, continue with general crop-family guidance instead of refusing.",
+      `For serious or spreading problems on valuable perennial crops, say: "${FARM_MATE_CASH_CROP_CAUTION}"`,
+      "Do not invent pesticide or fertilizer dosage, yield, profit, market price, buyer demand, or buyer availability.",
       "For general agronomy, use the exact headings What I think:, What to do now:, optional What to check:, and Next step:.",
       "For general agronomy, include no more than three actions, no more than two checks, and exactly one next step.",
       "For general agronomy, give useful general guidance before asking one useful follow-up question.",

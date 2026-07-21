@@ -4,6 +4,11 @@ import {
   normalizeCropDoctorVisionResult,
   type CropDoctorVisionResult
 } from "../crop-doctor-vision";
+import {
+  FARM_MATE_CASH_CROP_CAUTION,
+  farmMateCropGroupLabels,
+  findFarmMateCropLibraryEntry
+} from "../crop-library";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -71,6 +76,10 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const selectedCrop = normalizeCropDoctorSelectedCrop(input.selectedCrop);
   const selectedSymptom = input.selectedSymptom?.trim() || "Not sure";
+  const selectedCropEntry = findFarmMateCropLibraryEntry(selectedCrop);
+  const selectedCropLibraryContext = selectedCropEntry
+    ? `Crop library context: ${selectedCropEntry.displayName}; group ${farmMateCropGroupLabels[selectedCropEntry.cropGroup]}; family ${selectedCropEntry.cropFamily ?? "not assigned"}; aliases ${selectedCropEntry.aliases.slice(0, 6).join(", ")}; common symptom checks ${selectedCropEntry.commonSymptoms.slice(0, 6).join(", ")}. ${selectedCropEntry.guidanceLevel === "crop_specific" ? "Use available crop-specific context cautiously." : "Use general crop-family guidance and do not invent an exact crop-specific disease."} ${selectedCropEntry.cropGroup === "cash_perennial" ? FARM_MATE_CASH_CROP_CAUTION : ""}`
+    : "The crop is not confirmed in the local crop library. Use general visible-sign guidance and do not invent an exact crop-specific disease.";
   const cropInstruction =
     selectedCrop === "Not sure"
       ? "The farmer did not identify the crop. Attempt to identify the crop from the photo cautiously, but return crop_not_confirmed if the crop is unclear."
@@ -97,7 +106,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
               {
                 type: "input_text",
                 text:
-                  `Analyze this crop photo for visible field crop health signs or harvest/storage quality. ${cropInstruction} Farmer-selected crop: ${selectedCrop}. Farmer-selected symptom: ${selectedSymptom}. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical.`
+                  `Analyze this crop photo for visible field crop health signs or harvest/storage quality. ${cropInstruction} ${selectedCropLibraryContext} Farmer-selected crop: ${selectedCrop}. Farmer-selected symptom: ${selectedSymptom}. Return only the requested JSON. Do not force a disease diagnosis. Be cautious, brief and practical.`
               },
               {
                 type: "input_image",

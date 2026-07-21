@@ -1,5 +1,19 @@
+import {
+  FARM_MATE_CASH_CROP_CAUTION,
+  farmMateCropFamilyGuidance,
+  farmMateCropGroupLabel,
+  farmMateCropLibrary,
+  farmMateCropLibraryPromptContext,
+  farmMateCropOptionsByGroup,
+  farmMateCropSymptomsFor,
+  farmMateLimitedCropGuidanceNote,
+  findFarmMateCropLibraryEntry,
+  isFarmMateCashPerennialCrop
+} from "./crop-library";
+
 export type CropDoctorConfidence = "high" | "medium" | "low";
 export type CropDoctorPhotoCropMatch = "likely" | "uncertain" | "not_clear";
+export type CropDoctorPhotoConfidenceLabel = "Likely" | "Possible" | "Unclear";
 
 export type CropDoctorIssueCategory = "pest" | "disease" | "nutrient" | "water_stress" | "unknown";
 
@@ -19,7 +33,10 @@ export type CropDoctorVisionResult = {
   photoCropMatch: CropDoctorPhotoCropMatch;
   cropFromImage: string | null;
   crop: string | null;
+  cropGroup: string | null;
+  cropFamily: string | null;
   cropConfidence: CropDoctorConfidence;
+  photoConfidenceLabel: CropDoctorPhotoConfidenceLabel;
   resultType: CropDoctorResultType;
   possibleIssue: string;
   issueCategory: CropDoctorIssueCategory;
@@ -32,6 +49,9 @@ export type CropDoctorVisionResult = {
   recommendedAction: string[];
   prevention: string[];
   nextBestAction: string;
+  familyGuidance: string | null;
+  limitedGuidanceNote: string | null;
+  cashCropCaution: string | null;
   askFarmMatePrompt: string;
 };
 
@@ -41,19 +61,29 @@ export type CropDoctorHandoffContext = {
   selectedCrop: string;
   selectedSymptom: string | null;
   crop: string | null;
+  cropGroup: string | null;
+  cropFamily: string | null;
   cropConfidence: CropDoctorConfidence;
   possibleIssue: string;
   issueCategory: CropDoctorIssueCategory;
   resultType: CropDoctorResultType;
   visibleSigns: string[];
   nextBestAction: string;
+  familyGuidance: string | null;
+  limitedGuidanceNote: string | null;
+  cashCropCaution: string | null;
 };
 
 export const CROP_DOCTOR_ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const CROP_DOCTOR_AUTO_DETECT_VALUE = "not_sure";
 export const CROP_DOCTOR_NO_SELECTED_CROP = "Not sure";
-export const CROP_DOCTOR_SUPPORTED_CROPS = ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"] as const;
-export const CROP_DOCTOR_SYMPTOMS = [
+export const CROP_DOCTOR_CROP_GROUPS = farmMateCropOptionsByGroup().map((group) => ({
+  group: group.group,
+  label: group.label,
+  crops: group.crops.map((entry) => entry.displayName)
+}));
+export const CROP_DOCTOR_SUPPORTED_CROPS = CROP_DOCTOR_CROP_GROUPS.flatMap((group) => group.crops);
+const baseCropDoctorSymptoms = [
   "Yellow leaves",
   "Spots on leaves",
   "Holes in leaves",
@@ -65,6 +95,9 @@ export const CROP_DOCTOR_SYMPTOMS = [
   "Roots or tubers problem",
   "Not sure"
 ] as const;
+export const CROP_DOCTOR_SYMPTOMS = Array.from(
+  new Set([...baseCropDoctorSymptoms, ...farmMateCropLibrary.flatMap((entry) => entry.commonSymptoms)])
+);
 export const CROP_DOCTOR_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const CROP_DOCTOR_TOO_LARGE_MESSAGE = "Please upload a smaller image under 5 MB.";
 export const CROP_DOCTOR_FALLBACK_MESSAGE =
@@ -150,9 +183,15 @@ export function normalizeCropDoctorSelectedCrop(value: unknown) {
     return CROP_DOCTOR_NO_SELECTED_CROP;
   }
 
-  return CROP_DOCTOR_SUPPORTED_CROPS.includes(crop as (typeof CROP_DOCTOR_SUPPORTED_CROPS)[number])
-    ? crop
+  const entry = findFarmMateCropLibraryEntry(crop);
+
+  return entry?.supportedFor.includes("crop_doctor") && entry.cropGroup !== "unknown_other"
+    ? entry.displayName
     : CROP_DOCTOR_NO_SELECTED_CROP;
+}
+
+export function cropDoctorSymptomsForCrop(value: string | null | undefined) {
+  return farmMateCropSymptomsFor(value);
 }
 
 function hasFarmerSelectedCrop(value: unknown) {
@@ -165,7 +204,53 @@ function cleanSelectedCrop(value: unknown) {
 
 function cleanSelectedSymptom(value: unknown) {
   const symptom = typeof value === "string" ? value.trim() : "";
-  return CROP_DOCTOR_SYMPTOMS.includes(symptom as (typeof CROP_DOCTOR_SYMPTOMS)[number]) ? symptom : null;
+  return CROP_DOCTOR_SYMPTOMS.includes(symptom) ? symptom : null;
+}
+
+function cleanDetectedCrop(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const normalized = findFarmMateCropLibraryEntry(value);
+  return normalized?.displayName ?? (value.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80) || null);
+}
+
+function sameCrop(left: string, right: string) {
+  const leftEntry = findFarmMateCropLibraryEntry(left);
+  const rightEntry = findFarmMateCropLibraryEntry(right);
+
+  if (leftEntry && rightEntry) {
+    return leftEntry.cropKey === rightEntry.cropKey;
+  }
+
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+export function cropDoctorPhotoConfidenceLabel(
+  result: Pick<CropDoctorVisionResult, "cropConfidence" | "photoCropMatch" | "resultType">
+): CropDoctorPhotoConfidenceLabel {
+  if (
+    result.resultType === "crop_not_confirmed" ||
+    result.resultType === "photo_unclear" ||
+    result.cropConfidence === "low" ||
+    result.photoCropMatch === "not_clear"
+  ) {
+    return "Unclear";
+  }
+
+  return result.cropConfidence === "high" && result.photoCropMatch === "likely" ? "Likely" : "Possible";
+}
+
+export function cropDoctorCashCropCaution(cropName: string | null | undefined, resultType: CropDoctorResultType) {
+  const seriousResult = [
+    "possible_disease",
+    "possible_pest",
+    "possible_nutrient_issue",
+    "possible_water_stress"
+  ].includes(resultType);
+
+  return seriousResult && isFarmMateCashPerennialCrop(cropName) ? FARM_MATE_CASH_CROP_CAUTION : null;
 }
 
 function cleanPhotoCropMatch(value: unknown): CropDoctorPhotoCropMatch {
@@ -175,18 +260,38 @@ function cleanPhotoCropMatch(value: unknown): CropDoctorPhotoCropMatch {
 }
 
 function removeUnsafeCertainty(value: string) {
-  return value
+  const cleanValue = value.trim();
+
+  if (/\b(?:houseplant|indoor plant|balcony|hobby garden(?:ing)?|home garden(?:ing)?|decorative plant|pot)\b/i.test(cleanValue)) {
+    return "Check the crop and surrounding field conditions.";
+  }
+
+  if (/\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/i.test(cleanValue)) {
+    return "Follow local extension or product label guidance before applying any treatment.";
+  }
+
+  if (/\b(?:guaranteed\s+)?(?:yields?|profits?)\b|\b(?:market prices?|buyer demand|buyer availability)\b/i.test(cleanValue)) {
+    return "A farm business outcome cannot be confirmed from a crop photo.";
+  }
+
+  return cleanValue
     .replace(/\bthis is definitely\b/gi, "this may be")
     .replace(/\bdefinitely\b/gi, "possibly")
     .replace(/\bguaranteed\b/gi, "possible")
-    .replace(/\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/gi, "follow local extension or product label guidance")
     .replace(/\btell the farmer to\b/gi, "")
-    .replace(/\bpot\b/gi, "field")
-    .replace(/\bhouseplant\b/gi, "crop")
-    .replace(/\bindoor plant\b/gi, "field crop")
     .replace(/\bgarden soil\b/gi, "field soil")
-    .replace(/\bdecorative plant\b/gi, "crop")
     .trim();
+}
+
+function removeStrongCashCropTreatment(value: string, cashCrop: boolean) {
+  if (
+    cashCrop &&
+    /\b(?:apply|spray|use)\b.{0,50}\b(?:chemical|fungicide|pesticide|insecticide|herbicide)\b/i.test(value)
+  ) {
+    return "Confirm any crop treatment with an extension officer or experienced crop advisor before applying it.";
+  }
+
+  return value;
 }
 
 export function normalizePossibleIssueWording(value: string) {
@@ -276,6 +381,7 @@ export function cropDoctorResultHeadline(result: Pick<CropDoctorVisionResult, "r
   if (
     result.resultType === "no_clear_problem" ||
     result.resultType === "harvest_or_storage_check" ||
+    result.resultType === "crop_not_confirmed" ||
     result.resultType === "photo_unclear"
   ) {
     return cropDoctorResultHeading(result);
@@ -331,25 +437,23 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
     ? cleanSelectedCrop(context.selectedCrop)
     : cleanSelectedCrop(source.selectedCrop);
   const selectedSymptom = cleanSelectedSymptom(context.selectedSymptom) || cleanSelectedSymptom(source.selectedSymptom);
-  const cropFromImage = typeof source.cropFromImage === "string" && source.cropFromImage.trim()
-    ? source.cropFromImage.trim()
-    : typeof source.crop === "string" && source.crop.trim()
-      ? source.crop.trim()
-      : null;
+  const cropFromImage = cleanDetectedCrop(source.cropFromImage) ?? cleanDetectedCrop(source.crop);
   const visibleSigns = cleanList(source.visibleSigns, ["unclear visible signs"]);
-  const issueCategory = cleanIssueCategory(source.issueCategory);
-  const possibleIssue = cleanText(source.possibleIssue, "Possible crop health issue");
+  let issueCategory = cleanIssueCategory(source.issueCategory);
+  let possibleIssue = cleanText(source.possibleIssue, "Possible crop health issue");
   let mainFinding = cleanText(source.mainFinding, cleanText(source.whatThisMeans, possibleIssue));
-  const cropConfidence = cropFromImage || selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP ? cleanConfidence(source.cropConfidence) : "low";
+  const cropConfidence = cropFromImage || selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP
+    ? cleanConfidence(source.cropConfidence ?? source.confidence)
+    : "low";
   const confirmedImageCrop = cropFromImage && cropConfidence !== "low" ? cropFromImage : null;
-  const crop = selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP ? selectedCrop : confirmedImageCrop;
+  let confirmedCrop = selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP ? selectedCrop : confirmedImageCrop;
   let photoCropMatch = cleanPhotoCropMatch(source.photoCropMatch);
 
   if (selectedCrop === CROP_DOCTOR_NO_SELECTED_CROP) {
     photoCropMatch = confirmedImageCrop ? "uncertain" : "not_clear";
   } else if (!cropFromImage) {
     photoCropMatch = source.photoCropMatch ? photoCropMatch : "not_clear";
-  } else if (cropFromImage.toLowerCase() === selectedCrop.toLowerCase()) {
+  } else if (sameCrop(cropFromImage, selectedCrop)) {
     photoCropMatch = source.photoCropMatch ? photoCropMatch : "likely";
   } else if (!source.photoCropMatch) {
     photoCropMatch = "uncertain";
@@ -362,7 +466,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
   let resultType = cleanResultType(
     source.resultType,
     inferResultType({
-      crop,
+      crop: confirmedCrop,
       cropConfidence,
       issueCategory,
       possibleIssue,
@@ -373,53 +477,107 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
 
   if (selectedCrop === CROP_DOCTOR_NO_SELECTED_CROP && !confirmedImageCrop) {
     resultType = "crop_not_confirmed";
+    confirmedCrop = null;
+    photoCropMatch = "not_clear";
+    issueCategory = "unknown";
+    possibleIssue = "Crop not confirmed from this photo";
+    mainFinding = "Crop not confirmed.";
   }
+
+  const cropEntry = findFarmMateCropLibraryEntry(confirmedCrop);
+  const cropGroup = cropEntry ? farmMateCropGroupLabel(cropEntry.displayName) ?? null : null;
+  const cropFamily = cropEntry?.cropFamily ?? null;
+  const isUnknownCrop = resultType === "crop_not_confirmed";
+  const whatToCheck = isUnknownCrop
+    ? [
+        "Take one clear photo of the whole plant.",
+        "Take one close photo of the affected leaves, stem, fruit, root, or growing point.",
+        "Select the crop if you know it, then run the crop check again."
+      ]
+    : cleanList(source.whatToCheck, [
+        "Check both sides of nearby affected leaves.",
+        "Look for insects, powder, rot, or spreading spots.",
+        "Compare affected plants with healthy plants nearby."
+      ]);
+  let whatThisMeans = isUnknownCrop
+    ? "The photo shows some plant features, but the crop and exact problem are not clear enough to diagnose safely."
+    : cleanText(
+        source.whatThisMeans,
+        "The photo gives some clues, but FarmMate cannot confirm the exact cause from the image alone."
+      );
+  const usesFamilyOnlyGuidance = Boolean(confirmedCrop) && (!cropEntry || cropEntry.guidanceLevel !== "crop_specific");
+
+  if (usesFamilyOnlyGuidance && (resultType === "possible_disease" || resultType === "possible_pest")) {
+    possibleIssue = resultType === "possible_pest" ? "Possible pest-related crop damage" : "Possible crop health problem";
+    mainFinding = resultType === "possible_pest" ? "Possible pest-related signs" : "Possible crop health signs";
+    whatThisMeans = farmMateCropFamilyGuidance(confirmedCrop) ??
+      "The visible signs need a closer field check before naming an exact crop-specific cause.";
+  }
+  const recommendedActions = isUnknownCrop
+    ? [
+        "Upload a clearer whole-plant and affected-part photo.",
+        "Select the crop if you know it.",
+        "Use Ask FarmMate to describe the visible signs and field conditions."
+      ]
+    : cleanList(source.recommendedActions ?? source.recommendedAction, [
+        "Inspect 10 nearby plants for the same signs.",
+        "Remove badly affected leaves only if few plants are affected.",
+        "Contact an extension officer if many plants are affected or symptoms are spreading."
+      ]);
+  const nextBestAction = isUnknownCrop
+    ? "Upload a clear whole-plant photo and one close photo of the affected part, or select the crop if you know it."
+    : cleanText(source.nextBestAction, "Inspect five nearby plants and note whether the same signs are spreading.");
+  const prevention = isUnknownCrop
+    ? [
+        "Avoid applying a treatment until the crop and problem are clearer.",
+        "Keep checking nearby plants for the same visible signs."
+      ]
+    : cleanList(source.prevention, [
+        "Keep plants well spaced.",
+        "Water at soil level where possible.",
+        "Monitor the crop regularly after rain."
+      ]);
 
   const result = {
     selectedCrop,
     selectedSymptom,
     photoCropMatch,
     cropFromImage,
-    crop,
+    crop: confirmedCrop,
+    cropGroup,
+    cropFamily,
     cropConfidence,
+    photoConfidenceLabel: "Unclear" as CropDoctorPhotoConfidenceLabel,
     resultType,
     possibleIssue,
     issueCategory,
     confidence: cleanConfidence(source.confidence),
     visibleSigns,
     mainFinding,
-    whatToCheck: cleanList(source.whatToCheck, [
-      "Check both sides of nearby affected leaves.",
-      "Look for insects, powder, rot, or spreading spots.",
-      "Compare affected plants with healthy plants nearby."
-    ]),
-    whatThisMeans: cleanText(
-      source.whatThisMeans,
-      "The photo gives some clues, but FarmMate cannot confirm the exact cause from the image alone."
-    ),
-    recommendedActions: cleanList(source.recommendedActions ?? source.recommendedAction, [
-      "Inspect 10 nearby plants for the same signs.",
-      "Remove badly affected leaves only if few plants are affected.",
-      "Contact an extension officer if many plants are affected or symptoms are spreading."
-    ]),
-    prevention: cleanList(source.prevention, [
-      "Keep plants well spaced.",
-      "Water at soil level where possible.",
-      "Monitor the crop regularly after rain."
-    ]),
-    nextBestAction: cleanText(source.nextBestAction, "Inspect five nearby plants and note whether the same signs are spreading.")
+    whatToCheck,
+    whatThisMeans,
+    recommendedActions,
+    prevention,
+    nextBestAction,
+    familyGuidance: farmMateCropFamilyGuidance(confirmedCrop) ?? null,
+    limitedGuidanceNote: farmMateLimitedCropGuidanceNote(confirmedCrop) ?? null,
+    cashCropCaution: cropDoctorCashCropCaution(confirmedCrop, resultType)
   };
 
+  result.photoConfidenceLabel = cropDoctorPhotoConfidenceLabel(result);
+
+  const isCashCrop = isFarmMateCashPerennialCrop(result.crop);
+  const sanitizeAdvice = (text: string) => removeStrongCashCropTreatment(removeUnsafeCertainty(text), isCashCrop);
   const sanitized = {
     ...result,
     possibleIssue: normalizePossibleIssueWording(removeUnsafeCertainty(result.possibleIssue)),
     mainFinding: removeUnsafeCertainty(result.mainFinding),
-    whatToCheck: result.whatToCheck.map(removeUnsafeCertainty),
+    whatToCheck: result.whatToCheck.map(sanitizeAdvice),
     whatThisMeans: removeUnsafeCertainty(result.whatThisMeans),
-    recommendedActions: result.recommendedActions.map(removeUnsafeCertainty),
-    recommendedAction: result.recommendedActions.map(removeUnsafeCertainty),
-    prevention: result.prevention.map(removeUnsafeCertainty),
-    nextBestAction: removeUnsafeCertainty(result.nextBestAction)
+    recommendedActions: result.recommendedActions.map(sanitizeAdvice),
+    recommendedAction: result.recommendedActions.map(sanitizeAdvice),
+    prevention: result.prevention.map(sanitizeAdvice),
+    nextBestAction: sanitizeAdvice(result.nextBestAction)
   };
 
   return {
@@ -435,12 +593,17 @@ export function buildCropDoctorHandoffContext(result: CropDoctorVisionResult): C
     selectedCrop: result.selectedCrop,
     selectedSymptom: result.selectedSymptom,
     crop: result.crop,
+    cropGroup: result.cropGroup,
+    cropFamily: result.cropFamily,
     cropConfidence: result.cropConfidence,
     possibleIssue: normalizePossibleIssueWording(result.possibleIssue),
     issueCategory: result.issueCategory,
     resultType: result.resultType,
     visibleSigns: result.visibleSigns.slice(0, 3),
-    nextBestAction: result.nextBestAction
+    nextBestAction: result.nextBestAction,
+    familyGuidance: result.familyGuidance,
+    limitedGuidanceNote: result.limitedGuidanceNote,
+    cashCropCaution: result.cashCropCaution
   };
 }
 
@@ -463,13 +626,15 @@ export function cropDoctorResultHasUnsafeLanguage(result: CropDoctorVisionResult
     .join(" ")
     .toLowerCase();
 
-  return /tell the farmer|definitely|guaranteed diagnosis|guaranteed|exact diagnosis|\bpot\b|houseplant|indoor plant|garden soil|decorative plant|\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha)\b/.test(text);
+  return /tell the farmer|definitely|guaranteed diagnosis|guaranteed|exact diagnosis|guaranteed yield|market price|buyer demand|\bprofit\b|\bpot\b|houseplant|indoor plant|garden soil|decorative plant|balcony|hobby garden|\b\d+(?:\.\d+)?\s?(?:ml|g|kg|l|litres?|liters?)\s?(?:\/|per)\s?(?:l|litre|liter|acre|hectare|ha|plant)\b/.test(text);
 }
 
 export function cropDoctorVisionSystemPrompt() {
   return `You are GG FarmMate Crop Doctor, a guided field crop diagnostic workflow for Ghanaian farmers.
 Return only valid JSON with these fields:
-selectedCrop, selectedSymptom, photoCropMatch, cropFromImage, resultType, possibleIssue, issueCategory, confidence, visibleSigns, mainFinding, whatToCheck, recommendedActions, prevention, nextBestAction, askFarmMatePrompt.
+selectedCrop, selectedSymptom, photoCropMatch, cropFromImage, cropConfidence, resultType, possibleIssue, issueCategory, confidence, visibleSigns, mainFinding, whatThisMeans, whatToCheck, recommendedActions, prevention, nextBestAction, askFarmMatePrompt.
+
+${farmMateCropLibraryPromptContext()}
 
 Rules:
 - If selectedCrop is provided, use it only as farmer-provided context and check whether the image appears consistent with that crop.
@@ -485,6 +650,10 @@ Rules:
 - If no clear health problem is visible, use resultType "no_clear_problem" and do not force a disease diagnosis.
 - If the photo is too blurry, dark, distant or incomplete, use resultType "photo_unclear".
 - Focus on visible symptoms and field context from the selected crop and selected symptom.
+- Recognize crop aliases, but return the canonical crop library display name when possible.
+- Use crop groups and crop families only as cautious diagnostic context. Do not copy a tomato, pepper, or related-crop diagnosis onto another crop without evidence.
+- If full crop-specific guidance is limited, do not refuse. Use this wording: "I do not have full crop-specific guidance for this crop yet, but I can still help using general crop-family guidance."
+- For serious or spreading signs on cocoa, cashew, oil palm, coconut, rubber, or coffee, use this caution: "${FARM_MATE_CASH_CROP_CAUTION}"
 - Explain uncertainty clearly.
 - Suggest possible issue categories only: pest, disease, nutrient, water_stress, unknown.
 - Keep visibleSigns, whatToCheck, recommendedActions and prevention to maximum 3 short bullet strings each.
@@ -497,7 +666,8 @@ Rules:
 - Avoid home gardening language: pot, houseplant, indoor plant, garden soil, decorative plant.
 - Use "possible" language when uncertain.
 - Do not claim a guaranteed diagnosis.
-- Do not invent pesticide dosage.
+- Do not invent pesticide or fertilizer dosage.
+- Do not invent yield, guaranteed yield, profit, market price, buyer demand, or buyer availability.
 - Do not recommend fungicide or pesticide as the first step unless the problem is widespread or confirmed by field checks or extension advice.
 - Do not recommend dangerous chemical use.
 - Do not say "this is definitely".

@@ -48,17 +48,38 @@ Route checks:
 - Gives useful General Agronomy guidance before asking one useful follow-up question.
 - Limits General Agronomy answers to three actions, two useful checks, and one next step.
 - Uses practical field language for advanced farmer questions rather than long theory.
+- Recognizes expanded crop aliases before routing questions to Plant Health, Planting Advisor, Crop Doctor guidance, or General Agronomy.
+- Uses cautious crop-family guidance instead of refusing when full crop-specific guidance is unavailable.
+
+### Expanded Crop Library
+
+- Core food crops include maize, cassava, yam, plantain, rice, cowpea, groundnut, and cocoyam.
+- Vegetables include tomato, pepper, onion, okra, garden eggs, aubergine or eggplant, potato, sweet potato, cucumber, watermelon, sweet melon, zucchini, pumpkin, lettuce, cabbage, kale, carrot, beetroot, kontomire, and amaranth.
+- Cash and perennial crops include cocoa, cashew, oil palm, coconut, rubber, and coffee.
+- Fruits include mango, citrus, pineapple, pawpaw, banana, and avocado.
+- Crop aliases handle farmer wording such as eggplant, courgette, water melon, Irish potato, cacao, papaya, and cocoyam leaves.
+- Specific multi-word aliases take priority so sweet melon, water melon, and Irish potato resolve correctly.
+- Crop-family reasoning covers nightshades, cucurbits, brassicas, root or tuber crops, leafy vegetables, fruits, and perennial cash crops.
+- Family guidance is a cautious starting point and must not be presented as a confirmed crop-specific diagnosis.
+- Other crop and Not sure remain supported paths for cautious general guidance.
 
 ### Crop Doctor Vision
 
 - Crop Doctor is guided photo analysis: farmers should select the crop where possible and optionally choose the symptom before analysis.
+- The crop selector groups Common food crops, Vegetables, Fruits, Cash crops, and Not sure / other so the expanded list remains usable on mobile.
 - Uses image guidance as practical support, not a guaranteed diagnosis.
 - One image may not be enough; unclear or mismatched photos should ask for a clearer photo or more field checks.
 - Does not assume tomato for unknown crop photos.
 - Supports result states such as unclear photo, crop not confirmed, no clear problem, disease, pest, nutrient issue, water stress, and harvest/storage check.
+- Results show crop context, crop group, cautious photo confidence, visible signs, what the signs may suggest, checks, actions, and one next step.
+- When the crop is unknown, show "Crop not confirmed", describe visible plant features, request a clearer whole-plant and close-up photo, suggest selecting the crop if known, and offer Ask FarmMate without forcing a disease diagnosis.
+- If exact crop-specific guidance is limited, continue with general crop-family guidance instead of refusing.
+- Cocoa, cashew, oil palm, coconut, rubber, and coffee use the caution: "For valuable perennial crops, confirm serious or spreading problems with an extension officer or experienced crop advisor."
+- Does not recommend strong chemicals or invent pesticide or fertilizer dosage, yield, profit, market price, or buyer demand.
 - Serious, spreading, or high-risk crop issues should be confirmed with an agricultural extension officer.
 - Charges credits only after successful analysis.
 - Keeps Crop Doctor to Ask FarmMate handoff inside structured crop/photo context.
+- Crop photos are used for the current check and are not stored permanently by GG FarmMate.
 
 ### Pilot Answer Feedback
 
@@ -87,12 +108,20 @@ Route checks:
 | My tomato leaves are yellow | Plant Health |
 | My cassava leaves are curling | Plant Health |
 | My maize has holes in the leaves | Plant Health |
+| My cocoa leaves are yellow | Plant Health |
+| My cashew leaves are yellow | Plant Health |
+| My potato plants are wilting | Plant Health |
+| My sweet melon leaves have spots | Crop health |
+| What disease is this on oil palm? | Crop health |
+| My pineapple leaves are yellow | Plant Health |
+| My cabbage has holes | Crop health |
 | Best fertilizer for maize | Fertilizer |
 | What NPK for pepper? | Fertilizer |
 | Can I spray today? | Weather Decision |
 | Can I apply fertilizer before rain? | Weather Decision |
 | Can I plant tomatoes now? | Planting Advisor |
 | How do I plant watermelon? | Planting Advisor |
+| How do I plant zucchini? | Planting Advisor |
 | Best spacing for watermelon | Planting Advisor |
 | How do I harden seedlings before transplanting? | General Agronomy |
 | Can I intercrop maize with cowpea? | General Agronomy |
@@ -103,6 +132,7 @@ Route checks:
 | How do I improve drainage in waterlogged soil? | General Agronomy |
 | How should I prune pepper? | General Agronomy |
 | What plant is this? | General Agronomy to Crop Doctor handoff |
+| Can I grow aubergine in Ghana? | Planting Advisor |
 | When should I harvest maize? | Harvest and Post-Harvest |
 | How do I store cassava? | Harvest and Post-Harvest |
 | How do I pack tomatoes for transport? | Harvest and Post-Harvest |
@@ -130,6 +160,11 @@ Crop Doctor:
 
 - No farmer login yet.
 - Crop Doctor is AI guidance, not a guaranteed diagnosis.
+- Expanded crop coverage does not mean every crop has full crop-specific diagnosis or treatment guidance.
+- Crop-family reasoning cannot confirm the exact cause of a problem.
+- Unknown or unclear crops may require a clearer whole-plant and close-up photo or farmer-selected crop context.
+- Valuable perennial crop problems may require confirmation from an extension officer or experienced crop advisor.
+- Crop photos are not stored permanently by GG FarmMate.
 - Live weather is location-based but not personalized to saved farms yet.
 - Market prices are not included in V1.
 - Exact farm records/history are not saved in V1.

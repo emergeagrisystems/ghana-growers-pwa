@@ -66,7 +66,7 @@ export function detectFarmMateIntent(question: string): DetectedFarmMateIntent {
     return {
       intent: matchedIntent.intent,
       label: matchedIntent.label,
-      cropName: detectedCrop?.name,
+      cropName: detectedCrop?.displayName,
       matchedKeywords: matchedIntent.keywords.filter((keyword) => normalized.includes(keyword))
     };
   }
@@ -74,7 +74,7 @@ export function detectFarmMateIntent(question: string): DetectedFarmMateIntent {
   return {
     intent: "crop-health",
     label: "crop_health",
-    cropName: detectedCrop?.name,
+    cropName: detectedCrop?.displayName,
     matchedKeywords: []
   };
 }

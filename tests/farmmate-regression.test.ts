@@ -8,7 +8,7 @@ import {
   adminPrioritySeverity
 } from "../src/lib/adminPriorityState";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
-import { buildFarmMateVoiceLayerInput, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
+import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
@@ -100,16 +100,29 @@ import {
 } from "../src/lib/farmmate/general-agronomy-specialist";
 import { diagnosisFromFileName, farmMateQuestionFromDiagnosis, unknownCropDiagnosis } from "../src/lib/farmmate/crop-doctor-demo";
 import {
+  FARM_MATE_CASH_CROP_CAUTION,
+  detectFarmMateCropLibraryEntry,
+  farmMateCropFamilyGuidance,
+  farmMateCropGroupLabels,
+  farmMateCropLibrary,
+  farmMateCropLibraryPromptContext,
+  farmMateCropOptionsByGroup,
+  findFarmMateCropLibraryEntry
+} from "../src/lib/farmmate/crop-library";
+import {
   buildCropDoctorAskFarmMatePrompt,
   buildCropDoctorHandoffContext,
+  CROP_DOCTOR_CROP_GROUPS,
   cropDoctorResultHasUnsafeLanguage,
   CROP_DOCTOR_MAX_IMAGE_BYTES,
   CROP_DOCTOR_SUPPORTED_CROPS,
   CROP_DOCTOR_SYMPTOMS,
   CROP_DOCTOR_TOO_LARGE_MESSAGE,
+  cropDoctorPhotoConfidenceLabel,
   cropDoctorResultBadge,
   cropDoctorResultHeading,
   cropDoctorResultHeadline,
+  cropDoctorSymptomsForCrop,
   cropDoctorVisionSystemPrompt,
   normalizeCropDoctorSelectedCrop,
   normalizeCropDoctorVisionResult,
@@ -4143,7 +4156,6 @@ const tests: TestCase[] = [
     run: () => {
       const watermelon = plantingAdvisorCrops.find((guidance) => guidance.crop === "Watermelon");
       const watermelonText = JSON.stringify(watermelon).toLowerCase();
-      const cropDoctorVision = repoFile("src/lib/farmmate/crop-doctor-vision.ts");
 
       assert.equal(Boolean(watermelon?.suitablePlantingConditions.length), true);
       assert.equal(Boolean(watermelon?.spacingGuidance.length), true);
@@ -4156,7 +4168,8 @@ const tests: TestCase[] = [
       assert.equal(watermelonText.includes("profit"), false);
       assert.equal(watermelonText.includes("yield"), false);
       assert.equal(watermelonText.includes("buyer"), false);
-      assert.equal(cropDoctorVision.includes('"Watermelon / melon"'), true);
+      assert.equal(CROP_DOCTOR_SUPPORTED_CROPS.includes("Watermelon"), true);
+      assert.equal(CROP_DOCTOR_SUPPORTED_CROPS.includes("Sweet melon"), true);
     }
   },
   {
@@ -4873,9 +4886,38 @@ const tests: TestCase[] = [
       assert.ok(takePhotoIndex > 0);
       assert.ok(cropSelectorIndex > takePhotoIndex);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-crop"'), true);
-      assert.deepEqual(CROP_DOCTOR_SUPPORTED_CROPS, ["Maize", "Cassava", "Tomato", "Pepper", "Plantain", "Yam", "Onion", "Okra", "Cucumber", "Watermelon / melon", "Garden eggs", "Not sure"]);
+      const requiredCrops = [
+        "Maize",
+        "Cassava",
+        "Tomato",
+        "Pepper",
+        "Plantain",
+        "Yam",
+        "Onion",
+        "Okra",
+        "Cucumber",
+        "Watermelon",
+        "Garden eggs",
+        "Aubergine / eggplant",
+        "Potato",
+        "Sweet potato",
+        "Sweet melon",
+        "Zucchini",
+        "Lettuce",
+        "Cabbage",
+        "Cocoa",
+        "Cashew",
+        "Oil palm",
+        "Mango",
+        "Citrus",
+        "Pineapple",
+        "Not sure"
+      ];
+
+      requiredCrops.forEach((crop) => assert.equal(CROP_DOCTOR_SUPPORTED_CROPS.includes(crop), true, crop));
       assert.equal(cropDoctor.includes("Detect automatically"), true);
-      assert.equal(cropDoctor.includes("cropOptions.map"), true);
+      assert.equal(cropDoctor.includes("CROP_DOCTOR_CROP_GROUPS.map"), true);
+      assert.equal(cropDoctor.includes("<optgroup"), true);
       assert.equal(cropDoctor.includes("Select crop to analyse"), false);
     }
   },
@@ -4887,9 +4929,387 @@ const tests: TestCase[] = [
       assert.equal(cropDoctor.includes("What are you seeing?"), true);
       assert.equal(cropDoctor.includes("(optional)"), true);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-symptom"'), true);
-      assert.deepEqual(CROP_DOCTOR_SYMPTOMS, ["Yellow leaves", "Spots on leaves", "Holes in leaves", "Leaves curling", "Wilting", "Stunted growth", "Fruit problem", "Insects or pests", "Roots or tubers problem", "Not sure"]);
+      const requiredSymptoms = [
+        "Yellow leaves",
+        "Spots on leaves",
+        "Holes in leaves",
+        "Leaves curling",
+        "Wilting",
+        "Stunted growth",
+        "Fruit problem",
+        "Insects or pests",
+        "Roots or tubers problem",
+        "Powdery white patches",
+        "Caterpillar damage",
+        "Dieback",
+        "Not sure"
+      ];
+
+      requiredSymptoms.forEach((symptom) => assert.equal(CROP_DOCTOR_SYMPTOMS.includes(symptom), true, symptom));
       assert.equal(cropDoctor.includes("Not sure"), true);
       assert.equal(cropDoctor.includes("symptomOptions.map"), true);
+    }
+  },
+  {
+    name: "Sprint 40 crop library covers required Ghana food vegetable fruit and cash crops",
+    run: () => {
+      const expectedCrops: Array<[string, keyof typeof farmMateCropGroupLabels]> = [
+        ["Maize", "core_food"],
+        ["Rice", "core_food"],
+        ["Cowpea", "core_food"],
+        ["Groundnut", "core_food"],
+        ["Cocoyam", "core_food"],
+        ["Aubergine / eggplant", "vegetable"],
+        ["Potato", "vegetable"],
+        ["Sweet potato", "vegetable"],
+        ["Sweet melon", "vegetable"],
+        ["Zucchini", "vegetable"],
+        ["Lettuce", "vegetable"],
+        ["Cabbage", "vegetable"],
+        ["Kontomire", "vegetable"],
+        ["Cocoa", "cash_perennial"],
+        ["Cashew", "cash_perennial"],
+        ["Oil palm", "cash_perennial"],
+        ["Coconut", "cash_perennial"],
+        ["Rubber", "cash_perennial"],
+        ["Coffee", "cash_perennial"],
+        ["Mango", "fruit"],
+        ["Citrus", "fruit"],
+        ["Pineapple", "fruit"],
+        ["Pawpaw", "fruit"],
+        ["Banana", "fruit"],
+        ["Avocado", "fruit"],
+        ["Other crop", "unknown_other"],
+        ["Not sure", "unknown_other"]
+      ];
+
+      expectedCrops.forEach(([displayName, cropGroup]) => {
+        const entry = findFarmMateCropLibraryEntry(displayName);
+
+        assert.ok(entry, displayName);
+        assert.equal(entry?.cropGroup, cropGroup, displayName);
+        assert.equal(Boolean(entry?.cropKey), true, displayName);
+        assert.equal(Boolean(entry?.aliases.length), true, displayName);
+        assert.equal(entry?.supportedFor.includes("crop_doctor"), true, displayName);
+        assert.equal(entry?.supportedFor.includes("general_agronomy"), true, displayName);
+        assert.equal(Boolean(entry?.commonSymptoms.length), true, displayName);
+        assert.equal(Boolean(entry?.commonPestDiseasePatterns.length), true, displayName);
+        assert.equal(Boolean(entry?.diagnosticCautions.length), true, displayName);
+      });
+
+      assert.equal(farmMateCropGroupLabels.core_food, "Core food crop");
+      assert.equal(farmMateCropGroupLabels.vegetable, "Vegetable");
+      assert.equal(farmMateCropGroupLabels.cash_perennial, "Cash crop / perennial");
+      assert.equal(farmMateCropGroupLabels.fruit, "Fruit crop");
+      assert.equal(farmMateCropGroupLabels.unknown_other, "Not sure / other");
+      assert.equal(farmMateCropLibrary.length >= 41, true);
+    }
+  },
+  {
+    name: "Sprint 40 crop aliases normalize to canonical crops without short-name collisions",
+    run: () => {
+      const exactAliases: Array<[string, string]> = [
+        ["aubergine", "Aubergine / eggplant"],
+        ["eggplant", "Aubergine / eggplant"],
+        ["brinjal", "Aubergine / eggplant"],
+        ["zucchini", "Zucchini"],
+        ["courgette", "Zucchini"],
+        ["sweet melon", "Sweet melon"],
+        ["cantaloupe", "Sweet melon"],
+        ["honeydew", "Sweet melon"],
+        ["Irish potato", "Potato"],
+        ["white potato", "Potato"],
+        ["sweetpotato", "Sweet potato"],
+        ["water melon", "Watermelon"],
+        ["water-melon", "Watermelon"],
+        ["cacao", "Cocoa"],
+        ["papaya", "Pawpaw"],
+        ["cocoyam leaves", "Kontomire"]
+      ];
+
+      exactAliases.forEach(([alias, displayName]) => {
+        assert.equal(findFarmMateCropLibraryEntry(alias)?.displayName, displayName, alias);
+      });
+
+      assert.equal(findFarmMateCropLibraryEntry("garden egg")?.displayName, "Garden eggs");
+      assert.equal(findFarmMateCropLibraryEntry("garden eggs")?.displayName, "Garden eggs");
+      assert.equal(findFarmMateCropLibraryEntry("melon")?.displayName, "Sweet melon");
+      assert.equal(detectFarmMateCropLibraryEntry("My sweet potato leaves are yellow")?.displayName, "Sweet potato");
+      assert.equal(detectFarmMateCropLibraryEntry("My sweet melon leaves have spots")?.displayName, "Sweet melon");
+      assert.equal(detectFarmMateCropLibraryEntry("There are spots on my water-melon")?.displayName, "Watermelon");
+      assert.equal(detectFarmMateCropLibraryEntry("My garden egg has holes")?.displayName, "Garden eggs");
+      assert.equal(detectFarmMateCropLibraryEntry("My aubergine has holes")?.displayName, "Aubergine / eggplant");
+      assert.equal(detectFarmMateCropLibraryEntry("How do I plant melon?"), undefined);
+    }
+  },
+  {
+    name: "Sprint 40 Crop Doctor selector groups crops and adapts symptom checks",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const groups = farmMateCropOptionsByGroup();
+      const expectedLabels = ["Common food crops", "Vegetables", "Cash crops", "Fruits", "Not sure / other"];
+      const selectorLabels = CROP_DOCTOR_CROP_GROUPS.map((group) => group.label);
+
+      expectedLabels.forEach((label) => assert.equal(selectorLabels.includes(label), true, label));
+      assert.deepEqual(CROP_DOCTOR_CROP_GROUPS.map((group) => group.group), groups.map((group) => group.group));
+      assert.equal(CROP_DOCTOR_CROP_GROUPS.find((group) => group.group === "cash_perennial")?.crops.includes("Cocoa"), true);
+      assert.equal(CROP_DOCTOR_CROP_GROUPS.find((group) => group.group === "unknown_other")?.crops.includes("Not sure"), true);
+      assert.equal(new Set(CROP_DOCTOR_SUPPORTED_CROPS).size, CROP_DOCTOR_SUPPORTED_CROPS.length);
+      assert.equal(cropDoctor.includes("<optgroup"), true);
+      assert.equal(cropDoctor.includes("group.crops.map"), true);
+      assert.equal(cropDoctor.includes('setSelectedSymptom("")'), true);
+      assert.equal(normalizeCropDoctorSelectedCrop("eggplant"), "Aubergine / eggplant");
+      assert.equal(normalizeCropDoctorSelectedCrop("cacao"), "Cocoa");
+      assert.equal(normalizeCropDoctorSelectedCrop("Irish potato"), "Potato");
+      assert.equal(cropDoctorSymptomsForCrop("Zucchini").includes("Powdery white patches"), true);
+      assert.equal(cropDoctorSymptomsForCrop("Cabbage").includes("Caterpillar damage"), true);
+      assert.equal(cropDoctorSymptomsForCrop("Cocoa").includes("Dieback"), true);
+    }
+  },
+  {
+    name: "Sprint 40 crop-family guidance stays cautious for related crops",
+    run: () => {
+      const aubergine = findFarmMateCropLibraryEntry("aubergine");
+      const potato = findFarmMateCropLibraryEntry("Irish potato");
+      const zucchini = findFarmMateCropLibraryEntry("courgette");
+      const cabbage = findFarmMateCropLibraryEntry("cabbage");
+      const cocoa = findFarmMateCropLibraryEntry("cacao");
+      const aubergineGuidance = farmMateCropFamilyGuidance("aubergine") ?? "";
+
+      assert.equal(aubergine?.cropFamily, "Nightshade / Solanaceae");
+      assert.equal(potato?.cropFamily?.includes("Nightshade / Solanaceae"), true);
+      assert.equal(potato?.cropFamily?.toLowerCase().includes("root / tuber"), true);
+      assert.equal(zucchini?.cropFamily, "Cucurbit");
+      assert.equal(cabbage?.cropFamily, "Brassica");
+      assert.equal(cocoa?.cropFamily?.includes("Perennial cash crop"), true);
+      assert.equal(aubergineGuidance.toLowerCase().includes("tomato or pepper-like"), true);
+      assert.equal(aubergineGuidance.toLowerCase().includes("exact cause still needs checking"), true);
+      assert.equal(aubergineGuidance.toLowerCase().includes("definitely"), false);
+    }
+  },
+  {
+    name: "Sprint 40 Crop Doctor analyses aubergine with family context instead of refusing",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "eggplant",
+        selectedSymptom: "Spots on leaves",
+        cropFromImage: "aubergine",
+        cropConfidence: "medium",
+        photoCropMatch: "likely",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        possibleIssue: "A named aubergine disease without enough evidence",
+        mainFinding: "A named aubergine disease",
+        visibleSigns: ["brown leaf spots", "yellow edges"],
+        whatThisMeans: "A named aubergine disease is present.",
+        recommendedActions: ["Check nearby plants before treatment."],
+        nextBestAction: "Compare affected leaves with healthy aubergine leaves."
+      });
+      const text = JSON.stringify(result).toLowerCase();
+
+      assert.equal(result.selectedCrop, "Aubergine / eggplant");
+      assert.equal(result.cropFromImage, "Aubergine / eggplant");
+      assert.equal(result.crop, "Aubergine / eggplant");
+      assert.equal(result.cropGroup, "Vegetable");
+      assert.equal(result.cropFamily, "Nightshade / Solanaceae");
+      assert.equal(result.photoConfidenceLabel, "Possible");
+      assert.equal(result.familyGuidance?.includes("exact cause still needs checking"), true);
+      assert.equal(result.limitedGuidanceNote?.includes("can still help using general crop-family guidance"), true);
+      assert.equal(text.includes("named aubergine disease"), false);
+      assert.equal(/cannot help|not supported|refuse/.test(text), false);
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+    }
+  },
+  {
+    name: "Sprint 40 Crop Doctor adds valuable-perennial caution to serious cocoa context",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "cocoa",
+        selectedSymptom: "Dieback",
+        cropFromImage: "cacao",
+        cropConfidence: "high",
+        photoCropMatch: "likely",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        possibleIssue: "Possible spreading stem problem",
+        mainFinding: "Possible spreading cocoa stem problem",
+        visibleSigns: ["dieback", "dark stem area"],
+        recommendedActions: [
+          "Check nearby cocoa trees for the same signs.",
+          "Spray fungicide on all affected cocoa trees."
+        ],
+        nextBestAction: "Mark affected trees and arrange an experienced field check."
+      });
+      const handoff = buildCropDoctorHandoffContext(result);
+
+      assert.equal(result.crop, "Cocoa");
+      assert.equal(result.cropFromImage, "Cocoa");
+      assert.equal(result.cropGroup, "Cash crop / perennial");
+      assert.equal(result.photoConfidenceLabel, "Likely");
+      assert.equal(cropDoctorPhotoConfidenceLabel(result), "Likely");
+      assert.equal(result.cashCropCaution, FARM_MATE_CASH_CROP_CAUTION);
+      assert.equal(handoff.cashCropCaution, FARM_MATE_CASH_CROP_CAUTION);
+      assert.equal(result.limitedGuidanceNote?.includes("can still help"), true);
+      assert.equal(result.recommendedActions.some((action) => /fungicide|pesticide|insecticide|herbicide/i.test(action)), false);
+      assert.equal(result.recommendedActions.some((action) => action.includes("extension officer")), true);
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+    }
+  },
+  {
+    name: "Sprint 40 unknown Crop Doctor result describes features and never forces diagnosis",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Not sure",
+        cropFromImage: null,
+        cropConfidence: "low",
+        photoCropMatch: "not_clear",
+        resultType: "possible_disease",
+        issueCategory: "disease",
+        possibleIssue: "Definitely a named leaf disease",
+        mainFinding: "A named disease is confirmed",
+        visibleSigns: ["serrated leaves", "purple stem"]
+      });
+      const resultText = JSON.stringify(result).toLowerCase();
+
+      assert.equal(result.crop, null);
+      assert.equal(result.cropGroup, null);
+      assert.equal(result.resultType, "crop_not_confirmed");
+      assert.equal(result.issueCategory, "unknown");
+      assert.equal(result.possibleIssue, "Crop not confirmed from this photo");
+      assert.equal(cropDoctorResultHeadline(result), "Crop not confirmed");
+      assert.equal(result.photoConfidenceLabel, "Unclear");
+      assert.equal(result.visibleSigns.includes("serrated leaves"), true);
+      assert.equal(result.whatToCheck.some((line) => line.includes("whole plant")), true);
+      assert.equal(result.whatToCheck.some((line) => line.includes("Select the crop")), true);
+      assert.equal(result.recommendedActions.some((line) => line.includes("Ask FarmMate")), true);
+      assert.equal(result.askFarmMatePrompt.includes("could not confirm the crop"), true);
+      assert.equal(resultText.includes("named disease"), false);
+      assert.equal(resultText.includes("definitely"), false);
+    }
+  },
+  {
+    name: "Sprint 40 Ask FarmMate recognizes expanded crops and routes their tasks safely",
+    run: () => {
+      const routingCases: Array<[string, string, string[]]> = [
+        ["What is wrong with my cocoa?", "Cocoa", ["crop_health"]],
+        ["My cocoa leaves are yellow", "Cocoa", ["crop_health"]],
+        ["My cashew leaves are yellow", "Cashew", ["crop_health"]],
+        ["How do I plant zucchini?", "Zucchini", ["planting", "general_agronomy"]],
+        ["My sweet melon leaves have spots", "Sweet melon", ["crop_health", "pest_disease"]],
+        ["My potato plants are wilting", "Potato", ["crop_health"]],
+        ["Can I grow aubergine in Ghana?", "Aubergine / eggplant", ["general_agronomy", "planting"]],
+        ["What disease is this on oil palm?", "Oil palm", ["pest_disease", "crop_health"]],
+        ["My pineapple leaves are yellow", "Pineapple", ["crop_health"]],
+        ["My cabbage has holes", "Cabbage", ["crop_health", "pest_disease"]]
+      ];
+
+      routingCases.forEach(([question, crop, allowedSpecialists]) => {
+        const route = routeFarmMateQuestion(question);
+
+        assert.equal(route.detectedCrop, crop, question);
+        assert.equal(allowedSpecialists.includes(route.selectedSpecialist), true, `${question}: ${route.selectedSpecialist}`);
+      });
+
+      ["How do I plant zucchini?", "Can I grow aubergine in Ghana?"].forEach((question) => {
+        const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+        const text = responseText(response).toLowerCase();
+
+        assert.equal(Boolean(response.resolvedCrop), true, question);
+        assert.equal(/cannot help|crop is not supported|refuse/.test(text), false, question);
+      });
+    }
+  },
+  {
+    name: "Sprint 40 OpenAI contexts include aliases families cautious fallback and cash-crop rules",
+    run: () => {
+      const cocoaQuestion = "My cacao leaves are yellow";
+      const cocoaBrain = buildFarmMateResponse(cocoaQuestion, routeFarmMateQuestion(cocoaQuestion));
+      const cocoaPayload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion: cocoaQuestion,
+          brain: cocoaBrain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as {
+        cropLibraryContext?: {
+          displayName?: string;
+          cropGroup?: string;
+          cropFamily?: string;
+          aliases?: string[];
+          familyGuidance?: string;
+          limitedGuidanceNote?: string;
+          cashCropCaution?: string;
+        };
+        responseRules?: string[];
+      };
+      const cropPrompt = farmMateCropLibraryPromptContext();
+      const visionPrompt = cropDoctorVisionSystemPrompt();
+      const rules = cocoaPayload.responseRules?.join(" ") ?? "";
+
+      assert.equal(cocoaPayload.cropLibraryContext?.displayName, "Cocoa");
+      assert.equal(cocoaPayload.cropLibraryContext?.cropGroup, "Cash crop / perennial");
+      assert.equal(cocoaPayload.cropLibraryContext?.cropFamily?.includes("Perennial cash crop"), true);
+      assert.equal(cocoaPayload.cropLibraryContext?.aliases?.includes("cacao"), true);
+      assert.equal(cocoaPayload.cropLibraryContext?.limitedGuidanceNote?.includes("general crop-family guidance"), true);
+      assert.equal(cocoaPayload.cropLibraryContext?.cashCropCaution, FARM_MATE_CASH_CROP_CAUTION);
+      assert.equal(rules.includes(FARM_MATE_CASH_CROP_CAUTION), true);
+      assert.equal(cropPrompt.includes("Aubergine / eggplant"), true);
+      assert.equal(cropPrompt.includes("Zucchini"), true);
+      assert.equal(cropPrompt.includes("courgette"), true);
+      assert.equal(cropPrompt.includes("Sweet melon"), true);
+      assert.equal(cropPrompt.toLowerCase().includes("irish potato"), true);
+      assert.equal(FARM_MATE_SYSTEM_PROMPT.includes("crop-family similarities only as cautious context"), true);
+      assert.equal(FARM_MATE_SYSTEM_PROMPT.includes(FARM_MATE_CASH_CROP_CAUTION), true);
+      assert.equal(visionPrompt.includes("do not refuse"), true);
+      assert.equal(visionPrompt.includes("Do not invent pesticide or fertilizer dosage"), true);
+      assert.equal(visionPrompt.includes("yield, guaranteed yield, profit, market price, buyer demand"), true);
+      assert.equal(visionPrompt.includes("Think like a field crop advisor, not a home gardening assistant."), true);
+    }
+  },
+  {
+    name: "Sprint 40 Crop Doctor sanitizes dosage commercial claims and hobby-gardening language",
+    run: () => {
+      const result = normalizeCropDoctorVisionResult({
+        selectedCrop: "Cabbage",
+        cropFromImage: "Cabbage",
+        cropConfidence: "high",
+        photoCropMatch: "likely",
+        resultType: "possible_pest",
+        issueCategory: "pest",
+        possibleIssue: "This is definitely a pest",
+        mainFinding: "Definitely pest damage",
+        visibleSigns: ["holes in leaves"],
+        recommendedActions: [
+          "Apply 10ml per litre.",
+          "Guaranteed yield and guaranteed profit.",
+          "The market price and buyer demand are strong."
+        ],
+        prevention: ["Move the houseplant pot to the balcony hobby garden."],
+        nextBestAction: "Check nearby plants."
+      });
+      const text = JSON.stringify(result).toLowerCase();
+
+      assert.equal(/10ml per litre|guaranteed|\byield\b|\bprofit\b|market price|buyer demand/.test(text), false);
+      assert.equal(/houseplant|\bpot\b|balcony|hobby garden/.test(text), false);
+      assert.equal(cropDoctorResultHasUnsafeLanguage(result), false);
+    }
+  },
+  {
+    name: "Sprint 40 crop photos stay transient and are not written to application storage",
+    run: () => {
+      const cropDoctor = repoFile("src/components/CropDoctor.tsx");
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+      const vision = repoFile("src/lib/farmmate/ai/vision.ts");
+
+      assert.equal(cropDoctor.includes("URL.createObjectURL(file)"), true);
+      assert.equal(cropDoctor.includes("URL.revokeObjectURL(selectedImage)"), true);
+      assert.equal(cropDoctor.includes("localStorage.setItem"), false);
+      assert.equal(cropDoctor.includes("sessionStorage.setItem"), false);
+      assert.equal(route.includes("storage.from"), false);
+      assert.equal(route.includes("insertSupabaseRecord"), false);
+      assert.equal(vision.includes("writeFile"), false);
+      assert.equal(vision.includes("createWriteStream"), false);
     }
   },
   {
@@ -5562,6 +5982,7 @@ const tests: TestCase[] = [
     run: () => {
       const result = normalizeCropDoctorVisionResult({
         crop: "Pepper",
+        cropConfidence: "high",
         visibleSigns: ["one", "two", "three", "four"],
         recommendedAction: ["one", "two", "three", "four"],
         prevention: ["one", "two", "three", "four"]
@@ -5602,7 +6023,7 @@ const tests: TestCase[] = [
       assert.equal(prompt.includes("harvest_or_storage_check"), true);
       assert.equal(prompt.includes("do not force a disease diagnosis"), true);
       assert.equal(prompt.includes("Do not claim a guaranteed diagnosis."), true);
-      assert.equal(prompt.includes("Do not invent pesticide dosage"), true);
+      assert.equal(prompt.includes("Do not invent pesticide or fertilizer dosage"), true);
       assert.equal(prompt.includes("Do not recommend fungicide or pesticide as the first step"), true);
     }
   },
@@ -5639,7 +6060,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor result shows selected crop instead of only detected crop",
+    name: "Crop Doctor result shows selected crop in unified crop metadata",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
@@ -5649,16 +6070,17 @@ const tests: TestCase[] = [
         visibleSigns: ["orange spots"]
       });
 
-      const metadata = `Selected crop: ${result.selectedCrop}`;
-      assert.equal(metadata, "Selected crop: Maize");
-      assert.equal(cropDoctor.includes("Selected crop"), true);
-      assert.equal(cropDoctor.includes("Photo check"), true);
+      const metadata = `Crop: ${result.crop}`;
+      assert.equal(metadata, "Crop: Maize");
+      assert.equal(cropDoctor.includes('>Crop</dt>'), true);
+      assert.equal(cropDoctor.includes("Crop group"), true);
+      assert.equal(cropDoctor.includes("Photo confidence"), true);
       assert.equal(cropDoctor.includes("Crop detected:"), false);
       assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
     }
   },
   {
-    name: "Crop Doctor result shows Detected crop when no crop was selected",
+    name: "Crop Doctor result shows detected crop in unified crop metadata",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
@@ -5673,8 +6095,9 @@ const tests: TestCase[] = [
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.crop, "Maize");
       assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
-      assert.equal(cropDoctor.includes("Detected crop"), true);
-      assert.equal(cropDoctor.includes("diagnosisDetectedCrop"), true);
+      assert.equal(cropDoctor.includes('>Crop</dt>'), true);
+      assert.equal(cropDoctor.includes("{diagnosis.crop}"), true);
+      assert.equal(cropDoctor.includes("Photo confidence"), true);
     }
   },
   {

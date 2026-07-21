@@ -188,7 +188,7 @@ function isShortFollowUpAnswer(message: string) {
 }
 
 export function manageFarmMateConversation(message: string, state: ConversationState, context: ConversationManagerContext = {}): ConversationDecision {
-  const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(message)?.name;
+  const detectedCrop = context.crop ?? detectFarmMateCropFromQuestion(message)?.displayName;
   const topicMatch = detectTopic(message);
   const topic = topicMatch?.rule.topic ?? state.activeTopic ?? "general_agronomy";
   const specialist = topicMatch?.rule.specialist ?? state.activeSpecialist ?? "general_agronomy";
