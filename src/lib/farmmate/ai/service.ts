@@ -56,9 +56,14 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
 
   const isGeneralAgronomy =
     input.brain.routerResult?.selectedSpecialist === "general_agronomy" || input.brain.flow?.id.startsWith("general-agronomy-");
+  const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
 
-  if (isGeneralAgronomy) {
-    return !["What I think", "What to do now", "Next step"].every((heading) =>
+  if (isGeneralAgronomy || isCompletedGuidedConsultation) {
+    const requiredHeadings = isCompletedGuidedConsultation
+      ? ["What I think", "What to do now", "What to check", "Next step"]
+      : ["What I think", "What to do now", "Next step"];
+
+    return !requiredHeadings.every((heading) =>
       new RegExp(`(?:^|\\n)\\s*(?:#+\\s*)?${heading}\\s*:`, "i").test(trimmed)
     );
   }
@@ -104,8 +109,10 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       ? findWeatherDecisionGuidance(weatherTaskFromQuestion(input.farmerQuestion))
       : null;
   const liveWeatherContext =
-    input.brain.routerResult?.selectedSpecialist === "weather_decision" || input.brain.flow?.intent === "weather-decisions"
-      ? input.brain.weatherContext ?? null
+    (input.brain.routerResult?.selectedSpecialist === "weather_decision" ||
+      input.brain.flow?.intent === "weather-decisions") &&
+    input.brain.weatherContext?.liveWeatherAvailable === true
+      ? input.brain.weatherContext
       : null;
   const plantingContext =
     input.brain.routerResult?.selectedSpecialist === "planting" || input.brain.flow?.intent === "planting"
@@ -119,8 +126,11 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     input.brain.routerResult?.selectedSpecialist === "general_agronomy" || input.brain.flow?.id.startsWith("general-agronomy-")
       ? findGeneralAgronomyGuidance(input.farmerQuestion, Boolean(crop))
       : null;
+  const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
   const payload = {
-    instruction: generalAgronomyContext
+    instruction: isCompletedGuidedConsultation
+      ? "Write the final answer for this completed guided consultation using the exact headings What I think:, What to do now:, What to check:, and Next step:. Use the verified farmer answers, preserve the approved local guidance, and do not ask another follow-up question."
+      : generalAgronomyContext
       ? "Rewrite the local FarmMate Brain response using the exact headings What I think:, What to do now:, optional What to check:, and Next step:. Keep at most three actions, two checks, and one next step. Preserve the approved local guidance and do not add unsupported facts."
       : "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
     farmerQuestion: input.farmerQuestion,
@@ -213,6 +223,8 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     responseRules: [
       "Keep the answer concise and conversational.",
       "Use the farmer's answers when explaining the recommendation.",
+      "When farmerAnswers contains completed guided follow-ups, return a final answer with What I think:, What to do now:, What to check:, and Next step: and do not ask for the same information again.",
+      "Never replace a selectable guided follow-up card with prose such as 'Tell me your region'.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",
       "For weather decisions, do not invent live weather or forecast details.",
       "For weather decisions with live daily weather context, do not turn daily rain chance into exact 4 to 6 hour rain timing.",

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { hasSupabaseAdminConfig, insertSupabaseRecord, selectSupabaseRecords } from "../../supabase/admin";
+import { hasSupabaseAdminConfig, insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "../../supabase/admin";
 import { canUseMemoryUsageFallback, farmMateUsageWindowMs, getFarmMateCreditDecision, getFarmMateCreditStatus, FARM_MATE_MAX_USAGE_WINDOW_MS, usageTrackingUnavailableDecision } from "./rules";
 import type { FarmMateCreditDecision, FarmMateCreditStatus, FarmMateUsageEvent, FarmMateUsageTool } from "./types";
 
@@ -121,6 +121,7 @@ async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageToo
 
 async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date()) {
   const payload = {
+    id: crypto.randomUUID(),
     anonymous_user_hash: anonymousUserHash,
     tool,
     created_at: now.toISOString()
@@ -130,7 +131,7 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
     const result = await insertSupabaseRecord("farmmate_usage_events", payload);
 
     if (!result.error) {
-      return { recorded: true as const, storage: "supabase" as const };
+      return { recorded: true as const, storage: "supabase" as const, eventId: payload.id };
     }
 
     const missingTable = /farmmate_usage_events|does not exist|schema cache|relation/i.test(result.error);
@@ -149,12 +150,72 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
     warnUsage("Using in-memory FarmMate Credits write fallback for local development.");
   }
 
-  memoryEvents.push({
-    id: `memory-${memoryEvents.length + 1}`,
-    ...payload
-  });
+  memoryEvents.push(payload);
 
-  return { recorded: true as const, storage: "memory" as const };
+  return { recorded: true as const, storage: "memory" as const, eventId: payload.id };
+}
+
+async function rotateUsageEventId(anonymousUserHash: string, eventId: string, nextEventId: string) {
+  if (hasSupabaseAdminConfig()) {
+    const filter = [
+      `id=eq.${encodeURIComponent(eventId)}`,
+      `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
+      "tool=eq.ask_farmmate"
+    ].join("&");
+    const result = await updateSupabaseRecord("farmmate_usage_events", filter, { id: nextEventId });
+
+    if (!result.error && result.data?.id === nextEventId) {
+      return { rotated: true as const, replayed: false as const, storage: "supabase" as const, eventId: nextEventId };
+    }
+
+    if (!result.error) {
+      const replayQuery = [
+        `id=eq.${encodeURIComponent(nextEventId)}`,
+        `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
+        "tool=eq.ask_farmmate",
+        "select=id,anonymous_user_hash,tool,created_at",
+        "limit=1"
+      ].join("&");
+      const replayResult = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", replayQuery);
+
+      if (!replayResult.error && replayResult.data?.some((row) => row.id === nextEventId)) {
+        return { rotated: true as const, replayed: true as const, storage: "supabase" as const, eventId: nextEventId };
+      }
+
+      if (!replayResult.error) {
+        return { rotated: false as const, storage: "supabase" as const };
+      }
+
+      warnUsage("FarmMate consultation replay could not be checked.", replayResult.error);
+
+      if (!canUseMemoryUsageFallback()) {
+        return { rotated: false as const, storage: "unavailable" as const };
+      }
+    }
+
+    warnUsage("FarmMate consultation continuation could not be claimed.", result.error);
+
+    if (!canUseMemoryUsageFallback()) {
+      return { rotated: false as const, storage: "unavailable" as const };
+    }
+  }
+
+  const memoryEvent = memoryEvents.find(
+    (event) => event.id === eventId && event.anonymous_user_hash === anonymousUserHash && event.tool === "ask_farmmate"
+  );
+
+  if (!memoryEvent) {
+    const replayedMemoryEvent = memoryEvents.some(
+      (event) => event.id === nextEventId && event.anonymous_user_hash === anonymousUserHash && event.tool === "ask_farmmate"
+    );
+
+    return replayedMemoryEvent
+      ? { rotated: true as const, replayed: true as const, storage: "memory" as const, eventId: nextEventId }
+      : { rotated: false as const, storage: "memory" as const };
+  }
+
+  memoryEvent.id = nextEventId;
+  return { rotated: true as const, replayed: false as const, storage: "memory" as const, eventId: nextEventId };
 }
 
 export async function getFarmMateCreditsForDevice({
@@ -248,6 +309,29 @@ export async function recordFarmMateUsageForDevice({
 
   return {
     recorded: writeResult.recorded,
-    storage: writeResult.storage
+    storage: writeResult.storage,
+    eventId: "eventId" in writeResult ? writeResult.eventId : undefined
   };
+}
+
+export async function claimFarmMateConsultationContinuation({
+  anonymousDeviceId,
+  eventId,
+  nextEventId
+}: {
+  anonymousDeviceId: unknown;
+  eventId: string;
+  nextEventId: string;
+}) {
+  const anonymousUserHash = getAnonymousUserHash(anonymousDeviceId);
+
+  if (!anonymousUserHash || !eventId || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(nextEventId)) {
+    return { claimed: false as const, storage: "none" as const };
+  }
+
+  const result = await rotateUsageEventId(anonymousUserHash, eventId, nextEventId);
+
+  return result.rotated
+    ? { claimed: true as const, replayed: result.replayed, storage: result.storage, eventId: result.eventId }
+    : { claimed: false as const, storage: result.storage };
 }

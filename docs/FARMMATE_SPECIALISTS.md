@@ -30,6 +30,39 @@ Crop-family reasoning:
 - Crop-family patterns are cautious clues only. Similar-looking symptoms in related crops do not confirm the same cause.
 - If exact crop-specific guidance is limited, FarmMate says: "I do not have full crop-specific guidance for this crop yet, but I can still help using general crop-family guidance."
 
+## Ask FarmMate Guided Consultations
+
+Consultation and credit rules:
+
+- Ask FarmMate supports same-consultation follow-ups.
+- One farmer-started question equals one consultation credit.
+- Follow-up answers requested by FarmMate inside that consultation do not use extra credits.
+- A new unrelated farmer question starts a new consultation and uses a new credit.
+- The same consultation keeps its original question, specialist, known crop and field context, one pending follow-up, and answer history. This temporary client state is sent to the Ask FarmMate API to continue the consultation, but it is not persisted as consultation history.
+
+Guided interaction rules:
+
+- Farmers should be guided with buttons where possible.
+- Ask only one follow-up question at a time and preserve each answer in the same consultation.
+- A waiting follow-up shows one clear question and selectable options, including `I am not sure` where useful.
+- After a selection, acknowledge it with `You told me: {answer}` before continuing.
+- Do not replace an available guided question with prose such as "Tell me your region, growth stage, and what you can see."
+
+Pilot flow examples:
+
+- For "My cocoa leaves are yellow", ask region first, cocoa growth stage second, and the clearest visible sign third when it is still needed.
+- Cocoa region options include Western / Western North, Ashanti, Eastern, Bono / Ahafo, Central, Volta / Oti, Other region, and I am not sure.
+- Cocoa growth-stage options include Seedling, Young tree, Flowering, Pods forming, Mature tree, and I am not sure.
+- Cocoa visible-sign options include Yellow young leaves, Yellow older leaves, Leaf spots, Dieback or drying branches, Pod problem, Pest damage, and I am not sure.
+- The watermelon planting consultation asks region first, rain or irrigation availability second, and then gives its final recommendation.
+
+Final-answer rules:
+
+- Final answers use `What I think`, `What to do now`, `What to check`, and `Next step`.
+- For serious or spreading problems on valuable perennial crops, say: "For valuable perennial crops, confirm serious or spreading problems with an extension officer or experienced crop advisor."
+- Feedback controls appear after final answers only, never while a follow-up question is waiting for the farmer.
+- Copy Answer copies the final answer, not a follow-up question.
+
 ## Plant Health Specialist
 
 Handles crop symptoms, plant stress and visible field problems.

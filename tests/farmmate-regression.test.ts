@@ -71,6 +71,19 @@ import {
   validateMarketplaceTradeInput
 } from "../src/lib/marketplace/trade";
 import { manageFarmMateConversation, type ConversationState } from "../src/lib/farmmate/conversation-manager";
+import {
+  askFarmMateUsageMode,
+  continueAskFarmMateConsultation,
+  createAskFarmMateConsultation,
+  createFarmMateConsultationId,
+  isFinalAskFarmMateConsultation,
+  shouldShowFarmMateFinalControls
+} from "../src/lib/farmmate/consultation";
+import {
+  farmMateContinuationClaimId,
+  issueFarmMateConsultationToken,
+  verifyFarmMateConsultationToken
+} from "../src/lib/farmmate/consultation-token";
 import { weatherDecisionGuidance } from "../src/lib/farmmate/weather-decision-specialist";
 import {
   cropCalendarFarmMateQuestion,
@@ -209,6 +222,10 @@ function weatherAiInput(answer: string) {
     farmerAnswers,
     localStructuredResponse: weatherGuidedRecommendationCards(brain.flow?.id, farmerAnswers) ?? []
   };
+}
+
+function completedGuidedAnswer(action: string) {
+  return `What I think:\nThe field conditions need a cautious decision.\n\nWhat to do now:\n${action}\n\nWhat to check:\nConfirm rain, leaf wetness and wind before acting.\n\nNext step:\nCheck the field conditions again before spraying.`;
 }
 
 function sampleWeatherData() {
@@ -3278,6 +3295,24 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "OpenAI payload does not label unavailable weather context as live",
+    run: () => {
+      const weatherContext = sampleWeatherContext({ liveWeatherAvailable: false });
+      const brain = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"), { weatherContext });
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion: "Can I spray today?",
+          brain,
+          farmerAnswers: [],
+          localStructuredResponse: []
+        })
+      ) as { specialistContext?: { liveWeatherContext?: WeatherDecisionSummary | null; noLiveWeatherRule?: string } };
+
+      assert.equal(payload.specialistContext?.liveWeatherContext, null);
+      assert.equal(payload.specialistContext?.noLiveWeatherRule?.includes("Do not invent live rain"), true);
+    }
+  },
+  {
     name: "Skills Center has rotating challenges with required durations",
     run: () => {
       assert.deepEqual(
@@ -3734,14 +3769,14 @@ const tests: TestCase[] = [
       const truncated = "Since you're not sure about rain, don't spray yet. Spray only if no rain is expected for 4-6 hours, the wind is calm, and the";
 
       assert.equal(isLikelyIncompleteFarmMateAnswer(truncated, input), true);
-      assert.equal(isLikelyIncompleteFarmMateAnswer("Don't spray yet. First confirm whether rain is expected in the next 4 to 6 hours. Spray only when leaves are dry and wind is calm.", input), false);
+      assert.equal(isLikelyIncompleteFarmMateAnswer(completedGuidedAnswer("Don't spray yet. Spray only when leaves are dry and wind is calm."), input), false);
     }
   },
   {
     name: "rain expected weather answer is complete",
     run: () => {
       const input = weatherAiInput("Rain is expected soon");
-      const answer = "Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.";
+      const answer = completedGuidedAnswer("Do not spray now. Wait until after the rain and spray only when leaves are dry and wind is calm.");
 
       assert.equal(isLikelyIncompleteFarmMateAnswer(answer, input), false);
       assert.equal(answer.endsWith("."), true);
@@ -3751,7 +3786,7 @@ const tests: TestCase[] = [
     name: "safe spraying weather answer is complete",
     run: () => {
       const input = weatherAiInput("No rain expected soon");
-      const answer = "Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.";
+      const answer = completedGuidedAnswer("Spraying may be suitable. Follow the product label and avoid spraying during hot midday sun.");
 
       assert.equal(isLikelyIncompleteFarmMateAnswer(answer, input), false);
       assert.equal(answer.endsWith("."), true);
@@ -4229,12 +4264,11 @@ const tests: TestCase[] = [
     run: () => {
       const askFarmMate = repoFile("src/components/AskFarmMate.tsx");
 
-      assert.equal(askFarmMate.includes('response?.flow?.id === "plant-melon-clarification" && answer === "Watermelon"'), true);
+      assert.equal(askFarmMate.includes('response.flow?.id === "plant-melon-clarification" && selectedOption === "Watermelon"'), true);
       assert.equal(askFarmMate.includes('const watermelonQuestion = "How do I plant watermelon?"'), true);
-      assert.equal(askFarmMate.includes("setResponse(watermelonResponse)"), true);
-      assert.equal(askFarmMate.includes('activeCropName: "Watermelon"'), true);
-      assert.equal(askFarmMate.includes("waitingForFollowUp: true"), true);
-      assert.equal(askFarmMate.includes("followUpIndex + 1 < followUpQuestions.length"), true);
+      assert.equal(askFarmMate.includes("nextResponse = watermelonResponse"), true);
+      assert.equal(askFarmMate.includes("nextFollowUpQuestion = watermelonResponse.flow?.followUpQuestions[0]"), true);
+      assert.equal(askFarmMate.includes("continueAskFarmMateConsultation"), true);
     }
   },
   {
@@ -4516,7 +4550,7 @@ const tests: TestCase[] = [
       assert.deepEqual(followUp?.options, ["Maize", "Tomato", "Pepper", "Okra", "Onion", "Watermelon", "Other crop"]);
       assert.equal(shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response, false), true);
       assert.equal(guidance.includes("what crop are you planting"), false);
-      assert.equal(askFarmMateSource.indexOf("{shouldShowGeneralGuidanceBeforeFollowUp ?") < askFarmMateSource.indexOf("{!showRecommendation && currentFollowUp ?"), true);
+      assert.equal(askFarmMateSource.indexOf("{shouldShowGeneralGuidanceBeforeFollowUp ?") < askFarmMateSource.indexOf('consultation?.status === "awaiting_follow_up"'), true);
     }
   },
   {
@@ -6452,8 +6486,8 @@ const tests: TestCase[] = [
       assert.equal(askFarmMate.includes('prompt="Was this helpful?"'), true);
       assert.equal(askFarmMate.includes('wrongButtonLabel="Wrong answer"'), true);
       assert.equal(askFarmMate.includes('tool: "ask_farmmate"'), true);
-      assert.equal(askFarmMate.includes("originalQuestion: askedQuestion || undefined"), true);
-      assert.equal(askFarmMate.includes("specialist: response?.routerResult?.selectedSpecialist"), true);
+      assert.equal(askFarmMate.includes("originalQuestion: consultation?.originalQuestion || askedQuestion || undefined"), true);
+      assert.equal(askFarmMate.includes("specialist: consultation?.specialist ?? response?.routerResult?.selectedSpecialist"), true);
       assert.equal(askFarmMate.includes("answerSnippet: farmMateAnswerSnippet(cleanDisplayedAnswer)"), true);
       assert.equal(feedbackControl.includes("Send more feedback"), true);
       assert.equal(feedbackControl.includes("Copy answer"), true);
@@ -6603,7 +6637,7 @@ const tests: TestCase[] = [
       assert.equal(shouldShowFarmMateAnswerFeedback("", false), false);
       assert.equal(shouldShowFarmMateAnswerFeedback("A completed answer", true), false);
       assert.equal(shouldShowFarmMateAnswerFeedback("A completed answer", false), true);
-      assert.equal(askFarmMate.includes('creditReason !== "credits_exhausted"'), true);
+      assert.equal(askFarmMate.includes("shouldShowFarmMateFinalControls"), true);
       assert.equal(askFarmMate.includes("shouldShowFarmMateAnswerFeedback(cleanDisplayedAnswer, isThinking || isGeneratingNaturalAnswer)"), true);
       assert.equal(askFarmMate.includes("shouldShowLocalGuidance ? recommendationCards : []"), true);
       assert.equal(askFarmMate.includes('const shouldShowCreditActions = creditReason === "credits_exhausted"'), true);
@@ -6776,6 +6810,508 @@ const tests: TestCase[] = [
       assert.equal(docs.includes("Market Prices are not included in V1."), true);
       assert.equal(docs.includes("Farm history is not saved yet."), true);
       assert.equal(docs.includes("public.farmmate_pilot_feedback"), true);
+    }
+  },
+  {
+    name: "Sprint 41 cocoa consultation starts with one selectable region question",
+    run: () => {
+      const originalQuestion = "My cocoa leaves are yellow";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const followUp = brain.flow?.followUpQuestions[0];
+
+      assert.equal(brain.flow?.id, "cocoa-yellow-leaves");
+      assert.equal(brain.resolvedCrop, "Cocoa");
+      assert.equal(followUp?.question, "Which region are you farming in?");
+      assert.deepEqual(followUp?.options, [
+        "Western / Western North",
+        "Ashanti",
+        "Eastern",
+        "Bono / Ahafo",
+        "Central",
+        "Volta / Oti",
+        "Other region",
+        "I am not sure"
+      ]);
+      assert.equal(brain.flow?.followUpQuestions.length, 3);
+
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      assert.equal(component.includes('consultation?.status === "awaiting_follow_up"'), true);
+      assert.equal(component.includes("currentFollowUp.options"), true);
+      assert.equal(component.includes("void answerFollowUp(option)"), true);
+      assert.equal(component.includes("No extra credit for this follow-up."), true);
+    }
+  },
+  {
+    name: "Sprint 41 cocoa consultation advances region stage and visible sign in one consultation",
+    run: () => {
+      const originalQuestion = "My cocoa leaves are yellow";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const questions = brain.flow?.followUpQuestions ?? [];
+      const consultationId = createFarmMateConsultationId("cocoa-yellow-12345");
+      const initial = createAskFarmMateConsultation({
+        consultationId,
+        originalQuestion,
+        specialist: brain.routerResult?.selectedSpecialist,
+        normalizedCrop: brain.resolvedCrop,
+        pendingFollowUpQuestion: questions[0]
+      });
+      const afterRegion = continueAskFarmMateConsultation(initial, questions[0], "Ashanti", "Ashanti", questions[1]);
+      const afterStage = continueAskFarmMateConsultation(afterRegion, questions[1], "Young tree", "Young tree", questions[2]);
+      const afterSign = continueAskFarmMateConsultation(afterStage, questions[2], "Yellow older leaves", "Yellow older leaves");
+
+      assert.equal(afterRegion.consultationId, consultationId);
+      assert.equal(afterRegion.originalQuestion, originalQuestion);
+      assert.equal(afterRegion.selectedRegion, "Ashanti");
+      assert.equal(afterRegion.pendingFollowUpQuestion?.question, "What stage is the cocoa?");
+      assert.deepEqual(afterRegion.pendingFollowUpQuestion?.options, ["Seedling", "Young tree", "Flowering", "Pods forming", "Mature tree", "I am not sure"]);
+      assert.equal(afterStage.growthStage, "Young tree");
+      assert.equal(afterStage.pendingFollowUpQuestion?.question, "What do you see most clearly?");
+      assert.deepEqual(afterStage.pendingFollowUpQuestion?.options, [
+        "Yellow young leaves",
+        "Yellow older leaves",
+        "Leaf spots",
+        "Dieback or drying branches",
+        "Pod problem",
+        "Pest damage",
+        "I am not sure"
+      ]);
+      assert.equal(afterSign.selectedSymptom, "Yellow older leaves");
+      assert.equal(afterSign.pendingFollowUpQuestion, undefined);
+      assert.equal(afterSign.answerHistory.length, 3);
+    }
+  },
+  {
+    name: "Sprint 41 verified follow-ups are free while new or forged requests are not",
+    run: () => {
+      assert.equal(askFarmMateUsageMode({ isFollowUp: false, verifiedContinuation: false }), "record");
+      assert.equal(askFarmMateUsageMode({ isFollowUp: true, verifiedContinuation: true }), "continue");
+      assert.equal(askFarmMateUsageMode({ isFollowUp: true, verifiedContinuation: false }), "reject");
+
+      const firstId = createFarmMateConsultationId("first-question-12345");
+      const unrelatedId = createFarmMateConsultationId("unrelated-question-67890");
+      assert.notEqual(firstId, unrelatedId);
+
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const continuationBlock = route.slice(route.indexOf("const answerHistory = payload.consultationContext.answerHistory"));
+      assert.equal(continuationBlock.includes("checkFarmMateCreditsForDevice"), false);
+      assert.equal(continuationBlock.includes("recordFarmMateUsageForDevice"), false);
+      assert.equal(continuationBlock.includes("claimFarmMateConsultationContinuation"), true);
+      assert.equal(route.indexOf("recordFarmMateUsageForDevice") < route.indexOf("kind: \"follow_up\""), true);
+    }
+  },
+  {
+    name: "Sprint 41 unrelated typed input leaves a pending follow-up and starts a charged consultation",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const pendingStart = component.indexOf(
+        "if (conversationState.waitingForFollowUp && currentFollowUp)"
+      );
+      const newConsultationStart = component.indexOf("activeRequestKey.current =", pendingStart);
+
+      assert.notEqual(pendingStart, -1);
+      assert.notEqual(newConsultationStart, -1);
+
+      const pendingBlock = component.slice(pendingStart, newConsultationStart);
+      const newConsultationBlock = component.slice(newConsultationStart, component.indexOf("async function answerFollowUp", newConsultationStart));
+
+      assert.equal(pendingBlock.includes("void answerFollowUp(selectedOption)"), true);
+      assert.equal(pendingBlock.includes("Choose one of the follow-up options"), false);
+      assert.equal(newConsultationBlock.includes("createAskFarmMateConsultation"), true);
+      assert.equal(newConsultationBlock.includes("requestConsultationStep"), true);
+      assert.equal(newConsultationBlock.includes("isFollowUp: false"), true);
+    }
+  },
+  {
+    name: "Sprint 41 Ask FarmMate submissions do not wait on artificial timers",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+
+      assert.equal(component.includes("window.setTimeout"), false);
+    }
+  },
+  {
+    name: "Sprint 41 local clarification and marketplace questions each record one Ask credit",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const recordAction = component.indexOf('action: "record"');
+      const recorderStart = component.lastIndexOf("async function ", recordAction);
+      const requestStart = component.indexOf("async function ", recordAction);
+      const clarifyStart = component.indexOf('if (conversationDecision.action === "clarify")');
+      const marketplaceStart = component.indexOf("if (conversationDecision.isMarketplaceInfoRequest)", clarifyStart);
+      const normalQuestionStart = component.indexOf("const farmMateResponse = buildFarmMateResponse", marketplaceStart);
+
+      assert.notEqual(recordAction, -1);
+      assert.notEqual(recorderStart, -1);
+      assert.notEqual(requestStart, -1);
+      assert.notEqual(clarifyStart, -1);
+      assert.notEqual(marketplaceStart, -1);
+      assert.notEqual(normalQuestionStart, -1);
+
+      const recorder = component.slice(recorderStart, requestStart);
+      const clarificationBranch = component.slice(clarifyStart, marketplaceStart);
+      const marketplaceBranch = component.slice(marketplaceStart, normalQuestionStart);
+      const recorderName = /async function\s+([A-Za-z0-9_]+)\s*\(/.exec(recorder)?.[1];
+
+      assert.ok(recorderName);
+      assert.equal(recorder.includes('fetch("/api/farmmate/usage"'), true);
+      assert.equal(recorder.includes('tool: "ask_farmmate"'), true);
+      assert.equal(recorder.includes('action: "record"'), true);
+      assert.match(clarificationBranch, new RegExp(`(?:await|void) ${recorderName}\\(`));
+      assert.match(marketplaceBranch, new RegExp(`(?:await|void) ${recorderName}\\(`));
+    }
+  },
+  {
+    name: "Sprint 41 continuation token binds device question history and expected option",
+    run: () => {
+      const originalQuestion = "My cocoa leaves are yellow";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const pending = brain.flow?.followUpQuestions[0];
+      assert.ok(pending);
+      const initial = createAskFarmMateConsultation({
+        consultationId: createFarmMateConsultationId("signed-cocoa-12345"),
+        originalQuestion,
+        normalizedCrop: "Cocoa",
+        pendingFollowUpQuestion: pending
+      });
+      const continued = continueAskFarmMateConsultation(initial, pending, "Ashanti", "Ashanti", brain.flow?.followUpQuestions[1]);
+      const followUpAnswer = continued.answerHistory[0];
+      const issuedAt = new Date("2026-07-21T12:00:00.000Z");
+      const token = issueFarmMateConsultationToken({
+        consultationId: initial.consultationId,
+        usageEventId: "0a75a95f-f36b-481f-bdfd-1e112b8a5b1d",
+        anonymousUserHash: "device-hash",
+        originalQuestion,
+        boundContext: { cropDoctorContext: null, weatherContext: null },
+        answerHistory: [],
+        pendingFollowUpQuestion: pending,
+        now: issuedAt
+      });
+      const verificationInput = {
+        token,
+        consultationId: initial.consultationId,
+        anonymousUserHash: "device-hash",
+        originalQuestion,
+        boundContext: { cropDoctorContext: null, weatherContext: null },
+        previousAnswerHistory: [],
+        followUpAnswer,
+        now: new Date("2026-07-21T12:01:00.000Z")
+      };
+
+      assert.ok(token);
+      assert.ok(verifyFarmMateConsultationToken(verificationInput));
+      assert.equal(verifyFarmMateConsultationToken({ ...verificationInput, anonymousUserHash: "wrong-device" }), null);
+      assert.equal(verifyFarmMateConsultationToken({ ...verificationInput, originalQuestion: "A different question" }), null);
+      assert.equal(
+        verifyFarmMateConsultationToken({
+          ...verificationInput,
+          boundContext: { cropDoctorContext: null, weatherContext: { locationName: "Changed after token issue" } }
+        }),
+        null
+      );
+      assert.equal(
+        verifyFarmMateConsultationToken({
+          ...verificationInput,
+          previousAnswerHistory: [
+            {
+              questionId: "forged-history",
+              question: "A forged earlier question",
+              answer: "A forged earlier answer",
+              selectedOption: "A forged earlier answer",
+              options: ["A forged earlier answer"]
+            }
+          ]
+        }),
+        null
+      );
+
+      const claimId = farmMateContinuationClaimId({
+        consultationId: initial.consultationId,
+        usageEventId: "0a75a95f-f36b-481f-bdfd-1e112b8a5b1d",
+        followUpAnswer
+      });
+      assert.match(claimId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      assert.equal(
+        farmMateContinuationClaimId({
+          consultationId: initial.consultationId,
+          usageEventId: "0a75a95f-f36b-481f-bdfd-1e112b8a5b1d",
+          followUpAnswer
+        }),
+        claimId
+      );
+      assert.notEqual(
+        farmMateContinuationClaimId({
+          consultationId: initial.consultationId,
+          usageEventId: "0a75a95f-f36b-481f-bdfd-1e112b8a5b1d",
+          followUpAnswer: { ...followUpAnswer, selectedOption: "Northern" }
+        }),
+        claimId
+      );
+      assert.equal(verifyFarmMateConsultationToken({ ...verificationInput, now: new Date("2026-07-21T14:00:01.000Z") }), null);
+      assert.equal(
+        verifyFarmMateConsultationToken({
+          ...verificationInput,
+          followUpAnswer: { ...followUpAnswer, selectedOption: "Northern" }
+        }),
+        null
+      );
+    }
+  },
+  {
+    name: "Sprint 41 API fails closed and rotates the paid usage claim before continuing",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const usageServer = repoFile("src/lib/farmmate/usage/server.ts");
+
+      ["consultationId", "originalQuestion", "followUpAnswer", "consultationContext", "isFollowUp"].forEach((field) => {
+        assert.equal(route.includes(field), true, field);
+      });
+      assert.equal(route.includes('reason: "invalid_device_id"'), true);
+      assert.equal(route.includes('reason: "invalid_consultation"'), true);
+      assert.equal(route.includes('reason: "consultation_already_used"'), true);
+      assert.equal(route.indexOf("claimFarmMateConsultationContinuation") < route.lastIndexOf("generateFarmMateNaturalAnswer"), true);
+      assert.equal(usageServer.includes('updateSupabaseRecord("farmmate_usage_events"'), true);
+      assert.equal(usageServer.includes("memoryEvent.id = nextEventId"), true);
+      assert.equal(usageServer.includes("replayed: true"), true);
+      assert.equal(route.includes('reason: "consultation_recovered"'), true);
+      assert.equal(route.indexOf("if (claim.replayed)") < route.lastIndexOf("generateFarmMateNaturalAnswer"), true);
+    }
+  },
+  {
+    name: "Sprint 41 API rejects malformed external contexts before building authoritative guidance",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const inputValidation = route.slice(route.indexOf("function isCropDoctorHandoffContext"), route.indexOf("function authoritativeQuestion"));
+
+      assert.equal(inputValidation.includes("hasValidFarmMateBrainContexts(input.brain)"), true);
+      assert.match(inputValidation, /(?:is|validate)[A-Za-z]*CropDoctor[A-Za-z]*\(value\.cropDoctorContext\)/);
+      assert.match(inputValidation, /(?:is|validate)[A-Za-z]*Weather[A-Za-z]*\(value\.weatherContext\)/);
+      assert.equal(inputValidation.includes("input.brain.cropDoctorContext.question.trim() !== input.originalQuestion.trim()"), true);
+      assert.equal(inputValidation.includes("FARM_MATE_WEATHER_CONTEXT_MAX_AGE_MS"), true);
+    }
+  },
+  {
+    name: "Sprint 41 continuation storage outages are retriable while unrecognized claims remain conflicts",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const failedClaimStart = route.indexOf("if (!claim.claimed)");
+      const failedClaimEnd = route.indexOf("const credits = await creditStatus", failedClaimStart);
+      const failedClaim = route.slice(failedClaimStart, failedClaimEnd);
+
+      assert.notEqual(failedClaimStart, -1);
+      assert.notEqual(failedClaimEnd, -1);
+      assert.equal(failedClaim.includes('claim.storage === "unavailable"'), true);
+      assert.match(failedClaim, /reason: "(?:usage|consultation)_tracking_unavailable"/);
+      assert.equal(failedClaim.includes("status: 503"), true);
+      assert.equal(failedClaim.includes('reason: "consultation_already_used"'), true);
+      assert.equal(failedClaim.includes("status: 409"), true);
+    }
+  },
+  {
+    name: "Sprint 41 selected options are canonical for routing and final answer generation",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const authoritativeStart = route.indexOf("function authoritativeQuestion");
+      const requestHandlerStart = route.indexOf("export async function POST", authoritativeStart);
+      const authoritativeProcessing = route.slice(authoritativeStart, requestHandlerStart);
+
+      assert.equal(authoritativeProcessing.includes("?.selectedOption.toLowerCase()"), true);
+      assert.equal((authoritativeProcessing.match(/answer: selectedOption/g) ?? []).length >= 2, true);
+      assert.equal(authoritativeProcessing.includes("answer: answer.answer"), false);
+    }
+  },
+  {
+    name: "Sprint 41 AI receives structured cards rebuilt from the authoritative server brain",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const verifiedStart = route.indexOf("function verifiedAiInput");
+      const verifiedEnd = route.indexOf("async function creditStatus", verifiedStart);
+      const verifiedInput = route.slice(verifiedStart, verifiedEnd);
+      const helperCall = /localStructuredResponse:\s*([A-Za-z0-9_]+)\(brain(?:,[^)]+)?\)/.exec(verifiedInput)?.[1];
+      const buildsDirectlyFromBrain = /localStructuredResponse:\s*brain\.sections/.test(verifiedInput);
+
+      assert.notEqual(verifiedStart, -1);
+      assert.notEqual(verifiedEnd, -1);
+      assert.equal(verifiedInput.includes("input.localStructuredResponse"), false);
+      assert.equal(Boolean(helperCall) || buildsDirectlyFromBrain, true);
+
+      if (helperCall) {
+        const helperStart = route.indexOf(`function ${helperCall}`);
+        const helperSource = route.slice(helperStart, verifiedStart);
+
+        assert.notEqual(helperStart, -1);
+        assert.equal(helperSource.includes("brain.sections"), true);
+      }
+    }
+  },
+  {
+    name: "Sprint 41 final cocoa answer is structured and cautiously escalates valuable crop problems",
+    run: () => {
+      const originalQuestion = "My cocoa leaves are yellow";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const text = responseText(brain);
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const cardBuilder = component.slice(component.indexOf("function localRecommendationCards"), component.indexOf("function logRouterResult"));
+
+      assert.equal(cardBuilder.indexOf('title: "What I think"') < cardBuilder.indexOf('title: "What to do now"'), true);
+      assert.equal(cardBuilder.indexOf('title: "What to do now"') < cardBuilder.indexOf('title: "What to check"'), true);
+      assert.equal(cardBuilder.indexOf('title: "What to check"') < cardBuilder.indexOf('title: "Next step"'), true);
+      assert.equal(text.includes(FARM_MATE_CASH_CROP_CAUTION), true);
+      assert.equal(text.split(FARM_MATE_CASH_CROP_CAUTION).length - 1, 1);
+      assert.equal(text.toLowerCase().includes("tell me your region"), false);
+
+      const payload = JSON.parse(
+        buildFarmMateVoiceLayerInput({
+          farmerQuestion: originalQuestion,
+          brain,
+          farmerAnswers: [
+            { question: "Which region are you farming in?", answer: "Ashanti" },
+            { question: "What stage is the cocoa?", answer: "Young tree" },
+            { question: "What do you see most clearly?", answer: "Yellow older leaves" }
+          ],
+          localStructuredResponse: []
+        })
+      ) as { instruction?: string; responseRules?: string[] };
+      assert.equal(payload.instruction?.includes("exact headings What I think:"), true);
+      assert.equal(payload.instruction?.includes("do not ask another follow-up question"), true);
+      assert.equal(payload.responseRules?.some((rule) => rule.includes("Tell me your region")), true);
+    }
+  },
+  {
+    name: "Sprint 41 cash crop caution remains in the trimmed recommended actions",
+    run: () => {
+      const response = buildFarmMateResponse("My cocoa leaves are yellow", routeFarmMateQuestion("My cocoa leaves are yellow"));
+      const recommendedAction = response.sections.find((section) => section.title === "Recommended action");
+
+      assert.ok(recommendedAction);
+      assert.equal(recommendedAction.body.includes(FARM_MATE_CASH_CROP_CAUTION), true);
+      assert.equal(recommendedAction.body.length <= 3, true);
+    }
+  },
+  {
+    name: "Sprint 41 final guidance does not repeat questions already asked by the consultation",
+    run: () => {
+      const question = "My cocoa leaves are yellow";
+      const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+      const followUpQuestions = response.flow?.followUpQuestions.map((followUp) => followUp.question) ?? [];
+      const checkSection = response.sections.find((section) => section.title === "What to check");
+
+      assert.ok(checkSection);
+      assert.ok(followUpQuestions.length > 0);
+      followUpQuestions.forEach((followUpQuestion) => {
+        assert.equal(checkSection.body.includes(followUpQuestion), false, followUpQuestion);
+      });
+    }
+  },
+  {
+    name: "Sprint 41 feedback and copy controls render only for a completed final answer",
+    run: () => {
+      const originalQuestion = "My cocoa leaves are yellow";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const pending = brain.flow?.followUpQuestions[0];
+      const initial = createAskFarmMateConsultation({
+        consultationId: createFarmMateConsultationId("final-controls-12345"),
+        originalQuestion,
+        pendingFollowUpQuestion: pending
+      });
+      const awaiting = { ...initial, status: "awaiting_follow_up" as const };
+      const starting = { ...initial, status: "starting" as const };
+      const submitting = { ...initial, status: "submitting_follow_up" as const };
+      const failed = { ...initial, status: "error" as const };
+      const complete = {
+        ...initial,
+        pendingFollowUpQuestion: undefined,
+        followUpOptions: undefined,
+        status: "complete" as const
+      };
+
+      assert.equal(isFinalAskFarmMateConsultation(awaiting), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: starting, finalAnswer: "Final answer", isBusy: false }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: awaiting, finalAnswer: "Final answer", isBusy: false }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: submitting, finalAnswer: "Final answer", isBusy: false }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: failed, finalAnswer: "Final answer", isBusy: false }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: complete, finalAnswer: "", isBusy: false }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: complete, finalAnswer: "Final answer", isBusy: true }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: complete, finalAnswer: "Final answer", isBusy: false, creditReason: "credits_exhausted" }), false);
+      assert.equal(shouldShowFarmMateFinalControls({ consultation: complete, finalAnswer: "Final answer", isBusy: false }), true);
+
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      assert.equal(component.includes('consultation?.status === "starting"'), true);
+    }
+  },
+  {
+    name: "Sprint 41 Watermelon keeps region then rain in the same consultation",
+    run: () => {
+      const originalQuestion = "How do I plant watermelon?";
+      const brain = buildFarmMateResponse(originalQuestion, routeFarmMateQuestion(originalQuestion));
+      const questions = brain.flow?.followUpQuestions ?? [];
+      const initial = createAskFarmMateConsultation({
+        consultationId: createFarmMateConsultationId("watermelon-flow-12345"),
+        originalQuestion,
+        normalizedCrop: brain.resolvedCrop,
+        pendingFollowUpQuestion: questions[0]
+      });
+      const afterRegion = continueAskFarmMateConsultation(initial, questions[0], "Northern", "Northern", questions[1]);
+      const afterWater = continueAskFarmMateConsultation(afterRegion, questions[1], "I have irrigation", "I have irrigation");
+
+      assert.equal(questions[0]?.question, "Which region are you farming in?");
+      assert.equal(questions[1]?.question, "Do you have steady rain or irrigation available?");
+      assert.equal(afterRegion.consultationId, initial.consultationId);
+      assert.equal(afterWater.consultationId, initial.consultationId);
+      assert.equal(afterRegion.selectedRegion, "Northern");
+      assert.equal(afterWater.waterStatus, "I have irrigation");
+      assert.equal(afterWater.pendingFollowUpQuestion, undefined);
+      assert.equal(askFarmMateUsageMode({ isFollowUp: true, verifiedContinuation: true }), "continue");
+    }
+  },
+  {
+    name: "Sprint 41 follow-up card remains touch friendly without mobile overflow",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const awaitingFollowUp = component.indexOf('consultation?.status === "awaiting_follow_up"');
+      const followUpCard = component.slice(
+        component.indexOf("<fieldset", awaitingFollowUp),
+        component.indexOf("No extra credit for this follow-up.", awaitingFollowUp)
+      );
+
+      assert.notEqual(awaitingFollowUp, -1);
+      assert.equal(followUpCard.includes("min-h-11 w-full min-w-0"), true);
+      assert.equal(followUpCard.includes("whitespace-normal break-words"), true);
+      assert.equal(followUpCard.includes("sm:grid-cols-2"), true);
+      assert.equal(followUpCard.includes("overflow-x-auto"), false);
+    }
+  },
+  {
+    name: "Sprint 41 continuation failures can retry the signed follow-up without another credit",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const retryStart = component.indexOf("async function retryPendingFollowUp");
+      const retryEnd = component.indexOf("function askFarmMate", retryStart);
+      const retryBlock = component.slice(retryStart, retryEnd);
+
+      assert.notEqual(retryStart, -1);
+      assert.notEqual(retryEnd, -1);
+      assert.equal(retryBlock.includes("pendingContinuationRetry"), true);
+      assert.equal(retryBlock.includes("isFollowUp: true"), true);
+      assert.equal(retryBlock.includes("requestConsultationStep"), true);
+      assert.equal(retryBlock.includes("record"), false);
+      assert.equal(component.includes("This stays in the same consultation and will not use another credit."), true);
+      assert.equal(component.includes("followUpQuestionRef.current?.focus()"), true);
+      assert.equal(component.includes("consultationStartInFlight.current"), true);
+      assert.equal(component.includes("[overflow-wrap:anywhere]"), true);
+    }
+  },
+  {
+    name: "Sprint 41 documentation explains consultation credits buttons and final-only feedback",
+    run: () => {
+      const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md").toLowerCase();
+      const specialists = repoFile("docs/FARMMATE_SPECIALISTS.md").toLowerCase();
+      const combined = `${launchQa}\n${specialists}`;
+
+      assert.equal(combined.includes("same-consultation follow-ups"), true);
+      assert.equal(combined.includes("do not use extra credits") || combined.includes("no extra credit"), true);
+      assert.equal(combined.includes("one farmer-started question") && combined.includes("one consultation credit"), true);
+      assert.equal(combined.includes("buttons") && combined.includes("one follow-up question at a time"), true);
+      assert.equal(combined.includes("feedback") && combined.includes("final answer"), true);
     }
   }
 ];

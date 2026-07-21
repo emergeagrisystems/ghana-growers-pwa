@@ -11,6 +11,85 @@ export const sustainabilityPriorityOrder: SustainabilityPriority[] = [
 
 export const farmMateDecisionFlows: DecisionFlow[] = [
   {
+    id: "cocoa-yellow-leaves",
+    question: "My cocoa leaves are yellow",
+    intent: "crop-health",
+    possibleCauses: ["Root or water stress", "Nutrient imbalance", "Pest or disease pressure"],
+    requiredInformation: {
+      crop: "Cocoa",
+      region: "Unknown",
+      growthStage: "Unknown",
+      visibleSymptoms: ["Yellow leaves"]
+    },
+    followUpQuestions: [
+      {
+        id: "cocoa-yellow-region",
+        question: "Which region are you farming in?",
+        requiredForConfidence: true,
+        options: [
+          "Western / Western North",
+          "Ashanti",
+          "Eastern",
+          "Bono / Ahafo",
+          "Central",
+          "Volta / Oti",
+          "Other region",
+          "I am not sure"
+        ]
+      },
+      {
+        id: "cocoa-yellow-growth-stage",
+        question: "What stage is the cocoa?",
+        requiredForConfidence: true,
+        options: ["Seedling", "Young tree", "Flowering", "Pods forming", "Mature tree", "I am not sure"]
+      },
+      {
+        id: "cocoa-yellow-visible-sign",
+        question: "What do you see most clearly?",
+        requiredForConfidence: true,
+        options: [
+          "Yellow young leaves",
+          "Yellow older leaves",
+          "Leaf spots",
+          "Dieback or drying branches",
+          "Pod problem",
+          "Pest damage",
+          "I am not sure"
+        ]
+      }
+    ],
+    recommendation: {
+      summary: "Yellow cocoa leaves can come from root or water stress, nutrient imbalance, or pest and disease pressure, so the pattern should be checked before treatment.",
+      confidence: "medium",
+      reasoning: [
+        {
+          id: "cocoa-yellow-leaf-age",
+          observation: "Check whether yellowing is strongest on young leaves, older leaves, or the whole tree.",
+          interpretation: "Leaf age and symptom pattern help separate general stress from a spreading crop problem."
+        },
+        {
+          id: "cocoa-yellow-spread",
+          observation: "Check nearby cocoa trees for the same yellowing, spots, dieback, pod problems, or pest damage.",
+          interpretation: "A spreading pattern needs careful field confirmation before treatment."
+        }
+      ],
+      sustainabilityPriority: sustainabilityPriorityOrder,
+      recommendedAction: "Check soil moisture and drainage, inspect both young and older leaves, and compare several nearby trees before applying any treatment.",
+      guidance: [
+        "Avoid guessing a fertilizer or pesticide treatment from yellow leaves alone.",
+        "Keep the root area drained but do not allow young cocoa to dry out.",
+        "Record whether the signs are spreading to nearby trees."
+      ],
+      nextBestAction: {
+        id: "inspect-cocoa-yellowing",
+        label: "Inspect nearby cocoa trees",
+        instruction: "Check several nearby trees today and note which leaf age and visible sign are most affected.",
+        actionType: "monitor"
+      }
+    },
+    safetyRules: [decisionEngineSafetyRules[0], decisionEngineSafetyRules[1], decisionEngineSafetyRules[2]]
+  },
+  {
     id: "yellow-tomato-leaves",
     question: "Why are my tomato leaves turning yellow?",
     intent: "crop-health",

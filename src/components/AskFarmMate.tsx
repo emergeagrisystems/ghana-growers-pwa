@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { Bot, Camera, Loader2, Send } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
-import type { FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
+import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
+import {
+  consultationContextForApi,
+  continueAskFarmMateConsultation,
+  createAskFarmMateConsultation,
+  createFarmMateConsultationId,
+  shouldShowFarmMateFinalControls,
+  type AskFarmMateConsultationState,
+  type FarmMateConsultationAnswer
+} from "@/lib/farmmate/consultation";
 import { createConversationStateUpdate, manageFarmMateConversation, type ConversationDecision, type ConversationState } from "@/lib/farmmate/conversation-manager";
 import {
   cleanFarmMateFinalAnswer,
@@ -20,7 +29,7 @@ import {
 } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
-import { FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
+import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
 import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
@@ -42,9 +51,12 @@ const suggestions = [
   "What should I check from my crop photo?"
 ];
 
-type FollowUpAnswer = {
-  question: string;
-  answer: string;
+type FollowUpAnswer = FarmMateConsultationAnswer;
+
+type PendingContinuationRetry = {
+  farmMateResponse: FarmMateBrainResponse;
+  nextConsultation: AskFarmMateConsultationState;
+  followUpAnswer: FarmMateConsultationAnswer;
 };
 
 function sectionBody(response: FarmMateBrainResponse, title: string) {
@@ -387,6 +399,10 @@ function localRecommendationCards(response: FarmMateBrainResponse, answers: Foll
       body: conciseLines([...sectionBody(response, "Recommended action"), ...sectionBody(response, "Prevention").slice(0, 2)], 3)
     },
     {
+      title: "What to check",
+      body: conciseLines(sectionBody(response, "What to check"), 2)
+    },
+    {
       title: "Next step",
       body: conciseLines(sectionBody(response, "Next Best Action"), 1)
     }
@@ -434,8 +450,17 @@ function storedWeatherContextForFarmMate(): WeatherDecisionSummary | undefined {
   try {
     const stored = window.localStorage.getItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
     const parsed = stored ? (JSON.parse(stored) as Partial<WeatherDecisionSummary>) : null;
+    const updatedAt = Date.parse(parsed?.lastUpdatedAt ?? "");
+    const weatherContextAgeMs = Date.now() - updatedAt;
 
-    if (!parsed?.liveWeatherAvailable || !parsed.locationName || !Array.isArray(parsed.farmingNotes)) {
+    if (
+      !parsed?.liveWeatherAvailable ||
+      !parsed.locationName ||
+      !Array.isArray(parsed.farmingNotes) ||
+      !Number.isFinite(updatedAt) ||
+      weatherContextAgeMs < -5 * 60 * 1_000 ||
+      weatherContextAgeMs > 24 * 60 * 60 * 1_000
+    ) {
       return undefined;
     }
 
@@ -443,6 +468,21 @@ function storedWeatherContextForFarmMate(): WeatherDecisionSummary | undefined {
   } catch {
     return undefined;
   }
+}
+
+function askCreditFailureMessage(reason?: string, credits?: FarmMateCreditStatus | null) {
+  if (reason === "usage_tracking_unavailable") {
+    return "FarmMate is temporarily unavailable because your credit could not be checked. Please try again shortly.";
+  }
+
+  if (reason === "credits_exhausted" || reason === "rapid_submission") {
+    return askFarmMateCreditMessage({
+      reason,
+      refreshInText: credits?.refreshInText ?? "soon"
+    });
+  }
+
+  return "FarmMate could not start this consultation. Your question is still here, so you can try again.";
 }
 
 export function AskFarmMate({
@@ -468,15 +508,28 @@ export function AskFarmMate({
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
   const [creditReason, setCreditReason] = useState("");
+  const [consultationError, setConsultationError] = useState("");
+  const [consultation, setConsultation] = useState<AskFarmMateConsultationState | null>(null);
+  const [pendingContinuationRetry, setPendingContinuationRetry] = useState<PendingContinuationRetry | null>(null);
+  const [isSubmittingFollowUp, setIsSubmittingFollowUp] = useState(false);
+  const activeRequestKey = useRef("");
+  const consultationStartInFlight = useRef(false);
+  const followUpRequestInFlight = useRef(false);
+  const followUpQuestionRef = useRef<HTMLFieldSetElement | null>(null);
   const [conversationState, setConversationState] = useState<ConversationState>({
     waitingForFollowUp: false,
     turns: []
   });
   const [activeCropDoctorHandoff, setActiveCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
 
-  const canAsk = question.trim().length > 0 && !isThinking;
+  const canAsk =
+    question.trim().length > 0 &&
+    !isThinking &&
+    !isGeneratingNaturalAnswer &&
+    !isSubmittingFollowUp &&
+    consultation?.status !== "starting";
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
-  const currentFollowUp = followUpQuestions[followUpIndex];
+  const currentFollowUp = consultation ? consultation.pendingFollowUpQuestion : followUpQuestions[followUpIndex];
 
   useEffect(() => {
     function handlePrefill(event: Event) {
@@ -510,6 +563,12 @@ export function AskFarmMate({
     }
   }, [cropDoctorHandoff]);
 
+  useEffect(() => {
+    if (consultation?.status === "awaiting_follow_up") {
+      followUpQuestionRef.current?.focus();
+    }
+  }, [consultation?.pendingFollowUpQuestion?.id, consultation?.status]);
+
   async function refreshCredits() {
     try {
       const apiResponse = await fetch("/api/farmmate/usage", {
@@ -537,11 +596,29 @@ export function AskFarmMate({
     void refreshCredits();
   }, []);
 
-  async function requestNaturalAnswer(farmerQuestion: string, farmMateResponse: FarmMateBrainResponse, answers: FollowUpAnswer[]) {
+  async function requestConsultationStep({
+    farmMateResponse,
+    nextConsultation,
+    followUpAnswer,
+    isFollowUp
+  }: {
+    farmMateResponse: FarmMateBrainResponse;
+    nextConsultation: AskFarmMateConsultationState;
+    followUpAnswer?: FarmMateConsultationAnswer;
+    isFollowUp: boolean;
+  }) {
+    const awaitingFollowUp = Boolean(nextConsultation.pendingFollowUpQuestion);
+    const requestKey = `${nextConsultation.consultationId}-${nextConsultation.answerHistory.length}-${Date.now()}`;
+    activeRequestKey.current = requestKey;
     setNaturalAnswer("");
     setAiFallbackMessage("");
     setCreditMessage("");
-    setIsGeneratingNaturalAnswer(true);
+    setConsultationError("");
+    if (isFollowUp) {
+      setPendingContinuationRetry(null);
+    }
+    setIsGeneratingNaturalAnswer(!awaitingFollowUp);
+    setIsSubmittingFollowUp(isFollowUp);
 
     try {
       const apiResponse = await fetch("/api/farmmate/ask", {
@@ -551,62 +628,261 @@ export function AskFarmMate({
         },
         body: JSON.stringify({
           anonymousDeviceId: getFarmMateAnonymousDeviceId(),
-          farmerQuestion,
+          consultationId: nextConsultation.consultationId,
+          consultationToken: nextConsultation.consultationToken,
+          originalQuestion: nextConsultation.originalQuestion,
+          followUpAnswer,
+          consultationContext: consultationContextForApi(nextConsultation),
+          isFollowUp,
+          deferAnswer: awaitingFollowUp,
+          farmerQuestion: nextConsultation.originalQuestion,
           brain: farmMateResponse,
-          farmerAnswers: answers,
-          localStructuredResponse: localRecommendationCards(farmMateResponse, answers)
+          farmerAnswers: nextConsultation.answerHistory.map(({ question, answer }) => ({ question, answer })),
+          localStructuredResponse: localRecommendationCards(farmMateResponse, nextConsultation.answerHistory)
         })
       });
-      const data = (await apiResponse.json().catch(() => null)) as { ok?: boolean; answer?: string; fallback?: boolean; reason?: string; credits?: FarmMateCreditStatus; message?: string } | null;
+      const data = (await apiResponse.json().catch(() => null)) as FarmMateAskApiResponse | null;
+
+      if (activeRequestKey.current !== requestKey) {
+        return false;
+      }
 
       if (data?.credits) {
         setCredits(data.credits);
       }
 
       if (!apiResponse.ok) {
-        setCreditReason(typeof data?.reason === "string" ? data.reason : "");
-        if (data?.reason === "usage_tracking_unavailable") {
-          setAiFallbackMessage(farmMateFallbackMessage(data?.message));
-        } else if (data?.message) {
-          setCreditMessage(data.message);
+        const reason = typeof data?.reason === "string" ? data.reason : "";
+        const canRetryContinuation =
+          isFollowUp &&
+          Boolean(followUpAnswer) &&
+          (reason === "usage_tracking_unavailable" || reason === "consultation_tracking_unavailable");
+        setCreditReason(reason);
+        setConsultationError(
+          reason === "usage_tracking_unavailable"
+            ? askCreditFailureMessage(reason, data?.credits)
+            : data?.message || askCreditFailureMessage(reason, data?.credits)
+        );
+        if (canRetryContinuation && followUpAnswer) {
+          setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer });
+          setConsultation({ ...nextConsultation, status: "error" });
+        } else {
+          setConsultation({
+            ...nextConsultation,
+            pendingFollowUpQuestion: undefined,
+            followUpOptions: undefined,
+            status: data?.reason === "credits_exhausted" ? "exhausted" : "error"
+          });
+          setQuestion(nextConsultation.originalQuestion);
         }
-        return;
+        setConversationState((current) => ({ ...current, waitingForFollowUp: false }));
+        setShowRecommendation(false);
+        return false;
       }
 
-      if (data?.ok && data.answer?.trim()) {
+      if (data?.ok && data.kind === "follow_up" && data.followUp && data.consultationToken) {
+        const pendingIndex = farmMateResponse.flow?.followUpQuestions.findIndex((item) => item.id === data.followUp?.id) ?? -1;
+
+        if (pendingIndex >= 0) {
+          setFollowUpIndex(pendingIndex);
+        }
+        setConsultation({
+          ...nextConsultation,
+          consultationToken: data.consultationToken,
+          pendingFollowUpQuestion: data.followUp,
+          followUpOptions: data.followUp.options,
+          status: "awaiting_follow_up"
+        });
+        setConversationState((current) => ({ ...current, waitingForFollowUp: true }));
+        setShowRecommendation(false);
+        return true;
+      }
+
+      const completedConsultation: AskFarmMateConsultationState = {
+        ...nextConsultation,
+        consultationToken: undefined,
+        pendingFollowUpQuestion: undefined,
+        followUpOptions: undefined,
+        status: "complete"
+      };
+      setConsultation(completedConsultation);
+      setConversationState((current) => ({ ...current, waitingForFollowUp: false }));
+      setShowRecommendation(true);
+
+      if (data?.ok && data.kind === "final" && data.answer?.trim()) {
         setNaturalAnswer(cleanFarmMateFinalAnswer(data.answer));
-        return;
+        return true;
       }
 
       if (data?.fallback) {
         setAiFallbackMessage(farmMateFallbackMessage(data.message));
       }
+      return Boolean(data?.fallback);
     } catch {
+      if (activeRequestKey.current !== requestKey) {
+        return false;
+      }
       setNaturalAnswer("");
-      setAiFallbackMessage(farmMateFallbackMessage());
+      if (isFollowUp && followUpAnswer) {
+        setConsultationError("FarmMate could not continue this follow-up. Try it again without using another credit.");
+        setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer });
+        setConsultation({ ...nextConsultation, status: "error" });
+      } else {
+        setConsultationError("FarmMate could not start this consultation. Your question is still here, so you can try again.");
+        setConsultation({
+          ...nextConsultation,
+          pendingFollowUpQuestion: undefined,
+          followUpOptions: undefined,
+          status: "error"
+        });
+        setQuestion(nextConsultation.originalQuestion);
+      }
+      setConversationState((current) => ({ ...current, waitingForFollowUp: false }));
+      setShowRecommendation(false);
+      return false;
     } finally {
-      setIsGeneratingNaturalAnswer(false);
+      if (isFollowUp) {
+        followUpRequestInFlight.current = false;
+      } else {
+        consultationStartInFlight.current = false;
+      }
+      if (activeRequestKey.current === requestKey) {
+        setIsGeneratingNaturalAnswer(false);
+        setIsSubmittingFollowUp(false);
+      }
     }
+  }
+
+  async function completeLocalConsultation({
+    originalQuestion,
+    specialist,
+    cards,
+    conversationDecision
+  }: {
+    originalQuestion: string;
+    specialist?: ConversationDecision["specialist"];
+    cards: FarmMateLocalResponseCard[];
+    conversationDecision: ConversationDecision;
+  }) {
+    const localConsultation = createAskFarmMateConsultation({
+      consultationId: createFarmMateConsultationId(crypto.randomUUID()),
+      originalQuestion,
+      specialist
+    });
+    const requestKey = `${localConsultation.consultationId}-local-${Date.now()}`;
+    activeRequestKey.current = requestKey;
+    setConsultation({ ...localConsultation, status: "starting" });
+    setIsThinking(false);
+
+    try {
+      const apiResponse = await fetch("/api/farmmate/usage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+          tool: "ask_farmmate",
+          action: "record"
+        })
+      });
+      const data = (await apiResponse.json().catch(() => null)) as {
+        ok?: boolean;
+        reason?: string;
+        credits?: FarmMateCreditStatus;
+      } | null;
+
+      if (activeRequestKey.current !== requestKey) {
+        return;
+      }
+
+      if (data?.credits) {
+        setCredits(data.credits);
+      }
+
+      if (!apiResponse.ok || !data?.ok) {
+        const reason = typeof data?.reason === "string" ? data.reason : "";
+        setCreditReason(reason);
+        setConsultationError(askCreditFailureMessage(reason, data?.credits));
+        setConsultation({
+          ...localConsultation,
+          status: reason === "credits_exhausted" ? "exhausted" : "error"
+        });
+        setQuestion(originalQuestion);
+        return;
+      }
+
+      setLocalCards(cards);
+      setConsultation({ ...localConsultation, status: "complete" });
+      setShowRecommendation(true);
+      setConversationState(createConversationStateUpdate(conversationState, originalQuestion, conversationDecision, false));
+    } catch {
+      if (activeRequestKey.current !== requestKey) {
+        return;
+      }
+
+      setConsultationError("FarmMate could not start this consultation. Your question is still here, so you can try again.");
+      setConsultation({ ...localConsultation, status: "error" });
+      setQuestion(originalQuestion);
+    } finally {
+      consultationStartInFlight.current = false;
+    }
+  }
+
+  async function retryPendingFollowUp() {
+    if (!pendingContinuationRetry || isSubmittingFollowUp || followUpRequestInFlight.current) {
+      return;
+    }
+
+    const retry = pendingContinuationRetry;
+    followUpRequestInFlight.current = true;
+    setResponse(retry.farmMateResponse);
+    setConsultation({ ...retry.nextConsultation, status: "submitting_follow_up" });
+    setConsultationError("");
+    setShowRecommendation(false);
+
+    await requestConsultationStep({
+      farmMateResponse: retry.farmMateResponse,
+      nextConsultation: retry.nextConsultation,
+      followUpAnswer: retry.followUpAnswer,
+      isFollowUp: true
+    });
   }
 
   function askFarmMate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
 
     const trimmedQuestion = question.trim();
-    if (!trimmedQuestion || isThinking) {
+    if (
+      !trimmedQuestion ||
+      isThinking ||
+      isGeneratingNaturalAnswer ||
+      isSubmittingFollowUp ||
+      consultationStartInFlight.current
+    ) {
       return;
     }
 
     const handoffContext = activeCropDoctorHandoff?.question === trimmedQuestion ? activeCropDoctorHandoff : null;
     const conversationDecision = manageFarmMateConversation(trimmedQuestion, conversationState, handoffContext ?? undefined);
 
-    if (conversationDecision.action === "continue" && conversationState.waitingForFollowUp && currentFollowUp) {
-      logConversationDecision(trimmedQuestion, conversationState, conversationDecision, conversationDecision.specialist);
-      answerFollowUp(trimmedQuestion);
-      setQuestion("");
-      return;
+    if (conversationState.waitingForFollowUp && currentFollowUp) {
+      const selectedOption = (currentFollowUp.options ?? []).find(
+        (option) =>
+          option.toLowerCase() === trimmedQuestion.toLowerCase() ||
+          conversationalOption(currentFollowUp.id, option).toLowerCase() === trimmedQuestion.toLowerCase()
+      );
+
+      if (selectedOption) {
+        logConversationDecision(trimmedQuestion, conversationState, conversationDecision, conversationDecision.specialist);
+        void answerFollowUp(selectedOption);
+        setQuestion("");
+        return;
+      }
     }
 
+    consultationStartInFlight.current = true;
+    activeRequestKey.current = `reset-${Date.now()}`;
     setAskedQuestion(trimmedQuestion);
     setResponse(null);
     setFollowUpIndex(0);
@@ -618,7 +894,12 @@ export function AskFarmMate({
     setAiFallbackMessage("");
     setCreditMessage("");
     setCreditReason("");
+    setConsultationError("");
+    setPendingContinuationRetry(null);
+    setConsultation(null);
     setIsThinking(true);
+    setQuestion("");
+    setActiveCropDoctorHandoff(null);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
     logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
@@ -626,100 +907,140 @@ export function AskFarmMate({
     const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
 
     if (conversationDecision.action === "clarify") {
-      window.setTimeout(() => {
-        setLocalCards(clarificationResponse());
-        setShowRecommendation(true);
-        setConversationState(createConversationStateUpdate(conversationState, trimmedQuestion, conversationDecision, false));
-        setIsThinking(false);
-      }, 700);
+      void completeLocalConsultation({
+        originalQuestion: trimmedQuestion,
+        specialist: conversationDecision.specialist,
+        cards: clarificationResponse(),
+        conversationDecision
+      });
       return;
     }
 
     if (conversationDecision.isMarketplaceInfoRequest) {
-      window.setTimeout(() => {
-        setLocalCards(marketplaceInfoResponse());
-        setShowRecommendation(true);
-        setConversationState(createConversationStateUpdate(conversationState, trimmedQuestion, conversationDecision, false));
-        setIsThinking(false);
-      }, 700);
+      void completeLocalConsultation({
+        originalQuestion: trimmedQuestion,
+        specialist: conversationDecision.specialist,
+        cards: marketplaceInfoResponse(),
+        conversationDecision
+      });
       return;
     }
 
-    window.setTimeout(() => {
-      const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, {
-        previousCropName,
-        cropDoctorContext: handoffContext ?? undefined,
-        weatherContext: routerResult.selectedSpecialist === "weather_decision" ? storedWeatherContextForFarmMate() : undefined
-      });
-      const shouldGiveGuidanceBeforeGeneralFollowUp = Boolean(
-        farmMateResponse.flow?.id.startsWith("general-agronomy-") && farmMateResponse.flow.followUpQuestions.length > 0
-      );
-      const shouldShowRecommendation = (farmMateResponse.confidence === "high" || !farmMateResponse.flow) && !shouldGiveGuidanceBeforeGeneralFollowUp;
+    const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, {
+      previousCropName,
+      cropDoctorContext: handoffContext ?? undefined,
+      weatherContext: routerResult.selectedSpecialist === "weather_decision" ? storedWeatherContextForFarmMate() : undefined
+    });
+    const pendingFollowUpQuestion = farmMateResponse.flow?.followUpQuestions[0];
+    const shouldShowRecommendation = !pendingFollowUpQuestion;
+    const nextConsultation = createAskFarmMateConsultation({
+      consultationId: createFarmMateConsultationId(crypto.randomUUID()),
+      originalQuestion: trimmedQuestion,
+      specialist: routerResult.selectedSpecialist,
+      normalizedCrop: farmMateResponse.resolvedCrop,
+      pendingFollowUpQuestion
+    });
 
-      logBrainContext(trimmedQuestion, farmMateResponse);
-      setResponse(farmMateResponse);
-      setShowRecommendation(shouldShowRecommendation);
-      setConversationState(
-        createConversationStateUpdate(
-          conversationState,
-          trimmedQuestion,
-          {
-            ...conversationDecision,
-            cropName: farmMateResponse.resolvedCrop ?? conversationDecision.cropName,
-            specialist: routerResult.selectedSpecialist
-          },
-          !shouldShowRecommendation
-        )
-      );
-      setIsThinking(false);
-
-      if (shouldShowRecommendation) {
-        void requestNaturalAnswer(trimmedQuestion, farmMateResponse, []);
-      }
-      setActiveCropDoctorHandoff(null);
-    }, 1200);
+    logBrainContext(trimmedQuestion, farmMateResponse);
+    setResponse(farmMateResponse);
+    setConsultation(nextConsultation);
+    setShowRecommendation(shouldShowRecommendation);
+    setConversationState(
+      createConversationStateUpdate(
+        conversationState,
+        trimmedQuestion,
+        {
+          ...conversationDecision,
+          cropName: farmMateResponse.resolvedCrop ?? conversationDecision.cropName,
+          specialist: routerResult.selectedSpecialist
+        },
+        Boolean(pendingFollowUpQuestion)
+      )
+    );
+    setIsThinking(false);
+    void requestConsultationStep({
+      farmMateResponse,
+      nextConsultation,
+      isFollowUp: false
+    });
   }
 
-  function answerFollowUp(answer: string) {
-    if (!currentFollowUp) {
+  async function answerFollowUp(selectedOption: string) {
+    if (
+      !currentFollowUp ||
+      !consultation ||
+      consultation.status !== "awaiting_follow_up" ||
+      !response ||
+      isSubmittingFollowUp ||
+      followUpRequestInFlight.current
+    ) {
       return;
     }
 
-    const nextAnswers = [...followUpAnswers, { question: currentFollowUp.question, answer }];
+    followUpRequestInFlight.current = true;
+    const displayedAnswer = conversationalOption(currentFollowUp.id, selectedOption);
+    const provisionalConsultation = continueAskFarmMateConsultation(
+      consultation,
+      currentFollowUp,
+      selectedOption,
+      displayedAnswer
+    );
+    let nextResponse = response;
+    let nextFollowUpQuestion = undefined;
+    let nextFollowUpIndex = followUpIndex + 1;
 
-    setFollowUpAnswers(nextAnswers);
-
-    if (response?.flow?.id === "plant-melon-clarification" && answer === "Watermelon") {
+    if (response.flow?.id === "plant-melon-clarification" && selectedOption === "Watermelon") {
       const watermelonQuestion = "How do I plant watermelon?";
       const watermelonResponse = buildFarmMateResponse(watermelonQuestion, routeFarmMateQuestion(watermelonQuestion));
 
-      setResponse(watermelonResponse);
-      setFollowUpIndex(0);
-      setShowRecommendation(false);
-      setConversationState((current) => ({
-        ...current,
-        activeTopic: "planting",
-        activeCropName: "Watermelon",
-        activeSpecialist: "planting",
-        waitingForFollowUp: true
-      }));
-      return;
+      nextResponse = watermelonResponse;
+      nextFollowUpIndex = 0;
+      nextFollowUpQuestion = watermelonResponse.flow?.followUpQuestions[0];
+    } else {
+      const shouldCompleteWeatherFlow = shouldCompleteWeatherGuidedFlow(
+        response.flow?.id,
+        provisionalConsultation.answerHistory
+      );
+
+      if (!shouldCompleteWeatherFlow && nextFollowUpIndex < followUpQuestions.length) {
+        nextFollowUpQuestion = followUpQuestions[nextFollowUpIndex];
+      }
     }
 
-    const shouldCompleteWeatherFlow = shouldCompleteWeatherGuidedFlow(response?.flow?.id, nextAnswers);
+    const nextConsultation = continueAskFarmMateConsultation(
+      consultation,
+      currentFollowUp,
+      selectedOption,
+      displayedAnswer,
+      nextFollowUpQuestion
+    );
+    const submittingConsultation: AskFarmMateConsultationState = {
+      ...nextConsultation,
+      normalizedCrop: nextResponse.resolvedCrop ?? nextConsultation.normalizedCrop,
+      selectedCrop: nextResponse.resolvedCrop ?? nextConsultation.selectedCrop,
+      status: "submitting_follow_up"
+    };
+    const currentAnswer = submittingConsultation.answerHistory[submittingConsultation.answerHistory.length - 1];
 
-    if (!shouldCompleteWeatherFlow && followUpIndex + 1 < followUpQuestions.length) {
-      setFollowUpIndex((index) => index + 1);
-      setConversationState((current) => ({ ...current, waitingForFollowUp: true }));
-      return;
-    }
+    setResponse(nextResponse);
+    setFollowUpIndex(nextFollowUpIndex);
+    setFollowUpAnswers(submittingConsultation.answerHistory);
+    setConsultation(submittingConsultation);
+    setShowRecommendation(false);
+    setConversationState((current) => ({
+      ...current,
+      activeTopic: nextResponse.flow?.intent === "planting" ? "planting" : current.activeTopic,
+      activeCropName: nextResponse.resolvedCrop ?? current.activeCropName,
+      activeSpecialist: nextResponse.routerResult?.selectedSpecialist ?? current.activeSpecialist,
+      waitingForFollowUp: Boolean(nextFollowUpQuestion)
+    }));
 
-    setShowRecommendation(true);
-    setConversationState((current) => ({ ...current, waitingForFollowUp: false }));
-
-    if (response) {
-      void requestNaturalAnswer(askedQuestion, response, nextAnswers);
-    }
+    await requestConsultationStep({
+      farmMateResponse: nextResponse,
+      nextConsultation: submittingConsultation,
+      followUpAnswer: currentAnswer,
+      isFollowUp: true
+    });
   }
 
   const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
@@ -736,12 +1057,24 @@ export function AskFarmMate({
     naturalAnswer,
     shouldShowLocalGuidance ? recommendationCards : []
   );
+  const hasConsultationError =
+    Boolean(consultationError) && (consultation?.status === "error" || consultation?.status === "exhausted");
   const shouldShowAnswerFeedback =
-    showRecommendation &&
-    creditReason !== "credits_exhausted" &&
+    shouldShowFarmMateFinalControls({
+      consultation,
+      finalAnswer: cleanDisplayedAnswer,
+      isBusy: isThinking || isGeneratingNaturalAnswer || isSubmittingFollowUp,
+      creditReason
+    }) &&
     shouldShowFarmMateAnswerFeedback(cleanDisplayedAnswer, isThinking || isGeneratingNaturalAnswer);
   const completedAnswerSummary = compactFollowUpSummary(followUpAnswers);
-  const shouldShowIntro = Boolean(intro.lead || intro.detail) && (!showRecommendation || localCards.length > 0) && !isGeneratingNaturalAnswer && !naturalAnswer;
+  const shouldShowIntro =
+    !hasConsultationError &&
+    consultation?.status !== "starting" &&
+    Boolean(intro.lead || intro.detail) &&
+    (!showRecommendation || localCards.length > 0) &&
+    !isGeneratingNaturalAnswer &&
+    !naturalAnswer;
   const shouldShowCreditActions = creditReason === "credits_exhausted";
 
   return (
@@ -801,7 +1134,7 @@ export function AskFarmMate({
 
       <div className="mt-5 space-y-3" aria-live="polite">
         {askedQuestion ? (
-          <div className="ml-auto max-w-[92%] rounded-md bg-leaf-600 px-4 py-3 text-sm font-bold leading-6 text-white">
+          <div className="ml-auto max-w-[92%] break-words rounded-md bg-leaf-600 px-4 py-3 text-sm font-bold leading-6 text-white [overflow-wrap:anywhere]">
             {askedQuestion}
           </div>
         ) : null}
@@ -813,23 +1146,58 @@ export function AskFarmMate({
           </div>
         ) : null}
 
-        {response || localCards.length ? (
-          <div className="max-w-[92%] space-y-3">
+        {response || localCards.length || consultation ? (
+          <div className="min-w-0 max-w-full space-y-3 sm:max-w-[92%]">
+            {consultation?.status === "starting" && !isThinking && !isGeneratingNaturalAnswer ? (
+              <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
+                <Loader2 className="shrink-0 animate-spin text-leaf-700" size={18} aria-hidden="true" />
+                FarmMate is starting your consultation...
+              </div>
+            ) : null}
+
+            {hasConsultationError ? (
+              <div className="min-w-0 rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
+                <p className="break-words text-sm font-bold leading-6 text-ink/68">{consultationError}</p>
+                <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
+                  {pendingContinuationRetry
+                    ? "This stays in the same consultation and will not use another credit."
+                    : "Your original question is ready above. Tap Ask FarmMate to try again."}
+                </p>
+                {pendingContinuationRetry ? (
+                  <button
+                    type="button"
+                    disabled={isSubmittingFollowUp}
+                    onClick={() => void retryPendingFollowUp()}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
+                  >
+                    Try this follow-up again
+                  </button>
+                ) : shouldShowCreditActions ? (
+                  <Link
+                    href={FARM_MATE_FEEDBACK_CTA.href}
+                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
+                  >
+                    {FARM_MATE_FEEDBACK_CTA.label}
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+
             {shouldShowIntro ? (
-              <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76">
+              <div className="break-words rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-4 text-sm font-semibold leading-6 text-ink/76 [overflow-wrap:anywhere]">
                 {intro.lead ? <p>{intro.lead}</p> : null}
                 {intro.detail ? <p className={intro.lead ? "mt-2" : ""}>{intro.detail}</p> : null}
               </div>
             ) : null}
 
-            {shouldShowGeneralGuidanceBeforeFollowUp ? (
+            {shouldShowGeneralGuidanceBeforeFollowUp && !hasConsultationError && consultation?.status !== "starting" ? (
               <div className="space-y-3">
                 {recommendationCards.map((card) => (
                   <section key={card.title} className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                     <h3 className="text-sm font-black text-ink">{card.title}</h3>
                     <div className="mt-2 space-y-1">
                       {card.body.map((line) => (
-                        <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                        <p key={line} className="break-words text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">
                           {line}
                         </p>
                       ))}
@@ -841,27 +1209,45 @@ export function AskFarmMate({
 
             {!showRecommendation
               ? followUpAnswers.map((answer) => (
-                  <div key={`${answer.question}-${answer.answer}`} className="ml-auto max-w-[92%] rounded-md bg-white px-4 py-3 text-sm font-bold leading-6 text-ink/72 ring-1 ring-leaf-900/10">
-                    {answer.answer}
+                  <div key={`${answer.questionId}-${answer.answer}`} className="ml-auto min-w-0 max-w-full break-words rounded-md bg-white px-4 py-3 text-sm font-bold leading-6 text-ink/72 ring-1 ring-leaf-900/10 [overflow-wrap:anywhere] sm:max-w-[92%]">
+                    You told me: {answer.answer}
                   </div>
                 ))
               : null}
 
-            {!showRecommendation && currentFollowUp ? (
-              <div className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                <p className="text-sm font-black text-ink">{currentFollowUp.question}</p>
-                <div className="mt-3 grid gap-2">
+            {!showRecommendation && consultation?.status === "awaiting_follow_up" && currentFollowUp ? (
+              <fieldset
+                ref={followUpQuestionRef}
+                tabIndex={-1}
+                aria-labelledby={`farmmate-follow-up-${currentFollowUp.id}`}
+                className="min-w-0 max-w-full rounded-md border border-leaf-900/10 bg-white px-4 py-4 focus:outline-none"
+              >
+                <legend className="sr-only">FarmMate follow-up question</legend>
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-leaf-700">One quick question</p>
+                <p id={`farmmate-follow-up-${currentFollowUp.id}`} className="mt-1 text-sm font-black text-ink">
+                  {currentFollowUp.question}
+                </p>
+                <div className="mt-3 grid min-w-0 max-w-full gap-2 sm:grid-cols-2">
                   {(currentFollowUp.options ?? ["I can check this", "I am not sure", "I need help checking"]).map((option) => (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => answerFollowUp(conversationalOption(currentFollowUp.id, option))}
-                      className="min-h-11 rounded-md border border-leaf-900/15 bg-leaf-50 px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+                      disabled={isSubmittingFollowUp}
+                      onClick={() => void answerFollowUp(option)}
+                      className="min-h-11 w-full min-w-0 whitespace-normal break-words rounded-md border border-leaf-900/15 bg-leaf-50 px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-white disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                     >
                       {conversationalOption(currentFollowUp.id, option)}
                     </button>
                   ))}
                 </div>
+                <p className="mt-3 text-xs font-semibold text-ink/50">No extra credit for this follow-up.</p>
+              </fieldset>
+            ) : null}
+
+            {consultation?.status === "submitting_follow_up" ? (
+              <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
+                <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
+                FarmMate is continuing this consultation...
               </div>
             ) : null}
 
@@ -875,14 +1261,14 @@ export function AskFarmMate({
                 ) : naturalAnswer ? (
                   <>
                     {completedAnswerSummary ? (
-                      <p className="rounded-md bg-leaf-50 px-4 py-3 text-xs font-black leading-5 text-ink/60">
+                      <p className="break-words rounded-md bg-leaf-50 px-4 py-3 text-xs font-black leading-5 text-ink/60 [overflow-wrap:anywhere]">
                         You told me: {completedAnswerSummary}
                       </p>
                     ) : null}
                     <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                       <div className="space-y-3">
                         {naturalAnswer.split(/\n{2,}/).map((paragraph) => (
-                          <p key={paragraph} className="text-sm font-semibold leading-6 text-ink/72">
+                          <p key={paragraph} className="break-words text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">
                             {paragraph}
                           </p>
                         ))}
@@ -892,14 +1278,14 @@ export function AskFarmMate({
                 ) : null}
 
                 {aiFallbackMessage ? (
-                  <p className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68">
+                  <p className="break-words rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">
                     {aiFallbackMessage}
                   </p>
                 ) : null}
 
                 {creditMessage ? (
                   <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
-                    <p className="text-sm font-bold leading-6 text-ink/68">{creditMessage}</p>
+                    <p className="break-words text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">{creditMessage}</p>
                     {shouldShowCreditActions ? (
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Link
@@ -919,7 +1305,7 @@ export function AskFarmMate({
                         <h3 className="text-sm font-black text-ink">{card.title}</h3>
                         <div className="mt-2 space-y-1">
                           {card.body.map((line) => (
-                            <p key={line} className="text-sm font-semibold leading-6 text-ink/72">
+                            <p key={line} className="break-words text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">
                               {line}
                             </p>
                           ))}
@@ -941,14 +1327,14 @@ export function AskFarmMate({
 
                 {shouldShowAnswerFeedback ? (
                   <FarmMateAnswerFeedback
-                    key={`${askedQuestion}-${cleanDisplayedAnswer.slice(0, 40)}`}
+                    key={`${consultation?.consultationId ?? askedQuestion}-${cleanDisplayedAnswer.slice(0, 40)}`}
                     prompt="Was this helpful?"
                     wrongButtonLabel="Wrong answer"
                     copyText={cleanDisplayedAnswer}
                     context={{
                       tool: "ask_farmmate",
-                      originalQuestion: askedQuestion || undefined,
-                      specialist: response?.routerResult?.selectedSpecialist,
+                      originalQuestion: consultation?.originalQuestion || askedQuestion || undefined,
+                      specialist: consultation?.specialist ?? response?.routerResult?.selectedSpecialist,
                       answerSnippet: farmMateAnswerSnippet(cleanDisplayedAnswer)
                     }}
                   />

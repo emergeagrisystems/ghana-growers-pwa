@@ -9,6 +9,7 @@ import { findPlantingAdvisorGuidance, plantingAdvisorOpeningForQuestion, plantin
 import { findHarvestPostHarvestGuidance, harvestPostHarvestOpeningForQuestion, harvestPostHarvestQuestionType } from "../harvest-postharvest-specialist";
 import { findWeatherDecisionGuidance, weatherDecisionRainChanceBand, weatherOpeningForQuestion, weatherTaskFromQuestion } from "../weather-decision-specialist";
 import { findGeneralAgronomyDecisionFlow, findGeneralAgronomyGuidance } from "../general-agronomy-specialist";
+import { FARM_MATE_CASH_CROP_CAUTION, isFarmMateCashPerennialCrop } from "../crop-library";
 import type { WeatherDecisionSummary } from "../weather";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
@@ -200,6 +201,10 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
 
   if (selectedSpecialist === "general_agronomy") {
     return findGeneralAgronomyDecisionFlow(question, Boolean(resolvedCrop));
+  }
+
+  if (resolvedCrop === "Cocoa" && normalized.includes("yellow")) {
+    return farmMateDecisionFlows.find((flow) => flow.id === "cocoa-yellow-leaves");
   }
 
   if (plantHealthAssessment && ["crop_health", "pest_disease", "general_farming"].includes(selectedSpecialist)) {
@@ -758,6 +763,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const isPlantingFlow = flow.intent === "planting";
   const isHarvestFlow = flow.intent === "harvest";
   const isGeneralAgronomyFlow = flow.id.startsWith("general-agronomy-");
+  const cashCropCaution = isFarmMateCashPerennialCrop(resolvedCrop) ? FARM_MATE_CASH_CROP_CAUTION : undefined;
   const fertilizerContext = fertilizerContextLines(flow, resolvedCrop);
   const weatherContext = weatherContextLines(question, flow, options.weatherContext);
   const plantingContext = plantingContextLines(flow, resolvedCrop);
@@ -812,16 +818,13 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
       },
       {
         title: "What to check",
-        body: isGeneralAgronomyFlow
-          ? flow.recommendation.reasoning.map((step) => step.observation).slice(0, 2)
-          : isLowerConfidence
-          ? flow.followUpQuestions.map((followUp) => followUp.question)
-          : flow.recommendation.reasoning.map((step) => step.observation)
+        body: flow.recommendation.reasoning.map((step) => step.observation).slice(0, 3)
       },
       {
         title: "Recommended action",
         body: [
           flow.recommendation.recommendedAction,
+          ...(cashCropCaution ? [cashCropCaution] : []),
           ...(isWeatherFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isFertilizerFlow ? flow.recommendation.guidance.slice(0, 2) : []),
           ...(isPlantingFlow ? flow.recommendation.guidance.slice(0, 2) : []),

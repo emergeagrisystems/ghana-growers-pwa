@@ -50,6 +50,14 @@ Route checks:
 - Uses practical field language for advanced farmer questions rather than long theory.
 - Recognizes expanded crop aliases before routing questions to Plant Health, Planting Advisor, Crop Doctor guidance, or General Agronomy.
 - Uses cautious crop-family guidance instead of refusing when full crop-specific guidance is unavailable.
+- Ask FarmMate supports same-consultation follow-ups.
+- One farmer-started question equals one consultation credit, and follow-up answers requested by FarmMate do not use extra credits.
+- Farmers should be guided with buttons where possible, with only one pending follow-up question shown at a time.
+- A selected option stays in the same consultation and is acknowledged with `You told me: {answer}`.
+- "My cocoa leaves are yellow" asks region first, cocoa growth stage second, and the clearest visible sign next if it is still needed.
+- The watermelon planting flow asks region first, rain or irrigation availability second, and then gives a final recommendation.
+- Final answers retain `What I think`, `What to do now`, `What to check`, and `Next step`; valuable perennial guidance remains cautious.
+- A new unrelated question starts a new consultation and uses a new credit.
 
 ### Expanded Crop Library
 
@@ -86,7 +94,8 @@ Route checks:
 - Pilot farmers can rate completed Ask FarmMate and Crop Doctor answers as helpful, not clear, or wrong.
 - Ask FarmMate wrong-answer feedback preserves the original question and tool context, including the specialist when available.
 - Crop Doctor feedback preserves available crop, symptom, and result context without exposing internal debug data.
-- Feedback controls appear only after a result exists and remain usable on small mobile screens.
+- Feedback controls appear after final answers only and never while an Ask FarmMate follow-up is waiting; they remain usable on small mobile screens.
+- Copy Answer is available only after a final Ask FarmMate answer and copies that answer rather than the pending follow-up question.
 - Feedback is important during the public pilot because FarmMate is still learning from real farmer use.
 
 ### Crop Calendar
@@ -144,9 +153,13 @@ Route checks:
 
 Ask FarmMate:
 
-- 5 AI-assisted questions every 6 hours.
+- 5 Ask FarmMate consultations/questions every 6 hours.
+- One farmer-started question equals one consultation credit.
+- Follow-up answers requested by FarmMate inside the same consultation do not use extra credits.
+- A new unrelated question starts a new consultation and uses another credit.
+- Missing or invalid consultation context must not bypass Ask FarmMate credit checks.
 - Empty messages do not consume credits.
-- Exhausted state shows a friendly refresh message and Learn actions.
+- Exhausted state shows a friendly refresh message and a Share feedback action.
 - OpenAI is not called when credits are exhausted.
 
 Crop Doctor:
