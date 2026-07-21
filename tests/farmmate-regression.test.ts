@@ -7,6 +7,7 @@ import {
   adminPriorityActionClasses,
   adminPrioritySeverity
 } from "../src/lib/adminPriorityState";
+import { resolveAdminOptionalSource } from "../src/lib/adminOptionalSources";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import {
@@ -1464,6 +1465,91 @@ const tests: TestCase[] = [
       assert.equal(listingWorkspace.includes('tone="destructive"'), true);
       assert.equal(adminPage.includes("getAdminUserFromAccessToken"), true);
       assert.equal(listingPage.includes("getAdminUserFromAccessToken"), true);
+    }
+  },
+  {
+    name: "Optional admin sources distinguish unavailable tables from genuine failures",
+    run: () => {
+      assert.deepEqual(resolveAdminOptionalSource({
+        status: 404,
+        error: "Could not find the table 'public.whatsapp_leads' in the schema cache. PGRST205"
+      }), { state: "unavailable", data: [] });
+      assert.deepEqual(resolveAdminOptionalSource({
+        status: 404,
+        error: 'relation "public.featured_membership_enquiries" does not exist (42P01)'
+      }), { state: "unavailable", data: [] });
+      assert.deepEqual(resolveAdminOptionalSource({
+        status: 200,
+        data: [{ id: "optional-record" }]
+      }), { state: "available", data: [{ id: "optional-record" }] });
+      assert.deepEqual(resolveAdminOptionalSource({
+        status: 504,
+        error: "upstream request timed out"
+      }), { state: "error", status: 504, code: "OPTIONAL_SOURCE_READ_FAILED" });
+    }
+  },
+  {
+    name: "Featured Enquiries handles an absent optional source without a red table error",
+    run: () => {
+      const route = repoFile("src/app/api/admin/featured-enquiries/route.ts");
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+
+      assert.equal(route.includes("requireAdminUser"), true);
+      assert.equal(route.includes('export const dynamic = "force-dynamic"'), true);
+      assert.equal(route.includes("export const revalidate = 0"), true);
+      assert.equal(route.includes('"Cache-Control": "private, no-store, max-age=0"'), true);
+      assert.equal(route.includes('availability: "unavailable"'), true);
+      assert.equal(route.includes("Featured enquiry requests are not available yet."), true);
+      assert.equal(route.includes("retryable: true"), true);
+      assert.equal(route.includes("getFeaturedEnquiries(250).catch(() => null)"), true);
+      assert.equal(dashboard.includes('unavailableMessage="Featured enquiry requests are not available yet."'), true);
+      assert.equal(dashboard.includes("AdminOptionalQueueNotice"), true);
+      assert.equal(dashboard.includes("admin-empty-state"), true);
+      assert.equal(dashboard.includes("Retry"), true);
+    }
+  },
+  {
+    name: "Notifications treats WhatsApp clicks as isolated optional analytics",
+    run: () => {
+      const route = repoFile("src/app/api/admin/whatsapp-leads/route.ts");
+      const analyticsRoute = repoFile("src/app/api/admin/analytics/route.ts");
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const publicRoute = repoFile("src/app/api/whatsapp-leads/route.ts");
+
+      assert.equal(route.includes("requireAdminUser"), true);
+      assert.equal(route.includes('export const dynamic = "force-dynamic"'), true);
+      assert.equal(route.includes("export const revalidate = 0"), true);
+      assert.equal(route.includes('"Cache-Control": "private, no-store, max-age=0"'), true);
+      assert.equal(route.includes('availability: "unavailable"'), true);
+      assert.equal(route.includes("WhatsApp click tracking is not available yet."), true);
+      assert.equal(route.includes("retryable: true"), true);
+      assert.equal(route.includes("getRecentWhatsAppLeads(250).catch(() => null)"), true);
+      assert.equal(analyticsRoute.includes('readTable("whatsapp_leads"'), false);
+      assert.equal(analyticsRoute.includes("Optional click tracking loads independently"), true);
+      assert.equal(dashboard.includes("Buyer enquiries remain available in Produce Requests."), true);
+      assert.equal(dashboard.includes("Latest Contact Clicks"), true);
+      assert.equal(dashboard.includes("Latest Leads"), false);
+      assert.equal(dashboard.includes('activeSection === "whatsapp-leads" || (activeSection === "analytics"'), true);
+      assert.equal(publicRoute.includes("export async function GET"), false);
+    }
+  },
+  {
+    name: "Optional queue failures do not alter operational lead request sources",
+    run: () => {
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const leadRoute = repoFile("src/app/api/admin/lead-requests/route.ts");
+      const optionalSource = repoFile("src/lib/adminOptionalSources.ts");
+
+      assert.equal(dashboard.includes('fetch("/api/admin/lead-requests", { cache: "no-store" })'), true);
+      assert.equal(dashboard.includes('leadStatusCount(leadRequests, "New")'), true);
+      assert.equal(dashboard.includes('leadStatusCount(leadRequests, "Negotiating")'), true);
+      assert.equal(leadRoute.includes("getRecentLeadRequests(250)"), true);
+      assert.equal(leadRoute.includes("requireAdminUser"), true);
+      assert.equal(optionalSource.includes("serviceRoleKey"), false);
+      assert.equal(optionalSource.includes("phone"), false);
+      assert.equal(optionalSource.includes("whatsapp"), false);
+      assert.equal(optionalSource.includes("message"), false);
+      assert.equal(optionalSource.includes("console.error"), true);
     }
   },
   {
