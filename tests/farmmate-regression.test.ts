@@ -658,7 +658,7 @@ const tests: TestCase[] = [
   {
     name: "Listing submissions reconciliation migration creates the missing public queue safely",
     run: () => {
-      const migration = repoFile("supabase/migrations/031_reconcile_listing_submissions.sql");
+      const migration = repoFile("supabase/legacy-migrations/pre-baseline/031_reconcile_listing_submissions.sql");
 
       assert.equal(migration.includes("begin;"), true);
       assert.equal(migration.includes("commit;"), true);
@@ -687,7 +687,7 @@ const tests: TestCase[] = [
   {
     name: "Marketplace trade migration runs after listing submission reconciliation",
     run: () => {
-      const tradeMigration = repoFile("supabase/migrations/032_marketplace_trade_fields.sql");
+      const tradeMigration = repoFile("supabase/legacy-migrations/pre-baseline/032_marketplace_trade_fields.sql");
 
       assert.equal(tradeMigration.includes("begin;"), true);
       assert.equal(tradeMigration.includes("commit;"), true);
@@ -919,7 +919,7 @@ const tests: TestCase[] = [
   {
     name: "Listing submission review migration adds private review workflow safely",
     run: () => {
-      const migration = repoFile("supabase/migrations/033_listing_submission_review_workflow.sql");
+      const migration = repoFile("supabase/legacy-migrations/pre-baseline/033_listing_submission_review_workflow.sql");
       const anonGrant = migration.slice(
         migration.indexOf("grant insert ("),
         migration.indexOf(") on public.listing_submissions to anon;")
@@ -1065,7 +1065,7 @@ const tests: TestCase[] = [
   {
     name: "Unified buyer enquiries use private lead_requests instead of new request tables",
     run: () => {
-      const migration = repoFile("supabase/migrations/034_unified_buyer_enquiries.sql");
+      const migration = repoFile("supabase/legacy-migrations/pre-baseline/034_unified_buyer_enquiries.sql");
       const precheck = repoFile("supabase/review/precheck_034_unified_buyer_enquiries.sql");
       const verify = repoFile("supabase/review/verify_034_unified_buyer_enquiries.sql");
       const leadRequests = repoFile("src/lib/leadRequests.ts");
@@ -6787,7 +6787,7 @@ const tests: TestCase[] = [
   {
     name: "FarmMate pilot feedback migration is server-write only",
     run: () => {
-      const migration = repoFile("supabase/migrations/035_farmmate_pilot_feedback.sql");
+      const migration = repoFile("supabase/legacy-migrations/pre-baseline/035_farmmate_pilot_feedback.sql");
 
       assert.equal(migration.includes("create table if not exists public.farmmate_pilot_feedback"), true);
       assert.equal(migration.includes("tested_feature text not null"), true);
