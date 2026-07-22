@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   adminCountPillClass,
@@ -189,10 +189,19 @@ import {
   storeFarmMatePreparedAnswerFeedback
 } from "../src/lib/farmmate/answer-feedback";
 import type { FarmerProfile, Product, SupplierProfile } from "../src/types";
+import { adminEmailAllowlist, authorizeAdminIdentity } from "../src/lib/adminAuthorization";
+import {
+  createPreviewAccessToken,
+  previewAccessDecision,
+  previewAccessMaxAgeSeconds,
+  safeAdminReturnPath,
+  safePreviewDestination,
+  verifyPreviewAccessToken
+} from "../src/lib/previewAccess";
 
 type TestCase = {
   name: string;
-  run: () => void;
+  run: () => void | Promise<void>;
 };
 
 const plantHealthTomatoState: ConversationState = {
@@ -411,7 +420,192 @@ function repoFile(path: string) {
   return readFileSync(join(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 }
 
+function repoFiles(path: string): string[] {
+  return readdirSync(join(process.cwd(), path)).flatMap((entry) => {
+    const relativePath = join(path, entry);
+    return statSync(join(process.cwd(), relativePath)).isDirectory() ? repoFiles(relativePath) : [relativePath];
+  });
+}
+
 const tests: TestCase[] = [
+  {
+    name: "admin authorization ignores user metadata and accepts only controlled sources",
+    run: () => {
+      const selfClaimedUser = {
+        id: "user-1",
+        email: "farmer@example.com",
+        app_metadata: {},
+        user_metadata: { role: "admin", admin: true, roles: ["admin"] }
+      };
+
+      assert.deepEqual(authorizeAdminIdentity(selfClaimedUser, "approved@example.com"), {
+        authorized: false,
+        reason: "not_authorized"
+      });
+      assert.deepEqual(
+        authorizeAdminIdentity({ id: "user-2", email: "admin@example.com", app_metadata: { role: "admin" } }),
+        { authorized: true, source: "app_metadata" }
+      );
+      assert.deepEqual(
+        authorizeAdminIdentity({ id: "user-3", email: " ADMIN@EXAMPLE.COM ", app_metadata: {} }, "other@example.com, admin@example.com"),
+        { authorized: true, source: "email_allowlist" }
+      );
+      assert.deepEqual(authorizeAdminIdentity({ id: "user-4", email: "admin@example.com", app_metadata: {} }), {
+        authorized: false,
+        reason: "authorization_unconfigured"
+      });
+      assert.deepEqual(Array.from(adminEmailAllowlist(" ONE@example.com;two@example.com\n")), ["one@example.com", "two@example.com"]);
+    }
+  },
+  {
+    name: "preview access decisions fail closed for unauthenticated and unauthorized visitors",
+    run: () => {
+      assert.equal(
+        previewAccessDecision({
+          exitRequested: false,
+          hasAccessToken: false,
+          previewSecretConfigured: true
+        }),
+        "login"
+      );
+      assert.equal(
+        previewAccessDecision({
+          exitRequested: false,
+          hasAccessToken: true,
+          authorizationStatus: "forbidden",
+          previewSecretConfigured: true
+        }),
+        "forbidden"
+      );
+      assert.equal(
+        previewAccessDecision({
+          exitRequested: false,
+          hasAccessToken: true,
+          authorizationStatus: "authorized",
+          previewSecretConfigured: false
+        }),
+        "unavailable"
+      );
+      assert.equal(
+        previewAccessDecision({
+          exitRequested: false,
+          hasAccessToken: true,
+          authorizationStatus: "authorized",
+          previewSecretConfigured: true
+        }),
+        "grant"
+      );
+      assert.equal(
+        previewAccessDecision({
+          exitRequested: true,
+          hasAccessToken: false,
+          previewSecretConfigured: false
+        }),
+        "clear"
+      );
+    }
+  },
+  {
+    name: "preview cookies are signed short-lived and reject expiry or tampering",
+    run: async () => {
+      const secret = "preview-test-secret-that-is-long-enough";
+      const issuedAt = Date.UTC(2026, 6, 22, 12, 0, 0);
+      const token = await createPreviewAccessToken(secret, issuedAt);
+
+      assert.equal(typeof token, "string");
+      assert.equal(await verifyPreviewAccessToken(token ?? undefined, secret, issuedAt), true);
+      assert.equal(await verifyPreviewAccessToken(token ?? undefined, secret, issuedAt + previewAccessMaxAgeSeconds * 1000), false);
+      assert.equal(await verifyPreviewAccessToken(`${token}tampered`, secret, issuedAt), false);
+      assert.equal(await verifyPreviewAccessToken(token ?? undefined, `${secret}-different`, issuedAt), false);
+      assert.equal(await createPreviewAccessToken("too-short", issuedAt), null);
+    }
+  },
+  {
+    name: "preview and admin return destinations stay on trusted internal routes",
+    run: () => {
+      assert.equal(safePreviewDestination("/marketplace?category=Grains"), "/marketplace?category=Grains");
+      assert.equal(safePreviewDestination("https://evil.example/steal"), "/");
+      assert.equal(safePreviewDestination("//evil.example/steal"), "/");
+      assert.equal(safePreviewDestination("/dev-preview?exit=1"), "/");
+      assert.equal(safeAdminReturnPath("/dev-preview?destination=%2Fmarketplace"), "/dev-preview?destination=%2Fmarketplace");
+      assert.equal(safeAdminReturnPath("/marketplace"), "/admin");
+    }
+  },
+  {
+    name: "dev preview route uses authenticated authorization and secure cookie controls",
+    run: () => {
+      const route = repoFile("src/app/dev-preview/route.ts");
+      const middleware = repoFile("src/middleware.ts");
+      const layout = repoFile("src/app/layout.tsx");
+      const adminAuth = repoFile("src/lib/adminAuth.ts");
+      const loginRoute = repoFile("src/app/api/admin/auth/login/route.ts");
+      const publicLogin = repoFile("src/components/AdminLoginForm.tsx");
+      const environmentExample = repoFile(".env.example");
+
+      assert.equal(route.includes("getAdminAuthorizationFromAccessToken"), true);
+      assert.equal(route.includes("createPreviewAccessToken"), true);
+      assert.equal(route.includes("httpOnly: true"), true);
+      assert.equal(route.includes("sameSite: \"lax\""), true);
+      assert.equal(route.includes("maxAge: 0"), true);
+      assert.equal(route.includes('"enabled"'), false);
+      assert.equal(route.includes("PREVIEW_ACCESS_SECRET") && route.includes("searchParams.get(\"secret\")"), false);
+      assert.equal(route.includes("status: 403") || route.includes("deniedResponse(request, 403"), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+      assert.equal(middleware.includes("SITE_PRELAUNCH"), true);
+      assert.equal(layout.includes("Exit preview"), true);
+      assert.equal(adminAuth.includes('import "server-only"'), true);
+      assert.equal(adminAuth.includes("user_metadata"), false);
+      assert.equal(loginRoute.includes("user: result.user"), false);
+      assert.equal(publicLogin.includes("ADMIN_EMAIL_ALLOWLIST"), false);
+      assert.equal(publicLogin.includes("app_metadata"), false);
+      assert.equal(publicLogin.includes("user_metadata"), false);
+      assert.equal(environmentExample.includes("ADMIN_EMAIL_ALLOWLIST="), true);
+      assert.equal(environmentExample.includes("PREVIEW_ACCESS_SECRET="), true);
+    }
+  },
+  {
+    name: "client modules do not receive admin authorization metadata or server configuration",
+    run: () => {
+      const clientModules = repoFiles("src")
+        .filter((path) => path.endsWith(".ts") || path.endsWith(".tsx"))
+        .filter((path) => /^\s*["']use client["']/.test(repoFile(path)));
+
+      for (const path of clientModules) {
+        const source = repoFile(path);
+        assert.equal(source.includes("ADMIN_EMAIL_ALLOWLIST"), false, `${path} must not receive the admin allowlist`);
+        assert.equal(source.includes("PREVIEW_ACCESS_SECRET"), false, `${path} must not receive the preview signing secret`);
+        assert.equal(source.includes("app_metadata"), false, `${path} must not receive app metadata`);
+        assert.equal(source.includes("user_metadata"), false, `${path} must not receive user metadata`);
+      }
+    }
+  },
+  {
+    name: "all admin pages and non-auth admin APIs retain centralized protection",
+    run: () => {
+      const adminPages = repoFiles("src/app/admin")
+        .filter((path) => path.endsWith("page.tsx"))
+        .filter((path) => !path.includes(join("admin", "login")));
+      const adminApiRoutes = repoFiles("src/app/api/admin")
+        .filter((path) => path.endsWith("route.ts"))
+        .filter((path) => !path.includes(join("admin", "auth")));
+
+      assert.equal(adminPages.length > 0, true);
+      assert.equal(adminApiRoutes.length > 0, true);
+
+      for (const page of adminPages) {
+        assert.equal(repoFile(page).includes("getAdminUserFromAccessToken"), true, `${page} must use the centralized admin guard`);
+      }
+
+      for (const route of adminApiRoutes) {
+        const source = repoFile(route);
+        assert.equal(
+          source.includes("requireAdminUser") || source.includes("@/app/api/admin/records"),
+          true,
+          `${route} must use the centralized admin guard`
+        );
+      }
+    }
+  },
   {
     name: "FarmMate pilot exposes only the two requested public pages and FarmMate APIs",
     run: () => {
@@ -7355,21 +7549,25 @@ const tests: TestCase[] = [
   }
 ];
 
-let failures = 0;
+async function runRegressionTests() {
+  let failures = 0;
 
-for (const test of tests) {
-  try {
-    test.run();
-    console.log(`PASS ${test.name}`);
-  } catch (error) {
-    failures += 1;
-    console.error(`FAIL ${test.name}`);
-    console.error(error);
+  for (const test of tests) {
+    try {
+      await test.run();
+      console.log(`PASS ${test.name}`);
+    } catch (error) {
+      failures += 1;
+      console.error(`FAIL ${test.name}`);
+      console.error(error);
+    }
+  }
+
+  if (failures > 0) {
+    process.exitCode = 1;
+  } else {
+    console.log(`All ${tests.length} FarmMate regression tests passed.`);
   }
 }
 
-if (failures > 0) {
-  process.exitCode = 1;
-} else {
-  console.log(`All ${tests.length} FarmMate regression tests passed.`);
-}
+void runRegressionTests();

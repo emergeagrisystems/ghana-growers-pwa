@@ -1,3 +1,6 @@
+import "server-only";
+import { authorizeAdminIdentity, type AdminAuthorizationUser } from "@/lib/adminAuthorization";
+
 export const adminAccessCookie = "ghana_growers_admin_access_token";
 export const adminRefreshCookie = "ghana_growers_admin_refresh_token";
 
@@ -7,12 +10,13 @@ export type AdminUser = {
   role: string;
 };
 
-type SupabaseAuthUser = {
-  id?: string;
-  email?: string;
-  app_metadata?: Record<string, unknown>;
-  user_metadata?: Record<string, unknown>;
-};
+type SupabaseAuthUser = AdminAuthorizationUser;
+
+export type AdminSessionResult =
+  | { status: "authorized"; user: AdminUser }
+  | { status: "unauthenticated"; code: "missing_access_token" | "invalid_access_token" }
+  | { status: "forbidden"; code: "admin_not_authorized" }
+  | { status: "unavailable"; code: "supabase_auth_unconfigured" | "admin_authorization_unconfigured" | "auth_service_unavailable" };
 
 type SupabasePasswordResponse = {
   access_token?: string;
@@ -37,39 +41,19 @@ function supabaseAuthConfig() {
   };
 }
 
-function metadataHasAdminRole(metadata?: Record<string, unknown>) {
-  const role = metadata?.role;
-  const roles = metadata?.roles;
-  const isAdmin = metadata?.admin;
-
-  return (
-    role === "admin" ||
-    isAdmin === true ||
-    (Array.isArray(roles) && roles.includes("admin"))
-  );
-}
-
-function adminRole(user?: SupabaseAuthUser) {
-  if (metadataHasAdminRole(user?.app_metadata)) {
-    return "admin";
-  }
-
-  if (metadataHasAdminRole(user?.user_metadata)) {
-    return "admin";
-  }
-
-  return "";
+function adminAuthorization(user?: SupabaseAuthUser) {
+  return authorizeAdminIdentity(user, process.env.ADMIN_EMAIL_ALLOWLIST);
 }
 
 export function isSupabaseAdminUser(user?: SupabaseAuthUser) {
-  return adminRole(user) === "admin";
+  return adminAuthorization(user).authorized;
 }
 
 function adminUserFromSupabase(user: SupabaseAuthUser): AdminUser {
   return {
     id: user.id ?? "",
     email: user.email ?? "Admin user",
-    role: adminRole(user) || "admin"
+    role: "admin"
   };
 }
 
@@ -138,8 +122,18 @@ export async function signInAdminWithPassword(email: string, password: string) {
     return { error: result?.error_description || result?.msg || "Invalid email or password." };
   }
 
-  if (!isSupabaseAdminUser(result.user)) {
-    return { error: "This account is not authorized for Ghana Growers admin access.", status: 403 };
+  const authorization = adminAuthorization(result.user);
+
+  if (!authorization.authorized) {
+    const configurationMissing = authorization.reason === "authorization_unconfigured";
+
+    return {
+      error: configurationMissing
+        ? "Admin authorization is not configured. Contact the Ghana Growers administrator."
+        : "This account is not authorized for Ghana Growers admin access.",
+      status: configurationMissing ? 503 : 403,
+      code: configurationMissing ? "admin_authorization_unconfigured" : "admin_not_authorized"
+    };
   }
 
   return {
@@ -174,28 +168,52 @@ export async function requestAdminPasswordReset(email: string, redirectTo?: stri
   return { ok: true };
 }
 
-export async function getAdminUserFromAccessToken(accessToken?: string): Promise<AdminUser | null> {
+export async function getAdminAuthorizationFromAccessToken(accessToken?: string): Promise<AdminSessionResult> {
   const { url, anonKey } = supabaseAuthConfig();
 
-  if (!url || !anonKey || !accessToken) {
-    return null;
+  if (!accessToken) {
+    return { status: "unauthenticated", code: "missing_access_token" };
   }
 
-  const response = await fetch(`${url}/auth/v1/user`, {
-    method: "GET",
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${accessToken}`
-    },
-    cache: "no-store"
-  });
-  const user = (await response.json().catch(() => null)) as SupabaseUserResponse | null;
-
-  if (!response.ok || !user || !isSupabaseAdminUser(user)) {
-    return null;
+  if (!url || !anonKey) {
+    return { status: "unavailable", code: "supabase_auth_unconfigured" };
   }
 
-  return adminUserFromSupabase(user);
+  try {
+    const response = await fetch(`${url}/auth/v1/user`, {
+      method: "GET",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${accessToken}`
+      },
+      cache: "no-store"
+    });
+    const user = (await response.json().catch(() => null)) as SupabaseUserResponse | null;
+
+    if (!response.ok || !user?.id) {
+      return response.status === 401 || response.status === 403
+        ? { status: "unauthenticated", code: "invalid_access_token" }
+        : { status: "unavailable", code: "auth_service_unavailable" };
+    }
+
+    const authorization = adminAuthorization(user);
+
+    if (!authorization.authorized) {
+      return authorization.reason === "authorization_unconfigured"
+        ? { status: "unavailable", code: "admin_authorization_unconfigured" }
+        : { status: "forbidden", code: "admin_not_authorized" };
+    }
+
+    return { status: "authorized", user: adminUserFromSupabase(user) };
+  } catch {
+    return { status: "unavailable", code: "auth_service_unavailable" };
+  }
+}
+
+export async function getAdminUserFromAccessToken(accessToken?: string): Promise<AdminUser | null> {
+  const result = await getAdminAuthorizationFromAccessToken(accessToken);
+
+  return result.status === "authorized" ? result.user : null;
 }
 
 export async function getAdminUserFromRequest(request: Request) {

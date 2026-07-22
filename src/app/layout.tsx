@@ -6,9 +6,8 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
 import { siteConfig } from "@/data/site";
+import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 import { defaultOgImage, organizationJsonLd } from "@/lib/seo";
-
-const PREVIEW_COOKIE = "ghana_growers_dev_preview";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -53,9 +52,14 @@ export const viewport: Viewport = {
   initialScale: 1
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const prelaunchEnabled = process.env.SITE_PRELAUNCH !== "false";
-  const previewEnabled = cookies().get(PREVIEW_COOKIE)?.value === "enabled";
+  const previewEnabled = prelaunchEnabled
+    ? await verifyPreviewAccessToken(
+        cookies().get(previewAccessCookie)?.value,
+        process.env.PREVIEW_ACCESS_SECRET
+      )
+    : false;
   const showPublicShell = !prelaunchEnabled || previewEnabled;
 
   return (
@@ -67,6 +71,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
         />
         <PwaRegister />
+        {previewEnabled ? (
+          <div className="bg-earth-500 px-4 py-2 text-center text-sm font-black text-leaf-900">
+            Admin preview mode
+            <a href="/dev-preview?exit=1" className="focus-ring ml-3 rounded-md underline underline-offset-4">
+              Exit preview
+            </a>
+          </div>
+        ) : null}
         <Header showFullNavigation={showPublicShell} />
         <main>{children}</main>
         {showPublicShell ? <Footer /> : null}
