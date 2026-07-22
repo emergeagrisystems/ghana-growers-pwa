@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error ?? "Admin login failed." }, { status: result.status ?? 401 });
   }
 
-  const response = NextResponse.json({ ok: true, user: result.user });
+  const response = NextResponse.json({ ok: true });
   adminAuthCookieHeaders({
     accessToken: result.accessToken,
     refreshToken: result.refreshToken,

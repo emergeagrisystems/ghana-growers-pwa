@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Sprout } from "lucide-react";
-
-const PREVIEW_COOKIE = "ghana_growers_dev_preview";
+import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 
 function prelaunchEnabled() {
   return process.env.SITE_PRELAUNCH !== "false";
 }
 
-function previewEnabled() {
-  return cookies().get(PREVIEW_COOKIE)?.value === "enabled";
+async function previewEnabled() {
+  return verifyPreviewAccessToken(
+    cookies().get(previewAccessCookie)?.value,
+    process.env.PREVIEW_ACCESS_SECRET
+  );
 }
 
-export function PrelaunchHeader() {
-  if (!prelaunchEnabled() || previewEnabled()) {
+export async function PrelaunchHeader() {
+  if (!prelaunchEnabled() || await previewEnabled()) {
     return null;
   }
 
@@ -34,8 +36,8 @@ export function PrelaunchHeader() {
   );
 }
 
-export function PrelaunchFooter() {
-  if (!prelaunchEnabled() || previewEnabled()) {
+export async function PrelaunchFooter() {
+  if (!prelaunchEnabled() || await previewEnabled()) {
     return null;
   }
 

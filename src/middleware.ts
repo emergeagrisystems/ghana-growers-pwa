@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isControlledPrelaunchRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
-
-const PREVIEW_COOKIE = "ghana_growers_dev_preview";
+import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 
 function prelaunchEnabled() {
   return process.env.SITE_PRELAUNCH !== "false";
@@ -22,14 +21,19 @@ function isAllowedPrelaunchRoute(pathname: string) {
   return isPublicFarmMatePilotRoute(pathname) || isControlledPrelaunchRoute(pathname) || isPublicAsset(pathname);
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!prelaunchEnabled()) {
     return NextResponse.next();
   }
 
-  if (request.cookies.get(PREVIEW_COOKIE)?.value === "enabled") {
+  const previewAccessGranted = await verifyPreviewAccessToken(
+    request.cookies.get(previewAccessCookie)?.value,
+    process.env.PREVIEW_ACCESS_SECRET
+  );
+
+  if (previewAccessGranted) {
     return NextResponse.next();
   }
 

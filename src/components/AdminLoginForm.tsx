@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function AdminLoginForm() {
+export function AdminLoginForm({ returnTo = "/admin" }: { returnTo?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +33,7 @@ export function AdminLoginForm() {
     }
 
     setMessage("Login successful. Opening dashboard...");
-    router.replace("/admin");
+    router.replace(returnTo);
     router.refresh();
   }
 
@@ -70,7 +70,7 @@ export function AdminLoginForm() {
         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Admin</p>
         <h1 className="mt-3 text-3xl font-black text-ink">Admin Login</h1>
         <p className="mt-3 text-sm leading-6 text-ink/65">
-          Sign in with a Supabase Auth account that has the admin role.
+          Sign in with an account authorized for Ghana Growers administration.
         </p>
 
         <form className="mt-6 grid gap-4" onSubmit={submitLogin}>
