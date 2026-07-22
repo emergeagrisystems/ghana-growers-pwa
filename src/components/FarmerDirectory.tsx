@@ -15,10 +15,10 @@ import {
   paginationPages,
   isVerifiedFarmer
 } from "@/lib/farmerDirectory";
-import type { FarmerProfile } from "@/types";
+import type { PublicFarmerProfile } from "@/types";
 
 type FarmerDirectoryProps = {
-  farmers: FarmerProfile[];
+  farmers: PublicFarmerProfile[];
   initialSearch?: string;
 };
 
@@ -94,7 +94,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
     const query = search.trim().toLowerCase();
     const searchable = [
       farmer.farmName,
-      farmer.contactName,
+      farmer.farmerName,
       farmer.region,
       farmer.district,
       cleanFarmerLocation(farmer),

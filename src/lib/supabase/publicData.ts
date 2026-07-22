@@ -1,13 +1,14 @@
+import "server-only";
+
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
-import { supplierDirectory as fallbackSuppliers } from "@/data/suppliers";
 import fallbackSuccessStories from "@/data/successStories.json";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
-import { isDemoSeedFarmerProfile, isPublicFarmerProfile } from "@/lib/farmerDirectory";
+import { isDemoProfileOrigin, isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
-import type { FarmerProfile, Product, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
+import type { Product, PublicFarmerProfile, PublicSupplierProfile, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 type SupabaseFarmer = {
   id: string;
@@ -26,6 +27,7 @@ type SupabaseFarmer = {
   imported_photo_url: string | null;
   original_tally_data: Record<string, unknown> | null;
   verification_status: string | null;
+  launch_ready: boolean | null;
   verification_date: string | null;
   verified_by: string | null;
   verification_notes: string | null;
@@ -62,6 +64,7 @@ type SupabaseSupplier = {
   profile_image_url?: string | null;
   application_image_url?: string | null;
   status: string | null;
+  source?: string | null;
   is_featured: boolean | null;
   featured_until: string | null;
   featured_note: string | null;
@@ -231,6 +234,47 @@ async function fetchRows<T>(table: string, select = "*", order = "created_at.des
 
   const rows = (await response.json().catch(() => [])) as T[];
   return Array.isArray(rows) ? rows : [];
+}
+
+export type PublicProfileLoadResult<T> =
+  | { status: "ready"; data: T[] }
+  | { status: "unavailable"; data: []; code: "configuration_missing" | "network_error" | "read_failed" | "invalid_response" };
+
+async function fetchPublicProfileRows<T>(table: "farmers" | "suppliers"): Promise<PublicProfileLoadResult<T>> {
+  const { url, serviceRoleKey } = supabaseConfig();
+
+  if (!url || !serviceRoleKey) {
+    console.error("Public profile data unavailable", { route: "public-profile-loader", feature: table, code: "configuration_missing" });
+    return { status: "unavailable", data: [], code: "configuration_missing" };
+  }
+
+  const endpoint = new URL(`${url.replace(/\/$/, "")}/rest/v1/${table}`);
+  endpoint.searchParams.set("select", "*");
+  endpoint.searchParams.set("order", "created_at.desc");
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+      cache: "no-store"
+    });
+  } catch {
+    console.error("Public profile data unavailable", { route: "public-profile-loader", feature: table, code: "network_error" });
+    return { status: "unavailable", data: [], code: "network_error" };
+  }
+
+  if (!response.ok) {
+    console.error("Public profile data unavailable", { route: "public-profile-loader", feature: table, code: "read_failed" });
+    return { status: "unavailable", data: [], code: "read_failed" };
+  }
+
+  const rows = await response.json().catch(() => null);
+  if (!Array.isArray(rows)) {
+    console.error("Public profile data unavailable", { route: "public-profile-loader", feature: table, code: "invalid_response" });
+    return { status: "unavailable", data: [], code: "invalid_response" };
+  }
+
+  return { status: "ready", data: rows as T[] };
 }
 
 function slugify(value: string) {
@@ -474,7 +518,6 @@ function supplierImageUrls(row: SupabaseSupplier, services: string[]) {
   const urls = [
     row.logo_url,
     row.profile_image_url,
-    row.application_image_url,
     supplierServiceImageForName(services[0] ?? row.category, row.category),
     "/images/suppliers/supplier-1.jpg"
   ];
@@ -503,7 +546,7 @@ function supplierDescription(row: SupabaseSupplier, services: string[]) {
   return `${name} is listed in the Ghana Growers supplier network. Farmers and buyers can request service details through Ghana Growers.`;
 }
 
-function mapFarmer(row: SupabaseFarmer): FarmerProfile {
+function mapFarmer(row: SupabaseFarmer): PublicFarmerProfile {
   const slug = row.slug ?? slugify(row.farm_name);
   const products = cleanProductList(row.products?.length ? row.products : ["Produce"]);
   const verificationStatus = trustStatus(row.verification_status);
@@ -512,13 +555,12 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     id: row.id,
     slug,
     farmName: row.farm_name,
-    contactName: row.farmer_name ?? row.farm_name,
+    farmerName: row.farmer_name ?? row.farm_name,
     region: row.region,
     district: row.district,
     products,
     farmType: row.farm_type === "Livestock" || row.farm_type === "Mixed" ? row.farm_type : "Crop",
     farmSize: row.farm_size ?? "Not provided",
-    yearsFarming: "Not provided",
     availabilityStatus: row.status === "Archived" ? "Currently unavailable" : "Request availability",
     description: farmerDescription(row, products),
     harvestSeason: "Confirm current harvest timing with Ghana Growers.",
@@ -530,20 +572,16 @@ function mapFarmer(row: SupabaseFarmer): FarmerProfile {
     hasRealPhoto: farmerHasRealPublicPhoto(row),
     photoNeedsImport: farmerPhotoNeedsImport(row),
     verificationStatus,
+    status: "Active",
+    launchReady: true,
     verificationDate: row.verification_date ?? undefined,
-    verifiedBy: row.verified_by ?? undefined,
-    verificationNotes: row.verification_notes ?? undefined,
     ggStandardStatus: row.gg_standard_status ?? "Pending",
-    source: row.source ?? undefined,
     isFeatured: Boolean(row.is_featured),
     featuredUntil: row.featured_until ?? undefined,
-    featuredNote: row.featured_note ?? undefined,
-    trust: trustProfile(row.verification_status),
-    whatsappMessage: `Hello Ghana Growers, I am interested in contacting ${row.farm_name} in ${row.district}, ${row.region}.`
   };
 }
 
-function mapSupplier(row: SupabaseSupplier): SupplierProfile {
+function mapSupplier(row: SupabaseSupplier): PublicSupplierProfile {
   const slug = row.slug ?? slugify(row.company_name);
   const services = row.products_services?.length ? row.products_services : [row.category];
   const verificationStatus = trustStatus(row.verification_status);
@@ -553,7 +591,6 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     id: row.id,
     slug,
     companyName: row.company_name,
-    contactPerson: row.contact_person,
     supplierCategory: row.category as SupplierProfile["supplierCategory"],
     region: row.region,
     district: row.district,
@@ -563,18 +600,12 @@ function mapSupplier(row: SupabaseSupplier): SupplierProfile {
     serviceCoverageArea: row.service_coverage_area ?? `${row.district} and surrounding districts`,
     photos: supplierImageUrls(row, services),
     website: row.website ?? undefined,
-    phone: row.phone ?? row.whatsapp_number ?? "",
     verificationStatus,
+    status: "Active",
     verificationDate: row.verification_date ?? undefined,
-    verifiedBy: row.verified_by ?? undefined,
-    verificationNotes: row.verification_notes ?? undefined,
     ggStandardStatus: row.gg_standard_status ?? "Pending",
-    status: row.status ?? undefined,
     isFeatured: Boolean(row.is_featured),
     featuredUntil: row.featured_until ?? undefined,
-    featuredNote: row.featured_note ?? undefined,
-    trust: trustProfile(row.verification_status),
-    whatsappMessage: `Hello Ghana Growers, I want to contact ${row.company_name} about ${services.slice(0, 2).join(" and ")}.`
   };
 }
 
@@ -704,28 +735,29 @@ function mapSuccessStory(row: SupabaseSuccessStory): SuccessStory {
   };
 }
 
-export async function getFarmersData() {
-  const rows = await fetchRows<SupabaseFarmer>("farmers");
-  const publicRows = rows
-    .filter((row) => row.status === "Active" && !isDemoSeedFarmerProfile({ source: row.source ?? undefined }))
-    .map(mapFarmer)
-    .filter(isPublicFarmerProfile);
+export async function getFarmersData(): Promise<PublicProfileLoadResult<PublicFarmerProfile>> {
+  const result = await fetchPublicProfileRows<SupabaseFarmer>("farmers");
+  if (result.status === "unavailable") return result;
 
-  if (rows.length > 0) {
-    return featuredSort(publicRows);
-  }
-
-  return allowDemoPublicData() ? fallbackFarmers.filter(isPublicFarmerProfile) : [];
+  return {
+    status: "ready",
+    data: featuredSort(result.data.filter(isEligiblePublicFarmer).map(mapFarmer))
+  };
 }
 
-export async function getSuppliersData() {
-  const rows = await fetchRows<SupabaseSupplier>("suppliers");
-  return rows.length > 0 ? featuredSort(rows.map(mapSupplier)) : allowDemoPublicData() ? fallbackSuppliers : [];
+export async function getSuppliersData(): Promise<PublicProfileLoadResult<PublicSupplierProfile>> {
+  const result = await fetchPublicProfileRows<SupabaseSupplier>("suppliers");
+  if (result.status === "unavailable") return result;
+
+  return {
+    status: "ready",
+    data: featuredSort(result.data.filter(isEligiblePublicSupplier).map(mapSupplier))
+  };
 }
 
 export async function getMarketplaceListingsData() {
   const rows = await fetchRows<SupabaseListing>("marketplace_listings");
-  const demoFarmerSlugs = new Set(fallbackFarmers.filter(isDemoSeedFarmerProfile).map((farmer) => farmer.slug));
+  const demoFarmerSlugs = new Set(fallbackFarmers.filter((farmer) => isDemoProfileOrigin(farmer.source)).map((farmer) => farmer.slug));
   const publicFallbackProducts = fallbackProducts.filter((product) => !product.farmerSlug || !demoFarmerSlugs.has(product.farmerSlug));
 
   if (!rows.length) {

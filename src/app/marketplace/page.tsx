@@ -4,7 +4,7 @@ import { Beef, Boxes, Carrot, PackageCheck } from "lucide-react";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
 import { publicMarketplaceListings } from "@/lib/marketplace/publicListings";
-import type { FarmerProfile, SupplierProfile } from "@/types";
+import type { PublicFarmerProfile, PublicSupplierProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ const primaryCategories = [
   }
 ];
 
-function uniqueProfiles<T extends FarmerProfile | SupplierProfile>(profiles: T[]) {
+function uniqueProfiles<T extends PublicFarmerProfile | PublicSupplierProfile>(profiles: T[]) {
   const seen = new Set<string>();
 
   return profiles.filter((profile) => {
@@ -58,18 +58,20 @@ function uniqueProfiles<T extends FarmerProfile | SupplierProfile>(profiles: T[]
 }
 
 export default async function MarketplacePage() {
-  const [products, farmers, suppliers] = await Promise.all([
+  const [products, farmerResult, supplierResult] = await Promise.all([
     getMarketplaceListingsData(),
     getFarmersData(),
     getSuppliersData()
   ]);
+  const farmers = farmerResult.status === "ready" ? farmerResult.data : [];
+  const suppliers = supplierResult.status === "ready" ? supplierResult.data : [];
   const publicListings = publicMarketplaceListings(products, farmers, suppliers);
   const publicProducts = publicListings.map((listing) => listing.product);
   const publicFarmers = uniqueProfiles(
-    publicListings.flatMap((listing) => listing.seller.kind === "farmer" ? [listing.seller.profile as FarmerProfile] : [])
+    publicListings.flatMap((listing) => listing.seller.kind === "farmer" ? [listing.seller.profile as PublicFarmerProfile] : [])
   );
   const publicSuppliers = uniqueProfiles(
-    publicListings.flatMap((listing) => listing.seller.kind === "supplier" ? [listing.seller.profile as SupplierProfile] : [])
+    publicListings.flatMap((listing) => listing.seller.kind === "supplier" ? [listing.seller.profile as PublicSupplierProfile] : [])
   );
 
   return (

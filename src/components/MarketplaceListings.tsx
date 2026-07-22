@@ -14,12 +14,12 @@ import {
   type MarketplaceDisplayListing
 } from "@/lib/marketplace/publicListings";
 import { normalizeMarketplaceCategoryFilter } from "@/lib/marketplace/taxonomy";
-import type { FarmerProfile, Product, SupplierProfile } from "@/types";
+import type { Product, PublicFarmerProfile, PublicSupplierProfile } from "@/types";
 
 type MarketplaceListingsProps = {
   products: Product[];
-  farmers?: FarmerProfile[];
-  suppliers?: SupplierProfile[];
+  farmers?: PublicFarmerProfile[];
+  suppliers?: PublicSupplierProfile[];
 };
 
 type SelectFilter = {

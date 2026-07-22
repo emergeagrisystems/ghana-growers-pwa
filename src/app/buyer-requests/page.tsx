@@ -13,7 +13,7 @@ export const metadata = createPageMetadata({
 });
 
 export default async function BuyerRequestsPage() {
-  const [requests, marketplaceProducts, farmers] = await Promise.all([
+  const [requests, marketplaceProducts, farmerResult] = await Promise.all([
     getBuyerRequestsData(),
     getMarketplaceListingsData(),
     getFarmersData()
@@ -37,7 +37,7 @@ export default async function BuyerRequestsPage() {
           </div>
         </div>
       </section>
-      <BuyerRequestsBoard requests={requests} marketplaceProducts={marketplaceProducts} farmers={farmers} />
+      <BuyerRequestsBoard requests={requests} marketplaceProducts={marketplaceProducts} farmers={farmerResult.status === "ready" ? farmerResult.data : []} />
     </>
   );
 }

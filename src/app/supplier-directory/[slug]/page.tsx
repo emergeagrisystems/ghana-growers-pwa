@@ -13,12 +13,13 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { GGStandardBadge, GGStandardCommitment } from "@/components/GGStandard";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { SafeImage } from "@/components/SafeImage";
 import { supplierServiceImageForName } from "@/lib/productDisplay";
 import { createPageMetadata } from "@/lib/seo";
 import { getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
-import type { Product, SupplierProfile } from "@/types";
+import type { Product, PublicSupplierProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +30,8 @@ type SupplierProfilePageProps = {
 };
 
 export async function generateMetadata({ params }: SupplierProfilePageProps) {
-  const suppliers = await getSuppliersData();
-  const supplier = suppliers.find((record) => record.slug === params.slug);
+  const result = await getSuppliersData();
+  const supplier = result.status === "ready" ? result.data.find((record) => record.slug === params.slug) : undefined;
 
   if (!supplier) {
     return createPageMetadata({
@@ -74,7 +75,7 @@ function websiteLabel(url?: string) {
   }
 }
 
-function deliverySupportFor(supplier: SupplierProfile) {
+function deliverySupportFor(supplier: PublicSupplierProfile) {
   const category = supplier.supplierCategory.toLowerCase();
 
   if (category.includes("logistics")) {
@@ -92,7 +93,7 @@ function deliverySupportFor(supplier: SupplierProfile) {
   return "Delivery or pickup confirmed during inquiry";
 }
 
-function listingMatchesSupplier(listing: Product, supplier: SupplierProfile) {
+function listingMatchesSupplier(listing: Product, supplier: PublicSupplierProfile) {
   if (listing.ownerType === "Supplier") {
     return Boolean(
       (supplier.id && listing.ownerId === supplier.id) ||
@@ -125,11 +126,14 @@ function listingMatchesSupplier(listing: Product, supplier: SupplierProfile) {
 }
 
 export default async function SupplierProfilePage({ params }: SupplierProfilePageProps) {
-  const [suppliers, marketplaceProducts] = await Promise.all([
+  const [supplierResult, marketplaceProducts] = await Promise.all([
     getSuppliersData(),
     getMarketplaceListingsData()
   ]);
-  const supplier = suppliers.find((record) => record.slug === params.slug);
+  if (supplierResult.status === "unavailable") {
+    return <PublicDataUnavailable kind="supplier" />;
+  }
+  const supplier = supplierResult.data.find((record) => record.slug === params.slug);
 
   if (!supplier) {
     notFound();
@@ -384,9 +388,18 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
               </section>
 
               <section className="rounded-md border border-leaf-900/10 bg-leaf-600 p-5 text-white shadow-sm">
-                <p className="text-sm font-black uppercase tracking-wide text-earth-300">Contact Details</p>
-                <h2 className="mt-2 text-xl font-black">{supplier.contactPerson}</h2>
-                <p className="mt-3 text-sm leading-6 text-white/78">{supplier.phone}</p>
+                <p className="text-sm font-black uppercase tracking-wide text-earth-300">Request a connection</p>
+                <p className="mt-3 text-sm leading-6 text-white/78">Ghana Growers reviews requests before helping buyers or farmers connect with this supplier.</p>
+                <RequestConnectionButton
+                  label="Request Connection"
+                  sourceType="Supplier"
+                  sourceId={supplier.slug}
+                  sourceName={supplier.companyName}
+                  requestSource="supplier_profile"
+                  productInterest={supplier.productsServices.slice(0, 3).join(", ")}
+                  productOptions={supplier.productsServices}
+                  className="mt-4 w-full bg-white text-leaf-800 hover:bg-earth-50"
+                />
                 {supplier.website ? (
                   <a
                     href={supplier.website}

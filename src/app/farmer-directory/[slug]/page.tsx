@@ -11,6 +11,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { cleanProductList, productDisplayName, productImageForListing, productImageForName } from "@/lib/productDisplay";
@@ -40,8 +41,8 @@ type DisplayRow = {
 };
 
 export async function generateMetadata({ params }: FarmerProfilePageProps) {
-  const farmers = await getFarmersData();
-  const farmer = farmers.find((record) => record.slug === params.slug);
+  const result = await getFarmersData();
+  const farmer = result.status === "ready" ? result.data.find((record) => record.slug === params.slug) : undefined;
 
   if (!farmer) {
     return createPageMetadata({
@@ -231,12 +232,15 @@ function activeListingMatchesProduct(listingName: string, product: string) {
 }
 
 export default async function FarmerProfilePage({ params }: FarmerProfilePageProps) {
-  const [farmers, marketplaceProducts, buyerRequests] = await Promise.all([
+  const [farmerResult, marketplaceProducts, buyerRequests] = await Promise.all([
     getFarmersData(),
     getMarketplaceListingsData(),
     getBuyerRequestsData()
   ]);
-  const farmer = farmers.find((record) => record.slug === params.slug);
+  if (farmerResult.status === "unavailable") {
+    return <PublicDataUnavailable kind="farmer" />;
+  }
+  const farmer = farmerResult.data.find((record) => record.slug === params.slug);
 
   if (!farmer) {
     notFound();
@@ -303,7 +307,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
               <SafeImage
                 src={profilePhoto}
-                alt={`${farmer.contactName} of ${farmer.farmName}`}
+                alt={`${farmer.farmerName ?? farmer.farmName} of ${farmer.farmName}`}
                 width={520}
                 height={390}
                 priority
@@ -316,7 +320,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Profile</p>
-            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{farmer.contactName}</h1>
+            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{farmer.farmerName ?? farmer.farmName}</h1>
             <p className="mt-2 text-xl font-black text-leaf-700">{farmer.farmName}</p>
             <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-ink/68">
               <span className="inline-flex items-center gap-2 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
