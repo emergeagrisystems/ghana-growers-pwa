@@ -3,7 +3,7 @@ import { BadgeCheck, Building2, CalendarDays, MapPin, ShoppingBasket, Sprout, St
 import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
-import { normalizeTrust, VerificationBadge } from "@/components/TrustIndicators";
+import { VerificationBadge } from "@/components/TrustIndicators";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
 import {
@@ -16,11 +16,9 @@ import {
 import { cleanProductList, productImageForName } from "@/lib/productDisplay";
 import {
   featuredBuyerRequests,
-  featuredFarmers,
-  featuredListingLabels,
-  featuredSuppliers
+  featuredListingLabels
 } from "@/data/featuredListings";
-import type { FarmerProfile, SupplierProfile } from "@/types";
+import type { PublicFarmerProfile, PublicSupplierProfile } from "@/types";
 
 type FeaturedListingKind = "farmers" | "suppliers" | "buyerRequests" | "all";
 
@@ -31,8 +29,8 @@ type FeaturedListingsProps = {
   background?: "white" | "leaf" | "earth";
   limit?: number;
   compact?: boolean;
-  farmers?: FarmerProfile[];
-  suppliers?: SupplierProfile[];
+  farmers?: PublicFarmerProfile[];
+  suppliers?: PublicSupplierProfile[];
 };
 
 const backgrounds = {
@@ -72,7 +70,7 @@ function titleCaseLocation(value?: string) {
     .replace(/\bRegion\b/gi, "Region");
 }
 
-function formatFarmerLocation(farmer: FarmerProfile) {
+function formatFarmerLocation(farmer: PublicFarmerProfile) {
   const district = titleCaseLocation(farmer.district);
   const region = titleCaseLocation(farmer.region);
 
@@ -87,7 +85,7 @@ function formatFarmerProducts(products: string[]) {
   return cleanProductList(products).map((product) => product.replace("Aquaculture And Poultry", "Aquaculture & Poultry"));
 }
 
-function farmerImage(farmer: FarmerProfile) {
+function farmerImage(farmer: PublicFarmerProfile) {
   if (farmer.hasRealPhoto && farmer.photos[0]) {
     return farmer.photos[0];
   }
@@ -120,8 +118,8 @@ export function FeaturedListings({
   const showFarmers = showAll || kinds.includes("farmers");
   const showSuppliers = showAll || kinds.includes("suppliers");
   const showBuyerRequests = showAll || kinds.includes("buyerRequests");
-  const selectedFarmers = farmers ?? featuredFarmers;
-  const selectedSuppliers = suppliers ?? featuredSuppliers;
+  const selectedFarmers = farmers ?? [];
+  const selectedSuppliers = suppliers ?? [];
   const farmerLimit = limit ?? selectedFarmers.length;
   const visibleFarmers = selectedFarmers.slice(0, farmerLimit);
   const isCompactFarmersOnly = compact && showFarmers && !showSuppliers && !showBuyerRequests;
@@ -138,7 +136,6 @@ export function FeaturedListings({
         <div className={`mt-8 grid gap-5 ${gridClass}`}>
           {showFarmers
             ? visibleFarmers.map((farmer) => {
-                const trust = normalizeTrust(farmer.trust);
                 const products = formatFarmerProducts(farmer.products);
                 const location = formatFarmerLocation(farmer);
 
@@ -238,9 +235,9 @@ export function FeaturedListings({
                   />
                   <h3 className={`${compact ? "text-lg" : "text-xl"} mt-4 font-black text-ink`}>{farmer.farmName}</h3>
                   <p className="mt-1 text-sm font-bold text-leaf-700">{location}</p>
-                  {trust.status === "Verified" ? (
+                  {farmer.verificationStatus === "Verified" ? (
                     <div className="mt-3">
-                      <VerificationBadge kind="farmer" status={trust.status} />
+                      <VerificationBadge kind="farmer" status="Verified" />
                     </div>
                   ) : null}
                   {isFeaturedActive(farmer) ? (
@@ -267,8 +264,6 @@ export function FeaturedListings({
 
           {showSuppliers
             ? selectedSuppliers.slice(0, limit).map((supplier) => {
-                const trust = normalizeTrust(supplier.trust);
-
                 return (
                 <article key={supplier.slug} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
@@ -292,9 +287,9 @@ export function FeaturedListings({
                     <MapPin size={14} aria-hidden="true" />
                     {supplier.region}
                   </p>
-                  {trust.status === "Verified" ? (
+                  {supplier.verificationStatus === "Verified" ? (
                     <div className="mt-3">
-                      <VerificationBadge kind="supplier" status={trust.status} />
+                      <VerificationBadge kind="supplier" status="Verified" />
                     </div>
                   ) : null}
                   {isFeaturedActive(supplier) ? (

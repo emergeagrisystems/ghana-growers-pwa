@@ -13,10 +13,10 @@ import {
   supplierPaginationPages,
   supplierProducts
 } from "@/lib/supplierDirectory";
-import type { SupplierProfile } from "@/types";
+import type { PublicSupplierProfile } from "@/types";
 
 type SupplierDirectoryProps = {
-  suppliers: SupplierProfile[];
+  suppliers: PublicSupplierProfile[];
   initialSearch?: string;
 };
 
@@ -32,7 +32,7 @@ function unique(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).sort();
 }
 
-function SupplierBadge({ supplier }: { supplier: SupplierProfile }) {
+function SupplierBadge({ supplier }: { supplier: PublicSupplierProfile }) {
   if (!isVerifiedSupplier(supplier)) {
     return null;
   }
@@ -128,7 +128,6 @@ export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDir
     const products = supplierProducts(supplier);
     const searchable = [
       supplier.companyName,
-      supplier.contactPerson,
       supplier.supplierCategory,
       supplier.region,
       supplier.district,

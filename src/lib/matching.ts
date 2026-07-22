@@ -1,5 +1,5 @@
 import type { BuyerRequest } from "@/data/buyerRequests";
-import type { FarmerProfile, Product } from "@/types";
+import type { Product, PublicFarmerProfile } from "@/types";
 
 const productNoiseWords = new Set([
   "fresh",
@@ -76,7 +76,7 @@ export function locationMatchScore(
   return score;
 }
 
-export function findMatchingFarmersForRequest(request: BuyerRequest, farmers: FarmerProfile[], limit = 4) {
+export function findMatchingFarmersForRequest(request: BuyerRequest, farmers: PublicFarmerProfile[], limit = 4) {
   return farmers
     .map((farmer) => {
       const productScore = Math.max(...farmer.products.map((product) => productMatchScore(request.productName, product)), 0);
@@ -107,7 +107,7 @@ export function findMatchingListingsForRequest(request: BuyerRequest, products: 
     .map((match) => match.product);
 }
 
-export function findBuyerRequestsForFarmer(farmer: FarmerProfile, requests: BuyerRequest[], limit = 4) {
+export function findBuyerRequestsForFarmer(farmer: PublicFarmerProfile, requests: BuyerRequest[], limit = 4) {
   return requests
     .map((request) => {
       const productScore = Math.max(...farmer.products.map((product) => productMatchScore(request.productName, product)), 0);
@@ -138,7 +138,7 @@ export function findBuyerRequestsForListing(product: Product, requests: BuyerReq
     .map((match) => match.request);
 }
 
-export function buildBuyerRequestMatches(requests: BuyerRequest[], farmers: FarmerProfile[], products: Product[], limitPerRequest = 3) {
+export function buildBuyerRequestMatches(requests: BuyerRequest[], farmers: PublicFarmerProfile[], products: Product[], limitPerRequest = 3) {
   return requests
     .map((request) => ({
       request,

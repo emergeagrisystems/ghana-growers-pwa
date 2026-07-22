@@ -1,6 +1,7 @@
 import { cleanProductList, productImageForName } from "./productDisplay";
 import { isFeaturedActive } from "./featured";
-import type { FarmerProfile } from "../types";
+import { isEligiblePublicFarmer } from "./publicProfileEligibility";
+import type { FarmerProfile, PublicFarmerProfile } from "../types";
 
 export const FARMERS_PER_PAGE = 12;
 
@@ -86,8 +87,8 @@ export function farmerImagePosition(farmer: Pick<FarmerProfile, "farmName">) {
   return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
 }
 
-export function isVerifiedFarmer(farmer: Pick<FarmerProfile, "verificationStatus" | "trust">) {
-  return farmer.verificationStatus === "Verified" || farmer.trust?.status === "Verified";
+export function isVerifiedFarmer(farmer: Pick<FarmerProfile, "verificationStatus">) {
+  return farmer.verificationStatus === "Verified";
 }
 
 export function isDemoSeedFarmerProfile(farmer: Pick<FarmerProfile, "source">) {
@@ -97,50 +98,24 @@ export function isDemoSeedFarmerProfile(farmer: Pick<FarmerProfile, "source">) {
   return demoSourceMarkers.some((marker) => source === marker || source.includes(marker));
 }
 
-export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "verificationStatus" | "source" | "trust">) {
-  if (isDemoSeedFarmerProfile(farmer)) {
-    return false;
-  }
-
-  if (isVerifiedFarmer(farmer)) {
-    return true;
-  }
-
-  if (farmer.verificationStatus === "Premium Member" || farmer.trust?.status === "Premium Member") {
-    return true;
-  }
-
-  return farmer.source === "Founding Farmer";
+export function isPublicFarmerProfile(farmer: Pick<FarmerProfile, "slug" | "verificationStatus" | "status" | "launchReady" | "source">) {
+  return isEligiblePublicFarmer(farmer);
 }
 
 export function publicFarmerProfiles(farmers: FarmerProfile[]) {
   return farmers.filter(isPublicFarmerProfile);
 }
 
-function uniqueFarmersBySlug(farmers: FarmerProfile[]) {
+function uniqueFarmersBySlug<T extends Pick<PublicFarmerProfile, "slug">>(farmers: T[]) {
   return farmers.filter((farmer, index, allFarmers) => allFarmers.findIndex((item) => item.slug === farmer.slug) === index);
 }
 
-function configuredFarmersBySlug(farmers: FarmerProfile[], configuredSlugs: string[]) {
-  return configuredSlugs
-    .map((slug) => farmers.find((farmer) => farmer.slug === slug))
-    .filter((farmer): farmer is FarmerProfile => Boolean(farmer));
-}
-
-export function homepageFeaturedFarmerProfiles(farmers: FarmerProfile[], configuredFarmers: FarmerProfile[] = [], limit = 4, configuredSlugs: string[] = []) {
-  const configuredFeatured = uniqueFarmersBySlug([
-    ...configuredFarmersBySlug(farmers, configuredSlugs),
-    ...configuredFarmers
-  ])
-    .filter(isPublicFarmerProfile)
-    .slice(0, limit);
-
-  if (configuredFeatured.length > 0) {
-    return configuredFeatured;
-  }
-
+export function homepageFeaturedFarmerProfiles(
+  farmers: Array<PublicFarmerProfile & { source?: string }>,
+  limit = 4
+) {
   return uniqueFarmersBySlug(farmers)
-    .filter((farmer) => isPublicFarmerProfile(farmer) && isFeaturedActive(farmer))
+    .filter((farmer) => isEligiblePublicFarmer(farmer) && isFeaturedActive(farmer))
     .slice(0, limit);
 }
 

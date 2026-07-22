@@ -1,6 +1,7 @@
 import { cleanProductList } from "./productDisplay";
 import { isFeaturedActive } from "./featured";
-import type { SupplierProfile } from "../types";
+import { isEligiblePublicSupplier } from "./publicProfileEligibility";
+import type { PublicSupplierProfile, SupplierProfile } from "../types";
 
 export const SUPPLIERS_PER_PAGE = 12;
 
@@ -37,16 +38,22 @@ export function supplierProducts(supplier: Pick<SupplierProfile, "productsServic
   return products.length > 0 ? products : [cleanSupplierLabel(supplier.supplierCategory)];
 }
 
-export function isVerifiedSupplier(supplier: Pick<SupplierProfile, "verificationStatus" | "trust">) {
-  return supplier.verificationStatus === "Verified" || supplier.trust?.status === "Verified";
+export function isVerifiedSupplier(supplier: Pick<SupplierProfile, "verificationStatus">) {
+  return supplier.verificationStatus === "Verified";
 }
 
-export function isPublicSupplierProfile(supplier: Pick<SupplierProfile, "verificationStatus" | "trust">) {
-  return isVerifiedSupplier(supplier);
+export function isPublicSupplierProfile(supplier: Pick<SupplierProfile, "slug" | "verificationStatus" | "status" | "source">) {
+  return isEligiblePublicSupplier(supplier);
 }
 
 export function publicSupplierProfiles(suppliers: SupplierProfile[]) {
   return suppliers.filter(isPublicSupplierProfile);
+}
+
+export function orderPublicSupplierDirectoryProfiles(suppliers: PublicSupplierProfile[]) {
+  const featured = suppliers.filter((supplier) => isFeaturedActive(supplier)).slice(0, 4);
+  const featuredSlugs = new Set(featured.map((supplier) => supplier.slug));
+  return [...featured, ...suppliers.filter((supplier) => !featuredSlugs.has(supplier.slug))];
 }
 
 export function orderSupplierDirectoryProfiles(suppliers: SupplierProfile[]) {

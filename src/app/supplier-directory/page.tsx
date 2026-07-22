@@ -1,9 +1,9 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SupplierDirectory } from "@/components/SupplierDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getSuppliersData } from "@/lib/supabase/publicData";
-import { orderSupplierDirectoryProfiles } from "@/lib/supplierDirectory";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,8 @@ function searchQuery(value?: string | string[]) {
 }
 
 export default async function SupplierDirectoryPage({ searchParams }: SupplierDirectoryPageProps) {
-  const suppliers = orderSupplierDirectoryProfiles(await getSuppliersData());
+  const result = await getSuppliersData();
+  const suppliers = result.status === "ready" ? result.data : [];
   const initialSearch = searchQuery(searchParams?.q);
 
   return (
@@ -42,7 +43,11 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
           <ButtonLink href="/farmer-directory" variant="light">Browse Farmer Directory</ButtonLink>
         </div>
       </PageHero>
-      <SupplierDirectory suppliers={suppliers} initialSearch={initialSearch} />
+      {result.status === "unavailable" ? (
+        <PublicDataUnavailable kind="supplier" />
+      ) : (
+        <SupplierDirectory suppliers={suppliers} initialSearch={initialSearch} />
+      )}
     </>
   );
 }

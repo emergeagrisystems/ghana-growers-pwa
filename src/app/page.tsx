@@ -11,8 +11,8 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ButtonLink";
 import { FeaturedListings } from "@/components/FeaturedListings";
 import { MarketplaceCategoryShowcase } from "@/components/MarketplaceCategoryShowcase";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
-import { featuredFarmers as configuredFeaturedFarmers, featuredFarmerSlugs } from "@/data/featuredListings";
 import { homepageFarmMateTools } from "@/data/farmmatePublicTools";
 import { homepageFeaturedFarmerProfiles } from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
@@ -51,8 +51,8 @@ const howItWorks = [
 const trustPoints = ["Reviewed Profiles", "Reviewed Listings", "Buyer Request Support"];
 
 export default async function HomePage() {
-  const farmers = await getFarmersData();
-  const homepageFeaturedFarmers = homepageFeaturedFarmerProfiles(farmers, configuredFeaturedFarmers, 4, featuredFarmerSlugs);
+  const farmerResult = await getFarmersData();
+  const homepageFeaturedFarmers = farmerResult.status === "ready" ? homepageFeaturedFarmerProfiles(farmerResult.data, 4) : [];
 
   return (
     <>
@@ -178,7 +178,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {homepageFeaturedFarmers.length > 0 ? (
+      {farmerResult.status === "unavailable" ? (
+        <PublicDataUnavailable kind="farmer" />
+      ) : homepageFeaturedFarmers.length > 0 ? (
         <FeaturedListings
           kinds={["farmers"]}
           title="Featured farmers"

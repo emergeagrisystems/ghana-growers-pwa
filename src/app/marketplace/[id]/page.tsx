@@ -17,12 +17,16 @@ type MarketplaceListingPageProps = {
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: MarketplaceListingPageProps) {
-  const [products, farmers, suppliers] = await Promise.all([
+  const [products, farmerResult, supplierResult] = await Promise.all([
     getMarketplaceListingsData(),
     getFarmersData(),
     getSuppliersData()
   ]);
-  const listing = publicMarketplaceListings(products, farmers, suppliers).find((item) => item.product.id === decodeURIComponent(params.id));
+  const listing = publicMarketplaceListings(
+    products,
+    farmerResult.status === "ready" ? farmerResult.data : [],
+    supplierResult.status === "ready" ? supplierResult.data : []
+  ).find((item) => item.product.id === decodeURIComponent(params.id));
 
   return createPageMetadata({
     title: listing ? `${listing.title} | Marketplace` : "Marketplace Listing",
@@ -34,12 +38,16 @@ export async function generateMetadata({ params }: MarketplaceListingPageProps) 
 }
 
 export default async function MarketplaceListingPage({ params }: MarketplaceListingPageProps) {
-  const [products, farmers, suppliers] = await Promise.all([
+  const [products, farmerResult, supplierResult] = await Promise.all([
     getMarketplaceListingsData(),
     getFarmersData(),
     getSuppliersData()
   ]);
-  const listing = publicMarketplaceListings(products, farmers, suppliers).find((item) => item.product.id === decodeURIComponent(params.id));
+  const listing = publicMarketplaceListings(
+    products,
+    farmerResult.status === "ready" ? farmerResult.data : [],
+    supplierResult.status === "ready" ? supplierResult.data : []
+  ).find((item) => item.product.id === decodeURIComponent(params.id));
 
   if (!listing) {
     notFound();

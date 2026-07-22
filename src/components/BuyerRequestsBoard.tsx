@@ -15,7 +15,7 @@ import { buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import { normalizeTrust } from "@/components/TrustIndicators";
 import { buildBuyerRequestMatches, findMatchingFarmersForRequest, findMatchingListingsForRequest } from "@/lib/matching";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
-import type { FarmerProfile, Product } from "@/types";
+import type { Product, PublicFarmerProfile } from "@/types";
 
 type FilterConfig = {
   label: string;
@@ -36,7 +36,7 @@ function buyerWhatsAppUrl(request: BuyerRequest) {
 type BuyerRequestsBoardProps = {
   requests?: BuyerRequest[];
   marketplaceProducts?: Product[];
-  farmers?: FarmerProfile[];
+  farmers?: PublicFarmerProfile[];
 };
 
 function SearchBox({
@@ -178,7 +178,7 @@ function RequestDetailsModal({
 }: {
   request: BuyerRequest;
   marketplaceProducts: Product[];
-  farmers: FarmerProfile[];
+  farmers: PublicFarmerProfile[];
   onClose: () => void;
 }) {
   const trust = normalizeTrust(request.trust);

@@ -2,11 +2,12 @@ import Link from "next/link";
 import { ArrowRight, ClipboardList, Handshake, Search, Sprout, Store, UserRoundCheck, Wrench } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
 import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
-import type { FarmerProfile } from "@/types";
+import type { PublicFarmerProfile } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,7 @@ function cleanProfileLabel(value: string) {
     .replace(/\bAquaculture And Poultry\b/gi, "Aquaculture & Poultry");
 }
 
-function cleanFarmerLocation(farmer: FarmerProfile) {
+function cleanFarmerLocation(farmer: PublicFarmerProfile) {
   const district = cleanProfileLabel(farmer.district);
   const region = cleanProfileLabel(farmer.region);
 
@@ -102,15 +103,15 @@ function cleanFarmerLocation(farmer: FarmerProfile) {
   return `${district}, ${region}`;
 }
 
-function featuredImagePosition(farmer: FarmerProfile) {
+function featuredImagePosition(farmer: PublicFarmerProfile) {
   return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
 }
 
 export default async function DirectoryPage() {
-  const farmers = await getFarmersData();
-  const featuredFarmers = farmers
-    .filter((farmer) => isFeaturedActive(farmer) || farmer.verificationStatus === "Verified" || farmer.source === "Founding Farmer")
-    .slice(0, 4);
+  const farmerResult = await getFarmersData();
+  const featuredFarmers = farmerResult.status === "ready"
+    ? farmerResult.data.filter((farmer) => isFeaturedActive(farmer)).slice(0, 4)
+    : [];
 
   return (
     <>
@@ -170,7 +171,9 @@ export default async function DirectoryPage() {
         </div>
       </section>
 
-      {featuredFarmers.length > 0 ? (
+      {farmerResult.status === "unavailable" ? (
+        <PublicDataUnavailable kind="farmer" />
+      ) : featuredFarmers.length > 0 ? (
         <section className="bg-leaf-50 py-12 sm:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

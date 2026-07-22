@@ -24,7 +24,6 @@ import {
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { homepageFarmMateDescription, homepageFarmMateTools } from "../src/data/farmmatePublicTools";
 import { smartTools } from "../src/data/smartTools";
-import featuredListingData from "../src/data/featuredListings.json";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
 import {
   cleanFarmerLocation,
@@ -45,6 +44,12 @@ import {
   publicSupplierProfiles,
   supplierProducts
 } from "../src/lib/supplierDirectory";
+import {
+  isEligibleFeaturedFarmer,
+  isEligiblePublicFarmer,
+  isEligiblePublicSupplier,
+  isValidPublicProfileSlug
+} from "../src/lib/publicProfileEligibility";
 import {
   featuredMarketplaceListings,
   formatMarketplaceLocation,
@@ -287,6 +292,8 @@ function farmerFixture(overrides: Partial<FarmerProfile> = {}): FarmerProfile {
     photos: overrides.photos ?? [],
     hasRealPhoto: overrides.hasRealPhoto,
     verificationStatus: overrides.verificationStatus ?? "Verified",
+    status: overrides.status ?? "Active",
+    launchReady: overrides.launchReady ?? true,
     source: overrides.source,
     isFeatured: overrides.isFeatured,
     trust: overrides.trust,
@@ -315,7 +322,7 @@ function supplierFixture(overrides: Partial<SupplierProfile> = {}): SupplierProf
     verifiedBy: overrides.verifiedBy,
     verificationNotes: overrides.verificationNotes,
     ggStandardStatus: overrides.ggStandardStatus,
-    status: overrides.status,
+    status: overrides.status ?? "Active",
     isFeatured: overrides.isFeatured,
     featuredUntil: overrides.featuredUntil,
     featuredNote: overrides.featuredNote,
@@ -1816,7 +1823,7 @@ const tests: TestCase[] = [
         farmerFixture({ slug: "founding", verificationStatus: "Pending Verification", source: "Founding Farmer" })
       ]);
 
-      assert.deepEqual(publicProfiles.map((farmer) => farmer.slug), ["verified", "founding"]);
+      assert.deepEqual(publicProfiles.map((farmer) => farmer.slug), ["verified"]);
     }
   },
   {
@@ -1834,69 +1841,105 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Homepage featured farmers excludes demo seed configured profiles",
+    name: "Homepage featured farmers ignores legacy configured profile arrays",
+    run: () => {
+      const featuredFarmers = homepageFeaturedFarmerProfiles([]);
+      assert.deepEqual(featuredFarmers, []);
+    }
+  },
+  {
+    name: "Public farmer eligibility requires active verified launch-ready real records",
+    run: () => {
+      const eligible = { slug: "real-farm", status: "Active", verificationStatus: "Verified", launchReady: true, source: "Tally Import" };
+
+      assert.equal(isEligiblePublicFarmer(eligible), true);
+      assert.equal(isEligiblePublicFarmer({ ...eligible, status: "Pending" }), false);
+      assert.equal(isEligiblePublicFarmer({ ...eligible, verificationStatus: "Pending Verification" }), false);
+      assert.equal(isEligiblePublicFarmer({ ...eligible, launchReady: false }), false);
+      assert.equal(isEligiblePublicFarmer({ ...eligible, source: "Demo Seed" }), false);
+      assert.equal(isValidPublicProfileSlug("real-farm"), true);
+      assert.equal(isValidPublicProfileSlug("Real Farm"), false);
+    }
+  },
+  {
+    name: "Public supplier eligibility requires active verified real records",
+    run: () => {
+      const eligible = { slug: "real-supplier", status: "Active", verificationStatus: "Verified", source: "Production" };
+
+      assert.equal(isEligiblePublicSupplier(eligible), true);
+      assert.equal(isEligiblePublicSupplier({ ...eligible, status: "Pending" }), false);
+      assert.equal(isEligiblePublicSupplier({ ...eligible, verificationStatus: "Under Review" }), false);
+      assert.equal(isEligiblePublicSupplier({ ...eligible, source: "Placeholder" }), false);
+    }
+  },
+  {
+    name: "Featured farmer eligibility requires a current live feature flag",
+    run: () => {
+      const eligible = { slug: "real-farm", status: "Active", verificationStatus: "Verified", launchReady: true, source: "Tally Import", isFeatured: true };
+
+      assert.equal(isEligibleFeaturedFarmer(eligible, new Date("2026-07-22T12:00:00Z")), true);
+      assert.equal(isEligibleFeaturedFarmer({ ...eligible, isFeatured: false }, new Date("2026-07-22T12:00:00Z")), false);
+      assert.equal(isEligibleFeaturedFarmer({ ...eligible, featuredUntil: "2026-07-21" }, new Date("2026-07-22T12:00:00Z")), false);
+    }
+  },
+  {
+    name: "Public profile loaders use safe DTOs and distinguish unavailable reads",
+    run: () => {
+      const source = readFileSync(join(process.cwd(), "src/lib/supabase/publicData.ts"), "utf8");
+      const supplierMapper = source.slice(source.indexOf("function mapSupplier"), source.indexOf("function mapListing"));
+      const farmerMapper = source.slice(source.indexOf("function mapFarmer"), source.indexOf("function mapSupplier"));
+
+      assert.match(source, /import "server-only"/);
+      assert.match(source, /status: "unavailable"/);
+      assert.doesNotMatch(supplierMapper, /contactPerson:|phone:|whatsappMessage:|verificationNotes:|verifiedBy:|application_image_url/);
+      assert.doesNotMatch(farmerMapper, /verifiedBy:|verificationNotes:|whatsappMessage:|source:/);
+    }
+  },
+  {
+    name: "Public supplier profile never renders private contact fields",
+    run: () => {
+      const page = readFileSync(join(process.cwd(), "src/app/supplier-directory/[slug]/page.tsx"), "utf8");
+      const directory = readFileSync(join(process.cwd(), "src/components/SupplierDirectory.tsx"), "utf8");
+
+      assert.doesNotMatch(page, /supplier\.contactPerson|supplier\.phone|Contact Details/);
+      assert.doesNotMatch(directory, /supplier\.contactPerson|supplier\.phone/);
+      assert.match(page, /Request Connection/);
+    }
+  },
+  {
+    name: "Unavailable farmer application performs no upload or database insert",
+    run: () => {
+      const route = readFileSync(join(process.cwd(), "src/app/api/farmer-registration/route.ts"), "utf8");
+      const page = readFileSync(join(process.cwd(), "src/app/join/farmer/page.tsx"), "utf8");
+
+      assert.match(route, /Farmer applications are temporarily unavailable while we improve the application process/);
+      assert.match(route, /status: 503/);
+      assert.doesNotMatch(route, /request\.formData|uploadSupabaseStorageObject|insertSupabaseRecord|ok: true/);
+      assert.match(page, /Applications are temporarily unavailable/);
+      assert.doesNotMatch(page, /FarmerRegistrationForm/);
+    }
+  },
+  {
+    name: "Homepage featured farmers uses live featured flags instead of static slug config",
     run: () => {
       const featuredFarmers = homepageFeaturedFarmerProfiles(
-        [],
         [
-          farmerFixture({ slug: "akumadan-growers-group", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true }),
-          farmerFixture({ slug: "real-configured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true })
+          farmerFixture({ slug: "unconfigured-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true }),
+          farmerFixture({ slug: "not-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: false })
         ]
       );
 
-      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["real-configured"]);
+      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["unconfigured-featured"]);
     }
   },
   {
-    name: "Featured farmer config uses genuine curated profile slugs",
-    run: () => {
-      const obsoleteDemoSlugs = [
-        "akumadan-growers-group",
-        "nsawam-fruit-farmers",
-        "northern-root-crops-network",
-        "ada-vegetable-cooperative",
-        "techiman-maize-and-beans-farm",
-        "western-cocoa-and-plantain-farm"
-      ];
-
-      assert.deepEqual(featuredListingData.farmerSlugs, [
-        "ibrahim-mohammed-farm",
-        "duakib-baariyan-farm",
-        "s-k-nart-farms"
-      ]);
-      assert.equal(featuredListingData.farmerSlugs.some((slug) => obsoleteDemoSlugs.includes(slug)), false);
-    }
-  },
-  {
-    name: "Homepage featured farmers maps configured slugs to live public farmers",
+    name: "Homepage featured farmers does not duplicate live farmers",
     run: () => {
       const featuredFarmers = homepageFeaturedFarmerProfiles(
         [
-          farmerFixture({ slug: "s-k-nart-farms", farmName: "S. K. Nart Farms", source: "Tally Import", verificationStatus: "Verified" }),
-          farmerFixture({ slug: "unconfigured-featured", source: "Tally Import", verificationStatus: "Verified", isFeatured: true }),
-          farmerFixture({ slug: "ibrahim-mohammed-farm", farmName: "Ibrahim Mohammed Farm", source: "Tally Import", verificationStatus: "Verified" }),
-          farmerFixture({ slug: "duakib-baariyan-farm", farmName: "Duakib Baariyan Farm", source: "Tally Import", verificationStatus: "Verified" })
-        ],
-        [],
-        4,
-        ["ibrahim-mohammed-farm", "duakib-baariyan-farm", "s-k-nart-farms"]
-      );
-
-      assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), [
-        "ibrahim-mohammed-farm",
-        "duakib-baariyan-farm",
-        "s-k-nart-farms"
-      ]);
-    }
-  },
-  {
-    name: "Homepage featured farmers does not duplicate configured farmers",
-    run: () => {
-      const featuredFarmers = homepageFeaturedFarmerProfiles(
-        [farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified" })],
-        [farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified" })],
-        4,
-        ["ibrahim-mohammed-farm"]
+          farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified", isFeatured: true }),
+          farmerFixture({ slug: "ibrahim-mohammed-farm", source: "Tally Import", verificationStatus: "Verified", isFeatured: true })
+        ]
       );
 
       assert.deepEqual(featuredFarmers.map((farmer) => farmer.slug), ["ibrahim-mohammed-farm"]);
@@ -1917,13 +1960,10 @@ const tests: TestCase[] = [
   {
     name: "Homepage featured farmers hides when no eligible real featured profiles exist",
     run: () => {
-      const featuredFarmers = homepageFeaturedFarmerProfiles(
-        [
+      const featuredFarmers = homepageFeaturedFarmerProfiles([
           farmerFixture({ slug: "real-under-review", source: "Tally Import", verificationStatus: "Pending Verification", isFeatured: true }),
           farmerFixture({ slug: "demo-featured", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true })
-        ],
-        [farmerFixture({ slug: "configured-demo", source: "Demo Seed", verificationStatus: "Verified", isFeatured: true })]
-      );
+      ]);
 
       assert.deepEqual(featuredFarmers, []);
     }
@@ -2399,7 +2439,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Marketplace unverified sellers do not receive a verified badge",
+    name: "Marketplace excludes sellers that are not publicly eligible",
     run: () => {
       const listings = publicMarketplaceListings(
         [marketplaceProductFixture({ verified: true })],
@@ -2407,8 +2447,7 @@ const tests: TestCase[] = [
         []
       );
 
-      assert.equal(listings.length, 1);
-      assert.equal(listings[0].isSellerVerified, false);
+      assert.equal(listings.length, 0);
     }
   },
   {

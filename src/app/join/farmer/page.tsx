@@ -1,6 +1,5 @@
 import { ArrowRight, BadgeCheck, BarChart3, Leaf, Sprout, Tractor, Wheat, CloudSun, ShoppingBasket } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
-import { FarmerRegistrationForm } from "@/components/FarmerRegistrationForm";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -65,7 +64,7 @@ export default function JoinFarmerPage() {
             </p>
             <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
               <a href="#farmer-application" className="gg-button-primary w-full sm:w-auto">
-                Start Farmer Application
+                Application Update
               </a>
               <div className="w-full sm:w-auto [&>a]:w-full sm:[&>a]:w-auto">
                 <ButtonLink href="/farmer-hub" variant="secondary">
@@ -162,7 +161,20 @@ export default function JoinFarmerPage() {
               </div>
             </div>
           </div>
-          <FarmerRegistrationForm />
+          <section id="farmer-application" className="rounded-xl border border-leaf-900/10 bg-white p-6 shadow-soft sm:p-8" aria-live="polite">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Farmer application</p>
+            <h2 className="mt-3 text-2xl font-black text-ink sm:text-3xl">Applications are temporarily unavailable</h2>
+            <p className="mt-4 text-base leading-7 text-ink/68">
+              Farmer applications are temporarily unavailable while we improve the application process.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-ink/62">
+              You can still contact Ghana Growers or review the other ways to join the network.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <ButtonLink href="/contact">Contact Ghana Growers</ButtonLink>
+              <ButtonLink href="/join" variant="secondary">Join the Network</ButtonLink>
+            </div>
+          </section>
         </div>
       </section>
     </main>

@@ -3,13 +3,13 @@ import { isFeaturedActive } from "../featured";
 import { cleanSupplierLocation, isPublicSupplierProfile } from "../supplierDirectory";
 import { displayMarketplaceCategory } from "./taxonomy";
 import { marketplacePriceLine, marketplaceQuantityLabel, marketplaceQuantityLine, usesCustomMarketplaceUnit } from "./trade";
-import type { FarmerProfile, Product, SupplierProfile } from "../../types";
+import type { Product, PublicFarmerProfile, PublicSupplierProfile } from "../../types";
 
 export const MARKETPLACE_LISTINGS_PER_PAGE = 12;
 
 export type MarketplaceSeller =
-  | { kind: "farmer"; profile: FarmerProfile }
-  | { kind: "supplier"; profile: SupplierProfile }
+  | { kind: "farmer"; profile: PublicFarmerProfile }
+  | { kind: "supplier"; profile: PublicSupplierProfile }
   | { kind: "submission"; sellerType: "Farmer" | "Supplier"; sellerName: string; location: string; verificationStatus?: string };
 
 export type MarketplaceDisplayListing = {
@@ -174,7 +174,7 @@ export function isMarketplaceListingPublicStatus(product: Product) {
   return publicStatusPattern.test(product.status);
 }
 
-function isMarketplaceSupplierPublic(supplier: SupplierProfile) {
+function isMarketplaceSupplierPublic(supplier: PublicSupplierProfile) {
   if (!isPublicSupplierProfile(supplier)) {
     return false;
   }
@@ -191,8 +191,7 @@ function isMarketplaceSupplierPublic(supplier: SupplierProfile) {
 }
 
 export function isDemoMarketplaceListing(product: Product, seller?: MarketplaceSeller) {
-  const source = seller?.kind === "farmer" ? seller.profile.source : undefined;
-  const searchable = [product.id, product.ownerName, product.seller, product.farmerSlug, product.recordSource, source].filter(Boolean).join(" ");
+  const searchable = [product.id, product.ownerName, product.seller, product.farmerSlug, product.recordSource].filter(Boolean).join(" ");
 
   return demoSourcePattern.test(searchable) || knownDemoSellerPattern.test(searchable);
 }
@@ -225,7 +224,7 @@ function publicSubmissionSeller(product: Product): MarketplaceSeller | undefined
   };
 }
 
-export function findMarketplaceSeller(product: Product, farmers: FarmerProfile[], suppliers: SupplierProfile[]): MarketplaceSeller | undefined {
+export function findMarketplaceSeller(product: Product, farmers: PublicFarmerProfile[], suppliers: PublicSupplierProfile[]): MarketplaceSeller | undefined {
   const publicFarmers = farmers.filter(isPublicFarmerProfile);
   const publicSuppliers = suppliers.filter(isMarketplaceSupplierPublic);
   const farmerById = new Map(publicFarmers.filter((farmer) => farmer.id).map((farmer) => [farmer.id as string, farmer]));
@@ -332,14 +331,14 @@ export function toMarketplaceDisplayListing(product: Product, seller: Marketplac
     availability,
     supplyFrequency,
     isSellerVerified: seller.kind === "farmer"
-      ? seller.profile.verificationStatus === "Verified" || seller.profile.trust?.status === "Verified"
+      ? seller.profile.verificationStatus === "Verified"
       : seller.kind === "supplier"
-        ? seller.profile.verificationStatus === "Verified" || seller.profile.trust?.status === "Verified"
+        ? seller.profile.verificationStatus === "Verified"
         : seller.verificationStatus === "Verified"
   };
 }
 
-export function publicMarketplaceListings(products: Product[], farmers: FarmerProfile[], suppliers: SupplierProfile[]) {
+export function publicMarketplaceListings(products: Product[], farmers: PublicFarmerProfile[], suppliers: PublicSupplierProfile[]) {
   const seen = new Set<string>();
   const listings: MarketplaceDisplayListing[] = [];
 

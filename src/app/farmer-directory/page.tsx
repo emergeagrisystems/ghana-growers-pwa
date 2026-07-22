@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { FarmerDirectory } from "@/components/FarmerDirectory";
 import { PageHero } from "@/components/PageHero";
+import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
-import {
-  orderFarmerDirectoryProfiles
-} from "@/lib/farmerDirectory";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
 
@@ -28,7 +26,8 @@ function searchQuery(value?: string | string[]) {
 }
 
 export default async function FarmerDirectoryPage({ searchParams }: FarmerDirectoryPageProps) {
-  const farmers = orderFarmerDirectoryProfiles(await getFarmersData());
+  const result = await getFarmersData();
+  const farmers = result.status === "ready" ? result.data : [];
   const initialSearch = searchQuery(searchParams?.q);
 
   return (
@@ -58,7 +57,11 @@ export default async function FarmerDirectoryPage({ searchParams }: FarmerDirect
           </Link>
         </div>
       </PageHero>
-      <FarmerDirectory farmers={farmers} initialSearch={initialSearch} />
+      {result.status === "unavailable" ? (
+        <PublicDataUnavailable kind="farmer" />
+      ) : (
+        <FarmerDirectory farmers={farmers} initialSearch={initialSearch} />
+      )}
     </>
   );
 }
