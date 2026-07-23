@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import {
   ArrowRight,
   BadgeCheck,
+  Beef,
   Bot,
   Check,
   CloudSun,
@@ -11,17 +12,25 @@ import {
   HeartHandshake,
   Menu,
   MessageCircleQuestion,
+  PackageOpen,
   ScanSearch,
   ShieldCheck,
   ShoppingBasket,
   Sprout,
   Store,
-  UsersRound
+  UsersRound,
+  Wrench
 } from "lucide-react";
-import { ConnectionWordmarkLogo, CultivatedMonogramLogo, FieldSunriseLogo } from "@/components/BrandLabLogos";
+import {
+  ConnectionWordmarkLogo,
+  CultivatedMonogramLogo,
+  FieldSunriseLogo,
+  RecommendedWordmarkLogo,
+  RefinedCultivatedIcon
+} from "@/components/BrandLabLogos";
 import styles from "@/app/brand-lab/BrandLab.module.css";
 
-export type BrandDirection = "harvest" | "growth" | "market";
+export type BrandDirection = "harvest" | "growth" | "market" | "recommended";
 
 type DirectionConfig = {
   name: string;
@@ -29,6 +38,8 @@ type DirectionConfig = {
   accent: string;
   heroImage: string;
   headline: string;
+  headlineLines?: string[];
+  campaignLine?: string;
   support: string;
   primary: string;
   primaryHref: string;
@@ -80,6 +91,22 @@ const directionConfig: Record<BrandDirection, DirectionConfig> = {
     secondaryHref: "/join",
     marketHeading: "Make the next market connection count",
     marketCopy: "Move from discovery to a reviewed request while Ghana Growers keeps personal details private."
+  },
+  recommended: {
+    name: "Recommended Direction",
+    character: "Warm, trusted and ready to grow",
+    accent: "#F28C28",
+    heroImage: "/images/hero/ghana-growers-trade-hero.png",
+    headline: "Buy Local. Sell Your Harvest. Grow With Us.",
+    headlineLines: ["Buy Local.", "Sell Your Harvest.", "Grow With Us."],
+    campaignLine: "Ghana's harvest, moving with purpose",
+    support: "Ghana Growers connects farmers, buyers and agricultural suppliers through a reviewed marketplace and practical farming tools.",
+    primary: "Browse the marketplace",
+    primaryHref: "/marketplace",
+    secondary: "Sell your harvest",
+    secondaryHref: "/submit-listing",
+    marketHeading: "Four clear routes into local agricultural trade",
+    marketCopy: "Find the right marketplace pathway, review useful public information and request a connection without exposing private contact details."
   }
 };
 
@@ -95,10 +122,23 @@ const marketplaceCategories = [
   { image: "/images/marketplace/logistics-truck.jpg", title: "Tools & equipment", copy: "Practical equipment for production and handling." }
 ];
 
+const recommendedMarketplaceRoutes = [
+  { icon: ShoppingBasket, title: "Fresh Produce", copy: "Vegetables, fruits, grains, legumes, roots and more.", href: "/marketplace?category=Fresh%20Produce" },
+  { icon: PackageOpen, title: "Farm Inputs", copy: "Seeds, soil inputs, crop protection and farm supplies.", href: "/marketplace?category=Farm%20Inputs" },
+  { icon: Beef, title: "Livestock", copy: "Reviewed public listings for animals and livestock supply.", href: "/marketplace?category=Livestock" },
+  { icon: Wrench, title: "Tools & Equipment", copy: "Practical tools and equipment for production and handling.", href: "/marketplace?category=Tools%20%26%20Equipment" }
+];
+
+const recommendedFarmers = [
+  { name: "Adom Field Collective", region: "Eastern Region example", crops: "Maize · Groundnuts" },
+  { name: "Nhyira Harvest Farm", region: "Ashanti Region example", crops: "Tomatoes · Pepper" },
+  { name: "Savanna Roots Farm", region: "Northern Region example", crops: "Yam · Cowpea" }
+];
+
 const howItWorks = [
   { icon: ScanSearch, title: "Discover", copy: "Browse reviewed public information." },
   { icon: MessageCircleQuestion, title: "Request", copy: "Tell us what you need without exposing private contacts." },
-  { icon: BadgeCheck, title: "Review", copy: "Ghana Growers checks the request and available public records." },
+  { icon: BadgeCheck, title: "Ghana Growers reviews", copy: "The team checks the request and available public records." },
   { icon: Handshake, title: "Connect", copy: "Relevant parties decide whether to continue the conversation." }
 ];
 
@@ -107,10 +147,11 @@ function DirectionLogo({ direction, className }: { direction: BrandDirection; cl
 
   if (direction === "growth") return <CultivatedMonogramLogo className={className} accent={accent} />;
   if (direction === "market") return <ConnectionWordmarkLogo className={className} accent={accent} />;
+  if (direction === "recommended") return <RecommendedWordmarkLogo className={className} accent={accent} />;
   return <FieldSunriseLogo className={className} accent={accent} />;
 }
 
-function FarmerPlaceholder({ index }: { index: number }) {
+function FarmerPlaceholder({ index, farmer }: { index: number; farmer?: (typeof recommendedFarmers)[number] }) {
   return (
     <article className={styles.farmerCard}>
       <div className={styles.farmerVisual} aria-hidden="true">
@@ -122,8 +163,8 @@ function FarmerPlaceholder({ index }: { index: number }) {
       </div>
       <div className={styles.farmerBody}>
         <span className={styles.placeholderBadge}>Reviewed profile example</span>
-        <h3>Farmer profile</h3>
-        <p>Region and approved products appear here.</p>
+        <h3>{farmer?.name ?? "Farmer profile"}</h3>
+        <p>{farmer ? `${farmer.region} · ${farmer.crops}` : "Region and approved products appear here."}</p>
         <span className={styles.fakeLink}>View profile <ArrowRight size={15} aria-hidden="true" /></span>
       </div>
     </article>
@@ -183,8 +224,12 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
           <Image src={config.heroImage} alt="Ghanaian agriculture and local market activity" fill priority sizes="100vw" />
           <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroInner}>
-            <span className={styles.heroKicker}>Buy Local. Sell Your Harvest. Grow With Us.</span>
-            <h1>{config.headline}</h1>
+            <span className={styles.heroKicker}>{config.campaignLine ?? "Buy Local. Sell Your Harvest. Grow With Us."}</span>
+            <h1 className={config.headlineLines ? styles.heroHeadlineLines : undefined}>
+              {config.headlineLines
+                ? config.headlineLines.map((line) => <span key={line}>{line}</span>)
+                : config.headline}
+            </h1>
             <p>{config.support}</p>
             <div className={styles.heroActions}>
               <a className={styles.primaryAction} href={config.primaryHref}>{config.primary}<ArrowRight size={18} aria-hidden="true" /></a>
@@ -221,17 +266,29 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
             <p>{config.marketCopy}</p>
             <a className={styles.textAction} href="/marketplace">Browse the marketplace<ArrowRight size={17} aria-hidden="true" /></a>
           </div>
-          <div className={styles.marketGrid}>
-            {marketplaceCategories.map((category, index) => (
-              <article key={category.title} className={styles.marketCard}>
-                <div className={styles.marketImage}>
-                  <Image src={category.image} alt="" fill sizes="(max-width: 720px) 92vw, 30vw" />
-                  <span>0{index + 1}</span>
-                </div>
-                <div><h3>{category.title}</h3><p>{category.copy}</p></div>
-              </article>
-            ))}
-          </div>
+          {direction === "recommended" ? (
+            <div className={styles.marketRouteGrid}>
+              {recommendedMarketplaceRoutes.map(({ icon: Icon, ...route }) => (
+                <a key={route.title} href={route.href} className={styles.marketRoute}>
+                  <span><Icon size={24} aria-hidden="true" /></span>
+                  <div><h3>{route.title}</h3><p>{route.copy}</p></div>
+                  <ArrowRight size={17} aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.marketGrid}>
+              {marketplaceCategories.map((category, index) => (
+                <article key={category.title} className={styles.marketCard}>
+                  <div className={styles.marketImage}>
+                    <Image src={category.image} alt="" fill sizes="(max-width: 720px) 92vw, 30vw" />
+                    <span>0{index + 1}</span>
+                  </div>
+                  <div><h3>{category.title}</h3><p>{category.copy}</p></div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section id="featured" className={styles.featuredSection} aria-labelledby="featured-title">
@@ -243,7 +300,11 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
             </div>
             <span className={styles.exampleTag}>Fictional layout placeholders</span>
           </div>
-          <div className={styles.farmerGrid}>{[1, 2, 3, 4].map((index) => <FarmerPlaceholder index={index} key={index} />)}</div>
+          <div className={styles.farmerGrid}>
+            {direction === "recommended"
+              ? recommendedFarmers.map((farmer, index) => <FarmerPlaceholder index={index + 1} farmer={farmer} key={farmer.name} />)
+              : [1, 2, 3, 4].map((index) => <FarmerPlaceholder index={index} key={index} />)}
+          </div>
         </section>
 
         <section id="farmmate" className={styles.farmMateSection} aria-labelledby="farmmate-title">
@@ -254,11 +315,23 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
               <p>Check conditions, inspect crop concerns and ask practical farming questions in one focused place.</p>
               <a className={styles.primaryAction} href="/farmer-hub">Open GG FarmMate<ArrowRight size={18} aria-hidden="true" /></a>
             </div>
-            <div className={styles.toolList}>
-              <div><span><ScanSearch size={22} /></span><div><strong>Crop Doctor</strong><p>Photo-guided next steps for crop concerns.</p></div></div>
-              <div><span><CloudSun size={22} /></span><div><strong>Live Weather</strong><p>Local conditions for daily farm decisions.</p></div></div>
-              <div><span><Bot size={22} /></span><div><strong>Ask FarmMate</strong><p>Short, practical answers for the farm.</p></div></div>
-            </div>
+            {direction === "recommended" ? (
+              <div className={styles.farmMateProduct} aria-label="GG FarmMate interface concept">
+                <div className={styles.deviceTop}><span>GG FarmMate</span><span>Practical farming help</span></div>
+                <div className={styles.devicePrompt}>What would you like help with today?</div>
+                <div className={styles.deviceTools}>
+                  <div><span><ScanSearch size={23} /></span><div><strong>Crop Doctor</strong><p>Check a crop concern from a photo.</p></div></div>
+                  <div><span><Bot size={23} /></span><div><strong>Ask FarmMate</strong><p>Get a short, practical next step.</p></div></div>
+                </div>
+                <div className={styles.weatherStrip}><CloudSun size={20} /><span><strong>Live Weather</strong> supports daily field decisions.</span></div>
+              </div>
+            ) : (
+              <div className={styles.toolList}>
+                <div><span><ScanSearch size={22} /></span><div><strong>Crop Doctor</strong><p>Photo-guided next steps for crop concerns.</p></div></div>
+                <div><span><CloudSun size={22} /></span><div><strong>Live Weather</strong><p>Local conditions for daily farm decisions.</p></div></div>
+                <div><span><Bot size={22} /></span><div><strong>Ask FarmMate</strong><p>Short, practical answers for the farm.</p></div></div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -305,36 +378,51 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
 
         <section className={styles.logoBoard} aria-labelledby="logo-board-title">
           <div className={styles.sectionHeadingRow}>
-            <div><span className={styles.eyebrow}>Identity studies</span><h2 id="logo-board-title">Three logo concepts</h2><p>Evaluation-only vectors designed to remain legible in one colour and at small sizes.</p></div>
+            <div><span className={styles.eyebrow}>Identity studies</span><h2 id="logo-board-title">Recommended identity system</h2><p>A wordmark-first identity with a dedicated, simplified app icon for small digital spaces.</p></div>
             <span className={styles.exampleTag}>Concept SVGs — not production assets</span>
           </div>
-          <div className={styles.logoGrid}>
-            <article><span>A</span><FieldSunriseLogo accent="#F28C28" /><h3>Field & sunrise</h3><p>A welcoming horizon with cultivated rows.</p></article>
-            <article><span>B</span><CultivatedMonogramLogo accent="#8DBF2D" /><h3>Cultivated GG</h3><p>A compact monogram built from field-line geometry.</p></article>
-            <article><span>C</span><ConnectionWordmarkLogo accent="#E76F51" /><h3>Connected wordmark</h3><p>A strong text mark with one restrained connection detail.</p></article>
+          <div className={styles.recommendedLogoGrid}>
+            <article className={styles.wordmarkStudy}>
+              <span>Preferred wordmark</span>
+              <RecommendedWordmarkLogo accent="#F28C28" />
+              <h3>Connected Wordmark, refined</h3>
+              <p>The connection detail now sits within the wordmark composition, keeping Ghana Growers prominent and the Mango signal purposeful.</p>
+            </article>
+            <article className={styles.iconStudy}>
+              <span>Preferred app icon</span>
+              <div className={styles.iconScaleRow}>
+                <RefinedCultivatedIcon accent="#F28C28" />
+                <RefinedCultivatedIcon accent="#F28C28" />
+                <RefinedCultivatedIcon accent="#F28C28" />
+              </div>
+              <h3>Cultivated GG, simplified</h3>
+              <p>Clearer double-G geometry for 16px, 32px and 192px use without a generic technology feel.</p>
+            </article>
           </div>
           <div className={styles.oneColourRow}>
             <strong>One-colour check</strong>
-            <FieldSunriseLogo /><CultivatedMonogramLogo /><ConnectionWordmarkLogo />
+            <RecommendedWordmarkLogo accent="currentColor" />
+            <RefinedCultivatedIcon accent="currentColor" />
+            <span>Header · packaging · social · favicon</span>
           </div>
         </section>
 
         <section className={styles.recommendation} aria-labelledby="recommendation-title">
           <div className={styles.recommendationLead}>
             <span className={styles.eyebrow}>Professional recommendation</span>
-            <h2 id="recommendation-title">Build from Harvest Energy, with Fresh Growth discipline.</h2>
-            <p>Harvest Energy offers the strongest long-term balance of warmth, Ghanaian relevance and marketplace momentum. Keep its mango accent controlled, then borrow Fresh Growth&apos;s cleaner spacing and FarmMate treatment.</p>
+            <h2 id="recommendation-title">Recommended Direction is the preferred homepage.</h2>
+            <p>It combines Harvest Energy&apos;s warmth and image-led momentum with Fresh Growth&apos;s spacing discipline and stronger FarmMate product presence. Mango remains controlled so Forest Green, Cream and real agricultural imagery carry the brand.</p>
           </div>
           <dl>
-            <div><dt>Strongest overall</dt><dd>Harvest Energy</dd></div>
-            <div><dt>Best for trust</dt><dd>Fresh Growth</dd></div>
-            <div><dt>Best for energy</dt><dd>Market Connection</dd></div>
-            <div><dt>Long-term accent</dt><dd>Mango Orange</dd></div>
+            <div><dt>Preferred homepage</dt><dd>Recommended Direction</dd></div>
+            <div><dt>Energetic accent</dt><dd>Mango Orange</dd></div>
+            <div><dt>Identity foundation</dt><dd>Connected Wordmark</dd></div>
+            <div><dt>App icon direction</dt><dd>Refined Cultivated GG</dd></div>
           </dl>
           <div className={styles.riskGrid}>
-            <article><strong>Harvest Energy</strong><p>Risk: too much orange can feel promotional. Keep it to actions and small signals.</p></article>
-            <article><strong>Fresh Growth</strong><p>Risk: lime can lose contrast. Pair it with Forest Green text, never small white type.</p></article>
-            <article><strong>Market Connection</strong><p>Risk: coral can read as urgency. Reserve it for momentum, not trust states.</p></article>
+            <article><strong>Accent discipline</strong><p>Keep Mango near 5–10% of the composition and away from long or thin text.</p></article>
+            <article><strong>Trust language</strong><p>Continue using reviewed for general public records and reserve verified for confirmed statuses.</p></article>
+            <article><strong>Small-size identity</strong><p>Use the refined GG icon below wordmark sizes; do not squeeze the full name into favicon spaces.</p></article>
           </div>
         </section>
       </main>

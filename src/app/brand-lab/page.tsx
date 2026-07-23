@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: "Private Ghana Growers homepage and identity exploration."
 };
 
-const directions = new Set<BrandDirection>(["harvest", "growth", "market"]);
+const directions = new Set<BrandDirection>(["harvest", "growth", "market", "recommended"]);
 
 function selectedDirection(value?: string): BrandDirection {
   return value && directions.has(value as BrandDirection) ? (value as BrandDirection) : "harvest";

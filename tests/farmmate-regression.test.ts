@@ -7587,7 +7587,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Brand lab remains private and contains three fictional responsive directions",
+    name: "Brand lab remains private and contains four fictional responsive directions",
     run: () => {
       const page = repoFile("src/app/brand-lab/page.tsx");
       const component = repoFile("src/components/BrandLab.tsx");
@@ -7605,13 +7605,31 @@ const tests: TestCase[] = [
       assert.equal(component.includes('harvest: {'), true);
       assert.equal(component.includes('growth: {'), true);
       assert.equal(component.includes('market: {'), true);
+      assert.equal(component.includes('recommended: {'), true);
+      assert.equal(page.includes('"recommended"'), true);
       assert.equal(component.includes("Design example — not live data"), true);
       assert.equal(component.includes("Fictional layout placeholders"), true);
       assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
+      assert.equal(component.includes('["Buy Local.", "Sell Your Harvest.", "Grow With Us."]'), true);
+      assert.equal(component.includes("connects farmers, buyers and agricultural suppliers"), true);
       assert.equal(component.includes("reviewed growers"), true);
+      assert.equal(component.includes("Fresh Produce"), true);
+      assert.equal(component.includes("Farm Inputs"), true);
+      assert.equal(component.includes("Livestock"), true);
+      assert.equal(component.includes("Tools & Equipment"), true);
+      assert.equal(component.includes("Adom Field Collective"), true);
+      assert.equal(component.includes("Savanna Roots Farm"), true);
+      assert.equal(component.includes("Ghana Growers reviews"), true);
+      assert.equal(component.includes("Recommended Direction is the preferred homepage."), true);
+      assert.equal(component.includes("Mango Orange"), true);
       assert.equal(logos.includes("FieldSunriseLogo"), true);
       assert.equal(logos.includes("CultivatedMonogramLogo"), true);
       assert.equal(logos.includes("ConnectionWordmarkLogo"), true);
+      assert.equal(logos.includes("RecommendedWordmarkLogo"), true);
+      assert.equal(logos.includes("RefinedCultivatedIcon"), true);
+      assert.equal(styles.includes(".marketRouteGrid"), true);
+      assert.equal(styles.includes(".farmMateProduct"), true);
+      assert.equal(styles.includes(".recommendedLogoGrid"), true);
       assert.equal(styles.includes("@media (max-width: 1080px)"), true);
       assert.equal(styles.includes("@media (max-width: 780px)"), true);
       assert.equal(styles.includes("@media (max-width: 520px)"), true);
