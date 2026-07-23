@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         "/api",
         "/api/",
         "/api/*",
+        "/brand-lab",
         "/dev-preview",
         "/whatsapp-communities",
         "/about/blog"

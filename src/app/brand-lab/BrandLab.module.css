@@ -1,0 +1,531 @@
+.labRoot {
+  --forest: #143a1f;
+  --forest-ink: #162016;
+  --olive: #6f8f5f;
+  --cream: #f7f6ef;
+  --ivory: #fffdf7;
+  --sage: #eef3e8;
+  --gold: #dfae4a;
+  --line: #d7dfd0;
+  --muted: #5f6c60;
+  min-height: 100vh;
+  overflow: clip;
+  background: var(--cream);
+  color: var(--forest-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.labRoot *,
+.labRoot *::before,
+.labRoot *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.labRoot a,
+.labRoot button {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.labRoot a:focus-visible,
+.labRoot button:focus-visible {
+  outline: 3px solid var(--lab-accent);
+  outline-offset: 3px;
+}
+
+.labBar {
+  position: relative;
+  z-index: 70;
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 11px max(20px, calc((100vw - 1360px) / 2));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  background: #0c2514;
+  color: var(--ivory);
+}
+
+.labBar > div {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 2px 10px;
+}
+
+.labBar > div > span:last-child {
+  grid-column: 2;
+  color: #d5ded2;
+  font-size: 12px;
+}
+
+.labFlag {
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 6px 9px;
+  color: var(--lab-accent);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.labBar strong { font-size: 14px; }
+
+.labBar nav {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.labBar nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  padding: 8px 11px;
+  color: #e9eee7;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.labBar nav a span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 10px;
+}
+
+.labBar nav a[aria-current="page"] {
+  border-color: var(--lab-accent);
+  background: var(--lab-accent);
+  color: #102318;
+}
+
+.conceptHeader {
+  position: relative;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto minmax(180px, 1fr);
+  min-height: 78px;
+  align-items: center;
+  gap: 24px;
+  padding: 11px max(24px, calc((100vw - 1240px) / 2));
+  border-bottom: 1px solid rgba(20, 58, 31, 0.1);
+  background: rgba(247, 246, 239, 0.97);
+  color: var(--forest);
+}
+
+.logoLink { width: fit-content; }
+.headerLogo { width: 238px; height: 52px; color: var(--forest); }
+.desktopNav { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.desktopNav a { min-height: 42px; padding: 11px 9px; border-radius: 4px; color: var(--forest); font-size: 13px; font-weight: 800; }
+.desktopNav a:hover { background: var(--sage); }
+.headerAction {
+  justify-self: end;
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--forest);
+  border-radius: 4px;
+  padding: 10px 18px;
+  background: var(--forest);
+  color: var(--ivory);
+  font-size: 13px;
+  font-weight: 900;
+}
+.headerAction:hover { background: #0c2815; }
+.mobileNavigation { display: none; }
+
+.hero {
+  position: relative;
+  min-height: min(760px, calc(100svh - 82px));
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--forest);
+  color: var(--ivory);
+}
+
+.hero > img { z-index: -3; object-fit: cover; object-position: center; }
+.heroShade { position: absolute; inset: 0; z-index: -2; background: rgba(7, 25, 13, 0.58); }
+.heroInner {
+  display: flex;
+  width: min(1240px, calc(100% - 48px));
+  min-height: inherit;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0 auto;
+  padding: 92px 0 76px;
+}
+
+.heroKicker,
+.eyebrow {
+  display: block;
+  color: var(--lab-accent);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 790px;
+  margin: 16px 0 18px;
+  color: var(--ivory);
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: 78px;
+  font-weight: 700;
+  line-height: 0.98;
+}
+
+.heroInner > p { max-width: 650px; margin: 0; color: #e6ece3; font-size: 18px; line-height: 1.65; }
+.heroActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.primaryAction,
+.secondaryAction,
+.textAction {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 900;
+}
+.primaryAction { border: 1px solid var(--lab-accent); background: var(--lab-accent); color: #102318; }
+.primaryAction:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2); }
+.secondaryAction { border: 1px solid rgba(255,255,255,0.72); background: rgba(10, 35, 18, 0.36); color: var(--ivory); }
+.secondaryAction:hover { background: var(--ivory); color: var(--forest); }
+.connectionNote { display: flex; align-items: center; gap: 9px; margin-top: 28px; color: #f3f5ef; font-size: 13px; font-weight: 800; }
+.connectionNote svg { color: var(--lab-accent); }
+
+.pathways,
+.featuredSection,
+.howSection,
+.logoBoard,
+.recommendation {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 104px 0;
+}
+
+.sectionIntro { max-width: 690px; margin-bottom: 42px; }
+.sectionIntro h2,
+.sectionHeadingRow h2,
+.marketCopy h2,
+.farmMateIntro h2,
+.trustCopy h2,
+.finalCta h2,
+.recommendation h2 {
+  margin: 10px 0 0;
+  color: var(--forest);
+  font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.04;
+}
+
+.pathGrid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.pathGrid article { position: relative; min-height: 286px; padding: 36px 34px 32px 0; }
+.pathGrid article + article { border-left: 1px solid var(--line); padding-left: 34px; }
+.iconBox { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 6px; background: color-mix(in srgb, var(--lab-accent) 22%, var(--ivory)); color: var(--forest); }
+.pathGrid h3 { margin: 28px 0 10px; color: var(--forest); font-size: 22px; font-weight: 900; }
+.pathGrid p { max-width: 310px; min-height: 72px; margin: 0; color: var(--muted); line-height: 1.55; }
+.pathGrid a,
+.fakeLink { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin-top: 19px; color: var(--forest); font-size: 13px; font-weight: 900; }
+.pathGrid a:hover { color: color-mix(in srgb, var(--lab-accent) 70%, var(--forest)); }
+
+.marketSection {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 64px;
+  padding: 104px max(24px, calc((100vw - 1240px) / 2));
+  background: var(--forest);
+  color: var(--ivory);
+}
+.marketCopy { max-width: 440px; }
+.marketCopy h2 { color: var(--ivory); }
+.marketCopy p { margin: 18px 0 0; color: #cfdbcf; line-height: 1.7; }
+.textAction { justify-content: flex-start; padding-inline: 0; color: var(--forest); }
+.marketCopy .textAction { margin-top: 18px; color: var(--lab-accent); }
+.marketGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.marketCard { overflow: hidden; border: 1px solid rgba(255,255,255,0.13); border-radius: 7px; background: #1d4829; }
+.marketImage { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.marketImage img { object-fit: cover; transition: transform 300ms ease; }
+.marketCard:hover .marketImage img { transform: scale(1.025); }
+.marketImage span { position: absolute; right: 10px; top: 10px; display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--lab-accent); color: #102318; font-size: 11px; font-weight: 900; }
+.marketCard > div:last-child { min-height: 126px; padding: 18px; }
+.marketCard h3 { margin: 0 0 7px; color: var(--ivory); font-size: 18px; font-weight: 900; }
+.marketCard p { margin: 0; color: #d8e0d4; font-size: 13px; line-height: 1.5; }
+
+.featuredSection { background: var(--cream); }
+.sectionHeadingRow { display: flex; align-items: end; justify-content: space-between; gap: 28px; margin-bottom: 38px; }
+.sectionHeadingRow > div { max-width: 700px; }
+.sectionHeadingRow p { margin: 13px 0 0; color: var(--muted); line-height: 1.6; }
+.exampleTag { flex: none; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.farmerGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.farmerCard { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--ivory); }
+.farmerVisual { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--sage); color: var(--forest); }
+.farmerVisual > span { position: absolute; left: 18px; top: 15px; z-index: 2; font-size: 12px; font-weight: 900; }
+.farmerVisual svg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--olive); }
+.farmerVisual path:first-child { fill: color-mix(in srgb, var(--lab-accent) 19%, var(--sage)); }
+.farmerVisual path:last-child { fill: none; stroke: var(--forest); stroke-width: 2; }
+.farmerBody { padding: 18px; }
+.placeholderBadge { display: inline-flex; border-radius: 4px; padding: 5px 7px; background: var(--sage); color: var(--forest); font-size: 10px; font-weight: 900; }
+.farmerBody h3 { margin: 15px 0 6px; color: var(--forest); font-size: 18px; font-weight: 900; }
+.farmerBody p { min-height: 42px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.fakeLink { color: var(--forest); }
+
+.farmMateSection { padding: 34px max(24px, calc((100vw - 1240px) / 2)) 104px; background: var(--cream); }
+.farmMatePanel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 0.9fr); gap: 70px; padding: 68px; border-radius: 8px; background: var(--sage); }
+.farmMateIntro { align-self: center; }
+.farmMateIntro p { max-width: 560px; margin: 18px 0 26px; color: var(--muted); line-height: 1.65; }
+.farmMateIntro .primaryAction { color: #102318; }
+.toolList { border-top: 1px solid var(--line); }
+.toolList > div { display: grid; grid-template-columns: 48px 1fr; gap: 15px; align-items: center; min-height: 106px; border-bottom: 1px solid var(--line); }
+.toolList > div > span { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 6px; background: var(--ivory); color: var(--forest); }
+.toolList strong { color: var(--forest); font-size: 16px; }
+.toolList p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+.howSection { padding-top: 110px; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.steps li { position: relative; min-height: 250px; padding: 34px 28px 26px 0; border-bottom: 1px solid var(--line); }
+.steps li + li { border-left: 1px solid var(--line); padding-left: 28px; }
+.steps svg { margin-top: 24px; color: var(--lab-accent); }
+.stepNumber { position: absolute; top: 17px; right: 20px; color: #879386; font-size: 11px; font-weight: 900; }
+.steps h3 { margin: 28px 0 9px; color: var(--forest); font-size: 19px; font-weight: 900; }
+.steps p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+.trustSection { display: grid; grid-template-columns: 1fr 1fr; min-height: 620px; background: var(--ivory); }
+.trustImage { position: relative; min-height: 500px; overflow: hidden; }
+.trustImage img { object-fit: cover; }
+.trustCopy { align-self: center; max-width: 640px; padding: 70px 7vw; }
+.trustCopy > p { margin: 18px 0 0; color: var(--muted); line-height: 1.7; }
+.trustCopy ul { display: grid; gap: 14px; margin: 27px 0 14px; padding: 0; list-style: none; }
+.trustCopy li { display: flex; gap: 11px; align-items: flex-start; color: var(--forest); font-size: 14px; font-weight: 750; line-height: 1.5; }
+.trustCopy li svg { flex: none; margin-top: 1px; color: var(--lab-accent); }
+
+.finalCta { padding: 92px max(24px, calc((100vw - 1000px) / 2)); background: var(--forest); color: var(--ivory); text-align: center; }
+.finalCta h2 { color: var(--ivory); font-size: 56px; }
+.finalCta > p { max-width: 700px; margin: 18px auto 26px; color: #d4dfd2; line-height: 1.65; }
+.finalCta > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+
+.logoBoard { border-bottom: 1px solid var(--line); }
+.logoGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.logoGrid article { position: relative; min-height: 280px; border: 1px solid var(--line); border-radius: 7px; padding: 30px; background: var(--ivory); }
+.logoGrid article > span { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--lab-accent); color: #102318; font-size: 11px; font-weight: 900; }
+.logoGrid svg { width: 100%; height: 92px; margin-top: 20px; color: var(--forest); }
+.logoGrid h3 { margin: 16px 0 7px; color: var(--forest); font-size: 18px; font-weight: 900; }
+.logoGrid p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.oneColourRow { display: grid; grid-template-columns: 150px repeat(3, 1fr); align-items: center; gap: 28px; margin-top: 20px; border: 1px solid var(--forest); border-radius: 7px; padding: 18px 24px; background: var(--forest); color: var(--ivory); }
+.oneColourRow strong { font-size: 12px; text-transform: uppercase; }
+.oneColourRow svg { width: 100%; max-height: 58px; color: var(--ivory); }
+
+.recommendation { display: grid; grid-template-columns: 1.3fr 0.8fr; gap: 62px; }
+.recommendationLead p { margin: 20px 0 0; color: var(--muted); line-height: 1.7; }
+.recommendation dl { align-self: end; margin: 0; border-top: 1px solid var(--line); }
+.recommendation dl div { display: flex; justify-content: space-between; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.recommendation dt { color: var(--muted); font-size: 13px; }
+.recommendation dd { margin: 0; color: var(--forest); font-size: 13px; font-weight: 900; text-align: right; }
+.riskGrid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.riskGrid article { border-left: 3px solid var(--lab-accent); padding: 4px 18px; }
+.riskGrid strong { color: var(--forest); }
+.riskGrid p { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+.conceptFooter { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 36px; padding: 32px max(24px, calc((100vw - 1240px) / 2)); background: #0c2514; color: #d7e0d5; }
+.footerLogo { width: 190px; height: 46px; color: var(--ivory); }
+.conceptFooter > div p { margin: 6px 0 0; font-size: 11px; }
+.conceptFooter nav { display: grid; grid-template-columns: repeat(3, auto); gap: 8px 20px; }
+.conceptFooter nav a { color: var(--ivory); font-size: 12px; font-weight: 800; }
+.conceptFooter > p { justify-self: end; max-width: 210px; margin: 0; color: #aab7a9; font-size: 11px; line-height: 1.5; text-align: right; }
+
+/* Direction-specific composition, kept subtle enough for the shared brand to remain recognisable. */
+.growth .heroInner { align-items: center; justify-content: center; text-align: center; }
+.growth .heroInner > p { max-width: 720px; }
+.growth .heroActions { justify-content: center; }
+.growth .heroShade { background: rgba(8, 31, 16, 0.62); }
+.growth .connectionNote { border-top: 2px solid var(--lab-accent); padding-top: 15px; }
+.growth .marketSection { grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.72fr); background: #eef3e8; color: var(--forest); }
+.growth .marketCopy { grid-column: 2; grid-row: 1; }
+.growth .marketGrid { grid-column: 1; grid-row: 1; }
+.growth .marketCopy h2 { color: var(--forest); }
+.growth .marketCopy p { color: var(--muted); }
+.growth .marketCard { border-color: #cbd8c6; background: var(--ivory); }
+.growth .marketCard h3 { color: var(--forest); }
+.growth .marketCard p { color: var(--muted); }
+.growth .farmMatePanel { background: var(--forest); color: var(--ivory); }
+.growth .farmMateIntro h2,
+.growth .farmMateIntro p,
+.growth .toolList strong { color: var(--ivory); }
+.growth .toolList,
+.growth .toolList > div { border-color: rgba(255,255,255,0.17); }
+.growth .toolList p { color: #ced9cc; }
+.growth .toolList > div > span { background: color-mix(in srgb, var(--lab-accent) 72%, white); }
+
+.market .heroInner { width: min(1100px, calc(100% - 48px)); justify-content: center; }
+.market .hero h1 { max-width: 720px; }
+.market .heroShade { background: rgba(16, 34, 20, 0.68); }
+.market .pathways { display: grid; grid-template-columns: 0.72fr 1.5fr; gap: 70px; align-items: start; }
+.market .sectionIntro { position: sticky; top: 24px; }
+.market .pathGrid { grid-template-columns: 1fr; border-top: 0; }
+.market .pathGrid article { min-height: 210px; border-top: 1px solid var(--line); padding: 28px 0; }
+.market .pathGrid article + article { border-left: 0; padding-left: 0; }
+.market .pathGrid h3 { margin-top: 18px; }
+.market .pathGrid p { min-height: auto; }
+.market .marketSection { grid-template-columns: 1fr; }
+.market .marketCopy { max-width: 750px; }
+.market .marketGrid { max-width: 1000px; margin-left: auto; }
+.market .marketCard:nth-child(2) { transform: translateY(28px); }
+.market .marketCard:nth-child(3) { transform: translateY(56px); }
+.market .featuredSection { padding-top: 150px; }
+
+@media (max-width: 1080px) {
+  .labBar { align-items: flex-start; }
+  .labBar nav a { padding-inline: 9px; }
+  .labBar nav a span { display: none; }
+  .conceptHeader { grid-template-columns: 1fr auto; }
+  .desktopNav { display: none; }
+  .headerAction { display: none; }
+  .mobileNavigation { position: relative; display: block; }
+  .mobileNavigation summary { display: grid; width: 46px; height: 46px; cursor: pointer; list-style: none; place-items: center; border: 1px solid rgba(20,58,31,0.2); border-radius: 5px; background: transparent; color: var(--forest); }
+  .mobileNavigation summary::-webkit-details-marker { display: none; }
+  .mobileNavigation nav { position: absolute; right: 0; top: calc(100% + 8px); z-index: 80; display: grid; width: 220px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--ivory); box-shadow: 0 16px 36px rgba(12, 37, 20, 0.18); }
+  .mobileNavigation nav a { display: flex; min-height: 44px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--forest); font-size: 13px; font-weight: 850; }
+  .mobileNavigation nav a:last-child { border-bottom: 0; }
+  .mobileNavigation nav a:hover { background: var(--sage); }
+  .hero h1 { font-size: 66px; }
+  .marketSection { grid-template-columns: 1fr; }
+  .marketCopy { max-width: 720px; }
+  .growth .marketSection { grid-template-columns: 1fr; }
+  .growth .marketCopy { grid-column: 1; grid-row: 1; }
+  .growth .marketGrid { grid-column: 1; grid-row: 2; }
+  .farmMatePanel { gap: 42px; padding: 48px; }
+  .farmerGrid { grid-template-columns: repeat(2, 1fr); }
+  .conceptFooter { grid-template-columns: 1fr auto; }
+  .conceptFooter > p { grid-column: 1 / -1; justify-self: start; max-width: none; text-align: left; }
+}
+
+@media (max-width: 780px) {
+  .labBar { display: block; padding: 12px 16px; }
+  .labBar > div { grid-template-columns: auto 1fr; }
+  .labBar nav { margin-top: 10px; overflow-x: auto; padding-bottom: 3px; }
+  .labBar nav a { flex: none; white-space: nowrap; }
+  .conceptHeader { min-height: 68px; padding: 8px 18px; }
+  .headerLogo { width: 202px; height: 48px; }
+  .hero { min-height: 650px; }
+  .heroInner { width: min(100% - 36px, 680px); padding: 62px 0 52px; }
+  .hero h1 { max-width: 620px; font-size: 52px; }
+  .heroInner > p { font-size: 16px; }
+  .pathways,
+  .featuredSection,
+  .howSection,
+  .logoBoard,
+  .recommendation { width: min(100% - 36px, 680px); padding: 76px 0; }
+  .sectionIntro h2,
+  .sectionHeadingRow h2,
+  .marketCopy h2,
+  .farmMateIntro h2,
+  .trustCopy h2,
+  .recommendation h2 { font-size: 39px; }
+  .pathGrid { grid-template-columns: 1fr; }
+  .pathGrid article { min-height: 0; padding: 26px 0; }
+  .pathGrid article + article { border-top: 1px solid var(--line); border-left: 0; padding-left: 0; }
+  .pathGrid p { min-height: 0; }
+  .marketSection { gap: 34px; padding: 76px 18px; }
+  .marketGrid { grid-template-columns: 1fr 1fr; }
+  .marketCard:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  .marketCard:last-child .marketImage { aspect-ratio: auto; min-height: 200px; }
+  .market .marketCard:nth-child(2), .market .marketCard:nth-child(3) { transform: none; }
+  .market .featuredSection { padding-top: 76px; }
+  .sectionHeadingRow { align-items: flex-start; flex-direction: column; }
+  .farmMateSection { padding: 10px 18px 76px; }
+  .farmMatePanel { grid-template-columns: 1fr; gap: 34px; padding: 36px; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .steps li:nth-child(3) { border-left: 0; padding-left: 0; }
+  .trustSection { grid-template-columns: 1fr; }
+  .trustImage { min-height: 420px; }
+  .trustCopy { max-width: none; padding: 64px 28px; }
+  .finalCta { padding: 76px 22px; }
+  .finalCta h2 { font-size: 46px; }
+  .logoGrid { grid-template-columns: 1fr; }
+  .logoGrid article { min-height: 250px; }
+  .oneColourRow { grid-template-columns: 1fr; }
+  .oneColourRow svg { max-width: 280px; }
+  .recommendation { grid-template-columns: 1fr; gap: 36px; }
+  .riskGrid { grid-template-columns: 1fr; }
+  .conceptFooter { grid-template-columns: 1fr; }
+  .conceptFooter nav { justify-content: start; }
+  .market .pathways { display: block; }
+  .market .sectionIntro { position: static; }
+}
+
+@media (max-width: 520px) {
+  .labBar > div > span:last-child { display: none; }
+  .labBar nav { gap: 5px; }
+  .labBar nav a { min-height: 44px; font-size: 11px; }
+  .conceptHeader { padding-inline: 14px; }
+  .headerLogo { width: 184px; height: 44px; }
+  .mobileNavigation summary { width: 44px; height: 44px; }
+  .hero { min-height: 610px; }
+  .hero > img { object-position: 58% center; }
+  .growth .hero > img { object-position: 48% center; }
+  .market .hero > img { object-position: 61% center; }
+  .heroInner { width: calc(100% - 30px); justify-content: flex-end; padding: 48px 0 38px; }
+  .growth .heroInner { justify-content: flex-end; text-align: left; align-items: flex-start; }
+  .growth .heroActions { justify-content: flex-start; }
+  .hero h1 { margin-top: 12px; font-size: 43px; line-height: 1; }
+  .heroInner > p { font-size: 15px; line-height: 1.55; }
+  .heroActions { display: grid; width: 100%; grid-template-columns: 1fr; margin-top: 22px; }
+  .primaryAction, .secondaryAction { width: 100%; }
+  .connectionNote { align-items: flex-start; margin-top: 20px; line-height: 1.4; }
+  .pathways,
+  .featuredSection,
+  .howSection,
+  .logoBoard,
+  .recommendation { width: calc(100% - 30px); padding: 62px 0; }
+  .sectionIntro { margin-bottom: 30px; }
+  .sectionIntro h2,
+  .sectionHeadingRow h2,
+  .marketCopy h2,
+  .farmMateIntro h2,
+  .trustCopy h2,
+  .recommendation h2 { font-size: 34px; }
+  .marketGrid { grid-template-columns: 1fr; }
+  .marketCard:last-child { grid-column: auto; display: block; }
+  .marketCard:last-child .marketImage { aspect-ratio: 4 / 3; min-height: 0; }
+  .farmerGrid { grid-template-columns: 1fr; gap: 13px; }
+  .farmMatePanel { padding: 28px 20px; }
+  .farmMateIntro .primaryAction { width: 100%; }
+  .toolList > div { min-height: 96px; }
+  .steps { grid-template-columns: 1fr; }
+  .steps li, .steps li + li, .steps li:nth-child(3) { min-height: 0; border-left: 0; padding: 25px 0; }
+  .steps li + li { border-top: 1px solid var(--line); }
+  .steps svg { margin-top: 0; }
+  .steps h3 { margin-top: 16px; }
+  .trustImage { min-height: 330px; }
+  .trustCopy { padding: 54px 18px; }
+  .finalCta { padding: 64px 16px; }
+  .finalCta h2 { font-size: 38px; }
+  .finalCta > div { display: grid; }
+  .logoGrid article { padding: 22px; }
+  .logoGrid svg { height: 78px; }
+  .oneColourRow { padding: 18px; }
+  .conceptFooter { padding: 30px 16px; }
+  .conceptFooter nav { grid-template-columns: repeat(2, auto); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labRoot *, .labRoot *::before, .labRoot *::after { scroll-behavior: auto !important; transition: none !important; }
+}

@@ -7585,6 +7585,40 @@ const tests: TestCase[] = [
       assert.equal(combined.includes("buttons") && combined.includes("one follow-up question at a time"), true);
       assert.equal(combined.includes("feedback") && combined.includes("final answer"), true);
     }
+  },
+  {
+    name: "Brand lab remains private and contains three fictional responsive directions",
+    run: () => {
+      const page = repoFile("src/app/brand-lab/page.tsx");
+      const component = repoFile("src/components/BrandLab.tsx");
+      const logos = repoFile("src/components/BrandLabLogos.tsx");
+      const styles = repoFile("src/app/brand-lab/BrandLab.module.css");
+      const middleware = repoFile("src/middleware.ts");
+      const robots = repoFile("src/app/robots.ts");
+
+      assert.equal(page.includes('process.env.VERCEL_ENV === "preview"'), true);
+      assert.equal(page.includes("getAdminAuthorizationFromAccessToken"), true);
+      assert.equal(page.includes("noIndexMetadata"), true);
+      assert.equal(middleware.includes('pathname === "/brand-lab"'), true);
+      assert.equal(middleware.includes('requestHeaders.delete("x-ghana-growers-brand-lab")'), true);
+      assert.equal(robots.includes('"/brand-lab"'), true);
+      assert.equal(component.includes('harvest: {'), true);
+      assert.equal(component.includes('growth: {'), true);
+      assert.equal(component.includes('market: {'), true);
+      assert.equal(component.includes("Design example — not live data"), true);
+      assert.equal(component.includes("Fictional layout placeholders"), true);
+      assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
+      assert.equal(component.includes("reviewed growers"), true);
+      assert.equal(logos.includes("FieldSunriseLogo"), true);
+      assert.equal(logos.includes("CultivatedMonogramLogo"), true);
+      assert.equal(logos.includes("ConnectionWordmarkLogo"), true);
+      assert.equal(styles.includes("@media (max-width: 1080px)"), true);
+      assert.equal(styles.includes("@media (max-width: 780px)"), true);
+      assert.equal(styles.includes("@media (max-width: 520px)"), true);
+      assert.equal(component.includes("Ibrahim"), false);
+      assert.equal(component.includes("Duakib"), false);
+      assert.equal(component.includes("S. K. Nart"), false);
+    }
   }
 ];
 
