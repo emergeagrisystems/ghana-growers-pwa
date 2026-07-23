@@ -100,10 +100,10 @@ const directionConfig: Record<BrandDirection, DirectionConfig> = {
     headline: "Buy Local. Sell Your Harvest. Grow With Us.",
     headlineLines: ["Buy Local.", "Sell Your Harvest.", "Grow With Us."],
     campaignLine: "Ghana's harvest, moving with purpose",
-    support: "Ghana Growers connects farmers, buyers and agricultural suppliers through a reviewed marketplace and practical farming tools.",
-    primary: "Browse the marketplace",
+    support: "Ghana Growers connects farmers, buyers, and suppliers through a reviewed marketplace, trusted sourcing support, and practical farming tools.",
+    primary: "Browse Marketplace",
     primaryHref: "/marketplace",
-    secondary: "Sell your harvest",
+    secondary: "Sell Your Harvest",
     secondaryHref: "/submit-listing",
     marketHeading: "Four clear routes into local agricultural trade",
     marketCopy: "Find the right marketplace pathway, review useful public information and request a connection without exposing private contact details."
@@ -133,6 +133,14 @@ const recommendedFarmers = [
   { name: "Adom Field Collective", region: "Eastern Region example", crops: "Maize · Groundnuts" },
   { name: "Nhyira Harvest Farm", region: "Ashanti Region example", crops: "Tomatoes · Pepper" },
   { name: "Savanna Roots Farm", region: "Northern Region example", crops: "Yam · Cowpea" }
+];
+
+const shopQuickLinks = ["Tomatoes", "Plantain", "Maize", "Pepper", "Cassava", "Farm Inputs"];
+
+const supplyQuickLinks = [
+  { label: "Sell Produce", href: "/submit-listing" },
+  { label: "List Farm Inputs", href: "/submit-listing" },
+  { label: "Supplier Directory", href: "/supplier-directory" }
 ];
 
 const howItWorks = [
@@ -220,27 +228,76 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
       </header>
 
       <main id="top">
-        <section className={styles.hero}>
-          <Image src={config.heroImage} alt="Ghanaian agriculture and local market activity" fill priority sizes="100vw" />
-          <div className={styles.heroShade} aria-hidden="true" />
-          <div className={styles.heroInner}>
-            <span className={styles.heroKicker}>{config.campaignLine ?? "Buy Local. Sell Your Harvest. Grow With Us."}</span>
-            <h1 className={config.headlineLines ? styles.heroHeadlineLines : undefined}>
-              {config.headlineLines
-                ? config.headlineLines.map((line) => <span key={line}>{line}</span>)
-                : config.headline}
-            </h1>
-            <p>{config.support}</p>
-            <div className={styles.heroActions}>
-              <a className={styles.primaryAction} href={config.primaryHref}>{config.primary}<ArrowRight size={18} aria-hidden="true" /></a>
-              <a className={styles.secondaryAction} href={config.secondaryHref}>{config.secondary}</a>
+        {direction === "recommended" ? (
+          <section className={`${styles.hero} ${styles.marketplaceHero}`}>
+            <div className={styles.marketplaceHeroInner}>
+              <div className={styles.marketplaceHeroCopy}>
+                <span className={styles.heroKicker}>Reviewed marketplace for Ghana agriculture</span>
+                <h1 className={styles.heroHeadlineLines}>
+                  {config.headlineLines?.map((line) => <span key={line}>{line}</span>)}
+                </h1>
+                <p>{config.support}</p>
+                <div className={styles.heroActions}>
+                  <a className={styles.primaryAction} href={config.primaryHref}>{config.primary}<ArrowRight size={18} aria-hidden="true" /></a>
+                  <a className={styles.secondaryAction} href={config.secondaryHref}>{config.secondary}</a>
+                </div>
+                <div className={styles.heroBenefits} aria-label="Ghana Growers marketplace benefits">
+                  <span><ShieldCheck size={18} aria-hidden="true" />Reviewed public information</span>
+                  <span><UsersRound size={18} aria-hidden="true" />Private, human-supported connections</span>
+                </div>
+              </div>
+
+              <div className={styles.marketplaceHeroDeck}>
+                <div className={styles.heroSupportImage}>
+                  <Image src={config.heroImage} alt="Local produce being reviewed at a Ghanaian market" fill priority sizes="(max-width: 780px) 100vw, 46vw" />
+                  <span>Local trade · practical tools · human review</span>
+                </div>
+
+                <article className={`${styles.heroUtilityCard} ${styles.shopHeroCard}`}>
+                  <div className={styles.heroCardLabel}><span><ShoppingBasket size={20} aria-hidden="true" /></span>Start buying</div>
+                  <h2>Shop available produce</h2>
+                  <p>Explore current listings and find the right route for what you need.</p>
+                  <div className={styles.heroQuickLinks} aria-label="Quick marketplace links">
+                    {shopQuickLinks.map((item) => <a href={`/marketplace?search=${encodeURIComponent(item)}`} key={item}>{item}</a>)}
+                  </div>
+                  <a className={styles.heroCardAction} href="/marketplace">Browse listings<ArrowRight size={17} aria-hidden="true" /></a>
+                </article>
+
+                <article className={`${styles.heroUtilityCard} ${styles.supplyHeroCard}`}>
+                  <div className={styles.heroCardLabel}><span><Sprout size={20} aria-hidden="true" /></span>Start selling</div>
+                  <h2>Sell or supply through Ghana Growers</h2>
+                  <p>Choose the pathway that fits your produce, farm inputs, or supplier profile.</p>
+                  <div className={styles.supplyActionLinks}>
+                    {supplyQuickLinks.map((item) => <a href={item.href} key={item.label}>{item.label}<ArrowRight size={15} aria-hidden="true" /></a>)}
+                  </div>
+                  <a className={styles.heroCardAction} href="/submit-listing">Submit a listing<ArrowRight size={17} aria-hidden="true" /></a>
+                </article>
+              </div>
             </div>
-            <div className={styles.connectionNote}>
-              <UsersRound size={19} aria-hidden="true" />
-              <span>One network for farmers, buyers and suppliers</span>
+          </section>
+        ) : (
+          <section className={styles.hero}>
+            <Image src={config.heroImage} alt="Ghanaian agriculture and local market activity" fill priority sizes="100vw" />
+            <div className={styles.heroShade} aria-hidden="true" />
+            <div className={styles.heroInner}>
+              <span className={styles.heroKicker}>{config.campaignLine ?? "Buy Local. Sell Your Harvest. Grow With Us."}</span>
+              <h1 className={config.headlineLines ? styles.heroHeadlineLines : undefined}>
+                {config.headlineLines
+                  ? config.headlineLines.map((line) => <span key={line}>{line}</span>)
+                  : config.headline}
+              </h1>
+              <p>{config.support}</p>
+              <div className={styles.heroActions}>
+                <a className={styles.primaryAction} href={config.primaryHref}>{config.primary}<ArrowRight size={18} aria-hidden="true" /></a>
+                <a className={styles.secondaryAction} href={config.secondaryHref}>{config.secondary}</a>
+              </div>
+              <div className={styles.connectionNote}>
+                <UsersRound size={19} aria-hidden="true" />
+                <span>One network for farmers, buyers and suppliers</span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section id="paths" className={styles.pathways} aria-labelledby="pathways-title">
           <div className={styles.sectionIntro}>

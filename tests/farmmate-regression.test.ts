@@ -7611,7 +7611,13 @@ const tests: TestCase[] = [
       assert.equal(component.includes("Fictional layout placeholders"), true);
       assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
       assert.equal(component.includes('["Buy Local.", "Sell Your Harvest.", "Grow With Us."]'), true);
-      assert.equal(component.includes("connects farmers, buyers and agricultural suppliers"), true);
+      assert.equal(component.includes("connects farmers, buyers, and suppliers"), true);
+      assert.equal(component.includes("Reviewed marketplace for Ghana agriculture"), true);
+      assert.equal(component.includes("trusted sourcing support"), true);
+      assert.equal(component.includes("Shop available produce"), true);
+      assert.equal(component.includes("Sell or supply through Ghana Growers"), true);
+      assert.equal(component.includes("Browse listings"), true);
+      assert.equal(component.includes("Submit a listing"), true);
       assert.equal(component.includes("reviewed growers"), true);
       assert.equal(component.includes("Fresh Produce"), true);
       assert.equal(component.includes("Farm Inputs"), true);
@@ -7630,6 +7636,8 @@ const tests: TestCase[] = [
       assert.equal(styles.includes(".marketRouteGrid"), true);
       assert.equal(styles.includes(".farmMateProduct"), true);
       assert.equal(styles.includes(".recommendedLogoGrid"), true);
+      assert.equal(styles.includes(".marketplaceHeroInner"), true);
+      assert.equal(styles.includes(".heroUtilityCard"), true);
       assert.equal(styles.includes("@media (max-width: 1080px)"), true);
       assert.equal(styles.includes("@media (max-width: 780px)"), true);
       assert.equal(styles.includes("@media (max-width: 520px)"), true);
