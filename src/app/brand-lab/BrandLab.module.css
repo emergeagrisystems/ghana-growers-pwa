@@ -223,13 +223,11 @@
   padding: 18px 0 12px;
 }
 .marketplaceHeroCopy { padding-block: 20px; transform: translateY(-68px); }
-.marketplaceHero .heroKicker { width: fit-content; border-left: 3px solid var(--lab-accent); padding-left: 11px; }
-.marketplaceHero h1 { max-width: 660px; margin: 20px 0 22px; color: var(--forest); font-size: 74px; line-height: 0.86; }
+.marketplaceHero .heroKicker { width: fit-content; border-left: 3px solid var(--lab-accent); padding-left: 11px; color: var(--forest); }
+.marketplaceHero h1 { max-width: 660px; margin: 20px 0 22px; color: var(--forest); font-size: 74px; line-height: 0.98; }
+.marketplaceHero .heroHeadlineLines { display: grid; gap: 2px; }
 .marketplaceHero .heroHeadlineLines span { white-space: nowrap; }
 .marketplaceHeroCopy > p { max-width: 610px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
-.heroBenefits { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
-.heroBenefits span { display: inline-flex; align-items: center; gap: 7px; color: var(--forest); font-size: 12px; font-weight: 850; line-height: 1.45; }
-.heroBenefits svg { flex: none; color: var(--lab-accent); }
 
 .marketplaceHeroDeck { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 4px 0 8px; }
 .heroUtilityCard { position: relative; z-index: 3; width: 94%; border: 1px solid var(--line); border-radius: 8px; padding: 20px; background: var(--ivory); box-shadow: 0 14px 32px rgba(18, 47, 25, 0.11); }
@@ -620,9 +618,8 @@
   .hero h1 { margin-top: 12px; font-size: 43px; line-height: 1; }
   .marketplaceHero { min-height: auto; }
   .marketplaceHeroInner { width: calc(100% - 30px); gap: 32px; padding-block: 52px 62px; }
-  .marketplaceHero h1 { margin-block: 16px 18px; font-size: 46px; line-height: 0.92; }
+  .marketplaceHero h1 { margin-block: 16px 18px; font-size: 46px; line-height: 1; }
   .marketplaceHeroCopy > p { font-size: 15px; line-height: 1.55; }
-  .heroBenefits { display: grid; gap: 10px; margin-top: 22px; }
   .marketplaceHeroDeck { padding: 0; }
   .marketplaceHeroDeck::before { display: none; }
   .heroUtilityCard,

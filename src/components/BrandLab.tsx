@@ -236,15 +236,11 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
           <section className={`${styles.hero} ${styles.marketplaceHero}`}>
             <div className={styles.marketplaceHeroInner}>
               <div className={styles.marketplaceHeroCopy}>
-                <span className={styles.heroKicker}>Reviewed marketplace for Ghana agriculture</span>
+                <span className={styles.heroKicker}>For farmers, buyers &amp; suppliers</span>
                 <h1 className={styles.heroHeadlineLines}>
                   {config.headlineLines?.map((line) => <span key={line}>{line}</span>)}
                 </h1>
                 <p>{config.support}</p>
-                <div className={styles.heroBenefits} aria-label="Ghana Growers marketplace benefits">
-                  <span><ShieldCheck size={18} aria-hidden="true" />Reviewed public information</span>
-                  <span><UsersRound size={18} aria-hidden="true" />Private, human-supported connections</span>
-                </div>
               </div>
 
               <div className={styles.marketplaceHeroDeck}>

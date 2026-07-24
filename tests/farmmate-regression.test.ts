@@ -7612,7 +7612,9 @@ const tests: TestCase[] = [
       assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
       assert.equal(component.includes('["Buy.", "Sell.", "Grow."]'), true);
       assert.equal(component.includes("Buy farm produce, sell your harvest or agricultural supplies"), true);
-      assert.equal(component.includes("Reviewed marketplace for Ghana agriculture"), true);
+      assert.equal(component.includes("For farmers, buyers &amp; suppliers"), true);
+      assert.equal(component.includes("Reviewed public information"), false);
+      assert.equal(component.includes("Private, human-supported connections"), false);
       assert.equal(component.includes('accent: "#E8A33A"'), true);
       assert.equal(component.includes("Browse the Marketplace"), true);
       assert.equal(component.includes("Sell through Ghana Growers"), true);
