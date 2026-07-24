@@ -135,12 +135,16 @@ const recommendedFarmers = [
   { name: "Savanna Roots Farm", region: "Northern Region example", crops: "Yam · Cowpea" }
 ];
 
-const shopQuickLinks = ["Tomatoes", "Plantain", "Maize", "Pepper", "Cassava", "Farm Inputs"];
+const heroMarketplacePathways = [
+  { label: "Fresh Produce", href: "/marketplace?category=Fresh%20Produce" },
+  { label: "Farm Inputs", href: "/marketplace?category=Farm%20Inputs" },
+  { label: "Livestock", href: "/marketplace?category=Livestock" },
+  { label: "Tools & Equipment", href: "/marketplace?category=Tools%20%26%20Equipment" }
+];
 
-const supplyQuickLinks = [
-  { label: "Sell Produce", href: "/submit-listing" },
-  { label: "List Farm Inputs", href: "/submit-listing" },
-  { label: "Supplier Directory", href: "/supplier-directory" }
+const heroJoinLinks = [
+  { label: "Join as a Farmer", href: "/join/farmer" },
+  { label: "Join as a Supplier", href: "/join/supplier" }
 ];
 
 const howItWorks = [
@@ -237,10 +241,6 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
                   {config.headlineLines?.map((line) => <span key={line}>{line}</span>)}
                 </h1>
                 <p>{config.support}</p>
-                <div className={styles.heroActions}>
-                  <a className={styles.primaryAction} href={config.primaryHref}>{config.primary}<ArrowRight size={18} aria-hidden="true" /></a>
-                  <a className={styles.secondaryAction} href={config.secondaryHref}>{config.secondary}</a>
-                </div>
                 <div className={styles.heroBenefits} aria-label="Ghana Growers marketplace benefits">
                   <span><ShieldCheck size={18} aria-hidden="true" />Reviewed public information</span>
                   <span><UsersRound size={18} aria-hidden="true" />Private, human-supported connections</span>
@@ -248,29 +248,30 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
               </div>
 
               <div className={styles.marketplaceHeroDeck}>
-                <div className={styles.heroSupportImage}>
-                  <Image src={config.heroImage} alt="Local produce being reviewed at a Ghanaian market" fill priority sizes="(max-width: 780px) 100vw, 46vw" />
-                  <span>Local trade · practical tools · human review</span>
-                </div>
-
                 <article className={`${styles.heroUtilityCard} ${styles.shopHeroCard}`}>
-                  <div className={styles.heroCardLabel}><span><ShoppingBasket size={20} aria-hidden="true" /></span>Start buying</div>
-                  <h2>Shop available produce</h2>
-                  <p>Explore current listings and find the right route for what you need.</p>
-                  <div className={styles.heroQuickLinks} aria-label="Quick marketplace links">
-                    {shopQuickLinks.map((item) => <a href={`/marketplace?search=${encodeURIComponent(item)}`} key={item}>{item}</a>)}
+                  <div className={styles.shopCardImage}>
+                    <Image src={config.heroImage} alt="Local produce being reviewed at a Ghanaian market" fill priority sizes="(max-width: 780px) 100vw, 44vw" />
+                  <span>Local trade · practical tools · human review</span>
                   </div>
-                  <a className={styles.heroCardAction} href="/marketplace">Browse listings<ArrowRight size={17} aria-hidden="true" /></a>
+
+                  <div className={styles.heroCardContent}>
+                    <h2>Browse the Marketplace</h2>
+                    <p>Explore reviewed public listings through the pathway that fits what you need.</p>
+                    <div className={styles.heroPathwayLinks} aria-label="Marketplace pathways">
+                      {heroMarketplacePathways.map((item) => <a href={item.href} key={item.label}>{item.label}<ArrowRight size={14} aria-hidden="true" /></a>)}
+                    </div>
+                    <a className={styles.heroPrimaryAction} href="/marketplace">Browse Marketplace<ArrowRight size={17} aria-hidden="true" /></a>
+                  </div>
                 </article>
 
                 <article className={`${styles.heroUtilityCard} ${styles.supplyHeroCard}`}>
                   <div className={styles.heroCardLabel}><span><Sprout size={20} aria-hidden="true" /></span>Start selling</div>
-                  <h2>Sell or supply through Ghana Growers</h2>
-                  <p>Choose the pathway that fits your produce, farm inputs, or supplier profile.</p>
-                  <div className={styles.supplyActionLinks}>
-                    {supplyQuickLinks.map((item) => <a href={item.href} key={item.label}>{item.label}<ArrowRight size={15} aria-hidden="true" /></a>)}
+                  <h2>Sell through Ghana Growers</h2>
+                  <p>Farmers and suppliers can submit marketplace listings for review before they appear publicly.</p>
+                  <a className={styles.heroPrimaryAction} href="/submit-listing">Submit a Listing<ArrowRight size={17} aria-hidden="true" /></a>
+                  <div className={styles.sellerJoinLinks} aria-label="Join Ghana Growers">
+                    {heroJoinLinks.map((item) => <a href={item.href} key={item.label}>{item.label}<ArrowRight size={14} aria-hidden="true" /></a>)}
                   </div>
-                  <a className={styles.heroCardAction} href="/submit-listing">Submit a listing<ArrowRight size={17} aria-hidden="true" /></a>
                 </article>
               </div>
             </div>
