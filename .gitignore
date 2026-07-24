@@ -2,6 +2,7 @@ node_modules
 .next
 .farmmate-test-dist
 out
+supabase/.temp/
 *.tsbuildinfo
 .env*
 !.env.example
