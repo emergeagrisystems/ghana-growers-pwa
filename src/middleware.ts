@@ -21,11 +21,43 @@ function isAllowedPrelaunchRoute(pathname: string) {
   return isPublicFarmMatePilotRoute(pathname) || isControlledPrelaunchRoute(pathname) || isPublicAsset(pathname);
 }
 
+function requestHeaders(request: NextRequest, isBrandLab = false) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete("x-ghana-growers-brand-lab");
+
+  if (isBrandLab) {
+    requestHeaders.set("x-ghana-growers-brand-lab", "1");
+  }
+
+  return requestHeaders;
+}
+
+function nextResponse(request: NextRequest, isBrandLab = false) {
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders(request, isBrandLab)
+    }
+  });
+}
+
+function rewriteResponse(request: NextRequest, destination: URL) {
+  return NextResponse.rewrite(destination, {
+    request: {
+      headers: requestHeaders(request)
+    }
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // The page performs its own preview-deployment or authorized-admin check.
+  if (pathname === "/brand-lab") {
+    return nextResponse(request, true);
+  }
+
   if (!prelaunchEnabled()) {
-    return NextResponse.next();
+    return nextResponse(request);
   }
 
   const previewAccessGranted = await verifyPreviewAccessToken(
@@ -34,11 +66,11 @@ export async function middleware(request: NextRequest) {
   );
 
   if (previewAccessGranted) {
-    return NextResponse.next();
+    return nextResponse(request);
   }
 
   if (pathname === "/") {
-    return NextResponse.rewrite(new URL("/launching-soon", request.url));
+    return rewriteResponse(request, new URL("/launching-soon", request.url));
   }
 
   if (pathname === "/join/supplier" || pathname === "/supplier-registration") {
@@ -46,10 +78,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAllowedPrelaunchRoute(pathname)) {
-    return NextResponse.next();
+    return nextResponse(request);
   }
 
-  return NextResponse.rewrite(new URL("/launching-soon", request.url));
+  return rewriteResponse(request, new URL("/launching-soon", request.url));
 }
 
 export const config = {

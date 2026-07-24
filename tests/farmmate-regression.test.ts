@@ -7585,6 +7585,76 @@ const tests: TestCase[] = [
       assert.equal(combined.includes("buttons") && combined.includes("one follow-up question at a time"), true);
       assert.equal(combined.includes("feedback") && combined.includes("final answer"), true);
     }
+  },
+  {
+    name: "Brand lab remains private and contains four fictional responsive directions",
+    run: () => {
+      const page = repoFile("src/app/brand-lab/page.tsx");
+      const component = repoFile("src/components/BrandLab.tsx");
+      const logos = repoFile("src/components/BrandLabLogos.tsx");
+      const styles = repoFile("src/app/brand-lab/BrandLab.module.css");
+      const middleware = repoFile("src/middleware.ts");
+      const robots = repoFile("src/app/robots.ts");
+
+      assert.equal(page.includes('process.env.VERCEL_ENV === "preview"'), true);
+      assert.equal(page.includes("getAdminAuthorizationFromAccessToken"), true);
+      assert.equal(page.includes("noIndexMetadata"), true);
+      assert.equal(middleware.includes('pathname === "/brand-lab"'), true);
+      assert.equal(middleware.includes('requestHeaders.delete("x-ghana-growers-brand-lab")'), true);
+      assert.equal(robots.includes('"/brand-lab"'), true);
+      assert.equal(component.includes('harvest: {'), true);
+      assert.equal(component.includes('growth: {'), true);
+      assert.equal(component.includes('market: {'), true);
+      assert.equal(component.includes('recommended: {'), true);
+      assert.equal(page.includes('"recommended"'), true);
+      assert.equal(component.includes("Design example — not live data"), true);
+      assert.equal(component.includes("Fictional layout placeholders"), true);
+      assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
+      assert.equal(component.includes('["Buy.", "Sell.", "Grow."]'), true);
+      assert.equal(component.includes("Buy farm produce, sell your harvest or agricultural supplies"), true);
+      assert.equal(component.includes("For farmers, buyers &amp; suppliers"), true);
+      assert.equal(component.includes("Reviewed public information"), false);
+      assert.equal(component.includes("Private, human-supported connections"), false);
+      assert.equal(component.includes('accent: "#E8A33A"'), true);
+      assert.equal(component.includes("Browse the Marketplace"), true);
+      assert.equal(component.includes("Sell through Ghana Growers"), true);
+      assert.equal(component.includes("Browse Marketplace"), true);
+      assert.equal(component.includes("Submit a Listing"), true);
+      assert.equal(component.includes("heroMarketplacePathways"), true);
+      assert.equal(component.includes("heroJoinLinks"), true);
+      assert.equal(component.includes("shopQuickLinks"), false);
+      assert.equal(component.includes("supplyQuickLinks"), false);
+      assert.equal(component.includes("reviewed growers"), true);
+      assert.equal(component.includes("Fresh Produce"), true);
+      assert.equal(component.includes("Farm Inputs"), true);
+      assert.equal(component.includes("Livestock"), true);
+      assert.equal(component.includes("Tools & Equipment"), true);
+      assert.equal(component.includes("Adom Field Collective"), true);
+      assert.equal(component.includes("Savanna Roots Farm"), true);
+      assert.equal(component.includes("Ghana Growers reviews"), true);
+      assert.equal(component.includes("Recommended Direction is the preferred homepage."), true);
+      assert.equal(component.includes("Harvest Amber"), true);
+      assert.equal(logos.includes("FieldSunriseLogo"), true);
+      assert.equal(logos.includes("CultivatedMonogramLogo"), true);
+      assert.equal(logos.includes("ConnectionWordmarkLogo"), true);
+      assert.equal(logos.includes("RecommendedWordmarkLogo"), true);
+      assert.equal(logos.includes("RefinedCultivatedIcon"), true);
+      assert.equal(styles.includes(".marketRouteGrid"), true);
+      assert.equal(styles.includes(".farmMateProduct"), true);
+      assert.equal(styles.includes(".recommendedLogoGrid"), true);
+      assert.equal(styles.includes(".marketplaceHeroInner"), true);
+      assert.equal(styles.includes(".heroUtilityCard"), true);
+      assert.equal(styles.includes(".shopCardImage"), true);
+      assert.equal(styles.includes(".heroPathwayLinks"), true);
+      assert.equal(styles.includes(".heroPrimaryAction"), true);
+      assert.equal(styles.includes("color: #143a1f"), true);
+      assert.equal(styles.includes("@media (max-width: 1080px)"), true);
+      assert.equal(styles.includes("@media (max-width: 780px)"), true);
+      assert.equal(styles.includes("@media (max-width: 520px)"), true);
+      assert.equal(component.includes("Ibrahim"), false);
+      assert.equal(component.includes("Duakib"), false);
+      assert.equal(component.includes("S. K. Nart"), false);
+    }
   }
 ];
 
