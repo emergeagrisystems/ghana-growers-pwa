@@ -224,7 +224,7 @@
 }
 .marketplaceHeroCopy { padding-block: 20px; }
 .marketplaceHero .heroKicker { width: fit-content; border-left: 3px solid var(--lab-accent); padding-left: 11px; }
-.marketplaceHero h1 { max-width: 660px; margin: 20px 0 22px; color: var(--forest); font-size: 56px; line-height: 0.94; }
+.marketplaceHero h1 { max-width: 660px; margin: 20px 0 22px; color: var(--forest); font-size: 74px; line-height: 0.86; }
 .marketplaceHero .heroHeadlineLines span { white-space: nowrap; }
 .marketplaceHeroCopy > p { max-width: 610px; margin: 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
 .heroBenefits { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
@@ -520,7 +520,7 @@
   .mobileNavigation nav a:hover { background: var(--sage); }
   .hero h1 { font-size: 66px; }
   .marketplaceHeroInner { grid-template-columns: minmax(0, 0.84fr) minmax(460px, 1.16fr); gap: 42px; padding-block: 48px 54px; }
-  .marketplaceHero h1 { font-size: 44px; }
+  .marketplaceHero h1 { font-size: 58px; }
   .heroUtilityCard { width: 96%; }
   .supplyHeroCard { width: 90%; }
   .marketSection { grid-template-columns: 1fr; }
@@ -620,7 +620,7 @@
   .hero h1 { margin-top: 12px; font-size: 43px; line-height: 1; }
   .marketplaceHero { min-height: auto; }
   .marketplaceHeroInner { width: calc(100% - 30px); gap: 32px; padding-block: 52px 62px; }
-  .marketplaceHero h1 { margin-block: 16px 18px; font-size: 36px; line-height: 0.98; }
+  .marketplaceHero h1 { margin-block: 16px 18px; font-size: 46px; line-height: 0.92; }
   .marketplaceHeroCopy > p { font-size: 15px; line-height: 1.55; }
   .heroBenefits { display: grid; gap: 10px; margin-top: 22px; }
   .marketplaceHeroDeck { padding: 0; }

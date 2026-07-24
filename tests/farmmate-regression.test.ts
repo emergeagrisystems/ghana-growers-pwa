@@ -7610,10 +7610,10 @@ const tests: TestCase[] = [
       assert.equal(component.includes("Design example — not live data"), true);
       assert.equal(component.includes("Fictional layout placeholders"), true);
       assert.equal(component.includes("Buy Local. Sell Your Harvest. Grow With Us."), true);
-      assert.equal(component.includes('["Buy Local.", "Sell Your Harvest.", "Grow With Us."]'), true);
-      assert.equal(component.includes("connects farmers, buyers, and suppliers"), true);
+      assert.equal(component.includes('["Buy.", "Sell.", "Grow."]'), true);
+      assert.equal(component.includes("Buy farm produce, sell your harvest or agricultural supplies"), true);
       assert.equal(component.includes("Reviewed marketplace for Ghana agriculture"), true);
-      assert.equal(component.includes("trusted sourcing support"), true);
+      assert.equal(component.includes('accent: "#E8A33A"'), true);
       assert.equal(component.includes("Browse the Marketplace"), true);
       assert.equal(component.includes("Sell through Ghana Growers"), true);
       assert.equal(component.includes("Browse Marketplace"), true);
@@ -7631,7 +7631,7 @@ const tests: TestCase[] = [
       assert.equal(component.includes("Savanna Roots Farm"), true);
       assert.equal(component.includes("Ghana Growers reviews"), true);
       assert.equal(component.includes("Recommended Direction is the preferred homepage."), true);
-      assert.equal(component.includes("Mango Orange"), true);
+      assert.equal(component.includes("Harvest Amber"), true);
       assert.equal(logos.includes("FieldSunriseLogo"), true);
       assert.equal(logos.includes("CultivatedMonogramLogo"), true);
       assert.equal(logos.includes("ConnectionWordmarkLogo"), true);

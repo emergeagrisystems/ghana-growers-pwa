@@ -95,12 +95,12 @@ const directionConfig: Record<BrandDirection, DirectionConfig> = {
   recommended: {
     name: "Recommended Direction",
     character: "Warm, trusted and ready to grow",
-    accent: "#F28C28",
+    accent: "#E8A33A",
     heroImage: "/images/hero/ghana-growers-trade-hero.png",
-    headline: "Buy Local. Sell Your Harvest. Grow With Us.",
-    headlineLines: ["Buy Local.", "Sell Your Harvest.", "Grow With Us."],
+    headline: "Buy. Sell. Grow.",
+    headlineLines: ["Buy.", "Sell.", "Grow."],
     campaignLine: "Ghana's harvest, moving with purpose",
-    support: "Ghana Growers connects farmers, buyers, and suppliers through a reviewed marketplace, trusted sourcing support, and practical farming tools.",
+    support: "Buy farm produce, sell your harvest or agricultural supplies, and grow through better market access and practical farming tools.",
     primary: "Browse Marketplace",
     primaryHref: "/marketplace",
     secondary: "Sell Your Harvest",
@@ -469,16 +469,16 @@ export function BrandLab({ direction }: { direction: BrandDirection }) {
           <div className={styles.recommendationLead}>
             <span className={styles.eyebrow}>Professional recommendation</span>
             <h2 id="recommendation-title">Recommended Direction is the preferred homepage.</h2>
-            <p>It combines Harvest Energy&apos;s warmth and image-led momentum with Fresh Growth&apos;s spacing discipline and stronger FarmMate product presence. Mango remains controlled so Forest Green, Cream and real agricultural imagery carry the brand.</p>
+            <p>It combines Harvest Energy&apos;s warmth and image-led momentum with Fresh Growth&apos;s spacing discipline and stronger FarmMate product presence. Harvest Amber remains controlled so Forest Green, Cream and real agricultural imagery carry the brand.</p>
           </div>
           <dl>
             <div><dt>Preferred homepage</dt><dd>Recommended Direction</dd></div>
-            <div><dt>Energetic accent</dt><dd>Mango Orange</dd></div>
+            <div><dt>Energetic accent</dt><dd>Harvest Amber</dd></div>
             <div><dt>Identity foundation</dt><dd>Connected Wordmark</dd></div>
             <div><dt>App icon direction</dt><dd>Refined Cultivated GG</dd></div>
           </dl>
           <div className={styles.riskGrid}>
-            <article><strong>Accent discipline</strong><p>Keep Mango near 5–10% of the composition and away from long or thin text.</p></article>
+            <article><strong>Accent discipline</strong><p>Keep Harvest Amber near 5–10% of the composition and away from long or thin text.</p></article>
             <article><strong>Trust language</strong><p>Continue using reviewed for general public records and reserve verified for confirmed statuses.</p></article>
             <article><strong>Small-size identity</strong><p>Use the refined GG icon below wordmark sizes; do not squeeze the full name into favicon spaces.</p></article>
           </div>
