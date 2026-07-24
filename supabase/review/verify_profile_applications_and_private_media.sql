@@ -1,10 +1,13 @@
 -- Read-only verification for 20260723035406_profile_applications_and_private_media.sql.
 -- Compare the three row counts below with the precheck output.
 
-select version, name, inserted_at
-from supabase_migrations.schema_migrations
-where version in ('20260721190621', '20260721223536', '20260723035406')
-order by version;
+select
+  sm.version,
+  to_jsonb(sm)->>'name' as name,
+  to_jsonb(sm)->>'inserted_at' as inserted_at
+from supabase_migrations.schema_migrations sm
+where sm.version in ('20260721190621', '20260721223536', '20260723035406')
+order by sm.version;
 
 select
   target.table_name,

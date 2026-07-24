@@ -7620,6 +7620,20 @@ const tests: TestCase[] = [
       assert.equal(migration.includes("to anon"), false);
       assert.equal(migration.includes("to authenticated"), false);
     }
+  },
+  {
+    name: "Profile application verification tolerates optional migration history columns",
+    run: () => {
+      const verification = repoFile("supabase/review/verify_profile_applications_and_private_media.sql").toLowerCase();
+
+      assert.equal(verification.includes("to_jsonb(sm)->>'name' as name"), true);
+      assert.equal(verification.includes("to_jsonb(sm)->>'inserted_at' as inserted_at"), true);
+      assert.equal(verification.includes("select version, name, inserted_at"), false);
+      assert.equal(verification.includes("where sm.version in ('20260721190621', '20260721223536', '20260723035406')"), true);
+      assert.equal(verification.includes("insert into"), false);
+      assert.equal(verification.includes("update public."), false);
+      assert.equal(verification.includes("delete from"), false);
+    }
   }
 ];
 
