@@ -14,6 +14,7 @@ export default function robots(): MetadataRoute.Robots {
         "/api/",
         "/api/*",
         "/dev-preview",
+        "/logo-lab",
         "/whatsapp-communities",
         "/about/blog"
       ]
