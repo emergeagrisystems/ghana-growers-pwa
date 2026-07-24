@@ -7585,6 +7585,55 @@ const tests: TestCase[] = [
       assert.equal(combined.includes("buttons") && combined.includes("one follow-up question at a time"), true);
       assert.equal(combined.includes("feedback") && combined.includes("final answer"), true);
     }
+  },
+  {
+    name: "Logo identity lab stays private and uses original responsive vector concepts",
+    run: () => {
+      const page = repoFile("src/app/logo-lab/page.tsx");
+      const component = repoFile("src/components/logo-lab/LogoLab.tsx");
+      const artwork = repoFile("src/components/logo-lab/LogoArtwork.tsx");
+      const styles = repoFile("src/app/logo-lab/LogoLab.module.css");
+      const middleware = repoFile("src/middleware.ts");
+      const robots = repoFile("src/app/robots.ts");
+      const sitemap = repoFile("src/app/sitemap.ts");
+      const logoLabSource = `${component}\n${artwork}`;
+
+      assert.equal(page.includes('process.env.VERCEL_ENV === "preview"'), true);
+      assert.equal(page.includes("getAdminUserFromAccessToken"), true);
+      assert.equal(page.includes('redirect("/admin/login?next=/logo-lab")'), true);
+      assert.equal(page.includes("noIndexMetadata"), true);
+      assert.equal(middleware.includes('pathname === "/logo-lab"'), true);
+      assert.equal(robots.includes('"/logo-lab"'), true);
+      assert.equal(sitemap.includes('"/logo-lab"'), false);
+
+      assert.equal(logoLabSource.includes("Connected Wordmark"), true);
+      assert.equal(logoLabSource.includes("Cultivated GG"), true);
+      assert.equal(logoLabSource.includes("Field-to-Market Mark"), true);
+      assert.equal(logoLabSource.includes("Pure Typographic Wordmark"), true);
+      assert.equal(component.includes("Horizontal wordmark"), true);
+      assert.equal(component.includes("Compact stacked"), true);
+      assert.equal(component.includes("Symbol + wordmark"), true);
+      assert.equal(component.includes("One-colour Forest"), true);
+      assert.equal(component.includes("Cream on Forest"), true);
+      assert.equal(component.includes("Grayscale"), true);
+      assert.equal(component.includes("16, 32, 48, 192"), true);
+      assert.equal(component.includes("Desktop website header"), true);
+      assert.equal(component.includes("WhatsApp profile"), true);
+      assert.equal(component.includes("Farmer handbook"), true);
+      assert.equal(component.includes("Produce crate label"), true);
+      assert.equal(component.includes("Connected Wordmark + Cultivated GG icon"), true);
+
+      assert.equal(artwork.includes('viewBox="0 0 100 100"'), true);
+      assert.equal(artwork.includes("<title>{title}</title>"), true);
+      assert.equal(artwork.includes("<desc>{description}</desc>"), true);
+      assert.equal(artwork.includes("<image"), false);
+      assert.equal(artwork.includes("<filter"), false);
+      assert.equal(artwork.includes("linearGradient"), false);
+      assert.equal(styles.includes("overflow-x: clip"), true);
+      assert.equal(styles.includes("@media (max-width: 980px)"), true);
+      assert.equal(styles.includes("@media (max-width: 720px)"), true);
+      assert.equal(styles.includes("@media (max-width: 430px)"), true);
+    }
   }
 ];
 

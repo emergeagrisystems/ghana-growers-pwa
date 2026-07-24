@@ -18,7 +18,12 @@ function isPublicAsset(pathname: string) {
 }
 
 function isAllowedPrelaunchRoute(pathname: string) {
-  return isPublicFarmMatePilotRoute(pathname) || isControlledPrelaunchRoute(pathname) || isPublicAsset(pathname);
+  return (
+    pathname === "/logo-lab" ||
+    isPublicFarmMatePilotRoute(pathname) ||
+    isControlledPrelaunchRoute(pathname) ||
+    isPublicAsset(pathname)
+  );
 }
 
 export async function middleware(request: NextRequest) {
