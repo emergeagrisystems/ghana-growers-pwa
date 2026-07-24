@@ -220,9 +220,9 @@
   align-items: center;
   gap: 74px;
   margin: 0 auto;
-  padding: 42px 0 46px;
+  padding: 18px 0 12px;
 }
-.marketplaceHeroCopy { padding-block: 20px; }
+.marketplaceHeroCopy { padding-block: 20px; transform: translateY(-68px); }
 .marketplaceHero .heroKicker { width: fit-content; border-left: 3px solid var(--lab-accent); padding-left: 11px; }
 .marketplaceHero h1 { max-width: 660px; margin: 20px 0 22px; color: var(--forest); font-size: 74px; line-height: 0.86; }
 .marketplaceHero .heroHeadlineLines span { white-space: nowrap; }
@@ -231,16 +231,15 @@
 .heroBenefits span { display: inline-flex; align-items: center; gap: 7px; color: var(--forest); font-size: 12px; font-weight: 850; line-height: 1.45; }
 .heroBenefits svg { flex: none; color: var(--lab-accent); }
 
-.marketplaceHeroDeck { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 4px 0 8px 18px; }
-.marketplaceHeroDeck::before { position: absolute; left: 0; top: 18%; bottom: 14%; width: 3px; border-radius: 999px; background: var(--lab-accent); content: ""; }
+.marketplaceHeroDeck { position: relative; display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 4px 0 8px; }
 .heroUtilityCard { position: relative; z-index: 3; width: 94%; border: 1px solid var(--line); border-radius: 8px; padding: 20px; background: var(--ivory); box-shadow: 0 14px 32px rgba(18, 47, 25, 0.11); }
 .shopHeroCard { align-self: flex-start; overflow: hidden; padding: 0; }
-.shopCardImage { position: relative; height: 184px; overflow: hidden; background: var(--sage); }
+.shopCardImage { position: relative; height: 172px; overflow: hidden; background: var(--sage); }
 .shopCardImage img { object-fit: cover; object-position: center 43%; }
 .shopCardImage::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 31, 16, 0.04), rgba(8, 31, 16, 0.38)); content: ""; }
 .shopCardImage > span { position: absolute; left: 16px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 7px; border-radius: 4px; padding: 7px 9px; background: rgba(12, 37, 20, 0.91); color: var(--ivory); font-size: 10px; font-weight: 850; }
 .heroCardContent { padding: 20px; }
-.supplyHeroCard { width: 86%; align-self: flex-end; margin-top: -16px; border-color: var(--forest); background: var(--forest); color: var(--ivory); }
+.supplyHeroCard { width: 86%; align-self: flex-end; margin-top: -42px; border-color: var(--forest); background: var(--forest); color: var(--ivory); }
 .heroCardLabel { display: flex; align-items: center; gap: 10px; color: var(--forest); font-size: 11px; font-weight: 900; text-transform: uppercase; }
 .heroCardLabel > span { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 6px; background: color-mix(in srgb, var(--lab-accent) 23%, var(--ivory)); }
 .heroUtilityCard h2 { margin: 14px 0 6px; color: var(--forest); font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif; font-size: 27px; line-height: 1.04; }
@@ -519,7 +518,7 @@
   .mobileNavigation nav a:last-child { border-bottom: 0; }
   .mobileNavigation nav a:hover { background: var(--sage); }
   .hero h1 { font-size: 66px; }
-  .marketplaceHeroInner { grid-template-columns: minmax(0, 0.84fr) minmax(460px, 1.16fr); gap: 42px; padding-block: 48px 54px; }
+  .marketplaceHeroInner { grid-template-columns: minmax(0, 0.84fr) minmax(460px, 1.16fr); gap: 42px; padding-block: 24px 12px; }
   .marketplaceHero h1 { font-size: 58px; }
   .heroUtilityCard { width: 96%; }
   .supplyHeroCard { width: 90%; }
@@ -554,10 +553,11 @@
   .hero h1 { max-width: 620px; font-size: 52px; }
   .heroInner > p { font-size: 16px; }
   .marketplaceHeroInner { width: min(100% - 36px, 680px); grid-template-columns: 1fr; gap: 44px; padding-block: 66px 74px; }
-  .marketplaceHeroCopy { padding: 0; }
+  .marketplaceHeroCopy { padding: 0; transform: none; }
   .marketplaceHero h1 { max-width: 620px; font-size: 54px; }
   .marketplaceHeroCopy > p { font-size: 16px; }
-  .marketplaceHeroDeck { width: min(100%, 620px); margin-inline: auto; }
+  .marketplaceHeroDeck { width: min(100%, 620px); margin-inline: auto; padding: 4px 0 8px; }
+  .supplyHeroCard { margin-top: -16px; }
   .pathways,
   .featuredSection,
   .howSection,
