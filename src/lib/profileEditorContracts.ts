@@ -97,6 +97,8 @@ export type ProfileEditorRecord = FarmerProfileRecord | SupplierProfileRecord;
 export type PublicationCheck = {
   key: string;
   label: string;
+  state: "passed" | "missing" | "needs-review";
+  required: boolean;
   complete: boolean;
 };
 
@@ -146,32 +148,70 @@ function hasApprovedPhoto(profileImage: string | null, checklist: Record<string,
   return isSafePublicProfileImage(profileImage) || checklist.approvedNoPhoto === true;
 }
 
+function check(
+  key: string,
+  label: string,
+  state: PublicationCheck["state"],
+  required = true
+): PublicationCheck {
+  return { key, label, state, required, complete: state === "passed" };
+}
+
+function textState(value?: string | null): PublicationCheck["state"] {
+  return hasText(value) ? "passed" : "missing";
+}
+
+function imageState(profileImage: string | null, checklist: Record<string, boolean>): PublicationCheck["state"] {
+  if (hasApprovedPhoto(profileImage, checklist)) return "passed";
+  return hasText(profileImage) ? "needs-review" : "missing";
+}
+
 export function farmerPublicationChecks(record: FarmerProfileRecord): PublicationCheck[] {
+  const locationState = !hasText(record.region) && !hasText(record.district) && !hasText(record.farm_location)
+    ? "missing"
+    : hasText(record.region) && (hasText(record.district) || hasText(record.farm_location))
+      ? "passed"
+      : "needs-review";
   return [
-    { key: "farm-name", label: "Public farm name", complete: hasText(record.farm_name) },
-    { key: "slug", label: "Valid public URL slug", complete: isValidPublicProfileSlug(record.slug) },
-    { key: "location", label: "Region and public location", complete: hasText(record.region) && (hasText(record.district) || hasText(record.farm_location)) },
-    { key: "farm-type", label: "Farm type", complete: farmerFarmTypes.includes(record.farm_type as (typeof farmerFarmTypes)[number]) },
-    { key: "products", label: "At least one crop or product", complete: uniqueTextValues(record.products).length > 0 },
-    { key: "description", label: "Public description", complete: hasText(record.description) },
-    { key: "image", label: "Approved main image or approved no-photo state", complete: hasApprovedPhoto(record.profile_image_url, record.launch_checklist) },
-    { key: "verified", label: "Verification status is Verified", complete: record.verification_status === "Verified" },
-    { key: "launch-ready", label: "Launch Ready is marked", complete: record.launch_ready === true },
-    { key: "non-demo", label: "Record is not demo or placeholder data", complete: !isDemoProfileOrigin(record.source) }
+    check("farm-name", "Public farm name", textState(record.farm_name)),
+    check("slug", "Valid unique public URL slug", !hasText(record.slug) ? "missing" : isValidPublicProfileSlug(record.slug) ? "passed" : "needs-review"),
+    check("location", "Region and public location", locationState),
+    check("farm-type", "Farm type", !hasText(record.farm_type) ? "missing" : farmerFarmTypes.includes(record.farm_type as (typeof farmerFarmTypes)[number]) ? "passed" : "needs-review"),
+    check("products", "At least one crop or product", uniqueTextValues(record.products).length > 0 ? "passed" : "missing"),
+    check("description", "Public description", textState(record.description)),
+    check("image", "Approved main image or explicitly approved no-photo state", imageState(record.profile_image_url, record.launch_checklist)),
+    check("verified", "Verification status is Verified", record.verification_status === "Verified" ? "passed" : "needs-review"),
+    check("launch-ready", "Launch Ready is marked", record.launch_ready === true ? "passed" : "needs-review"),
+    check("non-demo", "Record is not demo or placeholder data", !isDemoProfileOrigin(record.source) ? "passed" : "needs-review")
   ];
 }
 
 export function supplierPublicationChecks(record: SupplierProfileRecord): PublicationCheck[] {
+  const normalizedCategories = normalizeSupplierCategories([record.category]);
+  const categoryState = !hasText(record.category)
+    ? "missing"
+    : unsupportedSupplierCategories([record.category]).length > 0 || normalizedCategories.length === 0
+      ? "needs-review"
+      : "passed";
+  const serviceAreaState = hasText(record.service_coverage_area) || hasText(record.region) || hasText(record.district)
+    ? "passed"
+    : "missing";
+  const descriptionState = !hasText(record.region) && !hasText(record.district)
+    ? "missing"
+    : hasText(record.region) && hasText(record.district)
+      ? "passed"
+      : "needs-review";
   return [
-    { key: "company-name", label: "Public company name", complete: hasText(record.company_name) },
-    { key: "slug", label: "Valid public URL slug", complete: isValidPublicProfileSlug(record.slug) },
-    { key: "category", label: "Approved supplier category", complete: normalizeSupplierCategories([record.category]).length > 0 },
-    { key: "products", label: "At least one product or service", complete: uniqueTextValues(record.products_services).length > 0 },
-    { key: "service-area", label: "Service coverage area", complete: hasText(record.service_coverage_area) },
-    { key: "description", label: "Enough public details to generate a business description", complete: hasText(record.region) && hasText(record.district) },
-    { key: "image", label: "Approved public image or approved no-photo state", complete: hasApprovedPhoto(record.profile_image_url || record.logo_url, record.launch_checklist) },
-    { key: "verified", label: "Verification status is Verified", complete: record.verification_status === "Verified" },
-    { key: "non-demo", label: "Record is not demo or placeholder data", complete: !isDemoProfileOrigin(record.source) }
+    check("company-name", "Public company name", textState(record.company_name)),
+    check("slug", "Valid unique public URL slug", !hasText(record.slug) ? "missing" : isValidPublicProfileSlug(record.slug) ? "passed" : "needs-review"),
+    check("category", "Approved supplier category", categoryState),
+    check("products", "At least one product or service", uniqueTextValues(record.products_services).length > 0 ? "passed" : "missing"),
+    check("service-area", "Service coverage or public location", serviceAreaState),
+    check("description", "Public business description", descriptionState),
+    check("image", "Approved public image or explicitly approved no-photo state", imageState(record.profile_image_url || record.logo_url, record.launch_checklist)),
+    check("verified", "Verification status is Verified", record.verification_status === "Verified" ? "passed" : "needs-review"),
+    check("launch-ready", "Launch readiness is marked", record.launch_ready === true ? "passed" : "needs-review"),
+    check("non-demo", "Record is not demo or placeholder data", !isDemoProfileOrigin(record.source) ? "passed" : "needs-review")
   ];
 }
 

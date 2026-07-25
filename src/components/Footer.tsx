@@ -23,7 +23,7 @@ const legalLinks = [
 export function Footer() {
   const pathname = usePathname();
 
-  if (isPublicFarmMatePilotPage(pathname)) {
+  if (isPublicFarmMatePilotPage(pathname) || pathname.startsWith("/admin/profiles/")) {
     return null;
   }
 

@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   Star,
   Trash2,
+  UploadCloud,
   X
 } from "lucide-react";
 import Image from "next/image";
@@ -209,6 +210,89 @@ function OrderedListField({ label, values, onChange, placeholder, error }: {
   );
 }
 
+function PublicImageControl({
+  label,
+  value,
+  uploading,
+  onUpload,
+  onRemove
+}: {
+  label: string;
+  value: string | null;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-leaf-900/10 bg-leaf-50/45 p-4">
+      <p className="text-sm font-black text-ink">{label}</p>
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative h-28 w-full overflow-hidden rounded-md bg-white ring-1 ring-leaf-900/10 sm:w-40">
+          {value ? <Image src={value} alt="Current approved public media" fill unoptimized className="object-cover" /> : <div className="grid h-full place-items-center text-ink/35"><ImageIcon className="h-8 w-8" /><span className="sr-only">No public image selected</span></div>}
+        </div>
+        <div className="flex flex-1 flex-wrap gap-2">
+          <label className="admin-action-secondary cursor-pointer">
+            <UploadCloud className="h-4 w-4" /> {uploading ? "Uploading..." : value ? "Replace" : "Upload"}
+            <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.currentTarget.value = ""; }} />
+          </label>
+          {value ? <button type="button" onClick={onRemove} className="admin-action-secondary text-tomato"><Trash2 className="h-4 w-4" /> Remove</button> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PublicGalleryControl({
+  label,
+  values,
+  uploading,
+  onUpload,
+  onChange
+}: {
+  label: string;
+  values: string[];
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onChange: (values: string[]) => void;
+}) {
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= values.length) return;
+    const next = [...values];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+  return (
+    <fieldset className="rounded-md border border-leaf-900/10 bg-leaf-50/45 p-4">
+      <legend className="px-1 text-sm font-black text-ink">{label}</legend>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {values.map((value, index) => (
+          <div key={value} className="overflow-hidden rounded-md bg-white ring-1 ring-leaf-900/10">
+            <div className="relative aspect-[4/3]"><Image src={value} alt={`${label} image ${index + 1}`} fill unoptimized className="object-cover" /></div>
+            <div className="flex items-center justify-between gap-2 p-2">
+              <span className="text-xs font-black text-ink/55">Image {index + 1}</span>
+              <div className="flex gap-1">
+                <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="admin-icon-button" aria-label={`Move ${label} image up`}><ArrowUp className="h-4 w-4" /></button>
+                <button type="button" onClick={() => move(index, 1)} disabled={index === values.length - 1} className="admin-icon-button" aria-label={`Move ${label} image down`}><ArrowDown className="h-4 w-4" /></button>
+                <button type="button" onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))} className="admin-icon-button text-tomato" aria-label={`Remove ${label} image`}><Trash2 className="h-4 w-4" /></button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {values.length === 0 ? <p className="mt-2 text-sm font-semibold text-ink/45">No approved public images selected.</p> : null}
+      <label className="admin-action-secondary mt-3 w-fit cursor-pointer">
+        <UploadCloud className="h-4 w-4" /> {uploading ? "Uploading..." : "Add image"}
+        <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.currentTarget.value = ""; }} />
+      </label>
+    </fieldset>
+  );
+}
+
+function StatusSummary({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-md border border-leaf-900/10 bg-leaf-50 px-4 py-3"><p className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</p><span className="mt-2 inline-flex rounded-full bg-white px-3 py-1 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">{value}</span></div>;
+}
+
 function Section({ title, description, privateSection = false, children }: {
   title: string;
   description?: string;
@@ -241,6 +325,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoadError("");
@@ -382,6 +467,49 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
     await load();
   }
 
+  async function uploadPublicImage(
+    file: File,
+    target: "profile_image_url" | "logo_url" | "farm_photo_urls" | "produce_photo_urls"
+  ) {
+    if (!draft || uploadingTarget) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setSaveError("Upload a JPG, PNG, or WEBP image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError("Image must be 5MB or smaller.");
+      return;
+    }
+    setUploadingTarget(target);
+    setSaveError("");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("bucket", kind === "farmer" ? "farmers" : "suppliers");
+    const response = await fetch("/api/admin/uploads", { method: "POST", body: formData }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+    setUploadingTarget(null);
+    if (!response?.ok || !result?.publicUrl) {
+      setSaveError(result?.error ?? "The image could not be uploaded.");
+      return;
+    }
+    setDraft((current) => {
+      if (!current) return current;
+      const existingGallery = target === "farm_photo_urls"
+        ? ("farm_photo_urls" in current ? current.farm_photo_urls : [])
+        : target === "produce_photo_urls"
+          ? ("produce_photo_urls" in current ? current.produce_photo_urls : [])
+          : [];
+      const nextValue = target === "farm_photo_urls" || target === "produce_photo_urls"
+        ? Array.from(new Set([...existingGallery, result.publicUrl as string]))
+        : result.publicUrl;
+      return {
+        ...current,
+        [target]: nextValue,
+        launch_checklist: { ...current.launch_checklist, approvedNoPhoto: false }
+      } as ProfileEditorRecord;
+    });
+  }
+
   if (loadError) {
     return <main className="min-h-screen bg-cream px-4 py-10"><div className="mx-auto max-w-xl rounded-md bg-white p-6 shadow-soft"><AlertCircle className="h-7 w-7 text-tomato" /><h1 className="mt-4 text-2xl font-black text-ink">Profile unavailable</h1><p className="mt-2 text-sm font-semibold text-ink/60">{loadError}</p><button type="button" onClick={() => void load()} className="admin-action-secondary mt-5"><RefreshCw className="h-4 w-4" /> Retry</button></div></main>;
   }
@@ -394,9 +522,11 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
   const title = farmer?.farm_name || supplier?.company_name || `${kind} profile`;
   const previewPhotos = textList(payload.preview.photos);
   const tabs: Array<[EditorTab, string]> = [["overview", "Profile"], ["media", "Media & documents"], ["review", "Review & publication"], ["preview", "Public preview"]];
+  const promotableApplicationMedia = payload.sourceHistory?.privateMedia.filter((item) => item.promotable) ?? [];
+  const privateDocuments = payload.sourceHistory?.privateMedia.filter((item) => !item.promotable) ?? [];
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-cream pb-28">
+    <main className="min-h-screen overflow-x-hidden bg-cream pb-40 sm:pb-28">
       <header className="border-b border-leaf-900/10 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -407,13 +537,14 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
           <div className="flex flex-wrap items-center gap-2 text-xs font-black">
             <span className={`rounded-full px-3 py-1.5 ${payload.eligibility.eligible ? "bg-leaf-100 text-leaf-800" : "bg-ink/8 text-ink/55"}`}>{payload.eligibility.eligible ? "Publicly eligible" : "Currently hidden"}</span>
             <span className="rounded-full bg-leaf-50 px-3 py-1.5 text-ink/60">Admin: {currentAdmin.email}</span>
+            <button type="button" onClick={() => setActiveTab("preview")} className="admin-action-secondary"><Eye className="h-4 w-4" /> Public Preview</button>
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">
-        <nav className="flex gap-2 overflow-x-auto pb-2" aria-label="Profile editor sections">
-          {tabs.map(([tab, label]) => <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`min-h-11 shrink-0 rounded-md px-4 text-sm font-black transition ${activeTab === tab ? "bg-leaf-800 text-white" : "bg-white text-ink/60 ring-1 ring-leaf-900/10 hover:text-leaf-800"}`}>{label}</button>)}
+        <nav className="grid grid-cols-2 gap-2 sm:flex sm:overflow-x-auto sm:pb-2" aria-label="Profile editor sections">
+          {tabs.map(([tab, label]) => <button key={tab} type="button" onClick={() => setActiveTab(tab)} aria-current={activeTab === tab ? "page" : undefined} className={`min-h-11 min-w-0 rounded-md px-3 py-2 text-sm font-black leading-5 transition sm:shrink-0 sm:px-4 ${activeTab === tab ? "bg-leaf-800 text-white" : "bg-white text-ink/60 ring-1 ring-leaf-900/10 hover:text-leaf-800"}`}>{label}</button>)}
         </nav>
 
         {saveError ? <div className="mt-4 flex items-start gap-3 rounded-md border border-tomato/20 bg-red-50 p-4 text-sm font-bold text-tomato" role="alert"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><span>{saveError}</span></div> : null}
@@ -475,26 +606,28 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
 
           {activeTab === "media" ? (
             <>
-              <Section title="Public Media" description="Only approved public URLs belong here. Reorder galleries with the arrow controls; duplicates are removed when saved."><div className="grid gap-4">
+              <Section title="Public Media" description="Upload reviewed public images, or explicitly select an approved image from the linked application. Normal profile editing does not require typing a URL."><div className="grid gap-4">
                 {farmer ? <>
-                  <Field label="Main profile image URL" optional type="url" value={farmer.profile_image_url ?? ""} onChange={(value) => updateField("profile_image_url", value)} error={fieldErrors.profile_image_url} />
-                  <OrderedListField label="Farm gallery" values={farmer.farm_photo_urls} onChange={(value) => updateField("farm_photo_urls", value)} placeholder="Add farm image" error={fieldErrors.farm_photo_urls} />
-                  <OrderedListField label="Produce gallery" values={farmer.produce_photo_urls} onChange={(value) => updateField("produce_photo_urls", value)} placeholder="Add produce image" error={fieldErrors.produce_photo_urls} />
+                  <PublicImageControl label="Main profile image" value={farmer.profile_image_url} uploading={uploadingTarget === "profile_image_url"} onUpload={(file) => void uploadPublicImage(file, "profile_image_url")} onRemove={() => updateField("profile_image_url", null)} />
+                  <PublicGalleryControl label="Farm gallery" values={farmer.farm_photo_urls} uploading={uploadingTarget === "farm_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "farm_photo_urls")} onChange={(value) => updateField("farm_photo_urls", value)} />
+                  <PublicGalleryControl label="Produce gallery" values={farmer.produce_photo_urls} uploading={uploadingTarget === "produce_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "produce_photo_urls")} onChange={(value) => updateField("produce_photo_urls", value)} />
                 </> : null}
                 {supplier ? <>
-                  <Field label="Public logo URL" optional type="url" value={supplier.logo_url ?? ""} onChange={(value) => updateField("logo_url", value)} error={fieldErrors.logo_url} />
-                  <Field label="Public profile image URL" optional type="url" value={supplier.profile_image_url ?? ""} onChange={(value) => updateField("profile_image_url", value)} error={fieldErrors.profile_image_url} />
+                  <PublicImageControl label="Public logo" value={supplier.logo_url} uploading={uploadingTarget === "logo_url"} onUpload={(file) => void uploadPublicImage(file, "logo_url")} onRemove={() => updateField("logo_url", null)} />
+                  <PublicImageControl label="Public profile image" value={supplier.profile_image_url} uploading={uploadingTarget === "profile_image_url"} onUpload={(file) => void uploadPublicImage(file, "profile_image_url")} onRemove={() => updateField("profile_image_url", null)} />
                   <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/55">Supplier gallery ordering is not stored by the current production schema. No unsupported field is written.</p>
                 </> : null}
+                {promotableApplicationMedia.length ? <div className="rounded-md border border-leaf-900/10 bg-white p-4"><h3 className="text-sm font-black text-ink">Approved application images</h3><p className="mt-1 text-sm font-semibold text-ink/50">Preview an application image, then explicitly select it for public use.</p><div className="mt-3 grid gap-2">{promotableApplicationMedia.map((item) => <div key={item.path} className="flex flex-col gap-3 rounded-md bg-leaf-50 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm font-black text-ink">{item.label}</p><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void previewPrivateMedia(item)} className="admin-action-secondary"><Eye className="h-4 w-4" /> Preview</button><button type="button" onClick={() => void promotePrivateImage(item)} className="admin-action-secondary"><ImageIcon className="h-4 w-4" /> Select approved application image</button></div></div>)}</div></div> : null}
                 <label className="flex min-h-11 items-center gap-3 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
                   <input type="checkbox" checked={draft.launch_checklist.approvedNoPhoto === true} onChange={(event) => updateField("launch_checklist", { ...draft.launch_checklist, approvedNoPhoto: event.target.checked })} className="h-4 w-4 rounded border-leaf-900/20 text-leaf-700" />
-                  Approved no-photo state
+                  Approve no-photo state
                 </label>
+                <details className="rounded-md border border-leaf-900/10 bg-white p-4"><summary className="cursor-pointer text-sm font-black text-ink">Technical details</summary><p className="mt-2 text-sm font-semibold text-ink/50">Compatibility fields for reviewed public URLs. Most administrators should use the controls above.</p><div className="mt-4 grid gap-4">{farmer ? <><Field label="Main profile image URL" optional type="url" value={farmer.profile_image_url ?? ""} onChange={(value) => updateField("profile_image_url", value)} error={fieldErrors.profile_image_url} /><OrderedListField label="Farm gallery URLs" values={farmer.farm_photo_urls} onChange={(value) => updateField("farm_photo_urls", value)} placeholder="Add URL" error={fieldErrors.farm_photo_urls} /><OrderedListField label="Produce gallery URLs" values={farmer.produce_photo_urls} onChange={(value) => updateField("produce_photo_urls", value)} placeholder="Add URL" error={fieldErrors.produce_photo_urls} /></> : null}{supplier ? <><Field label="Public logo URL" optional type="url" value={supplier.logo_url ?? ""} onChange={(value) => updateField("logo_url", value)} error={fieldErrors.logo_url} /><Field label="Public profile image URL" optional type="url" value={supplier.profile_image_url ?? ""} onChange={(value) => updateField("profile_image_url", value)} error={fieldErrors.profile_image_url} /></> : null}</div></details>
               </div></Section>
               <Section title="Private Application Documents" description="Protected short-lived previews only. Certificates and documents can never be promoted publicly." privateSection>
                 {payload.sourceHistory ? <div className="grid gap-2">
-                  {payload.sourceHistory.privateMedia.map((item) => <div key={item.path} className="flex flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-leaf-900/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-black text-ink">{item.label}</p><p className="mt-1 text-xs font-semibold text-ink/45">{item.promotable ? "Image eligible for explicit public approval" : "Private document - public promotion disabled"}</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void previewPrivateMedia(item)} className="admin-action-secondary"><Eye className="h-4 w-4" /> Preview</button>{item.promotable ? <button type="button" onClick={() => void promotePrivateImage(item)} className="admin-action-secondary"><ImageIcon className="h-4 w-4" /> Approve for public use</button> : null}</div></div>)}
-                  {payload.sourceHistory.privateMedia.length === 0 ? <p className="admin-empty-state p-4 text-sm font-semibold">No private application media is linked.</p> : null}
+                  {privateDocuments.map((item) => <div key={item.path} className="flex flex-col gap-3 rounded-md bg-white p-3 ring-1 ring-leaf-900/10 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-black text-ink">{item.label}</p><p className="mt-1 text-xs font-semibold text-ink/45">Private document - public promotion disabled</p></div><button type="button" onClick={() => void previewPrivateMedia(item)} className="admin-action-secondary"><Eye className="h-4 w-4" /> Preview</button></div>)}
+                  {privateDocuments.length === 0 ? <p className="admin-empty-state p-4 text-sm font-semibold">No private application documents are linked.</p> : null}
                 </div> : <p className="admin-empty-state p-4 text-sm font-semibold">This profile has no linked application media.</p>}
               </Section>
               {payload.sourceHistory ? <details className="rounded-md border border-leaf-900/10 bg-white p-4"><summary className="cursor-pointer text-sm font-black text-ink">Source history</summary><dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3"><div><dt className="font-black text-ink/45">Application status</dt><dd className="mt-1 font-semibold text-ink/70">{payload.sourceHistory.status}</dd></div><div><dt className="font-black text-ink/45">Submitted</dt><dd className="mt-1 font-semibold text-ink/70">{new Date(payload.sourceHistory.createdAt).toLocaleDateString()}</dd></div><div><dt className="font-black text-ink/45">Relationship</dt><dd className="mt-1 font-semibold text-ink/70">Linked one-to-one</dd></div></dl></details> : null}
@@ -503,20 +636,19 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
 
           {activeTab === "review" ? (
             <>
-              <Section title="Publication Checklist" description="Activation is blocked until every required public check passes."><div className="grid gap-2 sm:grid-cols-2">{payload.eligibility.checks.map((check) => <div key={check.key} className={`flex items-center gap-3 rounded-md px-3 py-3 text-sm font-bold ${check.complete ? "bg-leaf-50 text-leaf-800" : "bg-earth-50 text-earth-800"}`}>{check.complete ? <Check className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}{check.label}</div>)}</div></Section>
+              <Section title="Publication Checklist" description="This is the same server-side readiness evaluation used by Activate / Publish. Every required item must pass."><div className="grid gap-2 sm:grid-cols-2">{payload.eligibility.checks.map((check) => <div key={check.key} className={`flex items-start justify-between gap-3 rounded-md px-3 py-3 text-sm font-bold ${check.state === "passed" ? "bg-leaf-50 text-leaf-800" : check.state === "needs-review" ? "bg-amber-50 text-earth-800" : "bg-ink/[0.04] text-ink/65"}`}><span className="flex min-w-0 items-start gap-2">{check.state === "passed" ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : check.state === "needs-review" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}<span>{check.label}</span></span><span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-xs ring-1 ring-current/10">{check.state === "passed" ? "Passed" : check.state === "needs-review" ? "Needs review" : "Missing"}</span></div>)}</div></Section>
               <Section title="Review and Publication" description="Saving content never publishes it. Each status change is a separate protected, confirmed action."><div className="grid gap-4 md:grid-cols-2">
-                <Field label="Current status" value={draft.status} readOnly />
-                <Field label="Verification status" value={draft.verification_status} readOnly />
+                <StatusSummary label="Current status" value={draft.status} />
+                <StatusSummary label="Verification status" value={draft.verification_status} />
                 <SelectField label="Ghana Growers Standard status" value={draft.gg_standard_status ?? "Pending"} options={ggStandardStatuses} onChange={(value) => updateField("gg_standard_status", value)} />
                 <SelectField label="Launch status" value={draft.launch_status} options={kind === "farmer" ? launchStatuses : supplierLaunchStatuses} onChange={(value) => updateField("launch_status", value)} />
                 {supplier ? <SelectField label="Profile review status" value={supplier.profile_review_status} options={supplierReviewStatuses} onChange={(value) => updateField("profile_review_status", value)} /> : null}
-                <Field label="Verified by" optional value={draft.verified_by ?? ""} readOnly />
-                <Field label="Verification date" optional value={draft.verification_date?.slice(0, 10) ?? ""} readOnly />
+                <div className="rounded-md border border-leaf-900/10 bg-white p-4 md:col-span-2"><h3 className="text-sm font-black text-ink">Verification audit</h3><dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt className="font-black text-ink/45">Verified by</dt><dd className="mt-1 font-semibold text-ink/70">{draft.verified_by || "Not verified"}</dd></div><div><dt className="font-black text-ink/45">Verification date</dt><dd className="mt-1 font-semibold text-ink/70">{draft.verification_date ? new Date(draft.verification_date).toLocaleDateString() : "Not verified"}</dd></div></dl><p className="mt-3 text-xs font-semibold text-ink/45">These values are written by the protected Verify action using the signed-in Admin identity.</p></div>
                 <Field label="Featured until" optional type="date" value={draft.featured_until ?? ""} onChange={(value) => updateField("featured_until", value)} error={fieldErrors.featured_until} />
                 <div className="md:col-span-2"><TextAreaField label="Featured note" optional value={draft.featured_note ?? ""} onChange={(value) => updateField("featured_note", value)} /></div>
                 <div className="md:col-span-2"><TextAreaField label="Internal review notes" optional value={draft.verification_notes ?? ""} onChange={(value) => updateField("verification_notes", value)} /></div>
               </div>
-              {kind === "supplier" ? <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Supplier Launch Ready is recorded for editorial preparation, but current approved public eligibility remains Active + Verified + valid slug + non-demo source.</p> : null}
+              {kind === "supplier" ? <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Supplier activation requires the reviewed launch-readiness checklist. The approved public directory eligibility rule remains Active + Verified + valid slug + non-demo source.</p> : null}
               <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Featured status will become public only after the profile is eligible.</p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <button type="button" onClick={() => void transition("under-review", "Mark Under Review")} className="admin-action-secondary"><ShieldCheck className="h-4 w-4" /> Mark Under Review</button>

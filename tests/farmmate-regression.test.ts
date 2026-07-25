@@ -7884,7 +7884,7 @@ const tests: TestCase[] = [
         district: "Kumasi", category: "Seeds", products_services: ["Seed"], service_coverage_area: "Ashanti",
         whatsapp_number: null, phone: null, website: null, verification_status: "Verified", logo_url: "/logo.png", status: "Active",
         created_at: "2026-01-01", updated_at: "2026-01-01", is_featured: true, featured_until: null, featured_note: null,
-        launch_ready: false, launch_status: "Needs Improvement", source_application_id: null, verification_date: null,
+        launch_ready: true, launch_status: "Needs Improvement", source_application_id: null, verification_date: null,
         verified_by: null, verification_notes: null, gg_standard_status: "Pending", profile_review_status: "Ready",
         profile_image_url: null, source: "admin", editorial_notes: null, launch_checklist: {}
       } satisfies SupplierProfileRecord;
@@ -7909,7 +7909,7 @@ const tests: TestCase[] = [
       assert.doesNotMatch(previewSection, /phone_number|whatsapp_number|privateEmail|privateNotes|sourceHistory|signedUrl|certificate/);
       assert.equal(editor.includes("Private - never shown publicly"), true);
       assert.equal(editor.includes("Certificates and documents can never be promoted publicly."), true);
-      assert.equal(editor.includes("Approve for public use"), true);
+      assert.equal(editor.includes("Select approved application image"), true);
       assert.equal(publicData.includes("...(row.farm_photo_urls ?? [])"), true);
       assert.equal(publicData.includes("...(row.produce_photo_urls ?? [])"), true);
     }
@@ -7934,6 +7934,56 @@ const tests: TestCase[] = [
       assert.equal(dashboard.includes("openFarmerProfileEditor"), false);
       assert.equal(dashboard.includes("scheduleSupplierEditorialSave"), false);
       assert.equal(dashboard.includes("scheduleEditorialSave"), false);
+    }
+  },
+  {
+    name: "Admin profile editors use private page chrome and complete shared readiness checks",
+    run: () => {
+      const header = repoFile("src/components/Header.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const floating = repoFile("src/components/FloatingWhatsAppButton.tsx");
+      const page = repoFile("src/app/admin/profiles/[kind]/[recordKey]/page.tsx");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const contracts = repoFile("src/lib/profileEditorContracts.ts");
+
+      assert.equal(header.includes('pathname.startsWith("/admin/profiles/")'), true);
+      assert.equal(footer.includes('pathname.startsWith("/admin/profiles/")'), true);
+      assert.equal(floating.includes('"/admin/profiles"'), true);
+      assert.equal(page.includes("getAdminUserFromAccessToken"), true);
+      assert.equal(editor.includes("Back to Admin") && editor.includes("Public Preview"), true);
+      for (const label of [
+        "Public farm name", "Valid unique public URL slug", "Region and public location", "Farm type",
+        "At least one crop or product", "Public description", "Approved main image or explicitly approved no-photo state",
+        "Verification status is Verified", "Launch Ready is marked", "Public company name", "Approved supplier category",
+        "At least one product or service", "Service coverage or public location", "Public business description",
+        "Approved public image or explicitly approved no-photo state", "Launch readiness is marked"
+      ]) assert.equal(contracts.includes(label), true);
+      assert.equal((service.match(/evaluateProfileReadiness\(kind, record\)/g) ?? []).length >= 2, true);
+      assert.equal(service.includes("slug=eq.") && service.includes("id=neq."), true);
+      assert.equal(service.includes("check.required && !check.complete"), true);
+      assert.equal(editor.includes("Passed") && editor.includes("Missing") && editor.includes("Needs review"), true);
+    }
+  },
+  {
+    name: "Verification audit fields, media controls and mobile profile tabs remain protected",
+    run: () => {
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const publicMedia = editor.slice(editor.indexOf('title="Public Media"'), editor.indexOf('title="Private Application Documents"'));
+
+      assert.equal(service.includes('verification_date: new Date().toISOString(), verified_by: adminEmail'), true);
+      assert.equal(service.includes('"verified_by" in changes || "verification_date" in changes'), true);
+      assert.equal(editor.includes("These values are written by the protected Verify action using the signed-in Admin identity."), true);
+      assert.equal(editor.includes("StatusSummary") && editor.includes("Verification audit"), true);
+      assert.equal(editor.includes("Upload") && editor.includes("Replace") && editor.includes("Remove"), true);
+      assert.equal(publicMedia.includes("Technical details"), true);
+      assert.equal(publicMedia.indexOf("Technical details") > publicMedia.indexOf("PublicImageControl"), true);
+      assert.equal(editor.includes("Certificates and documents can never be promoted publicly."), true);
+      assert.equal(editor.includes("grid grid-cols-2 gap-2 sm:flex"), true);
+      assert.equal(editor.includes("min-h-11 min-w-0"), true);
+      assert.equal(editor.includes("pb-40 sm:pb-28"), true);
+      assert.equal(editor.includes("fixed inset-x-0 bottom-0"), true);
     }
   }
 ];

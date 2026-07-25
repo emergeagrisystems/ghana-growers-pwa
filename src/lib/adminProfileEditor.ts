@@ -13,6 +13,7 @@ import {
   type ProfileEditorKind,
   type ProfileEditorRecord,
   type ProfileTransition,
+  type PublicationCheck,
   type SupplierProfileRecord
 } from "@/lib/profileEditorContracts";
 import {
@@ -147,11 +148,37 @@ function publicPreview(kind: ProfileEditorKind, record: ProfileEditorRecord) {
     : mapSupplierPublicProfile(record as SupplierProfileRecord & SupabaseSupplier);
 }
 
+export async function evaluateProfileReadiness(
+  kind: ProfileEditorKind,
+  record: ProfileEditorRecord
+): Promise<PublicationCheck[]> {
+  const checks = publicationChecks(kind, record);
+  const slugCheck = checks.find((check) => check.key === "slug");
+  if (!slugCheck?.complete || !record.slug) return checks;
+
+  const table = kind === "farmer" ? "farmers" : "suppliers";
+  const duplicate = await selectSupabaseRecords<{ id: string }>(
+    table,
+    `select=id&slug=eq.${encodeURIComponent(record.slug)}&id=neq.${encodeURIComponent(record.id)}&limit=1`
+  );
+  if (duplicate.error) {
+    return checks.map((check) => check.key === "slug"
+      ? { ...check, state: "needs-review", complete: false, label: "Unique public URL slug could not be confirmed" }
+      : check);
+  }
+  if (duplicate.data?.length) {
+    return checks.map((check) => check.key === "slug"
+      ? { ...check, state: "needs-review", complete: false, label: "Public URL slug is already in use" }
+      : check);
+  }
+  return checks;
+}
+
 export async function profileEditorPayload(kind: ProfileEditorKind, recordKey: string) {
   const loaded = await loadAdminProfile(kind, recordKey);
   if (!loaded.record) return loaded;
   const record = loaded.record;
-  const checks = publicationChecks(kind, record);
+  const checks = await evaluateProfileReadiness(kind, record);
   const eligible = profileIsPubliclyEligible(kind, record);
 
   return {
@@ -179,6 +206,9 @@ function cleanChecklist(value: unknown) {
 
 function validateChanges(kind: ProfileEditorKind, changes: Record<string, unknown>) {
   const errors: Record<string, string> = {};
+  if ("verified_by" in changes || "verification_date" in changes) {
+    errors.verification = "Verification identity and date are set only by the protected Verify action.";
+  }
   if ("slug" in changes && changes.slug && (typeof changes.slug !== "string" || !isValidPublicProfileSlug(changes.slug))) {
     errors.slug = "Use lowercase letters, numbers, and single hyphens only.";
   }
@@ -302,14 +332,14 @@ export async function transitionAdminProfile({
   const loaded = await loadAdminProfile(kind, recordKey);
   if (!loaded.record) return loaded;
   const record = loaded.record;
-  const checks = publicationChecks(kind, record);
+  const checks = await evaluateProfileReadiness(kind, record);
 
   if (transition === "verify" && record.verification_status === "Verified") {
     return profileEditorPayload(kind, record.id);
   }
 
   if (transition === "activate") {
-    const missing = checks.filter((check) => !check.complete);
+    const missing = checks.filter((check) => check.required && !check.complete);
     if (missing.length) return { status: 409, error: "This profile is not ready to publish.", checks };
   }
   if (transition === "launch-ready") {
