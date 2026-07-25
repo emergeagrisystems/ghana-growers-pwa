@@ -78,6 +78,7 @@ type OptionalQueueLoadState = "idle" | "loading" | "available" | "unavailable" |
 
 type AdminRow = {
   id: string;
+  profileRecordId?: string;
   name: string;
   type: string;
   region: string;
@@ -363,6 +364,8 @@ type ApplicationRecord = {
   launch_checklist?: Partial<Record<SupplierChecklistItem, boolean>> | null;
   editorial_updated_at?: string | null;
   editorial_updated_by?: string | null;
+  linked_farmer_id?: string | null;
+  linked_supplier_id?: string | null;
 };
 type ListingSubmissionRecord = {
   id: string;
@@ -476,29 +479,6 @@ type ImportedFarmerRecord = {
   linked_marketplace_listings?: FarmerLinkedMarketplaceListing[];
   created_at?: string | null;
   source: string;
-};
-type FarmerProfileEditValues = {
-  farmer_name: string;
-  farm_name: string;
-  region: string;
-  district: string;
-  phone_number: string;
-  whatsapp_number: string;
-  email: string;
-  farm_location: string;
-  farm_size: string;
-  farm_type: string;
-  farming_experience: string;
-  products: string;
-  currently_harvesting: string;
-  supply_frequency: string;
-  delivery_preference: string;
-  payment_preference: string;
-  description: string;
-  gg_standard_status: string;
-  verification_status: string;
-  status: string;
-  verification_notes: string;
 };
 type FarmerImportReport = {
   imported: number;
@@ -1660,6 +1640,7 @@ function rowFromImportedFarmer(farmer: ImportedFarmerRecord): AdminRow {
 
   return {
     id: farmer.slug || farmer.id,
+    profileRecordId: farmer.id,
     name: farmer.farm_name || farmer.farmer_name,
     type: farmer.farm_type,
     region: farmer.region,
@@ -1699,39 +1680,6 @@ function importedFarmerPlaceholderFromRow(row: AdminRow): ImportedFarmerRecord {
     gg_standard_status: row.ggStandardStatus ?? "Pending",
     verification_notes: null,
     source: normalizedFarmerSource(row.source)
-  };
-}
-
-function profileEditValuesFromFarmer(farmer: ImportedFarmerRecord): FarmerProfileEditValues {
-  return {
-    farmer_name: farmer.farmer_name ?? "",
-    farm_name: farmer.farm_name ?? "",
-    region: farmer.region ?? "",
-    district: farmer.district ?? "",
-    phone_number: farmer.phone_number ?? "",
-    whatsapp_number: farmer.whatsapp_number ?? "",
-    email: farmer.email ?? "",
-    farm_location: farmer.farm_location ?? "",
-    farm_size: farmer.farm_size ?? "",
-    farm_type: farmer.farm_type ?? "",
-    farming_experience: farmer.farming_experience ?? "",
-    products: farmer.products.join(", "),
-    currently_harvesting: farmer.currently_harvesting ?? "",
-    supply_frequency: farmer.supply_frequency ?? "",
-    delivery_preference: farmer.delivery_preference ?? "",
-    payment_preference: farmer.payment_preference ?? "",
-    description: farmer.description ?? "",
-    gg_standard_status: farmer.gg_standard_status ?? "Pending",
-    verification_status: farmer.verification_status ?? "Pending",
-    status: farmer.status ?? "Pending Review",
-    verification_notes: farmer.verification_notes ?? ""
-  };
-}
-
-function farmerProfilePayload(values: FarmerProfileEditValues) {
-  return {
-    ...values,
-    products: values.products.split(/,|\n/).map((item) => item.trim()).filter(Boolean)
   };
 }
 
@@ -2190,7 +2138,7 @@ function farmerRecommendedAction(farmer: ImportedFarmerRecord) {
     return "Approve";
   }
 
-  return farmer.status === "Active" ? "Review Complete" : "Approve & Publish";
+  return farmer.status === "Active" ? "Review Complete" : "Open Profile Review";
 }
 
 function farmerReviewTimeline(farmer: ImportedFarmerRecord) {
@@ -3617,6 +3565,7 @@ function adminFarmerRowFromAnalytics(record: AnalyticsRecord): AdminRow {
 
   return {
     id,
+    profileRecordId: textValue(record, "id") || id,
     name: textValue(record, "farm_name") || textValue(record, "farmer_name") || "Farmer record",
     type: textValue(record, "farm_type") || "Farmer",
     region: textValue(record, "region") || "Ghana",
@@ -3641,6 +3590,7 @@ function adminSupplierRowFromAnalytics(record: AnalyticsRecord): AdminRow {
 
   return {
     id,
+    profileRecordId: textValue(record, "id") || id,
     name: textValue(record, "company_name") || "Supplier record",
     type: textValue(record, "category") || "Supplier",
     region: textValue(record, "region") || "Ghana",
@@ -3975,13 +3925,8 @@ export function AdminDashboard({
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
   const [farmerReviewDebug, setFarmerReviewDebug] = useState<Record<string, unknown> | null>(null);
-  const [editingFarmerProfile, setEditingFarmerProfile] = useState<ImportedFarmerRecord | null>(null);
-  const [farmerProfileEditValues, setFarmerProfileEditValues] = useState<FarmerProfileEditValues | null>(null);
-  const [isSavingFarmerProfile, setIsSavingFarmerProfile] = useState(false);
-  const [farmerProfileEditError, setFarmerProfileEditError] = useState("");
   const [editorialDecisions, setEditorialDecisions] = useState<Record<string, EditorialDecisionState>>({});
-  const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
-  const editorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [editorialSaveStates, setEditorialSaveStates] = useState<Record<string, "idle" | "dirty" | "saving" | "saved" | "error">>({});
   const editorialSaveVersions = useRef<Record<string, number>>({});
   const [supplierEditorialFilter, setSupplierEditorialFilter] = useState<SupplierEditorialFilter>("All");
   const [reviewingSupplierId, setReviewingSupplierId] = useState<string | null>(null);
@@ -3990,8 +3935,7 @@ export function AdminDashboard({
   const [isUpdatingSupplierReview, setIsUpdatingSupplierReview] = useState(false);
   const [pendingSupplierReviewAction, setPendingSupplierReviewAction] = useState<ApplicationStatus | "archive" | null>(null);
   const [supplierEditorialDecisions, setSupplierEditorialDecisions] = useState<Record<string, SupplierEditorialDecisionState>>({});
-  const [supplierEditorialSaveStates, setSupplierEditorialSaveStates] = useState<Record<string, "idle" | "saving" | "saved" | "error">>({});
-  const supplierEditorialSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [supplierEditorialSaveStates, setSupplierEditorialSaveStates] = useState<Record<string, "idle" | "dirty" | "saving" | "saved" | "error">>({});
   const [manualLaunchStatuses, setManualLaunchStatuses] = useState<Record<ManualLaunchChecklistItem, LaunchStatus>>(() =>
     Object.fromEntries(manualLaunchChecklistItems.map((item) => [item, "Incomplete"])) as Record<ManualLaunchChecklistItem, LaunchStatus>
   );
@@ -4373,11 +4317,6 @@ export function AdminDashboard({
       void loadImportedFarmers();
     }
   }, [activeSection, applicationTab, loadImportedFarmers]);
-
-  useEffect(() => () => {
-    Object.values(editorialSaveTimers.current).forEach((timer) => clearTimeout(timer));
-    Object.values(supplierEditorialSaveTimers.current).forEach((timer) => clearTimeout(timer));
-  }, []);
 
   const newApplicationCounts = useMemo(() => ({
     farmers: applications.farmer.filter(applicationNeedsReview).length,
@@ -4984,18 +4923,6 @@ export function AdminDashboard({
     void loadActivity();
   }
 
-  function scheduleEditorialSave(recordId: string, decision: EditorialDecisionState, delay = 450) {
-    const existingTimer = editorialSaveTimers.current[recordId];
-
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-    }
-
-    editorialSaveTimers.current[recordId] = setTimeout(() => {
-      void saveEditorialDecision(recordId, decision);
-    }, delay);
-  }
-
   async function uploadFarmerAsset(
     farmer: ImportedFarmerRecord,
     assetType: "profile" | "farm" | "produce" | "document",
@@ -5083,81 +5010,7 @@ export function AdminDashboard({
     void loadActivity();
   }
 
-  function openFarmerProfileEditor(farmer: ImportedFarmerRecord) {
-    setEditingFarmerProfile(farmer);
-    setFarmerProfileEditValues(profileEditValuesFromFarmer(farmer));
-    setFarmerProfileEditError("");
-  }
-
-  function closeFarmerProfileEditor() {
-    if (isSavingFarmerProfile) {
-      return;
-    }
-
-    setEditingFarmerProfile(null);
-    setFarmerProfileEditValues(null);
-    setFarmerProfileEditError("");
-  }
-
-  function updateFarmerProfileEditValue(field: keyof FarmerProfileEditValues, value: string) {
-    setFarmerProfileEditValues((current) => (current ? { ...current, [field]: value } : current));
-  }
-
-  async function saveFarmerProfileEdit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!editingFarmerProfile || !farmerProfileEditValues) {
-      return;
-    }
-
-    setIsSavingFarmerProfile(true);
-    setFarmerProfileEditError("");
-
-    const response = await fetch("/api/admin/farmer-import", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "profile",
-        ids: [editingFarmerProfile.id],
-        profile: farmerProfilePayload(farmerProfileEditValues)
-      })
-    }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as {
-      farmer?: ImportedFarmerRecord;
-      error?: string;
-      category?: string;
-      diagnostic?: string;
-      message?: string;
-    } | null;
-
-    setIsSavingFarmerProfile(false);
-
-    if (!response?.ok || !result?.farmer) {
-      if (response?.status === 401) {
-        window.location.href = "/admin/login";
-        return;
-      }
-
-      setFarmerProfileEditError(adminDiagnosticMessage(result, "Could not save farmer profile."));
-      return;
-    }
-
-    const updatedFarmer = result.farmer;
-    setImportedFarmers((current) => current.map((item) => (item.id === updatedFarmer.id ? updatedFarmer : item)));
-    setRowsBySection((current) => ({
-      ...current,
-      farmers: current.farmers.map((row) => (row.id === updatedFarmer.id || row.id === updatedFarmer.slug ? rowFromImportedFarmer(updatedFarmer) : row))
-    }));
-    setReviewingImportedFarmerId(updatedFarmer.id);
-    setVerificationReviewNotes(updatedFarmer.verification_notes ?? "");
-    setFarmerReviewDebug(reviewDebugFields(updatedFarmer));
-    setFarmerReviewMessage({ type: "success", text: result.message ?? "Farmer profile saved." });
-    setEditingFarmerProfile(null);
-    setFarmerProfileEditValues(null);
-    void loadActivity();
-  }
-
-  function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState, saveDelay = 450) {
+  function updateEditorialDecision(recordId: string, updater: (current: EditorialDecisionState) => EditorialDecisionState, _saveDelay = 450) {
     const farmer = importedFarmers.find((item) => item.id === recordId);
 
     if (!farmer) {
@@ -5168,7 +5021,7 @@ export function AdminDashboard({
       const existing = current[recordId] ?? defaultEditorialDecision(farmer);
       const nextDecision = updater(existing);
 
-      scheduleEditorialSave(recordId, nextDecision, saveDelay);
+      setEditorialSaveStates((states) => ({ ...states, [recordId]: "dirty" }));
       return {
         ...current,
         [recordId]: nextDecision
@@ -5234,19 +5087,7 @@ export function AdminDashboard({
     void loadActivity();
   }
 
-  function scheduleSupplierEditorialSave(recordId: string, decision: SupplierEditorialDecisionState, delay = 450) {
-    const existingTimer = supplierEditorialSaveTimers.current[recordId];
-
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-    }
-
-    supplierEditorialSaveTimers.current[recordId] = setTimeout(() => {
-      void saveSupplierEditorialDecision(recordId, decision);
-    }, delay);
-  }
-
-  function updateSupplierEditorialDecision(recordId: string, updater: (current: SupplierEditorialDecisionState) => SupplierEditorialDecisionState, saveDelay = 450) {
+  function updateSupplierEditorialDecision(recordId: string, updater: (current: SupplierEditorialDecisionState) => SupplierEditorialDecisionState, _saveDelay = 450) {
     const supplier = applications.supplier.find((item) => item.id === recordId);
 
     if (!supplier) {
@@ -5257,7 +5098,7 @@ export function AdminDashboard({
       const existing = current[recordId] ?? defaultSupplierEditorialDecision(supplier);
       const nextDecision = updater(existing);
 
-      scheduleSupplierEditorialSave(recordId, nextDecision, saveDelay);
+      setSupplierEditorialSaveStates((states) => ({ ...states, [recordId]: "dirty" }));
       return {
         ...current,
         [recordId]: nextDecision
@@ -6519,17 +6360,41 @@ export function AdminDashboard({
     void loadActivity();
   }
 
-  async function applySupplierReviewAction(application: ApplicationRecord, action: "under-review" | "approve-publish" | "approve-only" | "request-changes" | "reject" | "archive") {
+  async function convertProfileApplication(kind: "farmer" | "supplier", application: ApplicationRecord) {
+    const linkedProfileId = kind === "farmer" ? application.linked_farmer_id : application.linked_supplier_id;
+    if (linkedProfileId) {
+      window.location.href = `/admin/profiles/${kind}/${encodeURIComponent(linkedProfileId)}`;
+      return;
+    }
+    if (application.status !== "Approved") {
+      setApplicationError("Approve the application before creating a profile.");
+      return;
+    }
+    if (!window.confirm(`Create a non-public ${kind} profile from this approved application?`)) return;
+
+    const response = await fetch("/api/admin/profile-editor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "convert", kind, id: application.id })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { profileId?: string; reused?: boolean; error?: string } | null;
+    if (!response?.ok || !result?.profileId) {
+      if (response?.status === 401) window.location.href = "/admin/login";
+      setApplicationError(result?.error ?? "The profile could not be created.");
+      return;
+    }
+    window.location.href = `/admin/profiles/${kind}/${encodeURIComponent(result.profileId)}`;
+  }
+
+  async function applySupplierReviewAction(application: ApplicationRecord, action: "under-review" | "approve-only" | "request-changes" | "reject" | "archive") {
     const nextStatus: ApplicationStatus =
-      action === "approve-publish" || action === "approve-only"
+      action === "approve-only"
         ? "Approved"
         : action === "under-review" || action === "request-changes"
           ? "Under Review"
           : "Rejected";
     const actionLabel =
-      action === "approve-publish"
-        ? "approved for publishing"
-        : action === "approve-only"
+      action === "approve-only"
           ? "approved"
           : action === "request-changes"
             ? "marked for changes"
@@ -7876,14 +7741,13 @@ export function AdminDashboard({
                                   </p>
                                 </div>
                                 <div className="flex flex-col gap-2 sm:flex-row">
-                                  <button
-                                    type="button"
-                                    onClick={() => openFarmerProfileEditor(reviewingImportedFarmer)}
+                                  <Link
+                                    href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
                                     className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
                                   >
                                     <FilePenLine className="h-4 w-4" aria-hidden="true" />
                                     Edit Farmer Profile
-                                  </button>
+                                  </Link>
                                   <button
                                     type="button"
                                     onClick={() => openFarmerListingForm(reviewingImportedFarmer)}
@@ -8244,6 +8108,8 @@ export function AdminDashboard({
                                         ? "Saving"
                                         : editorialSaveStates[reviewingImportedFarmer.id] === "error"
                                           ? "Save failed"
+                                          : editorialSaveStates[reviewingImportedFarmer.id] === "dirty"
+                                            ? "Unsaved changes"
                                           : editorialSaveStates[reviewingImportedFarmer.id] === "saved"
                                             ? "Saved"
                                             : reviewingImportedFarmer.editorial_updated_by
@@ -8252,6 +8118,15 @@ export function AdminDashboard({
                                     </span>
                                   </div>
                                 </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => void saveEditorialDecision(reviewingImportedFarmer.id, reviewingEditorialDecision)}
+                                  disabled={editorialSaveStates[reviewingImportedFarmer.id] !== "dirty"}
+                                  className="admin-action-secondary mt-4 w-full"
+                                >
+                                  Save application review
+                                </button>
 
                                 <div className="mt-4 grid gap-2">
                                   <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Status</p>
@@ -8412,22 +8287,12 @@ export function AdminDashboard({
                             </div>
 
                             <div className="grid gap-2">
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("verify")}
-                                disabled={isUpdatingFarmerReview}
+                              <Link
+                                href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
                                 className="admin-action-primary w-full"
                               >
-                                {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Approve & Publish"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("verify-only")}
-                                disabled={isUpdatingFarmerReview}
-                                className="admin-action-secondary w-full"
-                              >
-                                {pendingFarmerReviewAction === "verify-only" ? "Approving..." : "Approve Only"}
-                              </button>
+                                Open profile review & publication
+                              </Link>
                               <button
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
@@ -8435,30 +8300,6 @@ export function AdminDashboard({
                                 className="admin-action-warning w-full"
                               >
                                 {pendingFarmerReviewAction === "needs-follow-up" ? "Requesting..." : "Request Changes"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("reject")}
-                                disabled={isUpdatingFarmerReview}
-                                className="admin-action-destructive w-full"
-                              >
-                                {pendingFarmerReviewAction === "reject" ? "Rejecting..." : "Reject"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("archive")}
-                                disabled={isUpdatingFarmerReview}
-                                className="admin-action-tertiary w-full"
-                              >
-                                {pendingFarmerReviewAction === "archive" ? "Archiving..." : "Archive"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("gg-standard")}
-                                disabled={isUpdatingFarmerReview}
-                                className="admin-action-warning w-full"
-                              >
-                                {pendingFarmerReviewAction === "gg-standard" ? "Approving..." : "Approve GG Standard"}
                               </button>
                             </div>
 
@@ -8824,6 +8665,8 @@ export function AdminDashboard({
                                         ? "Saving"
                                         : supplierEditorialSaveStates[reviewingSupplier.id] === "error"
                                           ? "Save failed"
+                                          : supplierEditorialSaveStates[reviewingSupplier.id] === "dirty"
+                                            ? "Unsaved changes"
                                           : supplierEditorialSaveStates[reviewingSupplier.id] === "saved"
                                             ? "Saved"
                                             : reviewingSupplier.editorial_updated_by
@@ -8832,6 +8675,15 @@ export function AdminDashboard({
                                     </span>
                                   </div>
                                 </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => void saveSupplierEditorialDecision(reviewingSupplier.id, reviewingSupplierEditorialDecision)}
+                                  disabled={supplierEditorialSaveStates[reviewingSupplier.id] !== "dirty"}
+                                  className="admin-action-secondary mt-4 w-full"
+                                >
+                                  Save application review
+                                </button>
 
                                 <div className="mt-4 grid gap-2">
                                   <p className="text-xs font-black uppercase tracking-wide text-ink/45">Launch Status</p>
@@ -8960,20 +8812,22 @@ export function AdminDashboard({
                             <div className="grid gap-2">
                               <button
                                 type="button"
-                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-publish")}
+                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-only")}
                                 disabled={isUpdatingSupplierReview}
                                 className="admin-action-primary w-full"
                               >
-                                {pendingSupplierReviewAction === "Approved" ? "Publishing..." : "Approve & Publish"}
+                                {pendingSupplierReviewAction === "Approved" ? "Approving..." : "Approve Application"}
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => void applySupplierReviewAction(reviewingSupplier, "approve-only")}
-                                disabled={isUpdatingSupplierReview}
-                                className="admin-action-secondary w-full"
-                              >
-                                {pendingSupplierReviewAction === "Approved" ? "Approving..." : "Approve Only"}
-                              </button>
+                              {reviewingSupplier.status === "Approved" || reviewingSupplier.linked_supplier_id ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void convertProfileApplication("supplier", reviewingSupplier)}
+                                  disabled={isUpdatingSupplierReview}
+                                  className="admin-action-secondary w-full"
+                                >
+                                  {reviewingSupplier.linked_supplier_id ? "Open Supplier Profile" : "Create Supplier Profile"}
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => void applySupplierReviewAction(reviewingSupplier, "request-changes")}
@@ -10547,7 +10401,7 @@ export function AdminDashboard({
                       <td className="px-5 py-4 text-ink/65">{row.dateAdded}</td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
-                          {activeSection === "farmers" || activeSection === "suppliers" || activeSection === "marketplace" ? (
+                          {activeSection === "marketplace" ? (
                             <>
                               <button
                                 type="button"
@@ -10658,6 +10512,11 @@ export function AdminDashboard({
                               <button
                                 type="button"
                                 onClick={() => {
+                                  if (activeSection === "farmers" || activeSection === "suppliers") {
+                                    const kind = activeSection === "farmers" ? "farmer" : "supplier";
+                                    window.location.href = `/admin/profiles/${kind}/${encodeURIComponent(row.profileRecordId || row.id)}`;
+                                    return;
+                                  }
                                   const formId = formIdForSection(activeSection);
 
                                   if (formId) {
@@ -10670,24 +10529,24 @@ export function AdminDashboard({
                                 className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                               >
                                 <FilePenLine className="h-3.5 w-3.5" />
-                                Edit
+                                {activeSection === "farmers" || activeSection === "suppliers" ? "Open profile" : "Edit"}
                               </button>
-                              <button
+                              {activeSection !== "farmers" && activeSection !== "suppliers" ? <button
                                 type="button"
                                 onClick={() => mockAction(row, "Mark Verified")}
                                 className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                               >
                                 <BadgeCheck className="h-3.5 w-3.5" />
                                 Mark Verified
-                              </button>
-                              <button
+                              </button> : null}
+                              {activeSection !== "farmers" && activeSection !== "suppliers" ? <button
                                 type="button"
                                 onClick={() => archiveAdminRow(row)}
                                 className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                               >
                                 <Archive className="h-3.5 w-3.5" />
                                 Archive
-                              </button>
+                              </button> : null}
                             </>
                           )}
                         </div>
@@ -11137,46 +10996,12 @@ export function AdminDashboard({
                       >
                         {pendingFarmerReviewAction === "needs-follow-up" ? "Updating..." : "Needs Follow-up"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("verify-only")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                      <Link
+                        href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
+                        className="admin-action-primary"
                       >
-                        {pendingFarmerReviewAction === "verify-only" ? "Verifying..." : "Verify Only"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("verify")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-leaf-700 px-4 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "verify" ? "Publishing..." : "Verify & Publish"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("gg-standard")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-earth-500 px-4 py-3 text-sm font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "gg-standard" ? "Approving..." : "Approve GG Standard Membership"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("reject")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-tomato ring-1 ring-tomato/20 transition hover:bg-tomato hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "reject" ? "Rejecting..." : "Reject Farmer"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("archive")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-ink px-4 py-3 text-sm font-black text-white transition hover:bg-ink/80 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "archive" ? "Archiving..." : "Archive"}
-                      </button>
+                        Open profile review & publication
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -11184,160 +11009,6 @@ export function AdminDashboard({
             </div>
           ) : null}
           </>
-          ) : null}
-
-          {editingFarmerProfile && farmerProfileEditValues ? (
-            <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/45 px-3 py-4 sm:px-4 sm:py-6">
-              <section className="max-h-[92dvh] w-full max-w-5xl overflow-y-auto rounded-md bg-white shadow-soft">
-                <div className="flex flex-col gap-4 border-b border-leaf-900/10 p-5 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Edit Farmer Profile</p>
-                    <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">
-                      {editingFarmerProfile.farm_name || editingFarmerProfile.farmer_name || "Farmer profile"}
-                    </h2>
-                    <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-ink/60">
-                      Update public profile details without changing uploaded media. Use the upload buttons for photos and documents.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={closeFarmerProfileEditor}
-                    disabled={isSavingFarmerProfile}
-                    className="rounded-md border border-leaf-900/10 px-4 py-2 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <form className="p-5" onSubmit={saveFarmerProfileEdit}>
-                  <div className="grid gap-5 md:grid-cols-2">
-                    {([
-                      ["farmer_name", "Farmer name"],
-                      ["farm_name", "Farm name"],
-                      ["region", "Region"],
-                      ["district", "District / town"],
-                      ["phone_number", "Phone"],
-                      ["whatsapp_number", "WhatsApp"],
-                      ["email", "Email"],
-                      ["farm_location", "Farm location"],
-                      ["farm_size", "Farm size"],
-                      ["farm_type", "Farm type"],
-                      ["farming_experience", "Years farming / farming experience"],
-                      ["currently_harvesting", "Currently harvesting"],
-                      ["supply_frequency", "Supply frequency"],
-                      ["delivery_preference", "Delivery preference"],
-                      ["payment_preference", "Payment preference"]
-                    ] as Array<[keyof FarmerProfileEditValues, string]>).map(([field, label]) => (
-                      <label key={field} className="grid gap-2 text-sm font-black text-ink">
-                        {label}
-                        <input
-                          value={farmerProfileEditValues[field]}
-                          onChange={(event) => updateFarmerProfileEditValue(field, event.target.value)}
-                          className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                        />
-                      </label>
-                    ))}
-
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      GG Standard status
-                      <select
-                        value={farmerProfileEditValues.gg_standard_status}
-                        onChange={(event) => updateFarmerProfileEditValue("gg_standard_status", event.target.value)}
-                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                      >
-                        {["Pending", "Member", "Suspended"].map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      Verification status
-                      <select
-                        value={farmerProfileEditValues.verification_status}
-                        onChange={(event) => updateFarmerProfileEditValue("verification_status", event.target.value)}
-                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                      >
-                        {["Pending", "Under Review", "Verified", "Rejected", "Needs Follow-up"].map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      Public visibility / status
-                      <select
-                        value={farmerProfileEditValues.status}
-                        onChange={(event) => updateFarmerProfileEditValue("status", event.target.value)}
-                        className="rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                      >
-                        {["Pending Review", "Active", "Archived"].map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="mt-5 grid gap-5">
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      Crops grown / livestock
-                      <textarea
-                        value={farmerProfileEditValues.products}
-                        onChange={(event) => updateFarmerProfileEditValue("products", event.target.value)}
-                        rows={3}
-                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                        placeholder="Maize, Yam, Cocoyam"
-                      />
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      Farm story / description
-                      <textarea
-                        value={farmerProfileEditValues.description}
-                        onChange={(event) => updateFarmerProfileEditValue("description", event.target.value)}
-                        rows={5}
-                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                        placeholder="Write a simple buyer-facing farm story."
-                      />
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-black text-ink">
-                      Internal verification notes
-                      <textarea
-                        value={farmerProfileEditValues.verification_notes}
-                        onChange={(event) => updateFarmerProfileEditValue("verification_notes", event.target.value)}
-                        rows={4}
-                        className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                      />
-                    </label>
-                  </div>
-
-                  {farmerProfileEditError ? (
-                    <p className="mt-5 whitespace-pre-wrap rounded-md bg-red-50 p-4 text-sm font-black text-tomato">
-                      {farmerProfileEditError}
-                    </p>
-                  ) : null}
-
-                  <div className="mt-6 flex flex-col gap-3 border-t border-leaf-900/10 pt-5 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={closeFarmerProfileEditor}
-                      disabled={isSavingFarmerProfile}
-                      className="rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-black text-ink/60 transition hover:border-leaf-700 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSavingFarmerProfile}
-                      className="rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSavingFarmerProfile ? "Saving..." : "Save Farmer Profile"}
-                    </button>
-                  </div>
-                </form>
-              </section>
-            </div>
           ) : null}
 
           {activeForm ? (

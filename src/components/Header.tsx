@@ -34,6 +34,10 @@ function PilotHeader() {
 export function Header({ showFullNavigation = true }: { showFullNavigation?: boolean }) {
   const pathname = usePathname();
 
+  if (pathname.startsWith("/admin/profiles/")) {
+    return null;
+  }
+
   if (isPublicFarmMatePilotPage(pathname)) {
     return <PilotHeader />;
   }

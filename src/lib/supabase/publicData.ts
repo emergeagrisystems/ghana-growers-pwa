@@ -10,7 +10,7 @@ import { isDemoProfileOrigin, isEligiblePublicFarmer, isEligiblePublicSupplier }
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
 import type { Product, PublicFarmerProfile, PublicSupplierProfile, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
-type SupabaseFarmer = {
+export type SupabaseFarmer = {
   id: string;
   slug: string | null;
   farmer_name: string | null;
@@ -33,6 +33,8 @@ type SupabaseFarmer = {
   verification_notes: string | null;
   gg_standard_status?: string | null;
   profile_image_url: string | null;
+  farm_photo_urls?: string[] | null;
+  produce_photo_urls?: string[] | null;
   description: string | null;
   status: string | null;
   source: string | null;
@@ -42,7 +44,7 @@ type SupabaseFarmer = {
   created_at: string;
 };
 
-type SupabaseSupplier = {
+export type SupabaseSupplier = {
   id: string;
   slug: string | null;
   company_name: string;
@@ -429,6 +431,8 @@ function isPublicDisplayableImageUrl(url?: string | null) {
 function farmerPhotoUrls(row: SupabaseFarmer) {
   const urls = [
     row.profile_image_url,
+    ...(row.farm_photo_urls ?? []),
+    ...(row.produce_photo_urls ?? []),
     row.imported_photo_url,
     isPublicDisplayableImageUrl(firstUrlFromText(row.tally_photo_url)) ? firstUrlFromText(row.tally_photo_url) : "",
     firstUsableTallyPhoto(row.original_tally_data),
@@ -546,7 +550,7 @@ function supplierDescription(row: SupabaseSupplier, services: string[]) {
   return `${name} is listed in the Ghana Growers supplier network. Farmers and buyers can request service details through Ghana Growers.`;
 }
 
-function mapFarmer(row: SupabaseFarmer): PublicFarmerProfile {
+export function mapFarmerPublicProfile(row: SupabaseFarmer): PublicFarmerProfile {
   const slug = row.slug ?? slugify(row.farm_name);
   const products = cleanProductList(row.products?.length ? row.products : ["Produce"]);
   const verificationStatus = trustStatus(row.verification_status);
@@ -581,7 +585,7 @@ function mapFarmer(row: SupabaseFarmer): PublicFarmerProfile {
   };
 }
 
-function mapSupplier(row: SupabaseSupplier): PublicSupplierProfile {
+export function mapSupplierPublicProfile(row: SupabaseSupplier): PublicSupplierProfile {
   const slug = row.slug ?? slugify(row.company_name);
   const services = row.products_services?.length ? row.products_services : [row.category];
   const verificationStatus = trustStatus(row.verification_status);
@@ -741,7 +745,7 @@ export async function getFarmersData(): Promise<PublicProfileLoadResult<PublicFa
 
   return {
     status: "ready",
-    data: featuredSort(result.data.filter(isEligiblePublicFarmer).map(mapFarmer))
+    data: featuredSort(result.data.filter(isEligiblePublicFarmer).map(mapFarmerPublicProfile))
   };
 }
 
@@ -751,7 +755,7 @@ export async function getSuppliersData(): Promise<PublicProfileLoadResult<Public
 
   return {
     status: "ready",
-    data: featuredSort(result.data.filter(isEligiblePublicSupplier).map(mapSupplier))
+    data: featuredSort(result.data.filter(isEligiblePublicSupplier).map(mapSupplierPublicProfile))
   };
 }
 

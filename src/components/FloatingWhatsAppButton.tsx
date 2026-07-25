@@ -19,7 +19,8 @@ const quietRoutes = [
   "/learn",
   "/success-stories",
   "/launching-soon",
-  "/dev-preview"
+  "/dev-preview",
+  "/admin/profiles"
 ];
 
 export function FloatingWhatsAppButton() {
