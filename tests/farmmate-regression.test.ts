@@ -7585,6 +7585,55 @@ const tests: TestCase[] = [
       assert.equal(combined.includes("buttons") && combined.includes("one follow-up question at a time"), true);
       assert.equal(combined.includes("feedback") && combined.includes("final answer"), true);
     }
+  },
+  {
+    name: "Profile application migration creates private review schemas without publishing records",
+    run: () => {
+      const migration = repoFile("supabase/migrations/20260723035406_profile_applications_and_private_media.sql").toLowerCase();
+
+      assert.equal(migration.includes("create table if not exists public.farmer_applications"), true);
+      assert.equal(migration.includes("linked_farmer_id uuid"), true);
+      assert.equal(migration.includes("linked_supplier_id uuid"), true);
+      assert.equal(migration.includes("source_application_id uuid"), true);
+      assert.equal(migration.includes("on delete set null"), true);
+      assert.equal(migration.includes("farmer_applications_linked_farmer_uidx"), true);
+      assert.equal(migration.includes("supplier_applications_linked_supplier_uidx"), true);
+      assert.equal(migration.includes("default false"), true);
+      assert.equal(migration.includes("insert into public.farmers"), false);
+      assert.equal(migration.includes("insert into public.suppliers"), false);
+      assert.equal(migration.includes("update public.farmers"), false);
+      assert.equal(migration.includes("update public.suppliers"), false);
+    }
+  },
+  {
+    name: "Profile application tables and buckets remain server-only",
+    run: () => {
+      const migration = repoFile("supabase/migrations/20260723035406_profile_applications_and_private_media.sql").toLowerCase();
+
+      assert.equal(migration.includes("alter table public.farmer_applications enable row level security"), true);
+      assert.equal(migration.includes("alter table public.supplier_applications enable row level security"), true);
+      assert.equal(migration.includes("from public, anon, authenticated"), true);
+      assert.equal(migration.includes("grant all on table public.farmer_applications to service_role"), true);
+      assert.equal(migration.includes("grant all on table public.supplier_applications to service_role"), true);
+      assert.match(migration, /'farmer-application-media',[\s\S]*?false,[\s\S]*?8388608/);
+      assert.match(migration, /'supplier-application-media',[\s\S]*?false,[\s\S]*?8388608/);
+      assert.equal(migration.includes("to anon"), false);
+      assert.equal(migration.includes("to authenticated"), false);
+    }
+  },
+  {
+    name: "Profile application verification tolerates optional migration history columns",
+    run: () => {
+      const verification = repoFile("supabase/review/verify_profile_applications_and_private_media.sql").toLowerCase();
+
+      assert.equal(verification.includes("to_jsonb(sm)->>'name' as name"), true);
+      assert.equal(verification.includes("to_jsonb(sm)->>'inserted_at' as inserted_at"), true);
+      assert.equal(verification.includes("select version, name, inserted_at"), false);
+      assert.equal(verification.includes("where sm.version in ('20260721190621', '20260721223536', '20260723035406')"), true);
+      assert.equal(verification.includes("insert into"), false);
+      assert.equal(verification.includes("update public."), false);
+      assert.equal(verification.includes("delete from"), false);
+    }
   }
 ];
 
