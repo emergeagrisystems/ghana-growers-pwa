@@ -51,6 +51,17 @@ import {
   isValidPublicProfileSlug
 } from "../src/lib/publicProfileEligibility";
 import {
+  APPLICATION_DOCUMENT_MAX_BYTES,
+  APPLICATION_IMAGE_MAX_BYTES,
+  buildFarmerProfileDraft,
+  buildSupplierProfileDraft,
+  normalizeServiceAreas,
+  normalizeSupplierCategories,
+  privateApplicationMediaPath,
+  validateApplicationMedia
+} from "../src/lib/profileApplicationContracts";
+import { convertApprovedApplication, type ConversionStore } from "../src/lib/profileApplicationConversion";
+import {
   featuredMarketplaceListings,
   formatMarketplaceLocation,
   marketplaceAvailability,
@@ -7633,6 +7644,171 @@ const tests: TestCase[] = [
       assert.equal(verification.includes("insert into"), false);
       assert.equal(verification.includes("update public."), false);
       assert.equal(verification.includes("delete from"), false);
+    }
+  },
+  {
+    name: "Supplier application inputs normalize to canonical private profile values",
+    run: () => {
+      assert.deepEqual(
+        normalizeSupplierCategories(["Fertilizer", "Machinery", "Irrigation", "Finance", "Seeds", "Seeds"]),
+        ["Fertilizers", "Farm Equipment", "Irrigation Systems", "Financial Services", "Seeds"]
+      );
+      assert.deepEqual(normalizeServiceAreas(["ashanti", "Greater Accra", "ashanti"]), ["Ashanti", "Greater Accra"]);
+      assert.equal(validateApplicationMedia({ contentType: "image/webp", size: APPLICATION_IMAGE_MAX_BYTES, kind: "image" }).ok, true);
+      assert.equal(validateApplicationMedia({ contentType: "application/pdf", size: APPLICATION_DOCUMENT_MAX_BYTES, kind: "document" }).ok, true);
+      assert.equal(validateApplicationMedia({ contentType: "application/pdf", size: 20, kind: "image" }).ok, false);
+      assert.equal(validateApplicationMedia({ contentType: "image/jpeg", size: APPLICATION_IMAGE_MAX_BYTES + 1, kind: "image" }).ok, false);
+      assert.equal(
+        privateApplicationMediaPath({ applicationId: "application-id", group: "certificates", objectId: "server-id", contentType: "application/pdf" }),
+        "application-id/certificates/server-id.pdf"
+      );
+    }
+  },
+  {
+    name: "Supplier submissions persist private paths and compensate partial upload failures",
+    run: () => {
+      const route = repoFile("src/app/api/supplier-registration/route.ts");
+      const service = repoFile("src/lib/profileApplications.ts");
+
+      assert.equal(route.includes("createSupplierApplication"), true);
+      assert.equal(route.includes("private_certificate_paths: privateCertificatePaths"), true);
+      assert.equal(route.includes("private_photo_paths: privatePhotoPaths"), true);
+      assert.equal(route.includes("cleanupUploadedMedia(uploadedPaths"), true);
+      assert.equal(route.lastIndexOf("validateApplicationMedia") < route.lastIndexOf("uploadPrivateApplicationMedia"), true);
+      assert.doesNotMatch(route, /bucket:\s*["']suppliers["']/);
+      assert.doesNotMatch(route, /certificate_urls:\s*validation\.data/);
+      assert.equal(service.includes("PROFILE_APPLICATION_MEDIA[kind].bucket"), true);
+      assert.equal(service.includes("publicUrl: false"), true);
+    }
+  },
+  {
+    name: "Profile application admin loaders remain authenticated and private",
+    run: () => {
+      const applicationsRoute = repoFile("src/app/api/admin/applications/route.ts");
+      const mediaRoute = repoFile("src/app/api/admin/profile-applications/media/route.ts");
+      const service = repoFile("src/lib/profileApplications.ts");
+
+      assert.equal(applicationsRoute.includes("requireAdminUser(request)"), true);
+      assert.equal(applicationsRoute.includes("Could not load application queues. Please retry."), true);
+      assert.equal(mediaRoute.includes("requireAdminUser(request)"), true);
+      assert.equal(mediaRoute.includes('"Cache-Control": "no-store, max-age=0"'), true);
+      assert.equal(service.startsWith('import "server-only";'), true);
+      assert.equal(service.includes("createSupabaseStorageSignedUrl"), true);
+      assert.doesNotMatch(mediaRoute, /console\.(error|warn)\([^\n]*path/);
+    }
+  },
+  {
+    name: "Approved application conversion is idempotent across retries",
+    run: async () => {
+      const application = { id: "application-1", status: "Approved", linkedProfileId: null as string | null };
+      const profiles = new Map<string, string>();
+      let createCount = 0;
+      const store: ConversionStore = {
+        async loadApplication() {
+          return { status: 200, data: application };
+        },
+        async findProfileBySource(_kind, applicationId) {
+          return { status: 200, profileId: profiles.get(applicationId) };
+        },
+        async createProfile(_kind, profile) {
+          createCount += 1;
+          const profileId = String(profile.id ?? "profile-1");
+          profiles.set("application-1", profileId);
+          return { status: 201, profileId };
+        },
+        async linkApplication(_kind, _applicationId, profileId) {
+          application.linkedProfileId = profileId;
+          return { status: 200 };
+        }
+      };
+      const profile = { id: "profile-1", status: "Pending", source_application_id: "application-1" };
+      const first = await convertApprovedApplication({ kind: "farmer", applicationId: application.id, profile, store });
+      const retry = await convertApprovedApplication({ kind: "farmer", applicationId: application.id, profile, store });
+
+      assert.equal(first.profileId, "profile-1");
+      assert.equal(first.reused, false);
+      assert.equal(retry.profileId, "profile-1");
+      assert.equal(retry.reused, true);
+      assert.equal(createCount, 1);
+
+      const pending = await convertApprovedApplication({
+        kind: "farmer",
+        applicationId: "pending-application",
+        profile,
+        store: { ...store, loadApplication: async () => ({ status: 200, data: { id: "pending-application", status: "Pending" } }) }
+      });
+      assert.equal(pending.status, 409);
+      assert.equal(createCount, 1);
+    }
+  },
+  {
+    name: "Application conversion drafts are private and never automatically featured",
+    run: () => {
+      const farmer = buildFarmerProfileDraft({
+        id: "farmer-application",
+        applicant_name: "Applicant",
+        phone_number: "0200000000",
+        region: "Ashanti",
+        district: "Ejisu",
+        farm_type: "Crop",
+        crops_products: ["Maize"]
+      });
+      const supplier = buildSupplierProfileDraft({
+        id: "supplier-application",
+        business_name: "Supplier Business",
+        contact_person: "Applicant",
+        region: "Ashanti",
+        district: "Ejisu",
+        normalized_categories: ["Seeds"],
+        products_or_services: "Maize seed"
+      });
+
+      assert.equal(farmer.status, "Pending");
+      assert.equal(farmer.verification_status, "Pending Verification");
+      assert.equal(farmer.launch_ready, false);
+      assert.equal(farmer.is_featured, false);
+      assert.equal(farmer.slug, null);
+      assert.equal(supplier.ok, true);
+      if (supplier.ok) {
+        assert.equal(supplier.data.status, "Pending");
+        assert.equal(supplier.data.verification_status, "Pending Verification");
+        assert.equal(supplier.data.launch_ready, false);
+        assert.equal(supplier.data.is_featured, false);
+        assert.equal(supplier.data.slug, null);
+      }
+    }
+  },
+  {
+    name: "Farmer application and approved media foundations remain safely dormant",
+    run: () => {
+      const farmerRoute = repoFile("src/app/api/farmer-registration/route.ts");
+      const farmerPage = repoFile("src/app/join/farmer/page.tsx");
+      const service = repoFile("src/lib/profileApplications.ts");
+
+      assert.equal(service.includes('insertSupabaseRecord("farmer_applications"'), true);
+      assert.equal(service.includes('bucket: PROFILE_APPLICATION_MEDIA[kind].bucket'), true);
+      assert.equal(service.includes("if (!approved)"), true);
+      assert.equal(service.includes("approvedImagePaths(kind, application)"), true);
+      assert.equal(service.includes("linkedProfileId !== profileId"), true);
+      assert.equal(service.includes("verifiedDigest !== sourceDigest"), true);
+      assert.equal(service.includes("private_certificate_paths") && service.includes("private_document_paths"), true);
+      assert.equal(farmerRoute.includes("status: 503"), true);
+      assert.doesNotMatch(farmerRoute, /createFarmerApplication|uploadPrivateApplicationMedia/);
+      assert.equal(farmerPage.includes("Applications are temporarily unavailable"), true);
+    }
+  },
+  {
+    name: "Profile runtime foundations preserve public DTO and eligibility privacy",
+    run: () => {
+      const publicData = repoFile("src/lib/supabase/publicData.ts");
+      const supplierMapper = publicData.slice(publicData.indexOf("function mapSupplier"), publicData.indexOf("function mapListing"));
+      const eligibility = repoFile("src/lib/publicProfileEligibility.ts");
+
+      assert.doesNotMatch(supplierMapper, /certificate|private_|contact_person|whatsapp_number|phone:/);
+      assert.equal(eligibility.includes('record.status === "Active"'), true);
+      assert.equal(eligibility.includes('verificationStatus(record) === "Verified"'), true);
+      assert.equal(eligibility.includes("launchReady === true"), true);
+      assert.equal(eligibility.includes("!isDemoProfileOrigin(record.source)"), true);
     }
   }
 ];

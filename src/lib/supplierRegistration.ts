@@ -1,5 +1,11 @@
 import { supplierRegistrationNotifications } from "@/data/notificationConfig";
 import { appendValuesToGoogleSheet } from "@/lib/googleSheets";
+import {
+  normalizeServiceAreas,
+  normalizeSupplierCategories,
+  unsupportedServiceAreas,
+  unsupportedSupplierCategories
+} from "@/lib/profileApplicationContracts";
 
 export type SupplierRegistrationPayload = {
   businessName: string;
@@ -34,8 +40,8 @@ export type SupplierRegistrationResult = {
   data?: SupplierRegistrationPayload;
 };
 
-function clean(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
+function clean(value: unknown, maxLength = 4000) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
 function cleanArray(value: unknown) {
@@ -49,30 +55,32 @@ function cleanArray(value: unknown) {
 
 export function validateSupplierRegistration(input: Record<string, unknown>): SupplierRegistrationResult {
   const isOnboardingFlow = input.onboardingFlow === "true";
-  const categories = cleanArray(input.categories ?? input.supplierCategory);
-  const regionsServed = cleanArray(input.regionsServed ?? input.region);
-  const businessName = clean(input.businessName) || clean(input.companyName);
-  const websiteUrl = clean(input.websiteUrl) || clean(input.website);
-  const businessDescription = clean(input.businessDescription) || clean(input.description);
+  const submittedCategories = cleanArray(input.categories ?? input.supplierCategory);
+  const submittedRegions = cleanArray(input.regionsServed ?? input.region);
+  const categories = normalizeSupplierCategories(submittedCategories);
+  const regionsServed = normalizeServiceAreas(submittedRegions);
+  const businessName = clean(input.businessName, 160) || clean(input.companyName, 160);
+  const websiteUrl = clean(input.websiteUrl, 2048) || clean(input.website, 2048);
+  const businessDescription = clean(input.businessDescription, 4000) || clean(input.description, 4000);
 
   const data: SupplierRegistrationPayload = {
     businessName,
-    companyName: clean(input.companyName) || businessName,
-    contactPerson: clean(input.contactPerson),
-    phone: clean(input.phone),
-    whatsapp: clean(input.whatsapp),
-    email: clean(input.email),
-    region: clean(input.region),
-    district: clean(input.district),
+    companyName: clean(input.companyName, 160) || businessName,
+    contactPerson: clean(input.contactPerson, 120),
+    phone: clean(input.phone, 32),
+    whatsapp: clean(input.whatsapp, 32),
+    email: clean(input.email, 254),
+    region: normalizeServiceAreas([clean(input.region, 80)])[0] ?? "",
+    district: clean(input.district, 120),
     websiteUrl,
-    registrationNumber: clean(input.registrationNumber),
+    registrationNumber: clean(input.registrationNumber, 120),
     categories,
     regionsServed,
     supplierCategory: clean(input.supplierCategory) || categories.join(", "),
-    productsServicesOffered: clean(input.productsServicesOffered),
+    productsServicesOffered: clean(input.productsServicesOffered, 2000),
     deliveryCoverage: clean(input.deliveryCoverage) || regionsServed.join(", "),
     businessDescription,
-    yearsInBusiness: clean(input.yearsInBusiness),
+    yearsInBusiness: clean(input.yearsInBusiness, 80),
     website: websiteUrl,
     description: businessDescription,
     logoImageUrl: clean(input.logoImageUrl),
@@ -102,9 +110,27 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
     errors.supplierCategory = "Choose at least one supplier category.";
   }
 
+  if (unsupportedSupplierCategories(submittedCategories).length > 0) {
+    errors.categories = "Choose supplier categories from the available list.";
+    errors.supplierCategory = "Choose supplier categories from the available list.";
+  }
+
   if (isOnboardingFlow && data.regionsServed.length === 0 && !data.region) {
     errors.regionsServed = "Choose at least one region served.";
     errors.region = "Choose at least one region served.";
+  }
+
+  if (unsupportedServiceAreas(submittedRegions).length > 0) {
+    errors.regionsServed = "Choose service regions from the available list.";
+    errors.region = "Choose service regions from the available list.";
+  }
+
+  if (data.phone && !/^[+0-9()\-\s]{7,32}$/.test(data.phone)) {
+    errors.phone = "Enter a valid phone number.";
+  }
+
+  if (data.whatsapp && !/^[+0-9()\-\s]{7,32}$/.test(data.whatsapp)) {
+    errors.whatsapp = "Enter a valid WhatsApp number.";
   }
 
   if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {

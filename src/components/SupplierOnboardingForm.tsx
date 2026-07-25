@@ -4,24 +4,9 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, ImagePlus, Send } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
+import { supplierCategories } from "@/data/supplierCategories";
 
 type FormErrors = Record<string, string | undefined>;
-
-const supplierCategories = [
-  "Seeds",
-  "Fertilizer",
-  "Agrochemicals",
-  "Machinery",
-  "Irrigation",
-  "Packaging",
-  "Logistics & Transport",
-  "Storage & Cold Chain",
-  "Veterinary",
-  "Finance",
-  "Insurance",
-  "Agricultural Services",
-  "Other"
-];
 
 const fieldClass = "gg-field min-w-0 w-full";
 

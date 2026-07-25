@@ -23,7 +23,13 @@ type StorageDeleteResponse = {
   status: number;
 };
 
-type SelectResponse<T> = {
+type StorageSignedUrlResponse = {
+  signedUrl?: string;
+  error?: string;
+  status: number;
+};
+
+export type SelectResponse<T> = {
   data?: T[];
   error?: string;
   status: number;
@@ -98,7 +104,8 @@ export async function selectSupabaseRecords<T extends Record<string, unknown>>(t
       apikey: serviceRoleKey,
       Authorization: `Bearer ${serviceRoleKey}`,
       "Content-Type": "application/json"
-    }
+    },
+    cache: "no-store"
   });
 
   const result = (await response.json().catch(() => null)) as T[] | { message?: string; details?: string; hint?: string } | null;
@@ -332,4 +339,62 @@ export async function deleteSupabaseStorageObject({
   }
 
   return { status: response.status };
+}
+
+export async function createSupabaseStorageSignedUrl({
+  bucket,
+  path,
+  expiresIn = 300
+}: {
+  bucket: string;
+  path: string;
+  expiresIn?: number;
+}): Promise<StorageSignedUrlResponse> {
+  const { url, serviceRoleKey } = supabaseConfig();
+
+  if (!url || !serviceRoleKey) {
+    return {
+      status: 503,
+      error: "Supabase Storage is not configured on the server."
+    };
+  }
+
+  const cleanUrl = url.replace(/\/$/, "");
+  const encodedPath = path
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+  const response = await fetch(`${cleanUrl}/storage/v1/object/sign/${bucket}/${encodedPath}`, {
+    method: "POST",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ expiresIn: Math.min(600, Math.max(60, expiresIn)) }),
+    cache: "no-store"
+  });
+  const result = (await response.json().catch(() => null)) as {
+    signedURL?: string;
+    signedUrl?: string;
+    message?: string;
+    error?: string;
+  } | null;
+
+  if (!response.ok) {
+    return {
+      status: response.status,
+      error: result?.message || result?.error || "Private media preview could not be created."
+    };
+  }
+
+  const signedPath = result?.signedURL ?? result?.signedUrl;
+  if (!signedPath) {
+    return { status: 502, error: "Private media preview could not be created." };
+  }
+
+  return {
+    status: response.status,
+    signedUrl: signedPath.startsWith("http") ? signedPath : `${cleanUrl}${signedPath.startsWith("/") ? "" : "/"}${signedPath}`
+  };
 }

@@ -17,6 +17,18 @@ export async function GET(request: Request) {
 
   const applications = await getApplications();
 
+  if (applications.error) {
+    console.error("Admin application queues failed to load", {
+      route: "/api/admin/applications",
+      feature: "profile_applications",
+      code: "load_failed"
+    });
+    return NextResponse.json({
+      error: "Could not load application queues. Please retry.",
+      diagnostics: applications.diagnostics
+    }, { status: 502 });
+  }
+
   return NextResponse.json(applications);
 }
 
