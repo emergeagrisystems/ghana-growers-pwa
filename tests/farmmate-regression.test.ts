@@ -51,6 +51,16 @@ import {
   isValidPublicProfileSlug
 } from "../src/lib/publicProfileEligibility";
 import {
+  farmerPublicationChecks,
+  featuredIsCurrentlyPublic,
+  normalizeRecordArrays,
+  profileIsPubliclyEligible,
+  supplierCategoryReview,
+  supplierPublicationChecks,
+  type FarmerProfileRecord,
+  type SupplierProfileRecord
+} from "../src/lib/profileEditorContracts";
+import {
   APPLICATION_DOCUMENT_MAX_BYTES,
   APPLICATION_IMAGE_MAX_BYTES,
   buildFarmerProfileDraft,
@@ -7809,6 +7819,121 @@ const tests: TestCase[] = [
       assert.equal(eligibility.includes('verificationStatus(record) === "Verified"'), true);
       assert.equal(eligibility.includes("launchReady === true"), true);
       assert.equal(eligibility.includes("!isDemoProfileOrigin(record.source)"), true);
+    }
+  },
+  {
+    name: "Profile editors use protected live rows and intentional patch saves",
+    run: () => {
+      const route = repoFile("src/app/api/admin/profile-editor/route.ts");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+
+      assert.equal(route.includes("requireAdminUser(request)"), true);
+      assert.equal(route.includes('export const dynamic = "force-dynamic"'), true);
+      assert.equal(route.includes('"Cache-Control": "no-store, max-age=0"'), true);
+      assert.equal(service.startsWith('import "server-only";'), true);
+      assert.equal(service.includes('"whatsapp_number", "verification_status", "profile_image_url"'), true);
+      assert.equal(service.includes("farmerEditableFields") && service.includes("supplierEditableFields"), true);
+      assert.equal(service.includes("for (const [field, value] of Object.entries(changes))"), true);
+      assert.equal(editor.includes("Unsaved changes"), true);
+      assert.equal(editor.includes("Save failed. Your edits remain on screen."), true);
+      assert.equal(editor.includes('label="Application contact name"'), true);
+      assert.equal(editor.includes('label="Personal name"'), false);
+      assert.equal(editor.includes("Save or reset your unsaved changes before approving public media."), true);
+      assert.equal(editor.includes('window.addEventListener("beforeunload"'), true);
+      assert.equal(editor.includes("Reset"), true);
+      assert.equal(editor.includes("Save Changes"), true);
+    }
+  },
+  {
+    name: "Profile save contracts preserve arrays, unknown supplier categories and ordering",
+    run: () => {
+      const farmer = normalizeRecordArrays({
+        id: "farmer-1", slug: "safe-farm", farmer_name: "Private Name", farm_name: "Safe Farm", region: "Eastern",
+        district: "Klo-Agogo", farm_type: "Crop", products: ["Maize", "Maize", "Cassava"], farm_size: null,
+        whatsapp_number: null, profile_image_url: "/farmer.jpg", description: "A reviewed farm profile.", status: "Active",
+        created_at: "2026-01-01", updated_at: "2026-01-01", verification_date: null, verification_status: "Verified",
+        verified_by: null, verification_notes: null, source: "admin", phone_number: null, email: null, farm_location: null,
+        farming_experience: null, currently_harvesting: null, supply_frequency: null, delivery_preference: null,
+        payment_preference: null, is_featured: true, featured_until: null, featured_note: null, launch_status: "Public Farmer",
+        editorial_notes: null, launch_ready: true, launch_checklist: {}, document_urls: [], gg_standard_status: "Pending",
+        farm_photo_urls: ["/farm-b.jpg", "/farm-a.jpg", "/farm-b.jpg"], produce_photo_urls: ["/produce.jpg"], source_application_id: null
+      } satisfies FarmerProfileRecord);
+
+      assert.deepEqual(farmer.products, ["Maize", "Cassava"]);
+      assert.deepEqual(farmer.farm_photo_urls, ["/farm-b.jpg", "/farm-a.jpg"]);
+      assert.equal(supplierCategoryReview("Legacy mechanisation partner").requiresReview, true);
+      assert.equal(supplierCategoryReview("Machinery").normalized, "Farm Equipment");
+    }
+  },
+  {
+    name: "Publication checks block incomplete profiles and featured visibility requires eligibility",
+    run: () => {
+      const farmer = {
+        id: "farmer-2", slug: "incomplete-farm", farmer_name: null, farm_name: "Incomplete Farm", region: "Eastern", district: "",
+        farm_type: "Crop", products: [], farm_size: null, whatsapp_number: null, profile_image_url: null, description: null,
+        status: "Pending", created_at: "2026-01-01", updated_at: "2026-01-01", verification_date: null,
+        verification_status: "Pending Verification", verified_by: null, verification_notes: null, source: "admin", phone_number: null,
+        email: null, farm_location: null, farming_experience: null, currently_harvesting: null, supply_frequency: null,
+        delivery_preference: null, payment_preference: null, is_featured: true, featured_until: null, featured_note: null,
+        launch_status: "Needs Improvement", editorial_notes: null, launch_ready: false, launch_checklist: {}, document_urls: [],
+        gg_standard_status: "Pending", farm_photo_urls: [], produce_photo_urls: [], source_application_id: null
+      } satisfies FarmerProfileRecord;
+      const supplier = {
+        id: "supplier-1", slug: "supplier-one", company_name: "Supplier One", contact_person: "Private", region: "Ashanti",
+        district: "Kumasi", category: "Seeds", products_services: ["Seed"], service_coverage_area: "Ashanti",
+        whatsapp_number: null, phone: null, website: null, verification_status: "Verified", logo_url: "/logo.png", status: "Active",
+        created_at: "2026-01-01", updated_at: "2026-01-01", is_featured: true, featured_until: null, featured_note: null,
+        launch_ready: false, launch_status: "Needs Improvement", source_application_id: null, verification_date: null,
+        verified_by: null, verification_notes: null, gg_standard_status: "Pending", profile_review_status: "Ready",
+        profile_image_url: null, source: "admin", editorial_notes: null, launch_checklist: {}
+      } satisfies SupplierProfileRecord;
+
+      assert.equal(farmerPublicationChecks(farmer).some((check) => !check.complete), true);
+      assert.equal(profileIsPubliclyEligible("farmer", farmer), false);
+      assert.equal(featuredIsCurrentlyPublic("farmer", farmer), false);
+      assert.equal(supplierPublicationChecks(supplier).every((check) => check.complete), true);
+      assert.equal(profileIsPubliclyEligible("supplier", supplier), true);
+      assert.equal(featuredIsCurrentlyPublic("supplier", supplier), true);
+    }
+  },
+  {
+    name: "Profile preview and media workflow keep private data out of public DTOs",
+    run: () => {
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const publicData = repoFile("src/lib/supabase/publicData.ts");
+      const previewSection = editor.slice(editor.indexOf("Admin-only Public Preview"), editor.indexOf("fixed inset-x-0 bottom-0"));
+
+      assert.equal(service.includes("mapFarmerPublicProfile") && service.includes("mapSupplierPublicProfile"), true);
+      assert.doesNotMatch(previewSection, /phone_number|whatsapp_number|privateEmail|privateNotes|sourceHistory|signedUrl|certificate/);
+      assert.equal(editor.includes("Private - never shown publicly"), true);
+      assert.equal(editor.includes("Certificates and documents can never be promoted publicly."), true);
+      assert.equal(editor.includes("Approve for public use"), true);
+      assert.equal(publicData.includes("...(row.farm_photo_urls ?? [])"), true);
+      assert.equal(publicData.includes("...(row.produce_photo_urls ?? [])"), true);
+    }
+  },
+  {
+    name: "Protected profile transitions and application conversion remain separated and idempotent",
+    run: () => {
+      const route = repoFile("src/app/api/admin/profile-editor/route.ts");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+
+      for (const transition of ["under-review", "verify", "launch-ready", "activate", "pause", "feature", "unfeature"]) {
+        assert.equal(route.includes(`"${transition}"`), true);
+      }
+      assert.equal(service.includes('transition === "activate"'), true);
+      assert.equal(service.includes("This profile is not ready to publish."), true);
+      assert.equal(route.includes("convertFarmerApplicationToProfile"), true);
+      assert.equal(route.includes("convertSupplierApplicationToProfile"), true);
+      assert.equal(dashboard.includes("Approve & Publish"), false);
+      assert.equal(dashboard.includes("Verify & Publish"), false);
+      assert.equal(dashboard.includes("Create Supplier Profile"), true);
+      assert.equal(dashboard.includes("openFarmerProfileEditor"), false);
+      assert.equal(dashboard.includes("scheduleSupplierEditorialSave"), false);
+      assert.equal(dashboard.includes("scheduleEditorialSave"), false);
     }
   }
 ];

@@ -313,6 +313,10 @@ h3 {
     @apply bg-tomato text-earth-50 hover:bg-tomato/90;
   }
 
+  .admin-icon-button {
+    @apply grid min-h-10 min-w-10 place-items-center rounded-md border border-leaf-900/10 bg-white text-ink/55 transition hover:bg-leaf-50 hover:text-leaf-800 disabled:cursor-not-allowed disabled:opacity-35;
+  }
+
   .admin-metric-card {
     @apply border-l-4 bg-white;
   }
