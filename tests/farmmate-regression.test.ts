@@ -7898,6 +7898,36 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Farmer review workspace distinguishes application review from public publication",
+    run: () => {
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const eligibility = repoFile("src/lib/publicProfileEligibility.ts");
+      const recommendation = dashboard.slice(
+        dashboard.indexOf("function farmerRecommendedAction"),
+        dashboard.indexOf("function farmerReviewTimeline")
+      );
+
+      assert.equal(recommendation.includes('return "Review Complete"'), false);
+      assert.equal(recommendation.includes('return "Application review complete"'), true);
+      assert.equal(dashboard.includes("The submitted farmer information has been reviewed. Open Public Review to complete launch-readiness and publication checks."), true);
+      assert.equal(dashboard.includes("Launch readiness, public preview and featuring are managed in Public Review."), true);
+      assert.equal(dashboard.includes("Application Review Checks"), true);
+      assert.equal(dashboard.includes("Open Public Review"), true);
+      assert.equal(dashboard.includes("markReviewingFarmerLaunchReady"), false);
+
+      for (const control of ["Mark Under Review", "Verify", "Mark Launch Ready", "Activate / Publish", "Pause / Deactivate", "Feature"]) {
+        assert.equal(editor.includes(control), true);
+      }
+      assert.equal(service.includes('checks.filter((check) => !check.complete && !["verified", "launch-ready"].includes(check.key))'), true);
+      assert.equal(service.includes("checks.filter((check) => check.required && !check.complete)"), true);
+      assert.equal(service.includes('case "feature":'), true);
+      assert.equal(eligibility.includes("isEligiblePublicFarmer"), true);
+      assert.equal(recommendation.includes("fetch("), false);
+    }
+  },
+  {
     name: "Profile preview and media workflow keep private data out of public DTOs",
     run: () => {
       const editor = repoFile("src/components/AdminProfileEditor.tsx");

@@ -2134,11 +2134,7 @@ function farmerRecommendedAction(farmer: ImportedFarmerRecord) {
     return "Call Farmer";
   }
 
-  if (farmer.verification_status !== "Verified") {
-    return "Approve";
-  }
-
-  return farmer.status === "Active" ? "Review Complete" : "Open Profile Review";
+  return "Application review complete";
 }
 
 function farmerReviewTimeline(farmer: ImportedFarmerRecord) {
@@ -8010,7 +8006,7 @@ export function AdminDashboard({
                             </section>
 
                             <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Profile Readiness</h4>
+                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Application Review Checks</h4>
                               <div className="mt-4 grid gap-2">
                                 {reviewingReadiness.map((item) => (
                                   <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
@@ -8021,6 +8017,9 @@ export function AdminDashboard({
                                   </div>
                                 ))}
                               </div>
+                              <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">
+                                Launch readiness, public preview and featuring are managed in Public Review.
+                              </p>
                             </section>
                           </div>
                         ) : (
@@ -8057,7 +8056,9 @@ export function AdminDashboard({
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
                               <p className="mt-2 text-xl font-black text-ink">{recommendedFarmerAction}</p>
                               <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
-                                Recommendations assist the reviewer. The final decision remains with Ghana Growers.
+                                {recommendedFarmerAction === "Application review complete"
+                                  ? "The submitted farmer information has been reviewed. Open Public Review to complete launch-readiness and publication checks."
+                                  : "Recommendations assist the reviewer. The final decision remains with Ghana Growers."}
                               </p>
                             </div>
 
@@ -8291,7 +8292,7 @@ export function AdminDashboard({
                                 href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
                                 className="admin-action-primary w-full"
                               >
-                                Open profile review & publication
+                                Open Public Review
                               </Link>
                               <button
                                 type="button"
