@@ -1,35 +1,64 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
-import { getApplications, updateApplicationStatus, updateSupplierEditorial, type ApplicationKind, type ApplicationStatus } from "@/lib/applications";
+import { getApplicationQueue, updateApplicationStatus, updateSupplierEditorial, type ApplicationKind, type ApplicationStatus } from "@/lib/applications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const allowedKinds = new Set<ApplicationKind>(["farmer", "buyer", "supplier"]);
 const allowedStatuses = new Set<ApplicationStatus>(["Under Review", "Approved", "Rejected", "Converted"]);
+const noStoreHeaders = { "Cache-Control": "private, no-store, max-age=0" };
+
+const queueErrorMessage: Record<ApplicationKind, string> = {
+  farmer: "Could not load farmer applications. Please retry.",
+  buyer: "Could not load buyer applications. Please retry.",
+  supplier: "Could not load supplier applications. Please retry."
+};
 
 export async function GET(request: Request) {
   const adminUser = await requireAdminUser(request);
 
   if (!adminUser) {
-    return NextResponse.json({ error: "Admin access required" }, { status: 401 });
+    return NextResponse.json({ error: "Admin access required" }, { status: 401, headers: noStoreHeaders });
   }
 
-  const applications = await getApplications();
+  const kind = new URL(request.url).searchParams.get("kind") as ApplicationKind | null;
 
-  if (applications.error) {
-    console.error("Admin application queues failed to load", {
+  if (!kind || !allowedKinds.has(kind)) {
+    return NextResponse.json({ error: "A valid application kind is required." }, { status: 400, headers: noStoreHeaders });
+  }
+
+  const queue = await getApplicationQueue(kind);
+
+  if (queue.state === "error") {
+    console.error("Admin application queue failed to load", {
       route: "/api/admin/applications",
-      feature: "profile_applications",
-      code: "load_failed"
+      applicationKind: kind,
+      source: queue.source,
+      code: "source_read_failed"
     });
     return NextResponse.json({
-      error: "Could not load application queues. Please retry.",
-      diagnostics: applications.diagnostics
-    }, { status: 502 });
+      kind,
+      state: queue.state,
+      error: queueErrorMessage[kind]
+    }, { status: queue.status >= 500 ? queue.status : 502, headers: noStoreHeaders });
   }
 
-  return NextResponse.json(applications);
+  if (queue.state === "unavailable") {
+    return NextResponse.json({
+      kind,
+      state: queue.state,
+      applications: [],
+      message: "Buyer applications are not available yet."
+    }, { headers: noStoreHeaders });
+  }
+
+  return NextResponse.json({
+    kind,
+    state: queue.state,
+    applications: queue.applications
+  }, { headers: noStoreHeaders });
 }
 
 export async function PATCH(request: Request) {

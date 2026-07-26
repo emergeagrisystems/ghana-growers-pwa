@@ -274,6 +274,7 @@ type AdminMatchOpportunity = {
 };
 type ApplicationKind = "farmer" | "buyer" | "supplier";
 type ApplicationStatus = "New" | "Pending" | "Under Review" | "Approved" | "Rejected" | "Converted";
+type ApplicationQueueLoadState = "idle" | "loading" | "loaded" | "unavailable" | "error";
 type SubmissionKind = "listing" | "buyer-request";
 type SubmissionStatus = "New" | "Needs Information" | "Under Review" | "Approved" | "Published" | "Paused" | "Rejected" | "Expired" | "Converted";
 type LaunchStatus = "Incomplete" | "Complete";
@@ -1033,7 +1034,7 @@ function summarize(
   rows: Record<AdminSectionId, AdminRow[]>,
   whatsappLeadCount: number,
   leadRequestCount: number,
-  applicationCounts: { farmers: number; buyers: number; suppliers: number },
+  applicationCounts: { farmers: number | null; buyers: number | null; suppliers: number | null },
   submissionCounts: { listings: number; buyerRequests: number }
 ) {
   const pendingVerifications = rows.verifications.filter((row) => row.status === "Pending").length;
@@ -1047,9 +1048,9 @@ function summarize(
     { label: "Pending Verifications", value: pendingVerifications, icon: CircleDashed },
     { label: "Total Leads", value: leadRequestCount, icon: MessageCircle },
     { label: "WhatsApp Leads", value: whatsappLeadCount, icon: MessageCircle },
-    { label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout },
-    { label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound },
-    { label: "Supplier Applications Waiting", value: applicationCounts.suppliers, icon: Truck },
+    ...(applicationCounts.farmers === null ? [] : [{ label: "New Farmer Applications", value: applicationCounts.farmers, icon: Sprout }]),
+    ...(applicationCounts.buyers === null ? [] : [{ label: "New Buyer Applications", value: applicationCounts.buyers, icon: UsersRound }]),
+    ...(applicationCounts.suppliers === null ? [] : [{ label: "Supplier Applications Waiting", value: applicationCounts.suppliers, icon: Truck }]),
     { label: "New Listing Submissions", value: submissionCounts.listings, icon: Store },
     { label: "New Buyer Request Submissions", value: submissionCounts.buyerRequests, icon: PackageCheck }
   ];
@@ -3895,8 +3896,12 @@ export function AdminDashboard({
     supplier: []
   });
   const [applicationTab, setApplicationTab] = useState<ApplicationKind>("farmer");
-  const [applicationError, setApplicationError] = useState("");
-  const [applicationDiagnostics, setApplicationDiagnostics] = useState<Partial<Record<ApplicationKind, string[]>>>({});
+  const [applicationQueueStates, setApplicationQueueStates] = useState<Record<ApplicationKind, ApplicationQueueLoadState>>({
+    farmer: "idle",
+    buyer: "idle",
+    supplier: "idle"
+  });
+  const [applicationErrors, setApplicationErrors] = useState<Partial<Record<ApplicationKind, string>>>({});
   const [submissions, setSubmissions] = useState<{
     listings: ListingSubmissionRecord[];
     buyerRequests: BuyerRequestSubmissionRecord[];
@@ -4213,14 +4218,19 @@ export function AdminDashboard({
     void loadAdminFarmers();
   }, [loadAdminFarmers]);
 
-  const loadApplications = useCallback(async () => {
-    const response = await fetch("/api/admin/applications").catch(() => null);
+  const loadApplicationQueue = useCallback(async (kind: ApplicationKind) => {
+    setApplicationQueueStates((current) => ({ ...current, [kind]: "loading" }));
+    setApplicationErrors((current) => ({ ...current, [kind]: undefined }));
+
+    const response = await fetch(`/api/admin/applications?kind=${encodeURIComponent(kind)}`, {
+      cache: "no-store"
+    }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as {
-      farmers?: ApplicationRecord[];
-      buyers?: ApplicationRecord[];
-      suppliers?: ApplicationRecord[];
+      kind?: ApplicationKind;
+      state?: "loaded" | "unavailable" | "error";
+      applications?: ApplicationRecord[];
       error?: string;
-      diagnostics?: Partial<Record<ApplicationKind, string[]>>;
+      message?: string;
     } | null;
 
     if (!response?.ok) {
@@ -4229,21 +4239,33 @@ export function AdminDashboard({
         return;
       }
 
-      setApplicationError(adminDiagnosticMessage(result, "Applications are unavailable."));
+      setApplicationQueueStates((current) => ({ ...current, [kind]: "error" }));
+      setApplicationErrors((current) => ({
+        ...current,
+        [kind]: adminDiagnosticMessage(result, `Could not load ${kind} applications. Please retry.`)
+      }));
       return;
     }
 
-    setApplications({
-      farmer: result?.farmers ?? [],
-      buyer: result?.buyers ?? [],
-      supplier: result?.suppliers ?? []
-    });
-    setSupplierEditorialDecisions(
-      Object.fromEntries((result?.suppliers ?? []).map((supplier) => [supplier.id, defaultSupplierEditorialDecision(supplier)]))
-    );
-    setApplicationDiagnostics(result?.diagnostics ?? {});
-    setApplicationError("");
+    const records = result?.applications ?? [];
+    setApplications((current) => ({ ...current, [kind]: records }));
+
+    if (kind === "supplier") {
+      setSupplierEditorialDecisions(
+        Object.fromEntries(records.map((supplier) => [supplier.id, defaultSupplierEditorialDecision(supplier)]))
+      );
+    }
+
+    setApplicationQueueStates((current) => ({
+      ...current,
+      [kind]: result?.state === "unavailable" ? "unavailable" : "loaded"
+    }));
+    setApplicationErrors((current) => ({ ...current, [kind]: undefined }));
   }, []);
+
+  const loadApplications = useCallback(async () => {
+    await Promise.all((["farmer", "buyer", "supplier"] as ApplicationKind[]).map((kind) => loadApplicationQueue(kind)));
+  }, [loadApplicationQueue]);
 
   useEffect(() => {
     void loadApplications();
@@ -4315,10 +4337,10 @@ export function AdminDashboard({
   }, [activeSection, applicationTab, loadImportedFarmers]);
 
   const newApplicationCounts = useMemo(() => ({
-    farmers: applications.farmer.filter(applicationNeedsReview).length,
-    buyers: applications.buyer.filter(applicationNeedsReview).length,
-    suppliers: applications.supplier.filter(applicationNeedsReview).length
-  }), [applications]);
+    farmers: applicationQueueStates.farmer === "loaded" ? applications.farmer.filter(applicationNeedsReview).length : null,
+    buyers: applicationQueueStates.buyer === "loaded" ? applications.buyer.filter(applicationNeedsReview).length : null,
+    suppliers: applicationQueueStates.supplier === "loaded" ? applications.supplier.filter(applicationNeedsReview).length : null
+  }), [applications, applicationQueueStates]);
   const newSubmissionCounts = useMemo(() => ({
     listings: submissions.listings.filter((submission) => submission.status === "New").length,
     buyerRequests: submissions.buyerRequests.filter((submission) => submission.status === "New").length
@@ -6273,7 +6295,26 @@ export function AdminDashboard({
     : isWhatsAppLeadsSection
       ? "Review WhatsApp contact-click analytics. Buyer enquiries remain in Produce Requests."
     : notice;
-  const visibleApplicationDiagnostics = applicationDiagnostics[applicationTab]?.join(" ") ?? "";
+  const selectedApplicationQueueState = applicationQueueStates[applicationTab];
+  const selectedApplicationError = applicationErrors[applicationTab] ?? "";
+
+  function applicationTabCount(kind: ApplicationKind, count: number) {
+    const state = applicationQueueStates[kind];
+
+    if (state === "unavailable") {
+      return "Unavailable";
+    }
+
+    if (state === "idle" || state === "loading") {
+      return "Loading";
+    }
+
+    if (state === "error") {
+      return "Error";
+    }
+
+    return String(count);
+  }
 
   async function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus) {
     const response = await fetch("/api/admin/lead-requests", {
@@ -6343,7 +6384,10 @@ export function AdminDashboard({
         return;
       }
 
-      setApplicationError(result?.error ?? "Could not update application.");
+      setApplicationErrors((current) => ({
+        ...current,
+        [applicationTab]: result?.error ?? "Could not update application."
+      }));
       return;
     }
 
@@ -6351,7 +6395,7 @@ export function AdminDashboard({
       ...current,
       [applicationTab]: current[applicationTab].map((item) => (item.id === application.id ? { ...item, status, updated_at: new Date().toISOString() } : item))
     }));
-    setApplicationError("");
+    setApplicationErrors((current) => ({ ...current, [applicationTab]: undefined }));
     setNotice(`${application.name} application marked ${status}.`);
     void loadActivity();
   }
@@ -6363,7 +6407,10 @@ export function AdminDashboard({
       return;
     }
     if (application.status !== "Approved") {
-      setApplicationError("Approve the application before creating a profile.");
+      setApplicationErrors((current) => ({
+        ...current,
+        [kind]: "Approve the application before creating a profile."
+      }));
       return;
     }
     if (!window.confirm(`Create a non-public ${kind} profile from this approved application?`)) return;
@@ -6376,7 +6423,10 @@ export function AdminDashboard({
     const result = (await response?.json().catch(() => null)) as { profileId?: string; reused?: boolean; error?: string } | null;
     if (!response?.ok || !result?.profileId) {
       if (response?.status === 401) window.location.href = "/admin/login";
-      setApplicationError(result?.error ?? "The profile could not be created.");
+      setApplicationErrors((current) => ({
+        ...current,
+        [kind]: result?.error ?? "The profile could not be created."
+      }));
       return;
     }
     window.location.href = `/admin/profiles/${kind}/${encodeURIComponent(result.profileId)}`;
@@ -7530,14 +7580,9 @@ export function AdminDashboard({
               </div>
             ) : isApplicationsSection ? (
               <div className="grid gap-5 p-5">
-                {applicationError || visibleApplicationDiagnostics ? (
-                  <div className="rounded-md bg-earth-50 p-4 text-sm font-semibold leading-6 text-earth-700">
-                    {applicationError || visibleApplicationDiagnostics}
-                  </div>
-                ) : null}
                 <div className="flex flex-wrap gap-2">
                   {([
-                    ["farmer", "Farmer Applications", farmerReviewQueue.length],
+                    ["farmer", "Farmer Applications", applications.farmer.filter(applicationNeedsReview).length],
                     ["buyer", "Buyer Applications", applications.buyer.filter(applicationNeedsReview).length],
                     ["supplier", "Supplier Applications", applications.supplier.filter(applicationNeedsReview).length]
                   ] as Array<[ApplicationKind, string, number]>).map(([kind, label, count]) => (
@@ -7549,11 +7594,36 @@ export function AdminDashboard({
                         applicationTab === kind ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-800 hover:bg-white"
                       }`}
                     >
-                      {label} ({count})
+                      {label} ({applicationTabCount(kind, count)})
                     </button>
                   ))}
                 </div>
-                {applicationTab === "farmer" ? (
+                {selectedApplicationQueueState === "loading" || selectedApplicationQueueState === "idle" ? (
+                  <div className="rounded-md bg-leaf-50 p-4 text-sm font-semibold leading-6 text-ink/60" role="status">
+                    Loading {applicationTab} applications...
+                  </div>
+                ) : null}
+                {selectedApplicationQueueState === "unavailable" ? (
+                  <div className="rounded-md bg-leaf-50 p-5 ring-1 ring-leaf-900/10" role="status">
+                    <h3 className="text-lg font-black text-ink">Buyer applications are not available yet.</h3>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-ink/60">
+                      Buyer enquiries remain available in Produce Requests and are not duplicated here.
+                    </p>
+                  </div>
+                ) : null}
+                {selectedApplicationQueueState === "error" ? (
+                  <div className="flex flex-col gap-3 rounded-md bg-tomato/10 p-4 text-sm font-semibold leading-6 text-tomato sm:flex-row sm:items-center sm:justify-between" role="alert">
+                    <span>{selectedApplicationError || `Could not load ${applicationTab} applications.`}</span>
+                    <button
+                      type="button"
+                      onClick={() => void loadApplicationQueue(applicationTab)}
+                      className="min-h-11 rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : null}
+                {selectedApplicationQueueState !== "loaded" ? null : applicationTab === "farmer" ? (
                   <div className="grid min-w-0 gap-5">
                     <section className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">

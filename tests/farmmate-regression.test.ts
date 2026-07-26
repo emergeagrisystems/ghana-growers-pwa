@@ -7692,14 +7692,41 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Profile application admin loaders remain authenticated and private",
+    name: "Profile application admin loaders remain authenticated, private, and queue-isolated",
     run: () => {
       const applicationsRoute = repoFile("src/app/api/admin/applications/route.ts");
       const mediaRoute = repoFile("src/app/api/admin/profile-applications/media/route.ts");
       const service = repoFile("src/lib/profileApplications.ts");
+      const applicationQueues = repoFile("src/lib/applications.ts");
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
 
       assert.equal(applicationsRoute.includes("requireAdminUser(request)"), true);
-      assert.equal(applicationsRoute.includes("Could not load application queues. Please retry."), true);
+      assert.equal(applicationsRoute.includes('searchParams.get("kind")'), true);
+      assert.equal(applicationsRoute.includes('getApplicationQueue(kind)'), true);
+      assert.equal(applicationsRoute.includes('"Cache-Control": "private, no-store, max-age=0"'), true);
+      assert.equal(applicationsRoute.includes("Could not load farmer applications. Please retry."), true);
+      assert.equal(applicationsRoute.includes("Could not load supplier applications. Please retry."), true);
+      assert.equal(applicationsRoute.includes("Could not load application queues. Please retry."), false);
+      assert.equal(applicationsRoute.includes('applicationKind: kind'), true);
+      assert.equal(applicationsRoute.includes('source: queue.source'), true);
+      assert.equal(applicationsRoute.includes("applicant"), false);
+      assert.equal(applicationQueues.includes("export async function getApplicationQueue"), true);
+      assert.equal(applicationQueues.includes('if (kind === "buyer")'), true);
+      assert.equal(applicationQueues.includes('state: "unavailable"'), true);
+      assert.equal(applicationQueues.includes('loadProfileApplicationsForAdmin(kind)'), true);
+      assert.doesNotMatch(applicationQueues, /selectSupabaseRecords<ApplicationRecord>\("buyer_applications"/);
+      assert.doesNotMatch(applicationQueues.slice(applicationQueues.indexOf("export async function getApplicationQueue"), applicationQueues.indexOf("function mapFarmerApplication")), /Promise\.all/);
+      assert.equal(dashboard.includes('/api/admin/applications?kind=${encodeURIComponent(kind)}'), true);
+      assert.equal(dashboard.includes("Buyer applications are not available yet."), true);
+      assert.equal(dashboard.includes("Buyer enquiries remain available in Produce Requests"), true);
+      assert.equal(dashboard.includes("loadApplicationQueue(applicationTab)"), true);
+      assert.equal(dashboard.includes('selectedApplicationQueueState === "error"'), true);
+      assert.equal(dashboard.includes('selectedApplicationQueueState === "unavailable"'), true);
+      assert.equal(dashboard.includes('applicationQueueStates.farmer === "loaded"'), true);
+      assert.equal(dashboard.includes('applicationQueueStates.supplier === "loaded"'), true);
+      assert.equal(dashboard.includes('applicationQueueStates.buyer === "loaded"'), true);
+      assert.equal(dashboard.includes("Could not load application queues"), false);
+      assert.equal(dashboard.includes('/api/admin/lead-requests'), true);
       assert.equal(mediaRoute.includes("requireAdminUser(request)"), true);
       assert.equal(mediaRoute.includes('"Cache-Control": "no-store, max-age=0"'), true);
       assert.equal(service.startsWith('import "server-only";'), true);
