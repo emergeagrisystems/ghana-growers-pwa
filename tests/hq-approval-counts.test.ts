@@ -12,6 +12,10 @@ import {
   type HqApprovalCountSources,
   type HqNonceConsumer
 } from "../src/lib/hqApprovalCounts";
+import {
+  hqApprovalCountsPrelaunchPath,
+  isHqApprovalCountsPrelaunchRoute
+} from "../src/lib/prelaunchAccess";
 
 const secret = "hq-integration-test-secret-that-is-at-least-thirty-two-characters";
 const nowMs = Date.UTC(2026, 6, 26, 16, 0, 0);
@@ -261,6 +265,50 @@ test("response contract contains no private applicant fields", async () => {
   assert.doesNotMatch(serialized, /"(?:id|name|applicant_name|email|phone|telephone|notes|media|media_path|private_profile_image_path)"\s*:/i);
 });
 
+test("prelaunch gate exempts only the exact protected HQ approval-counts pathname", () => {
+  assert.equal(hqApprovalCountsPrelaunchPath, hqApprovalCountsPath);
+  assert.equal(isHqApprovalCountsPrelaunchRoute(hqApprovalCountsPath), true);
+
+  for (const pathname of [
+    "/api/integrations/hq",
+    "/api/integrations/hq/approval-counts/extra",
+    "/api/integrations/other/approval-counts",
+    "/api/approval-counts"
+  ]) {
+    assert.equal(isHqApprovalCountsPrelaunchRoute(pathname), false, pathname);
+  }
+});
+
+test("HQ exemption leaves public pages and unrelated API paths on their existing decisions", () => {
+  for (const pathname of [
+    "/",
+    "/about",
+    "/marketplace",
+    "/farmer-hub",
+    "/farmer-hub/feedback",
+    "/admin",
+    "/api/admin/farmers",
+    "/api/farmmate/ask",
+    "/api/waitlist",
+    "/api/integrations/other",
+    "/api/administer"
+  ]) {
+    assert.equal(isHqApprovalCountsPrelaunchRoute(pathname), false, pathname);
+  }
+});
+
+test("middleware uses pathname-only exact HQ exemption without broad API allowlisting", () => {
+  const middleware = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
+  const prelaunchAccess = readFileSync(join(process.cwd(), "src/lib/prelaunchAccess.ts"), "utf8");
+
+  assert.match(middleware, /const \{ pathname \} = request\.nextUrl/);
+  assert.match(middleware, /isAllowedPrelaunchRoute\(pathname\)/);
+  assert.match(middleware, /isPublicFarmMatePilotRoute\(pathname\)/);
+  assert.match(middleware, /isControlledPrelaunchRoute\(pathname\)/);
+  assert.match(prelaunchAccess, /return pathname === hqApprovalCountsPrelaunchPath/);
+  assert.doesNotMatch(prelaunchAccess, /pathname\.startsWith\(["']\/api(?:\/integrations)?/);
+});
+
 test("route remains GET-only, no-store, signed, rate-limited, and without permissive CORS", () => {
   const route = readFileSync(join(process.cwd(), "src/app/api/integrations/hq/approval-counts/route.ts"), "utf8");
   const migration = readFileSync(join(process.cwd(), "supabase/migrations/20260726183000_hq_integration_rate_limit.sql"), "utf8");
@@ -285,4 +333,8 @@ test("route remains GET-only, no-store, signed, rate-limited, and without permis
   assert.match(nonceMigration, /enable row level security/i);
   assert.match(nonceMigration, /revoke all .* from public, anon, authenticated/i);
   assert.match(nonceMigration, /grant execute .* to service_role/i);
+  assert.match(route, /NextResponse\.json/);
+  assert.match(route, /genericResponse\("Unauthorized", 401\)/);
+  assert.match(route, /genericResponse\("Service unavailable", 503\)/);
+  assert.doesNotMatch(route, /console\.|logger\.|HQ_INTEGRATION_SECRET\s*[,)]/);
 });
