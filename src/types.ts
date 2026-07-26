@@ -210,6 +210,7 @@ export type PublicFarmerProfile = {
   farmerName?: string;
   region: string;
   district: string;
+  publicLocation?: string;
   products: string[];
   farmType: "Crop" | "Livestock" | "Mixed";
   farmSize: string;
@@ -220,7 +221,9 @@ export type PublicFarmerProfile = {
   availableQuantities?: string;
   deliveryOptions?: string[];
   paymentPreference?: string;
-  photos: string[];
+  mainImage?: string;
+  farmPhotos?: string[];
+  producePhotos?: string[];
   hasRealPhoto?: boolean;
   photoNeedsImport?: boolean;
   verificationStatus: string;

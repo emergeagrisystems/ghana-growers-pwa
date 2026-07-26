@@ -162,43 +162,25 @@ export async function POST(request: Request) {
         products: splitList(payload.products),
         farm_size: payload.farmSize,
         whatsapp_number: payload.whatsappNumber,
-        verification_status: payload.verificationStatus,
+        verification_status: "Pending Verification",
         gg_standard_status: payload.ggStandardStatus || "Pending",
-        verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
-        verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
+        verification_date: null,
+        verified_by: null,
         verification_notes: null,
         profile_image_url: payload.profileImageUrl || null,
-        status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
+        status: "Pending Review",
+        launch_ready: false,
+        is_featured: false
       };
     }
   });
 }
 
 export async function PATCH(request: Request) {
-  return updateRecord({
-    request,
-    table: "farmers",
-    filterColumn: "slug",
-    requiredFields,
-    activity: {
-      entityType: "Farmer",
-      entityName: (payload) => payload.farmName || payload.farmerName
-    },
-    mapPayload: (payload) => ({
-      farmer_name: payload.farmerName,
-      farm_name: payload.farmName,
-      region: payload.region,
-      district: payload.district,
-      farm_type: payload.farmType,
-      products: splitList(payload.products),
-      farm_size: payload.farmSize,
-      whatsapp_number: payload.whatsappNumber,
-      verification_status: payload.verificationStatus,
-      gg_standard_status: payload.ggStandardStatus || "Pending",
-      verification_date: payload.verificationStatus === "Verified" ? new Date().toISOString().slice(0, 10) : null,
-      verified_by: payload.verificationStatus === "Verified" ? "Ghana Growers Admin" : null,
-      profile_image_url: payload.profileImageUrl || null,
-      status: payload.verificationStatus === "Rejected" ? "Archived" : "Active"
-    })
-  });
+  const adminUser = await requireAdminUser(request);
+  if (!adminUser) return NextResponse.json({ error: "Admin access required" }, { status: 401 });
+  return NextResponse.json(
+    { error: "Open the dedicated Farmer Profile editor to save this farmer." },
+    { status: 409 }
+  );
 }

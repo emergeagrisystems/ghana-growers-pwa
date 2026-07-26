@@ -40,6 +40,12 @@ export async function PATCH(request: Request) {
   if (!body.subject || !body.recordId || !body.status || !targetTables[body.subject]) {
     return NextResponse.json({ error: "Verification subject, record ID, and status are required." }, { status: 400 });
   }
+  if (body.subject === "farmer") {
+    return NextResponse.json(
+      { error: "Open the dedicated Farmer Profile editor to change verification status." },
+      { status: 409 }
+    );
+  }
 
   const target = targetTables[body.subject];
   const verificationDate = body.status === "Verified" ? new Date().toISOString().slice(0, 10) : null;

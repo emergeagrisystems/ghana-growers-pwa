@@ -23,6 +23,12 @@ import {
 } from "@/lib/profileApplications";
 import { isValidPublicProfileSlug } from "@/lib/publicProfileEligibility";
 import {
+  cleanupPromotedFarmerProfileMedia,
+  finalizeFarmerProfileStaging,
+  promoteStagedFarmerProfileMedia,
+  type StagedFarmerProfileMedia
+} from "@/lib/farmerProfileMedia";
+import {
   mapFarmerPublicProfile,
   mapSupplierPublicProfile,
   type SupabaseFarmer,
@@ -143,9 +149,15 @@ async function loadSourceHistory(kind: ProfileEditorKind, record: ProfileEditorR
 }
 
 function publicPreview(kind: ProfileEditorKind, record: ProfileEditorRecord) {
-  return kind === "farmer"
-    ? mapFarmerPublicProfile(record as FarmerProfileRecord & SupabaseFarmer)
-    : mapSupplierPublicProfile(record as SupplierProfileRecord & SupabaseSupplier);
+  if (kind === "farmer") {
+    const preview = mapFarmerPublicProfile(record as FarmerProfileRecord & SupabaseFarmer);
+    return {
+      ...preview,
+      description: (record as FarmerProfileRecord).description?.trim() || "No public description has been added yet."
+    };
+  }
+
+  return mapSupplierPublicProfile(record as SupplierProfileRecord & SupabaseSupplier);
 }
 
 export async function evaluateProfileReadiness(
@@ -256,27 +268,104 @@ function sanitizedChanges(kind: ProfileEditorKind, changes: Record<string, unkno
   return output;
 }
 
+async function duplicateSlugError(kind: ProfileEditorKind, recordId: string, slug: unknown) {
+  if (typeof slug !== "string" || !slug.trim()) return null;
+  const table = kind === "farmer" ? "farmers" : "suppliers";
+  const duplicate = await selectSupabaseRecords<{ id: string }>(
+    table,
+    `select=id&slug=eq.${encodeURIComponent(slug.trim())}&id=neq.${encodeURIComponent(recordId)}&limit=1`
+  );
+
+  if (duplicate.error) {
+    return { status: 503, error: "The public URL slug could not be checked. Please try again." };
+  }
+  if (duplicate.data?.length) {
+    return {
+      status: 409,
+      error: "This public URL slug is already in use.",
+      errors: { slug: "This public URL slug is already in use." }
+    };
+  }
+  return null;
+}
+
 export async function saveAdminProfile({
   kind,
   recordKey,
   changes,
+  version,
+  stagedMedia = [],
   adminEmail
 }: {
   kind: ProfileEditorKind;
   recordKey: string;
   changes: Record<string, unknown>;
+  version?: string;
+  stagedMedia?: StagedFarmerProfileMedia[];
   adminEmail: string;
 }) {
   const errors = validateChanges(kind, changes);
   if (Object.keys(errors).length) return { status: 400, errors, error: "Correct the highlighted fields before saving." };
   const patch = sanitizedChanges(kind, changes);
-  if (!Object.keys(patch).length) return profileEditorPayload(kind, recordKey);
+  if (!Object.keys(patch).length && stagedMedia.length === 0) return profileEditorPayload(kind, recordKey);
 
   const loaded = await loadAdminProfile(kind, recordKey);
   if (!loaded.record) return loaded;
+  if (kind === "farmer" && (!version || loaded.record.updated_at !== version)) {
+    return { status: 409, error: "This profile was changed by another administrator. Reload before saving." };
+  }
+  if ("slug" in patch) {
+    const slugConflict = await duplicateSlugError(kind, loaded.record.id, patch.slug);
+    if (slugConflict) return slugConflict;
+  }
+  const promotion = kind === "farmer" && stagedMedia.length
+    ? await promoteStagedFarmerProfileMedia(loaded.record.id, stagedMedia)
+    : { status: 200, promoted: [] };
+  if ("error" in promotion && promotion.error) {
+    return { status: promotion.status, error: promotion.error };
+  }
+  if (kind === "farmer" && promotion.promoted.length) {
+    const farmer = loaded.record as FarmerProfileRecord;
+    const mainImages = promotion.promoted.filter((item) => item.target === "profile_image_url");
+    const farmImages = promotion.promoted.filter((item) => item.target === "farm_photo_urls").map((item) => item.publicUrl);
+    const produceImages = promotion.promoted.filter((item) => item.target === "produce_photo_urls").map((item) => item.publicUrl);
+    if (mainImages.length) patch.profile_image_url = mainImages.at(-1)?.publicUrl;
+    if (farmImages.length) patch.farm_photo_urls = Array.from(new Set([
+      ...uniqueTextValues(patch.farm_photo_urls ?? farmer.farm_photo_urls),
+      ...farmImages
+    ]));
+    if (produceImages.length) patch.produce_photo_urls = Array.from(new Set([
+      ...uniqueTextValues(patch.produce_photo_urls ?? farmer.produce_photo_urls),
+      ...produceImages
+    ]));
+    patch.launch_checklist = { ...farmer.launch_checklist, ...cleanChecklist(patch.launch_checklist), approvedNoPhoto: false };
+  }
   const table = kind === "farmer" ? "farmers" : "suppliers";
-  const update = await updateSupabaseRecord(table, `id=eq.${encodeURIComponent(loaded.record.id)}`, patch);
-  if (update.error) return { status: update.status, error: "Profile changes could not be saved." };
+  const filter = kind === "farmer"
+    ? `id=eq.${encodeURIComponent(loaded.record.id)}&updated_at=eq.${encodeURIComponent(version!)}`
+    : `id=eq.${encodeURIComponent(loaded.record.id)}`;
+  const update = await updateSupabaseRecord(table, filter, patch);
+  if (update.error) {
+    if (promotion.promoted.length) await cleanupPromotedFarmerProfileMedia(promotion.promoted, true);
+    if (/duplicate key|unique constraint|already exists/i.test(update.error) && "slug" in patch) {
+      return {
+        status: 409,
+        error: "This public URL slug is already in use.",
+        errors: { slug: "This public URL slug is already in use." }
+      };
+    }
+    return { status: update.status, error: "Profile changes could not be saved.", stagedMediaDiscarded: promotion.promoted.length > 0 };
+  }
+  if (kind === "farmer" && !update.data) {
+    if (promotion.promoted.length) await cleanupPromotedFarmerProfileMedia(promotion.promoted, true);
+    return { status: 409, error: "This profile was changed by another administrator. Reload before saving.", stagedMediaDiscarded: promotion.promoted.length > 0 };
+  }
+  if (promotion.promoted.length) {
+    const cleanup = await finalizeFarmerProfileStaging(loaded.record.id, promotion.promoted);
+    if (cleanup.failed) {
+      console.error("Farmer profile staging cleanup failed after save", { feature: "farmer_profile_media", code: cleanup.status });
+    }
+  }
 
   await logAdminActivity({
     adminEmail,
@@ -288,7 +377,7 @@ export async function saveAdminProfile({
   return profileEditorPayload(kind, loaded.record.id);
 }
 
-function transitionPatch(kind: ProfileEditorKind, transition: ProfileTransition, adminEmail: string) {
+function transitionPatch(kind: ProfileEditorKind, transition: ProfileTransition, adminEmail: string, record: ProfileEditorRecord) {
   switch (transition) {
     case "under-review":
       return kind === "supplier"
@@ -297,7 +386,9 @@ function transitionPatch(kind: ProfileEditorKind, transition: ProfileTransition,
     case "verify":
       return { verification_status: "Verified", verification_date: new Date().toISOString(), verified_by: adminEmail };
     case "launch-ready":
-      return { launch_ready: true };
+      return kind === "farmer" && record.status === "Active"
+        ? { launch_ready: true, status: "Pending Review" }
+        : { launch_ready: true };
     case "activate":
       return { status: "Active" };
     case "pause":
@@ -347,7 +438,7 @@ export async function transitionAdminProfile({
     if (missing.length) return { status: 409, error: "Complete the public profile before marking it Launch Ready.", checks };
   }
 
-  const patch = transitionPatch(kind, transition, adminEmail);
+  const patch = transitionPatch(kind, transition, adminEmail, record);
   const unchanged = Object.entries(patch).every(([key, value]) => record[key as keyof ProfileEditorRecord] === value);
   if (!unchanged) {
     const table = kind === "farmer" ? "farmers" : "suppliers";

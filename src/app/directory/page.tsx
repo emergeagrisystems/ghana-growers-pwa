@@ -191,7 +191,7 @@ export default async function DirectoryPage() {
               {featuredFarmers.map((farmer) => (
                 <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
                   <SafeImage
-                    src={farmer.photos[0] ?? "/images/farmers/farmer-1.jpg"}
+                    src={farmer.mainImage ?? "/images/farmers/farmer-1.jpg"}
                     alt={`${farmer.farmName} farm photo`}
                     width={320}
                     height={320}

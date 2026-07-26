@@ -7967,8 +7967,9 @@ const tests: TestCase[] = [
       assert.equal(editor.includes("Private - never shown publicly"), true);
       assert.equal(editor.includes("Certificates and documents can never be promoted publicly."), true);
       assert.equal(editor.includes("Select approved application image"), true);
-      assert.equal(publicData.includes("...(row.farm_photo_urls ?? [])"), true);
-      assert.equal(publicData.includes("...(row.produce_photo_urls ?? [])"), true);
+      assert.equal(publicData.includes("farmPhotos: cleanGallery(row.farm_photo_urls)"), true);
+      assert.equal(publicData.includes("producePhotos: cleanGallery(row.produce_photo_urls)"), true);
+      assert.equal(publicData.includes("document_urls"), false);
     }
   },
   {
@@ -8041,6 +8042,167 @@ const tests: TestCase[] = [
       assert.equal(editor.includes("min-h-11 min-w-0"), true);
       assert.equal(editor.includes("pb-40 sm:pb-28"), true);
       assert.equal(editor.includes("fixed inset-x-0 bottom-0"), true);
+    }
+  },
+  {
+    name: "Farmer profile editor is the only farmer publication authority",
+    run: () => {
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const farmerImport = repoFile("src/app/api/admin/farmer-import/route.ts");
+      const farmerImportPatch = farmerImport.slice(farmerImport.indexOf("export async function PATCH"));
+      const farmerRoute = repoFile("src/app/api/admin/farmers/route.ts");
+      const bulkRoute = repoFile("src/app/api/admin/farmers/bulk/route.ts");
+      const archiveRoute = repoFile("src/app/api/admin/archive/route.ts");
+      const featuredRoute = repoFile("src/app/api/admin/featured/route.ts");
+      const verificationRoute = repoFile("src/app/api/admin/verifications/route.ts");
+
+      assert.equal(farmerImportPatch.includes('"approve", "under-review", "needs-follow-up", "verify", "verify-only", "founding", "reject", "archive", "profile"'), true);
+      assert.equal(farmerImportPatch.includes("launch_ready:"), false);
+      assert.equal(farmerImportPatch.includes('verification_status: "Verified"'), false);
+      assert.equal(farmerImportPatch.includes('status: "Active"'), false);
+      assert.equal(farmerRoute.includes("Open the dedicated Farmer Profile editor to save this farmer."), true);
+      assert.equal(bulkRoute.includes("dedicated Farmer Profile editor"), true);
+      assert.equal(archiveRoute.includes("dedicated Farmer Profile editor"), true);
+      assert.equal(featuredRoute.includes("dedicated Farmer Profile editor"), true);
+      assert.equal(verificationRoute.includes("dedicated Farmer Profile editor"), true);
+      for (const transition of ["verify", "launch-ready", "activate", "pause", "feature", "unfeature"]) {
+        assert.equal(service.includes(`case "${transition}":`), true);
+      }
+    }
+  },
+  {
+    name: "Farmer review opening is read-only and does not create activity",
+    run: () => {
+      const route = repoFile("src/app/api/admin/farmer-import/route.ts");
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const getSection = route.slice(route.indexOf("export async function GET"), route.indexOf("export async function POST"));
+
+      assert.equal(getSection.includes('searchParams.get("id")'), true);
+      assert.equal(getSection.includes("logAdminActivity"), false);
+      assert.equal(getSection.includes("updateSupabaseRecord"), false);
+      assert.equal(route.includes('body.action === "view"'), true);
+      assert.equal(route.includes("Opening a farmer is read-only. Use GET with the farmer ID."), true);
+      assert.equal(dashboard.includes("/api/admin/farmer-import?id="), true);
+      assert.equal(dashboard.includes('action: "view"'), false);
+    }
+  },
+  {
+    name: "Launch Ready preserves an explicit farmer publication boundary",
+    run: () => {
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const contracts = repoFile("src/lib/profileEditorContracts.ts");
+
+      assert.equal(service.includes('kind === "farmer" && record.status === "Active"'), true);
+      assert.equal(service.includes('{ launch_ready: true, status: "Pending Review" }'), true);
+      assert.equal(service.includes('case "activate":\n      return { status: "Active" };'), true);
+      assert.equal(service.includes('case "pause":\n      return { status: "Archived" };'), true);
+      assert.equal(contracts.includes('farmer.status === "Active" && farmer.verification_status === "Verified" && farmer.launch_ready === true'), true);
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      assert.equal(editor.includes("Mark Launch Ready returns it to Pending Review; Activate / Publish remains the explicit final publication action."), true);
+    }
+  },
+  {
+    name: "Farmer public identity location and galleries use explicit safe fields",
+    run: () => {
+      const publicData = repoFile("src/lib/supabase/publicData.ts");
+      const publicTypes = repoFile("src/types.ts");
+      const detail = repoFile("src/app/farmer-directory/[slug]/page.tsx");
+      const mapper = publicData.slice(publicData.indexOf("export function mapFarmerPublicProfile"), publicData.indexOf("export function mapSupplierPublicProfile"));
+
+      assert.equal(publicData.includes('row.farm_name?.trim() || row.farmer_name?.trim() || "Ghana Growers Farmer"'), true);
+      assert.equal(mapper.includes("farmerName:"), false);
+      assert.equal(publicData.includes('row.farm_location?.trim() || row.district?.trim() || row.region?.trim() || "Ghana"'), true);
+      assert.equal(mapper.includes("publicLocation: publicFarmerLocation(row)"), true);
+      for (const field of ["mainImage", "farmPhotos", "producePhotos"]) assert.equal(publicTypes.includes(`${field}?:`), true);
+      assert.equal(mapper.includes("mainImage: media.mainImage"), true);
+      assert.equal(mapper.includes("farmPhotos: media.farmPhotos"), true);
+      assert.equal(mapper.includes("producePhotos: media.producePhotos"), true);
+      assert.equal(mapper.includes("photos:"), false);
+      assert.equal(detail.includes("farmer.farmPhotos") && detail.includes("farmer.producePhotos"), true);
+      assert.equal(detail.includes("Farm Gallery") && detail.includes("Produce Gallery"), true);
+      assert.equal(detail.includes("farmer.farmerName"), false);
+    }
+  },
+  {
+    name: "Farmer Admin Preview shows stored description truth",
+    run: () => {
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+
+      assert.equal(service.includes('description: (record as FarmerProfileRecord).description?.trim() || "No public description has been added yet."'), true);
+      assert.equal(editor.includes("No public description has been added yet."), true);
+      assert.equal(editor.includes("payload.preview.publicLocation"), true);
+    }
+  },
+  {
+    name: "Farmer Admin Public Preview renders safe galleries separately without actions",
+    run: () => {
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const previewSection = editor.slice(editor.indexOf('activeTab === "preview"'), editor.indexOf("fixed inset-x-0 bottom-0"));
+      const galleryComponent = editor.slice(editor.indexOf("function PublicPreviewGallery"), editor.indexOf("export function AdminProfileEditor"));
+
+      assert.equal(editor.includes('const previewMainImage = text(payload.preview.mainImage) || (kind === "supplier" ? textList(payload.preview.photos)[0] : "")'), true);
+      assert.equal(editor.includes('const previewFarmPhotos = kind === "farmer" ? textList(payload.preview.farmPhotos) : []'), true);
+      assert.equal(editor.includes('const previewProducePhotos = kind === "farmer" ? textList(payload.preview.producePhotos) : []'), true);
+      assert.equal(previewSection.includes('title="Farm Gallery" photos={previewFarmPhotos}'), true);
+      assert.equal(previewSection.includes('title="Produce Gallery" photos={previewProducePhotos}'), true);
+      assert.equal(previewSection.includes("No farm gallery images have been added yet."), true);
+      assert.equal(previewSection.includes("No produce gallery images have been added yet."), true);
+      assert.equal(galleryComponent.includes("photos.map((source, index)"), true);
+      assert.equal(galleryComponent.includes('alt={`${title} image ${index + 1}`}'), true);
+      assert.doesNotMatch(previewSection, /document_urls|phone_number|whatsapp_number|certificate|signedUrl|sourceHistory/);
+      assert.doesNotMatch(previewSection, /fetch\(|transition\(|saveProfile\(|upload/);
+    }
+  },
+  {
+    name: "Farmer profile saves reject duplicate slugs and stale versions",
+    run: () => {
+      const route = repoFile("src/app/api/admin/profile-editor/route.ts");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+
+      assert.equal(route.includes("version?: string"), true);
+      assert.equal(route.includes('body.kind === "farmer" && !body.version'), true);
+      assert.equal(editor.includes('version: kind === "farmer" ? baseline.updated_at : undefined'), true);
+      assert.equal(service.includes('kind === "farmer" && (!version || loaded.record.updated_at !== version)'), true);
+      assert.equal(service.includes("updated_at=eq.${encodeURIComponent(version!)}"), true);
+      assert.equal(service.includes("This profile was changed by another administrator. Reload before saving."), true);
+      assert.equal(service.includes('errors: { slug: "This public URL slug is already in use." }'), true);
+      assert.equal(editor.includes("setFieldErrors(result?.errors ?? {})"), true);
+    }
+  },
+  {
+    name: "Farmer editor stages new media privately and compensates failed saves",
+    run: () => {
+      const media = repoFile("src/lib/farmerProfileMedia.ts");
+      const mediaRoute = repoFile("src/app/api/admin/profile-editor/media/route.ts");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+
+      assert.equal(media.includes('return `editor-staging/${profileId}/`;'), true);
+      assert.equal(media.includes("isOwnedFarmerProfileStagingPath"), true);
+      assert.equal(media.includes("createSupabaseStorageSignedUrl"), true);
+      assert.equal(media.includes("verifiedDigest !== sourceDigest"), true);
+      assert.equal(mediaRoute.includes("requireAdminUser"), true);
+      assert.equal(service.includes("cleanupPromotedFarmerProfileMedia(promotion.promoted, true)"), true);
+      assert.equal(service.includes("stagedMediaDiscarded"), true);
+      assert.equal(editor.includes("stagedFarmerMedia"), true);
+      assert.equal(editor.includes("Existing profile media will not be deleted."), true);
+      assert.equal(editor.includes("beforeunload"), true);
+      assert.equal(media.includes("const publicResults") && media.includes("path: item.publicPath"), true);
+      assert.equal(media.includes("profile_image_url"), true);
+      assert.equal(media.includes("deleteSupabaseStorageObject({ bucket: PROFILE_APPLICATION_MEDIA.farmer.publicBucket, path: item.path })"), false);
+    }
+  },
+  {
+    name: "Farmer editor reliability introduces no migration",
+    run: () => {
+      const activeMigrations = readdirSync(join(process.cwd(), "supabase", "migrations")).filter((file) => file.endsWith(".sql"));
+      assert.equal(
+        activeMigrations.some((file) => /farmer.*editor|editor.*reliability/i.test(file)),
+        false
+      );
+      assert.equal(activeMigrations.includes("20260723035406_profile_applications_and_private_media.sql"), true);
     }
   }
 ];

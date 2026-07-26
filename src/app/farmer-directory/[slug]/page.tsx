@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: FarmerProfilePageProps) {
     title: farmer.farmName,
     description: `${farmer.farmName} in ${location.hero} supplies ${formatList(products)} through Ghana Growers.`,
     path: `/farmer-directory/${params.slug}`,
-    image: farmer.photos[0]
+    image: farmer.mainImage
   });
 }
 
@@ -112,10 +112,10 @@ function uniqueLocationParts(...values: Array<string | undefined | null>) {
     });
 }
 
-function buildLocationSummary(farmer: { district?: string | null; region?: string | null }): LocationSummary {
-  const parts = uniqueLocationParts(farmer.district, farmer.region);
+function buildLocationSummary(farmer: { publicLocation?: string | null; district?: string | null; region?: string | null }): LocationSummary {
+  const parts = uniqueLocationParts(farmer.publicLocation, farmer.district, farmer.region);
   const community = parts[0];
-  const region = parts[1];
+  const region = parts.at(-1);
   const serviceBase = community ?? region ?? "this farmer's area";
 
   return {
@@ -214,13 +214,6 @@ function compactRows(rows: DisplayRow[]) {
   return rows.filter((row) => isMeaningful(row.value) || row.label === "Active Listings");
 }
 
-function isLikelyFarmGalleryPhoto(photo: string) {
-  const normalized = photo.toLowerCase();
-  const produceOnlyPaths = ["/images/crops/", "/images/products/", "/images/marketplace/fresh-", "/images/marketplace/yam-cassava"];
-
-  return !produceOnlyPaths.some((path) => normalized.includes(path));
-}
-
 function activeListingMatchesProduct(listingName: string, product: string) {
   const cleanedListing = listingName
     .toLowerCase()
@@ -249,7 +242,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   const products = cleanProductList(farmer.products);
   const productText = formatList(products);
   const location = buildLocationSummary(farmer);
-  const profilePhoto = farmer.photos[0] ?? "/images/farmers/farmer-1.jpg";
+  const profilePhoto = farmer.mainImage ?? "/images/farmers/farmer-1.jpg";
   const activeMarketplaceListings = marketplaceProducts.filter((listing) => {
     if (listing.available === "Sold Out") {
       return false;
@@ -269,7 +262,8 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   const relevantBuyerRequests = findBuyerRequestsForFarmer(farmer, buyerRequests, 4);
   const deliveryOption = deliveryDisplay(farmer.deliveryOptions);
   const paymentPreference = paymentDisplay(farmer.paymentPreference);
-  const farmGalleryImages = Array.from(new Set(farmer.photos.filter((photo) => photo !== profilePhoto && isLikelyFarmGalleryPhoto(photo)))).slice(0, 2);
+  const farmGalleryImages = (farmer.farmPhotos ?? []).slice(0, 6);
+  const produceGalleryImages = (farmer.producePhotos ?? []).slice(0, 6);
   const productListings = products.map((product) => {
     const marketplaceMatch = activeMarketplaceListings.find((listing) => activeListingMatchesProduct(listing.name, product));
 
@@ -307,7 +301,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
               <SafeImage
                 src={profilePhoto}
-                alt={`${farmer.farmerName ?? farmer.farmName} of ${farmer.farmName}`}
+                alt={`${farmer.farmName} profile image`}
                 width={520}
                 height={390}
                 priority
@@ -320,8 +314,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
 
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-earth-700">Farmer Profile</p>
-            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{farmer.farmerName ?? farmer.farmName}</h1>
-            <p className="mt-2 text-xl font-black text-leaf-700">{farmer.farmName}</p>
+            <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">{farmer.farmName}</h1>
             <div className="mt-5 flex flex-wrap gap-3 text-sm font-bold text-ink/68">
               <span className="inline-flex items-center gap-2 rounded-md bg-white/75 px-3 py-2 ring-1 ring-leaf-900/10">
                 <MapPin className="h-4 w-4 text-leaf-700" aria-hidden="true" />
@@ -485,6 +478,27 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                     width={420}
                     height={280}
                     fallbackKind="farmer"
+                    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
+                    className="h-44 w-full rounded-md object-cover object-center ring-1 ring-leaf-900/10"
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {produceGalleryImages.length > 0 ? (
+            <section className="mt-8 rounded-md border border-leaf-900/10 bg-white p-6 shadow-sm">
+              <p className="text-sm font-black uppercase tracking-wide text-earth-700">Produce</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Produce Gallery</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {produceGalleryImages.map((photo, index) => (
+                  <SafeImage
+                    key={photo}
+                    src={photo}
+                    alt={`${farmer.farmName} produce photo ${index + 1}`}
+                    width={420}
+                    height={280}
+                    fallbackKind="crop"
                     sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 100vw"
                     className="h-44 w-full rounded-md object-cover object-center ring-1 ring-leaf-900/10"
                   />

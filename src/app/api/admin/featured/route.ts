@@ -49,6 +49,12 @@ export async function PATCH(request: Request) {
   if (!config || !recordId || !payload.action) {
     return NextResponse.json({ error: "Choose a valid featured record and action." }, { status: 400 });
   }
+  if (section === "farmers") {
+    return NextResponse.json(
+      { error: "Open the dedicated Farmer Profile editor to change Featured status." },
+      { status: 409 }
+    );
+  }
 
   const updatePayload =
     payload.action === "remove"

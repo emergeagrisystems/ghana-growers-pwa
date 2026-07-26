@@ -17,6 +17,7 @@ export type SupabaseFarmer = {
   farm_name: string;
   region: string;
   district: string;
+  farm_location?: string | null;
   farm_type: "Crop" | "Livestock" | "Mixed" | string;
   products: string[] | null;
   farm_size: string | null;
@@ -428,18 +429,32 @@ function isPublicDisplayableImageUrl(url?: string | null) {
   }
 }
 
-function farmerPhotoUrls(row: SupabaseFarmer) {
-  const urls = [
+function publicFarmerMedia(row: SupabaseFarmer) {
+  const mainCandidates = [
     row.profile_image_url,
-    ...(row.farm_photo_urls ?? []),
-    ...(row.produce_photo_urls ?? []),
     row.imported_photo_url,
     isPublicDisplayableImageUrl(firstUrlFromText(row.tally_photo_url)) ? firstUrlFromText(row.tally_photo_url) : "",
     firstUsableTallyPhoto(row.original_tally_data),
     "/images/farmers/farmer-1.jpg"
   ];
+  const mainImage = mainCandidates.find((url): url is string => isPublicDisplayableImageUrl(url)) ?? "/images/farmers/farmer-1.jpg";
+  const cleanGallery = (values?: string[] | null) => Array.from(new Set((values ?? [])
+    .filter((url): url is string => isPublicDisplayableImageUrl(url))
+    .filter((url) => url !== mainImage)));
 
-  return Array.from(new Set(urls.filter((url): url is string => isPublicDisplayableImageUrl(url))));
+  return {
+    mainImage,
+    farmPhotos: cleanGallery(row.farm_photo_urls),
+    producePhotos: cleanGallery(row.produce_photo_urls)
+  };
+}
+
+function publicFarmerIdentity(row: SupabaseFarmer) {
+  return row.farm_name?.trim() || row.farmer_name?.trim() || "Ghana Growers Farmer";
+}
+
+function publicFarmerLocation(row: SupabaseFarmer) {
+  return row.farm_location?.trim() || row.district?.trim() || row.region?.trim() || "Ghana";
 }
 
 function locationLabel(district?: string | null, region?: string | null) {
@@ -554,14 +569,16 @@ export function mapFarmerPublicProfile(row: SupabaseFarmer): PublicFarmerProfile
   const slug = row.slug ?? slugify(row.farm_name);
   const products = cleanProductList(row.products?.length ? row.products : ["Produce"]);
   const verificationStatus = trustStatus(row.verification_status);
+  const publicName = publicFarmerIdentity(row);
+  const media = publicFarmerMedia(row);
 
   return {
     id: row.id,
     slug,
-    farmName: row.farm_name,
-    farmerName: row.farmer_name ?? row.farm_name,
+    farmName: publicName,
     region: row.region,
     district: row.district,
+    publicLocation: publicFarmerLocation(row),
     products,
     farmType: row.farm_type === "Livestock" || row.farm_type === "Mixed" ? row.farm_type : "Crop",
     farmSize: row.farm_size ?? "Not provided",
@@ -572,7 +589,9 @@ export function mapFarmerPublicProfile(row: SupabaseFarmer): PublicFarmerProfile
     availableQuantities: "Ghana Growers confirms available quantities during the request process.",
     deliveryOptions: [publicDeliveryPreference()],
     paymentPreference: publicPaymentPreference(row.payment_preference),
-    photos: farmerPhotoUrls(row),
+    mainImage: media.mainImage,
+    farmPhotos: media.farmPhotos,
+    producePhotos: media.producePhotos,
     hasRealPhoto: farmerHasRealPublicPhoto(row),
     photoNeedsImport: farmerPhotoNeedsImport(row),
     verificationStatus,

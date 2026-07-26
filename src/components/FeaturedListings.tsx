@@ -86,8 +86,8 @@ function formatFarmerProducts(products: string[]) {
 }
 
 function farmerImage(farmer: PublicFarmerProfile) {
-  if (farmer.hasRealPhoto && farmer.photos[0]) {
-    return farmer.photos[0];
+  if (farmer.hasRealPhoto && farmer.mainImage) {
+    return farmer.mainImage;
   }
 
   return productImageForName(formatFarmerProducts(farmer.products)[0] ?? "Produce");
@@ -143,7 +143,7 @@ export function FeaturedListings({
                   const cardProducts = farmerCardProducts(farmer);
                   const mainProducts = cardProducts.slice(0, 2);
                   const extraProductCount = Math.max(0, cardProducts.length - mainProducts.length);
-                  const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
+                  const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.mainImage);
 
                   return (
                     <article
