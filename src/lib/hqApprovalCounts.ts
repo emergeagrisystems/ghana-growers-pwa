@@ -3,6 +3,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 export const hqApprovalCountsPath = "/api/integrations/hq/approval-counts";
 export const hqSignatureMaxAgeMs = 5 * 60 * 1000;
 export const hqApprovalCountsTimeoutMs = 4_000;
+export const hqNonceLength = 36;
+
+const hqNoncePattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type HqApprovalMetricName =
   | "farmerProfileApplicationsPending"
@@ -24,23 +27,35 @@ export type HqApprovalCountSources = Record<
   (signal: AbortSignal) => Promise<number>
 >;
 
-export function hqSignaturePayload(method: string, requestPath: string, timestamp: string) {
-  return [method.toUpperCase(), requestPath, timestamp].join("\n");
+export type HqNonceConsumer = (
+  nonce: string,
+  expiresAt: string,
+  signal?: AbortSignal
+) => Promise<boolean>;
+
+export function isValidHqNonce(nonce?: string | null): nonce is string {
+  return typeof nonce === "string" && nonce.length === hqNonceLength && hqNoncePattern.test(nonce);
+}
+
+export function hqSignaturePayload(method: string, requestPath: string, timestamp: string, nonce: string) {
+  return [method.toUpperCase(), requestPath, timestamp, nonce].join("\n");
 }
 
 export function createHqIntegrationSignature({
   method,
   requestPath,
   timestamp,
+  nonce,
   secret
 }: {
   method: string;
   requestPath: string;
   timestamp: string;
+  nonce: string;
   secret: string;
 }) {
   return createHmac("sha256", secret)
-    .update(hqSignaturePayload(method, requestPath, timestamp))
+    .update(hqSignaturePayload(method, requestPath, timestamp, nonce))
     .digest("hex");
 }
 
@@ -59,6 +74,7 @@ export function verifyHqIntegrationRequest({
   method,
   requestPath,
   timestamp,
+  nonce,
   signature,
   secret,
   nowMs = Date.now()
@@ -66,11 +82,12 @@ export function verifyHqIntegrationRequest({
   method: string;
   requestPath: string;
   timestamp?: string | null;
+  nonce?: string | null;
   signature?: string | null;
   secret: string;
   nowMs?: number;
 }) {
-  if (secret.length < 32 || !timestamp || !signature || !/^\d{10}$/.test(timestamp)) {
+  if (secret.length < 32 || !timestamp || !isValidHqNonce(nonce) || !signature || !/^\d{10}$/.test(timestamp)) {
     return false;
   }
 
@@ -80,8 +97,23 @@ export function verifyHqIntegrationRequest({
     return false;
   }
 
-  const expected = createHqIntegrationSignature({ method, requestPath, timestamp, secret });
+  const expected = createHqIntegrationSignature({ method, requestPath, timestamp, nonce, secret });
   return safeHexEqual(signature, expected);
+}
+
+export async function consumeHqIntegrationNonce({
+  nonce,
+  timestamp,
+  consume,
+  signal
+}: {
+  nonce: string;
+  timestamp: string;
+  consume: HqNonceConsumer;
+  signal?: AbortSignal;
+}) {
+  const expiresAt = new Date((Number(timestamp) * 1000) + hqSignatureMaxAgeMs).toISOString();
+  return consume(nonce, expiresAt, signal);
 }
 
 function validCount(value: unknown): value is number {

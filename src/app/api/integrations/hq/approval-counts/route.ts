@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   collectHqApprovalCounts,
+  consumeHqIntegrationNonce,
   hqApprovalCountsPath,
   verifyHqIntegrationRequest,
   type HqApprovalCountSources
@@ -25,6 +26,7 @@ const importedFarmerReviewQuery = new URLSearchParams({
 const hqRateLimitWindowSeconds = 60;
 const hqRateLimitMaxRequests = 60;
 const hqRateLimitTimeoutMs = 2_000;
+const hqReplayProtectionTimeoutMs = 2_000;
 
 type RateLimitResult = {
   allowed?: boolean;
@@ -78,6 +80,37 @@ async function enforceRateLimit(secret: string) {
     : { status: "limited" as const, retryAfter: retryAfterSeconds(result.data?.reset_at) };
 }
 
+async function enforceReplayProtection(nonce: string, timestamp: string) {
+  const consumed = await withTimeout(
+    (signal) => consumeHqIntegrationNonce({
+      nonce,
+      timestamp,
+      signal,
+      consume: async (nonceValue, expiresAt, requestSignal) => {
+        const result = await callSupabaseRpc<boolean>("consume_hq_integration_nonce", {
+          p_nonce_value: nonceValue,
+          p_expires_at: expiresAt
+        }, { signal: requestSignal });
+
+        if (result.error || typeof result.data !== "boolean") {
+          throw new Error("Replay protection is unavailable.");
+        }
+
+        return result.data;
+      }
+    }),
+    hqReplayProtectionTimeoutMs
+  ).catch(() => null);
+
+  if (consumed === null) {
+    return { status: "unavailable" as const };
+  }
+
+  return consumed
+    ? { status: "accepted" as const }
+    : { status: "replayed" as const };
+}
+
 async function exactCount(table: string, query: string, signal: AbortSignal) {
   const result = await countSupabaseRecords(table, query, { signal });
 
@@ -102,15 +135,18 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+  const timestamp = request.headers.get("x-hq-timestamp");
+  const nonce = request.headers.get("x-hq-nonce");
   const authorized = verifyHqIntegrationRequest({
     method: request.method,
     requestPath: url.pathname,
-    timestamp: request.headers.get("x-hq-timestamp"),
+    timestamp,
+    nonce,
     signature: request.headers.get("x-hq-signature"),
     secret
   });
 
-  if (!authorized || request.method !== "GET" || url.pathname !== hqApprovalCountsPath) {
+  if (!authorized || !timestamp || !nonce || request.method !== "GET" || url.pathname !== hqApprovalCountsPath) {
     return genericResponse("Unauthorized", 401);
   }
 
@@ -122,6 +158,16 @@ export async function GET(request: Request) {
 
   if (rateLimit.status === "limited") {
     return genericResponse("Too many requests", 429, { "Retry-After": String(rateLimit.retryAfter) });
+  }
+
+  const replayProtection = await enforceReplayProtection(nonce, timestamp);
+
+  if (replayProtection.status === "unavailable") {
+    return genericResponse("Service unavailable", 503);
+  }
+
+  if (replayProtection.status === "replayed") {
+    return genericResponse("Unauthorized", 401);
   }
 
   try {
