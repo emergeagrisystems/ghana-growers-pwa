@@ -8135,6 +8135,26 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Farmer Admin Public Preview renders safe galleries separately without actions",
+    run: () => {
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const previewSection = editor.slice(editor.indexOf('activeTab === "preview"'), editor.indexOf("fixed inset-x-0 bottom-0"));
+      const galleryComponent = editor.slice(editor.indexOf("function PublicPreviewGallery"), editor.indexOf("export function AdminProfileEditor"));
+
+      assert.equal(editor.includes('const previewMainImage = text(payload.preview.mainImage) || (kind === "supplier" ? textList(payload.preview.photos)[0] : "")'), true);
+      assert.equal(editor.includes('const previewFarmPhotos = kind === "farmer" ? textList(payload.preview.farmPhotos) : []'), true);
+      assert.equal(editor.includes('const previewProducePhotos = kind === "farmer" ? textList(payload.preview.producePhotos) : []'), true);
+      assert.equal(previewSection.includes('title="Farm Gallery" photos={previewFarmPhotos}'), true);
+      assert.equal(previewSection.includes('title="Produce Gallery" photos={previewProducePhotos}'), true);
+      assert.equal(previewSection.includes("No farm gallery images have been added yet."), true);
+      assert.equal(previewSection.includes("No produce gallery images have been added yet."), true);
+      assert.equal(galleryComponent.includes("photos.map((source, index)"), true);
+      assert.equal(galleryComponent.includes('alt={`${title} image ${index + 1}`}'), true);
+      assert.doesNotMatch(previewSection, /document_urls|phone_number|whatsapp_number|certificate|signedUrl|sourceHistory/);
+      assert.doesNotMatch(previewSection, /fetch\(|transition\(|saveProfile\(|upload/);
+    }
+  },
+  {
     name: "Farmer profile saves reject duplicate slugs and stale versions",
     run: () => {
       const route = repoFile("src/app/api/admin/profile-editor/route.ts");

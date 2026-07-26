@@ -315,6 +315,30 @@ function Section({ title, description, privateSection = false, children }: {
   );
 }
 
+function PublicPreviewGallery({ title, photos, emptyMessage, compact }: {
+  title: string;
+  photos: string[];
+  emptyMessage: string;
+  compact: boolean;
+}) {
+  return (
+    <section aria-labelledby={`preview-${title.toLowerCase().replaceAll(" ", "-")}`} className="border-t border-leaf-900/10 px-5 py-6 sm:px-6">
+      <h4 id={`preview-${title.toLowerCase().replaceAll(" ", "-")}`} className="text-lg font-black text-ink">{title}</h4>
+      {photos.length > 0 ? (
+        <div className={`mt-4 grid gap-3 ${compact ? "grid-cols-1" : "sm:grid-cols-2"}`}>
+          {photos.map((source, index) => (
+            <div key={`${source}-${index}`} className="relative aspect-[4/3] overflow-hidden rounded-md bg-leaf-50">
+              <Image src={source} alt={`${title} image ${index + 1}`} fill unoptimized className="object-cover" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-md bg-white px-4 py-3 text-sm font-semibold text-ink/60">{emptyMessage}</p>
+      )}
+    </section>
+  );
+}
+
 export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: ProfileEditorKind; recordKey: string; currentAdmin: { email: string } }) {
   const [payload, setPayload] = useState<EditorPayload | null>(null);
   const [draft, setDraft] = useState<ProfileEditorRecord | null>(null);
@@ -582,7 +606,9 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
   const farmer = kind === "farmer" ? draft as FarmerProfileRecord : null;
   const supplier = kind === "supplier" ? draft as SupplierProfileRecord : null;
   const title = farmer?.farm_name || supplier?.company_name || `${kind} profile`;
-  const previewMainImage = text(payload.preview.mainImage) || textList(payload.preview.photos)[0];
+  const previewMainImage = text(payload.preview.mainImage) || (kind === "supplier" ? textList(payload.preview.photos)[0] : "");
+  const previewFarmPhotos = kind === "farmer" ? textList(payload.preview.farmPhotos) : [];
+  const previewProducePhotos = kind === "farmer" ? textList(payload.preview.producePhotos) : [];
   const stagedMainImage = stagedFarmerMedia.find((item) => item.target === "profile_image_url")?.previewUrl;
   const stagedFarmPhotos = stagedFarmerMedia.filter((item) => item.target === "farm_photo_urls");
   const stagedProducePhotos = stagedFarmerMedia.filter((item) => item.target === "produce_photo_urls");
@@ -733,6 +759,12 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
               <div className={`mt-5 mx-auto overflow-hidden rounded-md border border-leaf-900/10 bg-cream shadow-sm ${previewMode === "mobile" ? "max-w-[390px]" : "max-w-4xl"}`}>
                 {previewMainImage ? <div className="relative aspect-[16/8] w-full bg-leaf-50"><Image src={previewMainImage} alt="Approved public profile preview" fill unoptimized className="object-cover" /></div> : <div className="grid aspect-[16/7] place-items-center bg-leaf-50 text-leaf-700"><ImageIcon className="h-10 w-10" /><span className="sr-only">No public image</span></div>}
                 <div className="p-5 sm:p-6"><p className="text-xs font-black uppercase tracking-wide text-earth-700">{kind === "farmer" ? "Farmer profile" : "Supplier profile"}</p><h3 className="mt-2 text-2xl font-black text-ink">{text(payload.preview.farmName) || text(payload.preview.companyName)}</h3><p className="mt-2 text-sm font-semibold text-ink/55">{text(payload.preview.publicLocation) || [text(payload.preview.district), text(payload.preview.region)].filter(Boolean).join(", ")}</p><p className={`mt-4 text-sm font-semibold leading-7 ${text(payload.preview.description) === "No public description has been added yet." ? "text-earth-700" : "text-ink/70"}`}>{text(payload.preview.description) || text(payload.preview.companyOverview)}</p><div className="mt-4 flex flex-wrap gap-2">{(textList(payload.preview.products).length ? textList(payload.preview.products) : textList(payload.preview.productsServices)).map((item) => <span key={item} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800">{item}</span>)}</div></div>
+                {kind === "farmer" ? (
+                  <>
+                    <PublicPreviewGallery title="Farm Gallery" photos={previewFarmPhotos} emptyMessage="No farm gallery images have been added yet." compact={previewMode === "mobile"} />
+                    <PublicPreviewGallery title="Produce Gallery" photos={previewProducePhotos} emptyMessage="No produce gallery images have been added yet." compact={previewMode === "mobile"} />
+                  </>
+                ) : null}
               </div>
               {!payload.eligibility.eligible ? <div className="mt-5 rounded-md bg-earth-50 p-4"><p className="font-black text-earth-800">This profile is currently hidden.</p><ul className="mt-2 grid gap-1 text-sm font-semibold text-earth-800/80">{payload.eligibility.hiddenReasons.map((reason) => <li key={reason}>- {reason}</li>)}</ul></div> : null}
             </Section>
