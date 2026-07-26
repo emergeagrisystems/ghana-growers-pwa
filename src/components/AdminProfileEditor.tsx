@@ -42,6 +42,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type EditorTab = "overview" | "media" | "review" | "preview";
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+type FarmerMediaTarget = "profile_image_url" | "farm_photo_urls" | "produce_photo_urls";
+type StagedFarmerMedia = { path: string; target: FarmerMediaTarget; previewUrl: string };
 type PrivateMediaItem = {
   path: string;
   group: "profile" | "farm" | "produce" | "logo" | "photos" | "certificates" | "documents";
@@ -326,6 +328,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
+  const [stagedFarmerMedia, setStagedFarmerMedia] = useState<StagedFarmerMedia[]>([]);
 
   const load = useCallback(async () => {
     setLoadError("");
@@ -339,12 +342,15 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
     setPayload(result);
     setDraft(result.record);
     setBaseline(result.record);
+    setStagedFarmerMedia([]);
     setSaveState("idle");
   }, [kind, recordKey]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const dirty = useMemo(() => Boolean(draft && baseline && JSON.stringify(draft) !== JSON.stringify(baseline)), [draft, baseline]);
+  const dirty = useMemo(() => Boolean(
+    draft && baseline && (JSON.stringify(draft) !== JSON.stringify(baseline) || stagedFarmerMedia.length > 0)
+  ), [draft, baseline, stagedFarmerMedia.length]);
   useEffect(() => {
     if (dirty && saveState !== "saving") setSaveState("dirty");
     if (!dirty && saveState === "dirty") setSaveState("idle");
@@ -372,6 +378,31 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
     if (dirty && !window.confirm("Leave this profile without saving your changes?")) event.preventDefault();
   }
 
+  async function cleanupStagedMedia(items: StagedFarmerMedia[]) {
+    if (!draft || kind !== "farmer" || items.length === 0) return true;
+    const response = await fetch("/api/admin/profile-editor/media", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profileId: draft.id, paths: items.map((item) => item.path) })
+    }).catch(() => null);
+    return Boolean(response?.ok);
+  }
+
+  async function resetChanges() {
+    if (!baseline || saveState === "saving") return;
+    if (stagedFarmerMedia.length && !window.confirm("Reset edits and remove the newly staged images? Existing profile media will not be deleted.")) return;
+    const cleaned = await cleanupStagedMedia(stagedFarmerMedia);
+    if (!cleaned) {
+      setSaveError("The staged images could not be removed. Try Reset again before leaving.");
+      return;
+    }
+    setStagedFarmerMedia([]);
+    setDraft(baseline);
+    setFieldErrors({});
+    setSaveError("");
+    setSaveState("idle");
+  }
+
   async function saveChanges() {
     if (!draft || !baseline || !dirty || saveState === "saving") return;
     const changes = Object.fromEntries(Object.entries(draft).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify((baseline as unknown as Record<string, unknown>)[key])));
@@ -381,19 +412,27 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
     const response = await fetch("/api/admin/profile-editor", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, id: draft.id, changes })
+      body: JSON.stringify({
+        kind,
+        id: draft.id,
+        version: kind === "farmer" ? baseline.updated_at : undefined,
+        changes,
+        stagedMedia: kind === "farmer" ? stagedFarmerMedia.map(({ path, target }) => ({ path, target })) : []
+      })
     }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as (EditorPayload & { error?: string; errors?: Record<string, string> }) | null;
+    const result = (await response?.json().catch(() => null)) as (EditorPayload & { error?: string; errors?: Record<string, string>; stagedMediaDiscarded?: boolean }) | null;
     if (!response?.ok || !result?.record) {
       if (response?.status === 401) window.location.href = "/admin/login";
       setSaveState("error");
       setSaveError(result?.error ?? "Save failed. Your edits remain on screen.");
       setFieldErrors(result?.errors ?? {});
+      if (result?.stagedMediaDiscarded) setStagedFarmerMedia([]);
       return;
     }
     setPayload(result);
     setDraft(result.record);
     setBaseline(result.record);
+    setStagedFarmerMedia([]);
     setSaveState("saved");
     setLastSaved(new Date());
   }
@@ -403,7 +442,10 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
       if (dirty) setSaveError("Save or reset your unsaved changes before changing publication state.");
       return;
     }
-    if (!window.confirm(`${label} for this ${kind} profile? This will not contact anyone.`)) return;
+    const confirmation = kind === "farmer" && action === "launch-ready" && draft.status === "Active" && !draft.launch_ready
+      ? "Mark Launch Ready for this legacy Active farmer profile? It will return to Pending Review and stay hidden until Activate / Publish is used explicitly."
+      : `${label} for this ${kind} profile? This will not contact anyone.`;
+    if (!window.confirm(confirmation)) return;
     setBusyAction(action);
     setSaveError("");
     const response = await fetch("/api/admin/profile-editor", {
@@ -484,12 +526,32 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
     setSaveError("");
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("bucket", kind === "farmer" ? "farmers" : "suppliers");
-    const response = await fetch("/api/admin/uploads", { method: "POST", body: formData }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+    if (kind === "farmer") {
+      formData.append("profileId", draft.id);
+      formData.append("target", target);
+    } else {
+      formData.append("bucket", "suppliers");
+    }
+    const response = await fetch(kind === "farmer" ? "/api/admin/profile-editor/media" : "/api/admin/uploads", { method: "POST", body: formData }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { publicUrl?: string; previewUrl?: string; path?: string; target?: FarmerMediaTarget; error?: string } | null;
     setUploadingTarget(null);
-    if (!response?.ok || !result?.publicUrl) {
+    if (!response?.ok || !result || (kind === "farmer" ? !result.previewUrl || !result.path || !result.target : !result.publicUrl)) {
       setSaveError(result?.error ?? "The image could not be uploaded.");
+      return;
+    }
+    if (kind === "farmer") {
+      const staged = { path: result.path!, previewUrl: result.previewUrl!, target: result.target! };
+      if (target === "profile_image_url") {
+        const replaced = stagedFarmerMedia.filter((item) => item.target === target);
+        if (replaced.length) await cleanupStagedMedia(replaced);
+        setStagedFarmerMedia((current) => [...current.filter((item) => item.target !== target), staged]);
+      } else {
+        setStagedFarmerMedia((current) => [...current, staged]);
+      }
+      setDraft((current) => current ? ({
+        ...current,
+        launch_checklist: { ...current.launch_checklist, approvedNoPhoto: false }
+      } as ProfileEditorRecord) : current);
       return;
     }
     setDraft((current) => {
@@ -500,8 +562,8 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
           ? ("produce_photo_urls" in current ? current.produce_photo_urls : [])
           : [];
       const nextValue = target === "farm_photo_urls" || target === "produce_photo_urls"
-        ? Array.from(new Set([...existingGallery, result.publicUrl as string]))
-        : result.publicUrl;
+        ? Array.from(new Set([...existingGallery, result.publicUrl!]))
+        : result.publicUrl!;
       return {
         ...current,
         [target]: nextValue,
@@ -520,7 +582,10 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
   const farmer = kind === "farmer" ? draft as FarmerProfileRecord : null;
   const supplier = kind === "supplier" ? draft as SupplierProfileRecord : null;
   const title = farmer?.farm_name || supplier?.company_name || `${kind} profile`;
-  const previewPhotos = textList(payload.preview.photos);
+  const previewMainImage = text(payload.preview.mainImage) || textList(payload.preview.photos)[0];
+  const stagedMainImage = stagedFarmerMedia.find((item) => item.target === "profile_image_url")?.previewUrl;
+  const stagedFarmPhotos = stagedFarmerMedia.filter((item) => item.target === "farm_photo_urls");
+  const stagedProducePhotos = stagedFarmerMedia.filter((item) => item.target === "produce_photo_urls");
   const tabs: Array<[EditorTab, string]> = [["overview", "Profile"], ["media", "Media & documents"], ["review", "Review & publication"], ["preview", "Public preview"]];
   const promotableApplicationMedia = payload.sourceHistory?.privateMedia.filter((item) => item.promotable) ?? [];
   const privateDocuments = payload.sourceHistory?.privateMedia.filter((item) => !item.promotable) ?? [];
@@ -608,9 +673,9 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
             <>
               <Section title="Public Media" description="Upload reviewed public images, or explicitly select an approved image from the linked application. Normal profile editing does not require typing a URL."><div className="grid gap-4">
                 {farmer ? <>
-                  <PublicImageControl label="Main profile image" value={farmer.profile_image_url} uploading={uploadingTarget === "profile_image_url"} onUpload={(file) => void uploadPublicImage(file, "profile_image_url")} onRemove={() => updateField("profile_image_url", null)} />
-                  <PublicGalleryControl label="Farm gallery" values={farmer.farm_photo_urls} uploading={uploadingTarget === "farm_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "farm_photo_urls")} onChange={(value) => updateField("farm_photo_urls", value)} />
-                  <PublicGalleryControl label="Produce gallery" values={farmer.produce_photo_urls} uploading={uploadingTarget === "produce_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "produce_photo_urls")} onChange={(value) => updateField("produce_photo_urls", value)} />
+                  <PublicImageControl label="Main profile image" value={stagedMainImage ?? farmer.profile_image_url} uploading={uploadingTarget === "profile_image_url"} onUpload={(file) => void uploadPublicImage(file, "profile_image_url")} onRemove={() => { const staged = stagedFarmerMedia.filter((item) => item.target === "profile_image_url"); if (staged.length) { void cleanupStagedMedia(staged); setStagedFarmerMedia((current) => current.filter((item) => item.target !== "profile_image_url")); } else updateField("profile_image_url", null); }} />
+                  <PublicGalleryControl label="Farm gallery" values={[...farmer.farm_photo_urls, ...stagedFarmPhotos.map((item) => item.previewUrl)]} uploading={uploadingTarget === "farm_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "farm_photo_urls")} onChange={(value) => { const keptStaged = stagedFarmPhotos.filter((item) => value.includes(item.previewUrl)); const removed = stagedFarmPhotos.filter((item) => !value.includes(item.previewUrl)); if (removed.length) void cleanupStagedMedia(removed); setStagedFarmerMedia((current) => [...current.filter((item) => item.target !== "farm_photo_urls"), ...keptStaged]); updateField("farm_photo_urls", value.filter((item) => !stagedFarmPhotos.some((staged) => staged.previewUrl === item))); }} />
+                  <PublicGalleryControl label="Produce gallery" values={[...farmer.produce_photo_urls, ...stagedProducePhotos.map((item) => item.previewUrl)]} uploading={uploadingTarget === "produce_photo_urls"} onUpload={(file) => void uploadPublicImage(file, "produce_photo_urls")} onChange={(value) => { const keptStaged = stagedProducePhotos.filter((item) => value.includes(item.previewUrl)); const removed = stagedProducePhotos.filter((item) => !value.includes(item.previewUrl)); if (removed.length) void cleanupStagedMedia(removed); setStagedFarmerMedia((current) => [...current.filter((item) => item.target !== "produce_photo_urls"), ...keptStaged]); updateField("produce_photo_urls", value.filter((item) => !stagedProducePhotos.some((staged) => staged.previewUrl === item))); }} />
                 </> : null}
                 {supplier ? <>
                   <PublicImageControl label="Public logo" value={supplier.logo_url} uploading={uploadingTarget === "logo_url"} onUpload={(file) => void uploadPublicImage(file, "logo_url")} onRemove={() => updateField("logo_url", null)} />
@@ -640,6 +705,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
               <Section title="Review and Publication" description="Saving content never publishes it. Each status change is a separate protected, confirmed action."><div className="grid gap-4 md:grid-cols-2">
                 <StatusSummary label="Current status" value={draft.status} />
                 <StatusSummary label="Verification status" value={draft.verification_status} />
+                {farmer && farmer.status === "Active" && !farmer.launch_ready ? <p className="rounded-md bg-earth-50 p-3 text-sm font-semibold leading-6 text-earth-800 md:col-span-2">This legacy Active record is not launch ready. Mark Launch Ready returns it to Pending Review; Activate / Publish remains the explicit final publication action.</p> : null}
                 <SelectField label="Ghana Growers Standard status" value={draft.gg_standard_status ?? "Pending"} options={ggStandardStatuses} onChange={(value) => updateField("gg_standard_status", value)} />
                 <SelectField label="Launch status" value={draft.launch_status} options={kind === "farmer" ? launchStatuses : supplierLaunchStatuses} onChange={(value) => updateField("launch_status", value)} />
                 {supplier ? <SelectField label="Profile review status" value={supplier.profile_review_status} options={supplierReviewStatuses} onChange={(value) => updateField("profile_review_status", value)} /> : null}
@@ -665,8 +731,8 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
             <Section title="Admin-only Public Preview" description="This preview uses the same safe public DTO as the directory. Private contact, notes, documents, paths, and signed URLs are excluded.">
               <div className="flex gap-2"><button type="button" onClick={() => setPreviewMode("desktop")} className={previewMode === "desktop" ? "admin-action-primary" : "admin-action-secondary"}>Desktop</button><button type="button" onClick={() => setPreviewMode("mobile")} className={previewMode === "mobile" ? "admin-action-primary" : "admin-action-secondary"}>Mobile</button></div>
               <div className={`mt-5 mx-auto overflow-hidden rounded-md border border-leaf-900/10 bg-cream shadow-sm ${previewMode === "mobile" ? "max-w-[390px]" : "max-w-4xl"}`}>
-                {previewPhotos[0] ? <div className="relative aspect-[16/8] w-full bg-leaf-50"><Image src={previewPhotos[0]} alt="Approved public profile preview" fill unoptimized className="object-cover" /></div> : <div className="grid aspect-[16/7] place-items-center bg-leaf-50 text-leaf-700"><ImageIcon className="h-10 w-10" /><span className="sr-only">No public image</span></div>}
-                <div className="p-5 sm:p-6"><p className="text-xs font-black uppercase tracking-wide text-earth-700">{kind === "farmer" ? "Farmer profile" : "Supplier profile"}</p><h3 className="mt-2 text-2xl font-black text-ink">{text(payload.preview.farmName) || text(payload.preview.companyName)}</h3><p className="mt-2 text-sm font-semibold text-ink/55">{[text(payload.preview.district), text(payload.preview.region)].filter(Boolean).join(", ")}</p><p className="mt-4 text-sm font-semibold leading-7 text-ink/70">{text(payload.preview.description) || text(payload.preview.companyOverview)}</p><div className="mt-4 flex flex-wrap gap-2">{(textList(payload.preview.products).length ? textList(payload.preview.products) : textList(payload.preview.productsServices)).map((item) => <span key={item} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800">{item}</span>)}</div></div>
+                {previewMainImage ? <div className="relative aspect-[16/8] w-full bg-leaf-50"><Image src={previewMainImage} alt="Approved public profile preview" fill unoptimized className="object-cover" /></div> : <div className="grid aspect-[16/7] place-items-center bg-leaf-50 text-leaf-700"><ImageIcon className="h-10 w-10" /><span className="sr-only">No public image</span></div>}
+                <div className="p-5 sm:p-6"><p className="text-xs font-black uppercase tracking-wide text-earth-700">{kind === "farmer" ? "Farmer profile" : "Supplier profile"}</p><h3 className="mt-2 text-2xl font-black text-ink">{text(payload.preview.farmName) || text(payload.preview.companyName)}</h3><p className="mt-2 text-sm font-semibold text-ink/55">{text(payload.preview.publicLocation) || [text(payload.preview.district), text(payload.preview.region)].filter(Boolean).join(", ")}</p><p className={`mt-4 text-sm font-semibold leading-7 ${text(payload.preview.description) === "No public description has been added yet." ? "text-earth-700" : "text-ink/70"}`}>{text(payload.preview.description) || text(payload.preview.companyOverview)}</p><div className="mt-4 flex flex-wrap gap-2">{(textList(payload.preview.products).length ? textList(payload.preview.products) : textList(payload.preview.productsServices)).map((item) => <span key={item} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-800">{item}</span>)}</div></div>
               </div>
               {!payload.eligibility.eligible ? <div className="mt-5 rounded-md bg-earth-50 p-4"><p className="font-black text-earth-800">This profile is currently hidden.</p><ul className="mt-2 grid gap-1 text-sm font-semibold text-earth-800/80">{payload.eligibility.hiddenReasons.map((reason) => <li key={reason}>- {reason}</li>)}</ul></div> : null}
             </Section>
@@ -680,7 +746,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
             {saveState === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : saveState === "saved" ? <Check className="h-4 w-4 text-leaf-700" /> : saveState === "error" ? <AlertCircle className="h-4 w-4 text-tomato" /> : dirty ? <AlertCircle className="h-4 w-4 text-earth-700" /> : <Save className="h-4 w-4" />}
             {saveState === "saving" ? "Saving..." : saveState === "saved" ? `Saved${lastSaved ? ` at ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}` : saveState === "error" ? "Save failed" : dirty ? "Unsaved changes" : "No unsaved changes"}
           </div>
-          <div className="flex gap-2"><button type="button" onClick={() => { setDraft(baseline); setFieldErrors({}); setSaveError(""); setSaveState("idle"); }} disabled={!dirty || saveState === "saving"} className="admin-action-secondary flex-1 sm:flex-none"><RotateCcw className="h-4 w-4" /> Reset</button><button type="button" onClick={() => void saveChanges()} disabled={!dirty || saveState === "saving"} className="admin-action-primary flex-1 sm:flex-none"><Save className="h-4 w-4" /> {saveState === "saving" ? "Saving..." : "Save Changes"}</button></div>
+          <div className="flex gap-2"><button type="button" onClick={() => void resetChanges()} disabled={!dirty || saveState === "saving"} className="admin-action-secondary flex-1 sm:flex-none"><RotateCcw className="h-4 w-4" /> Reset</button><button type="button" onClick={() => void saveChanges()} disabled={!dirty || saveState === "saving"} className="admin-action-primary flex-1 sm:flex-none"><Save className="h-4 w-4" /> {saveState === "saving" ? "Saving..." : "Save Changes"}</button></div>
         </div>
       </div>
     </main>

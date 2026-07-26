@@ -211,14 +211,14 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                 const products = farmerCardProducts(farmer);
                 const mainProducts = products.slice(0, 2);
                 const extraProductCount = Math.max(0, products.length - mainProducts.length);
-                const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.photos[0]);
+                const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.mainImage);
 
                 return (
                   <>
                     <div className="relative">
                       {hasRealPhoto ? (
                         <SafeImage
-                          src={farmer.photos[0]}
+                          src={farmer.mainImage!}
                           alt={`${farmer.farmName} farm photo`}
                           width={360}
                           height={270}

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
-import { logAdminActivity } from "@/lib/adminActivity";
-import { selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
+import { selectSupabaseRecords } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,41 +53,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const farmers = await selectSupabaseRecords<FarmerCleanupRow>(
-    "farmers",
-    "select=id,slug,farm_name,source,status&limit=5000"
+  return NextResponse.json(
+    { error: "Bulk farmer status changes are disabled. Review farmers individually in the dedicated profile editor." },
+    { status: 409 }
   );
-
-  if (farmers.error) {
-    return NextResponse.json({ error: "Could not read farmers for cleanup." }, { status: farmers.status });
-  }
-
-  const targets = nonTallyFarmers(farmers.data ?? []);
-
-  if (targets.length === 0) {
-    return NextResponse.json({ ok: true, archived: 0, targets: [] });
-  }
-
-  const filter = `id=in.(${targets.map((target) => encodeURIComponent(target.id)).join(",")})`;
-  const update = await updateSupabaseRecord("farmers", filter, {
-    status: "Archived"
-  });
-
-  if (update.error) {
-    return NextResponse.json({ error: "Could not archive manual/test farmers." }, { status: update.status });
-  }
-
-  await logAdminActivity({
-    adminEmail: adminUser.email,
-    actionType: "Archive",
-    entityType: "Farmer",
-    entityId: targets.map((target) => target.slug || target.id).join(","),
-    entityName: `${targets.length} manual/test farmer${targets.length === 1 ? "" : "s"}`
-  });
-
-  return NextResponse.json({
-    ok: true,
-    archived: targets.length,
-    targets
-  });
 }

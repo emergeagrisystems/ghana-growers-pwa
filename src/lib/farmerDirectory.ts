@@ -34,7 +34,8 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function cleanFarmerLocation(farmer: Pick<FarmerProfile, "district" | "region">) {
+export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district" | "region" | "publicLocation">) {
+  const publicLocation = cleanFarmerProfileLabel(farmer.publicLocation ?? "");
   const region = cleanFarmerProfileLabel(farmer.region);
   let district = cleanFarmerProfileLabel(farmer.district);
 
@@ -45,6 +46,10 @@ export function cleanFarmerLocation(farmer: Pick<FarmerProfile, "district" | "re
       .trim()
       .replace(/^,|,$/g, "")
       .trim();
+  }
+
+  if (publicLocation && ![district, region].some((value) => value.toLowerCase() === publicLocation.toLowerCase())) {
+    return [publicLocation, district, region].filter(Boolean).filter((value, index, values) => values.findIndex((candidate) => candidate.toLowerCase() === value.toLowerCase()) === index).join(", ");
   }
 
   if (!district) {
@@ -75,9 +80,9 @@ export function farmerCardProducts(farmer: Pick<FarmerProfile, "farmType" | "pro
   return farmerProducts(farmer).filter((product) => !isBroadFarmerProductLabel(product, farmer.farmType));
 }
 
-export function farmerCardImage(farmer: Pick<FarmerProfile, "farmType" | "hasRealPhoto" | "photos">, products: string[]) {
-  if (farmer.hasRealPhoto && farmer.photos[0]) {
-    return farmer.photos[0];
+export function farmerCardImage(farmer: Pick<PublicFarmerProfile, "farmType" | "hasRealPhoto" | "mainImage">, products: string[]) {
+  if (farmer.hasRealPhoto && farmer.mainImage) {
+    return farmer.mainImage;
   }
 
   return productImageForName(products[0] ?? "Produce", farmer.farmType);

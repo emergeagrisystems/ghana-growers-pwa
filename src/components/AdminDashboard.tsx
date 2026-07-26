@@ -5601,14 +5601,7 @@ export function AdminDashboard({
     setFarmerReviewMessage(null);
     setFarmerReviewDebug(null);
 
-    const response = await fetch("/api/admin/farmer-import", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "view",
-        ids: [farmer.id]
-      })
-    }).catch(() => null);
+    const response = await fetch(`/api/admin/farmer-import?id=${encodeURIComponent(farmer.id)}`, { cache: "no-store" }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
     setIsLoadingFarmerReview(false);
 
@@ -5634,7 +5627,6 @@ export function AdminDashboard({
       setFarmerReviewDebug(reviewDebugFields(result.farmer));
     }
 
-    void loadActivity();
   }
 
   async function openImportedFarmerReviewById(recordId: string, row?: AdminRow) {
@@ -5653,14 +5645,7 @@ export function AdminDashboard({
     setFarmerReviewMessage(null);
     setFarmerReviewDebug(null);
     setFarmerImportError("");
-    const response = await fetch("/api/admin/farmer-import", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "view",
-        ids: [recordId]
-      })
-    }).catch(() => null);
+    const response = await fetch(`/api/admin/farmer-import?id=${encodeURIComponent(recordId)}`, { cache: "no-store" }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { farmer?: ImportedFarmerRecord; error?: string } | null;
     setIsLoadingFarmerReview(false);
 
@@ -7481,30 +7466,9 @@ export function AdminDashboard({
                         >
                           Clear
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => bulkUpdateImportedFarmers("approve")}
-                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
-                          className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => bulkUpdateImportedFarmers("founding")}
-                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
-                          className="rounded-md bg-earth-500 px-3 py-2 text-xs font-black text-ink transition hover:bg-earth-400 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Founding Farmer
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => bulkUpdateImportedFarmers("archive")}
-                          disabled={isUpdatingImportedFarmers || selectedImportedFarmerIds.length === 0}
-                          className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-tomato disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Archive
-                        </button>
+                        <span className="rounded-md bg-leaf-50 px-3 py-2 text-xs font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                          Open each farmer in Public Review for workflow actions
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -8364,14 +8328,9 @@ export function AdminDashboard({
                               >
                                 Open Public Review
                               </Link>
-                              <button
-                                type="button"
-                                onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
-                                disabled={isUpdatingFarmerReview}
-                                className="admin-action-warning w-full"
-                              >
-                                {pendingFarmerReviewAction === "needs-follow-up" ? "Requesting..." : "Request Changes"}
-                              </button>
+                              <p className="rounded-md bg-white px-3 py-2 text-xs font-semibold leading-5 text-ink/55 ring-1 ring-leaf-900/10">
+                                Verification, launch readiness, publication, pausing and featuring are managed only in Public Review.
+                              </p>
                             </div>
 
                             <div className="flex gap-2">
@@ -10254,22 +10213,9 @@ export function AdminDashboard({
                     {selectedFarmerRowIds.length} farmer{selectedFarmerRowIds.length === 1 ? "" : "s"} selected
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(["active", "pending-review", "under-review", "founding", "archive"] as FarmerBulkAction[]).map((action) => (
-                      <button
-                        key={action}
-                        type="button"
-                        onClick={() => setPendingFarmerBulkAction(action)}
-                        className={`rounded-md px-3 py-2 text-xs font-black ring-1 ring-leaf-900/10 transition ${
-                          action === "archive"
-                            ? "bg-white text-tomato hover:ring-tomato/30"
-                            : action === "verified" || action === "founding"
-                              ? "bg-leaf-700 text-white hover:bg-leaf-800"
-                              : "bg-white text-ink/65 hover:text-leaf-800"
-                        }`}
-                      >
-                        {farmerBulkActionLabels[action]}
-                      </button>
-                    ))}
+                    <span className="rounded-md bg-white px-3 py-2 text-xs font-black text-ink/60 ring-1 ring-leaf-900/10">
+                      Workflow changes are completed one profile at a time in Public Review
+                    </span>
                     <button
                       type="button"
                       onClick={() => setSelectedFarmerRowIds([])}
@@ -10567,16 +10513,15 @@ export function AdminDashboard({
                           ) : activeSection === "farmers" && normalizedRowSource === "Tally Import" ? (
                             <>
                               <span className="inline-flex items-center rounded-md bg-earth-50 px-3 py-2 text-xs font-black text-earth-700">
-                                Verify in review
+                                Use Public Review
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => archiveAdminRow(row)}
+                              <Link
+                                href={`/admin/profiles/farmer/${encodeURIComponent(row.profileRecordId || row.id)}`}
                                 className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-xs font-black text-ink/65 ring-1 ring-leaf-900/10 transition hover:text-leaf-800"
                               >
-                                <Archive className="h-3.5 w-3.5" />
-                                Archive
-                              </button>
+                                <FilePenLine className="h-3.5 w-3.5" />
+                                Open profile
+                              </Link>
                             </>
                           ) : (
                             <>
@@ -11051,28 +10996,13 @@ export function AdminDashboard({
                       >
                         {pendingFarmerReviewAction === "notes" ? "Saving..." : "Save Notes"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("under-review")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "under-review" ? "Updating..." : "Mark Under Review"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}
-                        disabled={isUpdatingFarmerReview}
-                        className="rounded-md bg-white px-4 py-3 text-sm font-black text-earth-700 ring-1 ring-earth-500/20 transition hover:bg-earth-500 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {pendingFarmerReviewAction === "needs-follow-up" ? "Updating..." : "Needs Follow-up"}
-                      </button>
                       <Link
                         href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
                         className="admin-action-primary"
                       >
                         Open profile review & publication
                       </Link>
+                      <p className="w-full text-xs font-semibold text-ink/50">Profile workflow actions are available only in the dedicated Public Review editor.</p>
                     </div>
                   </div>
                 </div>

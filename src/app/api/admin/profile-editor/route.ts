@@ -7,6 +7,7 @@ import {
   convertSupplierApplicationToProfile
 } from "@/lib/profileApplications";
 import type { ProfileEditorKind, ProfileTransition } from "@/lib/profileEditorContracts";
+import type { StagedFarmerProfileMedia } from "@/lib/farmerProfileMedia";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,15 +54,19 @@ export async function PATCH(request: Request) {
     kind?: ProfileEditorKind;
     id?: string;
     changes?: Record<string, unknown>;
+    version?: string;
+    stagedMedia?: StagedFarmerProfileMedia[];
   };
-  if (!body.kind || !kinds.has(body.kind) || !body.id || !body.changes || typeof body.changes !== "object") {
-    return noStore({ error: "Profile type, record ID, and changes are required." }, { status: 400 });
+  if (!body.kind || !kinds.has(body.kind) || !body.id || !body.changes || typeof body.changes !== "object" || (body.kind === "farmer" && !body.version)) {
+    return noStore({ error: "Profile type, record ID, changes, and the loaded farmer version are required." }, { status: 400 });
   }
 
   const result = await saveAdminProfile({
     kind: body.kind,
     recordKey: body.id,
     changes: body.changes,
+    version: body.version,
+    stagedMedia: body.kind === "farmer" && Array.isArray(body.stagedMedia) ? body.stagedMedia : [],
     adminEmail: adminUser.email
   });
   if (!("data" in result)) {
@@ -70,7 +75,11 @@ export async function PATCH(request: Request) {
       feature: `${body.kind}_profile_editor`,
       code: result.status
     });
-    return noStore({ error: result.error ?? "Profile changes could not be saved.", errors: "errors" in result ? result.errors : undefined }, { status: result.status });
+    return noStore({
+      error: result.error ?? "Profile changes could not be saved.",
+      errors: "errors" in result ? result.errors : undefined,
+      stagedMediaDiscarded: "stagedMediaDiscarded" in result ? result.stagedMediaDiscarded : undefined
+    }, { status: result.status });
   }
   return noStore(result.data);
 }

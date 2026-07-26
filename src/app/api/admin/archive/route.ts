@@ -39,6 +39,12 @@ export async function PATCH(request: Request) {
   if (!body.section || !body.recordId || !archiveTargets[body.section]) {
     return NextResponse.json({ error: "Admin section and record ID are required." }, { status: 400 });
   }
+  if (body.section === "farmers") {
+    return NextResponse.json(
+      { error: "Open the dedicated Farmer Profile editor to pause or deactivate this farmer." },
+      { status: 409 }
+    );
+  }
 
   const target = archiveTargets[body.section];
   const update = await updateSupabaseRecord(target.table, filterFor(body.recordId, target.filterColumn), {
