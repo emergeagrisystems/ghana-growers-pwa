@@ -6,10 +6,11 @@ import {
   type FarmerApplicationAdminRow,
   type SupplierApplicationAdminRow
 } from "@/lib/profileApplications";
-import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
+import { insertSupabaseRecord, updateSupabaseRecord } from "@/lib/supabase/admin";
 
 export type ApplicationKind = "farmer" | "buyer" | "supplier";
 export type ApplicationStatus = "New" | "Pending" | "Under Review" | "Approved" | "Rejected" | "Converted";
+export type ApplicationQueueState = "loaded" | "unavailable" | "error";
 
 export type ApplicationRecord = {
   id: string;
@@ -89,38 +90,43 @@ export async function insertApplication(kind: ApplicationKind, payload: Omit<App
   });
 }
 
-export async function getApplications() {
-  const baseQuery =
-    "select=id,name,business_or_farm_name,phone,whatsapp_number,email,region,district,user_type,products_or_services,notes,status,created_at,updated_at&order=created_at.desc&limit=500";
-  const [buyers, farmers, suppliers] = await Promise.all([
-    selectSupabaseRecords<ApplicationRecord>("buyer_applications", baseQuery),
-    loadProfileApplicationsForAdmin("farmer"),
-    loadProfileApplicationsForAdmin("supplier")
-  ]);
-  const diagnostics: Partial<Record<ApplicationKind, string[]>> = {};
-
-  const addDiagnostic = (kind: ApplicationKind, message: string) => {
-    diagnostics[kind] = [...(diagnostics[kind] ?? []), message];
-  };
-
-  if (buyers.error) {
-    addDiagnostic("buyer", "Buyer applications could not be loaded.");
+export async function getApplicationQueue(kind: ApplicationKind): Promise<{
+  kind: ApplicationKind;
+  state: ApplicationQueueState;
+  applications: ApplicationRecord[];
+  source: string;
+  status: number;
+}> {
+  if (kind === "buyer") {
+    return {
+      kind,
+      state: "unavailable",
+      applications: [],
+      source: "buyer_applications",
+      status: 200
+    };
   }
 
-  if (farmers.error) {
-    addDiagnostic("farmer", "Farmer applications could not be loaded.");
-  }
+  const result = await loadProfileApplicationsForAdmin(kind);
 
-  if (suppliers.error) {
-    addDiagnostic("supplier", "Supplier applications could not be loaded.");
+  if (result.error) {
+    return {
+      kind,
+      state: "error",
+      applications: [],
+      source: tableByKind[kind],
+      status: result.status
+    };
   }
 
   return {
-    farmers: (farmers.data ?? []).map(mapFarmerApplication),
-    buyers: buyers.data ?? [],
-    suppliers: (suppliers.data ?? []).map(mapSupplierApplication),
-    error: Boolean(buyers.error || farmers.error || suppliers.error),
-    diagnostics
+    kind,
+    state: "loaded",
+    applications: kind === "farmer"
+      ? (result.data ?? []).map((application) => mapFarmerApplication(application as FarmerApplicationAdminRow))
+      : (result.data ?? []).map((application) => mapSupplierApplication(application as SupplierApplicationAdminRow)),
+    source: tableByKind[kind],
+    status: result.status
   };
 }
 
