@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isControlledPrelaunchRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
+import { isHqApprovalCountsPrelaunchRoute } from "@/lib/prelaunchAccess";
 import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 
 function prelaunchEnabled() {
@@ -18,7 +19,12 @@ function isPublicAsset(pathname: string) {
 }
 
 function isAllowedPrelaunchRoute(pathname: string) {
-  return isPublicFarmMatePilotRoute(pathname) || isControlledPrelaunchRoute(pathname) || isPublicAsset(pathname);
+  return (
+    isHqApprovalCountsPrelaunchRoute(pathname) ||
+    isPublicFarmMatePilotRoute(pathname) ||
+    isControlledPrelaunchRoute(pathname) ||
+    isPublicAsset(pathname)
+  );
 }
 
 export async function middleware(request: NextRequest) {

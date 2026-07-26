@@ -13,6 +13,6 @@
     "noEmit": false,
     "incremental": false
   },
-  "include": ["tests/**/*.ts", "src/lib/farmmate/**/*.ts", "src/lib/marketplace/**/*.ts", "src/lib/hqApprovalCounts.ts"],
+  "include": ["tests/**/*.ts", "src/lib/farmmate/**/*.ts", "src/lib/marketplace/**/*.ts", "src/lib/hqApprovalCounts.ts", "src/lib/prelaunchAccess.ts"],
   "exclude": ["node_modules", ".next", ".farmmate-test-dist"]
 }
