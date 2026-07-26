@@ -1,6 +1,12 @@
 import { generateUniqueSlug, splitList } from "@/app/api/admin/records";
 import { requireAdminUser } from "@/lib/adminAuth";
 import { logAdminActivity } from "@/lib/adminActivity";
+import {
+  farmerProfileReadiness,
+  farmerPublicationChecks,
+  type FarmerProfileRecord
+} from "@/lib/profileEditorContracts";
+import { isValidPublicProfileSlug } from "@/lib/publicProfileEligibility";
 import { insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord, uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
@@ -68,10 +74,13 @@ type ExistingFarmer = {
   editorial_notes?: string | null;
   launch_ready?: boolean | null;
   launch_checklist?: Record<string, unknown> | null;
+  is_featured?: boolean | null;
+  featured_until?: string | null;
   editorial_updated_at?: string | null;
   editorial_updated_by?: string | null;
   linked_marketplace_listings?: FarmerLinkedMarketplaceListing[];
   created_at?: string | null;
+  updated_at?: string | null;
   source: string | null;
 };
 
@@ -142,7 +151,7 @@ type ImportFieldKey = keyof typeof fieldLabels;
 
 const requiredImportFields: ImportFieldKey[] = ["farmerName"];
 const farmerReviewSelect =
-  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,farm_photo_urls,produce_photo_urls,document_urls,tally_file_references,photo_import_status,photo_import_notes,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,gg_standard_status,profile_image_url,description,launch_status,homepage_candidate,marketplace_featured,story_candidate,editorial_notes,launch_ready,launch_checklist,editorial_updated_at,editorial_updated_by,created_at,source";
+  "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,farm_photo_urls,produce_photo_urls,document_urls,tally_file_references,photo_import_status,photo_import_notes,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,gg_standard_status,profile_image_url,description,launch_status,homepage_candidate,marketplace_featured,story_candidate,editorial_notes,launch_ready,launch_checklist,is_featured,featured_until,editorial_updated_at,editorial_updated_by,created_at,updated_at,source";
 const farmerReviewBaseSelect =
   "select=id,slug,farmer_name,farm_name,region,district,farm_type,products,farm_size,phone_number,whatsapp_number,email,farm_location,farming_experience,currently_harvesting,supply_frequency,delivery_preference,payment_preference,workshop_interest,referral_source,tally_photo_url,imported_photo_url,original_tally_data,status,verification_status,verification_date,verified_by,verification_notes,profile_image_url,description,created_at,source";
 const farmerEditorialStatuses = ["Public Farmer", "Featured Farmer", "Founding Farmer 2026", "Needs Improvement", "Hold"] as const;
@@ -158,7 +167,7 @@ const farmerEditorialColumns = [
   "editorial_updated_at",
   "editorial_updated_by"
 ];
-const farmerReviewOptionalColumnPattern = /(gg_standard_status|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|editorial_updated|farm_photo_urls|produce_photo_urls|document_urls|tally_file_references|photo_import_status|photo_import_notes)/;
+const farmerReviewOptionalColumnPattern = /(gg_standard_status|launch_status|homepage_candidate|marketplace_featured|story_candidate|editorial_notes|launch_ready|launch_checklist|is_featured|featured_until|editorial_updated|updated_at|farm_photo_urls|produce_photo_urls|document_urls|tally_file_references|photo_import_status|photo_import_notes)/;
 
 const allowedPublicFarmerStatuses = new Set(["Pending Review", "Active", "Archived"]);
 const allowedVerificationStatuses = new Set(["Pending", "Under Review", "Verified", "Rejected", "Needs Follow-up"]);
@@ -898,7 +907,59 @@ async function tallyDetailPayload(mapped: ImportableFarmer, existing?: ExistingF
   };
 }
 
-function friendlyImportedFarmer(record: ExistingFarmer) {
+function farmerProfileRecord(record: ExistingFarmer): FarmerProfileRecord {
+  const launchChecklist = record.launch_checklist && typeof record.launch_checklist === "object"
+    ? Object.fromEntries(Object.entries(record.launch_checklist).filter((entry): entry is [string, boolean] => typeof entry[1] === "boolean"))
+    : {};
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    farmer_name: record.farmer_name,
+    farm_name: record.farm_name,
+    region: record.region,
+    district: record.district,
+    farm_type: record.farm_type,
+    products: record.products ?? [],
+    farm_size: record.farm_size,
+    whatsapp_number: record.whatsapp_number,
+    profile_image_url: record.profile_image_url ?? null,
+    description: record.description ?? null,
+    status: record.status ?? "Pending Review",
+    created_at: record.created_at ?? "",
+    updated_at: record.updated_at ?? record.created_at ?? "",
+    verification_date: record.verification_date ?? null,
+    verification_status: record.verification_status ?? "Pending",
+    verified_by: record.verified_by ?? null,
+    verification_notes: record.verification_notes ?? null,
+    source: normalizedFarmerSource(record.source),
+    phone_number: record.phone_number ?? null,
+    email: record.email ?? null,
+    farm_location: record.farm_location ?? null,
+    farming_experience: record.farming_experience ?? null,
+    currently_harvesting: record.currently_harvesting ?? null,
+    supply_frequency: record.supply_frequency ?? null,
+    delivery_preference: record.delivery_preference ?? null,
+    payment_preference: record.payment_preference ?? null,
+    is_featured: record.is_featured ?? false,
+    featured_until: record.featured_until ?? null,
+    featured_note: null,
+    launch_status: record.launch_status ?? "",
+    editorial_notes: record.editorial_notes ?? null,
+    launch_ready: record.launch_ready ?? false,
+    launch_checklist: launchChecklist,
+    document_urls: record.document_urls ?? [],
+    gg_standard_status: record.gg_standard_status ?? "Pending",
+    farm_photo_urls: record.farm_photo_urls ?? [],
+    produce_photo_urls: record.produce_photo_urls ?? [],
+    source_application_id: null
+  };
+}
+
+function friendlyImportedFarmer(record: ExistingFarmer, slugUnique?: boolean | null) {
+  const profileRecord = farmerProfileRecord(record);
+  const readiness = farmerProfileReadiness(profileRecord, farmerPublicationChecks(profileRecord, { slugUnique }));
+
   return {
     id: record.id,
     slug: record.slug ?? record.id,
@@ -944,12 +1005,25 @@ function friendlyImportedFarmer(record: ExistingFarmer) {
     editorial_notes: record.editorial_notes ?? "",
     launch_ready: record.launch_ready ?? false,
     launch_checklist: record.launch_checklist ?? {},
+    is_featured: record.is_featured ?? false,
+    featured_until: record.featured_until ?? null,
+    profile_readiness: readiness,
     editorial_updated_at: record.editorial_updated_at ?? null,
     editorial_updated_by: record.editorial_updated_by ?? null,
     linked_marketplace_listings: record.linked_marketplace_listings ?? [],
     created_at: record.created_at ?? null,
     source: normalizedFarmerSource(record.source)
   };
+}
+
+async function friendlyImportedFarmerWithConfirmedSlug(record: ExistingFarmer) {
+  if (!isValidPublicProfileSlug(record.slug)) return friendlyImportedFarmer(record);
+
+  const duplicate = await selectSupabaseRecords<{ id: string }>(
+    "farmers",
+    `select=id&slug=eq.${encodeURIComponent(record.slug as string)}&id=neq.${encodeURIComponent(record.id)}&limit=1`
+  );
+  return friendlyImportedFarmer(record, duplicate.error ? null : !duplicate.data?.length);
 }
 
 function cleanEditorialChecklist(value: unknown) {
@@ -1344,7 +1418,7 @@ async function handleFarmerAssetUpload(formData: FormData, adminEmail: string) {
   });
 
   const refreshedTarget = await getImportedFarmerById(target.farmer.id);
-  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? await friendlyImportedFarmerWithConfirmedSlug(refreshedTarget.farmer) : undefined;
 
   return NextResponse.json({
     ok: true,
@@ -1375,9 +1449,17 @@ export async function GET(request: Request) {
     const source = normalizedFarmerSource(farmer.source);
     return source === "Tally Import" || source === "Founding Farmer";
   });
+  const slugCounts = (farmers.data ?? []).reduce((counts, farmer) => {
+    const slug = farmer.slug?.trim().toLowerCase();
+    if (slug) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
 
   return NextResponse.json({
-    farmers: importedFarmers.map(friendlyImportedFarmer),
+    farmers: importedFarmers.map((farmer) => friendlyImportedFarmer(
+      farmer,
+      farmer.slug ? slugCounts.get(farmer.slug.trim().toLowerCase()) === 1 : undefined
+    )),
     diagnostics: {
       totalSupabaseFarmers: farmers.data?.length ?? 0,
       importedFarmers: importedFarmers.length,
@@ -1588,7 +1670,7 @@ export async function POST(request: Request) {
       duplicateRows: duplicates,
       errorRows: errors
     },
-    farmers: imported.map(friendlyImportedFarmer)
+    farmers: imported.map((farmer) => friendlyImportedFarmer(farmer))
   });
 }
 
@@ -1634,7 +1716,7 @@ export async function PATCH(request: Request) {
       entityName: target.farmer.farm_name
     });
 
-    return NextResponse.json({ ok: true, farmer: friendlyImportedFarmer(target.farmer) });
+    return NextResponse.json({ ok: true, farmer: await friendlyImportedFarmerWithConfirmedSlug(target.farmer) });
   }
 
   if (body.action === "import-photo") {
@@ -1681,7 +1763,7 @@ export async function PATCH(request: Request) {
     });
 
     const refreshedTarget = await getImportedFarmerById(target.farmer.id);
-    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? await friendlyImportedFarmerWithConfirmedSlug(refreshedTarget.farmer) : undefined;
 
     return NextResponse.json({ ok: true, farmer, message: "Farmer photo imported successfully." });
   }
@@ -1738,7 +1820,7 @@ export async function PATCH(request: Request) {
     });
 
     const refreshedTarget = await getImportedFarmerById(ids[0]);
-    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? await friendlyImportedFarmerWithConfirmedSlug(refreshedTarget.farmer) : undefined;
 
     return NextResponse.json({ ok: true, farmer, message: "Editorial decision saved." });
   }
@@ -1808,7 +1890,7 @@ export async function PATCH(request: Request) {
     });
 
     const refreshedTarget = await getImportedFarmerById(ids[0]);
-    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+    const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? await friendlyImportedFarmerWithConfirmedSlug(refreshedTarget.farmer) : undefined;
 
     return NextResponse.json({ ok: true, farmer, message: "Farmer profile saved." });
   }
@@ -1875,7 +1957,7 @@ export async function PATCH(request: Request) {
   });
 
   const refreshedTarget = ids.length === 1 ? await getImportedFarmerById(ids[0]) : null;
-  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? friendlyImportedFarmer(refreshedTarget.farmer) : undefined;
+  const farmer = refreshedTarget && "farmer" in refreshedTarget && refreshedTarget.farmer ? await friendlyImportedFarmerWithConfirmedSlug(refreshedTarget.farmer) : undefined;
   const message =
     body.action === "verify"
       ? "Farmer verified and published successfully."

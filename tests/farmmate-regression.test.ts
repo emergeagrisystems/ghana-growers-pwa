@@ -51,6 +51,7 @@ import {
   isValidPublicProfileSlug
 } from "../src/lib/publicProfileEligibility";
 import {
+  farmerProfileReadiness,
   farmerPublicationChecks,
   featuredIsCurrentlyPublic,
   normalizeRecordArrays,
@@ -7898,6 +7899,84 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Farmer readiness guidance reports truthful public requirements",
+    run: () => {
+      const skNartLike = {
+        id: "farmer-sk", slug: "s-k-nart-farms", farmer_name: "Private contact", farm_name: "S. K. Nart Farms",
+        region: "Eastern", district: "Klo-Agogo", farm_type: "Crop", products: ["Yellow Maize"], farm_size: null,
+        whatsapp_number: null, profile_image_url: "/images/farmers/sk-nart.jpg", description: null, status: "Active",
+        created_at: "2026-01-01", updated_at: "2026-01-01", verification_date: "2026-01-02",
+        verification_status: "Verified", verified_by: "admin", verification_notes: null, source: "Tally Import",
+        phone_number: null, email: null, farm_location: null, farming_experience: null, currently_harvesting: null,
+        supply_frequency: null, delivery_preference: null, payment_preference: null, is_featured: false,
+        featured_until: null, featured_note: null, launch_status: "Featured Farmer", editorial_notes: null,
+        launch_ready: false, launch_checklist: {}, document_urls: [], gg_standard_status: "Pending", farm_photo_urls: [],
+        produce_photo_urls: [], source_application_id: null
+      } satisfies FarmerProfileRecord;
+      const readiness = farmerProfileReadiness(skNartLike, farmerPublicationChecks(skNartLike, { slugUnique: true }));
+
+      assert.equal(readiness.total, 11);
+      assert.equal(readiness.complete, 9);
+      assert.deepEqual(readiness.missing.map((item) => item.label), ["Public description", "Launch Ready approval"]);
+      assert.equal(readiness.recommendation, "complete-public-profile");
+      assert.equal(readiness.publiclyEligible, false);
+      assert.equal(readiness.canFeature, false);
+      assert.equal(skNartLike.gg_standard_status, "Pending");
+      assert.equal(skNartLike.is_featured, false);
+
+      const eligible = {
+        ...skNartLike,
+        description: "Yellow Maize supplied from Klo-Agogo.",
+        launch_ready: true,
+        featured_until: "2099-12-31"
+      } satisfies FarmerProfileRecord;
+      const eligibleReadiness = farmerProfileReadiness(eligible, farmerPublicationChecks(eligible, { slugUnique: true }));
+      assert.equal(profileIsPubliclyEligible("farmer", eligible), true);
+      assert.equal(eligibleReadiness.publiclyEligible, true);
+      assert.equal(eligibleReadiness.canFeature, true);
+      assert.equal(featuredIsCurrentlyPublic("farmer", eligible), false);
+    }
+  },
+  {
+    name: "Verification or a photo alone cannot make a farmer launch ready",
+    run: () => {
+      const incomplete = {
+        id: "farmer-incomplete", slug: "incomplete-farm", farmer_name: null, farm_name: "Incomplete Farm", region: "",
+        district: "", farm_type: "", products: [], farm_size: null, whatsapp_number: null, profile_image_url: null,
+        description: null, status: "Pending", created_at: "2026-01-01", updated_at: "2026-01-01", verification_date: null,
+        verification_status: "Verified", verified_by: null, verification_notes: null, source: "admin", phone_number: null,
+        email: null, farm_location: null, farming_experience: null, currently_harvesting: null, supply_frequency: null,
+        delivery_preference: null, payment_preference: null, is_featured: false, featured_until: null, featured_note: null,
+        launch_status: "Needs Improvement", editorial_notes: null, launch_ready: false, launch_checklist: {}, document_urls: [],
+        gg_standard_status: "Pending", farm_photo_urls: [], produce_photo_urls: [], source_application_id: null
+      } satisfies FarmerProfileRecord;
+      const verifiedOnly = farmerProfileReadiness(incomplete, farmerPublicationChecks(incomplete, { slugUnique: true }));
+      const photoOnlyRecord = { ...incomplete, verification_status: "Pending Verification", profile_image_url: "/farmer.jpg" } satisfies FarmerProfileRecord;
+      const photoOnly = farmerProfileReadiness(photoOnlyRecord, farmerPublicationChecks(photoOnlyRecord, { slugUnique: true }));
+
+      assert.equal(verifiedOnly.publiclyEligible, false);
+      assert.equal(verifiedOnly.canMarkLaunchReady, false);
+      assert.equal(photoOnly.publiclyEligible, false);
+      assert.equal(photoOnly.canMarkLaunchReady, false);
+    }
+  },
+  {
+    name: "Farmer review guidance is read-only on render and admin protected",
+    run: () => {
+      const dashboard = repoFile("src/components/AdminDashboard.tsx");
+      const farmerRoute = repoFile("src/app/api/admin/farmer-import/route.ts");
+      const profileRoute = repoFile("src/app/api/admin/profile-editor/route.ts");
+
+      assert.equal(dashboard.includes("Review Complete"), false);
+      assert.equal(dashboard.includes("Application review complete"), true);
+      assert.equal(dashboard.includes("Profile readiness"), true);
+      assert.equal(dashboard.includes('onClick={() => void markReviewingFarmerLaunchReady()}'), true);
+      assert.equal(farmerRoute.includes("requireAdminUser(request)"), true);
+      assert.equal(profileRoute.includes("requireAdminUser(request)"), true);
+      assert.equal(profileRoute.includes('transition: "launch-ready"'), false);
+    }
+  },
+  {
     name: "Profile preview and media workflow keep private data out of public DTOs",
     run: () => {
       const editor = repoFile("src/components/AdminProfileEditor.tsx");
@@ -7955,7 +8034,7 @@ const tests: TestCase[] = [
       for (const label of [
         "Public farm name", "Valid unique public URL slug", "Region and public location", "Farm type",
         "At least one crop or product", "Public description", "Approved main image or explicitly approved no-photo state",
-        "Verification status is Verified", "Launch Ready is marked", "Public company name", "Approved supplier category",
+        "Verification status is Verified", "Launch Ready approval", "Public company name", "Approved supplier category",
         "At least one product or service", "Service coverage or public location", "Public business description",
         "Approved public image or explicitly approved no-photo state", "Launch readiness is marked"
       ]) assert.equal(contracts.includes(label), true);

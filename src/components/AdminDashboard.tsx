@@ -47,6 +47,7 @@ import {
   adminPrioritySeverity
 } from "@/lib/adminPriorityState";
 import { matchTokens, normalizeMatchText, productMatchScore } from "@/lib/matching";
+import type { FarmerProfileReadiness } from "@/lib/profileEditorContracts";
 
 type AdminStatus = "Pending" | "Under Review" | "Verified" | "Rejected" | "Active" | "Archived" | "Needs Follow-up" | "Published";
 type ImportAdminStatus = AdminStatus | "Pending Review";
@@ -474,6 +475,9 @@ type ImportedFarmerRecord = {
   editorial_notes?: string | null;
   launch_ready?: boolean | null;
   launch_checklist?: Partial<Record<LaunchChecklistItem, boolean>> | null;
+  is_featured?: boolean | null;
+  featured_until?: string | null;
+  profile_readiness?: FarmerProfileReadiness;
   editorial_updated_at?: string | null;
   editorial_updated_by?: string | null;
   linked_marketplace_listings?: FarmerLinkedMarketplaceListing[];
@@ -2115,30 +2119,9 @@ function farmerWaitingLabel(farmer: ImportedFarmerRecord) {
 }
 
 function farmerRecommendedAction(farmer: ImportedFarmerRecord) {
-  const readiness = farmerReviewReadiness(farmer);
-  const missing = readiness.filter((item) => !item.complete).map((item) => item.label);
-
-  if (!readiness.find((item) => item.label === "Contact")?.complete) {
-    return "Complete Contact Information";
-  }
-
-  if (missing.includes("Photo")) {
-    return "Request Farm Photos";
-  }
-
-  if (missing.includes("Products")) {
-    return "Complete Produce Information";
-  }
-
-  if (missing.includes("Location")) {
-    return "Call Farmer";
-  }
-
-  if (farmer.verification_status !== "Verified") {
-    return "Approve";
-  }
-
-  return farmer.status === "Active" ? "Review Complete" : "Open Profile Review";
+  if (farmer.profile_readiness?.recommendation === "public-profile-ready") return "Public profile ready";
+  if (farmer.profile_readiness?.recommendation === "review-public-preview") return "Review public preview";
+  return "Complete public profile";
 }
 
 function farmerReviewTimeline(farmer: ImportedFarmerRecord) {
@@ -3920,7 +3903,7 @@ export function AdminDashboard({
   const [reviewingImportedFarmerId, setReviewingImportedFarmerId] = useState<string | null>(null);
   const [verificationReviewNotes, setVerificationReviewNotes] = useState("");
   const [isUpdatingFarmerReview, setIsUpdatingFarmerReview] = useState(false);
-  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | "gg-standard" | null>(null);
+  const [pendingFarmerReviewAction, setPendingFarmerReviewAction] = useState<"under-review" | "needs-follow-up" | "verify" | "verify-only" | "reject" | "archive" | "notes" | "import-photo" | "gg-standard" | "launch-ready" | null>(null);
   const [uploadingFarmerAsset, setUploadingFarmerAsset] = useState<string | null>(null);
   const [farmerReviewMessage, setFarmerReviewMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingFarmerReview, setIsLoadingFarmerReview] = useState(false);
@@ -4736,6 +4719,8 @@ export function AdminDashboard({
       : null;
   const reviewingCompleteness = reviewingImportedFarmer ? farmerCompleteness(reviewingImportedFarmer) : null;
   const reviewingReadiness = reviewingImportedFarmer ? farmerReviewReadiness(reviewingImportedFarmer) : [];
+  const reviewingApplicationComplete = reviewingReadiness.length > 0 && reviewingReadiness.every((item) => item.complete);
+  const reviewingProfileReadiness = reviewingImportedFarmer?.profile_readiness ?? null;
   const reviewingFollowUpMessage = reviewingImportedFarmer ? followUpMessageForFarmer(reviewingImportedFarmer) : "";
   const reviewingWhatsappUrl =
     reviewingImportedFarmer?.whatsapp_number
@@ -5793,6 +5778,40 @@ export function AdminDashboard({
     void loadActivity();
     void loadAnalytics();
     void loadAdminFarmers();
+  }
+
+  async function markReviewingFarmerLaunchReady() {
+    if (!reviewingImportedFarmer || isUpdatingFarmerReview) return;
+    if (!window.confirm("Mark this farmer profile Launch Ready? This will not feature the farmer or contact anyone.")) return;
+
+    setIsUpdatingFarmerReview(true);
+    setPendingFarmerReviewAction("launch-ready");
+    setFarmerReviewMessage(null);
+    const response = await fetch("/api/admin/profile-editor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "transition",
+        kind: "farmer",
+        id: reviewingImportedFarmer.id,
+        transition: "launch-ready"
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+    setIsUpdatingFarmerReview(false);
+    setPendingFarmerReviewAction(null);
+
+    if (!response?.ok) {
+      if (response?.status === 401) {
+        window.location.href = "/admin/login";
+        return;
+      }
+      setFarmerReviewMessage({ type: "error", text: result?.error ?? "Launch readiness could not be updated." });
+      return;
+    }
+
+    await openImportedFarmerReviewById(reviewingImportedFarmer.id);
+    setFarmerReviewMessage({ type: "success", text: "Farmer profile marked Launch Ready. Featured status was not changed." });
   }
 
   function openAdminNavigationItem(item: AdminNavigationItem, groupName = groupForNavigationKey(item.key)) {
@@ -8010,17 +8029,36 @@ export function AdminDashboard({
                             </section>
 
                             <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-                              <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Profile Readiness</h4>
-                              <div className="mt-4 grid gap-2">
-                                {reviewingReadiness.map((item) => (
-                                  <div key={item.label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
-                                    <span className="text-sm font-black text-ink">{item.label}</span>
-                                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${item.complete ? "bg-leaf-100 text-leaf-800" : "bg-earth-50 text-earth-700"}`}>
-                                      {item.complete ? "Ready" : item.note}
-                                    </span>
-                                  </div>
-                                ))}
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Profile readiness</h4>
+                                  <p className="mt-1 text-sm font-semibold text-ink/58">Public directory requirements, separate from application review.</p>
+                                </div>
+                                {reviewingProfileReadiness ? (
+                                  <span className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                    {reviewingProfileReadiness.complete} of {reviewingProfileReadiness.total} complete
+                                  </span>
+                                ) : null}
                               </div>
+                              {reviewingApplicationComplete ? (
+                                <p className="mt-4 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">
+                                  Application review complete
+                                </p>
+                              ) : null}
+                              {reviewingProfileReadiness ? (
+                                reviewingProfileReadiness.missing.length > 0 ? (
+                                  <div className="mt-4 rounded-md bg-earth-50 p-4 ring-1 ring-earth-500/15">
+                                    <p className="text-xs font-black uppercase tracking-wide text-earth-700">Still needed</p>
+                                    <ul className="mt-2 grid gap-1.5 text-sm font-semibold text-ink/70">
+                                      {reviewingProfileReadiness.missing.map((item) => <li key={item.key}>- {item.label}</li>)}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <p className="mt-4 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10">All public profile requirements are complete.</p>
+                                )
+                              ) : (
+                                <p className="mt-4 rounded-md bg-white px-3 py-2 text-sm font-semibold text-ink/58 ring-1 ring-leaf-900/10">Readiness is loading from the protected profile review service.</p>
+                              )}
                             </section>
                           </div>
                         ) : (
@@ -8056,6 +8094,9 @@ export function AdminDashboard({
                             <div className="admin-recommendation-panel p-4">
                               <p className="text-xs font-black uppercase tracking-wide text-ink/45">Recommended Action</p>
                               <p className="mt-2 text-xl font-black text-ink">{recommendedFarmerAction}</p>
+                              {reviewingProfileReadiness?.publiclyEligible && !reviewingImportedFarmer.is_featured ? (
+                                <p className="mt-2 text-sm font-black text-leaf-800">Optional next step: Consider featuring this farmer.</p>
+                              ) : null}
                               <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
                                 Recommendations assist the reviewer. The final decision remains with Ghana Growers.
                               </p>
@@ -8074,13 +8115,14 @@ export function AdminDashboard({
                             </label>
 
                             <div className="admin-context-panel p-4">
-                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Trust</p>
+                              <p className="text-xs font-black uppercase tracking-wide text-ink/45">Profile states</p>
                               <div className="mt-3 grid gap-2">
                                 {[
+                                  ["Account/Profile Status", reviewingImportedFarmer.status],
                                   ["Verification", reviewingImportedFarmer.verification_status],
+                                  ["Launch Readiness", reviewingImportedFarmer.launch_ready ? "Approved" : "Not approved"],
                                   ["GG Standard", reviewingImportedFarmer.gg_standard_status ?? "Pending"],
-                                  ["Featured Farmer", "Not featured"],
-                                  ["Founding Farmer", normalizedFarmerSource(reviewingImportedFarmer.source) === "Founding Farmer" ? "Yes" : "No"]
+                                  ["Featured", reviewingImportedFarmer.is_featured ? "Featured" : "Not featured"]
                                 ].map(([label, value]) => (
                                   <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-leaf-900/10">
                                     <span className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</span>
@@ -8288,11 +8330,21 @@ export function AdminDashboard({
 
                             <div className="grid gap-2">
                               <Link
-                                href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}`}
+                                href={`/admin/profiles/farmer/${encodeURIComponent(reviewingImportedFarmer.id)}${reviewingProfileReadiness?.recommendation === "review-public-preview" ? "?tab=preview" : ""}`}
                                 className="admin-action-primary w-full"
                               >
-                                Open profile review & publication
+                                {reviewingProfileReadiness?.recommendation === "review-public-preview" ? "Preview Public Profile" : "Edit Farmer Profile"}
                               </Link>
+                              {reviewingProfileReadiness?.canMarkLaunchReady ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void markReviewingFarmerLaunchReady()}
+                                  disabled={isUpdatingFarmerReview}
+                                  className="admin-action-secondary w-full"
+                                >
+                                  {pendingFarmerReviewAction === "launch-ready" ? "Updating..." : "Mark Launch Ready"}
+                                </button>
+                              ) : null}
                               <button
                                 type="button"
                                 onClick={() => void applyImportedFarmerReviewAction("needs-follow-up")}

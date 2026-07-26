@@ -2,6 +2,7 @@ import "server-only";
 
 import { logAdminActivity, type AdminActionType } from "@/lib/adminActivity";
 import {
+  farmerProfileReadiness,
   featuredIsCurrentlyPublic,
   isSafePublicProfileImage,
   normalizeRecordArrays,
@@ -179,7 +180,9 @@ export async function profileEditorPayload(kind: ProfileEditorKind, recordKey: s
   if (!loaded.record) return loaded;
   const record = loaded.record;
   const checks = await evaluateProfileReadiness(kind, record);
-  const eligible = profileIsPubliclyEligible(kind, record);
+  const eligible = kind === "farmer"
+    ? farmerProfileReadiness(record as FarmerProfileRecord, checks).publiclyEligible
+    : profileIsPubliclyEligible(kind, record);
 
   return {
     status: 200,
@@ -339,12 +342,27 @@ export async function transitionAdminProfile({
   }
 
   if (transition === "activate") {
-    const missing = checks.filter((check) => check.required && !check.complete);
+    const missing = checks.filter((check) => check.required && !check.complete && check.key !== "status");
     if (missing.length) return { status: 409, error: "This profile is not ready to publish.", checks };
   }
   if (transition === "launch-ready") {
-    const missing = checks.filter((check) => !check.complete && !["verified", "launch-ready"].includes(check.key));
-    if (missing.length) return { status: 409, error: "Complete the public profile before marking it Launch Ready.", checks };
+    const missing = checks.filter((check) => !check.complete && !["status", "verified", "launch-ready"].includes(check.key));
+    if (missing.length) {
+      return {
+        status: 409,
+        error: `Complete the public profile before marking it Launch Ready. Still needed: ${missing.map((check) => check.label).join(", ")}.`,
+        checks
+      };
+    }
+  }
+  if (transition === "feature" && kind === "farmer") {
+    const readiness = farmerProfileReadiness(record as FarmerProfileRecord, checks);
+    if (!readiness.publiclyEligible) {
+      return { status: 409, error: "This farmer must be fully eligible for the public directory before featuring.", checks };
+    }
+    if (!readiness.canFeature) {
+      return { status: 409, error: "Set a current Featured until date before featuring this farmer.", checks };
+    }
   }
 
   const patch = transitionPatch(kind, transition, adminEmail);

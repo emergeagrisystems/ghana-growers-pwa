@@ -102,6 +102,19 @@ export type PublicationCheck = {
   complete: boolean;
 };
 
+export type FarmerReadinessRecommendation = "complete-public-profile" | "review-public-preview" | "public-profile-ready";
+
+export type FarmerProfileReadiness = {
+  checks: PublicationCheck[];
+  complete: number;
+  total: number;
+  missing: PublicationCheck[];
+  recommendation: FarmerReadinessRecommendation;
+  publiclyEligible: boolean;
+  canMarkLaunchReady: boolean;
+  canFeature: boolean;
+};
+
 export function uniqueTextValues(value: unknown) {
   const values = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[\n,;]+/) : [];
   return Array.from(new Set(values
@@ -166,24 +179,72 @@ function imageState(profileImage: string | null, checklist: Record<string, boole
   return hasText(profileImage) ? "needs-review" : "missing";
 }
 
-export function farmerPublicationChecks(record: FarmerProfileRecord): PublicationCheck[] {
+export function farmerPublicationChecks(
+  record: FarmerProfileRecord,
+  options: { slugUnique?: boolean | null } = {}
+): PublicationCheck[] {
   const locationState = !hasText(record.region) && !hasText(record.district) && !hasText(record.farm_location)
     ? "missing"
     : hasText(record.region) && (hasText(record.district) || hasText(record.farm_location))
       ? "passed"
       : "needs-review";
+  const slugState = !hasText(record.slug)
+    ? "missing"
+    : !isValidPublicProfileSlug(record.slug)
+      ? "needs-review"
+      : options.slugUnique === false || options.slugUnique === null
+        ? "needs-review"
+        : "passed";
+  const slugLabel = options.slugUnique === false
+    ? "Public URL slug is already in use"
+    : options.slugUnique === null
+      ? "Unique public URL slug could not be confirmed"
+      : "Valid unique public URL slug";
+
   return [
+    check("status", "Account/Profile Status is Active", record.status === "Active" ? "passed" : "needs-review"),
     check("farm-name", "Public farm name", textState(record.farm_name)),
-    check("slug", "Valid unique public URL slug", !hasText(record.slug) ? "missing" : isValidPublicProfileSlug(record.slug) ? "passed" : "needs-review"),
+    check("slug", slugLabel, slugState),
     check("location", "Region and public location", locationState),
     check("farm-type", "Farm type", !hasText(record.farm_type) ? "missing" : farmerFarmTypes.includes(record.farm_type as (typeof farmerFarmTypes)[number]) ? "passed" : "needs-review"),
     check("products", "At least one crop or product", uniqueTextValues(record.products).length > 0 ? "passed" : "missing"),
     check("description", "Public description", textState(record.description)),
     check("image", "Approved main image or explicitly approved no-photo state", imageState(record.profile_image_url, record.launch_checklist)),
     check("verified", "Verification status is Verified", record.verification_status === "Verified" ? "passed" : "needs-review"),
-    check("launch-ready", "Launch Ready is marked", record.launch_ready === true ? "passed" : "needs-review"),
+    check("launch-ready", "Launch Ready approval", record.launch_ready === true ? "passed" : "needs-review"),
     check("non-demo", "Record is not demo or placeholder data", !isDemoProfileOrigin(record.source) ? "passed" : "needs-review")
   ];
+}
+
+export function farmerProfileReadiness(
+  record: FarmerProfileRecord,
+  checks = farmerPublicationChecks(record)
+): FarmerProfileReadiness {
+  const missing = checks.filter((item) => !item.complete);
+  const publiclyEligible = profileIsPubliclyEligible("farmer", record) && missing.length === 0;
+  const missingBeforeLaunchApproval = missing.filter((item) => item.key !== "launch-ready");
+  const launchReadinessPrerequisites = missing.filter((item) => !["status", "verified", "launch-ready"].includes(item.key));
+  const canMarkLaunchReady = record.launch_ready !== true && launchReadinessPrerequisites.length === 0;
+  const featuredExpiry = record.featured_until?.trim();
+  const hasCurrentFeaturedExpiry = Boolean(
+    featuredExpiry && /^\d{4}-\d{2}-\d{2}$/.test(featuredExpiry) && new Date(`${featuredExpiry}T23:59:59`).getTime() >= Date.now()
+  );
+  const recommendation: FarmerReadinessRecommendation = publiclyEligible
+    ? "public-profile-ready"
+    : missingBeforeLaunchApproval.length === 0 && missing.some((item) => item.key === "launch-ready")
+      ? "review-public-preview"
+      : "complete-public-profile";
+
+  return {
+    checks,
+    complete: checks.length - missing.length,
+    total: checks.length,
+    missing,
+    recommendation,
+    publiclyEligible,
+    canMarkLaunchReady,
+    canFeature: publiclyEligible && hasCurrentFeaturedExpiry
+  };
 }
 
 export function supplierPublicationChecks(record: SupplierProfileRecord): PublicationCheck[] {
