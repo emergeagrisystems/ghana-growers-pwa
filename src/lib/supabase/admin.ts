@@ -35,6 +35,16 @@ export type SelectResponse<T> = {
   status: number;
 };
 
+export type CountResponse = {
+  count?: number;
+  error?: string;
+  status: number;
+};
+
+type SupabaseRequestOptions = {
+  signal?: AbortSignal;
+};
+
 type RpcResponse<T> = {
   data?: T;
   error?: string;
@@ -122,6 +132,46 @@ export async function selectSupabaseRecords<T extends Record<string, unknown>>(t
   return { status: response.status, data: Array.isArray(result) ? result : [] };
 }
 
+export async function countSupabaseRecords(
+  table: string,
+  query: string,
+  options: SupabaseRequestOptions = {}
+): Promise<CountResponse> {
+  const { url, serviceRoleKey } = supabaseConfig();
+
+  if (!url || !serviceRoleKey) {
+    return { status: 503, error: "Supabase count service is unavailable." };
+  }
+
+  try {
+    const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${table}?${query}`, {
+      method: "HEAD",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        Prefer: "count=exact"
+      },
+      cache: "no-store",
+      signal: options.signal
+    });
+
+    if (!response.ok) {
+      return { status: response.status, error: "Supabase count failed." };
+    }
+
+    const total = response.headers.get("content-range")?.match(/\/(\d+)$/)?.[1];
+    const count = total === undefined ? Number.NaN : Number(total);
+
+    if (!Number.isSafeInteger(count) || count < 0) {
+      return { status: 502, error: "Supabase count was unavailable." };
+    }
+
+    return { status: response.status, count };
+  } catch {
+    return { status: 503, error: "Supabase count service is unavailable." };
+  }
+}
+
 export async function updateSupabaseRecord<T extends Record<string, unknown>>(
   table: string,
   filter: string,
@@ -163,7 +213,8 @@ export async function updateSupabaseRecord<T extends Record<string, unknown>>(
 
 export async function callSupabaseRpc<T>(
   functionName: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  options: SupabaseRequestOptions = {}
 ): Promise<RpcResponse<T>> {
   const { url, serviceRoleKey } = supabaseConfig();
 
@@ -181,7 +232,8 @@ export async function callSupabaseRpc<T>(
       Authorization: `Bearer ${serviceRoleKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal: options.signal
   });
 
   const result = (await response.json().catch(() => null)) as T | { message?: string; details?: string; hint?: string } | null;
