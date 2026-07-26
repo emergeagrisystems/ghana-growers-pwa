@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type EditorTab = "overview" | "media" | "review" | "preview";
@@ -315,11 +314,10 @@ function Section({ title, description, privateSection = false, children }: {
 }
 
 export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: ProfileEditorKind; recordKey: string; currentAdmin: { email: string } }) {
-  const searchParams = useSearchParams();
   const [payload, setPayload] = useState<EditorPayload | null>(null);
   const [draft, setDraft] = useState<ProfileEditorRecord | null>(null);
   const [baseline, setBaseline] = useState<ProfileEditorRecord | null>(null);
-  const [activeTab, setActiveTab] = useState<EditorTab>(searchParams.get("tab") === "preview" ? "preview" : "overview");
+  const [activeTab, setActiveTab] = useState<EditorTab>("overview");
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -652,14 +650,13 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
               </div>
               {kind === "supplier" ? <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Supplier activation requires the reviewed launch-readiness checklist. The approved public directory eligibility rule remains Active + Verified + valid slug + non-demo source.</p> : null}
               <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Featured status will become public only after the profile is eligible.</p>
-              {farmer && !draft.is_featured && (!payload.eligibility.eligible || !draft.featured_until) ? <p className="mt-3 rounded-md bg-ink/[0.04] p-3 text-sm font-semibold text-ink/58">Feature Farmer becomes available after public eligibility passes and a Featured until date is saved.</p> : null}
               <div className="mt-5 flex flex-wrap gap-2">
                 <button type="button" onClick={() => void transition("under-review", "Mark Under Review")} className="admin-action-secondary"><ShieldCheck className="h-4 w-4" /> Mark Under Review</button>
                 <button type="button" onClick={() => void transition("verify", "Verify")} className="admin-action-secondary"><BadgeCheck className="h-4 w-4" /> Verify</button>
                 <button type="button" onClick={() => void transition("launch-ready", "Mark Launch Ready")} className="admin-action-secondary"><Check className="h-4 w-4" /> Mark Launch Ready</button>
                 <button type="button" onClick={() => void transition("activate", "Activate / Publish")} className="admin-action-primary"><BadgeCheck className="h-4 w-4" /> Activate / Publish</button>
                 <button type="button" onClick={() => void transition("pause", "Pause / Deactivate")} className="admin-action-destructive"><PauseCircle className="h-4 w-4" /> Pause / Deactivate</button>
-                <button type="button" onClick={() => void transition(draft.is_featured ? "unfeature" : "feature", draft.is_featured ? "Remove Featured" : "Feature Farmer")} disabled={Boolean(farmer && !draft.is_featured && (!payload.eligibility.eligible || !draft.featured_until))} className="admin-action-secondary"><Star className="h-4 w-4" /> {draft.is_featured ? "Remove Featured" : "Feature Farmer"}</button>
+                <button type="button" onClick={() => void transition(draft.is_featured ? "unfeature" : "feature", draft.is_featured ? "Remove Featured" : "Feature")} className="admin-action-secondary"><Star className="h-4 w-4" /> {draft.is_featured ? "Remove Featured" : "Feature"}</button>
               </div></Section>
             </>
           ) : null}
