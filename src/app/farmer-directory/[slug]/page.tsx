@@ -10,6 +10,7 @@ import {
   Truck,
   type LucideIcon
 } from "lucide-react";
+import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
@@ -299,15 +300,14 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-6 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:px-8 lg:py-9">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">
-              <SafeImage
+              <FarmerProfileImage
                 src={profilePhoto}
                 alt={`${farmer.farmName} profile image`}
-                width={520}
-                height={390}
+                variant="profile"
                 priority
                 fallbackKind="farmer"
                 sizes="(min-width: 1024px) 34vw, 100vw"
-                className="h-72 w-full rounded-md object-cover object-[center_30%] sm:h-80 lg:h-[340px]"
+                landscapePositionClass="object-[center_30%]"
               />
             </div>
           </div>

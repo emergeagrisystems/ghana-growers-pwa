@@ -8199,6 +8199,26 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Farmer profile images use orientation-aware public framing without workflow side effects",
+    run: () => {
+      const image = repoFile("src/components/FarmerProfileImage.tsx");
+      const detail = repoFile("src/app/farmer-directory/[slug]/page.tsx");
+      const directory = repoFile("src/components/FarmerDirectory.tsx");
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const previewSection = editor.slice(editor.indexOf('activeTab === "preview"'), editor.indexOf("fixed inset-x-0 bottom-0"));
+
+      assert.equal(image.includes('naturalHeight > naturalWidth ? "portrait" : "landscape"'), true);
+      assert.equal(image.includes("aspect-[4/5]") && image.includes("object-contain object-center"), true);
+      assert.equal(image.includes("aspect-[4/3]") && image.includes("object-cover"), true);
+      assert.equal(image.includes("data-farmer-image-orientation={orientation}"), true);
+      assert.equal(detail.includes("<FarmerProfileImage") && detail.includes('variant="profile"'), true);
+      assert.equal(directory.includes("<FarmerProfileImage") && directory.includes('variant="card"'), true);
+      assert.equal(previewSection.includes("<FarmerProfileImage") && previewSection.includes('variant="profile"'), true);
+      assert.doesNotMatch(image, /fetch\(|transition\(|saveProfile\(|upload|phone|whatsapp|document_urls|signedUrl/);
+      assert.doesNotMatch(previewSection, /phone_number|whatsapp_number|document_urls|certificate|signedUrl|sourceHistory/);
+    }
+  },
+  {
     name: "Farmer profile saves reject duplicate slugs and stale versions",
     run: () => {
       const route = repoFile("src/app/api/admin/profile-editor/route.ts");
