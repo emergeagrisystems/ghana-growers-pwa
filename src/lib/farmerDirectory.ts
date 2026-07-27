@@ -34,6 +34,38 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function locationKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\b(region|district|municipal|metropolitan|assembly)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function dedupePublicLocationParts(...values: Array<string | undefined | null>) {
+  const parts: string[] = [];
+
+  for (const value of values) {
+    const cleaned = value?.trim().replace(/\s+/g, " ") ?? "";
+    const key = locationKey(cleaned);
+
+    if (!cleaned || !key) {
+      continue;
+    }
+
+    const isRepeated = parts.some((part) => {
+      const partKey = locationKey(part);
+      return partKey === key || partKey.endsWith(` ${key}`) || key.endsWith(` ${partKey}`);
+    });
+
+    if (!isRepeated) {
+      parts.push(cleaned);
+    }
+  }
+
+  return parts;
+}
+
 export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district" | "region" | "publicLocation">) {
   const publicLocation = cleanFarmerProfileLabel(farmer.publicLocation ?? "");
   const region = cleanFarmerProfileLabel(farmer.region);
@@ -49,7 +81,7 @@ export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district"
   }
 
   if (publicLocation && ![district, region].some((value) => value.toLowerCase() === publicLocation.toLowerCase())) {
-    return [publicLocation, district, region].filter(Boolean).filter((value, index, values) => values.findIndex((candidate) => candidate.toLowerCase() === value.toLowerCase()) === index).join(", ");
+    return dedupePublicLocationParts(publicLocation, district, region).join(", ");
   }
 
   if (!district) {

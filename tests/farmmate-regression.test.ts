@@ -1831,6 +1831,14 @@ const tests: TestCase[] = [
       const farmer = farmerFixture();
 
       assert.equal(cleanFarmerLocation(farmer), "Tie Nkwanta-Koforidua, Eastern Region");
+      assert.equal(
+        cleanFarmerLocation({
+          publicLocation: "Zabrama-Pru West District",
+          district: "Pru West District",
+          region: "Bono East"
+        }),
+        "Zabrama-Pru West District, Bono East"
+      );
       assert.equal(cleanFarmerProfileLabel("Maise"), "Maize");
       assert.equal(cleanFarmerProfileLabel("Aquaculture And Poultry"), "Aquaculture & Poultry");
       assert.equal(cleanFarmerProfileLabel("Cabbages And Chili Pepper"), "Cabbage & Chili Pepper");
@@ -1846,6 +1854,60 @@ const tests: TestCase[] = [
       ]);
 
       assert.deepEqual(publicProfiles.map((farmer) => farmer.slug), ["verified"]);
+    }
+  },
+  {
+    name: "Public launch homepage ports the approved direction without lab content",
+    run: () => {
+      const homepage = repoFile("src/app/page.tsx");
+      const homepageStyles = repoFile("src/app/HomePage.module.css");
+
+      assert.equal(homepage.includes("Buy."), true);
+      assert.equal(homepage.includes("Sell."), true);
+      assert.equal(homepage.includes("Grow."), true);
+      assert.equal(homepage.includes('href="/marketplace"'), true);
+      assert.equal(homepage.includes('href="/submit-listing"'), true);
+      assert.equal(homepage.includes("getFarmersData()"), true);
+      assert.equal(homepage.includes("farmerResult.data.slice(0, 3)"), true);
+      assert.equal(homepage.includes("Brand Lab"), false);
+      assert.equal(homepage.includes("Private Design Lab"), false);
+      assert.equal(homepage.includes("Design example"), false);
+      assert.equal(homepage.includes("Market Prices"), false);
+      assert.equal(homepageStyles.includes("grid-template-columns"), true);
+      assert.equal(homepageStyles.includes("overflow: clip"), true);
+    }
+  },
+  {
+    name: "Public launch homepage preserves live navigation and privacy boundaries",
+    run: () => {
+      const header = repoFile("src/components/Header.tsx");
+      const navigation = repoFile("src/data/site.ts");
+      const homepage = repoFile("src/app/page.tsx");
+      const middleware = repoFile("src/middleware.ts");
+
+      assert.equal(navigation.includes('title: "Learn"'), true);
+      assert.equal(header.includes('id="mobile-navigation"'), true);
+      assert.equal(header.includes('aria-expanded={open}'), true);
+      assert.equal(homepage.includes("farmer.phone"), false);
+      assert.equal(homepage.includes("farmer.whatsapp"), false);
+      assert.equal(homepage.includes("farmer.email"), false);
+      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+    }
+  },
+  {
+    name: "Supplier and public error states use honest nontechnical language",
+    run: () => {
+      const supplierDirectory = repoFile("src/app/supplier-directory/page.tsx");
+      const notFound = repoFile("src/app/not-found.tsx");
+      const publicError = repoFile("src/app/error.tsx");
+
+      assert.equal(supplierDirectory.includes("Supplier Profiles Are Coming Soon"), true);
+      assert.equal(supplierDirectory.includes("as approved profiles become available"), true);
+      assert.equal(notFound.includes("This page could not be found."), true);
+      assert.equal(publicError.includes("We could not load this page."), true);
+      assert.equal(publicError.includes("stack"), false);
+      assert.equal(publicError.includes("{error."), false);
     }
   },
   {
