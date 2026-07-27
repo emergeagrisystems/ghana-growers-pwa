@@ -4,20 +4,26 @@
   "description": "Connect with Ghana farmers, buyers, and agricultural suppliers.",
   "start_url": "/farmer-hub",
   "display": "standalone",
-  "background_color": "#fffaf0",
-  "theme_color": "#477d22",
+  "background_color": "#F7F3E8",
+  "theme_color": "#143A1F",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],

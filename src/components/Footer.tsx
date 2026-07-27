@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Sprout } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
 import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 const quickLinks = [
@@ -31,11 +31,8 @@ export function Footer() {
     <footer className="brand-surface-dark border-t border-earth-100/15">
       <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.95fr_1.1fr] lg:items-start lg:px-8">
         <div className="max-w-md">
-          <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-md text-xl font-black">
-            <span className="grid h-10 w-10 place-items-center rounded-md bg-earth-500 text-leaf-900">
-              <Sprout size={22} aria-hidden="true" />
-            </span>
-            Ghana Growers
+          <Link href="/" className="focus-ring inline-flex rounded-md">
+            <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-12 w-auto sm:h-14" />
           </Link>
           <p className="brand-body mt-3 text-sm leading-6">
             Connecting farmers, suppliers and buyers across Ghana.

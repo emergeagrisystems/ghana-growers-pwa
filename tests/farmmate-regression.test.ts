@@ -682,7 +682,7 @@ const tests: TestCase[] = [
 
       assert.equal(pilotHeader.includes('href="/farmer-hub"'), true);
       assert.equal(pilotHeader.includes('href="/farmer-hub/feedback"'), true);
-      assert.equal(pilotHeader.includes("Ghana Growers"), true);
+      assert.equal(pilotHeader.includes("GhanaGrowersLogo"), true);
       assert.equal(pilotHeader.includes("GG FarmMate"), true);
       assert.equal(pilotHeader.includes("Share feedback"), true);
       ["/buy", "/sell", "/directory", "/marketplace", "/join", "Join the Network", "/about", "/contact", "/learn"].forEach((link) => {
@@ -1893,6 +1893,101 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes("farmer.email"), false);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+    }
+  },
+  {
+    name: "Approved Ghana Growers identity replaces temporary public shell branding",
+    run: () => {
+      const component = repoFile("src/components/GhanaGrowersLogo.tsx");
+      const header = repoFile("src/components/Header.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const prelaunchShell = repoFile("src/components/PrelaunchShell.tsx");
+      const launchingSoon = repoFile("src/app/launching-soon/page.tsx");
+
+      assert.equal(component.includes("GhanaGrowersLogo"), true);
+      assert.equal(component.includes('alt={decorative ? "" : "Ghana Growers"}'), true);
+      assert.equal(header.includes("GhanaGrowersLogo"), true);
+      assert.equal(footer.includes("GhanaGrowersLogo"), true);
+      assert.equal(prelaunchShell.includes("GhanaGrowersLogo"), true);
+      assert.equal(launchingSoon.includes('layout="stacked"'), true);
+      assert.equal(header.includes("Sprout"), false);
+      assert.equal(footer.includes("Sprout"), false);
+      assert.equal(prelaunchShell.includes("Sprout"), false);
+    }
+  },
+  {
+    name: "Approved identity assets preserve the people-and-G construction and word hierarchy",
+    run: () => {
+      const primary = repoFile("public/brand/ghana-growers-logo-primary.svg");
+      const horizontal = repoFile("public/brand/ghana-growers-logo-horizontal.svg");
+      const icon = repoFile("public/brand/ghana-growers-icon.svg");
+      const requiredAssets = [
+        "public/brand/ghana-growers-logo-primary.svg",
+        "public/brand/ghana-growers-logo-horizontal.svg",
+        "public/brand/ghana-growers-logo-reverse.svg",
+        "public/brand/ghana-growers-logo-stacked.svg",
+        "public/brand/ghana-growers-icon.svg",
+        "public/brand/ghana-growers-icon-reverse.svg",
+        "public/brand/ghana-growers-logo-monochrome.svg",
+        "public/favicon.svg",
+        "public/icons/favicon-16x16.png",
+        "public/icons/favicon-32x32.png",
+        "public/icons/icon-48x48.png",
+        "public/icons/apple-touch-icon.png",
+        "public/icons/icon-192.png",
+        "public/icons/icon-512.png",
+        "public/icons/icon-maskable-512.png",
+        "public/images/ghana-growers-social.png"
+      ];
+
+      requiredAssets.forEach((asset) => assert.equal(statSync(join(process.cwd(), asset)).size > 0, true, asset));
+      [primary, horizontal, icon].forEach((asset) => {
+        assert.equal(asset.includes("#143A1F"), true);
+        assert.equal(asset.includes("#4C6B36"), true);
+        assert.equal(asset.includes("#E8A33A"), true);
+        assert.equal(asset.includes("linearGradient"), false);
+        assert.equal(asset.includes("<script"), false);
+        assert.equal(asset.toLowerCase().includes("leaf"), false);
+      });
+      assert.equal(primary.includes(">GHANA<"), true);
+      assert.equal(primary.includes(">GROWERS<"), true);
+      assert.equal(primary.includes('font-size="64"'), true);
+      assert.equal(primary.includes('font-size="112"'), true);
+      assert.equal(primary.includes("Buy. Sell. Grow."), false);
+      assert.equal(horizontal.includes('font-size="42"'), true);
+      assert.equal(horizontal.includes('font-size="88"'), true);
+    }
+  },
+  {
+    name: "Manifest and social metadata use approved launch identity assets",
+    run: () => {
+      const manifest = JSON.parse(repoFile("public/manifest.json")) as {
+        background_color?: string;
+        icons?: Array<{ purpose?: string; sizes?: string; src?: string }>;
+        theme_color?: string;
+      };
+      const layout = repoFile("src/app/layout.tsx");
+      const seo = repoFile("src/lib/seo.ts");
+      const homepage = repoFile("src/app/page.tsx");
+      const middleware = repoFile("src/middleware.ts");
+
+      assert.equal(manifest.background_color, "#F7F3E8");
+      assert.equal(manifest.theme_color, "#143A1F");
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-192.png" && icon.sizes === "192x192"), true);
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-512.png" && icon.sizes === "512x512"), true);
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-maskable-512.png" && icon.purpose === "maskable"), true);
+      assert.equal(layout.includes("/favicon.svg"), true);
+      assert.equal(layout.includes("/icons/apple-touch-icon.png"), true);
+      assert.equal(layout.includes("width: 1200"), true);
+      assert.equal(layout.includes("height: 630"), true);
+      assert.equal(seo.includes('defaultOgImage = "/images/ghana-growers-social.png"'), true);
+      assert.equal(homepage.includes("Buy."), true);
+      assert.equal(homepage.includes("Sell."), true);
+      assert.equal(homepage.includes("Grow."), true);
+      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+      assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);
+      assert.equal(middleware.includes('pathname === "/favicon.svg"'), true);
     }
   },
   {

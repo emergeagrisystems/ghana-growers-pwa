@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LockKeyhole, ShoppingBasket, Sprout, Store, UsersRound } from "lucide-react";
+import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { SafeImage } from "@/components/SafeImage";
 
@@ -14,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: "Ghana's Agricultural Network is Growing",
     description: "Ghana Growers is preparing to connect farmers, buyers, and suppliers across Ghana.",
-    images: ["/images/hero/ghana-growers-hero.jpg"]
+    images: ["/images/ghana-growers-social.png"]
   }
 };
 
@@ -62,6 +63,7 @@ export default function LaunchingSoonPage() {
         <section>
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-16">
             <div>
+              <GhanaGrowersLogo layout="stacked" className="mb-6 h-auto w-36 sm:w-40" priority />
               <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm ring-1 ring-leaf-900/10">
                 <LockKeyhole size={16} aria-hidden="true" />
                 Launching Soon

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Ghana Growers</title>
+  <desc id="description">Ghana Growers social sharing image with the words Buy. Sell. Grow.</desc>
+  <rect width="1200" height="630" fill="#143A1F"/>
+  <rect x="72" y="72" width="6" height="486" rx="3" fill="#E8A33A"/>
+  <g transform="translate(105 116) scale(.6)">
+    <path fill="#F7F3E8" d="M249 116C154 116 78 188 78 282c0 96 77 174 174 174 91 0 165-64 178-151H278v70h70c-23 32-59 49-101 49-75 0-133-60-133-142 0-75 51-130 120-130 46 0 84 23 109 63l57-36c-34-55-87-83-151-83Z"/>
+    <circle cx="184" cy="58" r="38" fill="#E8A33A"/>
+    <path fill="#E8A33A" d="M111 128c35-24 83-27 124-9 44 20 75 62 78 123-30-43-65-73-105-89-33-14-66-21-97-25Z"/>
+    <circle cx="356" cy="58" r="38" fill="#4C6B36"/>
+    <path fill="#4C6B36" d="M351 112c54-8 103 7 137 45-45-7-87-3-121 15-43 23-72 61-96 113-1-61 17-116 50-150 10-11 20-18 30-23Z"/>
+  </g>
+  <text x="480" y="210" fill="#F7F3E8" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="700" letter-spacing="17">GHANA</text>
+  <text x="474" y="320" fill="#F7F3E8" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="800">GROWERS</text>
+  <line x1="480" y1="365" x2="1080" y2="365" stroke="#4C6B36" stroke-width="4"/>
+  <text x="480" y="470" fill="#E8A33A" font-family="Arial, Helvetica, sans-serif" font-size="70" font-weight="800">Buy. Sell. Grow.</text>
+</svg>
