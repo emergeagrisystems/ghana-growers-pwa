@@ -2,9 +2,9 @@
 
 import {
   approvedSupplierCategories,
+  authoritativeLifecycleSummary,
   farmerFarmTypes,
   ggStandardStatuses,
-  launchStatuses,
   supplierLaunchStatuses,
   supplierReviewStatuses,
   type FarmerProfileRecord,
@@ -605,6 +605,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
 
   const farmer = kind === "farmer" ? draft as FarmerProfileRecord : null;
   const supplier = kind === "supplier" ? draft as SupplierProfileRecord : null;
+  const lifecycle = authoritativeLifecycleSummary(draft);
   const title = farmer?.farm_name || supplier?.company_name || `${kind} profile`;
   const previewMainImage = text(payload.preview.mainImage) || (kind === "supplier" ? textList(payload.preview.photos)[0] : "");
   const previewFarmPhotos = kind === "farmer" ? textList(payload.preview.farmPhotos) : [];
@@ -728,18 +729,25 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin }: { kind: Pr
           {activeTab === "review" ? (
             <>
               <Section title="Publication Checklist" description="This is the same server-side readiness evaluation used by Activate / Publish. Every required item must pass."><div className="grid gap-2 sm:grid-cols-2">{payload.eligibility.checks.map((check) => <div key={check.key} className={`flex items-start justify-between gap-3 rounded-md px-3 py-3 text-sm font-bold ${check.state === "passed" ? "bg-leaf-50 text-leaf-800" : check.state === "needs-review" ? "bg-amber-50 text-earth-800" : "bg-ink/[0.04] text-ink/65"}`}><span className="flex min-w-0 items-start gap-2">{check.state === "passed" ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : check.state === "needs-review" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}<span>{check.label}</span></span><span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-xs ring-1 ring-current/10">{check.state === "passed" ? "Passed" : check.state === "needs-review" ? "Needs review" : "Missing"}</span></div>)}</div></Section>
-              <Section title="Review and Publication" description="Saving content never publishes it. Each status change is a separate protected, confirmed action."><div className="grid gap-4 md:grid-cols-2">
-                <StatusSummary label="Current status" value={draft.status} />
-                <StatusSummary label="Verification status" value={draft.verification_status} />
+              <Section title="Review and Publication" description="Saving content never publishes it. Each status change is a separate protected, confirmed action.">
+                <div aria-label="Authoritative lifecycle summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <StatusSummary label="Status" value={lifecycle.status} />
+                  <StatusSummary label="Verification" value={lifecycle.verification} />
+                  <StatusSummary label="Launch Ready" value={lifecycle.launchReady} />
+                  <StatusSummary label="Featured" value={lifecycle.featured} />
+                  <StatusSummary label="Featured until" value={lifecycle.featuredUntil} />
+                </div>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
                 {farmer && farmer.status === "Active" && !farmer.launch_ready ? <p className="rounded-md bg-earth-50 p-3 text-sm font-semibold leading-6 text-earth-800 md:col-span-2">This legacy Active record is not launch ready. Mark Launch Ready returns it to Pending Review; Activate / Publish remains the explicit final publication action.</p> : null}
                 <SelectField label="Ghana Growers Standard status" value={draft.gg_standard_status ?? "Pending"} options={ggStandardStatuses} onChange={(value) => updateField("gg_standard_status", value)} />
-                <SelectField label="Launch status" value={draft.launch_status} options={kind === "farmer" ? launchStatuses : supplierLaunchStatuses} onChange={(value) => updateField("launch_status", value)} />
+                {supplier ? <SelectField label="Launch status" value={supplier.launch_status} options={supplierLaunchStatuses} onChange={(value) => updateField("launch_status", value)} /> : null}
                 {supplier ? <SelectField label="Profile review status" value={supplier.profile_review_status} options={supplierReviewStatuses} onChange={(value) => updateField("profile_review_status", value)} /> : null}
+                {farmer ? <details className="rounded-md border border-leaf-900/10 bg-ink/[0.025] p-4 md:col-span-2"><summary className="cursor-pointer text-sm font-black text-ink">Historical import metadata</summary><dl className="mt-3 text-sm"><dt className="font-black text-ink/55">Historical import value - does not control publication or Featured status</dt><dd className="mt-1 font-semibold text-ink/70">{farmer.launch_status || "Not set"}</dd></dl></details> : null}
                 <div className="rounded-md border border-leaf-900/10 bg-white p-4 md:col-span-2"><h3 className="text-sm font-black text-ink">Verification audit</h3><dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt className="font-black text-ink/45">Verified by</dt><dd className="mt-1 font-semibold text-ink/70">{draft.verified_by || "Not verified"}</dd></div><div><dt className="font-black text-ink/45">Verification date</dt><dd className="mt-1 font-semibold text-ink/70">{draft.verification_date ? new Date(draft.verification_date).toLocaleDateString() : "Not verified"}</dd></div></dl><p className="mt-3 text-xs font-semibold text-ink/45">These values are written by the protected Verify action using the signed-in Admin identity.</p></div>
                 <Field label="Featured until" optional type="date" value={draft.featured_until ?? ""} onChange={(value) => updateField("featured_until", value)} error={fieldErrors.featured_until} />
                 <div className="md:col-span-2"><TextAreaField label="Featured note" optional value={draft.featured_note ?? ""} onChange={(value) => updateField("featured_note", value)} /></div>
                 <div className="md:col-span-2"><TextAreaField label="Internal review notes" optional value={draft.verification_notes ?? ""} onChange={(value) => updateField("verification_notes", value)} /></div>
-              </div>
+                </div>
               {kind === "supplier" ? <p className="mt-4 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Supplier activation requires the reviewed launch-readiness checklist. The approved public directory eligibility rule remains Active + Verified + valid slug + non-demo source.</p> : null}
               <p className="mt-3 rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">Featured status will become public only after the profile is eligible.</p>
               <div className="mt-5 flex flex-wrap gap-2">
