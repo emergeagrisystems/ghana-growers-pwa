@@ -233,6 +233,7 @@ export async function callSupabaseRpc<T>(
       "Content-Type": "application/json"
     },
     body: JSON.stringify(payload),
+    cache: "no-store",
     signal: options.signal
   });
 

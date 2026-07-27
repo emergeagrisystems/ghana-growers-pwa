@@ -16,6 +16,7 @@ import {
   hqApprovalCountsPrelaunchPath,
   isHqApprovalCountsPrelaunchRoute
 } from "../src/lib/prelaunchAccess";
+import { callSupabaseRpc } from "../src/lib/supabase/admin";
 
 const secret = "hq-integration-test-secret-that-is-at-least-thirty-two-characters";
 const nowMs = Date.UTC(2026, 6, 26, 16, 0, 0);
@@ -166,6 +167,60 @@ test("two simultaneous identical requests produce exactly one success", async ()
 
   assert.equal(results.filter(Boolean).length, 1);
   assert.equal(results.filter((accepted) => !accepted).length, 1);
+});
+
+test("server-side RPC calls bypass the Next.js data cache", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let cachedResponse: Response | undefined;
+  let databaseCalls = 0;
+
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+  globalThis.fetch = async (_input, init) => {
+    if (init?.cache !== "no-store" && cachedResponse) {
+      return cachedResponse.clone();
+    }
+
+    databaseCalls += 1;
+    const response = Response.json(databaseCalls === 1);
+
+    if (init?.cache !== "no-store") {
+      cachedResponse = response.clone();
+    }
+
+    return response;
+  };
+
+  try {
+    const first = await callSupabaseRpc<boolean>("consume_hq_integration_nonce", {
+      p_nonce_value: nonce,
+      p_expires_at: new Date(nowMs + (5 * 60 * 1000)).toISOString()
+    });
+    const replay = await callSupabaseRpc<boolean>("consume_hq_integration_nonce", {
+      p_nonce_value: nonce,
+      p_expires_at: new Date(nowMs + (5 * 60 * 1000)).toISOString()
+    });
+
+    assert.equal(first.data, true);
+    assert.equal(replay.data, false);
+    assert.equal(databaseCalls, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+
+    if (originalUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
+    }
+
+    if (originalServiceRoleKey === undefined) {
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    } else {
+      process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+    }
+  }
 });
 
 test("same timestamp with different valid nonces succeeds", async () => {
