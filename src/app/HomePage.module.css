@@ -92,43 +92,6 @@
   box-shadow: 0 14px 34px rgba(18, 47, 25, 0.11);
 }
 
-.marketplaceCard {
-  width: 88%;
-  align-self: flex-start;
-  overflow: hidden;
-}
-
-.marketplaceImage {
-  position: relative;
-  height: 158px;
-  overflow: hidden;
-  background: var(--sage);
-}
-
-.marketplaceImage::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(8, 31, 16, 0.02), rgba(8, 31, 16, 0.44));
-  content: "";
-}
-
-.marketplaceImage > span {
-  position: absolute;
-  bottom: 14px;
-  left: 16px;
-  z-index: 2;
-  border-radius: 4px;
-  padding: 7px 9px;
-  background: rgba(12, 37, 20, 0.92);
-  color: var(--cream);
-  font-size: 0.64rem;
-  font-weight: 800;
-}
-
-.marketplaceCardBody {
-  padding: 18px;
-}
-
 .heroCard h2 {
   margin: 0;
   color: var(--forest);
@@ -146,33 +109,57 @@
   line-height: 1.55;
 }
 
-.heroPathways {
+.marketplacePanel {
+  width: 100%;
+  padding: clamp(24px, 3vw, 32px);
+}
+
+.marketplacePanelIntro {
+  max-width: 480px;
+}
+
+.marketplacePanelIntro > p {
+  font-size: 0.9rem;
+}
+
+.heroCategoryGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 14px;
-  border-top: 1px solid var(--line);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 25px;
 }
 
-.heroPathways a {
-  display: flex;
-  min-height: 40px;
+.heroCategoryLink {
+  display: grid;
+  min-width: 0;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid var(--line);
-  padding: 8px 4px;
+  justify-items: center;
+  gap: 10px;
+  border-radius: 6px;
+  padding: 3px;
   color: var(--forest);
-  font-size: 0.72rem;
-  font-weight: 850;
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
 }
 
-.heroPathways a:nth-child(odd) {
-  padding-right: 12px;
+.heroCategoryImage {
+  position: relative;
+  width: min(100%, 96px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--sage);
 }
 
-.heroPathways a:nth-child(even) {
-  border-left: 1px solid var(--line);
-  padding-left: 12px;
+.heroCategoryImage img {
+  transition: transform 180ms ease;
+}
+
+.heroCategoryLink:hover .heroCategoryImage img {
+  transform: scale(1.035);
 }
 
 .amberButton,
@@ -202,64 +189,44 @@
   box-shadow: 0 8px 20px rgba(8, 31, 16, 0.18);
 }
 
-.sellerCard {
-  z-index: 3;
-  width: 72%;
-  align-self: flex-end;
-  margin-top: -14px;
-  border-color: var(--forest);
-  padding: 18px;
-  background: var(--forest);
-  color: var(--cream);
+.marketplaceButton {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 25px;
+  border-color: #e8a33a;
+  background: #e8a33a;
 }
 
-.sellerCard h2 {
-  margin-top: 14px;
-  color: var(--cream);
+.sellerPrompt {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 15px;
+  text-align: center;
 }
 
-.sellerCard p {
-  color: #d1ddd0;
+.sellerPrompt p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
-.cardLabel {
-  display: flex;
+.sellerPrompt a {
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  color: var(--cream);
-  font-size: 0.66rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.cardLabel > span {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 6px;
-  background: var(--amber);
+  gap: 4px;
   color: var(--forest);
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-color: rgba(20, 58, 31, 0.35);
+  text-underline-offset: 3px;
 }
 
-.sellerLinks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  padding-top: 10px;
-}
-
-.sellerLinks a {
-  display: flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  color: var(--cream);
+.sellerPrompt small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
   font-size: 0.7rem;
-  font-weight: 800;
+  line-height: 1.45;
 }
 
 .sectionShell {
@@ -838,13 +805,12 @@
     font-size: clamp(3.8rem, 7vw, 4.7rem);
   }
 
-  .marketplaceCard {
-    width: 92%;
+  .heroCategoryGrid {
+    gap: 12px;
   }
 
-  .sellerCard {
-    width: 78%;
-    margin-top: -10px;
+  .heroCategoryImage {
+    width: min(100%, 82px);
   }
 
   .farmMatePanel {
@@ -892,15 +858,6 @@
   .heroDeck {
     width: min(100%, 620px);
     margin-inline: auto;
-  }
-
-  .marketplaceCard,
-  .sellerCard {
-    width: 100%;
-  }
-
-  .sellerCard {
-    margin-top: 18px;
   }
 
   .roleSection,
@@ -1013,12 +970,7 @@
     line-height: 1.6;
   }
 
-  .marketplaceImage {
-    height: 168px;
-  }
-
-  .marketplaceCardBody,
-  .sellerCard {
+  .marketplacePanel {
     padding: 20px;
   }
 
@@ -1026,14 +978,13 @@
     font-size: 1.7rem;
   }
 
-  .heroPathways {
-    grid-template-columns: 1fr;
+  .heroCategoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px 12px;
   }
 
-  .heroPathways a:nth-child(odd),
-  .heroPathways a:nth-child(even) {
-    border-left: 0;
-    padding-inline: 4px;
+  .heroCategoryImage {
+    width: min(100%, 112px);
   }
 
   .amberButton,
@@ -1042,13 +993,8 @@
     width: 100%;
   }
 
-  .sellerLinks {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
-
-  .sellerLinks a {
-    min-height: 44px;
+  .sellerPrompt p {
+    line-height: 1.55;
   }
 
   .sectionIntro h2,

@@ -63,6 +63,33 @@ const marketplaceRoutes = [
   }
 ];
 
+const heroMarketplaceCategories = [
+  {
+    title: "Fresh Produce",
+    href: "/marketplace?category=fresh-produce",
+    image: "/images/marketplace/ghana-market-1.jpg",
+    imageAlt: "Fresh produce displayed at a Ghanaian market"
+  },
+  {
+    title: "Livestock",
+    href: "/marketplace?category=livestock",
+    image: "/images/crops/poultry.jpg",
+    imageAlt: "Cattle on a Ghanaian farm"
+  },
+  {
+    title: "Farm Inputs",
+    href: "/marketplace?category=farm-inputs",
+    image: "/images/marketplace/farm-inputs.jpg",
+    imageAlt: "Farm inputs arranged in an agricultural supply shop"
+  },
+  {
+    title: "Tools & Equipment",
+    href: "/marketplace?category=tools-equipment",
+    image: "/images/marketplace/farm-activity-1.jpg",
+    imageAlt: "Farmer working with a hand tool in a field"
+  }
+];
+
 const rolePaths = [
   {
     title: "For buyers",
@@ -131,52 +158,43 @@ export default async function HomePage() {
           </div>
 
           <div className={styles.heroDeck}>
-            <article className={`${styles.heroCard} ${styles.marketplaceCard}`}>
-              <div className={styles.marketplaceImage}>
-                <SafeImage
-                  src="/images/hero/ghana-growers-trade-hero.png"
-                  alt="Produce and agricultural trade at a Ghanaian market"
-                  fill
-                  priority
-                  fallbackSrc="/images/marketplace/ghana-market-1.jpg"
-                  fallbackKind="marketplace"
-                  sizes="(max-width: 780px) 100vw, 44vw"
-                  className="object-cover object-[center_43%]"
-                />
-                <span>Local trade, reviewed before publication</span>
+            <article className={`${styles.heroCard} ${styles.marketplacePanel}`}>
+              <div className={styles.marketplacePanelIntro}>
+                <h2>Explore the Marketplace</h2>
+                <p>Browse current produce, livestock, farm inputs and equipment.</p>
               </div>
-              <div className={styles.marketplaceCardBody}>
-                <h2>Browse the Marketplace</h2>
-                <p>Explore the current marketplace through the pathway that fits what you need.</p>
-                <nav className={styles.heroPathways} aria-label="Marketplace categories">
-                  {marketplaceRoutes.map((route) => (
-                    <Link href={route.href} key={route.title}>
-                      {route.title}
-                      <ArrowRight size={14} aria-hidden="true" />
-                    </Link>
-                  ))}
-                </nav>
-                <Link href="/marketplace" className={styles.amberButton}>
-                  Browse Marketplace
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-              </div>
-            </article>
 
-            <article className={`${styles.heroCard} ${styles.sellerCard}`}>
-              <div className={styles.cardLabel}>
-                <span><Sprout size={19} aria-hidden="true" /></span>
-                Start selling
-              </div>
-              <h2>Sell through Ghana Growers</h2>
-              <p>Farmers and suppliers can submit products and tools for review before they appear publicly.</p>
-              <Link href="/submit-listing" className={styles.amberButton}>
-                Submit a Listing
+              <nav className={styles.heroCategoryGrid} aria-label="Marketplace categories">
+                {heroMarketplaceCategories.map((category) => (
+                  <Link href={category.href} key={category.title} className={styles.heroCategoryLink}>
+                    <span className={styles.heroCategoryImage}>
+                      <SafeImage
+                        src={category.image}
+                        alt={category.imageAlt}
+                        fill
+                        fallbackKind="marketplace"
+                        sizes="(max-width: 540px) 40vw, (max-width: 820px) 20vw, 110px"
+                        className="object-cover"
+                      />
+                    </span>
+                    <span>{category.title}</span>
+                  </Link>
+                ))}
+              </nav>
+
+              <Link href="/marketplace" className={`${styles.amberButton} ${styles.marketplaceButton}`}>
+                Browse Marketplace
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
-              <div className={styles.sellerLinks}>
-                <Link href="/join">Farmer pathway info <ArrowRight size={14} aria-hidden="true" /></Link>
-                <Link href="/become-a-supplier">Join as a Supplier <ArrowRight size={14} aria-hidden="true" /></Link>
+
+              <div className={styles.sellerPrompt}>
+                <p>
+                  Selling produce or farm supplies?{" "}
+                  <Link href="/submit-listing">
+                    Submit a listing <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                </p>
+                <small>Listings are reviewed before appearing publicly.</small>
               </div>
             </article>
           </div>

@@ -1878,6 +1878,66 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Homepage hero uses one visual marketplace panel with honest actions",
+    run: () => {
+      const homepage = repoFile("src/app/page.tsx");
+      const homepageStyles = repoFile("src/app/HomePage.module.css");
+      const categories = [
+        {
+          title: "Fresh Produce",
+          href: "/marketplace?category=fresh-produce",
+          imageAlt: "Fresh produce displayed at a Ghanaian market"
+        },
+        {
+          title: "Livestock",
+          href: "/marketplace?category=livestock",
+          imageAlt: "Cattle on a Ghanaian farm"
+        },
+        {
+          title: "Farm Inputs",
+          href: "/marketplace?category=farm-inputs",
+          imageAlt: "Farm inputs arranged in an agricultural supply shop"
+        },
+        {
+          title: "Tools & Equipment",
+          href: "/marketplace?category=tools-equipment",
+          imageAlt: "Farmer working with a hand tool in a field"
+        }
+      ];
+
+      assert.equal(homepage.includes("Explore the Marketplace"), true);
+      assert.equal(homepage.includes("Browse current produce, livestock, farm inputs and equipment."), true);
+      assert.equal(homepage.includes('href="/marketplace"'), true);
+      assert.equal(homepage.includes("Browse Marketplace"), true);
+      assert.equal(homepage.includes('href="/submit-listing"'), true);
+      assert.equal(homepage.includes("Selling produce or farm supplies?"), true);
+      assert.equal(homepage.includes("Listings are reviewed before appearing publicly."), true);
+
+      for (const category of categories) {
+        assert.equal(homepage.includes(`title: "${category.title}"`), true);
+        assert.equal(homepage.includes(`href: "${category.href}"`), true);
+        assert.equal(homepage.includes(`imageAlt: "${category.imageAlt}"`), true);
+      }
+
+      assert.equal(homepage.includes("Browse the Marketplace"), false);
+      assert.equal(homepage.includes("Sell through Ghana Growers"), false);
+      assert.equal(homepage.includes("sellerCard"), false);
+      assert.equal(homepage.includes("marketplaceCard"), false);
+      assert.equal(homepage.includes("productCount"), false);
+      assert.equal(homepage.includes("listingCount"), false);
+      assert.equal(homepageStyles.includes(".marketplacePanel"), true);
+      assert.equal(homepageStyles.includes(".heroCategoryGrid"), true);
+      assert.equal(homepageStyles.includes("border-radius: 50%"), true);
+      assert.equal(homepageStyles.includes("min-height: 54px"), true);
+      assert.equal(homepageStyles.includes("background: #e8a33a"), true);
+      assert.equal(homepageStyles.includes(".homepage :is(a, button):focus-visible"), true);
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroCategoryGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/
+      );
+    }
+  },
+  {
     name: "Public launch homepage preserves live navigation and privacy boundaries",
     run: () => {
       const header = repoFile("src/components/Header.tsx");
