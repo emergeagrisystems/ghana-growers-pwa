@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Sprout, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SafeImage } from "@/components/SafeImage";
+import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
@@ -217,14 +217,13 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                   <>
                     <div className="relative">
                       {hasRealPhoto ? (
-                        <SafeImage
+                        <FarmerProfileImage
                           src={farmer.mainImage!}
                           alt={`${farmer.farmName} farm photo`}
-                          width={360}
-                          height={270}
-                          className={`aspect-[4/3] w-full rounded-t-md bg-leaf-50 object-cover ${farmerImagePosition(farmer)}`}
+                          variant="card"
                           fallbackKind="crop"
                           sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          landscapePositionClass={farmerImagePosition(farmer)}
                         />
                       ) : (
                         <FarmerPhotoPlaceholder />
