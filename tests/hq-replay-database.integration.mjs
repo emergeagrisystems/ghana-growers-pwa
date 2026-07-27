@@ -12,7 +12,7 @@ const rpcUrl = `${supabaseUrl}/rest/v1/rpc/consume_hq_integration_nonce`;
 const nonceTableUrl = `${supabaseUrl}/rest/v1/hq_integration_nonces`;
 const headers = {
   apikey: serviceRoleKey,
-  Authorization: `Bearer ${serviceRoleKey}`,
+  ...(!serviceRoleKey.startsWith("sb_secret_") ? { Authorization: `Bearer ${serviceRoleKey}` } : {}),
   "Content-Type": "application/json"
 };
 const testNonces = [];

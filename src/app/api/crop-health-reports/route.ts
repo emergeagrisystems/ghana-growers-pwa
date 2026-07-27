@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { insertSupabaseRecord, uploadSupabaseStorageObject } from "@/lib/supabase/admin";
+import { supabaseServerAuthHeaders } from "@/lib/supabase/serverAuthHeaders";
 import type { CropHealthResult } from "@/lib/cropHealth";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -61,10 +62,7 @@ async function fetchReports(sessionId: string) {
   endpoint.searchParams.set("limit", "12");
 
   const response = await fetch(endpoint, {
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`
-    },
+    headers: supabaseServerAuthHeaders(serviceRoleKey),
     cache: "no-store"
   }).catch(() => null);
 

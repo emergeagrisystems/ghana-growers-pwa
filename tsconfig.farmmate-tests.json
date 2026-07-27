@@ -13,6 +13,6 @@
     "noEmit": false,
     "incremental": false
   },
-  "include": ["tests/**/*.ts", "src/lib/farmmate/**/*.ts", "src/lib/marketplace/**/*.ts", "src/lib/hqApprovalCounts.ts", "src/lib/prelaunchAccess.ts", "src/lib/supabase/admin.ts"],
+  "include": ["tests/**/*.ts", "src/lib/farmmate/**/*.ts", "src/lib/marketplace/**/*.ts", "src/lib/hqApprovalCounts.ts", "src/lib/prelaunchAccess.ts", "src/lib/supabase/admin.ts", "src/lib/supabase/serverAuthHeaders.ts"],
   "exclude": ["node_modules", ".next", ".farmmate-test-dist"]
 }

@@ -17,12 +17,23 @@ import {
   isHqApprovalCountsPrelaunchRoute
 } from "../src/lib/prelaunchAccess";
 import { callSupabaseRpc } from "../src/lib/supabase/admin";
+import { supabaseServerAuthHeaders } from "../src/lib/supabase/serverAuthHeaders";
 
 const secret = "hq-integration-test-secret-that-is-at-least-thirty-two-characters";
 const nowMs = Date.UTC(2026, 6, 26, 16, 0, 0);
 const timestamp = String(Math.floor(nowMs / 1000));
 const nonce = "123e4567-e89b-42d3-a456-426614174000";
 const secondNonce = "123e4567-e89b-42d3-a456-426614174001";
+
+test("Supabase server headers support both new and legacy key types", () => {
+  assert.deepEqual(supabaseServerAuthHeaders("sb_secret_test-value"), {
+    apikey: "sb_secret_test-value"
+  });
+  assert.deepEqual(supabaseServerAuthHeaders("legacy-service-role-jwt"), {
+    apikey: "legacy-service-role-jwt",
+    Authorization: "Bearer legacy-service-role-jwt"
+  });
+});
 
 function validSignature(requestNonce = nonce, requestTimestamp = timestamp) {
   return createHqIntegrationSignature({
