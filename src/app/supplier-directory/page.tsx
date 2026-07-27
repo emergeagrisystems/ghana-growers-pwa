@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Supplier Directory",
   description:
-    "Find approved suppliers of seeds, fertiliser, irrigation, farm tools, equipment and other agricultural inputs across Ghana.",
+    "Connect with agricultural suppliers as approved Ghana Growers profiles become available.",
   path: "/supplier-directory"
 });
 
@@ -28,14 +28,17 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
   const result = await getSuppliersData();
   const suppliers = result.status === "ready" ? result.data : [];
   const initialSearch = searchQuery(searchParams?.q);
+  const hasPublicSuppliers = suppliers.length > 0;
 
   return (
     <>
       <PageHero
         eyebrow="Supplier Directory"
-        title="Find Farm Suppliers Across Ghana"
+        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Supplier Profiles Are Coming Soon"}
         variant="compact"
-        description="Find approved suppliers of seeds, fertiliser, irrigation, farm tools, equipment and other agricultural inputs."
+        description={hasPublicSuppliers
+          ? "Browse approved public supplier profiles and find agricultural products and services."
+          : "Connect with suppliers as approved profiles become available. Supplier applications remain open while the directory is prepared."}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/become-a-supplier">Become a Supplier</ButtonLink>

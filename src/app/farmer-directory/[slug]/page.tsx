@@ -14,6 +14,7 @@ import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
+import { dedupePublicLocationParts } from "@/lib/farmerDirectory";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { cleanProductList, productDisplayName, productImageForListing, productImageForName } from "@/lib/productDisplay";
 import { createPageMetadata } from "@/lib/seo";
@@ -82,14 +83,6 @@ function normalizeText(value?: string | null) {
   return value?.trim().replace(/\s+/g, " ") ?? "";
 }
 
-function normalizedKey(value?: string | null) {
-  return normalizeText(value)
-    .toLowerCase()
-    .replace(/\b(region|district|municipal|metropolitan|assembly)\b/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
 function isMeaningful(value?: string | null) {
   const cleaned = normalizeText(value);
   const key = cleaned.toLowerCase();
@@ -98,19 +91,7 @@ function isMeaningful(value?: string | null) {
 }
 
 function uniqueLocationParts(...values: Array<string | undefined | null>) {
-  const seen = new Set<string>();
-
-  return values
-    .map(normalizeText)
-    .filter(isMeaningful)
-    .filter((value) => {
-      const key = normalizedKey(value);
-      if (!key || seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
+  return dedupePublicLocationParts(...values.map(normalizeText).filter(isMeaningful));
 }
 
 function buildLocationSummary(farmer: { publicLocation?: string | null; district?: string | null; region?: string | null }): LocationSummary {
