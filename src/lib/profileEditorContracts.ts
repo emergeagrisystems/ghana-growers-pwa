@@ -94,6 +94,24 @@ export type SupplierProfileRecord = {
 
 export type ProfileEditorRecord = FarmerProfileRecord | SupplierProfileRecord;
 
+export type AuthoritativeLifecycleSummary = {
+  status: string;
+  verification: string;
+  launchReady: "Yes" | "No";
+  featured: "Yes" | "No";
+  featuredUntil: string;
+};
+
+export function authoritativeLifecycleSummary(record: ProfileEditorRecord): AuthoritativeLifecycleSummary {
+  return {
+    status: record.status === "Archived" ? "Paused" : record.status || "Not set",
+    verification: record.verification_status || "Not set",
+    launchReady: record.launch_ready ? "Yes" : "No",
+    featured: record.is_featured ? "Yes" : "No",
+    featuredUntil: record.featured_until || "Not set"
+  };
+}
+
 export type PublicationCheck = {
   key: string;
   label: string;

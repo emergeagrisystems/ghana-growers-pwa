@@ -57,7 +57,7 @@ const farmerEditableFields = new Set([
   "slug", "farmer_name", "farm_name", "region", "district", "farm_type", "products", "farm_size", "whatsapp_number",
   "profile_image_url", "description", "verification_notes", "phone_number", "email", "farm_location", "farming_experience",
   "currently_harvesting", "supply_frequency", "delivery_preference", "payment_preference", "featured_until", "featured_note",
-  "launch_status", "editorial_notes", "launch_checklist", "gg_standard_status", "farm_photo_urls", "produce_photo_urls"
+  "editorial_notes", "launch_checklist", "gg_standard_status", "farm_photo_urls", "produce_photo_urls"
 ]);
 
 const supplierEditableFields = new Set([

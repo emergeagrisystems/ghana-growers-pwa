@@ -51,6 +51,7 @@ import {
   isValidPublicProfileSlug
 } from "../src/lib/publicProfileEligibility";
 import {
+  authoritativeLifecycleSummary,
   farmerPublicationChecks,
   featuredIsCurrentlyPublic,
   normalizeRecordArrays,
@@ -7922,6 +7923,49 @@ const tests: TestCase[] = [
       assert.equal(supplierPublicationChecks(supplier).every((check) => check.complete), true);
       assert.equal(profileIsPubliclyEligible("supplier", supplier), true);
       assert.equal(featuredIsCurrentlyPublic("supplier", supplier), true);
+    }
+  },
+  {
+    name: "Farmer lifecycle summary ignores legacy editorial launch labels",
+    run: () => {
+      const farmer = {
+        id: "farmer-lifecycle", slug: "published-farm", farmer_name: null, farm_name: "Published Farm", region: "Eastern Region",
+        district: "Yilo Krobo Municipality", farm_type: "Mixed", products: ["Yam"], farm_size: null, whatsapp_number: null,
+        profile_image_url: "/published-farm.jpg", description: "A reviewed public farm profile.", status: "Active",
+        created_at: "2026-01-01", updated_at: "2026-01-02", verification_date: "2026-01-02", verification_status: "Verified",
+        verified_by: "admin", verification_notes: null, source: "admin", phone_number: null, email: null, farm_location: "Klo-Agogo",
+        farming_experience: null, currently_harvesting: null, supply_frequency: null, delivery_preference: null,
+        payment_preference: null, is_featured: false, featured_until: null, featured_note: null, launch_status: "Featured Farmer",
+        editorial_notes: null, launch_ready: true, launch_checklist: {}, document_urls: [], gg_standard_status: "Pending",
+        farm_photo_urls: ["/farm.jpg"], produce_photo_urls: [], source_application_id: null
+      } satisfies FarmerProfileRecord;
+
+      assert.deepEqual(authoritativeLifecycleSummary(farmer), {
+        status: "Active",
+        verification: "Verified",
+        launchReady: "Yes",
+        featured: "No",
+        featuredUntil: "Not set"
+      });
+
+      const editor = repoFile("src/components/AdminProfileEditor.tsx");
+      const service = repoFile("src/lib/adminProfileEditor.ts");
+      const route = repoFile("src/app/api/admin/profile-editor/route.ts");
+      const middleware = repoFile("src/middleware.ts");
+      const reviewSection = editor.slice(editor.indexOf('activeTab === "review"'), editor.indexOf('activeTab === "preview"'));
+      const farmerEditable = service.slice(service.indexOf("const farmerEditableFields"), service.indexOf("const supplierEditableFields"));
+      const supplierEditable = service.slice(service.indexOf("const supplierEditableFields"), service.indexOf("const arrayFields"));
+
+      assert.equal(reviewSection.includes('aria-label="Authoritative lifecycle summary"'), true);
+      assert.equal(reviewSection.includes('<StatusSummary label="Featured" value={lifecycle.featured} />'), true);
+      assert.equal(reviewSection.includes("Historical import value - does not control publication or Featured status"), true);
+      assert.equal(reviewSection.includes('options={kind === "farmer" ? launchStatuses'), false);
+      assert.equal(reviewSection.includes('transition(draft.is_featured ? "unfeature" : "feature"'), true);
+      assert.equal(farmerEditable.includes('"launch_status"'), false);
+      assert.equal(farmerEditable.includes('"is_featured"'), false);
+      assert.equal(supplierEditable.includes('"launch_status"'), true);
+      assert.equal(route.includes("requireAdminUser(request)"), true);
+      assert.equal(middleware.includes('"/launching-soon"'), true);
     }
   },
   {
