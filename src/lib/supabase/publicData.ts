@@ -8,6 +8,7 @@ import fallbackSuccessStories from "@/data/successStories.json";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
 import { isDemoProfileOrigin, isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
+import { supabaseServerAuthHeaders } from "@/lib/supabase/serverAuthHeaders";
 import type { Product, PublicFarmerProfile, PublicSupplierProfile, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";
 
 export type SupabaseFarmer = {
@@ -224,10 +225,7 @@ async function fetchRows<T>(table: string, select = "*", order = "created_at.des
   endpoint.searchParams.set("order", order);
 
   const response = await fetch(endpoint, {
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`
-    },
+    headers: supabaseServerAuthHeaders(serviceRoleKey),
     cache: "no-store"
   }).catch(() => null);
 
@@ -258,7 +256,7 @@ async function fetchPublicProfileRows<T>(table: "farmers" | "suppliers"): Promis
   let response: Response;
   try {
     response = await fetch(endpoint, {
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+      headers: supabaseServerAuthHeaders(serviceRoleKey),
       cache: "no-store"
     });
   } catch {

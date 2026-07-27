@@ -1,3 +1,5 @@
+import { supabaseServerAuthHeaders } from "./serverAuthHeaders";
+
 type InsertResponse<T> = {
   data?: T;
   error?: string;
@@ -76,8 +78,7 @@ export async function insertSupabaseRecord<T extends Record<string, unknown>>(ta
   const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${table}`, {
     method: "POST",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json",
       Prefer: "return=representation"
     },
@@ -111,8 +112,7 @@ export async function selectSupabaseRecords<T extends Record<string, unknown>>(t
   const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${table}?${query}`, {
     method: "GET",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json"
     },
     cache: "no-store"
@@ -147,8 +147,7 @@ export async function countSupabaseRecords(
     const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${table}?${query}`, {
       method: "HEAD",
       headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
+        ...supabaseServerAuthHeaders(serviceRoleKey),
         Prefer: "count=exact"
       },
       cache: "no-store",
@@ -189,8 +188,7 @@ export async function updateSupabaseRecord<T extends Record<string, unknown>>(
   const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/${table}?${filter}`, {
     method: "PATCH",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json",
       Prefer: "return=representation"
     },
@@ -228,11 +226,11 @@ export async function callSupabaseRpc<T>(
   const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${functionName}`, {
     method: "POST",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json"
     },
     body: JSON.stringify(payload),
+    cache: "no-store",
     signal: options.signal
   });
 
@@ -281,8 +279,7 @@ export async function uploadSupabaseStorageObject({
   const response = await fetch(`${cleanUrl}/storage/v1/object/${bucket}/${encodedPath}`, {
     method: "POST",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": contentType,
       "x-upsert": "true"
     },
@@ -329,10 +326,7 @@ export async function downloadSupabaseStorageObject({
 
   const response = await fetch(`${cleanUrl}/storage/v1/object/${bucket}/${encodedPath}`, {
     method: "GET",
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`
-    }
+    headers: supabaseServerAuthHeaders(serviceRoleKey)
   });
 
   if (!response.ok) {
@@ -375,10 +369,7 @@ export async function deleteSupabaseStorageObject({
 
   const response = await fetch(`${cleanUrl}/storage/v1/object/${bucket}/${encodedPath}`, {
     method: "DELETE",
-    headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`
-    }
+    headers: supabaseServerAuthHeaders(serviceRoleKey)
   });
 
   if (!response.ok && response.status !== 404) {
@@ -419,8 +410,7 @@ export async function createSupabaseStorageSignedUrl({
   const response = await fetch(`${cleanUrl}/storage/v1/object/sign/${bucket}/${encodedPath}`, {
     method: "POST",
     headers: {
-      apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ expiresIn: Math.min(600, Math.max(60, expiresIn)) }),
