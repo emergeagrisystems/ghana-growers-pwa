@@ -956,7 +956,11 @@
 
   .heroInner {
     gap: 30px;
-    padding: 48px 0 58px;
+    padding: 48px 0 36px;
+  }
+
+  .roleSection {
+    padding-top: 36px;
   }
 
   .heroTitle {

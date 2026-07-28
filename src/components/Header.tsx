@@ -107,9 +107,9 @@ function FullHeader() {
 
   return (
     <header className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
-      <nav className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-3 py-2 pr-14 sm:px-6 sm:pr-16 lg:px-8 lg:py-2.5">
+      <nav className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-3 py-1.5 pr-14 sm:px-6 sm:py-2 sm:pr-16 lg:px-8 lg:py-2.5">
         <Link href="/" className="focus-ring flex max-w-[calc(100vw-4.5rem)] min-w-0 items-center rounded-md">
-          <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-9 w-auto sm:h-10" priority />
+          <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-10 w-auto" priority />
         </Link>
 
         <div className="hidden items-center gap-1.5 lg:flex">

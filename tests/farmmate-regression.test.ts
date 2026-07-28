@@ -1935,6 +1935,10 @@ const tests: TestCase[] = [
         homepageStyles,
         /@media \(max-width: 540px\)[\s\S]*?\.heroCategoryGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/
       );
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?padding: 48px 0 36px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
+      );
     }
   },
   {
@@ -1967,6 +1971,8 @@ const tests: TestCase[] = [
       assert.equal(component.includes("GhanaGrowersLogo"), true);
       assert.equal(component.includes('alt={decorative ? "" : "Ghana Growers"}'), true);
       assert.equal(header.includes("GhanaGrowersLogo"), true);
+      assert.equal(header.includes('layout="horizontal" tone="reverse" className="h-10 w-auto"'), true);
+      assert.equal(header.includes("py-1.5 pr-14 sm:px-6 sm:py-2"), true);
       assert.equal(footer.includes("GhanaGrowersLogo"), true);
       assert.equal(prelaunchShell.includes("GhanaGrowersLogo"), true);
       assert.equal(launchingSoon.includes('layout="stacked"'), true);
