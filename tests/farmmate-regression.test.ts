@@ -1885,7 +1885,7 @@ const tests: TestCase[] = [
       const categories = [
         {
           title: "Fruits & Vegetables",
-          href: "/marketplace?search=fruits%20vegetables&category=fresh-produce",
+          href: "/marketplace?category=fresh-produce",
           imageAlt: "Fresh fruits and vegetables arranged in market baskets"
         },
         {
@@ -1896,7 +1896,7 @@ const tests: TestCase[] = [
         {
           title: "Fertilizer",
           href: "/marketplace?search=fertilizer&category=farm-inputs",
-          imageAlt: "Agricultural inputs displayed in a farm supply shop"
+          imageAlt: "Packaged fertilizer bags stacked for agricultural supply"
         },
         {
           title: "Livestock",
@@ -1905,7 +1905,7 @@ const tests: TestCase[] = [
         },
         {
           title: "Seeds",
-          href: "/marketplace?search=seeds&category=farm-inputs",
+          href: "/marketplace?search=seed&category=farm-inputs",
           imageAlt: "Cocoa beans drying on raised trays"
         }
       ];
@@ -1921,13 +1921,14 @@ const tests: TestCase[] = [
         true
       );
       assert.equal(homepage.includes("Smart Farming Tools"), true);
-      assert.equal(homepage.includes("AI-powered support for better farming decisions."), true);
+      assert.equal(homepage.includes("AI support for better farming decisions."), true);
       assert.equal(homepage.includes("Reviewed Profiles"), true);
-      assert.equal(homepage.includes("Public farmer and supplier profiles are checked before publication."), true);
+      assert.equal(homepage.includes("Public profiles are checked before publication."), true);
       assert.equal(homepage.includes("Sustainable Practices"), true);
-      assert.equal(homepage.includes("Practical guidance for responsible and productive farming."), true);
+      assert.equal(homepage.includes("Guidance for responsible, productive farming."), true);
       assert.equal(homepage.includes("Verified Network"), false);
       assert.equal(homepage.includes("From fresh produce to farm supplies, explore current listings in one place."), true);
+      assert.equal(homepage.includes('image: "/images/suppliers/supplier-3.jpg"'), true);
       assert.equal(homepage.includes("<ShoppingBasket size={18}"), true);
       assert.equal(homepage.includes('href="/marketplace"'), true);
       assert.equal(homepage.includes("Browse All Products"), true);
@@ -1957,6 +1958,8 @@ const tests: TestCase[] = [
       assert.equal(homepageStyles.includes(".heroTrustGrid"), true);
       assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
       assert.equal(homepageStyles.includes("min-height: 78px"), true);
+      assert.equal(homepageStyles.includes("font-size: 0.76rem"), true);
+      assert.equal(homepageStyles.includes("min-height: 44px"), true);
       assert.equal(homepageStyles.includes("min-height: 54px"), true);
       assert.equal(homepageStyles.includes("background: #e8a33a"), true);
       assert.equal(homepageStyles.includes(".homepage :is(a, button):focus-visible"), true);

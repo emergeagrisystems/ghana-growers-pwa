@@ -68,7 +68,7 @@ const marketplaceRoutes = [
 const heroMarketplaceCategories = [
   {
     title: "Fruits & Vegetables",
-    href: "/marketplace?search=fruits%20vegetables&category=fresh-produce",
+    href: "/marketplace?category=fresh-produce",
     image: "/images/products/tomatoes.jpg",
     imageAlt: "Fresh fruits and vegetables arranged in market baskets"
   },
@@ -81,8 +81,8 @@ const heroMarketplaceCategories = [
   {
     title: "Fertilizer",
     href: "/marketplace?search=fertilizer&category=farm-inputs",
-    image: "/images/products/farm-inputs.jpg",
-    imageAlt: "Agricultural inputs displayed in a farm supply shop"
+    image: "/images/suppliers/supplier-3.jpg",
+    imageAlt: "Packaged fertilizer bags stacked for agricultural supply"
   },
   {
     title: "Livestock",
@@ -92,7 +92,7 @@ const heroMarketplaceCategories = [
   },
   {
     title: "Seeds",
-    href: "/marketplace?search=seeds&category=farm-inputs",
+    href: "/marketplace?search=seed&category=farm-inputs",
     image: "/images/marketplace/farm-activity-2.jpg",
     imageAlt: "Cocoa beans drying on raised trays"
   }
@@ -101,17 +101,17 @@ const heroMarketplaceCategories = [
 const heroTrustPoints = [
   {
     title: "Smart Farming Tools",
-    text: "AI-powered support for better farming decisions.",
+    text: "AI support for better farming decisions.",
     icon: Bot
   },
   {
     title: "Reviewed Profiles",
-    text: "Public farmer and supplier profiles are checked before publication.",
+    text: "Public profiles are checked before publication.",
     icon: BadgeCheck
   },
   {
     title: "Sustainable Practices",
-    text: "Practical guidance for responsible and productive farming.",
+    text: "Guidance for responsible, productive farming.",
     icon: Leaf
   }
 ];
