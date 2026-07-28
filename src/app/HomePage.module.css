@@ -118,19 +118,37 @@
   max-width: 480px;
 }
 
+.marketplacePanelTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.marketplacePanelTitle > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(232, 163, 58, 0.2);
+  color: var(--forest);
+}
+
 .marketplacePanelIntro > p {
   font-size: 0.9rem;
 }
 
 .heroCategoryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px 12px;
   margin-top: 25px;
 }
 
 .heroCategoryLink {
   display: grid;
+  grid-column: span 2;
   min-width: 0;
   align-items: center;
   justify-items: center;
@@ -144,9 +162,17 @@
   text-align: center;
 }
 
+.heroCategoryLink:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.heroCategoryLink:nth-child(5) {
+  grid-column: 4 / span 2;
+}
+
 .heroCategoryImage {
   position: relative;
-  width: min(100%, 96px);
+  width: min(100%, 118px);
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -806,11 +832,11 @@
   }
 
   .heroCategoryGrid {
-    gap: 12px;
+    gap: 18px 12px;
   }
 
   .heroCategoryImage {
-    width: min(100%, 82px);
+    width: min(100%, 112px);
   }
 
   .farmMatePanel {
@@ -987,8 +1013,19 @@
     gap: 19px 12px;
   }
 
+  .heroCategoryLink,
+  .heroCategoryLink:nth-child(4) {
+    grid-column: auto;
+  }
+
+  .heroCategoryLink:nth-child(5) {
+    width: calc(50% - 6px);
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
   .heroCategoryImage {
-    width: min(100%, 112px);
+    width: min(100%, 118px);
   }
 
   .amberButton,

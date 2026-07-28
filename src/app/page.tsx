@@ -65,28 +65,34 @@ const marketplaceRoutes = [
 
 const heroMarketplaceCategories = [
   {
-    title: "Fresh Produce",
-    href: "/marketplace?category=fresh-produce",
-    image: "/images/marketplace/ghana-market-1.jpg",
-    imageAlt: "Fresh produce displayed at a Ghanaian market"
+    title: "Fruits & Vegetables",
+    href: "/marketplace?search=fruits%20vegetables&category=fresh-produce",
+    image: "/images/products/tomatoes.jpg",
+    imageAlt: "Fresh fruits and vegetables arranged in market baskets"
+  },
+  {
+    title: "Grains",
+    href: "/marketplace?search=maize&category=fresh-produce",
+    image: "/images/marketplace/produce-packaging.jpg",
+    imageAlt: "Bagged agricultural produce at a supply yard"
+  },
+  {
+    title: "Fertilizer",
+    href: "/marketplace?search=fertilizer&category=farm-inputs",
+    image: "/images/products/farm-inputs.jpg",
+    imageAlt: "Agricultural inputs displayed in a farm supply shop"
   },
   {
     title: "Livestock",
     href: "/marketplace?category=livestock",
-    image: "/images/crops/poultry.jpg",
-    imageAlt: "Cattle on a Ghanaian farm"
+    image: "/images/products/eggs.jpg",
+    imageAlt: "Cattle gathered on a Ghanaian farm"
   },
   {
-    title: "Farm Inputs",
-    href: "/marketplace?category=farm-inputs",
-    image: "/images/marketplace/farm-inputs.jpg",
-    imageAlt: "Farm inputs arranged in an agricultural supply shop"
-  },
-  {
-    title: "Tools & Equipment",
-    href: "/marketplace?category=tools-equipment",
-    image: "/images/marketplace/farm-activity-1.jpg",
-    imageAlt: "Farmer working with a hand tool in a field"
+    title: "Seeds",
+    href: "/marketplace?search=seeds&category=farm-inputs",
+    image: "/images/marketplace/farm-activity-2.jpg",
+    imageAlt: "Cocoa beans drying on raised trays"
   }
 ];
 
@@ -160,8 +166,11 @@ export default async function HomePage() {
           <div className={styles.heroDeck}>
             <article className={`${styles.heroCard} ${styles.marketplacePanel}`}>
               <div className={styles.marketplacePanelIntro}>
-                <h2>Explore the Marketplace</h2>
-                <p>Browse current produce, livestock, farm inputs and equipment.</p>
+                <div className={styles.marketplacePanelTitle}>
+                  <span aria-hidden="true"><ShoppingBasket size={18} /></span>
+                  <h2>Marketplace</h2>
+                </div>
+                <p>Explore produce, grains, farm inputs and livestock.</p>
               </div>
 
               <nav className={styles.heroCategoryGrid} aria-label="Marketplace categories">
