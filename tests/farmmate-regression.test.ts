@@ -1941,6 +1941,10 @@ const tests: TestCase[] = [
       assert.equal(homepageStyles.includes("min-height: 54px"), true);
       assert.equal(homepageStyles.includes("background: #e8a33a"), true);
       assert.equal(homepageStyles.includes(".homepage :is(a, button):focus-visible"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(4.5rem, 5.4vw, 5rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3.75rem, 6.2vw, 4.25rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3.75rem, 8vw, 4.25rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3rem, 14.5vw, 3.5rem)"), true);
       assert.match(
         homepageStyles,
         /@media \(max-width: 540px\)[\s\S]*?\.heroCategoryGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[\s\S]*?\.heroCategoryLink:nth-child\(5\)[\s\S]*?grid-column: 1 \/ -1/
