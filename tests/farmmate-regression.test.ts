@@ -1911,10 +1911,26 @@ const tests: TestCase[] = [
       ];
 
       assert.equal(homepage.includes("<h2>Marketplace</h2>"), true);
-      assert.equal(homepage.includes("Explore produce, grains, farm inputs and livestock."), true);
+      assert.equal(homepage.includes("Agricultural sourcing made easy"), true);
+      assert.equal(
+        homepage.includes("Need farm-fresh produce? Have a harvest to sell? Supply farm tools? You are in the right place."),
+        true
+      );
+      assert.equal(
+        homepage.includes("Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools—all in one place."),
+        true
+      );
+      assert.equal(homepage.includes("Smart Farming Tools"), true);
+      assert.equal(homepage.includes("AI-powered support for better farming decisions."), true);
+      assert.equal(homepage.includes("Reviewed Profiles"), true);
+      assert.equal(homepage.includes("Public farmer and supplier profiles are checked before publication."), true);
+      assert.equal(homepage.includes("Sustainable Practices"), true);
+      assert.equal(homepage.includes("Practical guidance for responsible and productive farming."), true);
+      assert.equal(homepage.includes("Verified Network"), false);
+      assert.equal(homepage.includes("From fresh produce to farm supplies, explore current listings in one place."), true);
       assert.equal(homepage.includes("<ShoppingBasket size={18}"), true);
       assert.equal(homepage.includes('href="/marketplace"'), true);
-      assert.equal(homepage.includes("Browse Marketplace"), true);
+      assert.equal(homepage.includes("Browse All Products"), true);
       assert.equal(homepage.includes('href="/submit-listing"'), true);
       assert.equal(homepage.includes("Selling produce or farm supplies?"), true);
       assert.equal(homepage.includes("Listings are reviewed before appearing publicly."), true);
@@ -1937,7 +1953,10 @@ const tests: TestCase[] = [
       assert.equal(homepageStyles.includes("grid-column: 2 / span 2"), true);
       assert.equal(homepageStyles.includes("grid-column: 4 / span 2"), true);
       assert.equal(homepageStyles.includes("border-radius: 50%"), true);
-      assert.equal(homepageStyles.includes("width: min(100%, 118px)"), true);
+      assert.equal(homepageStyles.includes("width: min(100%, 128px)"), true);
+      assert.equal(homepageStyles.includes(".heroTrustGrid"), true);
+      assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
+      assert.equal(homepageStyles.includes("min-height: 78px"), true);
       assert.equal(homepageStyles.includes("min-height: 54px"), true);
       assert.equal(homepageStyles.includes("background: #e8a33a"), true);
       assert.equal(homepageStyles.includes(".homepage :is(a, button):focus-visible"), true);
@@ -1951,7 +1970,7 @@ const tests: TestCase[] = [
       );
       assert.match(
         homepageStyles,
-        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?padding: 48px 0 36px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
+        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
       );
     }
   },

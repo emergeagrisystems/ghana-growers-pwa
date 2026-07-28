@@ -4,9 +4,11 @@ import {
   BadgeCheck,
   Beef,
   BookOpen,
+  Bot,
   Check,
   Handshake,
   HeartHandshake,
+  Leaf,
   MessageCircleQuestion,
   PackageOpen,
   ScanSearch,
@@ -96,6 +98,24 @@ const heroMarketplaceCategories = [
   }
 ];
 
+const heroTrustPoints = [
+  {
+    title: "Smart Farming Tools",
+    text: "AI-powered support for better farming decisions.",
+    icon: Bot
+  },
+  {
+    title: "Reviewed Profiles",
+    text: "Public farmer and supplier profiles are checked before publication.",
+    icon: BadgeCheck
+  },
+  {
+    title: "Sustainable Practices",
+    text: "Practical guidance for responsible and productive farming.",
+    icon: Leaf
+  }
+];
+
 const rolePaths = [
   {
     title: "For buyers",
@@ -152,15 +172,30 @@ export default async function HomePage() {
       <section className={styles.hero} aria-labelledby="homepage-hero-title">
         <div className={styles.heroInner}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>For farmers, buyers &amp; suppliers</p>
+            <p className={styles.eyebrow}>Agricultural sourcing made easy</p>
             <h1 id="homepage-hero-title" className={styles.heroTitle}>
               <span>Buy.</span>
               <span>Sell.</span>
               <span>Grow.</span>
             </h1>
-            <p className={styles.heroSupport}>
-              Buy farm produce, sell your harvest or agricultural supplies, and grow through better market access and practical farming tools.
+            <p className={styles.heroIntro}>
+              Need farm-fresh produce? Have a harvest to sell? Supply farm tools? You are in the right place.
             </p>
+            <p className={styles.heroSupport}>
+              Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools—all in one place.
+            </p>
+
+            <ul className={styles.heroTrustGrid} aria-label="How Ghana Growers supports its community">
+              {heroTrustPoints.map(({ icon: Icon, ...point }) => (
+                <li key={point.title}>
+                  <span className={styles.heroTrustIcon}><Icon size={18} aria-hidden="true" /></span>
+                  <div>
+                    <strong>{point.title}</strong>
+                    <p>{point.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className={styles.heroDeck}>
@@ -170,7 +205,7 @@ export default async function HomePage() {
                   <span aria-hidden="true"><ShoppingBasket size={18} /></span>
                   <h2>Marketplace</h2>
                 </div>
-                <p>Explore produce, grains, farm inputs and livestock.</p>
+                <p>From fresh produce to farm supplies, explore current listings in one place.</p>
               </div>
 
               <nav className={styles.heroCategoryGrid} aria-label="Marketplace categories">
@@ -192,7 +227,7 @@ export default async function HomePage() {
               </nav>
 
               <Link href="/marketplace" className={`${styles.amberButton} ${styles.marketplaceButton}`}>
-                Browse Marketplace
+                Browse All Products
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
 
