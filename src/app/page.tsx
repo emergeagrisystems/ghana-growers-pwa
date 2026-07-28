@@ -101,17 +101,14 @@ const heroMarketplaceCategories = [
 const heroTrustPoints = [
   {
     title: "Smart Farming Tools",
-    text: "AI support for better farming decisions.",
     icon: Bot
   },
   {
     title: "Reviewed Profiles",
-    text: "Public profiles are checked before publication.",
     icon: BadgeCheck
   },
   {
     title: "Sustainable Practices",
-    text: "Guidance for responsible, productive farming.",
     icon: Leaf
   }
 ];
@@ -184,18 +181,6 @@ export default async function HomePage() {
             <p className={styles.heroSupport}>
               Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools—all in one place.
             </p>
-
-            <ul className={styles.heroTrustGrid} aria-label="How Ghana Growers supports its community">
-              {heroTrustPoints.map(({ icon: Icon, ...point }) => (
-                <li key={point.title}>
-                  <span className={styles.heroTrustIcon}><Icon size={18} aria-hidden="true" /></span>
-                  <div>
-                    <strong>{point.title}</strong>
-                    <p>{point.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div className={styles.heroDeck}>
@@ -242,6 +227,15 @@ export default async function HomePage() {
               </div>
             </article>
           </div>
+
+          <ul className={styles.heroTrustGrid} aria-label="How Ghana Growers supports its community">
+            {heroTrustPoints.map(({ icon: Icon, title }) => (
+              <li key={title}>
+                <span className={styles.heroTrustIcon}><Icon size={18} aria-hidden="true" /></span>
+                <strong>{title}</strong>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

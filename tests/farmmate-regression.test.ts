@@ -1921,11 +1921,12 @@ const tests: TestCase[] = [
         true
       );
       assert.equal(homepage.includes("Smart Farming Tools"), true);
-      assert.equal(homepage.includes("AI support for better farming decisions."), true);
+      assert.equal(homepage.includes("AI support for better farming decisions."), false);
       assert.equal(homepage.includes("Reviewed Profiles"), true);
-      assert.equal(homepage.includes("Public profiles are checked before publication."), true);
+      assert.equal(homepage.includes("Public profiles are checked before publication."), false);
       assert.equal(homepage.includes("Sustainable Practices"), true);
-      assert.equal(homepage.includes("Guidance for responsible, productive farming."), true);
+      assert.equal(homepage.includes("Guidance for responsible, productive farming."), false);
+      assert.equal(homepage.includes("<p>{point.text}</p>"), false);
       assert.equal(homepage.includes("Verified Network"), false);
       assert.equal(homepage.includes("From fresh produce to farm supplies, explore current listings in one place."), true);
       assert.equal(homepage.includes('image: "/images/suppliers/supplier-3.jpg"'), true);
@@ -1957,8 +1958,10 @@ const tests: TestCase[] = [
       assert.equal(homepageStyles.includes("width: min(100%, 128px)"), true);
       assert.equal(homepageStyles.includes(".heroTrustGrid"), true);
       assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
-      assert.equal(homepageStyles.includes("min-height: 78px"), true);
-      assert.equal(homepageStyles.includes("font-size: 0.76rem"), true);
+      assert.equal(homepageStyles.includes('"copy deck"'), true);
+      assert.equal(homepageStyles.includes('"trust deck"'), true);
+      assert.equal(homepageStyles.includes("min-height: 60px"), true);
+      assert.equal(homepageStyles.includes("min-height: 58px"), true);
       assert.equal(homepageStyles.includes("min-height: 44px"), true);
       assert.equal(homepageStyles.includes("min-height: 54px"), true);
       assert.equal(homepageStyles.includes("background: #e8a33a"), true);
@@ -1973,7 +1976,11 @@ const tests: TestCase[] = [
       );
       assert.match(
         homepageStyles,
-        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
+        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?"copy"[\s\S]*?"deck"[\s\S]*?"trust"[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
+      );
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroTrustGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[\s\S]*?\.heroTrustGrid li:nth-child\(3\)[\s\S]*?grid-column: 1 \/ -1/
       );
     }
   },
