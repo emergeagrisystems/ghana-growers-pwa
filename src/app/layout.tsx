@@ -19,8 +19,13 @@ export const metadata: Metadata = {
   applicationName: siteConfig.name,
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon.svg",
-    apple: "/icons/icon.svg"
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-48x48.png", sizes: "48x48", type: "image/png" }
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   },
   openGraph: {
     title: `${siteConfig.name} | Trusted Agriculture Platform for Ghana`,
@@ -30,9 +35,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: defaultOgImage,
-        width: 1778,
-        height: 885,
-        alt: "Ghana Growers agricultural marketplace platform"
+        width: 1200,
+        height: 630,
+        alt: "Ghana Growers: Buy. Sell. Grow."
       }
     ],
     locale: "en_GH",

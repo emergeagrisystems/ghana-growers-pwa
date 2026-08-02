@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/data/site";
 
-export const defaultOgImage = "/images/hero/ghana-growers-trade-hero.png";
+export const defaultOgImage = "/images/ghana-growers-social.png";
 
 export function absoluteUrl(path = "/") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

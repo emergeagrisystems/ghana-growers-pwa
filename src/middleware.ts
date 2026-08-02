@@ -10,11 +10,13 @@ function prelaunchEnabled() {
 function isPublicAsset(pathname: string) {
   return (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/brand") ||
     pathname.startsWith("/images") ||
     pathname.startsWith("/icons") ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon.svg"
   );
 }
 

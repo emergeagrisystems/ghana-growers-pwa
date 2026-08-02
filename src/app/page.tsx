@@ -4,9 +4,11 @@ import {
   BadgeCheck,
   Beef,
   BookOpen,
+  Bot,
   Check,
   Handshake,
   HeartHandshake,
+  Leaf,
   MessageCircleQuestion,
   PackageOpen,
   ScanSearch,
@@ -63,25 +65,73 @@ const marketplaceRoutes = [
   }
 ];
 
+const heroMarketplaceCategories = [
+  {
+    title: "Fruits & Vegetables",
+    href: "/marketplace?category=fresh-produce",
+    image: "/images/products/tomatoes.jpg",
+    imageAlt: "Fresh fruits and vegetables arranged in market baskets"
+  },
+  {
+    title: "Grains",
+    href: "/marketplace?search=maize&category=fresh-produce",
+    image: "/images/marketplace/produce-packaging.jpg",
+    imageAlt: "Bagged agricultural produce at a supply yard"
+  },
+  {
+    title: "Fertilizer",
+    href: "/marketplace?search=fertilizer&category=farm-inputs",
+    image: "/images/suppliers/supplier-3.jpg",
+    imageAlt: "Packaged fertilizer bags stacked for agricultural supply"
+  },
+  {
+    title: "Livestock",
+    href: "/marketplace?category=livestock",
+    image: "/images/products/eggs.jpg",
+    imageAlt: "Cattle gathered on a Ghanaian farm"
+  },
+  {
+    title: "Seeds",
+    href: "/marketplace?search=seed&category=farm-inputs",
+    image: "/images/marketplace/farm-activity-2.jpg",
+    imageAlt: "Cocoa beans drying on raised trays"
+  }
+];
+
+const heroTrustPoints = [
+  {
+    title: "Smart Farming Tools",
+    icon: Bot
+  },
+  {
+    title: "Reviewed Profiles",
+    icon: BadgeCheck
+  },
+  {
+    title: "Sustainable Practices",
+    icon: Leaf
+  }
+];
+
 const rolePaths = [
   {
-    title: "For buyers",
-    text: "Browse current listings or ask Ghana Growers to help source what you need.",
-    action: "Start buying",
-    href: "/buy",
+    title: "Need farm-fresh produce?",
+    text: "Browse current listings or tell Ghana Growers what you need.",
+    action: "Browse Products",
+    href: "/marketplace",
     icon: ShoppingBasket
   },
   {
-    title: "For farmers",
-    text: "Present your harvest clearly and submit listings for review before publication.",
-    action: "Sell your harvest",
-    href: "/sell",
+    title: "Have a harvest to sell?",
+    text: "Submit your produce for review and make it easier for buyers to find you.",
+    action: "Sell Your Harvest",
+    href: "/submit-listing",
     icon: Sprout
   },
   {
-    title: "For suppliers",
-    text: "Apply to supply farm inputs, equipment or agricultural services through the network.",
-    action: "Supplier information",
+    title: "Supply farm inputs or tools?",
+    text: "Apply to join the network and present your agricultural products for review.",
+    action: "Join as a Supplier",
     href: "/become-a-supplier",
     icon: Store
   }
@@ -119,75 +169,81 @@ export default async function HomePage() {
       <section className={styles.hero} aria-labelledby="homepage-hero-title">
         <div className={styles.heroInner}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>For farmers, buyers &amp; suppliers</p>
+            <p className={styles.eyebrow}>Agricultural sourcing made easy</p>
             <h1 id="homepage-hero-title" className={styles.heroTitle}>
               <span>Buy.</span>
               <span>Sell.</span>
               <span>Grow.</span>
             </h1>
+            <p className={styles.heroIntro}>
+              Need farm-fresh produce? Have a harvest to sell? Supply farm tools? You are in the right place.
+            </p>
             <p className={styles.heroSupport}>
-              Buy farm produce, sell your harvest or agricultural supplies, and grow through better market access and practical farming tools.
+              Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools—all in one place.
             </p>
           </div>
 
           <div className={styles.heroDeck}>
-            <article className={`${styles.heroCard} ${styles.marketplaceCard}`}>
-              <div className={styles.marketplaceImage}>
-                <SafeImage
-                  src="/images/hero/ghana-growers-trade-hero.png"
-                  alt="Produce and agricultural trade at a Ghanaian market"
-                  fill
-                  priority
-                  fallbackSrc="/images/marketplace/ghana-market-1.jpg"
-                  fallbackKind="marketplace"
-                  sizes="(max-width: 780px) 100vw, 44vw"
-                  className="object-cover object-[center_43%]"
-                />
-                <span>Local trade, reviewed before publication</span>
+            <article className={`${styles.heroCard} ${styles.marketplacePanel}`}>
+              <div className={styles.marketplacePanelIntro}>
+                <div className={styles.marketplacePanelTitle}>
+                  <span aria-hidden="true"><ShoppingBasket size={18} /></span>
+                  <h2>Marketplace</h2>
+                </div>
+                <p>From fresh produce to farm supplies, explore current listings in one place.</p>
               </div>
-              <div className={styles.marketplaceCardBody}>
-                <h2>Browse the Marketplace</h2>
-                <p>Explore the current marketplace through the pathway that fits what you need.</p>
-                <nav className={styles.heroPathways} aria-label="Marketplace categories">
-                  {marketplaceRoutes.map((route) => (
-                    <Link href={route.href} key={route.title}>
-                      {route.title}
-                      <ArrowRight size={14} aria-hidden="true" />
-                    </Link>
-                  ))}
-                </nav>
-                <Link href="/marketplace" className={styles.amberButton}>
-                  Browse Marketplace
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-              </div>
-            </article>
 
-            <article className={`${styles.heroCard} ${styles.sellerCard}`}>
-              <div className={styles.cardLabel}>
-                <span><Sprout size={19} aria-hidden="true" /></span>
-                Start selling
-              </div>
-              <h2>Sell through Ghana Growers</h2>
-              <p>Farmers and suppliers can submit products and tools for review before they appear publicly.</p>
-              <Link href="/submit-listing" className={styles.amberButton}>
-                Submit a Listing
+              <nav className={styles.heroCategoryGrid} aria-label="Marketplace categories">
+                {heroMarketplaceCategories.map((category) => (
+                  <Link href={category.href} key={category.title} className={styles.heroCategoryLink}>
+                    <span className={styles.heroCategoryImage}>
+                      <SafeImage
+                        src={category.image}
+                        alt={category.imageAlt}
+                        fill
+                        fallbackKind="marketplace"
+                        sizes="(max-width: 540px) 40vw, (max-width: 820px) 20vw, 110px"
+                        className="object-cover"
+                      />
+                    </span>
+                    <span>{category.title}</span>
+                  </Link>
+                ))}
+              </nav>
+
+              <Link href="/marketplace" className={`${styles.amberButton} ${styles.marketplaceButton}`}>
+                Browse All Products
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
-              <div className={styles.sellerLinks}>
-                <Link href="/join">Farmer pathway info <ArrowRight size={14} aria-hidden="true" /></Link>
-                <Link href="/become-a-supplier">Join as a Supplier <ArrowRight size={14} aria-hidden="true" /></Link>
+
+              <div className={styles.sellerPrompt}>
+                <p>
+                  Selling produce or farm supplies?{" "}
+                  <Link href="/submit-listing">
+                    Submit a listing <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                </p>
+                <small>Listings are reviewed before appearing publicly.</small>
               </div>
             </article>
           </div>
+
+          <ul className={styles.heroTrustGrid} aria-label="How Ghana Growers supports its community">
+            {heroTrustPoints.map(({ icon: Icon, title }) => (
+              <li key={title}>
+                <span className={styles.heroTrustIcon}><Icon size={18} aria-hidden="true" /></span>
+                <strong>{title}</strong>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
       <section className={styles.roleSection} aria-labelledby="role-paths-title">
         <div className={styles.sectionShell}>
           <div className={styles.sectionIntro}>
-            <p className={styles.eyebrow}>Choose your path</p>
-            <h2 id="role-paths-title">Start with what brings you here.</h2>
+            <p className={styles.eyebrow}>CHOOSE YOUR PATH</p>
+            <h2 id="role-paths-title">What brings you here?</h2>
           </div>
           <div className={styles.roleGrid}>
             {rolePaths.map(({ icon: Icon, ...path }) => (

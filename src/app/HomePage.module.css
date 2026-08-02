@@ -26,13 +26,18 @@
   display: grid;
   width: min(1240px, calc(100% - 48px));
   grid-template-columns: minmax(0, 0.9fr) minmax(500px, 1.1fr);
-  align-items: center;
-  gap: clamp(48px, 6vw, 78px);
+  grid-template-areas:
+    "copy deck"
+    "trust deck";
+  align-items: start;
+  column-gap: clamp(48px, 6vw, 78px);
+  row-gap: 18px;
   margin: 0 auto;
   padding: 18px 0 12px;
 }
 
 .heroCopy {
+  grid-area: copy;
   align-self: start;
   padding-top: 16px;
 }
@@ -56,7 +61,7 @@
   margin: 22px 0 24px;
   color: var(--forest);
   font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  font-size: clamp(4.2rem, 6.3vw, 5.65rem);
+  font-size: clamp(4.5rem, 5.4vw, 5rem);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 0.92;
@@ -71,14 +76,66 @@
   max-width: 580px;
   margin: 0;
   color: var(--muted);
-  font-size: 1.05rem;
-  line-height: 1.7;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.heroIntro {
+  max-width: 570px;
+  margin: 0 0 10px;
+  color: var(--forest);
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.heroTrustGrid {
+  display: grid;
+  grid-area: trust;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heroTrustGrid li {
+  display: flex;
+  min-width: 0;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(20, 58, 31, 0.1);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--sage);
+}
+
+.heroTrustIcon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(232, 163, 58, 0.2);
+  color: var(--forest);
+}
+
+.heroTrustGrid strong {
+  display: block;
+  color: var(--forest);
+  font-size: 0.75rem;
+  line-height: 1.25;
 }
 
 .heroDeck {
   position: relative;
   display: flex;
+  grid-area: deck;
   min-width: 0;
+  align-self: center;
   flex-direction: column;
   justify-content: center;
 }
@@ -90,43 +147,6 @@
   border-radius: 8px;
   background: var(--ivory);
   box-shadow: 0 14px 34px rgba(18, 47, 25, 0.11);
-}
-
-.marketplaceCard {
-  width: 88%;
-  align-self: flex-start;
-  overflow: hidden;
-}
-
-.marketplaceImage {
-  position: relative;
-  height: 158px;
-  overflow: hidden;
-  background: var(--sage);
-}
-
-.marketplaceImage::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(8, 31, 16, 0.02), rgba(8, 31, 16, 0.44));
-  content: "";
-}
-
-.marketplaceImage > span {
-  position: absolute;
-  bottom: 14px;
-  left: 16px;
-  z-index: 2;
-  border-radius: 4px;
-  padding: 7px 9px;
-  background: rgba(12, 37, 20, 0.92);
-  color: var(--cream);
-  font-size: 0.64rem;
-  font-weight: 800;
-}
-
-.marketplaceCardBody {
-  padding: 18px;
 }
 
 .heroCard h2 {
@@ -146,33 +166,83 @@
   line-height: 1.55;
 }
 
-.heroPathways {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 14px;
-  border-top: 1px solid var(--line);
+.marketplacePanel {
+  width: 100%;
+  padding: clamp(24px, 3vw, 32px);
 }
 
-.heroPathways a {
+.marketplacePanelIntro {
+  max-width: 480px;
+}
+
+.marketplacePanelTitle {
   display: flex;
-  min-height: 40px;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid var(--line);
-  padding: 8px 4px;
+  gap: 10px;
+}
+
+.marketplacePanelTitle > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(232, 163, 58, 0.2);
   color: var(--forest);
-  font-size: 0.72rem;
-  font-weight: 850;
 }
 
-.heroPathways a:nth-child(odd) {
-  padding-right: 12px;
+.marketplacePanelIntro > p {
+  font-size: 0.9rem;
 }
 
-.heroPathways a:nth-child(even) {
-  border-left: 1px solid var(--line);
-  padding-left: 12px;
+.heroCategoryGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px 12px;
+  margin-top: 25px;
+}
+
+.heroCategoryLink {
+  display: grid;
+  grid-column: span 2;
+  min-width: 0;
+  align-items: center;
+  justify-items: center;
+  gap: 10px;
+  border-radius: 6px;
+  padding: 3px;
+  color: var(--forest);
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.heroCategoryLink:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.heroCategoryLink:nth-child(5) {
+  grid-column: 4 / span 2;
+}
+
+.heroCategoryImage {
+  position: relative;
+  width: min(100%, 128px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--sage);
+}
+
+.heroCategoryImage img {
+  transition: transform 180ms ease;
+}
+
+.heroCategoryLink:hover .heroCategoryImage img {
+  transform: scale(1.035);
 }
 
 .amberButton,
@@ -202,64 +272,44 @@
   box-shadow: 0 8px 20px rgba(8, 31, 16, 0.18);
 }
 
-.sellerCard {
-  z-index: 3;
-  width: 72%;
-  align-self: flex-end;
-  margin-top: -14px;
-  border-color: var(--forest);
-  padding: 18px;
-  background: var(--forest);
-  color: var(--cream);
+.marketplaceButton {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 25px;
+  border-color: #e8a33a;
+  background: #e8a33a;
 }
 
-.sellerCard h2 {
-  margin-top: 14px;
-  color: var(--cream);
+.sellerPrompt {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 15px;
+  text-align: center;
 }
 
-.sellerCard p {
-  color: #d1ddd0;
+.sellerPrompt p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
-.cardLabel {
-  display: flex;
+.sellerPrompt a {
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  color: var(--cream);
-  font-size: 0.66rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.cardLabel > span {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 6px;
-  background: var(--amber);
+  gap: 4px;
   color: var(--forest);
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-color: rgba(20, 58, 31, 0.35);
+  text-underline-offset: 3px;
 }
 
-.sellerLinks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  padding-top: 10px;
-}
-
-.sellerLinks a {
-  display: flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  color: var(--cream);
+.sellerPrompt small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
   font-size: 0.7rem;
-  font-weight: 800;
+  line-height: 1.45;
 }
 
 .sectionShell {
@@ -304,20 +354,28 @@
 .roleGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
   margin-top: 38px;
-  border-top: 1px solid var(--line);
 }
 
 .roleGrid article {
   position: relative;
+  display: flex;
   min-height: 250px;
-  padding: 28px 26px 25px 0;
-  border-bottom: 1px solid var(--line);
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--ivory) 72%, var(--sage));
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.roleGrid article + article {
-  border-left: 1px solid var(--line);
-  padding-left: 26px;
+.roleGrid article:hover,
+.roleGrid article:focus-within {
+  border-color: rgba(20, 58, 31, 0.28);
+  box-shadow: 0 10px 24px rgba(18, 47, 25, 0.08);
+  transform: translateY(-2px);
 }
 
 .iconBox,
@@ -333,14 +391,14 @@
 }
 
 .roleGrid h3 {
-  margin: 24px 0 0;
+  margin: 20px 0 0;
   color: var(--forest);
   font-size: 1.16rem;
   font-weight: 900;
+  line-height: 1.3;
 }
 
 .roleGrid p {
-  min-height: 72px;
   margin: 11px 0 0;
   color: var(--muted);
   font-size: 0.88rem;
@@ -360,6 +418,17 @@
   color: var(--forest);
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.roleGrid a {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.roleGrid a:hover {
+  text-decoration: underline;
+  text-decoration-color: rgba(20, 58, 31, 0.35);
+  text-underline-offset: 4px;
 }
 
 .marketBand {
@@ -826,7 +895,8 @@
 @media (max-width: 1080px) {
   .heroInner {
     grid-template-columns: minmax(0, 0.8fr) minmax(450px, 1.2fr);
-    gap: 40px;
+    column-gap: 40px;
+    row-gap: 16px;
     padding-top: 36px;
   }
 
@@ -835,16 +905,25 @@
   }
 
   .heroTitle {
-    font-size: clamp(3.8rem, 7vw, 4.7rem);
+    font-size: clamp(3.75rem, 6.2vw, 4.25rem);
   }
 
-  .marketplaceCard {
-    width: 92%;
+  .heroTrustGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .sellerCard {
-    width: 78%;
-    margin-top: -10px;
+  .heroTrustGrid li:nth-child(3) {
+    width: calc(50% - 4px);
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .heroCategoryGrid {
+    gap: 18px 12px;
+  }
+
+  .heroCategoryImage {
+    width: min(100%, 120px);
   }
 
   .farmMatePanel {
@@ -877,7 +956,11 @@
 
   .heroInner {
     width: min(100% - 36px, 680px);
-    gap: 38px;
+    grid-template-areas:
+      "copy"
+      "trust"
+      "deck";
+    gap: 24px;
     padding: 58px 0 70px;
   }
 
@@ -886,7 +969,7 @@
   }
 
   .heroTitle {
-    font-size: 4.6rem;
+    font-size: clamp(3.75rem, 8vw, 4.25rem);
   }
 
   .heroDeck {
@@ -894,13 +977,16 @@
     margin-inline: auto;
   }
 
-  .marketplaceCard,
-  .sellerCard {
-    width: 100%;
+  .heroTrustGrid {
+    width: min(100%, 620px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-inline: auto;
   }
 
-  .sellerCard {
-    margin-top: 18px;
+  .heroTrustGrid li:nth-child(3) {
+    width: auto;
+    grid-column: auto;
+    justify-self: stretch;
   }
 
   .roleSection,
@@ -916,17 +1002,7 @@
 
   .roleGrid article {
     min-height: 0;
-    padding: 26px 0;
-  }
-
-  .roleGrid article + article {
-    border-top: 1px solid var(--line);
-    border-left: 0;
-    padding-left: 0;
-  }
-
-  .roleGrid p {
-    min-height: 0;
+    padding: 24px;
   }
 
   .marketBand {
@@ -998,13 +1074,39 @@
   }
 
   .heroInner {
-    gap: 30px;
-    padding: 48px 0 58px;
+    grid-template-areas:
+      "copy"
+      "deck"
+      "trust";
+    gap: 24px;
+    padding: 48px 0 24px;
+  }
+
+  .roleSection {
+    padding: 32px 0 54px;
+  }
+
+  .roleGrid {
+    gap: 10px;
+    margin-top: 26px;
+  }
+
+  .roleGrid article {
+    padding: 20px;
+  }
+
+  .roleGrid h3 {
+    margin-top: 16px;
+  }
+
+  .roleGrid a {
+    min-height: 44px;
+    padding-top: 14px;
   }
 
   .heroTitle {
     margin: 18px 0 20px;
-    font-size: clamp(3.75rem, 19vw, 4.6rem);
+    font-size: clamp(3rem, 14.5vw, 3.5rem);
     line-height: 0.93;
   }
 
@@ -1013,12 +1115,33 @@
     line-height: 1.6;
   }
 
-  .marketplaceImage {
-    height: 168px;
+  .heroIntro {
+    font-size: 0.98rem;
   }
 
-  .marketplaceCardBody,
-  .sellerCard {
+  .heroTrustGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 auto;
+  }
+
+  .heroTrustGrid li {
+    min-height: 58px;
+    gap: 8px;
+    padding: 8px 9px;
+  }
+
+  .heroTrustGrid strong {
+    font-size: 0.74rem;
+  }
+
+  .heroTrustGrid li:nth-child(3) {
+    width: calc(50% - 4px);
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .marketplacePanel {
     padding: 20px;
   }
 
@@ -1026,14 +1149,24 @@
     font-size: 1.7rem;
   }
 
-  .heroPathways {
-    grid-template-columns: 1fr;
+  .heroCategoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px 12px;
   }
 
-  .heroPathways a:nth-child(odd),
-  .heroPathways a:nth-child(even) {
-    border-left: 0;
-    padding-inline: 4px;
+  .heroCategoryLink,
+  .heroCategoryLink:nth-child(4) {
+    grid-column: auto;
+  }
+
+  .heroCategoryLink:nth-child(5) {
+    width: calc(50% - 6px);
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .heroCategoryImage {
+    width: min(100%, 128px);
   }
 
   .amberButton,
@@ -1042,13 +1175,16 @@
     width: 100%;
   }
 
-  .sellerLinks {
-    grid-template-columns: 1fr;
-    gap: 2px;
+  .sellerPrompt p {
+    font-size: 0.86rem;
+    line-height: 1.55;
   }
 
-  .sellerLinks a {
+  .sellerPrompt a {
     min-height: 44px;
+    justify-content: center;
+    margin: -8px -3px;
+    padding: 8px 3px;
   }
 
   .sectionIntro h2,

@@ -682,7 +682,7 @@ const tests: TestCase[] = [
 
       assert.equal(pilotHeader.includes('href="/farmer-hub"'), true);
       assert.equal(pilotHeader.includes('href="/farmer-hub/feedback"'), true);
-      assert.equal(pilotHeader.includes("Ghana Growers"), true);
+      assert.equal(pilotHeader.includes("GhanaGrowersLogo"), true);
       assert.equal(pilotHeader.includes("GG FarmMate"), true);
       assert.equal(pilotHeader.includes("Share feedback"), true);
       ["/buy", "/sell", "/directory", "/marketplace", "/join", "Join the Network", "/about", "/contact", "/learn"].forEach((link) => {
@@ -1867,6 +1867,23 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes("Grow."), true);
       assert.equal(homepage.includes('href="/marketplace"'), true);
       assert.equal(homepage.includes('href="/submit-listing"'), true);
+      assert.equal(homepage.includes("CHOOSE YOUR PATH"), true);
+      assert.equal(homepage.includes("What brings you here?"), true);
+      assert.equal(homepage.includes("Need farm-fresh produce?"), true);
+      assert.equal(homepage.includes("Browse current listings or tell Ghana Growers what you need."), true);
+      assert.equal(homepage.includes('action: "Browse Products"'), true);
+      assert.equal(homepage.includes("Have a harvest to sell?"), true);
+      assert.equal(homepage.includes("Submit your produce for review and make it easier for buyers to find you."), true);
+      assert.equal(homepage.includes('action: "Sell Your Harvest"'), true);
+      assert.equal(homepage.includes("Supply farm inputs or tools?"), true);
+      assert.equal(homepage.includes("Apply to join the network and present your agricultural products for review."), true);
+      assert.equal(homepage.includes('action: "Join as a Supplier"'), true);
+      assert.equal(homepage.includes('href: "/become-a-supplier"'), true);
+      assert.equal(homepage.includes("Start with what brings you here."), false);
+      assert.equal(homepage.includes('title: "For buyers"'), false);
+      assert.equal(homepageStyles.includes(".roleGrid article:focus-within"), true);
+      assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
+      assert.equal(homepageStyles.includes("min-height: 44px"), true);
       assert.equal(homepage.includes("getFarmersData()"), true);
       assert.equal(homepage.includes("farmerResult.data.slice(0, 3)"), true);
       assert.equal(homepage.includes("Brand Lab"), false);
@@ -1875,6 +1892,113 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes("Market Prices"), false);
       assert.equal(homepageStyles.includes("grid-template-columns"), true);
       assert.equal(homepageStyles.includes("overflow: clip"), true);
+    }
+  },
+  {
+    name: "Homepage hero uses one visual marketplace panel with honest actions",
+    run: () => {
+      const homepage = repoFile("src/app/page.tsx");
+      const homepageStyles = repoFile("src/app/HomePage.module.css");
+      const categories = [
+        {
+          title: "Fruits & Vegetables",
+          href: "/marketplace?category=fresh-produce",
+          imageAlt: "Fresh fruits and vegetables arranged in market baskets"
+        },
+        {
+          title: "Grains",
+          href: "/marketplace?search=maize&category=fresh-produce",
+          imageAlt: "Bagged agricultural produce at a supply yard"
+        },
+        {
+          title: "Fertilizer",
+          href: "/marketplace?search=fertilizer&category=farm-inputs",
+          imageAlt: "Packaged fertilizer bags stacked for agricultural supply"
+        },
+        {
+          title: "Livestock",
+          href: "/marketplace?category=livestock",
+          imageAlt: "Cattle gathered on a Ghanaian farm"
+        },
+        {
+          title: "Seeds",
+          href: "/marketplace?search=seed&category=farm-inputs",
+          imageAlt: "Cocoa beans drying on raised trays"
+        }
+      ];
+
+      assert.equal(homepage.includes("<h2>Marketplace</h2>"), true);
+      assert.equal(homepage.includes("Agricultural sourcing made easy"), true);
+      assert.equal(
+        homepage.includes("Need farm-fresh produce? Have a harvest to sell? Supply farm tools? You are in the right place."),
+        true
+      );
+      assert.equal(
+        homepage.includes("Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools—all in one place."),
+        true
+      );
+      assert.equal(homepage.includes("Smart Farming Tools"), true);
+      assert.equal(homepage.includes("AI support for better farming decisions."), false);
+      assert.equal(homepage.includes("Reviewed Profiles"), true);
+      assert.equal(homepage.includes("Public profiles are checked before publication."), false);
+      assert.equal(homepage.includes("Sustainable Practices"), true);
+      assert.equal(homepage.includes("Guidance for responsible, productive farming."), false);
+      assert.equal(homepage.includes("<p>{point.text}</p>"), false);
+      assert.equal(homepage.includes("Verified Network"), false);
+      assert.equal(homepage.includes("From fresh produce to farm supplies, explore current listings in one place."), true);
+      assert.equal(homepage.includes('image: "/images/suppliers/supplier-3.jpg"'), true);
+      assert.equal(homepage.includes("<ShoppingBasket size={18}"), true);
+      assert.equal(homepage.includes('href="/marketplace"'), true);
+      assert.equal(homepage.includes("Browse All Products"), true);
+      assert.equal(homepage.includes('href="/submit-listing"'), true);
+      assert.equal(homepage.includes("Selling produce or farm supplies?"), true);
+      assert.equal(homepage.includes("Listings are reviewed before appearing publicly."), true);
+
+      for (const category of categories) {
+        assert.equal(homepage.includes(`title: "${category.title}"`), true);
+        assert.equal(homepage.includes(`href: "${category.href}"`), true);
+        assert.equal(homepage.includes(`imageAlt: "${category.imageAlt}"`), true);
+      }
+
+      assert.equal(homepage.includes("Browse the Marketplace"), false);
+      assert.equal(homepage.includes("Sell through Ghana Growers"), false);
+      assert.equal(homepage.includes("sellerCard"), false);
+      assert.equal(homepage.includes("marketplaceCard"), false);
+      assert.equal(homepage.includes("productCount"), false);
+      assert.equal(homepage.includes("listingCount"), false);
+      assert.equal(homepageStyles.includes(".marketplacePanel"), true);
+      assert.equal(homepageStyles.includes(".heroCategoryGrid"), true);
+      assert.equal(homepageStyles.includes("grid-template-columns: repeat(6, minmax(0, 1fr))"), true);
+      assert.equal(homepageStyles.includes("grid-column: 2 / span 2"), true);
+      assert.equal(homepageStyles.includes("grid-column: 4 / span 2"), true);
+      assert.equal(homepageStyles.includes("border-radius: 50%"), true);
+      assert.equal(homepageStyles.includes("width: min(100%, 128px)"), true);
+      assert.equal(homepageStyles.includes(".heroTrustGrid"), true);
+      assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
+      assert.equal(homepageStyles.includes('"copy deck"'), true);
+      assert.equal(homepageStyles.includes('"trust deck"'), true);
+      assert.equal(homepageStyles.includes("min-height: 60px"), true);
+      assert.equal(homepageStyles.includes("min-height: 58px"), true);
+      assert.equal(homepageStyles.includes("min-height: 44px"), true);
+      assert.equal(homepageStyles.includes("min-height: 54px"), true);
+      assert.equal(homepageStyles.includes("background: #e8a33a"), true);
+      assert.equal(homepageStyles.includes(".homepage :is(a, button):focus-visible"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(4.5rem, 5.4vw, 5rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3.75rem, 6.2vw, 4.25rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3.75rem, 8vw, 4.25rem)"), true);
+      assert.equal(homepageStyles.includes("font-size: clamp(3rem, 14.5vw, 3.5rem)"), true);
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroCategoryGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[\s\S]*?\.heroCategoryLink:nth-child\(5\)[\s\S]*?grid-column: 1 \/ -1/
+      );
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?"copy"[\s\S]*?"deck"[\s\S]*?"trust"[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding: 32px 0 54px;/
+      );
+      assert.match(
+        homepageStyles,
+        /@media \(max-width: 540px\)[\s\S]*?\.heroTrustGrid\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)[\s\S]*?\.heroTrustGrid li:nth-child\(3\)[\s\S]*?grid-column: 1 \/ -1/
+      );
     }
   },
   {
@@ -1893,6 +2017,129 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes("farmer.email"), false);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+    }
+  },
+  {
+    name: "Approved Ghana Growers identity replaces temporary public shell branding",
+    run: () => {
+      const component = repoFile("src/components/GhanaGrowersLogo.tsx");
+      const header = repoFile("src/components/Header.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const prelaunchShell = repoFile("src/components/PrelaunchShell.tsx");
+      const launchingSoon = repoFile("src/app/launching-soon/page.tsx");
+
+      assert.equal(component.includes("GhanaGrowersLogo"), true);
+      assert.equal(component.includes('alt={decorative ? "" : "Ghana Growers"}'), true);
+      assert.equal(header.includes("GhanaGrowersLogo"), true);
+      assert.equal(header.includes('layout="horizontal" tone="reverse" className="h-10 w-auto sm:h-11 lg:h-[50px]"'), true);
+      assert.equal(header.includes("min-h-[62px]"), true);
+      assert.equal(header.includes("lg:min-h-[70px]"), true);
+      assert.equal(footer.includes("GhanaGrowersLogo"), true);
+      assert.equal(prelaunchShell.includes("GhanaGrowersLogo"), true);
+      assert.equal(launchingSoon.includes('layout="stacked"'), true);
+      assert.equal(header.includes("Sprout"), false);
+      assert.equal(footer.includes("Sprout"), false);
+      assert.equal(prelaunchShell.includes("Sprout"), false);
+    }
+  },
+  {
+    name: "Public header preserves ordered navigation, accessible active states, and mobile controls",
+    run: () => {
+      const header = repoFile("src/components/Header.tsx");
+      const navigation = repoFile("src/data/site.ts");
+      const buyIndex = navigation.indexOf('title: "Buy"');
+      const sellIndex = navigation.indexOf('title: "Sell"');
+      const directoryIndex = navigation.indexOf('title: "Directory"');
+      const farmMateIndex = navigation.indexOf('title: "GG FarmMate"');
+      const learnIndex = navigation.indexOf('title: "Learn"');
+
+      assert.equal(buyIndex < sellIndex && sellIndex < directoryIndex && directoryIndex < farmMateIndex && farmMateIndex < learnIndex, true);
+      assert.equal(header.includes('aria-label="Main navigation"'), true);
+      assert.equal(header.includes('aria-current={isActive(item.href) ? "page" : undefined}'), true);
+      assert.equal(header.includes("after:bg-earth-500"), true);
+      assert.equal(header.includes("bg-earth-100 text-leaf-900 ring-1"), false);
+      assert.equal(header.includes('aria-controls="mobile-navigation"'), true);
+      assert.equal(header.includes('aria-expanded={open}'), true);
+      assert.equal(header.includes('event.key === "Escape"'), true);
+      assert.equal(header.includes("closeMenu({ restoreFocus: true })"), true);
+      assert.equal(header.includes("w-[calc(100%-30px)] max-w-[1240px]"), true);
+      assert.equal(header.includes("sm:w-[calc(100%-48px)]"), true);
+      assert.equal(header.indexOf("{navigation.map((item) => (") < header.lastIndexOf("Join the Network"), true);
+    }
+  },
+  {
+    name: "Approved identity assets preserve the people-and-G construction and word hierarchy",
+    run: () => {
+      const primary = repoFile("public/brand/ghana-growers-logo-primary.svg");
+      const horizontal = repoFile("public/brand/ghana-growers-logo-horizontal.svg");
+      const icon = repoFile("public/brand/ghana-growers-icon.svg");
+      const requiredAssets = [
+        "public/brand/ghana-growers-logo-primary.svg",
+        "public/brand/ghana-growers-logo-horizontal.svg",
+        "public/brand/ghana-growers-logo-reverse.svg",
+        "public/brand/ghana-growers-logo-stacked.svg",
+        "public/brand/ghana-growers-icon.svg",
+        "public/brand/ghana-growers-icon-reverse.svg",
+        "public/brand/ghana-growers-logo-monochrome.svg",
+        "public/favicon.svg",
+        "public/icons/favicon-16x16.png",
+        "public/icons/favicon-32x32.png",
+        "public/icons/icon-48x48.png",
+        "public/icons/apple-touch-icon.png",
+        "public/icons/icon-192.png",
+        "public/icons/icon-512.png",
+        "public/icons/icon-maskable-512.png",
+        "public/images/ghana-growers-social.png"
+      ];
+
+      requiredAssets.forEach((asset) => assert.equal(statSync(join(process.cwd(), asset)).size > 0, true, asset));
+      [primary, horizontal, icon].forEach((asset) => {
+        assert.equal(asset.includes("#143A1F"), true);
+        assert.equal(asset.includes("#4C6B36"), true);
+        assert.equal(asset.includes("#E8A33A"), true);
+        assert.equal(asset.includes("linearGradient"), false);
+        assert.equal(asset.includes("<script"), false);
+        assert.equal(asset.toLowerCase().includes("leaf"), false);
+      });
+      assert.equal(primary.includes(">GHANA<"), true);
+      assert.equal(primary.includes(">GROWERS<"), true);
+      assert.equal(primary.includes('font-size="64"'), true);
+      assert.equal(primary.includes('font-size="112"'), true);
+      assert.equal(primary.includes("Buy. Sell. Grow."), false);
+      assert.equal(horizontal.includes('font-size="42"'), true);
+      assert.equal(horizontal.includes('font-size="88"'), true);
+    }
+  },
+  {
+    name: "Manifest and social metadata use approved launch identity assets",
+    run: () => {
+      const manifest = JSON.parse(repoFile("public/manifest.json")) as {
+        background_color?: string;
+        icons?: Array<{ purpose?: string; sizes?: string; src?: string }>;
+        theme_color?: string;
+      };
+      const layout = repoFile("src/app/layout.tsx");
+      const seo = repoFile("src/lib/seo.ts");
+      const homepage = repoFile("src/app/page.tsx");
+      const middleware = repoFile("src/middleware.ts");
+
+      assert.equal(manifest.background_color, "#F7F3E8");
+      assert.equal(manifest.theme_color, "#143A1F");
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-192.png" && icon.sizes === "192x192"), true);
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-512.png" && icon.sizes === "512x512"), true);
+      assert.equal(manifest.icons?.some((icon) => icon.src === "/icons/icon-maskable-512.png" && icon.purpose === "maskable"), true);
+      assert.equal(layout.includes("/favicon.svg"), true);
+      assert.equal(layout.includes("/icons/apple-touch-icon.png"), true);
+      assert.equal(layout.includes("width: 1200"), true);
+      assert.equal(layout.includes("height: 630"), true);
+      assert.equal(seo.includes('defaultOgImage = "/images/ghana-growers-social.png"'), true);
+      assert.equal(homepage.includes("Buy."), true);
+      assert.equal(homepage.includes("Sell."), true);
+      assert.equal(homepage.includes("Grow."), true);
+      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+      assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);
+      assert.equal(middleware.includes('pathname === "/favicon.svg"'), true);
     }
   },
   {
