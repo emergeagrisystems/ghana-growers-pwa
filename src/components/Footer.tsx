@@ -35,7 +35,7 @@ export function Footer() {
             <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-12 w-auto sm:h-14" />
           </Link>
           <p className="brand-body mt-3 text-sm leading-6">
-            Connecting farmers, suppliers and buyers across Ghana.
+            Connecting farmers, buyers and agricultural suppliers through reviewed profiles, listings and sourcing requests.
           </p>
         </div>
 

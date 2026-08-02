@@ -102,12 +102,9 @@ export function SupplierDirectory({ suppliers, initialSearch = "" }: SupplierDir
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-md border border-leaf-900/10 bg-white p-6 text-center shadow-sm sm:p-8">
             <p className="gg-eyebrow">Supplier Directory</p>
-            <h2 className="mt-3 text-2xl font-black text-ink sm:text-3xl">Supplier profiles are coming soon</h2>
+            <h2 className="mt-3 text-2xl font-black text-ink sm:text-3xl">Agricultural supplier profiles are coming soon.</h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-ink/65 sm:text-base sm:leading-7">
-              Ghana Growers is currently reviewing agricultural suppliers before publishing their profiles.
-            </p>
-            <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-leaf-700">
-              Supplier profiles are published only after review.
+              Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support. Approved public profiles will appear here as they become available.
             </p>
             <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/become-a-supplier" className="gg-button-primary">

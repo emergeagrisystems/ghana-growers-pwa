@@ -66,8 +66,19 @@ export function dedupePublicLocationParts(...values: Array<string | undefined | 
   return parts;
 }
 
+function removeRepeatedDistrictSuffix(publicLocation: string, district: string) {
+  if (!publicLocation || !district) {
+    return publicLocation;
+  }
+
+  const suffix = new RegExp(`(?:\\s*[-,/]\\s*|\\s+)${escapeRegExp(district)}$`, "i");
+  const withoutDistrict = publicLocation.replace(suffix, "").replace(/[\s,/-]+$/g, "").trim();
+
+  return withoutDistrict || publicLocation;
+}
+
 export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district" | "region" | "publicLocation">) {
-  const publicLocation = cleanFarmerProfileLabel(farmer.publicLocation ?? "");
+  let publicLocation = cleanFarmerProfileLabel(farmer.publicLocation ?? "");
   const region = cleanFarmerProfileLabel(farmer.region);
   let district = cleanFarmerProfileLabel(farmer.district);
 
@@ -80,8 +91,12 @@ export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district"
       .trim();
   }
 
+  const locationWithRepeatedDistrict = publicLocation;
+  publicLocation = removeRepeatedDistrictSuffix(publicLocation, district);
+  const districtWasRemovedFromLocation = publicLocation !== locationWithRepeatedDistrict;
+
   if (publicLocation && ![district, region].some((value) => value.toLowerCase() === publicLocation.toLowerCase())) {
-    return dedupePublicLocationParts(publicLocation, district, region).join(", ");
+    return dedupePublicLocationParts(publicLocation, districtWasRemovedFromLocation ? null : district, region).join(", ");
   }
 
   if (!district) {

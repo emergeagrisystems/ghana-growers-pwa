@@ -34,11 +34,11 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
     <>
       <PageHero
         eyebrow="Supplier Directory"
-        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Supplier Profiles Are Coming Soon"}
+        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Agricultural supplier profiles are coming soon."}
         variant="compact"
         description={hasPublicSuppliers
           ? "Browse approved public supplier profiles and find agricultural products and services."
-          : "Connect with suppliers as approved profiles become available. Supplier applications remain open while the directory is prepared."}
+          : "Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support. Approved public profiles will appear here as they become available."}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/become-a-supplier">Become a Supplier</ButtonLink>
