@@ -1867,6 +1867,23 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes("Grow."), true);
       assert.equal(homepage.includes('href="/marketplace"'), true);
       assert.equal(homepage.includes('href="/submit-listing"'), true);
+      assert.equal(homepage.includes("CHOOSE YOUR PATH"), true);
+      assert.equal(homepage.includes("What brings you here?"), true);
+      assert.equal(homepage.includes("Need farm-fresh produce?"), true);
+      assert.equal(homepage.includes("Browse current listings or tell Ghana Growers what you need."), true);
+      assert.equal(homepage.includes('action: "Browse Products"'), true);
+      assert.equal(homepage.includes("Have a harvest to sell?"), true);
+      assert.equal(homepage.includes("Submit your produce for review and make it easier for buyers to find you."), true);
+      assert.equal(homepage.includes('action: "Sell Your Harvest"'), true);
+      assert.equal(homepage.includes("Supply farm inputs or tools?"), true);
+      assert.equal(homepage.includes("Apply to join the network and present your agricultural products for review."), true);
+      assert.equal(homepage.includes('action: "Join as a Supplier"'), true);
+      assert.equal(homepage.includes('href: "/become-a-supplier"'), true);
+      assert.equal(homepage.includes("Start with what brings you here."), false);
+      assert.equal(homepage.includes('title: "For buyers"'), false);
+      assert.equal(homepageStyles.includes(".roleGrid article:focus-within"), true);
+      assert.equal(homepageStyles.includes("grid-template-columns: repeat(3, minmax(0, 1fr))"), true);
+      assert.equal(homepageStyles.includes("min-height: 44px"), true);
       assert.equal(homepage.includes("getFarmersData()"), true);
       assert.equal(homepage.includes("farmerResult.data.slice(0, 3)"), true);
       assert.equal(homepage.includes("Brand Lab"), false);
@@ -1976,7 +1993,7 @@ const tests: TestCase[] = [
       );
       assert.match(
         homepageStyles,
-        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?"copy"[\s\S]*?"deck"[\s\S]*?"trust"[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding-top: 36px;/
+        /@media \(max-width: 540px\)[\s\S]*?\.heroInner\s*\{[\s\S]*?"copy"[\s\S]*?"deck"[\s\S]*?"trust"[\s\S]*?padding: 48px 0 24px;[\s\S]*?\.roleSection\s*\{[\s\S]*?padding: 32px 0 54px;/
       );
       assert.match(
         homepageStyles,

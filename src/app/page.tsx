@@ -115,23 +115,23 @@ const heroTrustPoints = [
 
 const rolePaths = [
   {
-    title: "For buyers",
-    text: "Browse current listings or ask Ghana Growers to help source what you need.",
-    action: "Start buying",
-    href: "/buy",
+    title: "Need farm-fresh produce?",
+    text: "Browse current listings or tell Ghana Growers what you need.",
+    action: "Browse Products",
+    href: "/marketplace",
     icon: ShoppingBasket
   },
   {
-    title: "For farmers",
-    text: "Present your harvest clearly and submit listings for review before publication.",
-    action: "Sell your harvest",
-    href: "/sell",
+    title: "Have a harvest to sell?",
+    text: "Submit your produce for review and make it easier for buyers to find you.",
+    action: "Sell Your Harvest",
+    href: "/submit-listing",
     icon: Sprout
   },
   {
-    title: "For suppliers",
-    text: "Apply to supply farm inputs, equipment or agricultural services through the network.",
-    action: "Supplier information",
+    title: "Supply farm inputs or tools?",
+    text: "Apply to join the network and present your agricultural products for review.",
+    action: "Join as a Supplier",
     href: "/become-a-supplier",
     icon: Store
   }
@@ -242,8 +242,8 @@ export default async function HomePage() {
       <section className={styles.roleSection} aria-labelledby="role-paths-title">
         <div className={styles.sectionShell}>
           <div className={styles.sectionIntro}>
-            <p className={styles.eyebrow}>Choose your path</p>
-            <h2 id="role-paths-title">Start with what brings you here.</h2>
+            <p className={styles.eyebrow}>CHOOSE YOUR PATH</p>
+            <h2 id="role-paths-title">What brings you here?</h2>
           </div>
           <div className={styles.roleGrid}>
             {rolePaths.map(({ icon: Icon, ...path }) => (
