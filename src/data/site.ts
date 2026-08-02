@@ -14,12 +14,12 @@ export const siteConfig = {
 export const WHATSAPP_NUMBER = "233000000000";
 
 export const navigation: NavigationItem[] = [
+  { title: "Buy", href: "/buy" },
+  { title: "Sell", href: "/sell" },
+  { title: "Directory", href: "/directory" },
   {
     title: "GG FarmMate",
     href: "/farmer-hub"
   },
-  { title: "Buy", href: "/buy" },
-  { title: "Sell", href: "/sell" },
-  { title: "Directory", href: "/directory" },
   { title: "Learn", href: "/learn" },
 ];

@@ -2031,14 +2031,40 @@ const tests: TestCase[] = [
       assert.equal(component.includes("GhanaGrowersLogo"), true);
       assert.equal(component.includes('alt={decorative ? "" : "Ghana Growers"}'), true);
       assert.equal(header.includes("GhanaGrowersLogo"), true);
-      assert.equal(header.includes('layout="horizontal" tone="reverse" className="h-10 w-auto"'), true);
-      assert.equal(header.includes("py-1.5 pr-14 sm:px-6 sm:py-2"), true);
+      assert.equal(header.includes('layout="horizontal" tone="reverse" className="h-10 w-auto sm:h-11 lg:h-[50px]"'), true);
+      assert.equal(header.includes("min-h-[62px]"), true);
+      assert.equal(header.includes("lg:min-h-[70px]"), true);
       assert.equal(footer.includes("GhanaGrowersLogo"), true);
       assert.equal(prelaunchShell.includes("GhanaGrowersLogo"), true);
       assert.equal(launchingSoon.includes('layout="stacked"'), true);
       assert.equal(header.includes("Sprout"), false);
       assert.equal(footer.includes("Sprout"), false);
       assert.equal(prelaunchShell.includes("Sprout"), false);
+    }
+  },
+  {
+    name: "Public header preserves ordered navigation, accessible active states, and mobile controls",
+    run: () => {
+      const header = repoFile("src/components/Header.tsx");
+      const navigation = repoFile("src/data/site.ts");
+      const buyIndex = navigation.indexOf('title: "Buy"');
+      const sellIndex = navigation.indexOf('title: "Sell"');
+      const directoryIndex = navigation.indexOf('title: "Directory"');
+      const farmMateIndex = navigation.indexOf('title: "GG FarmMate"');
+      const learnIndex = navigation.indexOf('title: "Learn"');
+
+      assert.equal(buyIndex < sellIndex && sellIndex < directoryIndex && directoryIndex < farmMateIndex && farmMateIndex < learnIndex, true);
+      assert.equal(header.includes('aria-label="Main navigation"'), true);
+      assert.equal(header.includes('aria-current={isActive(item.href) ? "page" : undefined}'), true);
+      assert.equal(header.includes("after:bg-earth-500"), true);
+      assert.equal(header.includes("bg-earth-100 text-leaf-900 ring-1"), false);
+      assert.equal(header.includes('aria-controls="mobile-navigation"'), true);
+      assert.equal(header.includes('aria-expanded={open}'), true);
+      assert.equal(header.includes('event.key === "Escape"'), true);
+      assert.equal(header.includes("closeMenu({ restoreFocus: true })"), true);
+      assert.equal(header.includes("w-[calc(100%-30px)] max-w-[1240px]"), true);
+      assert.equal(header.includes("sm:w-[calc(100%-48px)]"), true);
+      assert.equal(header.indexOf("{navigation.map((item) => (") < header.lastIndexOf("Join the Network"), true);
     }
   },
   {

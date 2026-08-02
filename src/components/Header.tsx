@@ -107,19 +107,24 @@ function FullHeader() {
 
   return (
     <header className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
-      <nav className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-3 py-1.5 pr-14 sm:px-6 sm:py-2 sm:pr-16 lg:px-8 lg:py-2.5">
+      <nav
+        aria-label="Main navigation"
+        className="relative mx-auto flex min-h-[62px] w-[calc(100%-30px)] max-w-[1240px] items-center justify-between gap-3 pr-14 sm:min-h-16 sm:w-[calc(100%-48px)] sm:pr-16 lg:min-h-[70px] lg:pr-0"
+      >
         <Link href="/" className="focus-ring flex max-w-[calc(100vw-4.5rem)] min-w-0 items-center rounded-md">
-          <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-10 w-auto" priority />
+          <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-10 w-auto sm:h-11 lg:h-[50px]" priority />
         </Link>
 
-        <div className="hidden items-center gap-1.5 lg:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {navigation.map((item) => (
             <div key={item.href} className="group relative">
               <Link
                 href={item.href}
                 aria-current={isActive(item.href) ? "page" : undefined}
-                className={`focus-ring inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-bold transition duration-200 hover:bg-earth-50/10 hover:text-earth-50 ${
-                  isActive(item.href) ? "bg-earth-100 text-leaf-900 ring-1 ring-earth-50/30 hover:bg-earth-100 hover:text-leaf-900" : "text-earth-100"
+                className={`focus-ring relative inline-flex min-h-10 items-center gap-1 rounded-sm px-2.5 py-2 text-sm font-bold text-earth-100 transition duration-200 hover:bg-earth-50/[0.06] hover:text-earth-50 ${
+                  isActive(item.href)
+                    ? "after:absolute after:bottom-0 after:left-2.5 after:right-2.5 after:h-0.5 after:rounded-full after:bg-earth-500"
+                    : ""
                 }`}
               >
                 {item.title}
@@ -145,7 +150,7 @@ function FullHeader() {
         <div className="hidden items-center gap-2 lg:flex">
           <Link
             href="/join"
-            className="gg-button-primary min-h-10 px-5 py-2"
+            className="gg-button-primary min-h-11 px-5 py-2"
           >
             Join the Network
           </Link>
@@ -158,23 +163,25 @@ function FullHeader() {
           aria-expanded={open}
           aria-controls="mobile-navigation"
           onClick={() => setOpen((value) => !value)}
-          className="focus-ring absolute right-3 top-1/2 grid h-11 w-11 shrink-0 -translate-y-1/2 place-items-center rounded-md border border-earth-100/20 bg-earth-50/[0.08] text-earth-50 transition hover:bg-earth-50/[0.14] sm:right-6 lg:hidden"
+          className="focus-ring absolute right-0 top-1/2 grid h-11 w-11 shrink-0 -translate-y-1/2 place-items-center rounded-md border border-earth-100/20 bg-earth-50/[0.08] text-earth-50 transition hover:bg-earth-50/[0.14] lg:hidden"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </nav>
 
       {open ? (
-        <div id="mobile-navigation" className="max-h-[calc(100dvh-60px)] overflow-y-auto border-t border-earth-100/15 bg-leaf-900 px-4 py-3 lg:hidden">
-          <div className="mx-auto grid max-w-7xl gap-2">
+        <div id="mobile-navigation" className="max-h-[calc(100dvh-62px)] overflow-y-auto border-t border-earth-100/15 bg-leaf-900 py-3 lg:hidden">
+          <div className="mx-auto grid w-[calc(100%-30px)] max-w-[1240px] gap-2 sm:w-[calc(100%-48px)]">
             {navigation.map((item) => (
               <div key={item.href}>
                 <Link
                   href={item.href}
                   onClick={() => closeMenu({ restoreFocus: true })}
                   aria-current={isActive(item.href) ? "page" : undefined}
-                  className={`focus-ring block min-h-11 rounded-md px-3 py-2.5 font-bold transition hover:bg-earth-50/10 ${
-                    isActive(item.href) ? "bg-earth-100 text-leaf-900 ring-1 ring-earth-50/30 hover:bg-earth-100 hover:text-leaf-900" : "text-earth-100"
+                  className={`focus-ring relative block min-h-11 rounded-sm px-3 py-2.5 font-bold text-earth-100 transition hover:bg-earth-50/[0.06] hover:text-earth-50 ${
+                    isActive(item.href)
+                      ? "after:absolute after:bottom-1.5 after:left-3 after:right-3 after:h-0.5 after:rounded-full after:bg-earth-500"
+                      : ""
                   }`}
                 >
                   {item.title}
