@@ -110,22 +110,22 @@ const rolePaths = [
 const howItWorks = [
   {
     title: "Explore",
-    text: "Browse public listings, farmer profiles and practical tools.",
+    text: "Browse listings, farmer profiles and practical farming tools.",
     icon: ScanSearch
   },
   {
-    title: "Submit a request",
+    title: "Send a request",
     text: "Tell Ghana Growers what you want to buy, sell or source.",
     icon: MessageCircleQuestion
   },
   {
-    title: "We review",
-    text: "We review the request and the available public information.",
+    title: "We check the details",
+    text: "We check the request and the available information.",
     icon: BadgeCheck
   },
   {
-    title: "Decide whether to connect",
-    text: "Where there is a suitable fit, both parties decide whether to continue.",
+    title: "Decide to connect",
+    text: "If there is a suitable fit, both sides decide whether to continue.",
     icon: Handshake
   }
 ];
@@ -347,7 +347,7 @@ export default async function HomePage() {
         <div className={styles.sectionShell}>
           <div className={styles.sectionIntro}>
             <p className={styles.eyebrow}>How Ghana Growers works</p>
-            <h2 id="how-it-works-title">Clear steps. Human review. Better connections.</h2>
+            <h2 id="how-it-works-title">Four simple steps.</h2>
           </div>
           <ol className={styles.steps}>
             {howItWorks.map(({ icon: Icon, ...step }, index) => (

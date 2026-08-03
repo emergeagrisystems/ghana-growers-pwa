@@ -2034,6 +2034,7 @@ const tests: TestCase[] = [
       const footer = repoFile("src/components/Footer.tsx");
       const supplierPage = repoFile("src/app/supplier-directory/page.tsx");
       const supplierDirectory = repoFile("src/components/SupplierDirectory.tsx");
+      const marketplacePage = repoFile("src/app/marketplace/page.tsx");
       const middleware = repoFile("src/middleware.ts");
       const adminPage = repoFile("src/app/admin/page.tsx");
 
@@ -2053,12 +2054,14 @@ const tests: TestCase[] = [
       assert.equal(homepage.includes('href="/farmer-hub"'), true);
       assert.equal(homepage.includes('href="/learn"'), true);
       assert.equal(homepage.includes("Market Prices"), false);
+      assert.equal(homepage.includes("Four simple steps."), true);
+      assert.equal(homepage.includes("Human review"), false);
 
       const approvedSteps = [
-        ["Explore", "Browse public listings, farmer profiles and practical tools."],
-        ["Submit a request", "Tell Ghana Growers what you want to buy, sell or source."],
-        ["We review", "We review the request and the available public information."],
-        ["Decide whether to connect", "Where there is a suitable fit, both parties decide whether to continue."]
+        ["Explore", "Browse listings, farmer profiles and practical farming tools."],
+        ["Send a request", "Tell Ghana Growers what you want to buy, sell or source."],
+        ["We check the details", "We check the request and the available information."],
+        ["Decide to connect", "If there is a suitable fit, both sides decide whether to continue."]
       ];
       approvedSteps.forEach(([title, text]) => {
         assert.equal(homepage.includes(`title: "${title}"`), true);
@@ -2081,11 +2084,20 @@ const tests: TestCase[] = [
       );
 
       const supplierHeading = "Agricultural supplier profiles are coming soon.";
-      const supplierCopy = "Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support. Approved public profiles will appear here as they become available.";
-      assert.equal(supplierPage.includes(supplierHeading), true);
-      assert.equal(supplierDirectory.includes(supplierHeading), true);
+      const supplierCopy = "Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support.";
+      const supplierEmptyHeading = "No public supplier profiles yet.";
+      const supplierEmptyCopy = "Approved profiles will appear here as they become available.";
+      assert.equal((supplierPage.match(/Agricultural supplier profiles are coming soon\./g) ?? []).length, 1);
       assert.equal(supplierPage.includes(supplierCopy), true);
-      assert.equal(supplierDirectory.includes(supplierCopy), true);
+      assert.equal(supplierPage.includes("Join as a Supplier"), true);
+      assert.equal(supplierDirectory.includes(supplierHeading), false);
+      assert.equal(supplierDirectory.includes(supplierCopy), false);
+      assert.equal(supplierDirectory.includes(supplierEmptyHeading), true);
+      assert.equal(supplierDirectory.includes(supplierEmptyCopy), true);
+
+      const marketplaceIntroduction = "Browse current listings for farm produce, livestock, farm inputs, tools and equipment. Availability, quantities, prices and delivery are confirmed during follow-up.";
+      assert.equal(marketplacePage.includes(marketplaceIntroduction), true);
+      assert.equal(marketplacePage.includes("from farmers and suppliers across Ghana"), false);
 
       ["Fruits & Vegetables", "Grains", "Fertilizer", "Livestock", "Seeds"].forEach((category) => {
         assert.equal(homepage.includes(`title: "${category}"`), true);
@@ -2252,12 +2264,14 @@ const tests: TestCase[] = [
   {
     name: "Supplier and public error states use honest nontechnical language",
     run: () => {
-      const supplierDirectory = repoFile("src/app/supplier-directory/page.tsx");
+      const supplierPage = repoFile("src/app/supplier-directory/page.tsx");
+      const supplierDirectory = repoFile("src/components/SupplierDirectory.tsx");
       const notFound = repoFile("src/app/not-found.tsx");
       const publicError = repoFile("src/app/error.tsx");
 
-      assert.equal(supplierDirectory.includes("Agricultural supplier profiles are coming soon."), true);
-      assert.equal(supplierDirectory.includes("Approved public profiles will appear here as they become available."), true);
+      assert.equal(supplierPage.includes("Agricultural supplier profiles are coming soon."), true);
+      assert.equal(supplierDirectory.includes("No public supplier profiles yet."), true);
+      assert.equal(supplierDirectory.includes("Approved profiles will appear here as they become available."), true);
       assert.equal(notFound.includes("This page could not be found."), true);
       assert.equal(publicError.includes("We could not load this page."), true);
       assert.equal(publicError.includes("stack"), false);

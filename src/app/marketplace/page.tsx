@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Marketplace",
   description:
-    "Browse reviewed farm produce, livestock, inputs, and tools from farmers and suppliers across Ghana.",
+    "Browse current listings for farm produce, livestock, farm inputs, tools and equipment. Availability, quantities, prices and delivery are confirmed during follow-up.",
   path: "/marketplace"
 });
 
@@ -85,7 +85,7 @@ export default async function MarketplacePage() {
                 Ghana Growers Marketplace
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-                Browse reviewed farm produce, livestock, inputs, and tools from farmers and suppliers across Ghana.
+                Browse current listings for farm produce, livestock, farm inputs, tools and equipment. Availability, quantities, prices and delivery are confirmed during follow-up.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:flex-col lg:items-stretch lg:justify-end">
