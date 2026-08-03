@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
-  Beef,
   BookOpen,
   Bot,
   Check,
@@ -10,13 +9,11 @@ import {
   HeartHandshake,
   Leaf,
   MessageCircleQuestion,
-  PackageOpen,
   ScanSearch,
   ShieldCheck,
   ShoppingBasket,
   Sprout,
-  Store,
-  Wrench
+  Store
 } from "lucide-react";
 import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
@@ -37,33 +34,6 @@ export const metadata = createPageMetadata({
     "Buy farm produce, sell harvests and agricultural supplies, and use practical farming tools through Ghana Growers.",
   path: "/"
 });
-
-const marketplaceRoutes = [
-  {
-    title: "Fresh Produce",
-    summary: "Vegetables, fruits, grains, legumes, roots and more.",
-    href: "/marketplace?category=fresh-produce",
-    icon: ShoppingBasket
-  },
-  {
-    title: "Farm Inputs",
-    summary: "Seeds, soil inputs, crop care and farm supplies.",
-    href: "/marketplace?category=farm-inputs",
-    icon: PackageOpen
-  },
-  {
-    title: "Livestock",
-    summary: "Browse the livestock listings currently available.",
-    href: "/marketplace?category=livestock",
-    icon: Beef
-  },
-  {
-    title: "Tools & Equipment",
-    summary: "Practical tools and equipment for farm work.",
-    href: "/marketplace?category=tools-equipment",
-    icon: Wrench
-  }
-];
 
 const heroMarketplaceCategories = [
   {
@@ -139,23 +109,23 @@ const rolePaths = [
 
 const howItWorks = [
   {
-    title: "Discover",
-    text: "Browse public listings, farmer profiles and practical tools.",
+    title: "Explore",
+    text: "Browse listings, farmer profiles and practical farming tools.",
     icon: ScanSearch
   },
   {
-    title: "Request",
+    title: "Send a request",
     text: "Tell Ghana Growers what you want to buy, sell or source.",
     icon: MessageCircleQuestion
   },
   {
-    title: "Ghana Growers reviews",
-    text: "The team checks the request and the available public information.",
+    title: "We check the details",
+    text: "We check the request and the available information.",
     icon: BadgeCheck
   },
   {
-    title: "Connect",
-    text: "Relevant parties decide whether to continue the conversation.",
+    title: "Decide to connect",
+    text: "If there is a suitable fit, both sides decide whether to continue.",
     icon: Handshake
   }
 ];
@@ -258,27 +228,18 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className={styles.marketBand} aria-labelledby="marketplace-routes-title">
-        <div className={styles.marketBandInner}>
-          <div className={styles.marketBandCopy}>
-            <p className={styles.eyebrow}>Marketplace</p>
-            <h2 id="marketplace-routes-title">Four clear routes into agricultural trade.</h2>
-            <p>Browse current listings, review the available details and request support when the right supply is not yet listed.</p>
-            <Link href="/submit-buyer-request" className={styles.lightTextLink}>
+      <section className={styles.sourcingSection} aria-labelledby="sourcing-support-title">
+        <div className={styles.sourcingInner}>
+          <div className={styles.sourcingCopy}>
+            <p className={styles.eyebrow}>SOURCING SUPPORT</p>
+            <h2 id="sourcing-support-title">Can&apos;t find what you need?</h2>
+            <p>Tell Ghana Growers what produce or agricultural supply you are looking for. We will review your request and follow up where a suitable option may be available.</p>
+          </div>
+          <div className={styles.sourcingAction}>
+            <Link href="/submit-buyer-request" className={styles.amberButton}>
               Submit a sourcing request <ArrowRight size={16} aria-hidden="true" />
             </Link>
-          </div>
-          <div className={styles.marketRouteGrid}>
-            {marketplaceRoutes.map(({ icon: Icon, ...route }) => (
-              <Link href={route.href} key={route.title} className={styles.marketRoute}>
-                <span><Icon size={23} aria-hidden="true" /></span>
-                <div>
-                  <h3>{route.title}</h3>
-                  <p>{route.summary}</p>
-                </div>
-                <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-            ))}
+            <small>Submitting a request does not guarantee availability.</small>
           </div>
         </div>
       </section>
@@ -292,7 +253,7 @@ export default async function HomePage() {
               <div className={styles.sectionIntro}>
                 <p className={styles.eyebrow}>Farmer Directory</p>
                 <h2 id="homepage-farmers-title">Meet farmers on Ghana Growers.</h2>
-                <p>Only public profiles that meet Ghana Growers&apos; eligibility rules appear here.</p>
+                <p>Explore farmers currently published on Ghana Growers, including their locations and products.</p>
               </div>
               <Link href="/farmer-directory" className={styles.outlineButton}>
                 View Farmer Directory <ArrowRight size={16} aria-hidden="true" />
@@ -348,8 +309,8 @@ export default async function HomePage() {
         <div className={styles.farmMatePanel}>
           <div className={styles.farmMateIntro}>
             <p className={styles.eyebrow}>GG FarmMate</p>
-            <h2 id="farmmate-title">Practical decisions, closer to the field.</h2>
-            <p>Check conditions, inspect crop concerns and ask practical farming questions in one focused place.</p>
+            <h2 id="farmmate-title">Practical farming help, in one place.</h2>
+            <p>Check field conditions, review crop concerns and ask everyday farming questions with GG FarmMate.</p>
             <Link href="/farmer-hub" className={styles.amberButton}>
               Open GG FarmMate <ArrowRight size={17} aria-hidden="true" />
             </Link>
@@ -386,7 +347,7 @@ export default async function HomePage() {
         <div className={styles.sectionShell}>
           <div className={styles.sectionIntro}>
             <p className={styles.eyebrow}>How Ghana Growers works</p>
-            <h2 id="how-it-works-title">Clear steps. Human review. Better connections.</h2>
+            <h2 id="how-it-works-title">Four simple steps.</h2>
           </div>
           <ol className={styles.steps}>
             {howItWorks.map(({ icon: Icon, ...step }, index) => (
@@ -414,12 +375,12 @@ export default async function HomePage() {
         </div>
         <div className={styles.trustCopy}>
           <p className={styles.eyebrow}>Trust through review</p>
-          <h2 id="trust-title">Useful public information, reviewed with care.</h2>
-          <p>Ghana Growers separates public profile information from private contact details and reviews requests before making introductions.</p>
+          <h2 id="trust-title">Public information, reviewed with care.</h2>
+          <p>Ghana Growers keeps public profile information separate from private contact details and reviews requests before supporting an introduction.</p>
           <ul>
-            <li><ShieldCheck size={19} aria-hidden="true" /><span>Public profiles follow clear eligibility rules.</span></li>
-            <li><HeartHandshake size={19} aria-hidden="true" /><span>Private contacts are not displayed automatically.</span></li>
-            <li><Check size={19} aria-hidden="true" /><span>Verification signals appear only where confirmed.</span></li>
+            <li><ShieldCheck size={19} aria-hidden="true" /><span>Public profiles are reviewed before they appear.</span></li>
+            <li><HeartHandshake size={19} aria-hidden="true" /><span>Private contact details are not shown publicly.</span></li>
+            <li><Check size={19} aria-hidden="true" /><span>Verification badges appear only when confirmed.</span></li>
           </ul>
           <Link href="/about">Learn about Ghana Growers <ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
@@ -427,8 +388,8 @@ export default async function HomePage() {
 
       <section className={styles.finalCta} aria-labelledby="join-network-title">
         <p className={styles.eyebrow}>Built for local agriculture</p>
-        <h2 id="join-network-title">Build useful agricultural connections across Ghana.</h2>
-        <p>Join as a buyer or supplier, or learn how farmers can prepare for the network while applications are being improved.</p>
+        <h2 id="join-network-title">Build better agricultural connections in Ghana.</h2>
+        <p>Buyers can explore listings or submit a sourcing request. Farmers can present products for review, and suppliers can apply to join the network.</p>
         <div>
           <Link href="/join" className={styles.amberButton}>Join the Network <ArrowRight size={17} aria-hidden="true" /></Link>
           <Link href="/contact" className={styles.darkOutlineButton}>Contact Ghana Growers</Link>

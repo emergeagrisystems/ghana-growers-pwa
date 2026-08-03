@@ -6,7 +6,7 @@ import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
 import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 const quickLinks = [
-  { title: "Buy", href: "/buy" },
+  { title: "Buy", href: "/marketplace" },
   { title: "Sell", href: "/sell" },
   { title: "Directory", href: "/directory" },
   { title: "GG FarmMate", href: "/farmer-hub" },
@@ -35,7 +35,7 @@ export function Footer() {
             <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-12 w-auto sm:h-14" />
           </Link>
           <p className="brand-body mt-3 text-sm leading-6">
-            Connecting farmers, suppliers and buyers across Ghana.
+            Connecting farmers, buyers and agricultural suppliers through reviewed profiles, listings and sourcing requests.
           </p>
         </div>
 

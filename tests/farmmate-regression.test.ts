@@ -1837,7 +1837,15 @@ const tests: TestCase[] = [
           district: "Pru West District",
           region: "Bono East"
         }),
-        "Zabrama-Pru West District, Bono East"
+        "Zabrama, Bono East"
+      );
+      assert.equal(
+        cleanFarmerLocation({
+          publicLocation: "Klo-Agogo",
+          district: "Yilo Krobo Municipality",
+          region: "Eastern Region"
+        }),
+        "Klo-Agogo, Yilo Krobo Municipality, Eastern Region"
       );
       assert.equal(cleanFarmerProfileLabel("Maise"), "Maize");
       assert.equal(cleanFarmerProfileLabel("Aquaculture And Poultry"), "Aquaculture & Poultry");
@@ -2020,6 +2028,86 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Homepage launch copy stays concise, honest, and connected to existing routes",
+    run: () => {
+      const homepage = repoFile("src/app/page.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const supplierPage = repoFile("src/app/supplier-directory/page.tsx");
+      const supplierDirectory = repoFile("src/components/SupplierDirectory.tsx");
+      const marketplacePage = repoFile("src/app/marketplace/page.tsx");
+      const middleware = repoFile("src/middleware.ts");
+      const adminPage = repoFile("src/app/admin/page.tsx");
+
+      assert.equal(homepage.includes("Four clear routes into agricultural trade."), false);
+      assert.equal(homepage.includes("marketplaceRoutes"), false);
+      assert.equal(homepage.includes("SOURCING SUPPORT"), true);
+      assert.equal(homepage.includes("Can&apos;t find what you need?"), true);
+      assert.equal(
+        homepage.includes("Tell Ghana Growers what produce or agricultural supply you are looking for. We will review your request and follow up where a suitable option may be available."),
+        true
+      );
+      assert.equal(homepage.includes('href="/submit-buyer-request"'), true);
+      assert.equal(homepage.includes("Submitting a request does not guarantee availability."), true);
+      assert.equal(homepage.includes("Explore farmers currently published on Ghana Growers, including their locations and products."), true);
+      assert.equal(homepage.includes("Practical farming help, in one place."), true);
+      assert.equal(homepage.includes("Check field conditions, review crop concerns and ask everyday farming questions with GG FarmMate."), true);
+      assert.equal(homepage.includes('href="/farmer-hub"'), true);
+      assert.equal(homepage.includes('href="/learn"'), true);
+      assert.equal(homepage.includes("Market Prices"), false);
+      assert.equal(homepage.includes("Four simple steps."), true);
+      assert.equal(homepage.includes("Human review"), false);
+
+      const approvedSteps = [
+        ["Explore", "Browse listings, farmer profiles and practical farming tools."],
+        ["Send a request", "Tell Ghana Growers what you want to buy, sell or source."],
+        ["We check the details", "We check the request and the available information."],
+        ["Decide to connect", "If there is a suitable fit, both sides decide whether to continue."]
+      ];
+      approvedSteps.forEach(([title, text]) => {
+        assert.equal(homepage.includes(`title: "${title}"`), true);
+        assert.equal(homepage.includes(`text: "${text}"`), true);
+      });
+
+      assert.equal(homepage.includes("Public information, reviewed with care."), true);
+      assert.equal(homepage.includes("Public profiles are reviewed before they appear."), true);
+      assert.equal(homepage.includes("Private contact details are not shown publicly."), true);
+      assert.equal(homepage.includes("Verification badges appear only when confirmed."), true);
+      assert.equal(homepage.includes("farmer.phone"), false);
+      assert.equal(homepage.includes("farmer.whatsapp"), false);
+      assert.equal(homepage.includes("farmer.email"), false);
+      assert.equal(homepage.includes("Build better agricultural connections in Ghana."), true);
+      assert.equal(homepage.includes('href="/join"'), true);
+      assert.equal(homepage.includes('href="/contact"'), true);
+      assert.equal(
+        footer.includes("Connecting farmers, buyers and agricultural suppliers through reviewed profiles, listings and sourcing requests."),
+        true
+      );
+
+      const supplierHeading = "Agricultural supplier profiles are coming soon.";
+      const supplierCopy = "Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support.";
+      const supplierEmptyHeading = "No public supplier profiles yet.";
+      const supplierEmptyCopy = "Approved profiles will appear here as they become available.";
+      assert.equal((supplierPage.match(/Agricultural supplier profiles are coming soon\./g) ?? []).length, 1);
+      assert.equal(supplierPage.includes(supplierCopy), true);
+      assert.equal(supplierPage.includes("Join as a Supplier"), true);
+      assert.equal(supplierDirectory.includes(supplierHeading), false);
+      assert.equal(supplierDirectory.includes(supplierCopy), false);
+      assert.equal(supplierDirectory.includes(supplierEmptyHeading), true);
+      assert.equal(supplierDirectory.includes(supplierEmptyCopy), true);
+
+      const marketplaceIntroduction = "Browse current listings for farm produce, livestock, farm inputs, tools and equipment. Availability, quantities, prices and delivery are confirmed during follow-up.";
+      assert.equal(marketplacePage.includes(marketplaceIntroduction), true);
+      assert.equal(marketplacePage.includes("from farmers and suppliers across Ghana"), false);
+
+      ["Fruits & Vegetables", "Grains", "Fertilizer", "Livestock", "Seeds"].forEach((category) => {
+        assert.equal(homepage.includes(`title: "${category}"`), true);
+      });
+      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
+      assert.equal(adminPage.includes('redirect("/admin/login")'), true);
+    }
+  },
+  {
     name: "Approved Ghana Growers identity replaces temporary public shell branding",
     run: () => {
       const component = repoFile("src/components/GhanaGrowersLogo.tsx");
@@ -2065,6 +2153,37 @@ const tests: TestCase[] = [
       assert.equal(header.includes("w-[calc(100%-30px)] max-w-[1240px]"), true);
       assert.equal(header.includes("sm:w-[calc(100%-48px)]"), true);
       assert.equal(header.indexOf("{navigation.map((item) => (") < header.lastIndexOf("Join the Network"), true);
+    }
+  },
+  {
+    name: "Buyer navigation uses Marketplace as the canonical public destination",
+    run: () => {
+      const navigation = repoFile("src/data/site.ts");
+      const header = repoFile("src/components/Header.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const legacyBuyPage = repoFile("src/app/buy/page.tsx");
+      const homepage = repoFile("src/app/page.tsx");
+      const marketplace = repoFile("src/app/marketplace/page.tsx");
+
+      assert.equal(navigation.includes('{ title: "Buy", href: "/marketplace" }'), true);
+      assert.equal(navigation.includes('{ title: "Marketplace"'), false);
+      assert.equal((header.match(/\{navigation\.map\(\(item\) => \(/g) ?? []).length, 2);
+      assert.equal(header.includes('if (href === "/marketplace")'), true);
+      assert.equal(header.includes('pathname === "/marketplace" || pathname.startsWith("/marketplace/")'), true);
+      assert.equal(header.includes('aria-current={isActive(item.href) ? "page" : undefined}'), true);
+      assert.equal(footer.includes('{ title: "Buy", href: "/marketplace" }'), true);
+
+      assert.equal(legacyBuyPage.includes('permanentRedirect(`/marketplace${query ? `?${query}` : ""}`)'), true);
+      assert.equal(legacyBuyPage.includes('const supportedMarketplaceParameters = ["search", "category"]'), true);
+      assert.equal(legacyBuyPage.includes("Source Fresh Produce"), false);
+      assert.equal(legacyBuyPage.includes('permanentRedirect("/buy")'), false);
+
+      assert.equal(homepage.includes('href="/marketplace"'), true);
+      assert.equal(homepage.includes("Browse All Products"), true);
+      assert.equal(homepage.includes('action: "Browse Products"'), true);
+      assert.equal(marketplace.includes('href="#marketplace-listings"'), true);
+      assert.equal(marketplace.includes('href="/submit-buyer-request"'), true);
+      assert.equal(marketplace.includes('href="/submit-listing"'), true);
     }
   },
   {
@@ -2145,12 +2264,14 @@ const tests: TestCase[] = [
   {
     name: "Supplier and public error states use honest nontechnical language",
     run: () => {
-      const supplierDirectory = repoFile("src/app/supplier-directory/page.tsx");
+      const supplierPage = repoFile("src/app/supplier-directory/page.tsx");
+      const supplierDirectory = repoFile("src/components/SupplierDirectory.tsx");
       const notFound = repoFile("src/app/not-found.tsx");
       const publicError = repoFile("src/app/error.tsx");
 
-      assert.equal(supplierDirectory.includes("Supplier Profiles Are Coming Soon"), true);
-      assert.equal(supplierDirectory.includes("as approved profiles become available"), true);
+      assert.equal(supplierPage.includes("Agricultural supplier profiles are coming soon."), true);
+      assert.equal(supplierDirectory.includes("No public supplier profiles yet."), true);
+      assert.equal(supplierDirectory.includes("Approved profiles will appear here as they become available."), true);
       assert.equal(notFound.includes("This page could not be found."), true);
       assert.equal(publicError.includes("We could not load this page."), true);
       assert.equal(publicError.includes("stack"), false);

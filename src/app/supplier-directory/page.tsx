@@ -34,17 +34,21 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
     <>
       <PageHero
         eyebrow="Supplier Directory"
-        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Supplier Profiles Are Coming Soon"}
+        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Agricultural supplier profiles are coming soon."}
         variant="compact"
         description={hasPublicSuppliers
           ? "Browse approved public supplier profiles and find agricultural products and services."
-          : "Connect with suppliers as approved profiles become available. Supplier applications remain open while the directory is prepared."}
+          : "Ghana Growers is reviewing suppliers of farm inputs, equipment, packaging and related agricultural support."}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <ButtonLink href="/become-a-supplier">Become a Supplier</ButtonLink>
-          <ButtonLink href="/marketplace?category=farm-inputs" variant="secondary">Browse Farm Inputs</ButtonLink>
-          <ButtonLink href="/farmer-directory" variant="light">Browse Farmer Directory</ButtonLink>
-        </div>
+        {hasPublicSuppliers ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <ButtonLink href="/become-a-supplier">Join as a Supplier</ButtonLink>
+            <ButtonLink href="/marketplace?category=farm-inputs" variant="secondary">Browse Farm Inputs</ButtonLink>
+            <ButtonLink href="/farmer-directory" variant="light">Browse Farmer Directory</ButtonLink>
+          </div>
+        ) : (
+          <ButtonLink href="/become-a-supplier">Join as a Supplier</ButtonLink>
+        )}
       </PageHero>
       {result.status === "unavailable" ? (
         <PublicDataUnavailable kind="supplier" />
