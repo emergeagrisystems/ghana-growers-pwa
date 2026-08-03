@@ -56,8 +56,8 @@ function FullHeader() {
       return pathname === "/farmer-hub" || pathname.startsWith("/farmer-hub/");
     }
 
-    if (href === "/buy") {
-      return pathname === "/buy" || pathname.startsWith("/buy/") || pathname === "/marketplace" || pathname.startsWith("/marketplace/") || pathname.startsWith("/services/buy") || pathname === "/submit-buyer-request";
+    if (href === "/marketplace") {
+      return pathname === "/marketplace" || pathname.startsWith("/marketplace/") || pathname === "/buy" || pathname.startsWith("/services/buy") || pathname === "/submit-buyer-request";
     }
 
     if (href === "/sell") {

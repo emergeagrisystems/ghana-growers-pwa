@@ -2144,6 +2144,37 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Buyer navigation uses Marketplace as the canonical public destination",
+    run: () => {
+      const navigation = repoFile("src/data/site.ts");
+      const header = repoFile("src/components/Header.tsx");
+      const footer = repoFile("src/components/Footer.tsx");
+      const legacyBuyPage = repoFile("src/app/buy/page.tsx");
+      const homepage = repoFile("src/app/page.tsx");
+      const marketplace = repoFile("src/app/marketplace/page.tsx");
+
+      assert.equal(navigation.includes('{ title: "Buy", href: "/marketplace" }'), true);
+      assert.equal(navigation.includes('{ title: "Marketplace"'), false);
+      assert.equal((header.match(/\{navigation\.map\(\(item\) => \(/g) ?? []).length, 2);
+      assert.equal(header.includes('if (href === "/marketplace")'), true);
+      assert.equal(header.includes('pathname === "/marketplace" || pathname.startsWith("/marketplace/")'), true);
+      assert.equal(header.includes('aria-current={isActive(item.href) ? "page" : undefined}'), true);
+      assert.equal(footer.includes('{ title: "Buy", href: "/marketplace" }'), true);
+
+      assert.equal(legacyBuyPage.includes('permanentRedirect(`/marketplace${query ? `?${query}` : ""}`)'), true);
+      assert.equal(legacyBuyPage.includes('const supportedMarketplaceParameters = ["search", "category"]'), true);
+      assert.equal(legacyBuyPage.includes("Source Fresh Produce"), false);
+      assert.equal(legacyBuyPage.includes('permanentRedirect("/buy")'), false);
+
+      assert.equal(homepage.includes('href="/marketplace"'), true);
+      assert.equal(homepage.includes("Browse All Products"), true);
+      assert.equal(homepage.includes('action: "Browse Products"'), true);
+      assert.equal(marketplace.includes('href="#marketplace-listings"'), true);
+      assert.equal(marketplace.includes('href="/submit-buyer-request"'), true);
+      assert.equal(marketplace.includes('href="/submit-listing"'), true);
+    }
+  },
+  {
     name: "Approved identity assets preserve the people-and-G construction and word hierarchy",
     run: () => {
       const primary = repoFile("public/brand/ghana-growers-logo-primary.svg");

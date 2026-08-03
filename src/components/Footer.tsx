@@ -6,7 +6,7 @@ import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
 import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 const quickLinks = [
-  { title: "Buy", href: "/buy" },
+  { title: "Buy", href: "/marketplace" },
   { title: "Sell", href: "/sell" },
   { title: "Directory", href: "/directory" },
   { title: "GG FarmMate", href: "/farmer-hub" },
