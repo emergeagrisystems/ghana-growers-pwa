@@ -977,6 +977,62 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "Sell page presents clear reviewed pathways without duplicate or unavailable journeys",
+    run: () => {
+      const sellPage = repoFile("src/app/sell/page.tsx");
+      const middleware = repoFile("src/middleware.ts");
+      const adminPage = repoFile("src/app/admin/page.tsx");
+
+      assert.equal(sellPage.includes("SELL ON GHANA GROWERS"), true);
+      assert.equal(sellPage.includes("What do you want to sell?"), true);
+      assert.equal(sellPage.includes("Every submission is reviewed before it appears publicly."), true);
+
+      assert.equal(sellPage.includes('title: "Sell Farm Produce"'), true);
+      assert.equal(sellPage.includes('cta: "Submit Produce"'), true);
+      assert.equal(sellPage.includes('title: "List Farm Inputs & Tools"'), true);
+      assert.equal(sellPage.includes('cta: "Submit Farm Inputs"'), true);
+      assert.equal(sellPage.includes('title: "Offer Agricultural Services"'), true);
+      assert.equal(sellPage.includes('cta: "Apply to Offer Services"'), true);
+      assert.equal(sellPage.match(/href: "\/submit-listing"/g)?.length, 2);
+      assert.equal(sellPage.match(/href: "\/become-a-supplier"/g)?.length, 1);
+      assert.equal(sellPage.includes("/join/farmer"), false);
+
+      assert.equal(sellPage.includes("What happens next?"), true);
+      assert.equal(sellPage.includes("Submit your details"), true);
+      assert.equal(sellPage.includes("We check the information"), true);
+      assert.equal(sellPage.includes("Approved submissions go public"), true);
+      assert.equal(sellPage.includes("Buyers send enquiries"), true);
+      assert.equal(sellPage.includes("may ask for more information"), true);
+      assert.equal(sellPage.includes("Prices, quantities and delivery are confirmed during follow-up."), true);
+
+      assert.equal(sellPage.includes("Before you submit"), true);
+      assert.equal(sellPage.includes("Submitting does not guarantee approval, publication or a sale."), true);
+      assert.equal(sellPage.includes("Ghana Growers may contact you for more information."), true);
+      assert.equal(sellPage.includes("Availability, quantities, prices, pickup and delivery are confirmed during follow-up."), true);
+      assert.equal(sellPage.includes("Private contact details are not shown publicly."), true);
+      assert.equal(sellPage.includes('href="/contact"'), true);
+      assert.equal(sellPage.includes("Contact Ghana Growers"), true);
+
+      for (const removedCopy of [
+        "reach buyers across Ghana",
+        "Reach More Buyers",
+        "Build trust before contact",
+        "Digital Visibility",
+        "Ready to reach more buyers?",
+        "Your profile or listing can go live",
+        'cta: "Become a Supplier"',
+        'cta: "List Service"'
+      ]) {
+        assert.equal(sellPage.includes(removedCopy), false, removedCopy);
+      }
+
+      assert.equal(sellPage.includes("min-h-11"), true);
+      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(middleware.includes('new URL("/launching-soon", request.url)'), true);
+      assert.equal(adminPage.includes('redirect("/admin/login")'), true);
+    }
+  },
+  {
     name: "Public Submit Listing form is guided, mobile-first, and preserves product pathways",
     run: () => {
       const form = repoFile("src/components/SubmitProduceListingForm.tsx");
