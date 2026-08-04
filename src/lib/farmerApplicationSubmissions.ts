@@ -1,7 +1,10 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import {
+  farmerApplicationId,
   farmerApplicationDedupeKey,
+  farmerApplicationPayloadFingerprint,
   farmerApplicationRateLimitKey,
   farmerApplicationSubmissionKey,
   type FarmerRegistrationPayload
@@ -20,9 +23,17 @@ type ExistingApplicationRow = {
 };
 
 export type FarmerApplicationSecurity = {
+  applicationId: string;
   submissionKey: string;
+  payloadFingerprint: string;
   dedupeKey: string;
   rateLimitKey: string;
+};
+
+export type FarmerApplicationFingerprintMedia = {
+  file: File;
+  group: string;
+  kind: "image" | "document";
 };
 
 const farmerApplicationWindowSeconds = 10 * 60;
@@ -32,13 +43,23 @@ function applicationSecret() {
   return process.env.LEAD_REQUEST_RATE_LIMIT_SECRET?.trim() || "";
 }
 
-export function farmerApplicationSecurity(
+export async function farmerApplicationSecurity(
   payload: FarmerRegistrationPayload,
-  clientKey: string
-): FarmerApplicationSecurity | null {
+  clientKey: string,
+  media: FarmerApplicationFingerprintMedia[]
+): Promise<FarmerApplicationSecurity | null> {
   const secret = applicationSecret();
   const contact = payload.phoneNumber || payload.whatsappNumber;
   const submissionKey = farmerApplicationSubmissionKey(payload.submissionToken, secret);
+  const applicationId = farmerApplicationId(submissionKey);
+  const mediaFingerprints = await Promise.all(media.map(async (item) => ({
+    group: item.group,
+    kind: item.kind,
+    contentType: item.file.type,
+    size: item.file.size,
+    digest: createHash("sha256").update(Buffer.from(await item.file.arrayBuffer())).digest("hex")
+  })));
+  const payloadFingerprint = farmerApplicationPayloadFingerprint(payload, mediaFingerprints, secret);
   const dedupeKey = farmerApplicationDedupeKey({
     applicantName: payload.applicantName,
     farmName: payload.farmName,
@@ -48,8 +69,8 @@ export function farmerApplicationSecurity(
   });
   const rateLimitKey = farmerApplicationRateLimitKey({ contact, clientKey, secret });
 
-  return submissionKey && dedupeKey && rateLimitKey
-    ? { submissionKey, dedupeKey, rateLimitKey }
+  return applicationId && submissionKey && payloadFingerprint && dedupeKey && rateLimitKey
+    ? { applicationId, submissionKey, payloadFingerprint, dedupeKey, rateLimitKey }
     : null;
 }
 
@@ -59,28 +80,44 @@ function metadataString(metadata: Record<string, unknown> | null | undefined, fi
 }
 
 export async function findExistingFarmerApplication(security: FarmerApplicationSecurity) {
-  const recent = await selectSupabaseRecords<ExistingApplicationRow>(
+  const byToken = await selectSupabaseRecords<ExistingApplicationRow>(
     "farmer_applications",
-    "select=id,status,source_metadata&order=created_at.desc&limit=200"
+    `select=id,status,source_metadata&source_metadata->>submission_key=eq.${encodeURIComponent(security.submissionKey)}&limit=1`
   ).catch(() => null);
 
-  if (!recent || recent.error) {
-    return { status: recent?.status ?? 503, error: "Farmer applications are temporarily unavailable. Please try again later." };
+  if (!byToken || byToken.error) {
+    return { status: byToken?.status ?? 503, error: "Farmer applications are temporarily unavailable. Please try again later." };
   }
 
-  const existing = recent.data?.find((row) => {
-    const metadata = row.source_metadata;
-    if (metadataString(metadata, "submission_key") === security.submissionKey) return true;
+  const tokenApplication = byToken.data?.[0];
+  if (tokenApplication) {
+    const storedFingerprint = metadataString(tokenApplication.source_metadata, "payload_fingerprint");
+    if (!storedFingerprint || storedFingerprint !== security.payloadFingerprint) {
+      return { status: 409, conflict: true as const };
+    }
 
-    const stillOpen = !["Rejected", "Converted"].includes(row.status);
-    return stillOpen && metadataString(metadata, "dedupe_key") === security.dedupeKey;
-  });
+    return {
+      status: 200,
+      duplicate: true as const,
+      reference: metadataString(tokenApplication.source_metadata, "application_reference") || undefined
+    };
+  }
 
-  return existing
+  const byDedupeKey = await selectSupabaseRecords<ExistingApplicationRow>(
+    "farmer_applications",
+    `select=id,status,source_metadata&source_metadata->>dedupe_key=eq.${encodeURIComponent(security.dedupeKey)}&status=not.in.(Rejected,Converted)&order=created_at.desc&limit=1`
+  ).catch(() => null);
+
+  if (!byDedupeKey || byDedupeKey.error) {
+    return { status: byDedupeKey?.status ?? 503, error: "Farmer applications are temporarily unavailable. Please try again later." };
+  }
+
+  const duplicate = byDedupeKey.data?.[0];
+  return duplicate
     ? {
         status: 200,
         duplicate: true as const,
-        reference: metadataString(existing.source_metadata, "application_reference") || undefined
+        reference: metadataString(duplicate.source_metadata, "application_reference") || undefined
       }
     : { status: 200 };
 }

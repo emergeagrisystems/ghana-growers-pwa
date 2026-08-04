@@ -435,8 +435,13 @@ export async function createSupabaseStorageSignedUrl({
     return { status: 502, error: "Private media preview could not be created." };
   }
 
+  const relativeSignedPath = signedPath.startsWith("/") ? signedPath : `/${signedPath}`;
+  const resolvedSignedPath = relativeSignedPath.startsWith("/object/")
+    ? `/storage/v1${relativeSignedPath}`
+    : relativeSignedPath;
+
   return {
     status: response.status,
-    signedUrl: signedPath.startsWith("http") ? signedPath : `${cleanUrl}${signedPath.startsWith("/") ? "" : "/"}${signedPath}`
+    signedUrl: signedPath.startsWith("http") ? signedPath : `${cleanUrl}${resolvedSignedPath}`
   };
 }

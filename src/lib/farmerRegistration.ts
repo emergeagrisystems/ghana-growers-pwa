@@ -29,6 +29,14 @@ export type FarmerRegistrationResult = {
   data?: FarmerRegistrationPayload;
 };
 
+export type FarmerApplicationMediaFingerprint = {
+  group: string;
+  kind: "image" | "document";
+  contentType: string;
+  size: number;
+  digest: string;
+};
+
 const maxLengths: Partial<Record<keyof FarmerRegistrationPayload, number>> = {
   applicantName: 120,
   farmName: 160,
@@ -126,6 +134,48 @@ function hmacDigest(secret: string, parts: string[]) {
 
 export function farmerApplicationSubmissionKey(submissionToken: string, secret: string) {
   return hmacDigest(secret, ["farmer-application-submission", submissionToken]);
+}
+
+export function farmerApplicationPayloadFingerprint(
+  payload: FarmerRegistrationPayload,
+  media: FarmerApplicationMediaFingerprint[],
+  secret: string
+) {
+  const canonicalPayload = {
+    version: 1,
+    applicantName: payload.applicantName,
+    farmName: payload.farmName,
+    phoneNumber: payload.phoneNumber,
+    whatsappNumber: payload.whatsappNumber,
+    email: payload.email,
+    region: payload.region,
+    district: payload.district,
+    farmLocation: payload.farmLocation,
+    farmType: payload.farmType,
+    cropsProducts: [...payload.cropsProducts].sort((left, right) => left.localeCompare(right)),
+    productionDetails: payload.productionDetails,
+    currentAvailability: payload.currentAvailability,
+    supplyFrequency: payload.supplyFrequency,
+    harvestSeason: payload.harvestSeason,
+    deliveryPreference: payload.deliveryPreference,
+    applicationMessage: payload.applicationMessage,
+    agreementAccepted: payload.agreementAccepted,
+    media: media.map((item) => ({
+      group: item.group,
+      kind: item.kind,
+      contentType: item.contentType.toLowerCase(),
+      size: item.size,
+      digest: item.digest
+    }))
+  };
+
+  return hmacDigest(secret, ["farmer-application-payload-v1", JSON.stringify(canonicalPayload)]);
+}
+
+export function farmerApplicationId(submissionKey: string) {
+  if (!/^[0-9a-f]{64}$/i.test(submissionKey)) return "";
+  const hex = submissionKey.toLowerCase();
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${((parseInt(hex.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, "0")}${hex.slice(18, 20)}-${hex.slice(20, 32)}`;
 }
 
 export function farmerApplicationRateLimitKey({

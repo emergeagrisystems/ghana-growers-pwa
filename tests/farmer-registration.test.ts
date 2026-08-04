@@ -4,7 +4,9 @@ import { join } from "node:path";
 import test from "node:test";
 import {
   createFarmerApplicationReference,
+  farmerApplicationId,
   farmerApplicationDedupeKey,
+  farmerApplicationPayloadFingerprint,
   farmerApplicationRateLimitKey,
   farmerApplicationSubmissionKey,
   validateFarmerRegistration
@@ -67,6 +69,31 @@ test("farmer submission security keys are secret-derived and purpose-separated",
   assert.equal(farmerApplicationSubmissionKey(token, "too-short"), "");
 });
 
+test("normalized farmer payload fingerprints distinguish material changes and media", () => {
+  const validated = validateFarmerRegistration(validInput);
+  assert.equal(validated.ok, true);
+  const payload = validated.data!;
+  const media = [{ group: "profile", kind: "image" as const, contentType: "image/png", size: 68, digest: "a".repeat(64) }];
+  const fingerprint = farmerApplicationPayloadFingerprint(payload, media, secret);
+  const reorderedCrops = farmerApplicationPayloadFingerprint({ ...payload, cropsProducts: [...payload.cropsProducts].reverse() }, media, secret);
+  const changedDistrict = farmerApplicationPayloadFingerprint({ ...payload, district: "A different district" }, media, secret);
+  const changedMedia = farmerApplicationPayloadFingerprint(payload, [{ ...media[0], digest: "b".repeat(64) }], secret);
+
+  assert.match(fingerprint, /^[a-f0-9]{64}$/);
+  assert.equal(reorderedCrops, fingerprint);
+  assert.notEqual(changedDistrict, fingerprint);
+  assert.notEqual(changedMedia, fingerprint);
+});
+
+test("submission keys produce one deterministic database-safe application ID", () => {
+  const submissionKey = farmerApplicationSubmissionKey(validInput.submissionToken, secret);
+  const applicationId = farmerApplicationId(submissionKey);
+
+  assert.match(applicationId, /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.equal(farmerApplicationId(submissionKey), applicationId);
+  assert.equal(farmerApplicationId("invalid"), "");
+});
+
 test("farmer application reference is safe and does not expose the internal UUID", () => {
   const reference = createFarmerApplicationReference(
     new Date("2026-08-04T10:00:00.000Z"),
@@ -88,6 +115,9 @@ test("public farmer route uses private service foundations and no publication si
   assert.match(route, /cleanupPrivateApplicationMedia/);
   assert.match(route, /companyWebsite/);
   assert.match(route, /findExistingFarmerApplication/);
+  assert.match(route, /payload_fingerprint: security\.payloadFingerprint/);
+  assert.match(route, /submissionConflictMessage, 409/);
+  assert.doesNotMatch(route, /inFlightSubmissionKeys/);
   assert.match(route, /consumeFarmerApplicationRateLimit/);
   assert.match(route, /source: "public_farmer_application"/);
   assert.match(route, /private_document_paths: privateDocumentPaths/);
@@ -110,6 +140,8 @@ test("farmer application UI preserves failure values and replaces the form on su
   assert.match(form, /if \(submitted\)/);
   assert.match(form, /Application received/);
   assert.match(form, /Your entries are still here/);
+  assert.match(form, /Start a new application/);
+  assert.match(form, /setSubmissionToken\(createSubmissionToken\(\)\)/);
   assert.match(form, /if \(isSubmitting \|\| submitted \|\| !submissionToken\) return/);
   assert.doesNotMatch(form, /form\.reset\(\)/);
   assert.match(form, /Optional photos and documents/);

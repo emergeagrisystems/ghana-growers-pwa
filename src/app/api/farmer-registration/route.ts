@@ -25,7 +25,7 @@ type PendingMedia = {
   label: string;
 };
 
-const inFlightSubmissionKeys = new Set<string>();
+const submissionConflictMessage = "This application was already submitted with different information. Start a new application to send the revised details.";
 
 function safeError(message: string, status = 500, field = "form") {
   return NextResponse.json({ ok: false, message, errors: { [field]: message } }, { status });
@@ -56,29 +56,6 @@ export async function POST(request: Request) {
     return safeError("Farmer applications are temporarily unavailable. Please try again later.", 503);
   }
 
-  const security = farmerApplicationSecurity(validation.data, clientKey(request));
-  if (!security) {
-    return safeError("Farmer applications are temporarily unavailable. Please try again later.", 503);
-  }
-
-  const existing = await findExistingFarmerApplication(security);
-  if (existing.error) return safeError(existing.error, existing.status);
-  if (existing.duplicate) {
-    return NextResponse.json({
-      ok: true,
-      duplicate: true,
-      message: "Application received",
-      reference: existing.reference
-    });
-  }
-
-  if (inFlightSubmissionKeys.has(security.submissionKey)) {
-    return safeError("This application is already being submitted. Please wait a moment.", 409);
-  }
-
-  const rateLimit = await consumeFarmerApplicationRateLimit(security.rateLimitKey);
-  if (rateLimit.error) return safeError(rateLimit.error, rateLimit.status);
-
   const mediaResult = pendingMedia(body);
   if (mediaResult.error) return safeError(mediaResult.error.message, 400, mediaResult.error.field);
 
@@ -96,12 +73,20 @@ export async function POST(request: Request) {
     }
   }
 
-  inFlightSubmissionKeys.add(security.submissionKey);
-  try {
-    return await saveApplication({ body: validation.data, media: mediaResult.items, security });
-  } finally {
-    inFlightSubmissionKeys.delete(security.submissionKey);
+  const security = await farmerApplicationSecurity(validation.data, clientKey(request), mediaResult.items);
+  if (!security) {
+    return safeError("Farmer applications are temporarily unavailable. Please try again later.", 503);
   }
+
+  const existing = await findExistingFarmerApplication(security);
+  if (existing.error) return safeError(existing.error, existing.status);
+  if (existing.conflict) return safeError(submissionConflictMessage, 409);
+  if (existing.duplicate) return duplicateSuccess(existing.reference);
+
+  const rateLimit = await consumeFarmerApplicationRateLimit(security.rateLimitKey);
+  if (rateLimit.error) return safeError(rateLimit.error, rateLimit.status);
+
+  return saveApplication({ body: validation.data, media: mediaResult.items, security });
 }
 
 async function saveApplication({
@@ -111,9 +96,9 @@ async function saveApplication({
 }: {
   body: NonNullable<ReturnType<typeof validateFarmerRegistration>["data"]>;
   media: PendingMedia[];
-  security: NonNullable<ReturnType<typeof farmerApplicationSecurity>>;
+  security: NonNullable<Awaited<ReturnType<typeof farmerApplicationSecurity>>>;
 }) {
-  const applicationId = crypto.randomUUID();
+  const applicationId = security.applicationId;
   const applicationReference = createFarmerApplicationReference();
   const uploadedPaths: string[] = [];
   let privateProfileImagePath: string | null = null;
@@ -180,12 +165,18 @@ async function saveApplication({
       form_version: 1,
       application_reference: applicationReference,
       submission_key: security.submissionKey,
+      payload_fingerprint: security.payloadFingerprint,
       dedupe_key: security.dedupeKey
     }
   }).catch(() => null);
 
   if (!application || application.error) {
     await cleanupUploadedMedia(uploadedPaths, application?.status ?? 502);
+    if (application?.status === 409) {
+      const existing = await findExistingFarmerApplication(security);
+      if (existing.conflict) return safeError(submissionConflictMessage, 409);
+      if (existing.duplicate) return duplicateSuccess(existing.reference);
+    }
     console.error("Farmer application save failed", {
       route: "/api/farmer-registration",
       feature: "farmer_applications",
@@ -199,6 +190,15 @@ async function saveApplication({
     message: "Application received",
     reference: applicationReference
   }, { status: 201 });
+}
+
+function duplicateSuccess(reference?: string) {
+  return NextResponse.json({
+    ok: true,
+    duplicate: true,
+    message: "Application received",
+    reference
+  });
 }
 
 function pendingMedia(body: Record<string, unknown>): { items: PendingMedia[]; error?: { field: string; message: string } } {

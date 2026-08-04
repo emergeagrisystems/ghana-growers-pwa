@@ -31,6 +31,7 @@ export function FarmerRegistrationForm() {
   const [submissionToken, setSubmissionToken] = useState("");
   const [applicationReference, setApplicationReference] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [hasSubmissionConflict, setHasSubmissionConflict] = useState(false);
 
   useEffect(() => {
     setSubmissionToken(createSubmissionToken());
@@ -42,6 +43,7 @@ export function FarmerRegistrationForm() {
 
     setErrors({});
     setErrorMessage("");
+    setHasSubmissionConflict(false);
     setIsSubmitting(true);
 
     const form = event.currentTarget;
@@ -61,6 +63,7 @@ export function FarmerRegistrationForm() {
 
       if (!response.ok || !data.ok) {
         setErrors(data.errors ?? {});
+        setHasSubmissionConflict(response.status === 409);
         throw new Error(data.errors?.form || data.message || "Farmer application could not be submitted.");
       }
 
@@ -73,6 +76,13 @@ export function FarmerRegistrationForm() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function startNewApplication() {
+    setSubmissionToken(createSubmissionToken());
+    setErrors({});
+    setErrorMessage("");
+    setHasSubmissionConflict(false);
   }
 
   if (submitted) {
@@ -207,7 +217,14 @@ export function FarmerRegistrationForm() {
       {errorMessage ? (
         <div className="mt-5 rounded-md bg-red-50 p-4 text-sm font-bold text-tomato" role="alert">
           <p>{errorMessage}</p>
-          <p className="mt-1 font-semibold">Your entries are still here. Review them and try again.</p>
+          <p className="mt-1 font-semibold">Your entries are still here.</p>
+          {hasSubmissionConflict ? (
+            <button type="button" onClick={startNewApplication} className="mt-3 min-h-11 rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/15 transition hover:bg-leaf-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-700">
+              Start a new application
+            </button>
+          ) : (
+            <p className="mt-1 font-semibold">Review them and try again.</p>
+          )}
         </div>
       ) : null}
 
