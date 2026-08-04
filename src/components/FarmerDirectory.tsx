@@ -5,7 +5,6 @@ import { BadgeCheck, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Sprou
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import {
-  cleanFarmerLocation,
   cleanFarmerProfileLabel,
   farmerCardProducts,
   farmerImagePosition,
@@ -15,10 +14,10 @@ import {
   paginationPages,
   isVerifiedFarmer
 } from "@/lib/farmerDirectory";
-import type { PublicFarmerProfile } from "@/types";
+import type { FarmerDirectoryProfile } from "@/types";
 
 type FarmerDirectoryProps = {
-  farmers: PublicFarmerProfile[];
+  farmers: FarmerDirectoryProfile[];
   initialSearch?: string;
 };
 
@@ -94,12 +93,10 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
     const query = search.trim().toLowerCase();
     const searchable = [
       farmer.farmName,
-      farmer.farmerName,
       farmer.region,
       farmer.district,
-      cleanFarmerLocation(farmer),
+      farmer.displayLocation,
       farmer.farmType,
-      farmer.availabilityStatus,
       farmer.products.join(" "),
       farmerProducts(farmer).join(" ")
     ].join(" ").toLowerCase();
@@ -152,7 +149,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                 <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-leaf-600" size={18} aria-hidden="true" />
                 <input
                   className="focus-ring min-h-11 w-full rounded-md border border-leaf-900/15 bg-white py-2.5 pl-10 pr-3 font-normal"
-                  placeholder="Search by farm, product, region, district, or contact name"
+                  placeholder="Search by farm, product, region, or district"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
@@ -241,7 +238,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                         </Link>
                       </h3>
 
-                      <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 text-ink/58">{cleanFarmerLocation(farmer)}</p>
+                      <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 text-ink/58">{farmer.displayLocation}</p>
 
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {mainProducts.map((item) => (

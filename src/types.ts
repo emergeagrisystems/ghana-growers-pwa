@@ -235,6 +235,19 @@ export type PublicFarmerProfile = {
   featuredUntil?: string;
 };
 
+export type FarmerDirectoryProfile = {
+  slug: string;
+  farmName: string;
+  region: string;
+  district: string;
+  displayLocation: string;
+  products: string[];
+  farmType: "Crop" | "Livestock" | "Mixed";
+  mainImage?: string;
+  hasRealPhoto: boolean;
+  verificationStatus: string;
+};
+
 export type PublicSupplierProfile = {
   id?: string;
   slug: string;
