@@ -150,6 +150,35 @@ test("migration grants service role only and creates no public policies", () => 
   assert.match(verify, /public_policy_count/);
 });
 
+test("contact enquiry privilege hardening keeps only service-role CRUD access", () => {
+  const migration = repoFile("supabase/migrations/20260804140000_harden_contact_enquiry_privileges.sql");
+  const precheck = repoFile("supabase/review/precheck_harden_contact_enquiry_privileges.sql");
+  const verify = repoFile("supabase/review/verify_harden_contact_enquiry_privileges.sql");
+
+  assert.match(migration, /revoke all privileges on table public\.contact_enquiries from service_role/);
+  assert.match(migration, /grant select, insert, update, delete on table public\.contact_enquiries to service_role/);
+  assert.match(migration, /revoke all privileges on table public\.contact_enquiries from public, anon, authenticated/);
+  assert.match(migration, /service_role owns public\.contact_enquiries/);
+  assert.doesNotMatch(migration, /drop table|create table|alter table|insert into|update public\.|delete from|create policy/i);
+
+  assert.match(precheck, /pg_get_userbyid\(c\.relowner\)/);
+  assert.match(precheck, /aclexplode\(c\.relacl\)/);
+  assert.match(precheck, /has_table_privilege/);
+  assert.match(precheck, /pg_auth_members/);
+  assert.match(precheck, /pg_default_acl/);
+  assert.match(precheck, /contact_enquiry_count/);
+
+  assert.match(verify, /migration 20260804140000 is not recorded/);
+  assert.match(verify, /service_role must have exactly four direct CRUD grants/);
+  assert.match(verify, /TRUNCATE/);
+  assert.match(verify, /REFERENCES/);
+  assert.match(verify, /TRIGGER/);
+  assert.match(verify, /MAINTAIN/);
+  assert.match(verify, /anon or authenticated retains effective table access/);
+  assert.match(verify, /contact_enquiries updated_at trigger changed/);
+  assert.match(verify, /unrelated aggregate row counts changed/);
+});
+
 test("unrelated public and security boundaries remain untouched", () => {
   const middleware = repoFile("src/middleware.ts");
   const homepage = repoFile("src/app/page.tsx");
