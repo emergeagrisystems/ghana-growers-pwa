@@ -14,7 +14,8 @@ const sections = [
     title: "Information Ghana Growers collects",
     body: [
       "Ghana Growers collects information people submit through registration forms, buyer request forms, listing submissions, lead forms, contact forms, and admin review workflows.",
-      "This may include names, farm or business names, phone numbers, WhatsApp numbers, email addresses, regions, districts, products, services, farm details, buyer demand, photos, and messages."
+      "This may include names, farm or business names, phone numbers, WhatsApp numbers, email addresses, regions, districts, products, services, farm details, buyer demand, photos, and messages.",
+      "Contact and partnership enquiries may include your name, email address, optional phone or WhatsApp number, organisation, subject or partnership interest, and message. Ghana Growers uses this information to review and respond to your enquiry. This information is handled privately and is not displayed publicly."
     ]
   },
   {
