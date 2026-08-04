@@ -8781,6 +8781,7 @@ const tests: TestCase[] = [
       const farmerDirectory = repoFile("src/app/farmer-directory/page.tsx");
       const about = repoFile("src/app/about/page.tsx");
       const privacy = repoFile("src/app/privacy-policy/page.tsx");
+      const homepage = repoFile("src/app/page.tsx");
       const layout = repoFile("src/app/layout.tsx");
       const site = repoFile("src/data/site.ts");
       const middleware = repoFile("src/middleware.ts");
@@ -8835,6 +8836,13 @@ const tests: TestCase[] = [
       assert.equal(privacy.includes("Contact and partnership enquiries may include your name"), true);
       assert.equal(layout.includes("Trusted Agriculture Platform for Ghana"), false);
       assert.equal(layout.includes("Buy. Sell. Grow."), true);
+      assert.equal(homepage.includes('title: "Ghana Growers | Buy. Sell. Grow."'), true);
+      assert.equal(
+        homepage.includes(
+          "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools."
+        ),
+        true
+      );
       assert.equal(site.includes("practical marketplace, public farmer profiles and smart farming tools"), true);
 
       assert.equal(middleware.includes('pathname === "/robots.txt" || pathname === "/sitemap.xml"'), true);
