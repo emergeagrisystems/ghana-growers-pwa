@@ -77,10 +77,10 @@ function removeRepeatedDistrictSuffix(publicLocation: string, district: string) 
   return withoutDistrict || publicLocation;
 }
 
-export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district" | "region" | "publicLocation">) {
+export function cleanFarmerLocation(farmer: { district?: string | null; region?: string | null; publicLocation?: string | null }) {
   let publicLocation = cleanFarmerProfileLabel(farmer.publicLocation ?? "");
-  const region = cleanFarmerProfileLabel(farmer.region);
-  let district = cleanFarmerProfileLabel(farmer.district);
+  const region = cleanFarmerProfileLabel(farmer.region ?? "");
+  let district = cleanFarmerProfileLabel(farmer.district ?? "");
 
   if (region) {
     district = district
@@ -104,6 +104,13 @@ export function cleanFarmerLocation(farmer: Pick<PublicFarmerProfile, "district"
   }
 
   return region ? `${district}, ${region}` : district;
+}
+
+export function publicFarmSize(value?: string | null) {
+  const cleaned = value?.trim().replace(/\s+/g, " ") ?? "";
+  const recognizedUnit = /\b(?:acre|acres|hectare|hectares|ha|plot|plots)\b/i;
+
+  return /\d/.test(cleaned) && recognizedUnit.test(cleaned) ? cleaned : "";
 }
 
 export function farmerProducts(farmer: Pick<FarmerProfile, "products">) {

@@ -14,7 +14,8 @@ import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
-import { dedupePublicLocationParts } from "@/lib/farmerDirectory";
+import { cleanFarmerLocation, dedupePublicLocationParts, publicFarmSize } from "@/lib/farmerDirectory";
+import { marketplacePriceLine } from "@/lib/marketplace/trade";
 import { findBuyerRequestsForFarmer } from "@/lib/matching";
 import { cleanProductList, productDisplayName, productImageForListing, productImageForName } from "@/lib/productDisplay";
 import { createPageMetadata } from "@/lib/seo";
@@ -95,7 +96,7 @@ function uniqueLocationParts(...values: Array<string | undefined | null>) {
 }
 
 function buildLocationSummary(farmer: { publicLocation?: string | null; district?: string | null; region?: string | null }): LocationSummary {
-  const parts = uniqueLocationParts(farmer.publicLocation, farmer.district, farmer.region);
+  const parts = cleanFarmerLocation(farmer).split(",").map(normalizeText).filter(Boolean);
   const community = parts[0];
   const region = parts.at(-1);
   const serviceBase = community ?? region ?? "this farmer's area";
@@ -161,24 +162,6 @@ function paymentDisplay(value?: string | null) {
   const payment = displayValue(value, "Payment to be confirmed");
 
   return payment === "Not provided" ? "Payment to be confirmed" : payment;
-}
-
-function formatPrice(value?: string | null) {
-  const cleaned = normalizeText(value);
-
-  if (!cleaned) {
-    return "Confirmed during request";
-  }
-
-  if (/^(ghs|₵|usd|\$)/i.test(cleaned)) {
-    return cleaned;
-  }
-
-  if (/^\d[\d,.\s]*$/.test(cleaned)) {
-    return `GHS ${cleaned}`;
-  }
-
-  return cleaned;
 }
 
 function formatQuantity(quantity?: string | null, unit?: string | null) {
@@ -262,7 +245,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
     : `${farmer.farmName} is a Ghana Growers farmer profile based in ${location.hero}. The farm currently lists ${productText}.`;
   const snapshotItems: DisplayRow[] = compactRows([
     { icon: Sprout, label: "Farm Type", value: displayValue(farmer.farmType) },
-    { icon: Ruler, label: "Farm Size", value: displayValue(farmer.farmSize) },
+    { icon: Ruler, label: "Farm Size", value: publicFarmSize(farmer.farmSize) },
     { icon: Clock3, label: "Supply Frequency", value: "Confirmed during request" },
     { icon: PackageCheck, label: "Active Listings", value: String(activeMarketplaceListings.length) }
   ]);
@@ -402,7 +385,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                         </div>
                         <div className="mt-4 grid gap-2 text-sm text-ink/66">
                           <DetailLine label="Quantity" value={formatQuantity(listing.quantity, listing.unit)} />
-                          <DetailLine label="Guide Price" value={formatPrice(listing.priceRange)} />
+                          <DetailLine label="Guide Price" value={marketplacePriceLine(listing)} />
                           <DetailLine label="Payment Terms" value={paymentPreference} />
                           <DetailLine label="Delivery / Pickup" value="Confirmed during request" />
                         </div>
@@ -417,7 +400,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
                             product: listing.name,
                             seller: farmer.farmName,
                             location: location.hero,
-                            pricePackage: formatPrice(listing.priceRange),
+                            pricePackage: marketplacePriceLine(listing),
                             listedQuantity: formatQuantity(listing.quantity, listing.unit),
                             availability: listing.available
                           }}
@@ -501,7 +484,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
               </div>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
                 {relevantBuyerRequests.map((request) => (
-                  <article key={request.id} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+                  <article key={request.reference} className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
                     <h3 className="font-black text-ink">{productDisplayName(request.productName)}</h3>
                     <p className="mt-2 text-sm font-black text-leaf-700">{request.quantityNeeded}</p>
                     <p className="mt-2 text-sm text-ink/58">{uniqueLocationParts(request.district, request.region).join(", ") || "Location to be confirmed"}</p>

@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { PageHero } from "@/components/PageHero";
 import { PublicDataUnavailable } from "@/components/PublicDataUnavailable";
 import { SafeImage } from "@/components/SafeImage";
+import { cleanFarmerLocation } from "@/lib/farmerDirectory";
 import { isFeaturedActive } from "@/lib/featured";
 import { createPageMetadata } from "@/lib/seo";
 import { getFarmersData } from "@/lib/supabase/publicData";
@@ -13,30 +14,30 @@ export const dynamic = "force-dynamic";
 
 export const metadata = createPageMetadata({
   title: "Directory",
-  description: "Find farmers, agricultural suppliers, and service providers across Ghana through Ghana Growers.",
+  description: "Browse farmers currently published on Ghana Growers. Supplier and agricultural service profiles will appear as they are approved.",
   path: "/directory"
 });
 
 const directoryCards = [
   {
-    title: "Find Farmers",
+    title: "Published Farmers",
     description: "Browse farmer profiles, crops, locations, and available produce.",
     href: "/farmer-directory",
     cta: "Find Farmers",
     icon: Sprout
   },
   {
-    title: "Find Suppliers",
-    description: "Find seeds, fertilizer, tools, equipment, packaging, and farm inputs.",
+    title: "Supplier Profiles",
+    description: "Approved supplier profiles will appear here as they become available.",
     href: "/supplier-directory",
-    cta: "Find Suppliers",
+    cta: "Supplier profiles coming soon",
     icon: Store
   },
   {
-    title: "Find Services",
-    description: "Find transport, ploughing, spraying, storage, packaging, and farm support.",
+    title: "Agricultural Services",
+    description: "Approved agricultural service profiles will appear as they become available.",
     href: "/supplier-directory?q=service",
-    cta: "Find Services",
+    cta: "Supplier profiles coming soon",
     icon: Wrench
   }
 ];
@@ -88,21 +89,6 @@ function cleanProfileLabel(value: string) {
     .replace(/\bAquaculture And Poultry\b/gi, "Aquaculture & Poultry");
 }
 
-function cleanFarmerLocation(farmer: PublicFarmerProfile) {
-  const district = cleanProfileLabel(farmer.district);
-  const region = cleanProfileLabel(farmer.region);
-
-  if (!district) {
-    return region || "Ghana";
-  }
-
-  if (!region || district.toLowerCase().includes(region.toLowerCase())) {
-    return district;
-  }
-
-  return `${district}, ${region}`;
-}
-
 function featuredImagePosition(farmer: PublicFarmerProfile) {
   return farmer.farmName.toLowerCase().includes("nart") ? "object-[center_18%]" : "object-[center_30%]";
 }
@@ -117,8 +103,8 @@ export default async function DirectoryPage() {
     <>
       <PageHero
         eyebrow="Directory"
-        title="Find Farmers, Suppliers & Services"
-        description="Browse reviewed farmers, agricultural suppliers, and service providers across Ghana."
+        title="Explore the Ghana Growers Directory."
+        description="Browse farmers currently published on Ghana Growers. Supplier and agricultural service profiles will appear as they are approved."
         variant="compact"
       >
         <form action="/farmer-directory" method="get" className="max-w-3xl rounded-md border border-leaf-900/10 bg-white p-2 shadow-soft">

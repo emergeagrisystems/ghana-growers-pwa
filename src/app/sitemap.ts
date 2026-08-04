@@ -27,8 +27,7 @@ const publicRoutes = [
   "/join/buyer",
   "/become-a-supplier",
   "/submit-buyer-request",
-  "/submit-listing",
-  "/market-intelligence"
+  "/submit-listing"
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

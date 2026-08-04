@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  BadgeCheck,
   ChevronDown,
   MessageCircle,
   Search,
@@ -11,11 +10,9 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
-import { normalizeTrust } from "@/components/TrustIndicators";
 import { buildBuyerRequestMatches, findMatchingFarmersForRequest, findMatchingListingsForRequest } from "@/lib/matching";
-import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
 import type { Product, PublicFarmerProfile } from "@/types";
+import type { PublicBuyerRequest } from "@/types/publicBuyerRequest";
 
 type FilterConfig = {
   label: string;
@@ -28,13 +25,8 @@ function unique(values: string[]) {
   return Array.from(new Set(values)).sort();
 }
 
-function buyerWhatsAppUrl(request: BuyerRequest) {
-  const message = `Hello, I am responding to your Ghana Growers sourcing request for ${request.quantityNeeded} of ${request.productName} in ${request.district}, ${request.region}.`;
-  return `https://wa.me/${request.whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
-
 type BuyerRequestsBoardProps = {
-  requests?: BuyerRequest[];
+  requests?: PublicBuyerRequest[];
   marketplaceProducts?: Product[];
   farmers?: PublicFarmerProfile[];
 };
@@ -89,7 +81,7 @@ function FilterControls({ filters }: { filters: FilterConfig[] }) {
   );
 }
 
-function StatusBadge({ status }: { status: BuyerRequest["status"] }) {
+function StatusBadge({ status }: { status: PublicBuyerRequest["status"] }) {
   const className =
     status === "Urgent"
       ? "bg-earth-500 text-ink"
@@ -104,28 +96,13 @@ function StatusBadge({ status }: { status: BuyerRequest["status"] }) {
   );
 }
 
-function BuyerTrustBadge({ status }: { status: string }) {
-  if (status === "Verified") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-leaf-50 px-3 py-1 text-xs font-black text-leaf-700">
-        <BadgeCheck className="h-3.5 w-3.5" />
-        Verified Buyer
-      </span>
-    );
-  }
-
-  return null;
-}
-
 function RequestCard({
   request,
   onViewDetails
 }: {
-  request: BuyerRequest;
-  onViewDetails: (request: BuyerRequest) => void;
+  request: PublicBuyerRequest;
+  onViewDetails: (request: PublicBuyerRequest) => void;
 }) {
-  const trust = normalizeTrust(request.trust);
-
   return (
     <article className="rounded-md bg-white p-4 shadow-sm ring-1 ring-leaf-900/10 transition hover:-translate-y-1 hover:shadow-soft sm:p-5">
       <div className="flex items-start justify-between gap-3">
@@ -151,12 +128,6 @@ function RequestCard({
         </div>
       </div>
 
-      {trust.status === "Verified" ? (
-        <div className="mt-4">
-          <BuyerTrustBadge status={trust.status} />
-        </div>
-      ) : null}
-
       <div className="mt-5">
         <button
           type="button"
@@ -176,12 +147,11 @@ function RequestDetailsModal({
   farmers,
   onClose
 }: {
-  request: BuyerRequest;
+  request: PublicBuyerRequest;
   marketplaceProducts: Product[];
   farmers: PublicFarmerProfile[];
   onClose: () => void;
 }) {
-  const trust = normalizeTrust(request.trust);
   const matchingFarmers = findMatchingFarmersForRequest(request, farmers, 3);
   const relatedProducts = findMatchingListingsForRequest(request, marketplaceProducts, 3);
 
@@ -204,7 +174,6 @@ function RequestDetailsModal({
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={request.status} />
-              <BuyerTrustBadge status={trust.status} />
             </div>
             <h2 className="mt-4 text-2xl font-black leading-tight text-ink sm:text-3xl">{request.productName}</h2>
             <p className="mt-2 text-lg font-black text-leaf-700 sm:text-xl">{request.quantityNeeded}</p>
@@ -217,31 +186,23 @@ function RequestDetailsModal({
               <Detail label="Delivery / pickup" value={request.deliveryPreference} />
               <Detail label="Deadline" value={request.deadline} />
               <Detail label="Budget / price range" value={request.budgetRange ?? "Confirm with buyer"} />
-              <Detail label="Verification status" value={trust.status === "Verified" ? "Verified by Ghana Growers" : "Not verified yet"} />
+              <Detail label="Public request reference" value={request.reference} />
             </div>
           </div>
 
           <aside className="rounded-md border border-leaf-900/10 bg-leaf-50 p-5">
-            <h3 className="font-black text-ink">Buyer notes</h3>
-            <p className="mt-3 text-sm leading-6 text-ink/65">{request.notes}</p>
+            <h3 className="font-black text-ink">Respond safely</h3>
+            <p className="mt-3 text-sm leading-6 text-ink/65">
+              Ghana Growers keeps buyer contact details private and supports follow-up through its enquiry process.
+            </p>
             <p className="mt-4 text-xs font-black uppercase tracking-wide text-ink/45">Posted {request.datePosted}</p>
-            <a
-              href={buyerWhatsAppUrl(request)}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() =>
-                trackWhatsAppLead({
-                  sourceType: "Buyer Request",
-                  sourceId: request.id,
-                  sourceName: request.productName,
-                  phoneNumber: request.whatsappNumber
-                })
-              }
+            <Link
+              href="/contact"
               className="gg-button-primary mt-5 w-full gap-2"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" />
-              WhatsApp Buyer
-            </a>
+              Respond through Ghana Growers
+            </Link>
           </aside>
         </div>
         {matchingFarmers.length > 0 || relatedProducts.length > 0 ? (
@@ -307,7 +268,7 @@ export function BuyerRequestsBoard({
   const [status, setStatus] = useState("All");
   const [deadline, setDeadline] = useState("All");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<BuyerRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<PublicBuyerRequest | null>(null);
 
   const products = useMemo(() => unique(requests.map((request) => request.productName)), [requests]);
   const regions = useMemo(() => unique(requests.map((request) => request.region)), [requests]);
@@ -344,9 +305,7 @@ export function BuyerRequestsBoard({
           request.region,
           request.district,
           request.buyerType,
-          request.buyerName,
           request.status,
-          request.notes
         ]
           .join(" ")
           .toLowerCase()
@@ -379,12 +338,9 @@ export function BuyerRequestsBoard({
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/65">
                   Ghana Growers reviews sourcing requests before publishing demand for matching.
                 </p>
-                <p className="mt-2 text-xs font-black uppercase tracking-wide text-ink/45">
-                  Last updated: {buyerRequestsMeta.lastUpdated}
-                </p>
               </div>
               <p className="max-w-md rounded-md bg-white px-3 py-2 text-xs font-semibold leading-5 text-ink/55">
-                {buyerRequestsMeta.note}
+                Availability and trading details are confirmed during follow-up through Ghana Growers.
               </p>
             </div>
           </div>
@@ -467,7 +423,7 @@ export function BuyerRequestsBoard({
               ) : filteredRequests.length > 0 ? (
                 <div className="mt-7 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {filteredRequests.map((request) => (
-                    <RequestCard key={request.id} request={request} onViewDetails={setSelectedRequest} />
+                    <RequestCard key={request.reference} request={request} onViewDetails={setSelectedRequest} />
                   ))}
                 </div>
               ) : (
@@ -490,7 +446,7 @@ export function BuyerRequestsBoard({
                   <div className="mt-5 grid gap-4 md:grid-cols-2">
                     {potentialMatches.map((match) => (
                       <button
-                        key={match.request.id}
+                        key={match.request.reference}
                         type="button"
                         onClick={() => setSelectedRequest(match.request)}
                         className="rounded-md bg-white p-4 text-left ring-1 ring-leaf-900/10 transition hover:-translate-y-0.5 hover:ring-leaf-700/30"

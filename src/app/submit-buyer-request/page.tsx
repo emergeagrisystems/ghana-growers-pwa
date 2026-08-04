@@ -1,7 +1,6 @@
 import { SubmitBuyerRequestForm } from "@/components/SubmitBuyerRequestForm";
 import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
 import { createPageMetadata } from "@/lib/seo";
-import { CheckCircle2 } from "lucide-react";
 
 export const metadata = createPageMetadata({
   title: "Request Produce",
@@ -11,18 +10,26 @@ export const metadata = createPageMetadata({
 });
 
 const sourcingSteps = [
-  "Submit Request",
-  "We Review",
-  "We Match",
-  "We Contact You",
-  "Supply Begins"
-];
-
-const trustPoints = [
-  "Reviewed by the Ghana Growers team",
-  "Matched with suitable farmers and suppliers",
-  "GG Quality Standard members highlighted where applicable",
-  "Expected review within one business day"
+  {
+    number: "01",
+    title: "Submit your request",
+    description: "Tell us what you need, the quantity and the location."
+  },
+  {
+    number: "02",
+    title: "We check the details",
+    description: "Ghana Growers reviews the request and may contact you for more information."
+  },
+  {
+    number: "03",
+    title: "We look for a suitable option",
+    description: "Where possible, we compare the request with available farmers, sellers or suppliers."
+  },
+  {
+    number: "04",
+    title: "You decide whether to continue",
+    description: "Availability, price, quantity, pickup and delivery are confirmed during follow-up."
+  }
 ];
 
 export default function SubmitBuyerRequestPage() {
@@ -36,33 +43,22 @@ export default function SubmitBuyerRequestPage() {
               <p className="gg-eyebrow">Produce Sourcing</p>
               <h1 className="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">Need Produce?</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-                Tell us what you&apos;re looking for. Our Ghana Growers team will review your request, identify suitable farmers and suppliers, and help connect you with the right people.
+                Tell Ghana Growers what produce or agricultural supply you need. We will review your request and follow up where a suitable option may be available.
               </p>
-              <div className="mt-6 rounded-md border border-earth-500/25 bg-earth-50 p-4 text-sm font-black text-ink shadow-sm">
-                Expected review: within one business day.
-              </div>
 
               <div className="mt-6 min-w-0 rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm sm:p-5">
                 <h2 className="text-lg font-black text-ink">How sourcing works</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-5">
-                  {sourcingSteps.map((step, index) => (
-                    <div key={step} className="rounded-md bg-leaf-50 p-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {sourcingSteps.map((step) => (
+                    <div key={step.number} className="rounded-md bg-leaf-50 p-4">
                       <span className="grid h-8 w-8 place-items-center rounded-md bg-white text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10">
-                        {index + 1}
+                        {step.number}
                       </span>
-                      <p className="mt-3 text-sm font-black leading-5 text-ink">{step}</p>
+                      <p className="mt-3 text-sm font-black leading-5 text-ink">{step.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-ink/65">{step.description}</p>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {trustPoints.map((point) => (
-                  <p key={point} className="flex items-start gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-semibold leading-6 text-ink/70">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-leaf-700" aria-hidden="true" />
-                    {point}
-                  </p>
-                ))}
               </div>
             </div>
             <SubmitBuyerRequestForm />

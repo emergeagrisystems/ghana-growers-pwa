@@ -29,9 +29,9 @@ import { getFarmersData } from "@/lib/supabase/publicData";
 import styles from "./HomePage.module.css";
 
 export const metadata = createPageMetadata({
-  title: "Buy, Sell and Grow Through Ghana Agriculture",
+  title: "Ghana Growers | Buy. Sell. Grow.",
   description:
-    "Buy farm produce, sell harvests and agricultural supplies, and use practical farming tools through Ghana Growers.",
+    "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools.",
   path: "/"
 });
 

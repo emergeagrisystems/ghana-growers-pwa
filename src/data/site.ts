@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "Ghana Growers",
   url: "https://www.ghana-growers.com",
   description:
-    "Ghana Growers connects farmers, buyers, and agricultural suppliers in Ghana through a trusted digital platform.",
+    "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools.",
   email: "hello@ghanagrowers.com",
   location: "Accra, Ghana"
 };

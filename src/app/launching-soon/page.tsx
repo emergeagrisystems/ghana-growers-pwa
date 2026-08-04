@@ -7,14 +7,14 @@ import { SafeImage } from "@/components/SafeImage";
 export const metadata = {
   title: "Launching Soon",
   description:
-    "Ghana Growers is preparing to connect farmers, buyers, and suppliers across Ghana through a trusted agricultural network.",
+    "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools.",
   robots: {
-    index: true,
-    follow: true
+    index: false,
+    follow: false
   },
   openGraph: {
     title: "Ghana's Agricultural Network is Growing",
-    description: "Ghana Growers is preparing to connect farmers, buyers, and suppliers across Ghana.",
+    description: "Ghana Growers is preparing its practical agricultural marketplace and support platform for public launch.",
     images: ["/images/ghana-growers-social.png"]
   }
 };
@@ -50,7 +50,7 @@ const benefitCards = [
   {
     title: "What Ghana Growers is",
     description:
-      "A trusted agricultural connection platform being prepared for Ghana's farmers, buyers, suppliers, and agribusiness partners.",
+      "A practical agricultural marketplace and support platform for buyers, farmers, suppliers, and agribusiness partners.",
     icon: UsersRound
   }
 ];
@@ -72,7 +72,7 @@ export default function LaunchingSoonPage() {
                 Ghana&apos;s Agricultural Network is Growing
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/72">
-                Ghana Growers is preparing to connect farmers, buyers, and suppliers across Ghana.
+                Ghana Growers is preparing its practical agricultural marketplace and support platform for public launch.
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-ink/62">
                 We are currently onboarding farmers, buyers, and agricultural suppliers before opening the full platform to the public.

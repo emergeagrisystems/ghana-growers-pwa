@@ -13,7 +13,18 @@ export const featuredListingLabels = featuredListingData.labels;
 
 export const featuredFarmers = farmerDirectory.filter((farmer) => featuredFarmerSlugSet.has(farmer.slug));
 export const featuredSuppliers = supplierDirectory.filter((supplier) => featuredSupplierSlugs.has(supplier.slug));
-export const featuredBuyerRequests = buyerRequests.filter((request) => featuredBuyerRequestIds.has(request.id));
+export const featuredBuyerRequests = buyerRequests
+  .filter((request) => featuredBuyerRequestIds.has(request.id))
+  .map((request, index) => ({
+    reference: `GG-FEATURED-${index + 1}`,
+    productName: request.productName,
+    quantityNeeded: request.quantityNeeded,
+    district: request.district,
+    region: request.region,
+    deadline: request.deadline,
+    buyerType: request.buyerType,
+    datePosted: request.datePosted
+  }));
 
 export function isFeaturedFarmer(slug: string) {
   return featuredFarmerSlugSet.has(slug);

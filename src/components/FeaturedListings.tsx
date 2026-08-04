@@ -4,7 +4,6 @@ import { FeaturedRibbon } from "@/components/FeaturedRibbon";
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { VerificationBadge } from "@/components/TrustIndicators";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { isFeaturedActive } from "@/lib/featured";
 import {
   cleanFarmerLocation,
@@ -316,7 +315,7 @@ export function FeaturedListings({
 
           {showBuyerRequests
             ? featuredBuyerRequests.slice(0, limit).map((request) => (
-                <article key={request.id} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
+                <article key={request.reference} className="relative overflow-hidden rounded-md border border-earth-500/40 bg-earth-50 p-5 shadow-card transition duration-200 ease-out hover:-translate-y-1 hover:shadow-soft">
                   <div className="flex items-start justify-between gap-4">
                     <FeaturedRibbon label={featuredListingLabels.buyerRequests} />
                     <div className="gg-icon gg-icon-marketplace h-10 w-10 shrink-0">
@@ -336,14 +335,9 @@ export function FeaturedListings({
                   <p className="mt-3 text-sm leading-6 text-ink/65">
                     {request.buyerType} in {request.district}, {request.region}. Deadline: {request.deadline}.
                   </p>
-                  <WhatsAppButton
-                    message={`Hello Ghana Growers, I am interested in the featured sourcing request for ${request.quantityNeeded} of ${request.productName}.`}
-                    sourceType="Buyer Request"
-                    sourceId={request.id}
-                    sourceName={request.productName}
-                    phoneNumber={request.whatsappNumber}
-                    className="mt-5 w-full"
-                  />
+                  <Link href="/contact" className="gg-button-primary mt-5 w-full">
+                    Respond through Ghana Growers
+                  </Link>
                 </article>
               ))
             : null}

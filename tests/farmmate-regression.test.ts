@@ -35,6 +35,7 @@ import {
   orderFarmerDirectoryProfiles,
   paginateFarmers,
   paginationPages,
+  publicFarmSize,
   publicFarmerProfiles
 } from "../src/lib/farmerDirectory";
 import {
@@ -8759,6 +8760,103 @@ const tests: TestCase[] = [
         false
       );
       assert.equal(activeMigrations.includes("20260723035406_profile_applications_and_private_media.sql"), true);
+    }
+  },
+  {
+    name: "Final public launch blockers keep buyer requests private and public copy factual",
+    run: () => {
+      const publicBuyerType = repoFile("src/types/publicBuyerRequest.ts");
+      const publicData = repoFile("src/lib/supabase/publicData.ts");
+      const publicMapper = publicData.slice(
+        publicData.indexOf("function mapBuyerRequest"),
+        publicData.indexOf("function mapFallbackBuyerRequest")
+      );
+      const buyerBoard = repoFile("src/components/BuyerRequestsBoard.tsx");
+      const adminDashboard = repoFile("src/components/AdminDashboard.tsx");
+      const marketIntelligence = repoFile("src/app/market-intelligence/page.tsx");
+      const sourcingPage = repoFile("src/app/submit-buyer-request/page.tsx");
+      const sourcingForm = repoFile("src/components/SubmitBuyerRequestForm.tsx");
+      const farmerProfile = repoFile("src/app/farmer-directory/[slug]/page.tsx");
+      const directory = repoFile("src/app/directory/page.tsx");
+      const farmerDirectory = repoFile("src/app/farmer-directory/page.tsx");
+      const about = repoFile("src/app/about/page.tsx");
+      const privacy = repoFile("src/app/privacy-policy/page.tsx");
+      const homepage = repoFile("src/app/page.tsx");
+      const layout = repoFile("src/app/layout.tsx");
+      const site = repoFile("src/data/site.ts");
+      const middleware = repoFile("src/middleware.ts");
+      const robots = repoFile("src/app/robots.ts");
+      const sitemap = repoFile("src/app/sitemap.ts");
+      const launchingSoon = repoFile("src/app/launching-soon/page.tsx");
+
+      for (const privateField of ["phone", "whatsapp", "email", "buyerName", "notes", "source", "id:"]) {
+        assert.equal(publicBuyerType.toLowerCase().includes(privateField.toLowerCase()), false);
+        assert.equal(publicMapper.toLowerCase().includes(privateField.toLowerCase()), false);
+      }
+      assert.equal(buyerBoard.includes("WhatsApp Buyer"), false);
+      assert.equal(buyerBoard.includes("wa.me"), false);
+      assert.equal(buyerBoard.includes("trackWhatsAppLead"), false);
+      assert.equal(buyerBoard.includes("fetch("), false);
+      assert.equal(buyerBoard.includes("Respond through Ghana Growers"), true);
+      assert.equal(buyerBoard.includes('href="/contact"'), true);
+      assert.equal(adminDashboard.includes("whatsapp_number"), true);
+      assert.equal(adminDashboard.includes("phone_number"), true);
+
+      assert.equal(marketIntelligence.includes("Market intelligence is not available yet."), true);
+      assert.equal(marketIntelligence.includes("not publishing market prices or demand signals"), true);
+      assert.equal(marketIntelligence.includes("<ButtonLink href=\"/marketplace\">"), true);
+      assert.equal(marketIntelligence.includes("noIndex: true"), true);
+      assert.equal(sitemap.includes('"/market-intelligence"'), false);
+
+      assert.equal(sourcingPage.includes("within one business day"), false);
+      assert.equal(sourcingForm.includes("within one business day"), false);
+      assert.equal(sourcingPage.includes("We Match"), false);
+      assert.equal(sourcingPage.includes("Supply Begins"), false);
+      assert.equal(sourcingPage.includes("Where possible, we compare the request"), true);
+      assert.equal(sourcingForm.includes("Your contact details and request information are kept private and are not shown publicly."), true);
+      assert.equal(sourcingForm.includes("Submitting a request does not guarantee availability or a match."), true);
+
+      assert.equal(farmerProfile.includes("marketplacePriceLine(listing)"), true);
+      assert.equal(farmerProfile.includes("formatPrice(listing.priceRange)"), false);
+      assert.equal(farmerProfile.includes("GHS 700"), false);
+      assert.equal(publicFarmSize("7"), "");
+      assert.equal(publicFarmSize("7 acres"), "7 acres");
+      assert.equal(publicFarmSize("2.5 hectares"), "2.5 hectares");
+      assert.equal(farmerProfile.includes("cleanFarmerLocation(farmer)"), true);
+      assert.equal(repoFile("src/lib/adminProfileEditor.ts").includes("publicLocation: cleanFarmerLocation(preview)"), true);
+
+      assert.equal(directory.includes("Explore the Ghana Growers Directory."), true);
+      assert.equal(directory.includes("Supplier profiles coming soon"), true);
+      assert.equal(directory.includes("across Ghana"), false);
+      assert.equal(farmerDirectory.includes("Meet farmers on Ghana Growers."), true);
+      assert.equal(farmerDirectory.includes("Across Ghana"), false);
+
+      assert.equal(about.includes("trusted agricultural platform"), false);
+      assert.equal(privacy.includes("improve platform readiness before launch"), false);
+      assert.equal(privacy.includes("Contact and partnership enquiries may include your name"), true);
+      assert.equal(layout.includes("Trusted Agriculture Platform for Ghana"), false);
+      assert.equal(layout.includes("Buy. Sell. Grow."), true);
+      assert.equal(homepage.includes('title: "Ghana Growers | Buy. Sell. Grow."'), true);
+      assert.equal(
+        homepage.includes(
+          "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools."
+        ),
+        true
+      );
+      assert.equal(site.includes("practical marketplace, public farmer profiles and smart farming tools"), true);
+
+      assert.equal(middleware.includes('pathname === "/robots.txt" || pathname === "/sitemap.xml"'), true);
+      assert.equal(middleware.includes('pathname.startsWith("/robots")'), false);
+      assert.equal(middleware.includes('pathname.startsWith("/sitemap")'), false);
+      assert.equal(middleware.includes('response.headers.set("X-Robots-Tag", "noindex, nofollow")'), true);
+      assert.equal(robots.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
+      assert.equal(robots.includes('export const dynamic = "force-dynamic"'), true);
+      assert.equal(robots.includes('disallow: "/"'), true);
+      assert.equal(robots.includes('allow: "/"'), true);
+      assert.equal(launchingSoon.includes("index: false"), true);
+      assert.equal(launchingSoon.includes("follow: false"), true);
+      assert.equal(middleware.includes("isHqApprovalCountsPrelaunchRoute(pathname)"), true);
+      assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
     }
   }
 ];
