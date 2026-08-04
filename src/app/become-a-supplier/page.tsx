@@ -4,26 +4,26 @@ import { SupplierOnboardingForm } from "@/components/SupplierOnboardingForm";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "Become a Ghana Growers Supplier",
+  title: "Apply to Join as a Supplier",
   description:
-    "Apply to become a Ghana Growers supplier and reach farmers, buyers, and agribusinesses looking for trusted agricultural products and services across Ghana.",
+    "Suppliers and agricultural service providers can apply to present farm inputs, tools, equipment, logistics, packaging and related support.",
   path: "/become-a-supplier"
 });
 
 const benefits = [
   {
-    title: "Reach Serious Customers",
-    description: "Connect with farmers, buyers and agribusinesses looking for trusted suppliers.",
+    title: "Present What You Offer",
+    description: "Tell Ghana Growers about your agricultural products, equipment or related support.",
     icon: Store
   },
   {
-    title: "Build Trust",
-    description: "Verified profiles and the Ghana Growers Quality Standard help your business stand out.",
+    title: "Private Application",
+    description: "Application contacts and documents remain private while Ghana Growers reviews them.",
     icon: ShieldCheck
   },
   {
-    title: "Grow With the Network",
-    description: "Become part of Ghana's trusted agricultural ecosystem.",
+    title: "Separate Public Review",
+    description: "An application does not create or publish a supplier profile automatically.",
     icon: Handshake
   }
 ];
@@ -52,13 +52,13 @@ export default function BecomeSupplierPage() {
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-earth-700 ring-1 ring-earth-500/25">
               <BadgeCheck size={15} aria-hidden="true" />
-              Supplier Onboarding
+              Supplier Application
             </p>
             <h1 className="gg-hero-title mt-6 max-w-[22rem] sm:max-w-3xl">
-              Become a Ghana Growers Supplier
+              Apply to join as a supplier
             </h1>
             <p className="mt-6 max-w-[22rem] text-lg leading-8 text-ink/70 sm:max-w-2xl">
-              Reach farmers, buyers and agribusinesses looking for trusted agricultural products and services across Ghana.
+              Suppliers and agricultural service providers can apply to present farm inputs, tools, equipment, logistics, packaging and related support. Applications are reviewed before any profile appears publicly.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#supplier-application" className="gg-button-primary w-[calc(100vw-2rem)] max-w-full sm:w-auto">
@@ -77,9 +77,9 @@ export default function BecomeSupplierPage() {
               <div className="grid h-14 w-14 place-items-center rounded-xl bg-leaf-700 text-white">
                 <Truck size={28} aria-hidden="true" />
               </div>
-              <h2 className="mt-6 text-2xl font-black text-ink">A trusted place for agricultural suppliers</h2>
+              <h2 className="mt-6 text-2xl font-black text-ink">One application for products and services</h2>
               <p className="mt-3 text-sm leading-6 text-ink/65">
-                Ghana Growers reviews supplier applications before public visibility so farmers and buyers can discover serious businesses with confidence.
+                Agricultural suppliers and service providers use this form. Ghana Growers may request more information during review.
               </p>
               <div className="mt-6 grid gap-3">
                 {["Inputs", "Equipment", "Logistics", "Packaging", "Services"].map((item) => (
@@ -98,7 +98,7 @@ export default function BecomeSupplierPage() {
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-[22rem] sm:max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Why join</p>
-            <h2 className="mt-3 break-words text-3xl font-black text-ink sm:text-4xl">Build visibility inside Ghana&apos;s agricultural network.</h2>
+            <h2 className="mt-3 break-words text-3xl font-black text-ink sm:text-4xl">Share the information needed for an initial review.</h2>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {benefits.map((benefit) => {
@@ -141,13 +141,13 @@ export default function BecomeSupplierPage() {
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:items-start lg:px-8">
           <div className="min-w-0 rounded-2xl bg-ivory p-6 ring-1 ring-earth-500/25">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">What happens next</p>
-            <h2 className="mt-3 text-2xl font-black text-ink">Ghana Growers reviews every supplier before visibility.</h2>
+            <h2 className="mt-3 text-2xl font-black text-ink">Applications are reviewed before any public profile.</h2>
             <div className="mt-6 grid gap-3">
               {[
                 "We review your application",
-                "We verify your business details",
-                "We prepare your supplier profile",
-                "We contact you within one business day"
+                "We may request more information",
+                "We record an approval decision",
+                "Approved profiles receive a separate public review"
               ].map((step) => (
                 <div key={step} className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink/75">
                   <BadgeCheck size={17} className="shrink-0 text-leaf-700" aria-hidden="true" />

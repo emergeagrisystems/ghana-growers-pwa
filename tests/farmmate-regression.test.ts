@@ -2415,16 +2415,19 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Unavailable farmer application performs no upload or database insert",
+    name: "Farmer registration uses the private application workflow",
     run: () => {
       const route = readFileSync(join(process.cwd(), "src/app/api/farmer-registration/route.ts"), "utf8");
       const page = readFileSync(join(process.cwd(), "src/app/join/farmer/page.tsx"), "utf8");
 
-      assert.match(route, /Farmer applications are temporarily unavailable while we improve the application process/);
-      assert.match(route, /status: 503/);
-      assert.doesNotMatch(route, /request\.formData|uploadSupabaseStorageObject|insertSupabaseRecord|ok: true/);
-      assert.match(page, /Applications are temporarily unavailable/);
-      assert.doesNotMatch(page, /FarmerRegistrationForm/);
+      assert.match(route, /request\.formData/);
+      assert.match(route, /createFarmerApplication/);
+      assert.match(route, /uploadPrivateApplicationMedia/);
+      assert.match(route, /cleanupPrivateApplicationMedia/);
+      assert.doesNotMatch(route, /convertFarmerApplicationToProfile|createListingSubmission/);
+      assert.match(page, /Register your farm with Ghana Growers/);
+      assert.match(page, /FarmerRegistrationForm/);
+      assert.doesNotMatch(page, /Applications are temporarily unavailable/);
     }
   },
   {
@@ -8303,7 +8306,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Farmer application and approved media foundations remain safely dormant",
+    name: "Farmer application and approved media foundations remain private and review-led",
     run: () => {
       const farmerRoute = repoFile("src/app/api/farmer-registration/route.ts");
       const farmerPage = repoFile("src/app/join/farmer/page.tsx");
@@ -8316,9 +8319,12 @@ const tests: TestCase[] = [
       assert.equal(service.includes("linkedProfileId !== profileId"), true);
       assert.equal(service.includes("verifiedDigest !== sourceDigest"), true);
       assert.equal(service.includes("private_certificate_paths") && service.includes("private_document_paths"), true);
-      assert.equal(farmerRoute.includes("status: 503"), true);
-      assert.doesNotMatch(farmerRoute, /createFarmerApplication|uploadPrivateApplicationMedia/);
-      assert.equal(farmerPage.includes("Applications are temporarily unavailable"), true);
+      assert.equal(farmerRoute.includes("createFarmerApplication"), true);
+      assert.equal(farmerRoute.includes("uploadPrivateApplicationMedia"), true);
+      assert.equal(farmerRoute.includes("cleanupPrivateApplicationMedia"), true);
+      assert.doesNotMatch(farmerRoute, /convertFarmerApplicationToProfile|createListingSubmission/);
+      assert.equal(farmerPage.includes("FarmerRegistrationForm"), true);
+      assert.equal(farmerPage.includes("Registration does not publish a profile automatically"), true);
     }
   },
   {

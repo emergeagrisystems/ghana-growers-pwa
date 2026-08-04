@@ -46,6 +46,14 @@ export type ApplicationRecord = {
   private_profile_image_path?: string | null;
   private_farm_image_paths?: string[] | null;
   private_produce_image_paths?: string[] | null;
+  application_reference?: string | null;
+  farm_location?: string | null;
+  farm_type?: string | null;
+  production_details?: string | null;
+  current_availability?: string | null;
+  supply_frequency?: string | null;
+  harvest_season?: string | null;
+  delivery_preference?: string | null;
   review_state?: string | null;
   verification_decision?: string | null;
   linked_farmer_id?: string | null;
@@ -131,6 +139,9 @@ export async function getApplicationQueue(kind: ApplicationKind): Promise<{
 }
 
 function mapFarmerApplication(application: FarmerApplicationAdminRow): ApplicationRecord {
+  const applicationReference = typeof application.source_metadata?.application_reference === "string"
+    ? application.source_metadata.application_reference
+    : null;
   return {
     id: application.id,
     name: application.applicant_name,
@@ -143,6 +154,14 @@ function mapFarmerApplication(application: FarmerApplicationAdminRow): Applicati
     user_type: "Farmer",
     products_or_services: (application.crops_products ?? []).join(", "),
     notes: application.application_message ?? application.admin_notes ?? null,
+    application_reference: applicationReference,
+    farm_location: application.location ?? null,
+    farm_type: application.farm_type,
+    production_details: application.production_details ?? null,
+    current_availability: application.current_availability ?? null,
+    supply_frequency: application.supply_frequency ?? null,
+    harvest_season: application.harvest_season ?? null,
+    delivery_preference: application.delivery_preference ?? null,
     status: application.status as ApplicationStatus,
     created_at: application.created_at,
     updated_at: application.updated_at,

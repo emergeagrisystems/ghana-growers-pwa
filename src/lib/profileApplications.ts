@@ -66,7 +66,10 @@ export type FarmerApplicationAdminRow = FarmerApplicationForConversion & {
   verification_decision: string;
   launch_ready: boolean;
   application_message?: string | null;
+  production_details?: string | null;
+  harvest_season?: string | null;
   admin_notes?: string | null;
+  source_metadata?: Record<string, unknown> | null;
   private_profile_image_path?: string | null;
   private_farm_image_paths?: string[] | null;
   private_produce_image_paths?: string[] | null;
@@ -100,9 +103,9 @@ export type SupplierApplicationAdminRow = SupplierApplicationForConversion & {
 const farmerAdminColumns = [
   "id", "applicant_name", "farm_name", "phone_number", "whatsapp_number", "email", "region", "district", "location",
   "farm_type", "crops_products", "farm_size", "farming_experience", "current_availability", "supply_frequency",
-  "delivery_preference", "application_message", "private_profile_image_path", "private_farm_image_paths",
+  "delivery_preference", "production_details", "harvest_season", "application_message", "private_profile_image_path", "private_farm_image_paths",
   "private_produce_image_paths", "private_document_paths", "status", "review_state", "verification_decision", "launch_ready",
-  "admin_notes", "linked_farmer_id", "created_at", "updated_at"
+  "admin_notes", "source_metadata", "linked_farmer_id", "created_at", "updated_at"
 ].join(",");
 
 const supplierAdminColumns = [

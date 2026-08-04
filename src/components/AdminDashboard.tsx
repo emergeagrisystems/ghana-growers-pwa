@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -367,6 +368,18 @@ type ApplicationRecord = {
   editorial_updated_by?: string | null;
   linked_farmer_id?: string | null;
   linked_supplier_id?: string | null;
+  application_reference?: string | null;
+  farm_location?: string | null;
+  farm_type?: string | null;
+  production_details?: string | null;
+  current_availability?: string | null;
+  supply_frequency?: string | null;
+  harvest_season?: string | null;
+  delivery_preference?: string | null;
+  private_profile_image_path?: string | null;
+  private_farm_image_paths?: string[] | null;
+  private_produce_image_paths?: string[] | null;
+  private_document_paths?: string[] | null;
 };
 type ListingSubmissionRecord = {
   id: string;
@@ -831,6 +844,7 @@ const operationsNavigation: Array<{
     group: "Network",
     items: [
       { key: "network-farmer-applications", id: "applications", label: "Farmer Applications", applicationTab: "farmer" },
+      { key: "network-imported-farmers", id: "applications", label: "Imported Farmers Pending Review", applicationTab: "farmer" },
       { key: "network-supplier-applications", id: "applications", label: "Supplier Applications", applicationTab: "supplier" },
       { key: "network-members", id: "farmers", label: "Members" },
       { key: "network-directories", id: "suppliers", label: "Directories" }
@@ -3829,6 +3843,191 @@ function AdminOptionalQueueNotice({
   );
 }
 
+function FarmerApplicationsWorkspace({
+  applications,
+  onUpdate,
+  onConvert
+}: {
+  applications: ApplicationRecord[];
+  onUpdate: (application: ApplicationRecord, status: ApplicationStatus) => Promise<void>;
+  onConvert: (application: ApplicationRecord) => Promise<void>;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mediaPreviews, setMediaPreviews] = useState<Array<{ label: string; url: string }>>([]);
+  const [mediaError, setMediaError] = useState("");
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const selected = applications.find((application) => application.id === selectedId) ?? applications[0] ?? null;
+
+  useEffect(() => {
+    if (!selectedId && applications[0]) setSelectedId(applications[0].id);
+    if (selectedId && !applications.some((application) => application.id === selectedId)) {
+      setSelectedId(applications[0]?.id ?? null);
+    }
+  }, [applications, selectedId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMediaPreviews([]);
+    setMediaError("");
+    if (!selected) return;
+
+    const imagePaths = [
+      ...(selected.private_profile_image_path ? [{ label: "Main application image", path: selected.private_profile_image_path }] : []),
+      ...(selected.private_farm_image_paths ?? []).map((path, index) => ({ label: `Farm image ${index + 1}`, path })),
+      ...(selected.private_produce_image_paths ?? []).map((path, index) => ({ label: `Produce image ${index + 1}`, path }))
+    ];
+    if (imagePaths.length === 0) return;
+
+    setIsLoadingMedia(true);
+    void Promise.all(imagePaths.map(async (item) => {
+      const response = await fetch("/api/admin/profile-applications/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "farmer", applicationId: selected.id, path: item.path, action: "preview" })
+      }).catch(() => null);
+      const result = (await response?.json().catch(() => null)) as { signedUrl?: string } | null;
+      return response?.ok && result?.signedUrl ? { label: item.label, url: result.signedUrl } : null;
+    })).then((previews) => {
+      if (cancelled) return;
+      const available = previews.filter((preview): preview is { label: string; url: string } => Boolean(preview));
+      setMediaPreviews(available);
+      if (available.length !== imagePaths.length) setMediaError("One or more protected media previews could not be loaded.");
+    }).finally(() => {
+      if (!cancelled) setIsLoadingMedia(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  async function openProtectedDocument(path: string) {
+    if (!selected) return;
+    setMediaError("");
+    const response = await fetch("/api/admin/profile-applications/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "farmer", applicationId: selected.id, path, action: "preview" })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { signedUrl?: string } | null;
+    if (!response?.ok || !result?.signedUrl) {
+      setMediaError("This protected document preview is unavailable.");
+      return;
+    }
+    window.open(result.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
+  if (applications.length === 0) {
+    return <p className="rounded-md bg-leaf-50 p-5 text-sm font-semibold text-ink/58">No new farmer applications yet.</p>;
+  }
+
+  return (
+    <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(260px,0.75fr)_minmax(0,1.5fr)]">
+      <aside className="admin-queue-panel p-4">
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">New Farmer Applications</p>
+        <h3 className="mt-1 text-xl font-black text-ink">Applications ({applications.length})</h3>
+        <div className="mt-4 grid gap-2">
+          {applications.map((application) => {
+            const active = selected?.id === application.id;
+            return (
+              <button
+                key={application.id}
+                type="button"
+                onClick={() => setSelectedId(application.id)}
+                className={`rounded-md border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-700 ${active ? "border-leaf-700 bg-leaf-50" : "border-leaf-900/10 bg-white hover:bg-leaf-50"}`}
+              >
+                <p className="text-xs font-black uppercase tracking-wide text-earth-700">{application.application_reference || "Reference unavailable"}</p>
+                <p className="mt-1 text-sm font-black text-ink">{application.business_or_farm_name || application.name}</p>
+                <p className="mt-1 text-xs font-semibold text-ink/55">{[application.district, application.region].filter(Boolean).join(", ") || "Location not provided"}</p>
+                <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-wide text-ink/45">
+                  <span>{application.status}</span>
+                  <span>{new Date(application.created_at).toLocaleDateString()}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <div className="admin-panel min-w-0 p-5">
+        {selected ? (
+          <div className="grid gap-6">
+            <header>
+              <p className="text-xs font-black uppercase tracking-wide text-earth-700">{selected.application_reference || "Farmer application"}</p>
+              <h3 className="mt-2 text-2xl font-black text-ink">{selected.business_or_farm_name || selected.name}</h3>
+              <p className="mt-2 text-sm font-semibold text-ink/58">Submitted {new Date(selected.created_at).toLocaleString()} · {selected.status}</p>
+            </header>
+
+            <dl className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["Applicant", selected.name],
+                ["Region and district", [selected.district, selected.region].filter(Boolean).join(", ")],
+                ["Farm location", selected.farm_location],
+                ["Farm type", selected.farm_type],
+                ["Crops or products", selected.products_or_services],
+                ["Current availability", selected.current_availability],
+                ["Supply frequency", selected.supply_frequency],
+                ["Harvest season", selected.harvest_season],
+                ["Delivery preference", selected.delivery_preference]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-md bg-leaf-50 p-3">
+                  <dt className="text-xs font-black uppercase tracking-wide text-ink/45">{label}</dt>
+                  <dd className="mt-1 break-words text-sm font-semibold text-ink/70">{value || "Not provided"}</dd>
+                </div>
+              ))}
+            </dl>
+
+            {selected.production_details || selected.notes ? (
+              <div className="grid gap-3">
+                {selected.production_details ? <div className="rounded-md bg-white p-4 text-sm leading-6 text-ink/70 ring-1 ring-leaf-900/10"><strong>Farming or supply information</strong><p className="mt-2">{selected.production_details}</p></div> : null}
+                {selected.notes ? <div className="rounded-md bg-white p-4 text-sm leading-6 text-ink/70 ring-1 ring-leaf-900/10"><strong>Application message</strong><p className="mt-2">{selected.notes}</p></div> : null}
+              </div>
+            ) : null}
+
+            <section className="rounded-md bg-earth-50 p-4 ring-1 ring-earth-500/15">
+              <h4 className="font-black text-ink">Private contact information</h4>
+              <div className="mt-3 grid gap-2 text-sm font-semibold text-ink/68 sm:grid-cols-3">
+                <p>Phone: {selected.phone || "Not provided"}</p>
+                <p>WhatsApp: {selected.whatsapp_number || "Not provided"}</p>
+                <p>Email: {selected.email || "Not provided"}</p>
+              </div>
+            </section>
+
+            <section>
+              <h4 className="font-black text-ink">Protected application media</h4>
+              {isLoadingMedia ? <p className="mt-2 text-sm font-semibold text-ink/55">Loading protected previews...</p> : null}
+              {mediaPreviews.length > 0 ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {mediaPreviews.map((preview) => <Image key={preview.label} src={preview.url} alt={preview.label} width={800} height={600} unoptimized className="aspect-[4/3] w-full rounded-md bg-leaf-50 object-contain ring-1 ring-leaf-900/10" />)}
+                </div>
+              ) : !isLoadingMedia ? <p className="mt-2 text-sm font-semibold text-ink/55">No application images were provided.</p> : null}
+              {(selected.private_document_paths ?? []).length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(selected.private_document_paths ?? []).map((path, index) => (
+                    <button key={index} type="button" onClick={() => void openProtectedDocument(path)} className="min-h-11 rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-800 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-leaf-700">
+                      Preview protected document {index + 1}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {mediaError ? <p className="mt-3 text-sm font-bold text-tomato" role="alert">{mediaError}</p> : null}
+            </section>
+
+            <div className="flex flex-wrap gap-2 border-t border-leaf-900/10 pt-5">
+              <button type="button" onClick={() => void onUpdate(selected, "Under Review")} className="admin-action-tertiary">Mark Under Review</button>
+              <button type="button" onClick={() => void onUpdate(selected, "Approved")} className="admin-action-primary">Approve</button>
+              <button type="button" onClick={() => void onUpdate(selected, "Rejected")} className="admin-action-destructive">Reject</button>
+              <button type="button" onClick={() => void onConvert(selected)} disabled={selected.status !== "Approved" && !selected.linked_farmer_id} className="admin-action-primary disabled:cursor-not-allowed disabled:opacity-50">
+                {selected.linked_farmer_id ? "Open Farmer Profile" : "Create Farmer Profile"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 export function AdminDashboard({
   currentAdmin,
   initialSection = "analytics",
@@ -4331,10 +4530,10 @@ export function AdminDashboard({
   }, []);
 
   useEffect(() => {
-    if (activeSection === "farmer-import" || (activeSection === "applications" && applicationTab === "farmer")) {
+    if (activeSection === "farmer-import" || (activeSection === "applications" && activeNavigationKey === "network-imported-farmers")) {
       void loadImportedFarmers();
     }
-  }, [activeSection, applicationTab, loadImportedFarmers]);
+  }, [activeNavigationKey, activeSection, loadImportedFarmers]);
 
   const newApplicationCounts = useMemo(() => ({
     farmers: applicationQueueStates.farmer === "loaded" ? applications.farmer.filter(applicationNeedsReview).length : null,
@@ -4842,7 +5041,7 @@ export function AdminDashboard({
   const reviewingSupplierLaunchReadiness = reviewingSupplierEditorialDecision ? supplierLaunchReadiness(reviewingSupplierEditorialDecision) : null;
 
   useEffect(() => {
-    if (activeSection !== "applications" || applicationTab !== "farmer" || reviewingImportedFarmerId || farmerReviewQueue.length === 0) {
+    if (activeSection !== "applications" || applicationTab !== "farmer" || activeNavigationKey !== "network-imported-farmers" || reviewingImportedFarmerId || farmerReviewQueue.length === 0) {
       return;
     }
 
@@ -4851,7 +5050,7 @@ export function AdminDashboard({
     setVerificationReviewNotes(firstFarmer.verification_notes ?? "");
     setFarmerReviewDebug(reviewDebugFields(firstFarmer));
     setFarmerReviewMessage(null);
-  }, [activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
+  }, [activeNavigationKey, activeSection, applicationTab, farmerReviewQueue, reviewingImportedFarmerId]);
 
   useEffect(() => {
     if (activeSection !== "applications" || applicationTab !== "supplier" || reviewingSupplierId || supplierReviewQueue.length === 0) {
@@ -6265,12 +6464,15 @@ export function AdminDashboard({
   const isBuyerRequestsSection = activeSection === "buyer-requests";
   const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
-  const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer";
+  const isImportedFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer" && activeNavigationKey === "network-imported-farmers";
+  const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer" && !isImportedFarmerReviewWorkspace;
   const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
-  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : isWhatsAppLeadsSection ? "Optional Analytics" : "Manage Records";
-  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "Farmer Review Workspace" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : isWhatsAppLeadsSection ? "Notifications" : activeSectionLabel;
+  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isImportedFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : isWhatsAppLeadsSection ? "Optional Analytics" : "Manage Records";
+  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "New Farmer Applications" : isImportedFarmerReviewWorkspace ? "Imported Farmers Pending Review" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : isWhatsAppLeadsSection ? "Notifications" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
-    ? "Review one farmer, make one decision, then continue to the next application."
+    ? "Review private farmer applications submitted through the public registration form."
+    : isImportedFarmerReviewWorkspace
+      ? "Review previously imported farmer records separately from new farmer applications."
     : isSupplierReviewWorkspace
       ? "Review one supplier, make one decision, then continue to the next application."
     : isBuyerRequestsSection
@@ -7544,16 +7746,19 @@ export function AdminDashboard({
               </div>
             ) : isApplicationsSection ? (
               <div className="grid gap-5 p-5">
-                <div className="flex flex-wrap gap-2">
+                <div className={isImportedFarmerReviewWorkspace ? "hidden" : "flex flex-wrap gap-2"}>
                   {([
-                    ["farmer", "Farmer Applications", applications.farmer.filter(applicationNeedsReview).length],
+                    ["farmer", "Farmer Applications", applications.farmer.length],
                     ["buyer", "Buyer Applications", applications.buyer.filter(applicationNeedsReview).length],
                     ["supplier", "Supplier Applications", applications.supplier.filter(applicationNeedsReview).length]
                   ] as Array<[ApplicationKind, string, number]>).map(([kind, label, count]) => (
                     <button
                       key={kind}
                       type="button"
-                      onClick={() => setApplicationTab(kind)}
+                      onClick={() => {
+                        setApplicationTab(kind);
+                        setActiveNavigationKey(kind === "farmer" ? "network-farmer-applications" : kind === "supplier" ? "network-supplier-applications" : "network-buyer-applications");
+                      }}
                       className={`rounded-md px-4 py-2.5 text-sm font-black transition ${
                         applicationTab === kind ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-800 hover:bg-white"
                       }`}
@@ -7587,7 +7792,13 @@ export function AdminDashboard({
                     </button>
                   </div>
                 ) : null}
-                {selectedApplicationQueueState !== "loaded" ? null : applicationTab === "farmer" ? (
+                {selectedApplicationQueueState !== "loaded" ? null : applicationTab === "farmer" && !isImportedFarmerReviewWorkspace ? (
+                  <FarmerApplicationsWorkspace
+                    applications={applications.farmer}
+                    onUpdate={updateApplication}
+                    onConvert={(application) => convertProfileApplication("farmer", application)}
+                  />
+                ) : applicationTab === "farmer" ? (
                   <div className="grid min-w-0 gap-5">
                     <section className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
