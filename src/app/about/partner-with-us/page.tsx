@@ -1,7 +1,7 @@
 import { Building2, Handshake, PackageCheck, Sprout, Store, Truck, UsersRound } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
+import { ContactEnquiryForm } from "@/components/ContactEnquiryForm";
 import { PageHero } from "@/components/PageHero";
-import { RegistrationForm } from "@/components/RegistrationForm";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -119,7 +119,7 @@ export default function PartnerPage() {
               </p>
             </section>
 
-            <RegistrationForm title="Start a partnership conversation" audience="partner" />
+            <ContactEnquiryForm enquiryType="Partnership" />
           </div>
         </div>
       </section>

@@ -49,7 +49,7 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Contact Us"
         title="Contact Ghana Growers"
-        description="Send Ghana Growers a message about farmer onboarding, buyer demand, supplier registration, verification, partnerships, or a listing that needs review."
+        description="Have a question about buying, selling, farmer registration, supplier applications or Ghana Growers? Send us a message."
         variant="compact"
       />
       <section className="bg-white py-16">
@@ -59,12 +59,6 @@ export default function ContactPage() {
               <h2 className="text-lg font-black text-ink">Operated by Emerge Agri Systems (E.A.Sy)</h2>
               <p className="mt-2 text-sm leading-7 text-ink/66">
                 Ghana Growers is the public agricultural platform operated by Emerge Agri Systems. Use this contact page for farmer, buyer, supplier, verification, and partnership enquiries.
-              </p>
-            </div>
-            <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
-              <h2 className="text-lg font-black text-ink">Response expectation</h2>
-              <p className="mt-2 text-sm leading-7 text-ink/66">
-                We normally respond within 1-2 business days. If your enquiry is about a buyer request, farmer profile, supplier registration, or trust issue, include the name, product, region, and phone or WhatsApp number where possible.
               </p>
             </div>
             {contactItems.map((item) => {

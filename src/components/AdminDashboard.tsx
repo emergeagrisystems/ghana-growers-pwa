@@ -17,6 +17,7 @@ import {
   FilePenLine,
   ListChecks,
   LayoutDashboard,
+  Mail,
   MessageCircle,
   PackageCheck,
   PlusCircle,
@@ -32,6 +33,7 @@ import {
   X
 } from "lucide-react";
 import { ChangeEvent, FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AdminContactEnquiriesWorkspace } from "@/components/AdminContactEnquiriesWorkspace";
 import { buyerRequests } from "@/data/buyerRequests";
 import { farmerDirectory } from "@/data/farmers";
 import { learnLessons as learnArticles } from "@/data/learnLessons";
@@ -59,6 +61,7 @@ type AdminSectionId =
   | "launch-checklist"
   | "lead-queue"
   | "featured-enquiries"
+  | "contact-enquiries"
   | "farmer-import"
   | "farmers"
   | "buyers"
@@ -691,6 +694,7 @@ function sectionRows(): Record<AdminSectionId, AdminRow[]> {
     "launch-checklist": [],
     "lead-queue": [],
     "featured-enquiries": [],
+    "contact-enquiries": [],
     "farmer-import": [],
     farmers: farmerDirectory.map((farmer) => ({
       id: farmer.slug,
@@ -794,6 +798,7 @@ const sections: Array<{ id: AdminSectionId; label: string; icon: typeof LayoutDa
   { id: "launch-checklist", label: "Launch Checklist", icon: ListChecks },
   { id: "lead-queue", label: "Leads", icon: MessageCircle },
   { id: "featured-enquiries", label: "Featured Enquiries", icon: Star },
+  { id: "contact-enquiries", label: "Contact & Partnership Enquiries", icon: Mail },
   { id: "farmer-import", label: "Farmer Import", icon: UploadCloud },
   { id: "farmers", label: "Farmers", icon: Sprout },
   { id: "buyers", label: "Buyers", icon: UsersRound },
@@ -846,6 +851,7 @@ const operationsNavigation: Array<{
       { key: "network-farmer-applications", id: "applications", label: "Farmer Applications", applicationTab: "farmer" },
       { key: "network-imported-farmers", id: "applications", label: "Imported Farmers Pending Review", applicationTab: "farmer" },
       { key: "network-supplier-applications", id: "applications", label: "Supplier Applications", applicationTab: "supplier" },
+      { key: "network-contact-enquiries", id: "contact-enquiries", label: "Contact & Partnership Enquiries" },
       { key: "network-members", id: "farmers", label: "Members" },
       { key: "network-directories", id: "suppliers", label: "Directories" }
     ]
@@ -6463,12 +6469,13 @@ export function AdminDashboard({
   const isLeadQueueSection = activeSection === "lead-queue";
   const isBuyerRequestsSection = activeSection === "buyer-requests";
   const isFeaturedEnquiriesSection = activeSection === "featured-enquiries";
+  const isContactEnquiriesSection = activeSection === "contact-enquiries";
   const isMatchOpportunitiesSection = activeSection === "match-opportunities";
   const isImportedFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer" && activeNavigationKey === "network-imported-farmers";
   const isFarmerReviewWorkspace = isApplicationsSection && applicationTab === "farmer" && !isImportedFarmerReviewWorkspace;
   const isSupplierReviewWorkspace = isApplicationsSection && applicationTab === "supplier";
-  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isImportedFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : isWhatsAppLeadsSection ? "Optional Analytics" : "Manage Records";
-  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "New Farmer Applications" : isImportedFarmerReviewWorkspace ? "Imported Farmers Pending Review" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isMatchOpportunitiesSection ? "Sourcing Queue" : isWhatsAppLeadsSection ? "Notifications" : activeSectionLabel;
+  const sectionEyebrow = isAnalyticsReportsSection ? "Reports" : isFarmerReviewWorkspace || isImportedFarmerReviewWorkspace || isSupplierReviewWorkspace ? "Review Workspace" : isBuyerRequestsSection || isContactEnquiriesSection ? "Private Enquiry Workspace" : isMatchOpportunitiesSection ? "Sourcing Workspace" : isWhatsAppLeadsSection ? "Optional Analytics" : "Manage Records";
+  const sectionTitle = isAnalyticsReportsSection ? "Analytics" : isFarmerReviewWorkspace ? "New Farmer Applications" : isImportedFarmerReviewWorkspace ? "Imported Farmers Pending Review" : isSupplierReviewWorkspace ? "Supplier Review Workspace" : isBuyerRequestsSection ? "Produce Requests" : isContactEnquiriesSection ? "Contact & Partnership Enquiries" : isMatchOpportunitiesSection ? "Sourcing Queue" : isWhatsAppLeadsSection ? "Notifications" : activeSectionLabel;
   const sectionNotice = isFarmerReviewWorkspace
     ? "Review private farmer applications submitted through the public registration form."
     : isImportedFarmerReviewWorkspace
@@ -6477,6 +6484,8 @@ export function AdminDashboard({
       ? "Review one supplier, make one decision, then continue to the next application."
     : isBuyerRequestsSection
       ? "Review private buyer enquiries from marketplace listings, directory profiles, and generic sourcing forms."
+    : isContactEnquiriesSection
+      ? "Review private messages and partnership enquiries independently from applications and buyer requests."
     : isMatchOpportunitiesSection
       ? "Help buyers source produce by reviewing one case, choosing matches, and deciding the next action."
     : isWhatsAppLeadsSection
@@ -7135,7 +7144,7 @@ export function AdminDashboard({
                   <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">{sectionTitle}</h2>
                   <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-ink/58">{sectionNotice}</p>
                 </div>
-                {!isAnalyticsReportsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isBuyerRequestsSection && !isFeaturedEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
+                {!isAnalyticsReportsSection && !isLaunchChecklistSection && !isFarmerImportSection && !isLeadQueueSection && !isBuyerRequestsSection && !isFeaturedEnquiriesSection && !isContactEnquiriesSection && !isApplicationsSection && !isSubmissionsSection && !isWhatsAppLeadsSection && !isMatchOpportunitiesSection ? (
                 <div className={`grid gap-3 ${activeSectionFormId ? "sm:grid-cols-[auto_1fr_auto]" : "sm:grid-cols-[1fr_auto]"}`}>
                   {activeSectionFormId ? (
                     <button
@@ -7743,6 +7752,10 @@ export function AdminDashboard({
                     <p className="p-6 text-sm font-semibold text-ink/60">Upload a Tally CSV to preview imported farmers here.</p>
                   ) : null}
                 </section>
+              </div>
+            ) : isContactEnquiriesSection ? (
+              <div className="p-5">
+                <AdminContactEnquiriesWorkspace />
               </div>
             ) : isApplicationsSection ? (
               <div className="grid gap-5 p-5">
