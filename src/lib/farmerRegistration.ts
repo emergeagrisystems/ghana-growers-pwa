@@ -1,125 +1,115 @@
-import { farmerRegistrationNotifications } from "@/data/notificationConfig";
-import { appendValuesToGoogleSheet } from "@/lib/googleSheets";
+import { createHmac, randomBytes } from "node:crypto";
 
 export type FarmerRegistrationPayload = {
-  farmerName: string;
-  fullName: string;
+  applicantName: string;
   farmName: string;
   phoneNumber: string;
   whatsappNumber: string;
-  emailAddress: string;
+  email: string;
   region: string;
   district: string;
-  districtTown: string;
-  farmSize: string;
-  farmSizeAcres: string;
+  farmLocation: string;
   farmType: "Crop" | "Livestock" | "Mixed";
-  mainCrops: string;
-  products: string;
-  otherProduce: string;
+  cropsProducts: string[];
+  productionDetails: string;
   currentAvailability: string;
+  supplyFrequency: string;
   harvestSeason: string;
-  expectedHarvestPeriod: string;
-  farmDescription: string;
-  additionalNotes: string;
-  hasAvailableProduce: string;
-  farmerPhotoUrl: string;
-  farmPhotoUrls: string[];
-  producePhotoUrls: string[];
-  agreement: boolean;
-  privacyAccepted: boolean;
+  deliveryPreference: string;
+  applicationMessage: string;
+  agreementAccepted: boolean;
+  submissionToken: string;
 };
+
+export type FarmerRegistrationField = keyof FarmerRegistrationPayload | "contact" | "media" | "form";
 
 export type FarmerRegistrationResult = {
   ok: boolean;
-  errors: Partial<Record<keyof FarmerRegistrationPayload | "form", string>>;
+  errors: Partial<Record<FarmerRegistrationField, string>>;
   data?: FarmerRegistrationPayload;
+};
+
+const maxLengths: Partial<Record<keyof FarmerRegistrationPayload, number>> = {
+  applicantName: 120,
+  farmName: 160,
+  phoneNumber: 40,
+  whatsappNumber: 40,
+  email: 254,
+  region: 120,
+  district: 120,
+  farmLocation: 200,
+  productionDetails: 1500,
+  currentAvailability: 500,
+  supplyFrequency: 300,
+  harvestSeason: 300,
+  deliveryPreference: 500,
+  applicationMessage: 1500
 };
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function cleanArray(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.map(clean).filter(Boolean);
-  }
+function cleanList(value: unknown) {
+  const values = Array.isArray(value) ? value : [value];
+  return Array.from(new Set(values.flatMap((item) => clean(item).split(/[\n,;]+/))
+    .map((item) => item.trim())
+    .filter(Boolean)));
+}
 
-  const stringValue = clean(value);
-  return stringValue ? stringValue.split(",").map((item) => item.trim()).filter(Boolean) : [];
+function hasValidPhoneLength(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+export function isFarmerSubmissionToken(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export function validateFarmerRegistration(input: Record<string, unknown>): FarmerRegistrationResult {
-  const farmerName = clean(input.farmerName) || clean(input.fullName);
-  const districtTown = clean(input.districtTown) || clean(input.district);
-  const farmSize = clean(input.farmSize) || clean(input.farmSizeAcres);
-  const mainCrops = clean(input.mainCrops) || clean(input.products);
-  const harvestSeason = clean(input.harvestSeason) || clean(input.expectedHarvestPeriod);
-  const farmDescription = clean(input.farmDescription) || clean(input.additionalNotes);
-  const agreement = input.agreement === true || input.privacyAccepted === true;
-
+  const cropsProducts = cleanList(input.cropsProducts ?? input.mainCrops ?? input.products);
   const data: FarmerRegistrationPayload = {
-    farmerName,
-    fullName: farmerName,
+    applicantName: clean(input.applicantName ?? input.farmerName ?? input.fullName),
     farmName: clean(input.farmName),
-    phoneNumber: clean(input.phoneNumber) || clean(input.phone),
-    whatsappNumber: clean(input.whatsappNumber) || clean(input.whatsapp),
-    emailAddress: clean(input.emailAddress) || clean(input.email),
+    phoneNumber: clean(input.phoneNumber ?? input.phone),
+    whatsappNumber: clean(input.whatsappNumber ?? input.whatsapp),
+    email: clean(input.email ?? input.emailAddress),
     region: clean(input.region),
-    district: districtTown,
-    districtTown,
-    farmSize,
-    farmSizeAcres: farmSize,
-    farmType: (clean(input.farmType) || "Crop") as FarmerRegistrationPayload["farmType"],
-    mainCrops,
-    products: mainCrops,
-    otherProduce: clean(input.otherProduce),
+    district: clean(input.district ?? input.districtTown),
+    farmLocation: clean(input.farmLocation ?? input.location),
+    farmType: clean(input.farmType) as FarmerRegistrationPayload["farmType"],
+    cropsProducts,
+    productionDetails: clean(input.productionDetails ?? input.farmDescription),
     currentAvailability: clean(input.currentAvailability),
-    harvestSeason,
-    expectedHarvestPeriod: harvestSeason,
-    farmDescription,
-    additionalNotes: farmDescription,
-    hasAvailableProduce: clean(input.hasAvailableProduce),
-    farmerPhotoUrl: clean(input.farmerPhotoUrl),
-    farmPhotoUrls: cleanArray(input.farmPhotoUrls),
-    producePhotoUrls: cleanArray(input.producePhotoUrls),
-    agreement,
-    privacyAccepted: agreement
+    supplyFrequency: clean(input.supplyFrequency),
+    harvestSeason: clean(input.harvestSeason ?? input.expectedHarvestPeriod),
+    deliveryPreference: clean(input.deliveryPreference),
+    applicationMessage: clean(input.applicationMessage ?? input.additionalNotes),
+    agreementAccepted: input.agreementAccepted === true || input.agreement === true || input.privacyAccepted === true,
+    submissionToken: clean(input.submissionToken)
   };
   const errors: FarmerRegistrationResult["errors"] = {};
-  const requiredFields: Array<keyof FarmerRegistrationPayload> = [
-    "farmerName",
-    "phoneNumber",
-    "region",
-    "districtTown",
-    "mainCrops",
-    "currentAvailability",
-    "farmDescription",
-    "hasAvailableProduce"
-  ];
 
-  requiredFields.forEach((field) => {
-    if (!data[field]) {
-      errors[field] = "This field is required.";
+  if (!data.applicantName) errors.applicantName = "Enter your name.";
+  if (!data.phoneNumber && !data.whatsappNumber) errors.contact = "Enter a phone or WhatsApp number.";
+  if (data.phoneNumber && !hasValidPhoneLength(data.phoneNumber)) errors.phoneNumber = "Enter a valid phone number.";
+  if (data.whatsappNumber && !hasValidPhoneLength(data.whatsappNumber)) errors.whatsappNumber = "Enter a valid WhatsApp number.";
+  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Enter a valid email address.";
+  if (!data.region) errors.region = "Select your region.";
+  if (!data.district) errors.district = "Enter your district.";
+  if (!["Crop", "Livestock", "Mixed"].includes(data.farmType)) errors.farmType = "Select a farm type.";
+  if (data.cropsProducts.length === 0) errors.cropsProducts = "Tell us what you grow or produce.";
+  if (data.cropsProducts.length > 30 || data.cropsProducts.some((item) => item.length > 80)) {
+    errors.cropsProducts = "Use up to 30 short crop or product names.";
+  }
+  if (!data.agreementAccepted) errors.agreementAccepted = "Confirm the application terms before submitting.";
+  if (!isFarmerSubmissionToken(data.submissionToken)) errors.form = "Please refresh this page and try again.";
+
+  for (const [field, maxLength] of Object.entries(maxLengths) as Array<[keyof FarmerRegistrationPayload, number]>) {
+    const value = data[field];
+    if (typeof value === "string" && value.length > maxLength) {
+      errors[field] = `Keep this answer under ${maxLength} characters.`;
     }
-  });
-
-  if (data.emailAddress && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.emailAddress)) {
-    errors.emailAddress = "Enter a valid email address.";
-  }
-
-  if (data.farmSize && Number(data.farmSize) <= 0) {
-    errors.farmSize = "Enter a farm size greater than zero.";
-    errors.farmSizeAcres = "Enter a farm size greater than zero.";
-  }
-
-  if (!["Crop", "Livestock", "Mixed"].includes(data.farmType)) {
-    errors.farmType = "Select a valid farm type.";
-  }
-
-  if (!data.agreement) {
-    errors.agreement = "You must accept the Ghana Growers marketplace and quality guidelines.";
-    errors.privacyAccepted = "You must accept the Ghana Growers marketplace and quality guidelines.";
   }
 
   return {
@@ -129,79 +119,53 @@ export function validateFarmerRegistration(input: Record<string, unknown>): Farm
   };
 }
 
-export async function appendFarmerRegistrationToSheet(data: FarmerRegistrationPayload) {
-  const sheetName = process.env.GOOGLE_SHEETS_FARMER_SHEET_NAME || farmerRegistrationNotifications.googleSheetName;
-  const submittedAt = new Date().toISOString();
-
-  return appendValuesToGoogleSheet(sheetName, "A:U", [[
-    submittedAt,
-    data.farmerName,
-    data.farmName,
-    data.phoneNumber,
-    data.whatsappNumber,
-    data.emailAddress,
-    data.region,
-    data.districtTown,
-    data.farmSize,
-    data.farmType,
-    data.mainCrops,
-    data.otherProduce,
-    data.currentAvailability,
-    data.harvestSeason,
-    data.hasAvailableProduce,
-    data.farmDescription,
-    data.farmerPhotoUrl,
-    data.farmPhotoUrls.join(", "),
-    data.producePhotoUrls.join(", "),
-    data.agreement ? "Yes" : "No",
-    data.additionalNotes
-  ]]);
+function hmacDigest(secret: string, parts: string[]) {
+  if (secret.trim().length < 32) return "";
+  return createHmac("sha256", secret).update(parts.join("|")).digest("hex");
 }
 
-export async function sendFarmerRegistrationEmail(data: FarmerRegistrationPayload) {
-  const resendApiKey = process.env.RESEND_API_KEY;
+export function farmerApplicationSubmissionKey(submissionToken: string, secret: string) {
+  return hmacDigest(secret, ["farmer-application-submission", submissionToken]);
+}
 
-  if (!resendApiKey || farmerRegistrationNotifications.adminEmails.length === 0) {
-    return { configured: false };
-  }
+export function farmerApplicationRateLimitKey({
+  contact,
+  clientKey,
+  secret
+}: {
+  contact: string;
+  clientKey: string;
+  secret: string;
+}) {
+  const requestFingerprint = hmacDigest(secret, ["farmer-application-fingerprint", clientKey || "public"]);
+  return hmacDigest(secret, ["farmer-application-rate-limit", contact, requestFingerprint]);
+}
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from: process.env.FARMER_REGISTRATION_FROM_EMAIL || farmerRegistrationNotifications.fromEmail,
-      to: farmerRegistrationNotifications.adminEmails,
-      subject: `${farmerRegistrationNotifications.subjectPrefix}: ${data.farmerName}`,
-      text: [
-        `Farmer Name: ${data.farmerName}`,
-        `Farm Name: ${data.farmName || "Not provided"}`,
-        `Phone Number: ${data.phoneNumber}`,
-        `WhatsApp Number: ${data.whatsappNumber || "Not provided"}`,
-        `Email Address: ${data.emailAddress || "Not provided"}`,
-        `Region: ${data.region}`,
-        `District/Town: ${data.districtTown}`,
-        `Farm Size: ${data.farmSize || "Not provided"}`,
-        `Farm Type: ${data.farmType}`,
-        `Main Crops/Produce: ${data.mainCrops}`,
-        `Other Produce: ${data.otherProduce || "None"}`,
-        `Current Availability: ${data.currentAvailability}`,
-        `Harvest Season: ${data.harvestSeason || "Not provided"}`,
-        `Has Available Produce: ${data.hasAvailableProduce}`,
-        `Farm Description: ${data.farmDescription}`,
-        `Farmer Photo: ${data.farmerPhotoUrl || "None"}`,
-        `Farm Photos: ${data.farmPhotoUrls.join(", ") || "None"}`,
-        `Produce Photos: ${data.producePhotoUrls.join(", ") || "None"}`,
-        `Agreement: ${data.agreement ? "Yes" : "No"}`
-      ].join("\n")
-    })
-  });
+export function farmerApplicationDedupeKey({
+  applicantName,
+  farmName,
+  contact,
+  region,
+  secret
+}: {
+  applicantName: string;
+  farmName: string;
+  contact: string;
+  region: string;
+  secret: string;
+}) {
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+]+/g, " ").replace(/\s+/g, " ").trim();
+  return hmacDigest(secret, [
+    "farmer-application-dedupe",
+    normalize(applicantName),
+    normalize(farmName),
+    normalize(contact),
+    normalize(region)
+  ]);
+}
 
-  if (!response.ok) {
-    throw new Error("Unable to send farmer registration email.");
-  }
-
-  return { configured: true };
+export function createFarmerApplicationReference(date = new Date(), entropy = randomBytes(4)) {
+  const day = date.toISOString().slice(0, 10).replace(/-/g, "");
+  const suffix = entropy.toString("hex").toUpperCase();
+  return `GGF-${day}-${suffix}`;
 }

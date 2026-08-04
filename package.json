@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmmate-regression.test.js && node .farmmate-test-dist/tests/hq-approval-counts.test.js",
+    "test": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmmate-regression.test.js && node .farmmate-test-dist/tests/farmer-registration.test.js && node .farmmate-test-dist/tests/hq-approval-counts.test.js",
+    "test:farmer-registration": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmer-registration.test.js",
     "test:hq-replay-database": "node tests/hq-replay-database.integration.mjs"
   },
   "dependencies": {

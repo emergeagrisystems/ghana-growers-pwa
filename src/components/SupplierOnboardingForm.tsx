@@ -59,14 +59,14 @@ export function SupplierOnboardingForm() {
         <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-earth-700">Application received</p>
         <h2 className="mt-3 text-3xl font-black text-ink">We&apos;ve received your supplier application.</h2>
         <p className="mt-3 max-w-2xl text-base leading-7 text-ink/68">
-          Our team will review your business information and contact you with the next steps.
+          Ghana Growers will review the information and may contact you for more details. An application does not publish a supplier profile automatically.
         </p>
         <div className="mt-6 grid gap-3">
           {[
             "Review your application",
-            "Verify your business details",
-            "Prepare your supplier profile",
-            "Contact you within one business day"
+            "Request more information where needed",
+            "Record an approval decision",
+            "Review any approved profile before public visibility"
           ].map((step) => (
             <div key={step} className="flex items-center gap-3 rounded-xl bg-leaf-50 px-4 py-3 text-sm font-bold text-ink/75">
               <CheckCircle2 size={17} className="shrink-0 text-leaf-700" aria-hidden="true" />
@@ -93,7 +93,7 @@ export function SupplierOnboardingForm() {
         <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Supplier Application</p>
         <h2 className="mt-3 text-3xl font-black text-ink">Tell us about your business</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/65">
-          These details help Ghana Growers understand your products, service area, and readiness before preparing a supplier profile.
+          These details help Ghana Growers understand your products, services and coverage before reviewing the application.
         </p>
       </div>
 
