@@ -22,6 +22,7 @@ import {
   type SupplierApplicationAdminRow
 } from "@/lib/profileApplications";
 import { isValidPublicProfileSlug } from "@/lib/publicProfileEligibility";
+import { cleanFarmerLocation } from "@/lib/farmerDirectory";
 import {
   cleanupPromotedFarmerProfileMedia,
   finalizeFarmerProfileStaging,
@@ -153,6 +154,7 @@ function publicPreview(kind: ProfileEditorKind, record: ProfileEditorRecord) {
     const preview = mapFarmerPublicProfile(record as FarmerProfileRecord & SupabaseFarmer);
     return {
       ...preview,
+      publicLocation: cleanFarmerLocation(preview),
       description: (record as FarmerProfileRecord).description?.trim() || "No public description has been added yet."
     };
   }

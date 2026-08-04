@@ -21,7 +21,7 @@ const sections = [
   {
     title: "How the information is used",
     body: [
-      "The information helps Ghana Growers review profiles, prepare public listings, manage buyer demand, match requests, follow up on leads, verify records, and improve platform readiness before launch.",
+      "The information helps Ghana Growers review profiles, prepare public listings, manage buyer demand, match requests, follow up on leads, verify records, and continue improving the platform as the network grows.",
       "Ghana Growers may use contact details to follow up about a registration, buyer request, supplier enquiry, verification issue, or partnership message."
     ]
   },

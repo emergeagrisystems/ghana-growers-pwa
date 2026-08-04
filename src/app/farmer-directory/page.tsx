@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const metadata = createPageMetadata({
   title: "Farmer Directory",
   description:
-    "Discover farmers across Ghana by region, district, product, and farm type through the Ghana Growers Farmer Directory.",
+    "Explore farmers currently published on Ghana Growers, including their locations and products.",
   path: "/farmer-directory"
 });
 
@@ -34,9 +34,9 @@ export default async function FarmerDirectoryPage({ searchParams }: FarmerDirect
     <>
       <PageHero
         eyebrow="Farmer Directory"
-        title="Find Farmers Across Ghana"
+        title="Meet farmers on Ghana Growers."
         variant="compact"
-        description="Search farmer profiles by location, crop, and farm type, then request through Ghana Growers."
+        description="Explore farmers currently published on Ghana Growers, including their locations and products."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link href="#farmer-discovery" className="gg-button-primary">

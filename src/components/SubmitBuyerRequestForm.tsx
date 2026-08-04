@@ -9,7 +9,7 @@ const fieldClass = "gg-field min-w-0 w-full";
 const deliveryOptions = ["Buyer Pickup", "Deliver to buyer", "Collection point", "Flexible / discuss with Ghana Growers"];
 const nextSteps = [
   "Review your sourcing request",
-  "Identify suitable farmers and suppliers",
+  "Look for suitable farmers, sellers or suppliers",
   "Confirm availability where possible",
   "Contact you with the next steps"
 ];
@@ -55,7 +55,7 @@ export function SubmitBuyerRequestForm() {
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Request Supply</p>
           <h2 className="mt-2 text-2xl font-black text-ink">Tell us what you need</h2>
           <p className="mt-2 text-sm leading-6 text-ink/62">
-            These details help Ghana Growers understand the product, location, timing, and volume before we start matching.
+            These details help Ghana Growers understand the product, location, timing, and volume before review.
           </p>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -88,6 +88,11 @@ export function SubmitBuyerRequestForm() {
           </label>
         </div>
 
+        <div className="mt-5 grid gap-2 rounded-md border border-leaf-900/10 bg-leaf-50 p-4 text-sm leading-6 text-ink/68">
+          <p>Your contact details and request information are kept private and are not shown publicly.</p>
+          <p className="font-bold text-ink">Submitting a request does not guarantee availability or a match.</p>
+        </div>
+
         <SubmitButton isSubmitting={isSubmitting} label="Request Supply" />
       </fieldset>
       <Messages error={error} />
@@ -104,7 +109,7 @@ function SourcingConfirmation({ message }: { message: string }) {
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Sourcing request received</p>
           <h2 className="mt-2 text-2xl font-black text-ink">{message}</h2>
           <p className="mt-3 text-sm leading-6 text-ink/68">
-            Our team is now reviewing your requirements. Expected response: within one business day.
+            Our team will review your requirements and follow up where a suitable option may be available.
           </p>
         </div>
       </div>

@@ -20,13 +20,24 @@ function isPublicAsset(pathname: string) {
   );
 }
 
+function isPrelaunchSeoRoute(pathname: string) {
+  return pathname === "/robots.txt" || pathname === "/sitemap.xml";
+}
+
 function isAllowedPrelaunchRoute(pathname: string) {
   return (
     isHqApprovalCountsPrelaunchRoute(pathname) ||
+    isPrelaunchSeoRoute(pathname) ||
     isPublicFarmMatePilotRoute(pathname) ||
     isControlledPrelaunchRoute(pathname) ||
     isPublicAsset(pathname)
   );
+}
+
+function gatedResponse(request: NextRequest) {
+  const response = NextResponse.rewrite(new URL("/launching-soon", request.url));
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
 }
 
 export async function middleware(request: NextRequest) {
@@ -46,7 +57,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/") {
-    return NextResponse.rewrite(new URL("/launching-soon", request.url));
+    return gatedResponse(request);
   }
 
   if (pathname === "/join/supplier" || pathname === "/supplier-registration") {
@@ -57,7 +68,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  return NextResponse.rewrite(new URL("/launching-soon", request.url));
+  return gatedResponse(request);
 }
 
 export const config = {

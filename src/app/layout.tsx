@@ -12,7 +12,7 @@ import { defaultOgImage, organizationJsonLd } from "@/lib/seo";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} | Farmers, Buyers and Suppliers in Ghana`,
+    default: `${siteConfig.name} | Buy. Sell. Grow.`,
     template: `%s | ${siteConfig.name}`
   },
   description: siteConfig.description,
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   },
   openGraph: {
-    title: `${siteConfig.name} | Trusted Agriculture Platform for Ghana`,
+    title: `${siteConfig.name} | Buy. Sell. Grow.`,
     description: siteConfig.description,
     url: siteConfig.url,
     siteName: siteConfig.name,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | Trusted Agriculture Platform for Ghana`,
+    title: `${siteConfig.name} | Buy. Sell. Grow.`,
     description: siteConfig.description,
     images: [defaultOgImage]
   }

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
+import type { PublicBuyerRequest } from "@/types/publicBuyerRequest";
 import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
@@ -699,30 +700,50 @@ function mapListing(
   };
 }
 
-function mapBuyerRequest(row: SupabaseBuyerRequest): BuyerRequest {
+function publicRequestReference(source: string, createdAt: string) {
+  let hash = 2166136261;
+
+  for (const character of source) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return `GG-${dateOnly(createdAt).replace(/-/g, "")}-${(hash >>> 0).toString(36).toUpperCase()}`;
+}
+
+function mapBuyerRequest(row: SupabaseBuyerRequest): PublicBuyerRequest {
   const status = row.status === "Urgent" || row.status === "Fulfilled" ? row.status : "Open";
 
   return {
-    id: row.id,
+    reference: publicRequestReference(row.id, row.created_at),
     productName: row.product_needed,
     quantityNeeded: row.quantity,
     region: row.region,
     district: row.district,
     deadline: row.deadline ?? "Confirm with buyer",
     buyerType: row.buyer_type,
-    buyerName: row.buyer_name ?? "Ghana Growers Buyer",
     deliveryPreference: row.delivery_preference ?? "Confirm delivery or pickup preference",
     budgetRange: row.budget_range ?? undefined,
-    notes: row.notes ?? "Contact buyer through Ghana Growers for full request details.",
     status,
-    whatsappNumber: row.whatsapp_number ?? "233000000000",
-    contactMethod: "WhatsApp",
-    datePosted: dateOnly(row.created_at),
-    verificationStatus: trustStatus(row.verification_status),
-    verificationDate: row.verification_date ?? undefined,
-    verifiedBy: row.verified_by ?? undefined,
-    verificationNotes: row.verification_notes ?? undefined,
-    trust: trustProfile(row.verification_status)
+    datePosted: dateOnly(row.created_at)
+  };
+}
+
+function mapFallbackBuyerRequest(request: BuyerRequest): PublicBuyerRequest {
+  const status = request.status === "Urgent" || request.status === "Fulfilled" ? request.status : "Open";
+
+  return {
+    reference: publicRequestReference(request.id, request.datePosted),
+    productName: request.productName,
+    quantityNeeded: request.quantityNeeded,
+    region: request.region,
+    district: request.district,
+    deadline: request.deadline,
+    buyerType: request.buyerType,
+    deliveryPreference: request.deliveryPreference,
+    budgetRange: request.budgetRange,
+    status,
+    datePosted: request.datePosted
   };
 }
 
@@ -801,7 +822,7 @@ export async function getMarketplaceListingsData() {
 
 export async function getBuyerRequestsData() {
   const rows = await fetchRows<SupabaseBuyerRequest>("buyer_requests");
-  return rows.length > 0 ? rows.map(mapBuyerRequest) : allowDemoPublicData() ? fallbackBuyerRequests : [];
+  return rows.length > 0 ? rows.map(mapBuyerRequest) : allowDemoPublicData() ? fallbackBuyerRequests.map(mapFallbackBuyerRequest) : [];
 }
 
 export async function getMarketPricesData() {

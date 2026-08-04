@@ -45,7 +45,7 @@ export default function AboutPage() {
       <PageHero
         eyebrow="About Ghana Growers"
         title="A practical agricultural network for Ghana"
-        description="Ghana Growers helps farmers show what they produce, buyers find supply, and suppliers present useful agricultural products and services across Ghana."
+        description="Ghana Growers is a practical agricultural marketplace and support platform connecting buyers, farmers and agricultural suppliers through public profiles, listings, sourcing requests and farming tools."
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <ButtonLink href="/join">Join the Network</ButtonLink>
@@ -59,10 +59,10 @@ export default function AboutPage() {
             <p className="gg-eyebrow">Who We Are</p>
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-4xl">Ghana Growers organizes farmer, buyer, and supplier information in one place.</h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
-              Ghana Growers is being built as a trusted agricultural platform for Ghana. It brings together farmer profiles, marketplace listings, buyer demand, supplier services, verification information, and GG FarmMate tools.
+              Ghana Growers is a practical agricultural marketplace and support platform connecting buyers, farmers and agricultural suppliers through public profiles, listings, sourcing requests and farming tools.
             </p>
             <p className="mt-4 max-w-3xl text-base leading-8 text-ink/70">
-              The platform is not a shortcut around good judgement. It gives farmers, buyers, suppliers, and partners a clearer starting point before they discuss quantity, price, quality, delivery, and payment.
+              Ghana Growers is starting with a small group of published farmers and listings and will add more as profiles and submissions are reviewed.
             </p>
           </div>
           <aside className="rounded-md border border-leaf-900/10 bg-earth-50 p-5 shadow-sm">
@@ -84,7 +84,7 @@ export default function AboutPage() {
           </div>
           <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm sm:p-6">
             <p className="text-base leading-8 text-ink/70">
-              Emerge Agri Systems (E.A.Sy) is the parent organization behind Ghana Growers. E.A.Sy builds practical agricultural systems that help organize farmer records, supplier visibility, buyer demand, market information, and digital support tools.
+              Emerge Agri Systems (E.A.Sy) is the parent organization behind Ghana Growers. E.A.Sy builds practical agricultural systems that help organize farmer records, supplier visibility, buyer demand, sourcing information, and digital support tools.
             </p>
             <p className="mt-4 text-base leading-8 text-ink/70">
               Ghana Growers remains the public-facing platform. It is where farmers, buyers, suppliers, and partners can register, review opportunities, and request connections through a Ghana-focused agricultural network.
