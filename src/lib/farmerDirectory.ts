@@ -1,7 +1,7 @@
 import { cleanProductList, productImageForName } from "./productDisplay";
 import { isFeaturedActive } from "./featured";
 import { isEligiblePublicFarmer } from "./publicProfileEligibility";
-import type { FarmerProfile, PublicFarmerProfile } from "../types";
+import type { FarmerDirectoryProfile, FarmerProfile, PublicFarmerProfile } from "../types";
 
 export const FARMERS_PER_PAGE = 12;
 
@@ -104,6 +104,23 @@ export function cleanFarmerLocation(farmer: { district?: string | null; region?:
   }
 
   return region ? `${district}, ${region}` : district;
+}
+
+export function farmerDirectoryProfile(farmer: PublicFarmerProfile): FarmerDirectoryProfile {
+  const hasRealPhoto = Boolean(farmer.hasRealPhoto && farmer.mainImage);
+
+  return {
+    slug: farmer.slug,
+    farmName: farmer.farmName,
+    region: farmer.region,
+    district: farmer.district,
+    displayLocation: cleanFarmerLocation(farmer),
+    products: [...farmer.products],
+    farmType: farmer.farmType,
+    mainImage: hasRealPhoto ? farmer.mainImage : undefined,
+    hasRealPhoto,
+    verificationStatus: farmer.verificationStatus
+  };
 }
 
 export function publicFarmSize(value?: string | null) {

@@ -28,6 +28,7 @@ import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpe
 import {
   cleanFarmerLocation,
   cleanFarmerProfileLabel,
+  farmerDirectoryProfile,
   farmerCardProducts,
   homepageFeaturedFarmerProfiles,
   isDemoSeedFarmerProfile,
@@ -216,7 +217,7 @@ import {
   shouldShowFarmMateAnswerFeedback,
   storeFarmMatePreparedAnswerFeedback
 } from "../src/lib/farmmate/answer-feedback";
-import type { FarmerProfile, Product, SupplierProfile } from "../src/types";
+import type { FarmerProfile, Product, PublicFarmerProfile, SupplierProfile } from "../src/types";
 import { adminEmailAllowlist, authorizeAdminIdentity } from "../src/lib/adminAuthorization";
 import {
   createPreviewAccessToken,
@@ -1907,6 +1908,60 @@ const tests: TestCase[] = [
       assert.equal(cleanFarmerProfileLabel("Maise"), "Maize");
       assert.equal(cleanFarmerProfileLabel("Aquaculture And Poultry"), "Aquaculture & Poultry");
       assert.equal(cleanFarmerProfileLabel("Cabbages And Chili Pepper"), "Cabbage & Chili Pepper");
+    }
+  },
+  {
+    name: "Farmer Directory serializes only its explicit public card allowlist",
+    run: () => {
+      const source: PublicFarmerProfile = {
+        id: "private-profile-id",
+        slug: "zinatu-issaka-farm",
+        farmName: "Zinatu Issaka Farm",
+        farmerName: "Private personal name",
+        region: "Bono East",
+        district: "Pru West District",
+        publicLocation: "Zabrama-Pru West District",
+        products: ["Maize", "Rabbits", "Sheep"],
+        farmType: "Mixed",
+        farmSize: "7",
+        availabilityStatus: "Request availability",
+        description: "Public profile description",
+        harvestSeason: "Confirm current harvest timing with Ghana Growers.",
+        capacityVolume: "Quantities confirmed by Ghana Growers",
+        mainImage: "/images/farmers/zinatu.jpg",
+        farmPhotos: ["/images/farmers/zinatu-gallery.jpg"],
+        producePhotos: [],
+        hasRealPhoto: true,
+        verificationStatus: "Verified",
+        status: "Active",
+        launchReady: true,
+        isFeatured: false
+      };
+      const directoryProfile = farmerDirectoryProfile(source);
+      const serialized = JSON.stringify(directoryProfile);
+
+      assert.deepEqual(Object.keys(directoryProfile).sort(), [
+        "displayLocation",
+        "district",
+        "farmName",
+        "farmType",
+        "hasRealPhoto",
+        "mainImage",
+        "products",
+        "region",
+        "slug",
+        "verificationStatus"
+      ]);
+      assert.equal(directoryProfile.displayLocation, "Zabrama, Bono East");
+      assert.doesNotMatch(serialized, /Zabrama-Pru West District|\"farmSize\"|\"farmSizeUnit\"|private-profile-id|Private personal name/);
+      assert.equal(farmerCardProducts(directoryProfile).join(", "), "Maize, Rabbits, Sheep");
+
+      const page = repoFile("src/app/farmer-directory/page.tsx");
+      const component = repoFile("src/components/FarmerDirectory.tsx");
+      assert.equal(page.includes("result.data.map(farmerDirectoryProfile)"), true);
+      assert.equal(component.includes("FarmerDirectoryProfile[]"), true);
+      assert.equal(component.includes("farmer.displayLocation"), true);
+      assert.doesNotMatch(component, /farmer\.(publicLocation|farmSize|farmSizeUnit|description|farmPhotos|producePhotos|id)\b/);
     }
   },
   {
