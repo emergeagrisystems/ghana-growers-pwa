@@ -135,11 +135,19 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                 Browse farmers by region, district, product, and farm type.
               </p>
             </div>
-            <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-ink/70">
-              {filteredFarmers.length > 0
-                ? `Showing ${showingStart}–${showingEnd} of ${filteredFarmers.length} farmers`
-                : `Showing 0 of ${farmers.length} farmers`}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <p className="rounded-md bg-white px-3 py-2 text-sm font-bold text-ink/70">
+                {filteredFarmers.length > 0
+                  ? `Showing ${showingStart}–${showingEnd} of ${filteredFarmers.length} farmers`
+                  : `Showing 0 of ${farmers.length} farmers`}
+              </p>
+              {hasActiveFilters ? (
+                <button type="button" onClick={clearFilters} className="gg-button-secondary min-h-11 px-4 py-2">
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(420px,2fr)_repeat(4,minmax(0,1fr))] lg:items-end">
@@ -179,12 +187,6 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
               </label>
             ))}
           </div>
-          {hasActiveFilters ? (
-            <button type="button" onClick={clearFilters} className="gg-button-secondary mt-4 min-h-10 px-4 py-2">
-              <X className="h-4 w-4" aria-hidden="true" />
-              Clear filters
-            </button>
-          ) : null}
         </div>
 
         {farmers.length === 0 ? (
@@ -201,7 +203,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
             </Link>
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[repeat(3,minmax(0,22.5rem))] xl:justify-between xl:gap-x-8">
             {paginatedFarmers.pageItems.map((farmer) => (
               <article key={farmer.slug} className="flex h-full flex-col overflow-hidden rounded-md border border-leaf-900/10 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-card">
               {(() => {
@@ -219,7 +221,7 @@ export function FarmerDirectory({ farmers, initialSearch = "" }: FarmerDirectory
                           alt={`${farmer.farmName} farm photo`}
                           variant="card"
                           fallbackKind="crop"
-                          sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          sizes="(min-width: 1280px) 360px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                           landscapePositionClass={farmerImagePosition(farmer)}
                         />
                       ) : (

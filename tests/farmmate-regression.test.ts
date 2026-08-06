@@ -8758,12 +8758,32 @@ const tests: TestCase[] = [
       assert.equal(image.includes('naturalHeight > naturalWidth ? "portrait" : "landscape"'), true);
       assert.equal(image.includes("aspect-[4/5]") && image.includes("object-contain object-center"), true);
       assert.equal(image.includes("aspect-[4/3]") && image.includes("object-cover"), true);
+      assert.equal(image.includes('variant === "card"') && image.includes('`object-cover ${landscapePositionClass}`'), true);
       assert.equal(image.includes("data-farmer-image-orientation={orientation}"), true);
       assert.equal(detail.includes("<FarmerProfileImage") && detail.includes('variant="profile"'), true);
       assert.equal(directory.includes("<FarmerProfileImage") && directory.includes('variant="card"'), true);
       assert.equal(previewSection.includes("<FarmerProfileImage") && previewSection.includes('variant="profile"'), true);
       assert.doesNotMatch(image, /fetch\(|transition\(|saveProfile\(|upload|phone|whatsapp|document_urls|signedUrl/);
       assert.doesNotMatch(previewSection, /phone_number|whatsapp_number|document_urls|certificate|signedUrl|sourceHistory/);
+    }
+  },
+  {
+    name: "Farmer Directory keeps balanced responsive cards and compact active-filter controls",
+    run: () => {
+      const directory = repoFile("src/components/FarmerDirectory.tsx");
+      const resultGrid = directory.slice(directory.indexOf('mt-8 grid items-stretch'), directory.indexOf('{farmers.length > 0 && filteredFarmers.length === 0'));
+      const discoveryHeader = directory.slice(directory.indexOf('flex flex-col gap-3 lg:flex-row'), directory.indexOf('mt-4 grid gap-3'));
+
+      assert.equal(resultGrid.includes("sm:grid-cols-2"), true);
+      assert.equal(resultGrid.includes("lg:grid-cols-3"), true);
+      assert.equal(resultGrid.includes("xl:grid-cols-[repeat(3,minmax(0,22.5rem))]"), true);
+      assert.equal(resultGrid.includes("xl:justify-between"), true);
+      assert.equal(resultGrid.includes("xl:grid-cols-4"), false);
+      assert.equal(resultGrid.includes('sizes="(min-width: 1280px) 360px'), true);
+      assert.equal(discoveryHeader.includes("Showing ${showingStart}"), true);
+      assert.equal(discoveryHeader.includes("Clear filters"), true);
+      assert.equal(discoveryHeader.includes("min-h-11"), true);
+      assert.doesNotMatch(resultGrid, /fetch\(|saveProfile\(|transition\(|phone|whatsapp|document_urls|signedUrl/);
     }
   },
   {
