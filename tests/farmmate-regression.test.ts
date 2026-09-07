@@ -1,3 +1,11 @@
+import { runInNewContext } from "node:vm";
+import { createHmac } from "node:crypto";
+import { ModuleKind, ScriptTarget, transpileModule } from "typescript";
+import { NextRequest, NextResponse } from "next/server";
+import * as previewAccess from "../src/lib/previewAccess";
+import * as pilotAccess from "../src/lib/farmmate/pilot-access";
+import * as prelaunchAccess from "../src/lib/prelaunchAccess";
+
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -458,7 +466,222 @@ function repoFiles(path: string): string[] {
   });
 }
 
+// Execute the actual TypeScript handlers without changing the test compiler's
+// alias configuration or importing live admin authentication. Unknown imports fail.
+function loadPreviewHandler<T>(path: string, modules: Record<string, unknown>, env: Record<string, string | undefined>) {
+  const exports = {};
+  const compiled = transpileModule(repoFile(path), {
+    compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2020 }
+  }).outputText;
+  runInNewContext(compiled, {
+    exports,
+    require: (name: string) => {
+      assert.ok(Object.prototype.hasOwnProperty.call(modules, name), `Unexpected preview test import: ${name}`);
+      return modules[name];
+    },
+    process: { env },
+    URL,
+    console: { warn: () => undefined }
+  }, { filename: path });
+  return exports as T;
+}
+
+type PreviewHandler = (request: NextRequest) => Promise<NextResponse>;
+
+function previewMiddleware(env: Record<string, string | undefined>, verifier = previewAccess.verifyPreviewAccessToken) {
+  return loadPreviewHandler<{ middleware: PreviewHandler }>("src/middleware.ts", {
+    "next/server": { NextResponse },
+    "@/lib/farmmate/pilot-access": pilotAccess,
+    "@/lib/prelaunchAccess": prelaunchAccess,
+    "@/lib/previewAccess": { ...previewAccess, verifyPreviewAccessToken: verifier }
+  }, env).middleware;
+}
+
+function previewRequest(path: string, token?: string) {
+  return new NextRequest(new URL(path, "http://localhost:3000"), {
+    headers: token === undefined ? {} : { cookie: `${previewAccess.previewAccessCookie}=${token}` }
+  });
+}
+
+function assertPreviewHeaders(response: NextResponse) {
+  assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+}
+
+async function assertPreviewDenied(response: NextResponse, mode: string) {
+  assert.equal(response.headers.get("x-middleware-next"), null);
+  assert.equal(response.headers.get("location"), null);
+  assertPreviewHeaders(response);
+  if (mode === "true") {
+    assert.equal(response.headers.get("x-middleware-rewrite"), "http://localhost:3000/launching-soon");
+    assert.equal(await response.text(), "");
+  } else {
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get("x-middleware-rewrite"), null);
+    assert.equal(await response.text(), "Preview access is restricted.");
+  }
+}
+
 const tests: TestCase[] = [
+  {
+    name: "P09-S1 child previews reject invalid credentials in both launch modes",
+    run: async () => {
+      const secret = "local-preview-regression-secret-32-characters";
+      const token = (await createPreviewAccessToken(secret))!;
+      const expired = (await createPreviewAccessToken(secret, Date.now() - previewAccessMaxAgeSeconds * 1000))!;
+      const expiresAt = token.split(".")[1];
+      const wrongPurpose = `v1.${expiresAt}.${createHmac("sha256", secret).update(`other-purpose:v1:${expiresAt}`).digest("hex")}`;
+      const cases = [
+        { name: "no cookie", token: undefined, secret },
+        { name: "empty cookie", token: "", secret },
+        { name: "cookie name alone", token: "enabled", secret },
+        { name: "malformed", token: "v1.bad", secret },
+        { name: "invalid signature", token: token.slice(0, -1) + (token.endsWith("0") ? "1" : "0"), secret },
+        { name: "expired", token: expired, secret },
+        { name: "missing secret", token, secret: undefined },
+        { name: "empty secret", token, secret: "" },
+        { name: "short secret", token, secret: "short" },
+        { name: "wrong secret", token, secret: secret + "different" },
+        { name: "wrong version", token: token.replace("v1.", "v2."), secret },
+        { name: "wrong purpose", token: wrongPurpose, secret },
+        { name: "extra token part", token: token + ".extra", secret }
+      ];
+      for (const mode of ["true", "false"]) {
+        for (const path of [
+          "/dev-preview/launch-collection",
+          "/dev-preview/launch-collection?component=story&exit=1",
+          "/dev-preview/launch-collection/",
+          "/dev-preview/nested/../launch-collection",
+          "/dev-preview/launch-collection/./",
+          "/dev-preview/future-child"
+        ]) {
+          assert.equal(pilotAccess.isControlledPrelaunchRoute(new URL(path, "http://localhost").pathname), false);
+          for (const scenario of cases) {
+            const middleware = previewMiddleware({ SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: scenario.secret });
+            await assertPreviewDenied(await middleware(previewRequest(path, scenario.token)), mode);
+          }
+        }
+        const throwing = previewMiddleware({ SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: secret }, async () => {
+          throw new Error("synthetic configuration detail must not reach the response");
+        });
+        await assertPreviewDenied(await throwing(previewRequest("/dev-preview/launch-collection", token)), mode);
+      }
+    }
+  },
+  {
+    name: "P09-S1 valid child access is private and never authorizes the next cookie-free request",
+    run: async () => {
+      const secret = "local-preview-regression-secret-32-characters";
+      const token = (await createPreviewAccessToken(secret))!;
+      for (const mode of ["true", "false"]) {
+        const middleware = previewMiddleware({ SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: secret });
+        for (const path of ["/dev-preview/launch-collection", "/dev-preview/launch-collection?component=story", "/dev-preview/launch-collection/", "/dev-preview/a/../launch-collection"]) {
+          const granted = await middleware(previewRequest(path, token));
+          assert.equal(granted.headers.get("x-middleware-next"), "1");
+          assert.equal(granted.headers.get("x-middleware-rewrite"), null);
+          assertPreviewHeaders(granted);
+          await assertPreviewDenied(await middleware(previewRequest(path)), mode);
+        }
+        const gated = await middleware(previewRequest("/launching-soon"));
+        assert.equal(gated.headers.get("x-middleware-next"), "1", "denial target must not loop");
+      }
+    }
+  },
+  {
+    name: "P09-S1 preserves exact entry admin login denial grant exit and safe destinations",
+    run: async () => {
+      const secret = "local-preview-regression-secret-32-characters";
+      for (const mode of ["true", "false"]) {
+        for (const status of ["no-token", "unauthenticated", "forbidden", "unavailable", "authorized"]) {
+          let authCalls = 0;
+          const GET = loadPreviewHandler<{ GET: PreviewHandler }>("src/app/dev-preview/route.ts", {
+            "next/server": { NextResponse },
+            "@/lib/previewAccess": previewAccess,
+            "@/lib/adminAuth": {
+              adminAccessTokenFromRequest: () => status === "no-token" ? undefined : "mock-admin-token",
+              getAdminAuthorizationFromAccessToken: async () => {
+                authCalls += 1;
+                return { status, code: "mock-authorization-status" };
+              }
+            }
+          }, { SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: secret, NODE_ENV: "production" }).GET;
+          const request = previewRequest("/dev-preview?destination=%2Fdev-preview%2Flaunch-collection");
+          const entryPass = await previewMiddleware({ SITE_PRELAUNCH: mode })(request);
+          assert.equal(entryPass.headers.get("x-middleware-next"), "1");
+          const response = await GET(request);
+          assert.equal(authCalls, status === "no-token" ? 0 : 1);
+          assert.equal(response.headers.get("cache-control"), "private, no-store, max-age=0");
+          if (status === "no-token" || status === "unauthenticated") {
+            const location = new URL(response.headers.get("location")!);
+            assert.equal(location.pathname, "/admin/login");
+            assert.equal(location.searchParams.get("next"), "/dev-preview?destination=%2Fdev-preview%2Flaunch-collection");
+          } else if (status === "authorized") {
+            assert.equal(response.headers.get("location"), "http://localhost:3000/dev-preview/launch-collection");
+            const cookie = response.cookies.get(previewAccess.previewAccessCookie)!;
+            assert.equal(await verifyPreviewAccessToken(cookie.value, secret), true);
+            const granted = await previewMiddleware({ SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: secret })(previewRequest("/dev-preview/launch-collection", cookie.value));
+            assert.equal(granted.headers.get("x-middleware-next"), "1");
+            assert.match(response.headers.get("set-cookie")!, /HttpOnly/);
+            assert.match(response.headers.get("set-cookie")!, /Secure/);
+            assert.match(response.headers.get("set-cookie")!, /SameSite=lax/i);
+            assert.match(response.headers.get("set-cookie")!, /Max-Age=1800/);
+            for (const destination of ["https://example.invalid", "//example.invalid", "/api/admin/users", "/admin/login", "/dev-preview?exit=1"]) {
+              const safe = await GET(previewRequest(`/dev-preview?destination=${encodeURIComponent(destination)}`));
+              assert.equal(safe.headers.get("location"), "http://localhost:3000/");
+            }
+          } else {
+            assert.equal(response.status, status === "forbidden" ? 403 : 503);
+            assert.equal(response.headers.get("location"), null);
+            assert.doesNotMatch(await response.text(), /mock-authorization-status|PREVIEW_ACCESS_SECRET/);
+          }
+          if (status !== "authorized") {
+            assert.equal(response.cookies.get(previewAccess.previewAccessCookie)?.value, "");
+            assert.match(response.headers.get("set-cookie")!, /Max-Age=0/);
+          }
+          const callsBeforeExit = authCalls;
+          const exit = await GET(previewRequest("/dev-preview?exit=1"));
+          assert.equal(authCalls, callsBeforeExit);
+          assert.equal(exit.headers.get("location"), "http://localhost:3000/launching-soon");
+          assert.equal(exit.cookies.get(previewAccess.previewAccessCookie)?.value, "");
+          assert.match(exit.headers.get("set-cookie")!, /Max-Age=0/);
+        }
+        for (const missingSecret of [undefined, "", "short"]) {
+          const GET = loadPreviewHandler<{ GET: PreviewHandler }>("src/app/dev-preview/route.ts", {
+            "next/server": { NextResponse }, "@/lib/previewAccess": previewAccess,
+            "@/lib/adminAuth": {
+              adminAccessTokenFromRequest: () => "mock-admin-token",
+              getAdminAuthorizationFromAccessToken: async () => ({ status: "authorized" })
+            }
+          }, { SITE_PRELAUNCH: mode, PREVIEW_ACCESS_SECRET: missingSecret }).GET;
+          const response = await GET(previewRequest("/dev-preview"));
+          assert.equal(response.status, 503);
+          assert.equal(response.cookies.get(previewAccess.previewAccessCookie)?.value, "");
+        }
+      }
+    }
+  },
+  {
+    name: "P09-S1 retains unrelated middleware route boundaries in both launch modes",
+    run: async () => {
+      for (const mode of ["true", "false"]) {
+        const middleware = previewMiddleware({ SITE_PRELAUNCH: mode });
+        for (const path of ["/dev-preview", "/admin", "/admin/users", "/admin/login", "/api/admin/users", "/farmer-hub", "/farmer-hub/feedback", "/api/farmmate/ask", "/api/integrations/hq/approval-counts", "/launching-soon", "/robots.txt", "/sitemap.xml", "/_next/static/test.js", "/brand/logo.svg", "/images/test.jpg", "/icons/test.png", "/manifest.json", "/sw.js", "/favicon.ico", "/favicon.svg"]) {
+          const response = await middleware(previewRequest(path));
+          assert.equal(response.headers.get("x-middleware-next"), "1", `${mode}: ${path}`);
+        }
+        for (const path of ["/", "/about", "/marketplace", "/learn", "/dev-preview-lookalike", "/api/integrations/hq/other", "/api/private"]) {
+          const response = await middleware(previewRequest(path));
+          assert.equal(response.headers.get("x-middleware-next"), mode === "false" ? "1" : null, path);
+          assert.equal(response.headers.get("x-middleware-rewrite"), mode === "true" ? "http://localhost:3000/launching-soon" : null, path);
+        }
+        for (const path of ["/join/supplier", "/supplier-registration"]) {
+          const response = await middleware(previewRequest(path));
+          assert.equal(response.headers.get("location"), mode === "true" ? "http://localhost:3000/become-a-supplier" : null);
+          assert.equal(response.headers.get("x-middleware-next"), mode === "false" ? "1" : null);
+        }
+      }
+    }
+  },
   {
     name: "admin authorization ignores user metadata and accepts only controlled sources",
     run: () => {

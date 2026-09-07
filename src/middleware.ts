@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isControlledPrelaunchRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
+import { isControlledPrelaunchRoute, isInternalPreviewRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
 import { isHqApprovalCountsPrelaunchRoute } from "@/lib/prelaunchAccess";
 import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 
@@ -42,6 +42,28 @@ function gatedResponse(request: NextRequest) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Internal previews stay private independently of the public launch mode.
+  if (isInternalPreviewRoute(pathname)) {
+    let previewAccessGranted = false;
+    try {
+      previewAccessGranted = await verifyPreviewAccessToken(
+        request.cookies.get(previewAccessCookie)?.value,
+        process.env.PREVIEW_ACCESS_SECRET
+      );
+    } catch {
+      // A verification/configuration failure must never expose preview content.
+    }
+
+    const response = previewAccessGranted
+      ? NextResponse.next()
+      : prelaunchEnabled()
+        ? gatedResponse(request)
+        : new NextResponse("Preview access is restricted.", { status: 403 });
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+  }
 
   if (!prelaunchEnabled()) {
     return NextResponse.next();

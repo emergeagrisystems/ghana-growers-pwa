@@ -30,13 +30,16 @@ export function isProtectedFarmMatePilotPage(pathname: string) {
   );
 }
 
+export function isInternalPreviewRoute(pathname: string) {
+  return pathname.startsWith("/dev-preview/");
+}
+
 export function isControlledPrelaunchRoute(pathname: string) {
   return (
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname.startsWith("/api/admin/") ||
     pathname === "/launching-soon" ||
-    pathname === "/dev-preview" ||
-    pathname.startsWith("/dev-preview/")
+    pathname === "/dev-preview"
   );
 }
