@@ -234,3 +234,20 @@
 @container (max-width:50rem) { .toolsStrip > ul { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:34rem) { .heroMedia,.heroMedia .landscapePlaceholder { min-height:9rem; } .toolsStrip { grid-template-columns:1fr; gap:.5rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; justify-self:center; } }
 @container (max-width:34rem) { .heroMedia,.heroMedia .landscapePlaceholder { min-height:9rem; } .toolsStrip { grid-template-columns:1fr; gap:.5rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; justify-self:center; } }
+
+/* Compact value-led product introduction; static, synthetic dashboard cue. */
+.previewBrand { display:inline-flex; align-items:center; min-height:44px; color:inherit; font-weight:600; text-decoration:none; }
+.previewBrand:focus-visible { outline:2px solid currentColor; outline-offset:4px; }
+.toolsStrip { grid-template-columns:minmax(0,1fr) 8rem; row-gap:.75rem; }
+.toolsStrip > h2 { margin:0; font-size:clamp(1.25rem,2vw,1.6rem); line-height:1.3; }
+.toolsIntro { grid-column:1; margin:0; max-width:48rem; font-size:1rem; line-height:1.5; }
+.toolsStrip > ul { margin:0; align-self:start; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem 1.25rem; }
+.toolsStrip > ul > li { border:0; padding:0; font-size:.9rem; }
+.toolsStrip .deviceCue { width:8rem; grid-row:1 / 4; padding:.3rem; }
+.dashboard { overflow:hidden; border-radius:.75rem; background:var(--hp-soft); text-align:left; font-size:.75rem; line-height:1.35; }
+.dashboardBar { padding:.5rem; background:var(--hp-heading); color:white; font-weight:600; }
+.dashboardStatus,.dashboardNote { margin:.4rem .5rem; font-size:.75rem; }
+.dashboardCard { display:grid; gap:.2rem; margin:.4rem; padding:.5rem; background:white; border:1px solid var(--hp-sage); border-radius:.4rem; }
+.dashboardCard strong,.dashboardCard span { font-size:.75rem; }
+@media(max-width:34rem) { .toolsStrip { grid-template-columns:1fr; gap:.75rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; } }
+@container (max-width:34rem) { .toolsStrip { grid-template-columns:1fr; gap:.75rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; } }

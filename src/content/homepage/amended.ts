@@ -10,7 +10,9 @@ export const homepage = {
   searchLabel: "Farmers & Suppliers",
   searchHint: "Search by product, farmer or supplier name, or region",
   shortcuts: ["Vegetables", "Seeds", "Livestock", "Fertilizers", "Fruits", "Farmland"],
-  toolsTitle: "Have you tried our farming tools?",
+  toolsTitle: "Everything You Need to Manage Your Farm Better",
+  toolsIntro: "Monitor crop health, plan what comes next, follow weather conditions and get practical support when you need it.",
+  toolsBenefits: ["Everyday farm assistance", "Crop health monitoring", "Planning & timing guidance", "Weather & seasonal updates"],
   tools: [
     {name: "Ask Wuobi", description: "Everyday farming questions"},
     {name: "Crop Doctor", description: "Crop concerns"},
