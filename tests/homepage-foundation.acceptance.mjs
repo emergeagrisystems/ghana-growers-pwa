@@ -50,6 +50,16 @@ try {
   const root=page.locator("[data-foundation]");
   await root.waitFor();
   await page.evaluate(()=>document.fonts.ready);
+  results.palette = await root.evaluate(el => Object.fromEntries(
+    [...el.querySelectorAll("[data-palette], [data-palette-role]")].map(n => [n.getAttribute("data-palette") || n.getAttribute("data-palette-role"), getComputedStyle(n).backgroundColor])
+  ));
+  assert.deepEqual(results.palette, {
+    cream: "rgb(245, 240, 221)", sage: "rgb(232, 238, 224)", "soft-green": "rgb(238, 245, 232)",
+    forest: "rgb(27, 58, 36)", maize: "rgb(242, 183, 5)", charcoal: "rgb(26, 26, 26)",
+    main: "rgb(245, 240, 221)", secondary: "rgb(232, 238, 224)", tint: "rgb(238, 245, 232)"
+  }, "Rendered palette and section roles must match the amended founder handoff");
+  assert.match(await root.locator("[data-review-boundary]").innerText(), /Legacy shell, header and footer wording outside it is not approved/);
+  assert(await root.getByText("This revised specimen awaits founder approval.", {exact:false}).isVisible());
   assert.equal(await page.locator("main main").count(),0);
   assert.equal(await root.getByRole("link").count(),0);
   for(const label of ["Buy Produce","List Your Farm"])assert(await root.getByRole("button",{name:label,exact:true}).isDisabled());

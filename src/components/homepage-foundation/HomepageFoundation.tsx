@@ -15,8 +15,29 @@ export function HomepageFoundation() {
           <FoundationBrand />
           <p className={styles.eyebrow}>{foundation.review}</p>
         </div>
+        <p className={styles.boundary} data-review-boundary>{foundation.boundary}</p>
         <p className={styles.introduction}>{foundation.introduction}</p>
-        <header className={styles.hero}>
+        <section className={styles.palette} aria-labelledby="foundation-palette">
+          <h2 id="foundation-palette">{foundation.paletteTitle}</h2>
+          <p>{foundation.paletteIntro}</p>
+          <ul className={styles.paletteGrid}>
+            {foundation.lightPalette.map((colour) => (
+              <li key={colour.token} className={styles.lightSample} data-palette={colour.token}>
+                <h3>{colour.name}</h3><p>{colour.hex}</p><p>{colour.role}</p>
+              </li>
+            ))}
+          </ul>
+          <ul className={styles.accentList}>
+            {foundation.accents.map((colour) => (
+              <li key={colour.token}>
+                <span className={styles.accentSample} data-palette={colour.token} aria-hidden="true" />
+                <div><h3>{colour.name}</h3><p>{colour.hex} · {colour.role}</p></div>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.paletteNote}>{foundation.paletteNote}</p>
+        </section>
+        <header className={styles.hero} data-palette-role="main">
           <p className={styles.eyebrow}>{foundation.sections[0]}</p>
           <h1>{foundation.headline}</h1>
           <p id="foundation-action-note" className={styles.heroNote}>{foundation.heroNote}</p>
@@ -26,7 +47,7 @@ export function HomepageFoundation() {
             ))}
           </div>
         </header>
-        <section className={styles.section} aria-labelledby="foundation-evidence">
+        <section className={`${styles.section} ${styles.evidenceSection}`} data-palette-role="secondary" aria-labelledby="foundation-evidence">
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>{foundation.sections[1]}</p>
             <h2 id="foundation-evidence">{foundation.evidenceTitle}</h2>
@@ -47,7 +68,7 @@ export function HomepageFoundation() {
             ))}
           </ul>
         </section>
-        <section className={styles.section} aria-labelledby="foundation-states">
+        <section className={`${styles.section} ${styles.interfaceSection}`} data-palette-role="tint" aria-labelledby="foundation-states">
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>{foundation.sections[2]}</p>
             <h2 id="foundation-states">{foundation.statesTitle}</h2>

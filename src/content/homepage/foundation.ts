@@ -8,6 +8,20 @@ export const foundation = {
   brand: "Ghana Growers",
   review: "Private foundation review",
   introduction: "A small review of typography, actions and information states. All examples are synthetic.",
+  boundary: "Review boundary: only the foundation specimen below is under review. Legacy shell, header and footer wording outside it is not approved by this review.",
+  paletteTitle: "Provisional website palette",
+  paletteIntro: "Exact founder-selected colours, shown without overlays or texture. This revised specimen awaits founder approval.",
+  lightPalette: [
+    { token: "cream", name: "Cream Beige", hex: "#F5F0DD", role: "Main warm background · heading and actions" },
+    { token: "sage", name: "Pale Sage", hex: "#E8EEE0", role: "Secondary light background · information section" },
+    { token: "soft-green", name: "Soft Green", hex: "#EEF5E8", role: "Soft light background / tint · interface section" }
+  ],
+  accents: [
+    { token: "forest", name: "Forest Green", hex: "#1B3A24", role: "Primary / dark brand surface" },
+    { token: "maize", name: "Maize Yellow", hex: "#F2B705", role: "Accent / action" },
+    { token: "charcoal", name: "Charcoal", hex: "#1A1A1A", role: "Primary text" }
+  ],
+  paletteNote: "White is a functional neutral for cards and controls. Status and evidence colours retain independent meanings.",
   headline: "Find produce. Find farmers. Farm smarter.",
   heroNote: "Action specimens only — these buttons do not open a destination.",
   actions: ["Buy Produce", "List Your Farm"],
@@ -40,5 +54,5 @@ export const foundation = {
   glyphTitle: "Type and character review",
   glyphIntro: "Character specimens only, not translated copy.",
   glyphs: "Ɛ ɛ · Ɔ ɔ · Ƒ ƒ · Ɣ ɣ · Ŋ ŋ · á à ã · ₵ GH₵",
-  footer: "Provisional foundation · Founder review required"
+  footer: "End of foundation specimen · Founder review required. Surrounding legacy shell, header and footer wording remains outside this review and is not approved."
 } as const;
