@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { Check } from "lucide-react";
 import { MobileCardBrowser } from "./MobileCardBrowser";
 import { PreviewHeader, PreviewFooter, ToolInterfacePreview } from "./PreviewChrome";
 import { homepage as copy } from "@/content/homepage/amended";
@@ -57,7 +58,7 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
         </div>
       </div>
     </header>
-    <div className={styles.toolsStrip} data-tools-teaser><h2>{copy.toolsTitle}</h2><p className={styles.toolsIntro}>{copy.toolsIntro}</p><ul>{copy.toolsBenefits.map(benefit => <li key={benefit}><strong>{benefit}</strong></li>)}</ul><div className={styles.deviceCue} data-device-cue><ToolInterfacePreview compact /></div></div>
+    <div className={styles.toolsStrip} data-tools-teaser><h2>{copy.toolsTitle}</h2><p className={styles.toolsIntro}>{copy.toolsIntro}</p><ul>{copy.toolsBenefits.map(benefit => <li key={benefit}><Check size={12} aria-hidden="true"/><strong>{benefit}</strong></li>)}</ul><div className={styles.deviceCue} data-device-cue><ToolInterfacePreview compact /></div></div>
     <section className={`${styles.section} ${styles.sage}`} aria-labelledby="homepage-directory">
       <div className={styles.sectionInner}><div className={styles.headingRow}><h2 id="homepage-directory">{copy.directoryTitle}</h2><UnavailableAction label={copy.directoryActions[directoryTab]} /></div>
         <Tabs names={copy.directoryTabs} selected={directoryTab} onChange={setDirectoryTab} id="directory" />

@@ -279,3 +279,22 @@
   .toolsStrip > ul { justify-self:start; }
   .toolsStrip .deviceCue { transform:none; margin-bottom:-1.75rem; }
 }
+
+/* Centred compact introduction with decorative, non-status benefit checks. */
+.toolsStrip { min-height:13.5rem; padding-block:1rem; row-gap:.65rem; margin-bottom:1.5rem; }
+.toolsStrip > h2 { justify-self:center; text-align:center; font-size:clamp(1.4rem,2.1vw,1.8rem); align-self:center; }
+.toolsStrip > .toolsIntro { justify-self:center; text-align:center; max-width:44rem; }
+.toolsStrip > ul { max-width:34rem; gap:.65rem 1rem; align-self:center; }
+.toolsStrip > ul > li { display:flex; align-items:flex-start; gap:.3rem; }
+.toolsStrip > ul > li > svg { flex:0 0 12px; margin-top:.3rem; color:var(--hp-heading); }
+.toolsStrip .deviceCue { position:absolute; right:1.25rem; top:50%; transform:translateY(-50%); margin:0; }
+@media(max-width:34rem) {
+ .toolsStrip { min-height:0; row-gap:.5rem; margin-bottom:1rem; }
+ .toolsStrip > ul { gap:.5rem; }
+ .toolsStrip .deviceCue { position:static; transform:none; margin-bottom:-1.75rem; }
+}
+@container (max-width:34rem) {
+ .toolsStrip { min-height:0; row-gap:.5rem; margin-bottom:1rem; }
+ .toolsStrip > ul { gap:.5rem; }
+ .toolsStrip .deviceCue { position:static; transform:none; margin-bottom:-1.75rem; }
+}
