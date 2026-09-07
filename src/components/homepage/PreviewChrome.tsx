@@ -32,9 +32,9 @@ const actions = ["Ask", "Upload", "Start", "View Calendar"];
 // Static visual adaptation of FarmTools.tsx selector. No runtime tool imports or advice.
 export function ToolInterfacePreview({compact = false}: {compact?: boolean}) {
   return <div className={compact ? styles.miniInterface : styles.toolInterface} data-tool-interface>
-    <div className={styles.interfaceBar}><strong>Ghana Growers</strong><span>UI Preview</span></div>
+    <div className={styles.interfaceBar}><strong>{compact ? "Farming Tools" : "Ghana Growers"}</strong><span>UI Preview</span></div>
     <p className={styles.interfaceTitle}>Choose a farm tool</p>
-    <div className={styles.interfaceGrid}>{copy.tools.map((tool,index) => {const Icon=icons[index];return <div key={tool.name} className={styles.interfaceCard}><Icon size={20} aria-hidden="true"/><strong>{tool.name}</strong>{!compact && <><span>{tool.description}</span><button type="button" disabled title="Tool unavailable in this Preview">{actions[index]}</button></>}</div>;})}</div>
+    <div className={styles.interfaceGrid}>{copy.tools.map((tool,index) => {const Icon=icons[index];return <div key={tool.name} className={styles.interfaceCard}><Icon size={compact ? 16 : 20} aria-hidden="true"/><strong>{tool.name}</strong>{!compact && <><span>{tool.description}</span><button type="button" disabled title="Tool unavailable in this Preview">{actions[index]}</button></>}</div>;})}</div>
     <p className={styles.interfaceNote}>Static interface preview · tools inactive</p>
   </div>;
 }
