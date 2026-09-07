@@ -98,13 +98,38 @@ try{
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:1000});
   assert(await root.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Overflow at '+width);
-  assert(await root.evaluate(el=>[...el.querySelectorAll('*')].filter(n=>!n.closest('[aria-hidden="true"]')).every(n=>n.getBoundingClientRect().right<=el.getBoundingClientRect().right+1)),'Child overflow');
+  assert(await root.evaluate(el=>[...el.querySelectorAll('*')].filter(n=>!n.closest('[aria-hidden="true"]')&&!n.closest('[data-card-track]')).every(n=>n.getBoundingClientRect().right<=el.getBoundingClientRect().right+1)),'Child overflow');
   if(width===1440)assert(await root.locator('h1').evaluate(el=>el.getBoundingClientRect().height<parseFloat(getComputedStyle(el).lineHeight)*1.2),'Wide heading should be one statement');
   if(width===1440) for(const panel of ['#directory-panel','#marketplace-panel']){
     assert(await root.locator(panel+' article').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===1),'Four cards should share one desktop row');
   }
   if(width===1440) assert(await root.getByRole('region',{name:'Learn',exact:true}).locator('article').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===1));
   if([390,768,1440].includes(width)){await root.locator('[data-homepage-hero]').screenshot({path:path.join(out,'hero-'+mode+'-'+width+'.png')});await root.locator('[data-tool-interface]').last().screenshot({path:path.join(out,'tools-'+mode+'-'+width+'.png')});}
+  if(width===320||width===390){
+    const measures={width,cards:[],targets:[]};
+    for(const label of ['farmer','supplier','listing','Learn']){
+      if(label==='supplier')await root.getByRole('tab',{name:'Suppliers & Services',exact:true}).click();
+      const browser=root.locator('[data-card-browser="'+label+'"]');const track=browser.locator('[data-card-track]');const cards=track.locator('article');const total=await cards.count();
+      const metric=await track.evaluate(el=>({width:el.clientWidth,cardWidth:el.firstElementChild.getBoundingClientRect().width,scrollWidth:el.scrollWidth,bodyFont:parseFloat(getComputedStyle(el.querySelector('article p')).fontSize)}));
+      assert(Math.abs(metric.width-metric.cardWidth)<=1,'One full-width card: '+label);assert(metric.width>=width-34);assert(metric.bodyFont>=14);measures.cards.push({label,...metric});
+      const status=browser.getByRole('status');assert.equal(await status.innerText(),'1 of '+total);
+      await browser.getByRole('button',{name:'Next '+label+' card',exact:true}).click();await status.getByText('2 of '+total,{exact:true}).waitFor();
+      assert(await track.evaluate(el=>Math.abs(el.children[1].getBoundingClientRect().left-el.getBoundingClientRect().left)<2));
+      await track.focus();await track.press('End');await status.getByText(total+' of '+total,{exact:true}).waitFor();assert(await browser.getByRole('button',{name:'Next '+label+' card',exact:true}).isDisabled());
+      await track.press('Home');await status.getByText('1 of '+total,{exact:true}).waitFor();
+      await track.evaluate(el=>el.scrollTo({left:el.firstElementChild.getBoundingClientRect().width+16,behavior:'instant'}));await status.getByText('2 of '+total,{exact:true}).waitFor();
+      await browser.getByRole('button',{name:'Previous '+label+' card',exact:true}).click();await status.getByText('1 of '+total,{exact:true}).waitFor();
+      await browser.screenshot({path:path.join(out,'cards-'+label+'-'+mode+'-'+width+'.png')});
+      if(label==='supplier'){await root.getByRole('tab',{name:'Farmers',exact:true}).click();assert.equal(await root.locator('[data-card-browser="farmer"]').getByRole('status').innerText(),'1 of 4');}
+    }
+    const steps=root.locator('#homepage-how').locator('..').locator('..').locator('ol');assert(await steps.locator('li').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().left))).size===1));
+    const teaser=root.getByRole('heading',{name:'Have you tried our farming tools?',exact:true}).locator('..');assert(await teaser.locator('li').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===2));
+    measures.targets=await root.locator('button:visible').evaluateAll(nodes=>nodes.map(n=>({label:n.textContent,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,clipped:n.scrollWidth>n.clientWidth+1})));
+    assert(measures.targets.every(t=>t.width>=43.9&&t.height>=43.9&&!t.clipped),'Touch targets and complete labels');
+    measures.pageOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1);assert(!measures.pageOverflow);
+    measures.pageHeight=await root.evaluate(el=>el.getBoundingClientRect().height);
+    await writeFile(path.join(out,'mobile-metrics-'+mode+'-'+width+'.json'),JSON.stringify(measures,null,2));
+  }
   results.widths.push(width);await root.screenshot({path:path.join(out,'homepage-'+mode+'-'+width+'.png')});
  }
  await page.setViewportSize({width:1440,height:1000});
