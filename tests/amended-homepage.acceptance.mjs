@@ -123,7 +123,7 @@ try{
       if(label==='supplier'){await root.getByRole('tab',{name:'Farmers',exact:true}).click();assert.equal(await root.locator('[data-card-browser="farmer"]').getByRole('status').innerText(),'1 of 4');}
     }
     const steps=root.locator('#homepage-how').locator('..').locator('..').locator('ol');assert(await steps.locator('li').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().left))).size===1));
-    const teaser=root.getByRole('heading',{name:'Everything You Need to Manage Your Farm Better',exact:true}).locator('..');assert(await teaser.locator('li').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===2));
+    const teaser=root.getByRole('heading',{name:'Everything You Need to Manage Your Farm Better',exact:true}).locator('..');assert(await teaser.locator('li').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===4));
     measures.targets=await root.locator('button:visible').evaluateAll(nodes=>nodes.map(n=>({label:n.textContent,width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height,clipped:n.scrollWidth>n.clientWidth+1})));
     assert(measures.targets.every(t=>t.width>=43.9&&t.height>=43.9&&!t.clipped),'Touch targets and complete labels');
     measures.pageOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>document.documentElement.clientWidth+1);assert(!measures.pageOverflow);

@@ -251,3 +251,17 @@
 .dashboardCard strong,.dashboardCard span { font-size:.75rem; }
 @media(max-width:34rem) { .toolsStrip { grid-template-columns:1fr; gap:.75rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; } }
 @container (max-width:34rem) { .toolsStrip { grid-template-columns:1fr; gap:.75rem; } .toolsStrip .deviceCue { grid-column:1; grid-row:auto; } }
+
+/* Narrow product cue shares the benefits row, resting into the lower padding. */
+@media(max-width:34rem) {
+  .toolsStrip { grid-template-columns:minmax(0,1fr) 8rem; column-gap:.75rem; }
+  .toolsStrip > h2,.toolsStrip > .toolsIntro { grid-column:1 / -1; }
+  .toolsStrip > ul { grid-column:1; grid-row:3; grid-template-columns:1fr; gap:.75rem; align-self:center; }
+  .toolsStrip .deviceCue { grid-column:2; grid-row:3; justify-self:end; align-self:end; margin-bottom:-.4rem; }
+}
+@container (max-width:34rem) {
+  .toolsStrip { grid-template-columns:minmax(0,1fr) 8rem; column-gap:.75rem; }
+  .toolsStrip > h2,.toolsStrip > .toolsIntro { grid-column:1 / -1; }
+  .toolsStrip > ul { grid-column:1; grid-row:3; grid-template-columns:1fr; gap:.75rem; align-self:center; }
+  .toolsStrip .deviceCue { grid-column:2; grid-row:3; justify-self:end; align-self:end; margin-bottom:-.4rem; }
+}
