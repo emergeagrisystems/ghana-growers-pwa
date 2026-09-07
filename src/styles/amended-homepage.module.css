@@ -265,3 +265,17 @@
   .toolsStrip > ul { grid-column:1; grid-row:3; grid-template-columns:1fr; gap:.75rem; align-self:center; }
   .toolsStrip .deviceCue { grid-column:2; grid-row:3; justify-self:end; align-self:end; margin-bottom:-.4rem; }
 }
+
+/* Final section refinement: grouped benefits and a restrained cutout cue. */
+.toolsStrip > ul { width:100%; max-width:36rem; justify-self:center; }
+.toolsStrip .deviceCue { transform:translateY(-2.5rem); box-shadow:0 8px 20px #1b3a2424; }
+@media(max-width:34rem) {
+  .toolsStrip { margin-bottom:1rem; }
+  .toolsStrip > ul { justify-self:start; }
+  .toolsStrip .deviceCue { transform:none; margin-bottom:-1.75rem; }
+}
+@container (max-width:34rem) {
+  .toolsStrip { margin-bottom:1rem; }
+  .toolsStrip > ul { justify-self:start; }
+  .toolsStrip .deviceCue { transform:none; margin-bottom:-1.75rem; }
+}
