@@ -65,7 +65,7 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
         </div>
       </div>
     </section>
-    <section className={`${styles.section} ${styles.soft}`} aria-labelledby="homepage-tools"><div className={`${styles.sectionInner} ${styles.showcase}`}>
+    <section className={`${styles.section} ${styles.neutral}`} aria-labelledby="homepage-tools"><div className={`${styles.sectionInner} ${styles.showcase}`}>
       <div className={styles.productPending}><p className={styles.eyebrow}>Ghana Growers farming tools</p><div className={styles.productSlots} aria-hidden="true"><span /><span /><span /><span /></div><p>{copy.productUnavailable}</p></div><div><p className={styles.eyebrow}>Farming tools</p><h2 id="homepage-tools">{copy.toolsHeading}</h2><ul className={styles.toolList}>{copy.tools.map(tool => <li key={tool.name}><strong>{tool.name}</strong><span>{tool.description}</span></li>)}</ul><p className={styles.availability}>Working names. Tool entry remains unavailable pending its own checks.</p></div>
     </div></section>
     <section className={`${styles.section} ${styles.cream}`} aria-labelledby="homepage-marketplace"><div className={styles.sectionInner}>
@@ -73,10 +73,10 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
       <Tabs names={copy.marketplaceTabs} selected={marketTab} onChange={setMarketTab} id="marketplace" />
       <div id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-tab-${marketTab}`} tabIndex={0}>{data.listings.status === "unavailable" ? <p className={styles.empty}>{copy.marketplaceUnavailable}</p> : listings.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <div className={styles.cards}>{listings.map(entry => <article key={entry.id}><div className={styles.cropPlaceholder}><span aria-hidden="true">{entry.category}</span><p>{copy.cropPlaceholder}</p></div><h3>{entry.title}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.seller} · {entry.location}</p><p className={styles.availability}>Listing details unavailable</p></article>)}</div>}</div>
     </div></section>
-    <section className={`${styles.section} ${styles.sage}`} aria-labelledby="homepage-how"><div className={styles.sectionInner}>
+    <section className={`${styles.section} ${styles.neutral}`} aria-labelledby="homepage-how"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-how">{copy.howTitle}</h2><UnavailableAction label={copy.howAction} /></div><ol className={styles.steps}>{copy.steps.map((step, index) => <li key={step.title}><span>0{index + 1}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>
     </div></section>
-    <section className={`${styles.section} ${styles.cream}`} aria-labelledby="homepage-learn"><div className={styles.sectionInner}>
+    <section className={`${styles.section} ${styles.sage}`} aria-labelledby="homepage-learn"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-learn">{copy.learnTitle}</h2><UnavailableAction label={copy.learnAction} /></div>{data.resources.status === "unavailable" ? <p className={styles.empty}>{copy.learnUnavailable}</p> : data.resources.items.length === 0 ? <p className={styles.empty}>No reviewed resources are available.</p> : <div className={`${styles.cards} ${styles.resourceCards}`}>{data.resources.items.slice(0, 3).map(entry => <article key={entry.id}><div className={styles.resourcePlaceholder} aria-hidden="true">{entry.format === "Video" ? "Video Preview" : entry.format}</div><p className={styles.eyebrow}>{entry.format === "Video" ? "Video Preview" : entry.format}</p><h3>{entry.title}</h3><p className={styles.availability}>{copy.resourcePlaceholder}</p><p className={styles.availability}>Resource destination unavailable</p></article>)}</div>}
     </div></section>
     <section className={styles.audience} aria-labelledby="homepage-audience"><h2 id="homepage-audience">{copy.audienceTitle}</h2><div>{copy.audiences.map(label => <UnavailableAction key={label} label={label} />)}</div><p>{copy.unavailableAction}</p></section>

@@ -1,4 +1,4 @@
-/* P09-2 surface refinement: Soft Green foundation, Pale Sage support, secondary Cream Beige. P09-1 specimen remains unchanged. */
+/* P09-2 reviewed section rhythm: neutral breathing space between tinted discovery areas; existing structure and P09-1 specimen preserved. */
 .page { --hp-forest:#1b3a24; --hp-maize:#f2b705; --hp-cream:#f5f0dd; --hp-sage:#e8eee0; --hp-soft:#eef5e8; --hp-charcoal:#1a1a1a; --hp-neutral:#fff; --hp-page:var(--hp-soft); --hp-warm:var(--hp-cream); --hp-secondary:var(--hp-sage); --hp-tint:var(--hp-soft); --hp-text:var(--hp-charcoal); --hp-heading:var(--hp-forest); --hp-action:var(--hp-maize); color:var(--hp-text); background:var(--hp-page); font:400 1rem/1.6 var(--gg-hf-font),system-ui,"Segoe UI",Arial,sans-serif; }
 .page *, .page *::before, .page *::after { box-sizing:border-box; }
 .page h1,.page h2,.page h3,.page p { margin:0; font-family:inherit; }
@@ -39,6 +39,7 @@
 .sectionInner { max-width:76rem; margin:auto; }
 .sage { background:var(--hp-secondary); }
 .soft { background:var(--hp-tint); }
+.neutral { background:var(--hp-neutral); }
 .cream { background:var(--hp-page); }
 .headingRow { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.2rem; }
 .tabs { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1rem; }
@@ -60,7 +61,7 @@
 .audience { max-width:76rem; margin:0 auto; padding:1.5rem; background:var(--hp-warm); border:1px solid var(--hp-heading); border-radius:.6rem; }
 .audience > div { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:.75rem; margin:1rem 0 .5rem; }
 .audience p,.end { font-size:.8rem; }
-.end { padding:1.5rem; text-align:center; }
+.end { padding:1.5rem; margin-top:1.5rem !important; text-align:center; background:var(--hp-heading); color:var(--hp-neutral); }
 .results { max-width:45rem; margin:1rem auto; text-align:left; background:var(--hp-neutral); padding:1rem; }
 .results ul { padding-left:1.25rem; }
 @media(max-width:79rem) { .toolsStrip,.audience { margin-inline:1rem; } }
@@ -77,14 +78,14 @@
 .landscapePlaceholder > span { font-size:.75rem; letter-spacing:.2em; color:var(--hp-heading); }
 .landscapePlaceholder p { font-size:.8rem; }
 .deviceCue { width:9rem; flex:0 0 9rem; padding:.45rem; border:2px solid var(--hp-heading); border-radius:1.3rem; background:var(--hp-neutral); }
-.deviceScreen { min-height:12rem; padding:.8rem .5rem; border-radius:.8rem; background:var(--hp-tint); font-size:.65rem; }
+.deviceScreen { min-height:12rem; padding:.8rem .5rem; border-radius:.8rem; background:var(--hp-tint); font-size:.8rem; }
 .deviceSlot { display:block; height:1.5rem; background:var(--hp-neutral); border:1px solid var(--hp-heading); border-radius:.25rem; margin:.75rem 0; }
 .profilePlaceholder { display:flex; align-items:center; gap:.75rem; padding-bottom:1rem; }
 .profilePlaceholder > span { width:3rem; height:3rem; flex:0 0 3rem; border-radius:50%; background:var(--hp-secondary); color:var(--hp-heading); display:grid; place-items:center; font-weight:600; }
-.profilePlaceholder p { font-size:.7rem; margin:0; }
+.profilePlaceholder p { font-size:.8rem; margin:0; }
 .cropPlaceholder { min-height:7rem; padding:1rem; margin-bottom:1rem; display:flex; flex-direction:column; justify-content:center; background:var(--hp-tint); border:1px dashed var(--hp-heading); border-radius:.4rem; text-align:center; }
 .cropPlaceholder > span { font-size:.85rem; font-weight:600; }
-.cropPlaceholder p { font-size:.7rem; }
+.cropPlaceholder p { font-size:.8rem; }
 .resourcePlaceholder { min-height:6rem; padding:1rem; margin-bottom:1rem; display:grid; place-items:center; background:var(--hp-warm); border:1px dashed var(--hp-heading); border-radius:.4rem; font-size:.9rem; }
 .productSlots { display:grid; grid-template-columns:1fr 1fr; width:100%; gap:.75rem; margin:1rem 0; }
 .productSlots span { min-height:3rem; border:1px solid var(--hp-heading); border-radius:.4rem; background:var(--hp-tint); }
