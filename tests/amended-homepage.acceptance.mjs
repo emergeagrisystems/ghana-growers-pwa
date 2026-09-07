@@ -85,7 +85,10 @@ try{
  await supplier.press('ArrowLeft');const farmer=root.getByRole('tab',{name:'Farmers',exact:true});assert.equal(await farmer.getAttribute('aria-selected'),'true');assert(await farmer.evaluate(el=>el===document.activeElement));
  assert(await farmer.evaluate(el=>getComputedStyle(el).outlineStyle!=='none'));
  const category=root.getByRole('tab',{name:'Vegetables',exact:true});await category.click();assert.equal(await category.getAttribute('aria-selected'),'true');await category.press('End');assert.equal(await root.getByRole('tab',{name:'Farm inputs',exact:true}).getAttribute('aria-selected'),'true');
- assert.match(await root.innerText(),/GG FarmMate, Join the Network and the E.A.Sy endorsement line/);
+ assert.doesNotMatch(await root.innerText(),/GG FarmMate|Join the Network|E\.A\.Sy|Emerge Agri Systems/);
+ assert.equal(await page.locator('[data-legacy-shell]:visible').count(),0);
+ assert.equal(await root.locator('[data-preview-header]').count(),1);
+ assert.equal(await root.locator('[data-preview-footer]').count(),1);
  for(const label of ['All','Vegetables','Fruits','Livestock','Farm inputs']){await root.getByRole('tab',{name:label,exact:true}).click();assert.equal(await root.locator('#marketplace-panel article').count(),4);}
  assert.equal(await root.locator('[data-device-cue]').count(),1);
  assert.equal(await root.locator('[data-hero-placeholder]').count(),1);
@@ -95,14 +98,20 @@ try{
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:1000});
   assert(await root.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Overflow at '+width);
-  assert(await root.evaluate(el=>[...el.querySelectorAll('*')].every(n=>n.getBoundingClientRect().right<=el.getBoundingClientRect().right+1)),'Child overflow');
+  assert(await root.evaluate(el=>[...el.querySelectorAll('*')].filter(n=>!n.closest('[aria-hidden="true"]')).every(n=>n.getBoundingClientRect().right<=el.getBoundingClientRect().right+1)),'Child overflow');
   if(width===1440)assert(await root.locator('h1').evaluate(el=>el.getBoundingClientRect().height<parseFloat(getComputedStyle(el).lineHeight)*1.2),'Wide heading should be one statement');
   if(width===1440) for(const panel of ['#directory-panel','#marketplace-panel']){
     assert(await root.locator(panel+' article').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===1),'Four cards should share one desktop row');
   }
   if(width===1440) assert(await root.getByRole('region',{name:'Learn',exact:true}).locator('article').evaluateAll(nodes=>new Set(nodes.map(n=>Math.round(n.getBoundingClientRect().top))).size===1));
+  if([390,768,1440].includes(width)){await root.locator('[data-homepage-hero]').screenshot({path:path.join(out,'hero-'+mode+'-'+width+'.png')});await root.locator('[data-tool-interface]').last().screenshot({path:path.join(out,'tools-'+mode+'-'+width+'.png')});}
   results.widths.push(width);await root.screenshot({path:path.join(out,'homepage-'+mode+'-'+width+'.png')});
  }
+ await page.setViewportSize({width:1440,height:1000});
+ const desktop=root.getByRole('navigation',{name:'Homepage navigation',exact:true});
+ for(const label of ['Explore','Find','How it works']){const summary=desktop.locator('summary').filter({hasText:label});await summary.focus();await summary.press('Enter');assert(await summary.evaluate(n=>n.parentElement.open));await summary.press('Escape');assert(await summary.evaluate(n=>!n.parentElement.open&&document.activeElement===n));}
+ for(const width of [390,768]){await page.setViewportSize({width,height:1000});const menu=root.locator('[data-preview-header] > div > details > summary');await menu.click();const mobile=root.getByRole('navigation',{name:'Mobile homepage navigation'});const explore=mobile.getByText('Explore',{exact:true});if(!(await explore.evaluate(n=>n.parentElement.open)))await explore.click();assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isVisible());assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isDisabled());await page.screenshot({path:path.join(out,'menu-'+mode+'-'+width+'.png')});await menu.press('Escape');assert(!(await mobile.isVisible()));}
+ await page.setViewportSize({width:1440,height:1000});
  results.contrast=await root.evaluate(el=>{
  function lum(rgb){const a=rgb.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{n/=255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722;}
  return [...el.querySelectorAll('p,h1,h2,h3,button,label,input,strong')].map(n=>{let p=n,bg;while(p){bg=getComputedStyle(p).backgroundColor;if(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')break;p=p.parentElement;}const a=lum(getComputedStyle(n).color),b=lum(bg);return{label:n.textContent.slice(0,35),ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};});
@@ -117,6 +126,7 @@ try{
    if(scenario==='empty'){assert(await root.getByRole('searchbox').isEnabled());await root.getByRole('button',{name:'Search',exact:true}).click();await root.getByRole('status').getByText(/^0 profiles/).waitFor();}
    else assert(await root.getByRole('searchbox').isDisabled());
  }
+ await page.goto(new URL('/farmer-hub',base).href);assert(await page.locator('[data-legacy-shell]:visible').count()>0);assert.equal(await page.locator('[data-preview-header]').count(),0);assert.equal(await page.locator('header[data-legacy-shell]').evaluate(n=>getComputedStyle(n).position),'sticky');
  await page.goto(new URL('/dev-preview?exit=1',base).href);await page.goto(new URL(route,base).href);assert.equal(await page.locator('[data-amended-homepage]').count(),0);
  assert.equal(writes.length,0);assert.equal(results.errors.length,0);
 }finally{await browser.close();await writeFile(path.join(out,'acceptance-'+mode+'.json'),JSON.stringify(results,null,2));}

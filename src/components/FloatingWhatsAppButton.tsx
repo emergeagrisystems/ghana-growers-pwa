@@ -33,7 +33,7 @@ export function FloatingWhatsAppButton() {
   }
 
   return (
-    <a
+    <a data-legacy-shell
       href={whatsappUrl("Hello Ghana Growers, I would like to connect with your team.")}
       target="_blank"
       rel="noreferrer"

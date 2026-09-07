@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { PreviewHeader, PreviewFooter, ToolInterfacePreview } from "./PreviewChrome";
 import { homepage as copy } from "@/content/homepage/amended";
 import { categoryListings, discover, type HomepageData } from "@/lib/homepage/discovery";
 import { foundationFont } from "@/components/homepage-foundation/font";
@@ -36,8 +37,9 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
   const results = submitted === null ? [] : discover(data.directory.items, submitted);
   const listings = categoryListings(data.listings.items, copy.marketplaceTabs[marketTab]).slice(0, 4);
   return <section className={`${styles.page} ${foundationFont.variable}`} data-amended-homepage aria-label={copy.review}>
+    <PreviewHeader />
     <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
-    <header className={styles.hero}>
+    <header className={styles.hero} data-homepage-hero>
       <div className={styles.heroInner}>
         <p className={styles.brand}>Ghana Growers</p>
         <h1>{copy.headline}</h1>
@@ -51,8 +53,8 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
         <div className={styles.shortcuts} aria-label="Popular searches">{copy.shortcuts.map(label => <button key={label} type="button" disabled={!directoryReady || label === "Farmland"} title={label === "Farmland" ? "Farmland discovery is not available" : undefined} onClick={() => {setQuery(label); setSubmitted(label);}}>{label}</button>)}</div>
         {submitted !== null && directoryReady && <section className={styles.results} aria-label="Search results"><h2>Search results</h2><p role="status">{results.length} {results.length === 1 ? "profile" : "profiles"} found in the synthetic dataset{submitted ? ` for “${submitted}”` : ""}.</p><ul>{results.map(entry => <li key={entry.id}><strong>{entry.name}</strong><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.region} · {entry.products.join(", ")}</p></li>)}</ul></section>}
         <div className={styles.heroMedia}>
-          <div className={styles.landscapePlaceholder} data-hero-placeholder><span aria-hidden="true">LANDSCAPE</span><p>{copy.mediaUnavailable}</p></div>
-          <div className={styles.deviceCue} data-device-cue><div className={styles.deviceScreen}><strong>Ghana Growers</strong><span className={styles.deviceSlot} aria-hidden="true" /><span className={styles.deviceSlot} aria-hidden="true" /><p>{copy.productUnavailable}</p></div></div>
+          <div className={styles.landscapePlaceholder} data-hero-placeholder><div className={styles.fieldLines} aria-hidden="true"><i/><i/><i/></div><span>LANDSCAPE STUDY</span><p>{copy.mediaUnavailable}</p></div>
+          <div className={styles.deviceCue} data-device-cue><ToolInterfacePreview compact /></div>
         </div>
       </div>
     </header>
@@ -66,7 +68,7 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
       </div>
     </section>
     <section className={`${styles.section} ${styles.neutral}`} aria-labelledby="homepage-tools"><div className={`${styles.sectionInner} ${styles.showcase}`}>
-      <div className={styles.productPending}><p className={styles.eyebrow}>Ghana Growers farming tools</p><div className={styles.productSlots} aria-hidden="true"><span /><span /><span /><span /></div><p>{copy.productUnavailable}</p></div><div><p className={styles.eyebrow}>Farming tools</p><h2 id="homepage-tools">{copy.toolsHeading}</h2><ul className={styles.toolList}>{copy.tools.map(tool => <li key={tool.name}><strong>{tool.name}</strong><span>{tool.description}</span></li>)}</ul><p className={styles.availability}>Working names. Tool entry remains unavailable pending its own checks.</p></div>
+      <ToolInterfacePreview /><div><p className={styles.eyebrow}>Farming tools</p><h2 id="homepage-tools">{copy.toolsHeading}</h2><ul className={styles.toolList}>{copy.tools.map(tool => <li key={tool.name}><strong>{tool.name}</strong><span>{tool.description}</span></li>)}</ul><p className={styles.availability}>Working names. Tool entry remains unavailable pending its own checks.</p></div>
     </div></section>
     <section className={`${styles.section} ${styles.cream}`} aria-labelledby="homepage-marketplace"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-marketplace">{copy.marketplaceTitle}</h2><UnavailableAction label={copy.marketplaceAction} /></div>
@@ -80,6 +82,6 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
       <div className={styles.headingRow}><h2 id="homepage-learn">{copy.learnTitle}</h2><UnavailableAction label={copy.learnAction} /></div>{data.resources.status === "unavailable" ? <p className={styles.empty}>{copy.learnUnavailable}</p> : data.resources.items.length === 0 ? <p className={styles.empty}>No reviewed resources are available.</p> : <div className={`${styles.cards} ${styles.resourceCards}`}>{data.resources.items.slice(0, 3).map(entry => <article key={entry.id}><div className={styles.resourcePlaceholder} aria-hidden="true">{entry.format === "Video" ? "Video Preview" : entry.format}</div><p className={styles.eyebrow}>{entry.format === "Video" ? "Video Preview" : entry.format}</p><h3>{entry.title}</h3><p className={styles.availability}>{copy.resourcePlaceholder}</p><p className={styles.availability}>Resource destination unavailable</p></article>)}</div>}
     </div></section>
     <section className={styles.audience} aria-labelledby="homepage-audience"><h2 id="homepage-audience">{copy.audienceTitle}</h2><div>{copy.audiences.map(label => <UnavailableAction key={label} label={label} />)}</div><p>{copy.unavailableAction}</p></section>
-    <p className={styles.end}>{copy.footer}</p>
+    <PreviewFooter />
   </section>;
 }

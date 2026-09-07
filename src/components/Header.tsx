@@ -10,7 +10,7 @@ import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 function PilotHeader() {
   return (
-    <header className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
+    <header data-legacy-shell className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
       <nav aria-label="GG FarmMate pilot" className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:px-6 lg:px-8 lg:py-2.5">
         <Link href="/farmer-hub" className="focus-ring flex min-w-0 items-center rounded-md">
           <GhanaGrowersLogo layout="horizontal" tone="reverse" className="h-9 w-auto sm:h-10" priority />
@@ -106,7 +106,7 @@ function FullHeader() {
   }, [open]);
 
   return (
-    <header className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
+    <header data-legacy-shell className="brand-surface-dark sticky top-0 z-50 border-b border-earth-100/15 backdrop-blur">
       <nav
         aria-label="Main navigation"
         className="relative mx-auto flex min-h-[62px] w-[calc(100%-30px)] max-w-[1240px] items-center justify-between gap-3 pr-14 sm:min-h-16 sm:w-[calc(100%-48px)] sm:pr-16 lg:min-h-[70px] lg:pr-0"

@@ -1,7 +1,7 @@
 // P09-2: amended P09-0A handoff Â§4; no operational/publication authority implied.
 export const homepage = {
   review: "Amended homepage · Protected review",
-  boundary: "Foundation direction is approved. This homepage is under review. Surrounding legacy shell, navigation, header and footer wording is outside approval, including GG FarmMate, Join the Network and the E.A.Sy endorsement line.",
+  boundary: "Structure and surface rhythm approved. Hero, product preview and Route A header/footer are under founder review. No operational readiness or release approval is implied.",
   fixtureNotice: "Synthetic Preview dataset — not real farmers, suppliers or offers. Search and tabs operate only on these test records. No prices, availability, verification or contact details are represented.",
   fixtureLabel: "Synthetic fixture · not a real record",
   fixtureSearch: "Search synthetic Preview profiles by product, name or example region.",
@@ -46,5 +46,5 @@ export const homepage = {
   cropPlaceholder: "Neutral image placeholder · not evidence of this listing",
   profilePlaceholder: "Neutral profile placeholder",
   servicePlaceholder: "Neutral service placeholder",
-  footer: "End of amended homepage review. No approval of the surrounding legacy shell is implied."
+  footer: "Visual review only. No merge or Production release approved."
 } as const;

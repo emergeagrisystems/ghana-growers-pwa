@@ -28,7 +28,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="brand-surface-dark border-t border-earth-100/15">
+    <footer data-legacy-shell className="brand-surface-dark border-t border-earth-100/15">
       <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.95fr_1.1fr] lg:items-start lg:px-8">
         <div className="max-w-md">
           <Link href="/" className="focus-ring inline-flex rounded-md">
