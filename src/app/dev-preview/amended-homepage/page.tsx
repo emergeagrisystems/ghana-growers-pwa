@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AmendedHomepage } from "@/components/homepage/AmendedHomepage";
 import { getHomepagePreviewFixtures } from "./fixtures";
+import { getHomepagePreviewMedia } from "./media";
 
 export const metadata: Metadata = { title: "Amended homepage · Protected review", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -11,5 +12,5 @@ export const dynamic = "force-dynamic";
 export default function AmendedHomepagePage({searchParams}: {searchParams: {fixture?: string | string[]}}) {
   if (process.env.VERCEL_ENV === "production") notFound();
   const scenario = typeof searchParams.fixture === "string" ? searchParams.fixture : undefined;
-  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} />;
+  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} media={getHomepagePreviewMedia()} />;
 }

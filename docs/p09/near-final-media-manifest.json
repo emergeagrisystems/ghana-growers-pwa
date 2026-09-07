@@ -1,0 +1,78 @@
+[
+  {
+    "crop": "tomatoes",
+    "file": "GG-CROP-001-tomatoes-benchmark-01.png",
+    "sourceSha256": "54aa4eb483fac3aedeaa4a4eca08cbbfc7f4e2f7dfff1e4841c8c51fff76fe92",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 40778,
+    "outputSha256": "a0c0d8f7dc20430d3fe81c41c7ee009fd1dd93198ef5d06cb3b7d4c8e383cfeb"
+  },
+  {
+    "crop": "peppers",
+    "file": "GG-CROP-002-peppers-master-02.png",
+    "sourceSha256": "a9f2c9233472ed0c90fabe59f3ffde9f5aeb705eeb05be0c1dd753215559d3f6",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 48174,
+    "outputSha256": "440d74b75fe90b2a506669d6fc2e0514184af53fe7637e6f79b7b944e3ac9b02"
+  },
+  {
+    "crop": "onions",
+    "file": "GG-CROP-004-onions-master-01.png",
+    "sourceSha256": "4e3eac372bafcf716cb5ba087f02800465242c6d852377da9727e14b84ff6b3b",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 45726,
+    "outputSha256": "425b6bdcad997e226236b9a9335b8665f3e007f12adfadc7cd0b91974442ac9e"
+  },
+  {
+    "crop": "garden eggs",
+    "file": "GG-CROP-005-garden-eggs-master-01.png",
+    "sourceSha256": "5c624c95f0d8b1b743b3412937288d651ebee5e235e1e7acabed018f5b12d175",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 45616,
+    "outputSha256": "bded760bca2f255e19c2c30dc0f02a499fa64cb6cebc1f01127bea49538dd1d6"
+  },
+  {
+    "crop": "pineapple",
+    "file": "GG-CROP-010-pineapple-master-01.png",
+    "sourceSha256": "39d5bde9f7051361baab9343f69fbcd7a4c2aca2f3ab1b0b66114c453286f73a",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 54526,
+    "outputSha256": "c0b7ccd48f2e5bec7df3ba8dab8b744fa6eadc503ef1f241e54267ac0480c497"
+  },
+  {
+    "crop": "mango",
+    "file": "GG-CROP-011-mango-master-01.png",
+    "sourceSha256": "7f63604546f515e400e84ccea1c90878bebd61315abff136ada35b86f327fde6",
+    "width": 4992,
+    "height": 3328,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 49534,
+    "outputSha256": "1333c0ce07db6680a57a49d1c5d5d16d1ce0eec8e8e3a41a29e362160a4c37b6"
+  },
+  {
+    "crop": "plantain",
+    "file": "GG-CROP-003-plantain-master-retained.png",
+    "sourceSha256": "d8287c2180d8750394f32109d37d2c338ef4b5f217374ba644bbb284f33306f1",
+    "width": 4800,
+    "height": 3200,
+    "derivative": "600px proportional WebP quality 80; no crop/reconstruction",
+    "outputBytes": 44394,
+    "outputSha256": "29ae711a4ea6fe148eff2a4d67610250f37310bfb587fc5fbb474ab71b1fabdf"
+  },
+  {
+    "file": "1000047188.jpg",
+    "bytes": 116819,
+    "sourceSha256": "86b91d0f368ac64a246c6efdda24dd350c620fa9b9f23c7cd358fb3f3a88057d",
+    "treatment": "Exact original bytes; CSS viewport shows source rectangle x340 y35 width570 height570. No raster edit or redraw."
+  }
+]

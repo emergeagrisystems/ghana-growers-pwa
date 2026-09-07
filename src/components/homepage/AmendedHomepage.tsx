@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Check } from "lucide-react";
+import { ProduceMedia, listingIllustration, type HomepageMedia } from "./PreviewMedia";
 import { MobileCardBrowser } from "./MobileCardBrowser";
 import { PreviewHeader, PreviewFooter, ToolInterfacePreview } from "./PreviewChrome";
 import { homepage as copy } from "@/content/homepage/amended";
@@ -28,7 +29,7 @@ function Tabs({names, selected, onChange, id}: {names: readonly string[]; select
   </div>;
 }
 
-export function AmendedHomepage({data}: {data: HomepageData}) {
+export function AmendedHomepage({data,media}: {data: HomepageData; media: HomepageMedia}) {
   const [directoryTab, setDirectoryTab] = useState(0);
   const [marketTab, setMarketTab] = useState(0);
   const [query, setQuery] = useState("");
@@ -39,8 +40,8 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
   const results = submitted === null ? [] : discover(data.directory.items, submitted);
   const listings = categoryListings(data.listings.items, copy.marketplaceTabs[marketTab]).slice(0, 4);
   return <section className={`${styles.page} ${foundationFont.variable}`} data-amended-homepage aria-label={copy.review}>
-    <PreviewHeader />
-    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{copy.mediaUnavailable}. The device is a static interface preview with inactive tools.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
+    <PreviewHeader logo={media.logo} />
+    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{copy.mediaUnavailable}. The device is a static interface preview with inactive tools. The legacy logo is temporary and replaceable. Produce images are approved generated illustrations, not evidence of listings or sellers.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
     <header className={styles.hero} data-homepage-hero>
       <div className={styles.heroInner}>
         <p className={styles.brand}>Local · Fresh · Sustainable</p>
@@ -73,7 +74,7 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
     <section className={`${styles.section} ${styles.cream}`} aria-labelledby="homepage-marketplace"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-marketplace">{copy.marketplaceTitle}</h2><UnavailableAction label={copy.marketplaceAction} /></div>
       <Tabs names={copy.marketplaceTabs} selected={marketTab} onChange={setMarketTab} id="marketplace" />
-      <div id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-tab-${marketTab}`} tabIndex={0}>{data.listings.status === "unavailable" ? <p className={styles.empty}>{copy.marketplaceUnavailable}</p> : listings.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={marketTab} label="listing">{listings.map(entry => <article key={entry.id}><div className={styles.cropPlaceholder}><span aria-hidden="true">{entry.category}</span><p>{copy.cropPlaceholder}</p></div><h3>{entry.title}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.seller} · {entry.location}</p><p className={styles.availability}>Listing details unavailable</p></article>)}</MobileCardBrowser>}</div>
+      <div id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-tab-${marketTab}`} tabIndex={0}>{data.listings.status === "unavailable" ? <p className={styles.empty}>{copy.marketplaceUnavailable}</p> : listings.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={marketTab} label="listing">{listings.map(entry => <article key={entry.id}><ProduceMedia key={entry.id} category={entry.category} image={listingIllustration(entry.category,Number(entry.id.split("-").at(-1)),media)} /><h3>{entry.title}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.seller} · {entry.location}</p><p className={styles.availability}>Listing details unavailable</p></article>)}</MobileCardBrowser>}</div>
     </div></section>
     <section className={`${styles.section} ${styles.neutral}`} aria-labelledby="homepage-how"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-how">{copy.howTitle}</h2><UnavailableAction label={copy.howAction} /></div><ol className={styles.steps}>{copy.steps.map((step, index) => <li key={step.title}><span>0{index + 1}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>
@@ -82,6 +83,6 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
       <div className={styles.headingRow}><h2 id="homepage-learn">{copy.learnTitle}</h2><UnavailableAction label={copy.learnAction} /></div>{data.resources.status === "unavailable" ? <p className={styles.empty}>{copy.learnUnavailable}</p> : data.resources.items.length === 0 ? <p className={styles.empty}>No reviewed resources are available.</p> : <MobileCardBrowser label="Learn" resources>{data.resources.items.slice(0, 3).map(entry => <article key={entry.id}><div className={styles.resourcePlaceholder} aria-hidden="true">{entry.format === "Video" ? "Video Preview" : entry.format}</div><p className={styles.eyebrow}>{entry.format === "Video" ? "Video Preview" : entry.format}</p><h3>{entry.title}</h3><p className={styles.availability}>{copy.resourcePlaceholder}</p><p className={styles.availability}>Resource destination unavailable</p></article>)}</MobileCardBrowser>}
     </div></section>
     <section className={styles.audience} aria-labelledby="homepage-audience"><h2 id="homepage-audience">{copy.audienceTitle}</h2><div>{copy.audiences.map(label => <UnavailableAction key={label} label={label} />)}</div><p>{copy.unavailableAction}</p></section>
-    <PreviewFooter />
+    <PreviewFooter logo={media.logo} />
   </section>;
 }

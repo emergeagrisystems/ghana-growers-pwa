@@ -97,7 +97,7 @@
 .previewHeader { background:var(--hp-neutral); border-bottom:1px solid var(--hp-sage); }
 .headerInner { max-width:76rem; margin:auto; padding:1rem 0; display:flex; justify-content:space-between; align-items:center; gap:1.5rem; }
 .wordmark { font-size:1.3rem; font-weight:700; letter-spacing:-.04em; color:var(--hp-heading); white-space:nowrap; }
-.wordmark span { display:block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; font-weight:500; }
+.wordmark > span { display:block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; font-weight:500; }
 .desktopNav,.navGroups,.headerActions { display:flex; align-items:center; gap:1.25rem; }
 .desktopNav { flex:1; justify-content:flex-end; }
 .previewHeader button { background:transparent; color:var(--hp-heading); border:0; padding:.5rem 0; font-size:.9rem; }
@@ -298,3 +298,11 @@
  .toolsStrip > ul { gap:.5rem; }
  .toolsStrip .deviceCue { position:static; transform:none; margin-bottom:-1.75rem; }
 }
+
+/* Authorised provisional media; no changes to locked product-section rules. */
+.previewBrand { gap:.5rem; }
+.legacyLogoCrop { display:block; position:relative; flex:0 0 44px; width:44px; height:44px; overflow:hidden; border-radius:.25rem; background:white; }
+.legacyLogoCrop img { position:absolute; width:118.5684px; height:auto; max-width:none; left:-26.2456px; top:-2.7018px; }
+.produceMedia { margin:0; }
+.produceMedia img { display:block; width:100%; height:auto; aspect-ratio:3 / 2; object-fit:cover; border-radius:.35rem; }
+.produceMedia figcaption { margin-top:.4rem; color:var(--hp-heading); font-size:.75rem; line-height:1.4; }

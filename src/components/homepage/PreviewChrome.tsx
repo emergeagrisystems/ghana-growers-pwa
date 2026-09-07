@@ -19,15 +19,15 @@ function Navigation() {
     if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
   }}><summary>{group.label}</summary><div className={styles.navPanel}><p>Unavailable in Preview</p>{group.items.map(label => <Pending key={label} label={label}/>)}</div></details>)}<Pending label="About Ghana Growers"/></div><div className={styles.headerActions}><Pending label="List a Product"/><Pending label="Join"/></div></>;
 }
-export function PreviewHeader() {
+export function PreviewHeader({logo}: {logo?: string}) {
   return <header className={styles.previewHeader} data-preview-header><div className={styles.headerInner}>
-    <div className={styles.wordmark}><PreviewBrand/><span>Protected Preview</span></div>
+    <div className={styles.wordmark}><PreviewBrand logo={logo}/><span>Protected Preview</span></div>
     <nav aria-label="Homepage navigation" className={styles.desktopNav}><Navigation/></nav>
     <details className={styles.mobileNav} onKeyDown={event => {if(event.key === "Escape"){event.currentTarget.open=false;event.currentTarget.querySelector("summary")?.focus();}}}><summary>Menu</summary><nav aria-label="Mobile homepage navigation"><Navigation/><p className={styles.availability}>Destinations unavailable in Preview</p></nav></details>
   </div></header>;
 }
-export function PreviewFooter() {
-  return <footer className={styles.previewFooter} data-preview-footer><div className={styles.footerInner}><div className={styles.footerBrand}><PreviewBrand/><p>Protected homepage Preview</p><p>Synthetic records. No live offers.</p></div>{groups.map(group => <div key={group.label}><h2>{group.label}</h2>{group.items.map(label => <Pending key={label} label={label}/>)}</div>)}</div><div className={styles.footerBase}><Pending label="About Ghana Growers"/><p>Destinations unavailable in Preview</p><p>{copy.footer}</p></div></footer>;
+export function PreviewFooter({logo}: {logo?: string}) {
+  return <footer className={styles.previewFooter} data-preview-footer><div className={styles.footerInner}><div className={styles.footerBrand}><PreviewBrand logo={logo}/><p>Protected homepage Preview</p><p>Synthetic records. No live offers.</p></div>{groups.map(group => <div key={group.label}><h2>{group.label}</h2>{group.items.map(label => <Pending key={label} label={label}/>)}</div>)}</div><div className={styles.footerBase}><Pending label="About Ghana Growers"/><p>Destinations unavailable in Preview</p><p>{copy.footer}</p></div></footer>;
 }
 const icons = [Bot, Camera, Sprout, CalendarDays];
 const actions = ["Ask", "Upload", "Start", "View Calendar"];
