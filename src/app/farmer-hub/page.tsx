@@ -1,5 +1,6 @@
 import { ShieldCheck, Sprout } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
 import { FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
@@ -31,7 +32,9 @@ export default function FarmerHubPage() {
               Ask FarmMate for farming advice, or upload a crop photo when something looks wrong.
             </p>
             <FarmMateHeroActions />
-            <FarmTools />
+            <Suspense fallback={null}>
+              <FarmTools />
+            </Suspense>
           </div>
 
           <aside className="grid gap-4 lg:pt-10" aria-label="FarmMate daily support">
