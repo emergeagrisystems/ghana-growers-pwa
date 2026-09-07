@@ -39,27 +39,25 @@ export function AmendedHomepage({data}: {data: HomepageData}) {
   const listings = categoryListings(data.listings.items, copy.marketplaceTabs[marketTab]).slice(0, 4);
   return <section className={`${styles.page} ${foundationFont.variable}`} data-amended-homepage aria-label={copy.review}>
     <PreviewHeader />
-    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
+    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{copy.mediaUnavailable}. The device is a static interface preview with inactive tools.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
     <header className={styles.hero} data-homepage-hero>
       <div className={styles.heroInner}>
-        <p className={styles.brand}>Ghana Growers</p>
+        <p className={styles.brand}>Local · Fresh · Sustainable</p>
         <h1>{copy.headline}</h1>
         <div className={styles.actions}>{copy.actions.map(label => <UnavailableAction key={label} label={label} />)}</div>
-        <p className={styles.availability}>{copy.unavailableAction}</p>
         <form className={styles.search} onSubmit={event => { event.preventDefault(); if (directoryReady) setSubmitted(query.trim()); }}>
           <label htmlFor={searchId}>{copy.searchLabel}</label>
-          <div><input id={searchId} type="search" value={query} disabled={!directoryReady} maxLength={120} onChange={event => setQuery(event.target.value)} placeholder={copy.searchHint} aria-describedby={`${searchId}-hint`} /><button type="submit" disabled={!directoryReady}>Search</button></div>
-          <p id={`${searchId}-hint`}>{directoryReady ? copy.fixtureSearch : copy.directoryUnavailable}</p>
+          <div><input id={searchId} type="search" value={query} disabled={!directoryReady} maxLength={120} onChange={event => setQuery(event.target.value)} placeholder={copy.searchHint} aria-describedby={directoryReady ? undefined : `${searchId}-hint`} /><button type="submit" disabled={!directoryReady}>Search</button></div>
+          {!directoryReady && <p id={`${searchId}-hint`}>{copy.directoryUnavailable}</p>}
         </form>
-        <div className={styles.shortcuts} aria-label="Popular searches">{copy.shortcuts.map(label => <button key={label} type="button" disabled={!directoryReady || label === "Farmland"} title={label === "Farmland" ? "Farmland discovery is not available" : undefined} onClick={() => {setQuery(label); setSubmitted(label);}}>{label}</button>)}</div>
+        <div className={styles.shortcuts} aria-label="Popular searches">{copy.shortcuts.map(label => <button key={label} type="button" disabled={!directoryReady || label === "Farmland"} title={label === "Farmland" ? "Farmland discovery is not available" : undefined} onClick={() => {setQuery(label); setSubmitted(label);}}><span>{label}</span></button>)}</div>
         {submitted !== null && directoryReady && <section className={styles.results} aria-label="Search results"><h2>Search results</h2><p role="status">{results.length} {results.length === 1 ? "profile" : "profiles"} found in the synthetic dataset{submitted ? ` for “${submitted}”` : ""}.</p><ul>{results.map(entry => <li key={entry.id}><strong>{entry.name}</strong><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.region} · {entry.products.join(", ")}</p></li>)}</ul></section>}
         <div className={styles.heroMedia}>
-          <div className={styles.landscapePlaceholder} data-hero-placeholder><div className={styles.fieldLines} aria-hidden="true"><i/><i/><i/></div><span>LANDSCAPE STUDY</span><p>{copy.mediaUnavailable}</p></div>
-          <div className={styles.deviceCue} data-device-cue><ToolInterfacePreview compact /></div>
+          <div className={styles.landscapePlaceholder} data-hero-placeholder role="img" aria-label={copy.mediaUnavailable}><div className={styles.fieldLines} aria-hidden="true"><i/><i/><i/></div></div>
         </div>
       </div>
     </header>
-    <div className={styles.toolsStrip}><h2>{copy.toolsTitle}</h2><ul>{copy.tools.map(tool => <li key={tool.name}><strong>{tool.name}</strong><p>{tool.description}</p></li>)}</ul><p className={styles.availability}>{copy.unavailableAction}</p></div>
+    <div className={styles.toolsStrip} data-tools-teaser><h2>{copy.toolsTitle}</h2><ul>{copy.tools.map(tool => <li key={tool.name}><strong>{tool.name}</strong><p>{tool.description}</p></li>)}</ul><div className={styles.deviceCue} data-device-cue><ToolInterfacePreview compact /></div></div>
     <section className={`${styles.section} ${styles.sage}`} aria-labelledby="homepage-directory">
       <div className={styles.sectionInner}><div className={styles.headingRow}><h2 id="homepage-directory">{copy.directoryTitle}</h2><UnavailableAction label={copy.directoryActions[directoryTab]} /></div>
         <Tabs names={copy.directoryTabs} selected={directoryTab} onChange={setDirectoryTab} id="directory" />
