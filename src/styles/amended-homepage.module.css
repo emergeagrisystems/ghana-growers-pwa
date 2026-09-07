@@ -1,5 +1,5 @@
-/* P09-2 consumes the exact founder-approved P09-1 direction without changing its specimen. */
-.page { --hp-forest:#1b3a24; --hp-maize:#f2b705; --hp-cream:#f5f0dd; --hp-sage:#e8eee0; --hp-soft:#eef5e8; --hp-charcoal:#1a1a1a; --hp-neutral:#fff; --hp-page:var(--hp-cream); --hp-secondary:var(--hp-sage); --hp-tint:var(--hp-soft); --hp-text:var(--hp-charcoal); --hp-heading:var(--hp-forest); --hp-action:var(--hp-maize); color:var(--hp-text); background:var(--hp-page); font:400 1rem/1.6 var(--gg-hf-font),system-ui,"Segoe UI",Arial,sans-serif; }
+/* P09-2 surface refinement: Soft Green foundation, Pale Sage support, secondary Cream Beige. P09-1 specimen remains unchanged. */
+.page { --hp-forest:#1b3a24; --hp-maize:#f2b705; --hp-cream:#f5f0dd; --hp-sage:#e8eee0; --hp-soft:#eef5e8; --hp-charcoal:#1a1a1a; --hp-neutral:#fff; --hp-page:var(--hp-soft); --hp-warm:var(--hp-cream); --hp-secondary:var(--hp-sage); --hp-tint:var(--hp-soft); --hp-text:var(--hp-charcoal); --hp-heading:var(--hp-forest); --hp-action:var(--hp-maize); color:var(--hp-text); background:var(--hp-page); font:400 1rem/1.6 var(--gg-hf-font),system-ui,"Segoe UI",Arial,sans-serif; }
 .page *, .page *::before, .page *::after { box-sizing:border-box; }
 .page h1,.page h2,.page h3,.page p { margin:0; font-family:inherit; }
 .page h1,.page h2,.page h3 { color:var(--hp-heading); line-height:1.2; }
@@ -57,7 +57,7 @@
 .steps { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:1.5rem; }
 .steps span { display:block; color:var(--hp-heading); font-weight:600; margin-bottom:.5rem; }
 .steps h3 { margin-bottom:.5rem; }
-.audience { max-width:76rem; margin:0 auto; padding:1.5rem; background:var(--hp-tint); border:1px solid var(--hp-heading); border-radius:.6rem; }
+.audience { max-width:76rem; margin:0 auto; padding:1.5rem; background:var(--hp-warm); border:1px solid var(--hp-heading); border-radius:.6rem; }
 .audience > div { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:.75rem; margin:1rem 0 .5rem; }
 .audience p,.end { font-size:.8rem; }
 .end { padding:1.5rem; text-align:center; }
@@ -85,7 +85,7 @@
 .cropPlaceholder { min-height:7rem; padding:1rem; margin-bottom:1rem; display:flex; flex-direction:column; justify-content:center; background:var(--hp-tint); border:1px dashed var(--hp-heading); border-radius:.4rem; text-align:center; }
 .cropPlaceholder > span { font-size:.85rem; font-weight:600; }
 .cropPlaceholder p { font-size:.7rem; }
-.resourcePlaceholder { min-height:6rem; padding:1rem; margin-bottom:1rem; display:grid; place-items:center; background:var(--hp-secondary); border:1px dashed var(--hp-heading); border-radius:.4rem; font-size:.9rem; }
+.resourcePlaceholder { min-height:6rem; padding:1rem; margin-bottom:1rem; display:grid; place-items:center; background:var(--hp-warm); border:1px dashed var(--hp-heading); border-radius:.4rem; font-size:.9rem; }
 .productSlots { display:grid; grid-template-columns:1fr 1fr; width:100%; gap:.75rem; margin:1rem 0; }
 .productSlots span { min-height:3rem; border:1px solid var(--hp-heading); border-radius:.4rem; background:var(--hp-tint); }
 .productPending { font-size:.8rem; }
