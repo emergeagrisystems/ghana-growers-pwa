@@ -69,7 +69,9 @@ try{
  const page=await ctx.newPage();page.on('pageerror',e=>results.errors.push(e.message));
  const writes=[];page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.method());});
  await page.goto(new URL(route,base).href);const root=page.locator('[data-amended-homepage]');await root.waitFor();await page.evaluate(()=>document.fonts.ready);
- assert.equal(await page.locator('main main').count(),0);assert.equal(await root.getByRole('link').count(),2);
+ assert.equal(await page.locator('main main').count(),0);assert.equal(await root.getByRole('link',{name:'Ghana Growers home',exact:true}).count(),2);
+ assert(await root.getByRole('link',{name:'Contact',exact:true}).isVisible());
+ for(const href of await root.locator('a[href]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')))) assert(href.startsWith('/dev-preview/')||href==='#homepage-content');
  assert(await root.getByRole('searchbox').isEnabled());
  assert.match(await root.locator('[data-fixture-notice]').innerText(),/not real farmers, suppliers or offers/);
  assert.equal(await root.locator('#directory-panel article').count(),4);

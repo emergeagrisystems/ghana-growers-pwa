@@ -1,6 +1,8 @@
 "use client";
 
 import { Bot, Camera, CalendarDays, Sprout, CloudSun } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { previewDestinations } from "@/content/public-preview";
 import { homepage as copy } from "@/content/homepage/amended";
 import styles from "@/styles/amended-homepage.module.css";
 
@@ -12,22 +14,25 @@ const groups = [
   {label: "How it works", items: ["How Ghana Growers works", "How information is checked"]}
 ];
 function Pending({label}: {label: string}) {
+  const pathname = usePathname();
+  const href = previewDestinations[label];
+  if (href) return <a href={href} aria-current={pathname === href ? "page" : undefined}>{label}</a>;
   return <button type="button" disabled title="Destination unavailable in this Preview">{label}</button>;
 }
 function Navigation() {
   return <><div className={styles.navGroups}>{groups.map(group => <details key={group.label} onKeyDown={event => {
-    if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
-  }}><summary>{group.label}</summary><div className={styles.navPanel}><p>Unavailable in Preview</p>{group.items.map(label => <Pending key={label} label={label}/>)}</div></details>)}<Pending label="About Ghana Growers"/></div><div className={styles.headerActions}><Pending label="List a Product"/><Pending label="Join"/></div></>;
+    if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+  }}><summary>{group.label}</summary><div className={styles.navPanel}><p>{group.label === "How it works" ? "Protected Preview pages" : "Unavailable in Preview"}</p>{group.items.map(label => <Pending key={label} label={label}/>)}</div></details>)}<Pending label="About Ghana Growers"/></div><div className={styles.headerActions}><Pending label="List a Product"/><Pending label="Join"/></div></>;
 }
 export function PreviewHeader({logo}: {logo?: string}) {
-  return <header className={styles.previewHeader} data-preview-header><div className={styles.headerInner}>
+  return <header role="banner" className={styles.previewHeader} data-preview-header><div className={styles.headerInner}>
     <div className={styles.wordmark}><PreviewBrand logo={logo}/><span>Protected Preview</span></div>
     <nav aria-label="Homepage navigation" className={styles.desktopNav}><Navigation/></nav>
-    <details className={styles.mobileNav} onKeyDown={event => {if(event.key === "Escape"){event.currentTarget.open=false;event.currentTarget.querySelector("summary")?.focus();}}}><summary>Menu</summary><nav aria-label="Mobile homepage navigation"><Navigation/><p className={styles.availability}>Destinations unavailable in Preview</p></nav></details>
+    <details className={styles.mobileNav} onKeyDown={event => {if(event.key === "Escape"){event.currentTarget.open=false;event.currentTarget.querySelector("summary")?.focus();}}}><summary>Menu</summary><nav aria-label="Mobile homepage navigation"><Navigation/><p className={styles.availability}>Explanatory pages are available. Other destinations remain unavailable in Preview.</p></nav></details>
   </div></header>;
 }
 export function PreviewFooter({logo}: {logo?: string}) {
-  return <footer className={styles.previewFooter} data-preview-footer><div className={styles.footerInner}><div className={styles.footerBrand}><PreviewBrand logo={logo}/><p>Protected homepage Preview</p><p>Synthetic records. No live offers.</p></div>{groups.map(group => <div key={group.label}><h2>{group.label}</h2>{group.items.map(label => <Pending key={label} label={label}/>)}</div>)}</div><div className={styles.footerBase}><Pending label="About Ghana Growers"/><p>Destinations unavailable in Preview</p><p>{copy.footer}</p></div></footer>;
+  return <footer role="contentinfo" className={styles.previewFooter} data-preview-footer><div className={styles.footerInner}><div className={styles.footerBrand}><PreviewBrand logo={logo}/><p>Protected website Preview</p><p>Synthetic records. No live offers.</p></div>{groups.map(group => <div key={group.label}><h2>{group.label}</h2>{group.items.map(label => <Pending key={label} label={label}/>)}</div>)}</div><div className={styles.footerBase}><Pending label="About Ghana Growers"/><Pending label="Contact"/><Pending label="Privacy policy"/><Pending label="Terms of use"/><p>Privacy policy and terms await approval. Other unavailable destinations belong to later packages.</p><p>{copy.footer}</p></div></footer>;
 }
 const icons = [Bot, Camera, Sprout, CalendarDays];
 const actions = ["Ask", "Upload", "Start", "View Calendar"];

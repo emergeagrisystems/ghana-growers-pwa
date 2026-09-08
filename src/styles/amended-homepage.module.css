@@ -323,3 +323,27 @@
 /* Preserve the complete empty-field hint without reserving a hidden native clear control. */
 .search input:placeholder-shown::-webkit-search-cancel-button,.search input::-webkit-search-decoration { display:none; }
 .search input:placeholder-shown { padding-inline:.5rem; }
+
+/* P09-1A shared protected shell and explanation surfaces. Existing semantic roles. */
+.page a:focus-visible { outline:3px solid currentColor; outline-offset:4px; }
+.page .skipLink { position:absolute; left:1rem; top:0; transform:translateY(-160%); z-index:50; background:var(--hp-neutral); color:var(--hp-heading); padding:.7rem 1rem; }
+.page .skipLink:focus { transform:none; }
+.previewHeader a:not(.previewBrand) { display:inline-flex; align-items:center; min-height:44px; padding:.5rem 0; color:var(--hp-heading); font-size:.9rem; }
+.navPanel a:not(.previewBrand) { display:flex; width:100%; }
+.page a[aria-current="page"] { text-decoration:underline; text-underline-offset:.25em; font-weight:600; }
+.previewFooter a:not(.previewBrand) { display:flex; align-items:center; min-height:44px; color:var(--hp-neutral); font-size:.85rem; }
+.previewFooter a:hover,.previewHeader a:hover { text-decoration:underline; }
+.page a.action { display:inline-flex; align-items:center; min-height:44px; text-decoration:none; }
+.explanation { max-width:64rem; margin:auto; padding:2rem 1rem 3rem; background:var(--hp-neutral); }
+.page:has(.explanation) { background:var(--hp-neutral); }
+.explanation header { max-width:46rem; margin:1rem 0 2rem; }
+.explanation h1 { font-size:clamp(1.9rem,4vw,2.8rem); letter-spacing:-.015em; line-height:1.18; }
+.explanationIntro { margin-top:1rem !important; font-size:1.1rem; max-width:65ch; }
+.explanationSections { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.explanationSections section { background:var(--hp-secondary); padding:1.5rem; border-radius:.5rem; }
+.explanationSections section:nth-child(even) { background:var(--hp-tint); }
+.explanationSections h2 { font-size:1.2rem; margin-bottom:.65rem; }
+.explanationSections p { max-width:60ch; }
+.backLink,.relatedPages a { display:inline-flex; align-items:center; min-height:44px; color:var(--hp-heading); text-decoration:underline; text-underline-offset:.2em; }
+.relatedPages { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; border-top:1px solid var(--hp-secondary); padding-top:1rem; margin-top:2rem; }
+@media(max-width:40rem) { .explanationSections { grid-template-columns:1fr; } .explanationSections section { padding:1.25rem; } .explanation { padding-top:1rem; } }
