@@ -1,0 +1,2 @@
+import {MarketplacePreviewFrame} from "@/components/marketplace-preview/MarketplacePreviewFrame";
+export default function NotFound(){if(process.env.VERCEL_ENV==="production")return null;return <MarketplacePreviewFrame><h1>Source unavailable</h1><p>This request source is not available. No request was sent.</p><a href="/dev-preview/request-produce">Start a general Request Produce Preview</a></MarketplacePreviewFrame>;}

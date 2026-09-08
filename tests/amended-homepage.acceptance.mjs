@@ -82,7 +82,7 @@ try{
  }
  for(const label of ['Vegetables','Seeds','Livestock','Fertilizers','Fruits']){await root.getByRole('button',{name:label,exact:true}).click();assert(await root.getByRole('region',{name:'Search results',exact:true}).locator('li').count()>0);}
  await page.reload();await root.waitFor();
- for(const label of ['Buy Produce','Farmland'])assert(await root.getByRole('button',{name:label,exact:true}).isDisabled());
+ assert.equal(await root.getByRole('link',{name:'Buy Produce',exact:true}).getAttribute('href'),'/dev-preview/marketplace');assert(await root.getByRole('button',{name:'Farmland',exact:true}).isDisabled());
  assert.equal(await root.getByRole('link',{name:'List Your Farm',exact:true}).getAttribute('href'),'/dev-preview/list-your-farm');
  const supplier=root.getByRole('tab',{name:'Suppliers & Services',exact:true});
  await supplier.click();assert.equal(await root.locator('#directory-panel article').count(),4);assert.match(await root.locator('#directory-panel').innerText(),/Preview Supplier 01/);assert.equal(await supplier.getAttribute('aria-selected'),'true');await root.getByRole('button',{name:'View All Suppliers & Services',exact:true}).waitFor();
@@ -140,7 +140,7 @@ try{
  await page.setViewportSize({width:1440,height:1000});
  const desktop=root.getByRole('navigation',{name:'Homepage navigation',exact:true});
  for(const label of ['Explore','Find','How it works']){const summary=desktop.locator('summary').filter({hasText:label});await summary.focus();await summary.press('Enter');assert(await summary.evaluate(n=>n.parentElement.open));await summary.press('Escape');assert(await summary.evaluate(n=>!n.parentElement.open&&document.activeElement===n));}
- for(const width of [390,768]){await page.setViewportSize({width,height:1000});const menu=root.locator('[data-preview-header] > div > details > summary');await menu.click();const mobile=root.getByRole('navigation',{name:'Mobile homepage navigation'});const explore=mobile.getByText('Explore',{exact:true});if(!(await explore.evaluate(n=>n.parentElement.open)))await explore.click();assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isVisible());assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isDisabled());await page.screenshot({path:path.join(out,'menu-'+mode+'-'+width+'.png')});await menu.press('Escape');assert(!(await mobile.isVisible()));}
+ for(const width of [390,768]){await page.setViewportSize({width,height:1000});const menu=root.locator('[data-preview-header] > div > details > summary');await menu.click();const mobile=root.getByRole('navigation',{name:'Mobile homepage navigation'});const explore=mobile.getByText('Explore',{exact:true});if(!(await explore.evaluate(n=>n.parentElement.open)))await explore.click();assert(await mobile.getByRole('link',{name:'Marketplace',exact:true}).isVisible());assert.equal(await mobile.getByRole('link',{name:'Marketplace',exact:true}).getAttribute('href'),'/dev-preview/marketplace');await page.screenshot({path:path.join(out,'menu-'+mode+'-'+width+'.png')});await menu.press('Escape');assert(!(await mobile.isVisible()));}
  await page.setViewportSize({width:1440,height:1000});
  results.contrast=await root.evaluate(el=>{
  function lum(rgb){const a=rgb.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{n/=rgb.startsWith('color(srgb')?1:255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722;}

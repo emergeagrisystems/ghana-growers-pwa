@@ -12,6 +12,7 @@ import { foundationFont } from "@/components/homepage-foundation/font";
 import styles from "@/styles/amended-homepage.module.css";
 
 function UnavailableAction({label}: {label: string}) {
+  if (label === "Buy Produce" || label === "View Marketplace") return <a className={styles.action} href="/dev-preview/marketplace">{label}</a>;
   if (label === "List Your Farm") return <a className={styles.action} href="/dev-preview/list-your-farm">{label}</a>;
   if (label === "View All Farmers") return <a className={styles.action} href="/dev-preview/farmers">{label}</a>;
   return <button type="button" disabled className={styles.action} title={copy.unavailableAction}>{label}</button>;
@@ -80,7 +81,7 @@ export function AmendedHomepage({data,media,heroCandidates}: {data: HomepageData
     <section className={`${styles.section} ${styles.cream}`} aria-labelledby="homepage-marketplace"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-marketplace">{copy.marketplaceTitle}</h2><UnavailableAction label={copy.marketplaceAction} /></div>
       <Tabs names={copy.marketplaceTabs} selected={marketTab} onChange={setMarketTab} id="marketplace" />
-      <div id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-tab-${marketTab}`} tabIndex={0}>{data.listings.status === "unavailable" ? <p className={styles.empty}>{copy.marketplaceUnavailable}</p> : listings.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={marketTab} label="listing">{listings.map(entry => <article key={entry.id}><ProduceMedia key={entry.id} category={entry.category} image={listingIllustration(entry.category,Number(entry.id.split("-").at(-1)),media)} /><h3>{entry.title}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.seller} · {entry.location}</p><p className={styles.availability}>Listing details unavailable</p></article>)}</MobileCardBrowser>}</div>
+      <div id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-tab-${marketTab}`} tabIndex={0}>{data.listings.status === "unavailable" ? <p className={styles.empty}>{copy.marketplaceUnavailable}</p> : listings.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={marketTab} label="listing">{listings.map(entry => <article key={entry.id}><ProduceMedia key={entry.id} category={entry.category} image={listingIllustration(entry.category,Number(entry.id.split("-").at(-1)),media)} /><h3>{entry.title}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.seller} · {entry.location}</p><a className={styles.availability} href={`/dev-preview/marketplace/${entry.id}`} aria-label={`View ${entry.title}`}>View listing</a></article>)}</MobileCardBrowser>}</div>
     </div></section>
     <section className={`${styles.section} ${styles.neutral}`} aria-labelledby="homepage-how"><div className={styles.sectionInner}>
       <div className={styles.headingRow}><h2 id="homepage-how">{copy.howTitle}</h2><a className={styles.action} href="/dev-preview/public/how-it-works">{copy.howAction}</a></div><ol className={styles.steps}>{copy.steps.map((step, index) => <li key={step.title}><span>0{index + 1}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>

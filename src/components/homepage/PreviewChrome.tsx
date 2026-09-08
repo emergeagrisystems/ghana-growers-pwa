@@ -22,13 +22,13 @@ function Pending({label}: {label: string}) {
 function Navigation() {
   return <><div className={styles.navGroups}>{groups.map(group => <details key={group.label} onKeyDown={event => {
     if (event.key === "Escape") { event.stopPropagation(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
-  }}><summary>{group.label}</summary><div className={styles.navPanel}><p>{group.label === "How it works" ? "Protected Preview pages" : group.label === "Find" ? "Farmers available in Preview" : "Unavailable in Preview"}</p>{group.items.map(label => <Pending key={label} label={label}/>)}</div></details>)}<Pending label="About Ghana Growers"/></div><div className={styles.headerActions}><Pending label="List a Product"/><Pending label="Join"/></div></>;
+  }}><summary>{group.label}</summary><div className={styles.navPanel}><p>{group.label === "How it works" ? "Protected Preview pages" : group.label === "Find" ? "Farmers available in Preview" : "Marketplace available in Preview"}</p>{group.items.map(label => <Pending key={label} label={label}/>)}</div></details>)}<Pending label="About Ghana Growers"/></div><div className={styles.headerActions}><Pending label="List a Product"/><Pending label="Join"/></div></>;
 }
 export function PreviewHeader({logo}: {logo?: string}) {
   return <header role="banner" className={styles.previewHeader} data-preview-header><div className={styles.headerInner}>
     <div className={styles.wordmark}><PreviewBrand logo={logo}/><span>Protected Preview</span></div>
     <nav aria-label="Homepage navigation" className={styles.desktopNav}><Navigation/></nav>
-    <details className={styles.mobileNav} onKeyDown={event => {if(event.key === "Escape"){event.currentTarget.open=false;event.currentTarget.querySelector("summary")?.focus();}}}><summary>Menu</summary><nav aria-label="Mobile homepage navigation"><Navigation/><p className={styles.availability}>Farmer and explanatory pages are available. Other destinations remain unavailable in Preview.</p></nav></details>
+    <details className={styles.mobileNav} onKeyDown={event => {if(event.key === "Escape"){event.currentTarget.open=false;event.currentTarget.querySelector("summary")?.focus();}}}><summary>Menu</summary><nav aria-label="Mobile homepage navigation"><Navigation/><p className={styles.availability}>Farmer, Marketplace and explanatory pages are available. Other destinations remain unavailable in Preview.</p></nav></details>
   </div></header>;
 }
 export function PreviewFooter({logo}: {logo?: string}) {

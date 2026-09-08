@@ -1,7 +1,9 @@
-// P09-1A target architecture. Only these explanatory routes are enabled.
+// Protected Route A destinations enabled through P09-1C.
 // Operational destinations and final legal text require separate release gates.
 export const previewDestinations: Record<string, string> = {
   "Farmers": "/dev-preview/farmers",
+  "Marketplace": "/dev-preview/marketplace",
+  "List a Product": "/dev-preview/list-a-product",
   "How Ghana Growers works": "/dev-preview/public/how-it-works",
   "How information is checked": "/dev-preview/public/how-information-is-checked",
   "About Ghana Growers": "/dev-preview/public/about",

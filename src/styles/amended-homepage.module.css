@@ -108,8 +108,8 @@
 .navPanel p { font-size:.8rem; border-bottom:1px solid var(--hp-sage); padding-bottom:.5rem; }
 .navPanel button { display:block; width:100%; text-align:left; }
 .headerActions { gap:.5rem; }
-.headerActions button { padding:.5rem .85rem; border:1px solid var(--hp-heading); border-radius:.4rem; }
-.headerActions button:first-child { background:var(--hp-maize); }
+.headerActions button,.headerActions a { padding:.5rem .85rem; border:1px solid var(--hp-heading); border-radius:.4rem; }
+.headerActions button:first-child,.headerActions a:first-child { background:var(--hp-maize); }
 .mobileNav { display:none; }
 .review { border-bottom:0; background:var(--hp-neutral); padding-block:.6rem; }
 .review strong { margin-bottom:0; }
@@ -347,3 +347,6 @@
 .backLink,.relatedPages a { display:inline-flex; align-items:center; min-height:44px; color:var(--hp-heading); text-decoration:underline; text-underline-offset:.2em; }
 .relatedPages { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; border-top:1px solid var(--hp-secondary); padding-top:1rem; margin-top:2rem; }
 @media(max-width:40rem) { .explanationSections { grid-template-columns:1fr; } .explanationSections section { padding:1.25rem; } .explanation { padding-top:1rem; } }
+
+/* P09-1C newly enabled listing links retain readable touch targets. */
+.page a.availability { display:inline-flex; align-items:center; min-height:44px; }
