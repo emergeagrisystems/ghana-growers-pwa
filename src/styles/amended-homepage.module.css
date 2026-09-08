@@ -310,3 +310,12 @@
 /* Keep the recovered brand and native menu affordance on one narrow header row. */
 @media(max-width:34rem) { .headerInner { gap:.75rem; } .wordmark { font-size:1.1rem; } .mobileNav { flex-shrink:0; } .mobileNav > summary { white-space:nowrap; } }
 @container (max-width:34rem) { .headerInner { gap:.75rem; } .wordmark { font-size:1.1rem; } .mobileNav { flex-shrink:0; } .mobileNav > summary { white-space:nowrap; } }
+
+/* Shortlist mode only: preserve the approved image slot and all hero geometry. */
+.heroCandidatePhoto { object-fit:cover; object-position:50% 50%; opacity:.88; }
+.heroComparison { margin-top:1rem; padding:.75rem; border:1px solid var(--hp-heading); border-radius:.4rem; }
+.heroComparison legend { padding-inline:.25rem; font-weight:600; }
+.heroComparison > div { display:flex; flex-wrap:wrap; gap:.5rem; }
+.heroComparison button { min-width:44px; padding:.5rem 1rem; color:var(--hp-heading); background:white; border:1px solid var(--hp-heading); border-radius:.35rem; }
+.heroComparison button[aria-pressed="true"] { color:white; background:var(--hp-heading); }
+.heroComparison button:focus-visible { outline:3px solid var(--hp-heading); outline-offset:3px; }

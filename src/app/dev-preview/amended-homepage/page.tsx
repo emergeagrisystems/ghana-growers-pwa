@@ -3,14 +3,16 @@ import { notFound } from "next/navigation";
 import { AmendedHomepage } from "@/components/homepage/AmendedHomepage";
 import { getHomepagePreviewFixtures } from "./fixtures";
 import { getHomepagePreviewMedia } from "./media";
+import { getHeroShortlist } from "./hero-shortlist";
 
 export const metadata: Metadata = { title: "Amended homepage · Protected review", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 // Existing middleware verifies the signed preview grant in both launch modes.
 // This additional guard prevents this fixture page from running on a Production deployment.
-export default function AmendedHomepagePage({searchParams}: {searchParams: {fixture?: string | string[]}}) {
+export default function AmendedHomepagePage({searchParams}: {searchParams: {fixture?: string | string[]; hero?: string | string[]}}) {
   if (process.env.VERCEL_ENV === "production") notFound();
   const scenario = typeof searchParams.fixture === "string" ? searchParams.fixture : undefined;
-  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} media={getHomepagePreviewMedia()} />;
+  const hero = typeof searchParams.hero === "string" && ["compare","B2","C1","C2"].includes(searchParams.hero) ? searchParams.hero : undefined;
+  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} media={getHomepagePreviewMedia()} heroCandidates={hero ? getHeroShortlist() : undefined} initialHero={hero === "compare" ? "B2" : hero} />;
 }

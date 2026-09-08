@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Check } from "lucide-react";
+import { HeroShortlistControls, HeroShortlistImage, type HeroCandidate } from "./HeroShortlist";
 import { ProduceMedia, listingIllustration, type HomepageMedia } from "./PreviewMedia";
 import { MobileCardBrowser } from "./MobileCardBrowser";
 import { PreviewHeader, PreviewFooter, ToolInterfacePreview } from "./PreviewChrome";
@@ -29,7 +30,9 @@ function Tabs({names, selected, onChange, id}: {names: readonly string[]; select
   </div>;
 }
 
-export function AmendedHomepage({data,media}: {data: HomepageData; media: HomepageMedia}) {
+export function AmendedHomepage({data,media,heroCandidates,initialHero}: {data: HomepageData; media: HomepageMedia; heroCandidates?: readonly HeroCandidate[]; initialHero?: string}) {
+  const [heroLabel,setHeroLabel] = useState(initialHero ?? "B2");
+  const heroCandidate = heroCandidates?.find(candidate=>candidate.label===heroLabel);
   const [directoryTab, setDirectoryTab] = useState(0);
   const [marketTab, setMarketTab] = useState(0);
   const [query, setQuery] = useState("");
@@ -41,7 +44,7 @@ export function AmendedHomepage({data,media}: {data: HomepageData; media: Homepa
   const listings = categoryListings(data.listings.items, copy.marketplaceTabs[marketTab]).slice(0, 4);
   return <section className={`${styles.page} ${foundationFont.variable}`} data-amended-homepage aria-label={copy.review}>
     <PreviewHeader logo={media.logo} />
-    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{copy.mediaUnavailable}. The device is a static interface preview with inactive tools. The legacy logo is temporary and replaceable. Produce images are approved generated illustrations, not evidence of listings or sellers.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
+    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{heroCandidate ? "Hero imagery is shortlisted for comparison, not finally approved" : copy.mediaUnavailable}. The device is a static interface preview with inactive tools. The legacy logo is temporary and replaceable. Produce images are approved generated illustrations, not evidence of listings or sellers.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p>{heroCandidates && <HeroShortlistControls candidates={heroCandidates} selected={heroLabel} onChange={setHeroLabel}/>}</aside>
     <header className={styles.hero} data-homepage-hero>
       <div className={styles.heroInner}>
         <p className={styles.brand}>Local · Fresh · Sustainable</p>
@@ -55,7 +58,7 @@ export function AmendedHomepage({data,media}: {data: HomepageData; media: Homepa
         <div className={styles.shortcuts} aria-label="Popular searches">{copy.shortcuts.map(label => <button key={label} type="button" disabled={!directoryReady || label === "Farmland"} title={label === "Farmland" ? "Farmland discovery is not available" : undefined} onClick={() => {setQuery(label); setSubmitted(label);}}><span>{label}</span></button>)}</div>
         {submitted !== null && directoryReady && <section className={styles.results} aria-label="Search results"><h2>Search results</h2><p role="status">{results.length} {results.length === 1 ? "profile" : "profiles"} found in the synthetic dataset{submitted ? ` for “${submitted}”` : ""}.</p><ul>{results.map(entry => <li key={entry.id}><strong>{entry.name}</strong><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.region} · {entry.products.join(", ")}</p></li>)}</ul></section>}
         <div className={styles.heroMedia}>
-          <div className={styles.landscapePlaceholder} data-hero-placeholder role="img" aria-label={copy.mediaUnavailable}><div className={styles.fieldLines} aria-hidden="true"><i/><i/><i/></div></div>
+          <div className={styles.landscapePlaceholder} data-hero-image-slot data-hero-placeholder={!heroCandidate || undefined} role={heroCandidate ? undefined : "img"} aria-label={heroCandidate ? undefined : copy.mediaUnavailable}>{heroCandidate ? <HeroShortlistImage key={heroCandidate.label} candidate={heroCandidate}/> : <div className={styles.fieldLines} aria-hidden="true"><i/><i/><i/></div>}</div>
         </div>
       </div>
     </header>

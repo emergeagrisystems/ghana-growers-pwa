@@ -1,0 +1,35 @@
+[
+  {
+    "label": "B2",
+    "id": "90f1f1f2-25db-41d2-a21e-cf67a8cc19db",
+    "file": "GG-HERO-B2-modern-agricultural-platform-01.png",
+    "width": 4992,
+    "height": 3328,
+    "sourceSha256": "015116f99d76a2948dac1e8c11e30f6df50f40d36febd8d76755fa88509089b6",
+    "outputSha256": "31fffa3c0fb8720b0cb85065ecae30fdcb7647164e326dab791cd74302dfb6d8",
+    "outputBytes": 205664,
+    "derivative": "1600px proportional WebP, quality 80; no authored crop or retouch"
+  },
+  {
+    "label": "C1",
+    "id": "797bcdc2-0b91-4bbd-80c2-f4f8e2aef5d0",
+    "file": "GG-HERO-C1-soft-minimal-agricultural-texture-01.png",
+    "width": 4992,
+    "height": 3328,
+    "sourceSha256": "fc8ba24dbcdd854bca8488cd26a6fa9c837302cfafefa87bccd120902c7736f7",
+    "outputSha256": "2055a3243eaecadcbc6e1a04938df1c2e7bdd0122af6453ae5b6d3740537c081",
+    "outputBytes": 173556,
+    "derivative": "1600px proportional WebP, quality 80; no authored crop or retouch"
+  },
+  {
+    "label": "C2",
+    "id": "a7494706-f23c-4e1a-87ce-ca6bc7898b2d",
+    "file": "GG-HERO-C2-soft-minimal-agricultural-texture-01.png",
+    "width": 4992,
+    "height": 3328,
+    "sourceSha256": "e625b91d6ade6b5108c1e6c2aedd32ce2ab3f27583f189a8c2daf36b25b7472d",
+    "outputSha256": "a550ad28b0ab92cc2b2abeebc251f7c416ec5d212eaf562dfe446633e51925d7",
+    "outputBytes": 132580,
+    "derivative": "1600px proportional WebP, quality 80; no authored crop or retouch"
+  }
+]

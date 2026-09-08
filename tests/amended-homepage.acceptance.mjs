@@ -1,3 +1,4 @@
+import {verifyHeroShortlist} from './hero-shortlist.verify.mjs';
 import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {createRequire} from 'node:module';
@@ -148,6 +149,7 @@ try{
  await writeFile(path.join(out,'reading-order-'+mode+'.txt'),await root.ariaSnapshot());
  await page.setViewportSize({width:1280,height:1000});for(const zoom of [2,4]){await page.evaluate(z=>document.documentElement.style.zoom=String(z),zoom);assert(await root.evaluate(el=>el.scrollWidth<=el.clientWidth+1));}
  await page.evaluate(()=>document.documentElement.style.zoom='');await page.reload();await root.waitFor();
+ await verifyHeroShortlist(page,base.origin,out);
  for(const scenario of ['empty','unavailable']){
    await page.goto(new URL(route+'?fixture='+scenario,base).href);await root.waitFor();
    assert.equal(await root.locator('article').count(),0);
