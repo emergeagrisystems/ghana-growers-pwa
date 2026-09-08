@@ -350,3 +350,6 @@
 
 /* P09-1C newly enabled listing links retain readable touch targets. */
 .page a.availability { display:inline-flex; align-items:center; min-height:44px; }
+
+/* Preserve the approved header action spacing when its destination becomes a link. */
+.previewHeader .headerActions a { padding:.5rem .85rem; font:inherit; }
