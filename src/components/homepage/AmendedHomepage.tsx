@@ -12,6 +12,8 @@ import { foundationFont } from "@/components/homepage-foundation/font";
 import styles from "@/styles/amended-homepage.module.css";
 
 function UnavailableAction({label}: {label: string}) {
+  if (label === "List Your Farm") return <a className={styles.action} href="/dev-preview/list-your-farm">{label}</a>;
+  if (label === "View All Farmers") return <a className={styles.action} href="/dev-preview/farmers">{label}</a>;
   return <button type="button" disabled className={styles.action} title={copy.unavailableAction}>{label}</button>;
 }
 
@@ -68,7 +70,7 @@ export function AmendedHomepage({data,media,heroCandidates}: {data: HomepageData
       <div className={styles.sectionInner}><div className={styles.headingRow}><h2 id="homepage-directory">{copy.directoryTitle}</h2><UnavailableAction label={copy.directoryActions[directoryTab]} /></div>
         <Tabs names={copy.directoryTabs} selected={directoryTab} onChange={setDirectoryTab} id="directory" />
         <div id="directory-panel" role="tabpanel" aria-labelledby={`directory-tab-${directoryTab}`} tabIndex={0}>
-          {!directoryReady ? <p className={styles.empty}>{copy.directoryUnavailable}</p> : profiles.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={directoryTab} label={directoryTab === 0 ? "farmer" : "supplier"}>{profiles.map(entry => <article key={entry.id}><div className={styles.profilePlaceholder}><span aria-hidden="true">{entry.kind === "farmer" ? "PF" : "PS"}</span><p>{entry.kind === "farmer" ? copy.profilePlaceholder : copy.servicePlaceholder}</p></div><h3>{entry.name}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.region}</p><p>{entry.products.join(", ")}</p><p className={styles.availability}>Profile destination unavailable</p></article>)}</MobileCardBrowser>}
+          {!directoryReady ? <p className={styles.empty}>{copy.directoryUnavailable}</p> : profiles.length === 0 ? <p className={styles.empty}>No Preview fixtures match this category.</p> : <MobileCardBrowser key={directoryTab} label={directoryTab === 0 ? "farmer" : "supplier"}>{profiles.map(entry => <article key={entry.id}><div className={styles.profilePlaceholder}><span aria-hidden="true">{entry.kind === "farmer" ? "PF" : "PS"}</span><p>{entry.kind === "farmer" ? copy.profilePlaceholder : copy.servicePlaceholder}</p></div><h3>{entry.name}</h3><p className={styles.availability}>{copy.fixtureLabel}</p><p>{entry.region}</p><p>{entry.products.join(", ")}</p>{entry.kind === "farmer" ? <a className={styles.action} href={`/dev-preview/farmers/${entry.id}`} aria-label={`View ${entry.name} profile`}>View profile</a> : <p className={styles.availability}>Profile destination unavailable</p>}</article>)}</MobileCardBrowser>}
         </div>
       </div>
     </section>

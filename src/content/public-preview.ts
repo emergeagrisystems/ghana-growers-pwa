@@ -1,6 +1,7 @@
 // P09-1A target architecture. Only these explanatory routes are enabled.
 // Operational destinations and final legal text require separate release gates.
 export const previewDestinations: Record<string, string> = {
+  "Farmers": "/dev-preview/farmers",
   "How Ghana Growers works": "/dev-preview/public/how-it-works",
   "How information is checked": "/dev-preview/public/how-information-is-checked",
   "About Ghana Growers": "/dev-preview/public/about",

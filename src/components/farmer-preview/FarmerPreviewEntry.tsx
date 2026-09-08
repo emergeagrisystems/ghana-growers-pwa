@@ -1,0 +1,40 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { ghanaRegions } from "@/data/ghanaRegions";
+import { farmerDirectoryPath } from "@/lib/farmer-preview";
+import styles from "@/styles/farmer-preview.module.css";
+type Field = {name:string;label:string;required?:boolean;type?:string;max?:number;options?:readonly string[];area?:boolean};
+// Field hierarchy and limits follow FarmerRegistrationForm.tsx / farmerRegistration.ts.
+// No shared operational submit handler is imported or called.
+const groups:{title:string;fields:Field[]}[]=[
+ {title:"Contact information",fields:[{name:"applicantName",label:"Your name",required:true,max:120},{name:"farmName",label:"Farm name",max:160},{name:"phoneNumber",label:"Phone number",type:"tel",max:40},{name:"whatsappNumber",label:"WhatsApp number",type:"tel",max:40},{name:"email",label:"Email",type:"email",max:254}]},
+ {title:"Farm and location",fields:[{name:"region",label:"Region",required:true,options:ghanaRegions},{name:"district",label:"District",required:true,max:120},{name:"farmLocation",label:"Farm location or community",max:200},{name:"farmType",label:"Farm type",required:true,options:["Crop","Livestock","Mixed"]}]},
+ {title:"What you grow or produce",fields:[{name:"cropsProducts",label:"Crops or products",required:true,area:true,max:2430},{name:"productionDetails",label:"Farming or supply information",area:true,max:1500},{name:"currentAvailability",label:"Current availability",max:500},{name:"supplyFrequency",label:"Supply frequency",max:300},{name:"harvestSeason",label:"Harvest season",max:300},{name:"deliveryPreference",label:"Delivery preference",max:500},{name:"applicationMessage",label:"Application message",area:true,max:1500}]}
+];
+const files=[{name:"profileImage",label:"Main farmer or farm image",count:1,mb:5},{name:"farmImages",label:"Farm images",count:4,mb:5},{name:"produceImages",label:"Produce images",count:4,mb:5},{name:"documents",label:"Supporting documents",count:3,mb:8}];
+export function FarmerPreviewEntry(){
+ const [ready,setReady]=useState(false),[errors,setErrors]=useState<Record<string,string>>({}),[complete,setComplete]=useState(false);
+ const errorBox=useRef<HTMLDivElement>(null),completion=useRef<HTMLDivElement>(null),form=useRef<HTMLFormElement>(null);
+ useEffect(()=>setReady(true),[]);
+ useEffect(()=>{if(complete)completion.current?.focus();else if(Object.keys(errors).length)errorBox.current?.focus();},[errors,complete]);
+ function validate(event:React.FormEvent<HTMLFormElement>){event.preventDefault();const data=new FormData(event.currentTarget);const e:Record<string,string>={};
+  for(const f of groups.flatMap(g=>g.fields)){const value=String(data.get(f.name)||"").trim();if(f.required&&!value)e[f.name]=`Enter ${f.label.toLowerCase()}.`;if(f.max&&value.length>f.max)e[f.name]=`Use no more than ${f.max} characters.`;if(f.options&&value&&!f.options.includes(value))e[f.name]=`Select a valid ${f.label.toLowerCase()}.`;}
+  const phone=String(data.get("phoneNumber")||"").trim(),whatsapp=String(data.get("whatsappNumber")||"").trim();if(!phone&&!whatsapp)e.phoneNumber="Enter a phone or WhatsApp number. Use fictional details for this Preview.";
+  for(const key of ["phoneNumber","whatsappNumber"]){const v=String(data.get(key)||"").trim();if(v&&!(v.replace(/\D/g,"").length>=7&&v.replace(/\D/g,"").length<=15))e[key]="Enter a valid phone number.";}
+  const email=String(data.get("email")||"").trim();if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))e.email="Enter a valid email address.";
+  const crops=Array.from(new Set(String(data.get("cropsProducts")||"").split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean)));if(!crops.length)e.cropsProducts="Tell us what you grow or produce.";if(crops.length>30||crops.some(s=>s.length>80))e.cropsProducts="Use up to 30 short crop or product names.";
+  for(const f of files){const selected=data.getAll(f.name).filter((v):v is File=>v instanceof File&&v.size>0);if(selected.length>f.count||selected.some(v=>v.size>f.mb*1024*1024||!["image/jpeg","image/png","image/webp",...(f.name==="documents"?["application/pdf"]:[])].includes(v.type)))e[f.name]=`Choose up to ${f.count} ${f.name==="documents"?"PDF or image":"JPG, PNG or WEBP"} file(s), at most ${f.mb}MB each.`;}
+  if(!data.get("agreementAccepted"))e.agreementAccepted="Confirm the application statement for this Preview demonstration.";setErrors(e);if(!Object.keys(e).length)setComplete(true);
+ }
+ const err=(name:string)=>errors[name]?<span id={`${name}-error`} className={styles.error}>{errors[name]}</span>:null;
+ return <section data-farmer-entry><header className={styles.intro}><h1>List Your Farm</h1><p>Tell us about your farm</p></header><div className={styles.state}><strong>Preview validation only</strong><p>Use fictional details and test files only. Nothing is sent, uploaded, saved or published. Reloading this page clears the form.</p></div>
+  <div ref={completion} tabIndex={-1} hidden={!complete} className={styles.panel} role="status"><h2>Preview validation complete</h2><p>Nothing was submitted. No application reference, contact request or public profile has been created.</p><p>A real application would require an approved submission route and review before publication. That path is not active here.</p><button type="button" onClick={()=>{setComplete(false);requestAnimationFrame(()=>document.getElementById("applicantName")?.focus());}}>Edit Preview details</button><a href={farmerDirectoryPath}>Browse farmers</a></div>
+  <form ref={form} hidden={complete} noValidate onSubmit={validate} className={styles.entryForm}><fieldset disabled={!ready}>
+   <div ref={errorBox} hidden={!Object.keys(errors).length} tabIndex={-1} role="alert" className={styles.errorSummary}><h2>Review these fields</h2><ul>{Object.entries(errors).map(([name,message])=><li key={name}><a href={`#${name}`} onClick={()=>document.getElementById(name)?.focus()}>{message}</a></li>)}</ul><p>Your entries are still here.</p></div>
+   {groups.map(group=><fieldset key={group.title}><legend>{group.title}</legend>{group.title==="Contact information"&&<p>Provide at least one phone or WhatsApp number. Use fictional details only.</p>}<div className={styles.formGrid}>{group.fields.map(f=>{const props={id:f.name,name:f.name,required:f.required,"aria-invalid":!!errors[f.name],"aria-describedby":errors[f.name]?`${f.name}-error`:undefined};return <label key={f.name}>{f.label} {f.required?"(required)":"(optional)"}{f.options?<select {...props} defaultValue=""><option value="">Select {f.label.toLowerCase()}</option>{f.options.map(o=><option key={o}>{o}</option>)}</select>:f.area?<textarea {...props} maxLength={f.max} rows={3}/>:<input {...props} type={f.type||"text"} maxLength={f.max} autoComplete="off"/>}{err(f.name)}</label>;})}</div></fieldset>)}
+   <fieldset><legend>Optional photos and documents</legend><p>Test files remain in this browser form only. No file is uploaded or read.</p><div className={styles.formGrid}>{files.map(f=><label key={f.name}>{f.label} (optional)<input id={f.name} name={f.name} type="file" multiple={f.count>1} accept={f.name==="documents"?"image/jpeg,image/png,image/webp,application/pdf":"image/jpeg,image/png,image/webp"} aria-invalid={!!errors[f.name]} aria-describedby={`${f.name}-hint${errors[f.name]?` ${f.name}-error`:""}`}/><span id={`${f.name}-hint`}>Up to {f.count} file(s), {f.mb}MB each.</span>{err(f.name)}</label>)}</div></fieldset>
+   <label className={styles.agreement}><input id="agreementAccepted" name="agreementAccepted" type="checkbox" required aria-invalid={!!errors.agreementAccepted} aria-describedby={errors.agreementAccepted?"agreementAccepted-error":undefined}/><span>Preview demonstration: I confirm that the information is accurate and agree that Ghana Growers may review this application and contact me about it. This statement is not sent or recorded.{err("agreementAccepted")}</span></label>
+   <button type="submit" className={styles.primary} disabled={!ready}>Review Preview application</button><p>No real application is submitted.</p>
+  </fieldset></form>
+ </section>;
+}

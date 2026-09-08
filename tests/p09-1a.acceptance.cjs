@@ -20,7 +20,7 @@ async function review(ctx, page){
     assert.match(await page.title(),/Protected/);
     const text=await root.innerText();assert.doesNotMatch(text,/GG FarmMate|Join the Network|Buy\. Sell\. Grow\.|Emerge Agri Systems|E\.A\.Sy|Verified by/);
     if(i){assert.equal(await root.locator('h1').innerText(),titles[i-1]);assert.equal(await root.locator('form').count(),0);}
-    for(const href of await root.locator('a[href]').evaluateAll(ns=>ns.map(n=>n.getAttribute('href'))))assert(routes.includes(href)||href.startsWith('#'),'allowlisted href '+href);
+    for(const href of await root.locator('a[href]').evaluateAll(ns=>ns.map(n=>n.getAttribute('href'))))assert(routes.includes(href)||href.startsWith('#')||href==='/dev-preview/farmers'||href==='/dev-preview/list-your-farm'||/^\/dev-preview\/farmers\/p09-preview-farmer-0[1-4]$/.test(href),'allowlisted href '+href);
     const metric=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,clipped:[...document.querySelectorAll('[data-public-preview] h1,[data-public-preview] h2,[data-public-preview] p,[data-public-preview] a')].filter(n=>n.checkVisibility()&&n.getBoundingClientRect().width&&n.scrollWidth>n.clientWidth+1).map(n=>n.textContent),nav:!!document.querySelector('details[open]')}));
     assert(!metric.overflow);assert.deepEqual(metric.clipped,[]);
     const links=await root.locator('a:visible').evaluateAll(ns=>ns.filter(n=>n.getBoundingClientRect().top>=0).map(n=>({text:n.textContent,height:n.getBoundingClientRect().height,width:n.getBoundingClientRect().width})));

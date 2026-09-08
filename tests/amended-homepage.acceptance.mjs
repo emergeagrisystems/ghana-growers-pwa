@@ -82,7 +82,8 @@ try{
  }
  for(const label of ['Vegetables','Seeds','Livestock','Fertilizers','Fruits']){await root.getByRole('button',{name:label,exact:true}).click();assert(await root.getByRole('region',{name:'Search results',exact:true}).locator('li').count()>0);}
  await page.reload();await root.waitFor();
- for(const label of ['Buy Produce','List Your Farm','Farmland'])assert(await root.getByRole('button',{name:label,exact:true}).isDisabled());
+ for(const label of ['Buy Produce','Farmland'])assert(await root.getByRole('button',{name:label,exact:true}).isDisabled());
+ assert.equal(await root.getByRole('link',{name:'List Your Farm',exact:true}).getAttribute('href'),'/dev-preview/list-your-farm');
  const supplier=root.getByRole('tab',{name:'Suppliers & Services',exact:true});
  await supplier.click();assert.equal(await root.locator('#directory-panel article').count(),4);assert.match(await root.locator('#directory-panel').innerText(),/Preview Supplier 01/);assert.equal(await supplier.getAttribute('aria-selected'),'true');await root.getByRole('button',{name:'View All Suppliers & Services',exact:true}).waitFor();
  await supplier.press('ArrowLeft');const farmer=root.getByRole('tab',{name:'Farmers',exact:true});assert.equal(await farmer.getAttribute('aria-selected'),'true');assert(await farmer.evaluate(el=>el===document.activeElement));
