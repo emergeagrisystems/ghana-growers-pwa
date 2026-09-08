@@ -92,10 +92,10 @@ try{
  assert.equal(await root.locator('[data-preview-footer]').count(),1);
  for(const label of ['All','Vegetables','Fruits','Livestock','Farm inputs']){await root.getByRole('tab',{name:label,exact:true}).click();assert.equal(await root.locator('#marketplace-panel article').count(),4);}
  assert.equal(await root.locator('[data-device-cue]').count(),1);
- assert.equal(await root.locator('[data-hero-placeholder]').count(),1);
+ assert.equal(await root.locator('[data-hero-candidate="C1"]').count(),1);
  assert.equal(await root.getByRole('region',{name:'Learn',exact:true}).locator('article').count(),3);
  await root.getByRole('tab',{name:'All',exact:true}).click();
- assert.equal(await root.locator('img').count(),6);assert.equal(await root.locator('figure img[alt*="Illustrative"]').count(),4);
+ assert.equal(await root.locator('img').count(),7);assert.equal(await root.locator('figure img[alt*="Illustrative"]').count(),4);
  assert.equal(await root.locator('article').filter({hasText:'Synthetic fixture · not a real record'}).count(),8);
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:1000});
@@ -140,7 +140,7 @@ try{
  for(const width of [390,768]){await page.setViewportSize({width,height:1000});const menu=root.locator('[data-preview-header] > div > details > summary');await menu.click();const mobile=root.getByRole('navigation',{name:'Mobile homepage navigation'});const explore=mobile.getByText('Explore',{exact:true});if(!(await explore.evaluate(n=>n.parentElement.open)))await explore.click();assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isVisible());assert(await mobile.getByRole('button',{name:'Marketplace',exact:true}).isDisabled());await page.screenshot({path:path.join(out,'menu-'+mode+'-'+width+'.png')});await menu.press('Escape');assert(!(await mobile.isVisible()));}
  await page.setViewportSize({width:1440,height:1000});
  results.contrast=await root.evaluate(el=>{
- function lum(rgb){const a=rgb.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{n/=255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722;}
+ function lum(rgb){const a=rgb.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>{n/=rgb.startsWith('color(srgb')?1:255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722;}
  return [...el.querySelectorAll('p,h1,h2,h3,button,label,input,strong,figcaption')].map(n=>{let p=n,bg;while(p){bg=getComputedStyle(p).backgroundColor;if(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')break;p=p.parentElement;}const a=lum(getComputedStyle(n).color),b=lum(bg);return{label:n.textContent.slice(0,35),ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};});
  });
  assert(results.contrast.every(c=>c.ratio>=4.5),'Text contrast');

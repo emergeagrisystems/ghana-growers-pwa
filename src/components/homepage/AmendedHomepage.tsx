@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { Check } from "lucide-react";
-import { HeroShortlistControls, HeroShortlistImage, type HeroCandidate } from "./HeroShortlist";
+import { HeroShortlistImage, type HeroCandidate } from "./HeroShortlist";
 import { ProduceMedia, listingIllustration, type HomepageMedia } from "./PreviewMedia";
 import { MobileCardBrowser } from "./MobileCardBrowser";
 import { PreviewHeader, PreviewFooter, ToolInterfacePreview } from "./PreviewChrome";
@@ -30,9 +30,8 @@ function Tabs({names, selected, onChange, id}: {names: readonly string[]; select
   </div>;
 }
 
-export function AmendedHomepage({data,media,heroCandidates,initialHero}: {data: HomepageData; media: HomepageMedia; heroCandidates?: readonly HeroCandidate[]; initialHero?: string}) {
-  const [heroLabel,setHeroLabel] = useState(initialHero ?? "B2");
-  const heroCandidate = heroCandidates?.find(candidate=>candidate.label===heroLabel);
+export function AmendedHomepage({data,media,heroCandidates}: {data: HomepageData; media: HomepageMedia; heroCandidates?: readonly HeroCandidate[]}) {
+  const heroCandidate = heroCandidates?.find(candidate=>candidate.label === "C1");
   const [directoryTab, setDirectoryTab] = useState(0);
   const [marketTab, setMarketTab] = useState(0);
   const [query, setQuery] = useState("");
@@ -44,7 +43,7 @@ export function AmendedHomepage({data,media,heroCandidates,initialHero}: {data: 
   const listings = categoryListings(data.listings.items, copy.marketplaceTabs[marketTab]).slice(0, 4);
   return <section className={`${styles.page} ${foundationFont.variable}`} data-amended-homepage aria-label={copy.review}>
     <PreviewHeader logo={media.logo} />
-    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{heroCandidate ? "Hero imagery is shortlisted for comparison, not finally approved" : copy.mediaUnavailable}. The device is a static interface preview with inactive tools. The legacy logo is temporary and replaceable. Produce images are approved generated illustrations, not evidence of listings or sellers.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p>{heroCandidates && <HeroShortlistControls candidates={heroCandidates} selected={heroLabel} onChange={setHeroLabel}/>}</aside>
+    <aside className={styles.review}><strong>{copy.review}</strong><p>{copy.boundary}</p><p>Unresolved destinations remain disabled. No operational destinations or editorial resources are enabled by these fixtures.</p><p>{heroCandidate ? "C1 is the approved current homepage hero illustrative asset, not evidence of a Ghana Growers-owned farm, farmer, transaction, facility or operation" : copy.mediaUnavailable}. The device is a static interface preview with inactive tools. The legacy logo is temporary and replaceable. Produce images are approved generated illustrations, not evidence of listings or sellers.</p><p data-fixture-notice><strong>{copy.fixtureNotice}</strong></p></aside>
     <header className={styles.hero} data-homepage-hero>
       <div className={styles.heroInner}>
         <p className={styles.brand}>Local · Fresh · Sustainable</p>
@@ -52,7 +51,8 @@ export function AmendedHomepage({data,media,heroCandidates,initialHero}: {data: 
         <div className={styles.actions}>{copy.actions.map(label => <UnavailableAction key={label} label={label} />)}</div>
         <form className={styles.search} onSubmit={event => { event.preventDefault(); if (directoryReady) setSubmitted(query.trim()); }}>
           <label htmlFor={searchId}>{copy.searchLabel}</label>
-          <div><input id={searchId} type="search" value={query} disabled={!directoryReady} maxLength={120} onChange={event => setQuery(event.target.value)} placeholder={copy.searchHint} aria-describedby={directoryReady ? undefined : `${searchId}-hint`} /><button type="submit" disabled={!directoryReady}>Search</button></div>
+          <span id={`${searchId}-description`} hidden>{copy.searchHint}</span>
+          <div><input id={searchId} type="search" value={query} disabled={!directoryReady} maxLength={120} onChange={event => setQuery(event.target.value)} placeholder="Search product, name or region" aria-describedby={directoryReady ? `${searchId}-description` : `${searchId}-description ${searchId}-hint`} /><button type="submit" disabled={!directoryReady}>Search</button></div>
           {!directoryReady && <p id={`${searchId}-hint`}>{copy.directoryUnavailable}</p>}
         </form>
         <div className={styles.shortcuts} aria-label="Popular searches">{copy.shortcuts.map(label => <button key={label} type="button" disabled={!directoryReady || label === "Farmland"} title={label === "Farmland" ? "Farmland discovery is not available" : undefined} onClick={() => {setQuery(label); setSubmitted(label);}}><span>{label}</span></button>)}</div>

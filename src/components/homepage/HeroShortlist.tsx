@@ -9,5 +9,5 @@ export function HeroShortlistControls({candidates,selected,onChange}: {candidate
 export function HeroShortlistImage({candidate}: {candidate: HeroCandidate}) {
  const [failed,setFailed]=useState(false);
  if(failed) return <div className={styles.fieldLines} role="img" aria-label="Hero candidate unavailable; provisional landscape placeholder"><i/><i/><i/></div>;
- return <Image unoptimized priority src={candidate.src} alt={`Illustrative agricultural landscape, shortlist ${candidate.label}; not evidence of Ghana Growers land or operations.`} fill className={styles.heroCandidatePhoto} data-hero-candidate={candidate.label} onError={()=>setFailed(true)}/>;
+ return <Image unoptimized priority src={candidate.src} alt={`Illustrative agricultural landscape ${candidate.label}; not evidence of a Ghana Growers-owned farm, farmer, transaction, facility or operation.`} fill className={styles.heroCandidatePhoto} data-hero-candidate={candidate.label} onError={()=>setFailed(true)}/>;
 }

@@ -13,3 +13,10 @@ Truth boundary: generated illustrative landscapes only, not evidence of Ghana Gr
 Delivery: server-only candidate JSON supplied only to protected comparison mode; Production guard retained. No public assets/routes, real data, auth/admin/AI changes, Figma change, merge or Production deployment authorised.
 
 Validation: tests/hero-shortlist.verify.mjs checks six renders, exact unchanged geometry/text/font, centre-cover/opacity, zero hero device descendants, keyboard switching, direct candidate entry, image failure fallback and zoom/reflow. Existing homepage acceptance remains in use. Founder selection remains the next gate.
+
+
+## Founder selection — 2026-09-08
+
+C1 (797bcdc2-0b91-4bbd-80c2-f4f8e2aef5d0) is APPROVED CURRENT HOMEPAGE HERO ILLUSTRATIVE ASSET. This decision supersedes the comparison-only/default-placeholder status above. Normal protected Preview uses C1 only, including old comparison URLs; the temporary switcher is removed. B2 and C2 remain retained unused approved/reviewed alternatives, with original sources and derivatives unchanged. Imagery is not evidence of a Ghana Growers-owned farm, farmer, transaction, facility or operation. No Production release authorised.
+
+Hero uses a scoped semantic --hp-hero surface blending existing neutral (82%) and warm (18%) tokens, without creating a permanent brand colour. The exact short search placeholder is used at every width; aria-describedby retains the fuller search meaning. Other sections and the restrained image crop are unchanged.

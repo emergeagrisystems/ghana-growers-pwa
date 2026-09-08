@@ -11,7 +11,7 @@
 .page button:focus-visible,.page input:focus-visible,.page [role="tabpanel"]:focus-visible { outline:3px solid var(--hp-heading); outline-offset:4px; }
 .review { padding:1rem max(1rem,calc((100% - 76rem)/2)); border-bottom:1px solid var(--hp-heading); background:var(--hp-neutral); font-size:.8rem; }
 .review strong { display:block; margin-bottom:.4rem; }
-.hero { background:var(--hp-page); text-align:center; padding:2.5rem 1rem 4rem; }
+.hero { --hp-hero:color-mix(in srgb,var(--hp-neutral) 82%,var(--hp-warm)); background:var(--hp-hero); text-align:center; padding:2.5rem 1rem 4rem; }
 .heroInner { max-width:80rem; margin:auto; }
 .brand { font-size:1.2rem; font-weight:700; color:var(--hp-heading); }
 .page h1 { font-size:clamp(2.1rem,3.5vw,3.2rem); line-height:1.2; font-weight:600; letter-spacing:0; word-spacing:.04em; margin:1.5rem 0; }
@@ -319,3 +319,7 @@
 .heroComparison button { min-width:44px; padding:.5rem 1rem; color:var(--hp-heading); background:white; border:1px solid var(--hp-heading); border-radius:.35rem; }
 .heroComparison button[aria-pressed="true"] { color:white; background:var(--hp-heading); }
 .heroComparison button:focus-visible { outline:3px solid var(--hp-heading); outline-offset:3px; }
+
+/* Preserve the complete empty-field hint without reserving a hidden native clear control. */
+.search input:placeholder-shown::-webkit-search-cancel-button,.search input::-webkit-search-decoration { display:none; }
+.search input:placeholder-shown { padding-inline:.5rem; }

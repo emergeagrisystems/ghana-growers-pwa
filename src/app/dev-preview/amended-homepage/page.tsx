@@ -13,6 +13,5 @@ export const dynamic = "force-dynamic";
 export default function AmendedHomepagePage({searchParams}: {searchParams: {fixture?: string | string[]; hero?: string | string[]}}) {
   if (process.env.VERCEL_ENV === "production") notFound();
   const scenario = typeof searchParams.fixture === "string" ? searchParams.fixture : undefined;
-  const hero = typeof searchParams.hero === "string" && ["compare","B2","C1","C2"].includes(searchParams.hero) ? searchParams.hero : undefined;
-  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} media={getHomepagePreviewMedia()} heroCandidates={hero ? getHeroShortlist() : undefined} initialHero={hero === "compare" ? "B2" : hero} />;
+  return <AmendedHomepage data={getHomepagePreviewFixtures(scenario)} media={getHomepagePreviewMedia()} heroCandidates={getHeroShortlist().filter(candidate => candidate.label === "C1")} />;
 }
