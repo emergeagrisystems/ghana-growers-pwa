@@ -1,6 +1,7 @@
 // Protected Route A destinations enabled through P09-1C.
 // Operational destinations and final legal text require separate release gates.
 export const previewDestinations: Record<string, string> = {
+  "Suppliers & Services": "/dev-preview/suppliers-services",
   "Farmers": "/dev-preview/farmers",
   "Marketplace": "/dev-preview/marketplace",
   "List a Product": "/dev-preview/list-a-product",

@@ -1,0 +1,5 @@
+import {providerUrl,type Provider} from "@/lib/suppliers-preview";
+import styles from "@/styles/suppliers-preview.module.css";
+export function ProviderCard({provider:p,from}:{provider:Provider;from:string}){
+ return <article className={styles.card} id={"provider-"+p.id} tabIndex={-1}><div className={styles.placeholder} role="img" aria-label={p.category+" — neutral category image placeholder"}><span>{p.category}</span><small>Context image placeholder</small></div><div className={styles.cardBody}><h3>{p.name}</h3><p className={styles.category}>{p.category}</p><dl><div><dt>Based in</dt><dd>{p.base}, {p.baseRegion}</dd></div><div><dt>Serves</dt><dd>{p.serves.length?p.serves.join(" · "):"Needs confirmation"}</dd></div></dl><p>{p.offerings.slice(0,2).join(" · ")}</p><p className={styles.small}>Service area: {p.areaState}</p><a aria-label={"View profile: "+p.name} href={providerUrl(p.id,from+"#provider-"+p.id)}>View profile<span className={styles.srOnly}>: {p.name}</span> →</a></div></article>;
+}
