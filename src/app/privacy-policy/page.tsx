@@ -11,6 +11,15 @@ export const metadata = createPageMetadata({
 
 const sections = [
   {
+    title: "Ask Mama G, Crop Doctor and AI processing",
+    body: [
+      "Ask Mama G sends your question and relevant consultation context, including answers to follow-up questions, to OpenAI when the AI service is available. Crop Doctor sends the uploaded crop image and any selected crop or symptom to OpenAI to generate guidance. Do not include sensitive personal information or upload photos containing people or personal documents.",
+      "These tools can be incomplete or mistaken. Crop-photo results are guidance, not a confirmed diagnosis. Check product labels and seek qualified local advice for important crop, chemical or safety decisions.",
+      "A device identifier is stored in your browser and converted to a hash on the server for usage and credit checks. Usage records include the tool and time used. Consultation state and selected weather location may also be held in your browser. Weather lookups use the selected location. The current Crop Doctor AI route processes the photo in the request; it does not publish the photo as a directory image.",
+      "Public registration, enquiry and feedback submissions are currently unavailable. This page does not promise a particular AI-provider retention period or immediate deletion."
+    ]
+  },
+  {
     title: "Information Ghana Growers collects",
     body: [
       "Ghana Growers collects information people submit through registration forms, buyer request forms, listing submissions, lead forms, contact forms, and admin review workflows.",

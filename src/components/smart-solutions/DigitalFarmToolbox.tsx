@@ -28,7 +28,7 @@ const tools = [
   },
   {
     id: "assistant",
-    label: "Ask FarmMate",
+    label: "Ask Mama G",
     icon: Bot,
     description: "Ask practical farming and market questions."
   }

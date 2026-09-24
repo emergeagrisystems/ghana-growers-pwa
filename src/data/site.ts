@@ -18,7 +18,7 @@ export const navigation: NavigationItem[] = [
   { title: "Sell", href: "/sell" },
   { title: "Directory", href: "/directory" },
   {
-    title: "GG FarmMate",
+    title: "Ask Mama G",
     href: "/farmer-hub"
   },
   { title: "Learn", href: "/learn" },

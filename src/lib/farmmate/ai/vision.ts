@@ -9,6 +9,7 @@ import {
   farmMateCropGroupLabels,
   findFarmMateCropLibraryEntry
 } from "../crop-library";
+import { boundedJsonRequest, FARM_MATE_VISION_TIMEOUT_MS, FarmMateRequestTimeout } from "../request-limits";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -37,7 +38,7 @@ export type CropDoctorVisionAiResult =
     }
   | {
       ok: false;
-      reason: "missing_api_key" | "openai_request_error" | "empty_response" | "invalid_response";
+      reason: "missing_api_key" | "model_timeout" | "openai_request_error" | "empty_response" | "invalid_response";
       fallback: true;
     };
 
@@ -90,7 +91,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
   }
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_URL, {
+    const { response, data } = await boundedJsonRequest<OpenAIResponsesApiResult>(OPENAI_RESPONSES_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -117,13 +118,12 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
         ],
         max_output_tokens: 600
       })
-    });
+    }, FARM_MATE_VISION_TIMEOUT_MS);
 
     if (!response.ok) {
       return { ok: false, reason: "openai_request_error", fallback: true };
     }
 
-    const data = (await response.json()) as OpenAIResponsesApiResult;
     const text = extractOutputText(data);
 
     if (!text) {
@@ -143,7 +143,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
         selectedSymptom
       })
     };
-  } catch {
-    return { ok: false, reason: "openai_request_error", fallback: true };
+  } catch (error) {
+    return { ok: false, reason: error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error", fallback: true };
   }
 }

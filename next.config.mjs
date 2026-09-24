@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_RC1_PREVIEW: process.env.VERCEL_ENV === "preview" ? "true" : process.env.NEXT_PUBLIC_RC1_PREVIEW || "false"
+  },
   async redirects() {
     return [
       {
@@ -19,7 +22,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.supabase.co",
+        hostname: process.env.VERCEL_ENV === "preview" || process.env.NEXT_PUBLIC_RC1_PREVIEW === "true" ? "ecluxmyxqofkbzcyurlf.supabase.co" : "*.supabase.co",
         pathname: "/storage/v1/object/public/**"
       }
     ]

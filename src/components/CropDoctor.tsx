@@ -4,6 +4,8 @@ import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } fr
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { boundedJsonRequest, createFarmMateRequestGate, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
+import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import {
   buildCropDoctorHandoffContext,
   cropDoctorResultBadge,
@@ -55,6 +57,12 @@ function logCropDoctorCreditState(detail: {
 export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (handoff: CropDoctorHandoffContext | string) => void }) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const analysisGate = useRef(createFarmMateRequestGate());
+  const photoRequestId = useRef("");
+  useEffect(() => {
+    const gate = analysisGate.current;
+    return () => gate.invalidate();
+  }, []);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
@@ -69,11 +77,11 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   const isCreditExhausted = credits?.creditState === "exhausted";
   const isCreditTemporarilyUnavailable = credits?.creditState === "temporarily_unavailable";
   const isAnalysisDisabled = shouldDisableCropDoctorAnalysis(credits);
-  const isUploadDisabled = shouldDisableCropDoctorUpload(credits);
+  const isUploadDisabled = isAnalysing || shouldDisableCropDoctorUpload(credits);
   const symptomOptions = cropDoctorSymptomsForCrop(selectedCrop);
   const isAnalyseButtonDisabled = !selectedFile || isAnalysing || isAnalysisDisabled;
   const analyseButtonText = isAnalysing
-    ? "FarmMate is checking your crop photo..."
+    ? "Mama G is checking your crop photo..."
     : !selectedFile
       ? "Take or choose a photo first"
       : isAnalysisDisabled
@@ -94,7 +102,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     const anonymousDeviceId = getFarmMateAnonymousDeviceId();
 
     try {
-      const response = await fetch("/api/farmmate/usage", {
+      const { data } = await boundedJsonRequest<{ credits?: CropDoctorCreditStatus }>("/api/farmmate/usage", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -104,8 +112,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           tool: "crop_doctor",
           action: "status"
         })
-      });
-      const data = (await response.json().catch(() => null)) as { credits?: CropDoctorCreditStatus } | null;
+      }, FARM_MATE_BROWSER_TIMEOUT_MS);
 
       if (data?.credits) {
         setCredits(data.credits);
@@ -147,6 +154,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   }, []);
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    if (isAnalysing) return;
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -166,6 +174,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     }
 
     setSelectedImage(URL.createObjectURL(file));
+    photoRequestId.current = crypto.randomUUID();
     setSelectedFile(file);
     setFileName(file.name);
     setDiagnosis(null);
@@ -194,6 +203,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
   }
 
   function resetDiagnosisForFieldContext() {
+    analysisGate.current.invalidate();
+    photoRequestId.current = crypto.randomUUID();
     setDiagnosis(null);
     setHasDiagnosis(false);
     setIsAnalysing(false);
@@ -223,6 +234,9 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       return;
     }
 
+    const requestToken = analysisGate.current.start();
+    if (requestToken === null) return;
+
     setCreditMessage("");
     setShowAskFarmMateFallback(false);
     setDiagnosis(null);
@@ -232,21 +246,26 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     const formData = new FormData();
     const anonymousDeviceId = getFarmMateAnonymousDeviceId();
     formData.append("anonymousDeviceId", anonymousDeviceId);
+    photoRequestId.current ||= crypto.randomUUID();
+    formData.append("requestId", photoRequestId.current);
     formData.append("image", selectedFile);
     formData.append("selectedCrop", selectedCrop || CROP_DOCTOR_AUTO_DETECT_VALUE);
     formData.append("selectedSymptom", selectedSymptom || "Not sure");
 
-    const response = await fetch("/api/farmmate/crop-doctor", {
-      method: "POST",
-      body: formData
-    }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as {
+    const result = await boundedJsonRequest<{
       ok?: boolean;
       result?: CropDoctorVisionResult;
       credits?: CropDoctorCreditStatus;
       reason?: FarmMateCreditDecision["reason"] | string;
       message?: string;
-    } | null;
+    }>("/api/farmmate/crop-doctor", {
+      method: "POST",
+      body: formData
+    }, FARM_MATE_BROWSER_TIMEOUT_MS).catch(() => null);
+    if (!analysisGate.current.isCurrent(requestToken)) return;
+    analysisGate.current.finish(requestToken);
+    const response = result?.response;
+    const data = result?.data;
 
     if (data?.credits) {
       const nextCredits: CropDoctorCreditStatus =
@@ -269,8 +288,8 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
     if (!response?.ok || !data?.ok || !data.result) {
       setIsAnalysing(false);
-      setCreditMessage(data?.message || "FarmMate could not complete the photo check right now. You can still ask FarmMate to guide you using a description of what you see.");
-      setShowAskFarmMateFallback(data?.reason === "credits_exhausted" || data?.reason === "usage_tracking_unavailable");
+      setCreditMessage(data?.message || "Mama G could not confirm the photo check. No diagnosis is available. Describe what you see to Ask Mama G, or retry the photo check manually.");
+      setShowAskFarmMateFallback(true);
       return;
     }
 
@@ -321,6 +340,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         </div>
       </div>
 
+      <p id="crop-doctor-disclosure" className="mt-5 text-sm leading-6 text-ink/75">
+        Crop Doctor uses AI to analyse the crop photo you upload. The image may be processed by our AI service provider to identify possible crop-health issues. Do not upload photos containing people, personal documents or other sensitive information. Results are guidance, not a confirmed diagnosis.
+      </p>
+
       <div
         aria-disabled={isUploadDisabled}
         className={`mt-5 grid min-h-44 place-items-center rounded-md border-2 border-dashed p-5 text-center transition ${
@@ -334,7 +357,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Take a crop photo"}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
             {isUploadDisabled
-              ? "You can still ask FarmMate for guidance while you wait."
+              ? "You can still ask Mama G for guidance while you wait."
               : "Take a clear photo of the affected part. If possible, also include some healthy leaves or the whole plant."}
           </p>
           {!isUploadDisabled ? <p className="mt-2 text-xs font-bold text-ink/48">Take a photo of the affected crop, or choose one from your phone.</p> : null}
@@ -399,9 +422,10 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
       <div className="mt-5 grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
         <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-crop">
-          Tell FarmMate the crop if you know it
+          Tell Mama G the crop if you know it
           <select
             id="crop-doctor-selected-crop"
+            disabled={isAnalysing}
             className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
             value={selectedCrop}
             onChange={(event) => {
@@ -427,6 +451,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           What are you seeing? <span className="font-semibold text-ink/50">(optional)</span>
           <select
             id="crop-doctor-selected-symptom"
+            disabled={isAnalysing}
             className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
             value={selectedSymptom}
             onChange={(event) => {
@@ -448,6 +473,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         <button
           type="button"
           onClick={analyseCrop}
+          aria-describedby="crop-doctor-disclosure"
           disabled={isAnalyseButtonDisabled}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
         >
@@ -455,7 +481,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
           {analyseButtonText}
         </button>
         {isAnalysisDisabled && selectedFile ? (
-          <p className="mt-2 text-xs font-bold leading-5 text-ink/48">{creditMessage || "Crop Doctor checks are not available right now."}</p>
+          <p className="mt-2 text-xs font-bold leading-5 text-ink/48">{mamaGPublicText(creditMessage || "Crop Doctor checks are not available right now.")}</p>
         ) : null}
       </div>
 
@@ -463,13 +489,13 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         {isAnalysing ? (
           <div className="flex items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
             <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
-            FarmMate is checking your crop photo...
+            Mama G is checking your crop photo...
           </div>
         ) : null}
 
         {creditMessage ? (
           <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
-            <p className="text-sm font-bold leading-6 text-ink/68">{creditMessage}</p>
+            <p className="text-sm font-bold leading-6 text-ink/68">{mamaGPublicText(creditMessage)}</p>
             {showAskFarmMateFallback ? (
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
@@ -477,7 +503,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
                   onClick={askFarmMateInstead}
                   className="inline-flex min-h-10 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                 >
-                  Ask FarmMate instead
+                  Ask Mama G instead
                 </button>
                 <Link
                   href={FARM_MATE_FEEDBACK_CTA.href}
@@ -495,7 +521,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="gg-eyebrow text-leaf-700">Main finding</p>
-                <h3 className="mt-2 gg-card-title">{cropDoctorResultHeadline(diagnosis)}</h3>
+                <h3 className="mt-2 gg-card-title">{mamaGPublicText(cropDoctorResultHeadline(diagnosis))}</h3>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
@@ -511,7 +537,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               ) : (
                 <div>
                   <dt className="font-black text-ink">Crop not confirmed</dt>
-                  <dd className="mt-1 font-semibold text-ink/64">FarmMate could not confirm the crop from this photo.</dd>
+                  <dd className="mt-1 font-semibold text-ink/64">Mama G could not confirm the crop from this photo.</dd>
                 </div>
               )}
               <div>
@@ -532,17 +558,17 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
 
             {diagnosis.limitedGuidanceNote ? (
               <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
-                {diagnosis.limitedGuidanceNote}
+                {mamaGPublicText(diagnosis.limitedGuidanceNote)}
               </p>
             ) : null}
             {diagnosis.familyGuidance ? (
               <p className="mt-2 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
-                {diagnosis.familyGuidance}
+                {mamaGPublicText(diagnosis.familyGuidance)}
               </p>
             ) : null}
             {diagnosis.cashCropCaution ? (
               <p className="mt-2 rounded-md border border-earth-500/20 bg-earth-50 px-3 py-2 text-sm font-bold leading-6 text-ink/70">
-                {diagnosis.cashCropCaution}
+                {mamaGPublicText(diagnosis.cashCropCaution)}
               </p>
             ) : null}
 
@@ -559,7 +585,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
                   <ul className="mt-2 grid gap-1.5">
                     {items.map((item) => (
                       <li key={item} className="text-sm font-semibold leading-6 text-ink/66">
-                        {item}
+                        {mamaGPublicText(item)}
                       </li>
                     ))}
                   </ul>
@@ -572,7 +598,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
               onClick={askFarmMateAboutThis}
               className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
-              Ask FarmMate about this
+              Ask Mama G about this
             </button>
 
             <FarmMateAnswerFeedback

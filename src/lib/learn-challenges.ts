@@ -147,7 +147,7 @@ export const learnChallenges: LearnChallenge[] = [
       },
       {
         day: 7,
-        title: "Ask FarmMate what to improve",
+        title: "Ask Mama G what to improve",
         task: "Check your compost pile and decide the next care step.",
         whatYouNeed: ["Your compost pile", "Your phone", "A few notes on smell, moisture, and texture"],
         whyItMatters: "Compost changes over time. Checking it helps you know whether to add water, add dry material, turn it again, or wait.",
@@ -156,11 +156,11 @@ export const learnChallenges: LearnChallenge[] = [
           "Check if it is damp or too dry.",
           "Check if it is warming up.",
           "Look at whether large materials are breaking down.",
-          "Ask FarmMate what to do next."
+          "Ask Mama G what to do next."
         ],
         doneWhen: "You have checked the pile and know your next compost care step.",
         commonMistake: "Do not use the compost before it is dark, crumbly, and smells earthy.",
-        actionSteps: ["Check smell", "Check moisture", "Ask FarmMate"],
+        actionSteps: ["Check smell", "Check moisture", "Ask Mama G"],
         farmMatePrompt: "How do I know when my compost is ready?"
       }
     ]
@@ -222,7 +222,7 @@ export const learnChallenges: LearnChallenge[] = [
       challengeDay(4, "Check stems and roots", "Look for weak stems, rot, or root stress signs.", ["Crop plants", "Soil near roots"], "Stem and root problems can cause wilting and poor growth.", ["Check stem base.", "Look for rot or damage.", "Check if soil is too dry or waterlogged."], "You know if stems and root area look healthy.", "Do not only inspect leaves when plants are wilting.", ["Check stem", "Check soil", "Look for rot"], "What should I check when crops are wilting?"),
       challengeDay(5, "Check spacing and airflow", "Look for crowded plants and poor airflow.", ["Crop rows", "Measuring step if useful"], "Crowded crops can stay wet longer and disease may spread faster.", ["Check plant distance.", "Look for leaves touching too much.", "Open paths for inspection where possible."], "You know if the crop is crowded.", "Do not plant too close just to increase plant count.", ["Check spacing", "Look for crowding", "Open paths"], "Is my crop spacing too close?"),
       challengeDay(6, "Check soil moisture", "Check whether soil is dry, moist, or waterlogged.", ["Your hand or stick", "Crop root area"], "Moisture stress can look like disease or nutrient problems.", ["Check below the surface.", "Compare weak and healthy spots.", "Note dry or waterlogged areas."], "You know the field moisture condition.", "Do not add fertilizer to very dry or waterlogged soil.", ["Check soil", "Compare areas", "Note moisture"], "Can dry soil make my crop look sick?"),
-      challengeDay(7, "Choose one next action", "Use your field notes to decide what to do next.", ["Field notes", "Optional photo", "FarmMate"], "A clear next action is better than guessing.", ["Review the signs.", "Ask FarmMate if needed.", "Use Crop Doctor if a clear photo would help."], "You have one practical next action.", "Do not try many treatments at once.", ["Review notes", "Ask FarmMate", "Choose one action"], "My crop is not growing well. What should I check first?")
+      challengeDay(7, "Choose one next action", "Use your field notes to decide what to do next.", ["Field notes", "Optional photo", "Ask Mama G"], "A clear next action is better than guessing.", ["Review the signs.", "Ask Mama G if needed.", "Use Crop Doctor if a clear photo would help."], "You have one practical next action.", "Do not try many treatments at once.", ["Review notes", "Ask Mama G", "Choose one action"], "My crop is not growing well. What should I check first?")
     ]
   },
   {

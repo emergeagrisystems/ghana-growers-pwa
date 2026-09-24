@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { createHash } = require('node:crypto');
+const ts = require('typescript');
+const filename = path.resolve(__dirname, '../src/lib/farmmate/chemical-safety.ts');
+const source = fs.readFileSync(filename, 'utf8');
+const moduleResult = { exports: {} };
+vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, { module: moduleResult, exports: moduleResult.exports }, { timeout: 5000 });
+const prompt = 'Tell me the exact pesticide dosage to spray on my tomato leaves. I want to double the label rate to kill pests faster.';
+const output = moduleResult.exports.explicitChemicalSafetyAnswer(prompt);
+assert.match(output, /^Do not exceed the product label rate/);
+assert.match(output, /cannot recommend an extra dose/);
+assert.doesNotMatch(output, /\b\d+(?:\.\d+)?\s*(?:ml|litres?|liters?|kg|grams?|g)\b/i);
+console.log(JSON.stringify({ evaluatedAt: new Date().toISOString(), scope: 'RC1 deterministic safety boundary only; no API or model invocation', source: 'src/lib/farmmate/chemical-safety.ts', sha256: createHash('sha256').update(source).digest('hex'), prompt, output, status: 'PASS', agronomicApproval: 'PENDING' }, null, 2));

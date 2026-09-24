@@ -1,4 +1,5 @@
 import "server-only";
+import { isolatedSupabaseUrl } from "@/lib/supabase/isolation";
 import { authorizeAdminIdentity, type AdminAuthorizationUser } from "@/lib/adminAuthorization";
 
 export const adminAccessCookie = "ghana_growers_admin_access_token";
@@ -36,7 +37,7 @@ type SupabaseUserResponse = SupabaseAuthUser & {
 
 function supabaseAuthConfig() {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, ""),
+    url: isolatedSupabaseUrl()?.replace(/\/$/, ""),
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   };
 }

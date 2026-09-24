@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 import {
   FARM_MATE_ANSWER_FEEDBACK_PATH,
   FARM_MATE_PILOT_TRUST_NOTE,
@@ -39,8 +40,10 @@ export function FarmMateAnswerFeedback({
   const [feedbackTimestamp, setFeedbackTimestamp] = useState("");
   const [feedbackPreparationFailed, setFeedbackPreparationFailed] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"" | "copied" | "error">("");
+  const feedbackAvailable = isPublicSubmissionAvailable("farmmate-feedback");
 
   function prepareFeedback(nextType: FarmMateAnswerFeedbackType, nextReason: FarmMateWrongAnswerReason | null = null) {
+    if (!feedbackAvailable) return;
     const timestamp = new Date().toISOString();
     const isWrongAnswer = nextType === "wrong_answer";
     setFeedbackType(nextType);
@@ -61,6 +64,7 @@ export function FarmMateAnswerFeedback({
   }
 
   function prepareMoreFeedback() {
+    if (!feedbackAvailable) return;
     const timestamp = feedbackTimestamp || new Date().toISOString();
     const prepared = storeFarmMatePreparedAnswerFeedback(window.sessionStorage, {
       ...context,
@@ -88,7 +92,7 @@ export function FarmMateAnswerFeedback({
   return (
     <section className="mt-3 min-w-0 max-w-full overflow-hidden rounded-md border border-leaf-900/10 bg-white/80 p-3">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-black text-ink/68">{prompt}</p>
+        <p className="text-xs font-black text-ink/68">{feedbackAvailable ? prompt : "Answer tools"}</p>
         {copyText ? (
           <button
             type="button"
@@ -101,7 +105,7 @@ export function FarmMateAnswerFeedback({
         ) : null}
       </div>
 
-      <div className="mt-2 flex min-w-0 max-w-full flex-wrap gap-2">
+      {feedbackAvailable ? <><div className="mt-2 flex min-w-0 max-w-full flex-wrap gap-2">
         {farmMateAnswerFeedbackOptions.map((option) => {
           const label = option.value === "wrong_answer" ? wrongButtonLabel : option.label;
           const isSelected = feedbackType === option.value;
@@ -177,7 +181,9 @@ export function FarmMateAnswerFeedback({
         </p>
       </div>
 
-      {showTrustNote ? <p className="mt-2 text-xs font-semibold leading-5 text-ink/50">{FARM_MATE_PILOT_TRUST_NOTE}</p> : null}
+      </> : <p className="mt-2 text-xs leading-5 text-ink/60">Feedback submissions are currently unavailable.</p>}
+
+      {showTrustNote ? <p className="mt-2 text-xs font-semibold leading-5 text-ink/50">{FARM_MATE_PILOT_TRUST_NOTE.replace(/\bFarmMate\b/g, "Mama G")}</p> : null}
     </section>
   );
 }

@@ -44,6 +44,7 @@ export type FarmMateAiSuccess = {
 
 export type FarmMateAiFailureReason =
   | "missing_api_key"
+  | "model_timeout"
   | "openai_request_error"
   | "empty_response"
   | "incomplete_response";

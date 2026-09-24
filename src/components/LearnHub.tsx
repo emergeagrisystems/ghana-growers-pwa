@@ -28,6 +28,7 @@ import {
 } from "@/lib/learn-challenges";
 import { getLearnIllustrationType, LearnIllustration } from "@/components/learn/LearnIllustration";
 import type { BlogPost } from "@/types";
+import { displayLearnCategory } from "@/lib/learnDisplay";
 
 type LearnHubProps = {
   posts: BlogPost[];
@@ -63,7 +64,7 @@ const menuItems: Array<{ key: MenuKey; label: string }> = [
   { key: "crop", label: "Crop Care" },
   { key: "pests", label: "Pests & Diseases" },
   { key: "harvest", label: "Harvest & Storage" },
-  { key: "farmmate", label: "FarmMate Guides" },
+  { key: "farmmate", label: "Mama G Guides" },
   { key: "videos", label: "Videos" },
   { key: "all", label: "All Lessons" }
 ];
@@ -91,7 +92,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
     ],
     action: {
       question: "What can I use to improve my soil this week?",
-      button: "Ask FarmMate",
+      button: "Ask Mama G",
       href: "/farmer-hub?tool=ask"
     }
   },
@@ -118,7 +119,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
     ],
     action: {
       question: "My crop is not growing well. What should I check first?",
-      button: "Ask FarmMate",
+      button: "Ask Mama G",
       href: "/farmer-hub?tool=ask"
     }
   },
@@ -144,7 +145,7 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
     ],
     action: {
       question: "Can I spray today, or should I check something first?",
-      button: "Ask FarmMate",
+      button: "Ask Mama G",
       href: "/farmer-hub?tool=ask"
     }
   },
@@ -172,33 +173,33 @@ const topicPanels: Record<TopicKey, TopicPanel> = {
     ],
     action: {
       question: "How should I store my maize, yam, or tomatoes before selling?",
-      button: "Ask FarmMate",
+      button: "Ask Mama G",
       href: "/farmer-hub?tool=ask"
     }
   },
   farmmate: {
-    label: "FarmMate Guides",
-    intro: "Learn how to use GG FarmMate tools to get better answers and practical next steps.",
+    label: "Mama G Guides",
+    intro: "Learn how to use Ask Mama G tools to get better answers and practical next steps.",
     icon: Bot,
     category: "FarmMate Guides",
     ladder: {
       start: "Ask clear farm questions.",
       improve: "Upload better crop photos.",
-      further: "Use FarmMate advice with field checks and good records."
+      further: "Use Mama G advice with field checks and good records."
     },
-    featured: "How to Use GG FarmMate",
-    practice: "Ask FarmMate one clear question about a crop, soil, weather, or harvest problem.",
+    featured: "How to Use Ask Mama G",
+    practice: "Ask Mama G one clear question about a crop, soil, weather, or harvest problem.",
     recommended: [
-      "How to Use GG FarmMate",
-      "How to Ask FarmMate a Good Question",
+      "How to Use Ask Mama G",
+      "How to Ask Mama G a Good Question",
       "How to Use Crop Doctor",
       "When Not to Spray Because of Weather",
       "How to Use Crop Calendar",
       "How to Use Planting Advisor"
     ],
     action: {
-      question: "How can I use FarmMate better on my farm?",
-      button: "Open FarmMate",
+      question: "How can I use Mama G better on my farm?",
+      button: "Open Mama G",
       href: "/farmer-hub"
     }
   }
@@ -210,15 +211,15 @@ const categoryFilters: Array<{ label: string; value: LearnFilter }> = [
   { label: "Crop Care", value: "Crop Care" },
   { label: "Pests & Diseases", value: "Pests & Diseases" },
   { label: "Harvest & Storage", value: "Harvest & Storage" },
-  { label: "FarmMate Guides", value: "FarmMate Guides" },
+  { label: "Mama G Guides", value: "FarmMate Guides" },
   { label: "Videos", value: "Video Lessons" }
 ];
 
 const liveFarmMateTools = [
   {
-    title: "Ask FarmMate",
+    title: "Ask Mama G",
     text: "Ask any farming question and get a practical next step.",
-    cta: "Ask FarmMate",
+    cta: "Ask Mama G",
     href: "/farmer-hub?tool=ask",
     icon: Bot
   },
@@ -253,7 +254,7 @@ function LessonCard({ post }: { post: BlogPost }) {
   return (
     <article className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{displayLearnCategory(post.category)}</p>
         <span className="gg-icon gg-icon-standard h-9 w-9 shrink-0">
           <BookOpen size={17} aria-hidden="true" />
         </span>
@@ -276,7 +277,7 @@ function CompactLessonCard({ post }: { post: BlogPost }) {
   return (
     <article className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex flex-wrap gap-2 text-xs font-black text-ink/58">
-        <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.category}</span>
+        <span className="rounded-md bg-leaf-50 px-2.5 py-1">{displayLearnCategory(post.category)}</span>
         {post.level ? <span className="rounded-md bg-earth-50 px-2.5 py-1 text-earth-800">{post.level}</span> : null}
         <span className="rounded-md bg-leaf-50 px-2.5 py-1">{post.readTime}</span>
       </div>
@@ -378,7 +379,7 @@ function VideosPanel({ posts }: { posts: BlogPost[] }) {
         <p className="gg-eyebrow">Videos</p>
         <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Watch Short Farm Lessons</h2>
         <p className="mt-2 text-sm leading-6 text-ink/64">
-          Short practical videos for soil health, crop checks, FarmMate tools, harvest handling, and better growing practices.
+          Short practical videos for soil health, crop checks, Mama G tools, harvest handling, and better growing practices.
         </p>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -529,7 +530,7 @@ function AllLessonsPanel({ posts }: { posts: BlogPost[] }) {
         !query ||
         [
           post.title,
-          post.category,
+          displayLearnCategory(post.category),
           post.level ?? "",
           post.excerpt,
           post.audience ?? "",
@@ -554,7 +555,7 @@ function AllLessonsPanel({ posts }: { posts: BlogPost[] }) {
             <p className="gg-eyebrow">All Lessons</p>
             <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Browse every Skills Center lesson</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/62">
-              Search compact lessons for soil, compost, crop care, rain, pest prevention, harvest readiness, and FarmMate tools.
+              Search compact lessons for soil, compost, crop care, rain, pest prevention, harvest readiness, and Mama G tools.
             </p>
           </div>
           <label className="block">
@@ -635,7 +636,7 @@ function TodayPanel({ posts }: { posts: BlogPost[] }) {
               Read lesson
             </Link>
             <Link href="/farmer-hub?tool=ask" className="focus-ring rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
-              Ask FarmMate about soil
+              Ask Mama G about soil
             </Link>
           </div>
         </article>
@@ -651,7 +652,7 @@ function FarmMateToolsPanel({ posts }: { posts: BlogPost[] }) {
     <section className="space-y-6">
       <TopicPanelView panel={topicPanels.farmmate} posts={posts} />
       <div>
-        <p className="gg-eyebrow">Practice with live FarmMate tools</p>
+        <p className="gg-eyebrow">Practice with live Mama G tools</p>
         <h2 className="mt-2 text-2xl font-black text-ink sm:text-3xl">Move from learning into action</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {liveFarmMateTools.map((tool) => {

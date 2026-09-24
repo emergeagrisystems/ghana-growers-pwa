@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import {
   consumeFarmerApplicationRateLimit,
   farmerApplicationSecurity,
@@ -38,6 +39,9 @@ function clientKey(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("farmer-registration");
+  if (unavailable) return unavailable;
+
   const contentType = request.headers.get("content-type") ?? "";
   const body = contentType.includes("multipart/form-data")
     ? formDataToRecord(await request.formData().catch(() => new FormData()))

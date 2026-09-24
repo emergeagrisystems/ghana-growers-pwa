@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, ImagePlus, Send } from "lucide-react";
@@ -10,7 +11,9 @@ type FormErrors = Record<string, string | undefined>;
 
 const fieldClass = "gg-field min-w-0 w-full";
 
-export function SupplierOnboardingForm() {
+export const SupplierOnboardingForm = withPublicSubmissionGate(SupplierOnboardingFormAvailable, "supplier-registration", "Supplier registration", false);
+
+function SupplierOnboardingFormAvailable() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");

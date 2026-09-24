@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { CheckCircle2, Send } from "lucide-react";
 import Link from "next/link";
@@ -14,7 +15,9 @@ const nextSteps = [
   "Contact you with the next steps"
 ];
 
-export function SubmitBuyerRequestForm() {
+export const SubmitBuyerRequestForm = withPublicSubmissionGate(SubmitBuyerRequestFormAvailable, "buyer-request-submissions", "Buyer requests", false);
+
+function SubmitBuyerRequestFormAvailable() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
@@ -17,7 +18,9 @@ import {
 
 type FormStatus = "idle" | "submitting" | "success" | "error" | "unavailable";
 
-export function FarmMatePilotFeedbackForm() {
+export const FarmMatePilotFeedbackForm = withPublicSubmissionGate(FarmMatePilotFeedbackFormAvailable, "farmmate-feedback", "Feedback submissions", false);
+
+function FarmMatePilotFeedbackFormAvailable() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [message, setMessage] = useState("");
   const [answerFeedbackPrefill, setAnswerFeedbackPrefill] = useState<FarmMateAnswerFeedbackFormPrefill | null>(null);
@@ -66,14 +69,14 @@ export function FarmMatePilotFeedbackForm() {
 
     if (!payload.helpfulness) {
       setStatus("error");
-      setMessage("Please choose whether FarmMate was helpful.");
+      setMessage("Please choose whether Mama G was helpful.");
       form.querySelector<HTMLElement>("[name='helpfulness']")?.focus();
       return;
     }
 
     if (!payload.wouldUseAgain) {
       setStatus("error");
-      setMessage("Please choose whether you would use FarmMate again.");
+      setMessage("Please choose whether you would use Mama G again.");
       form.querySelector<HTMLElement>("[name='wouldUseAgain']")?.focus();
       return;
     }
@@ -112,7 +115,7 @@ export function FarmMatePilotFeedbackForm() {
           href="/farmer-hub"
           className="mt-5 inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-700 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
         >
-          Back to GG FarmMate
+          Back to Ask Mama G
         </Link>
       </article>
     );
@@ -158,7 +161,7 @@ export function FarmMatePilotFeedbackForm() {
       </label>
 
       <fieldset className="mt-5">
-        <legend className="text-sm font-black text-ink">Was FarmMate helpful?</legend>
+        <legend className="text-sm font-black text-ink">Was Mama G helpful?</legend>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {farmMatePilotHelpfulnessOptions.map((option) => (
             <label key={option.value} className="flex min-h-12 items-center gap-2 rounded-md border border-leaf-900/10 bg-earth-50 px-3 py-2 text-sm font-bold text-ink/72">
@@ -198,7 +201,7 @@ export function FarmMatePilotFeedbackForm() {
       </label>
 
       <fieldset className="mt-5">
-        <legend className="text-sm font-black text-ink">Would you use FarmMate again?</legend>
+        <legend className="text-sm font-black text-ink">Would you use Mama G again?</legend>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {farmMatePilotWouldUseAgainOptions.map((option) => (
             <label key={option.value} className="flex min-h-12 items-center gap-2 rounded-md border border-leaf-900/10 bg-earth-50 px-3 py-2 text-sm font-bold text-ink/72">

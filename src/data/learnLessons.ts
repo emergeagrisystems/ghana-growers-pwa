@@ -136,7 +136,7 @@ export const learnLessons = [
     need: "A notebook or phone, good light, and time to inspect several plants across the field.",
     steps: "Check lower leaves, top leaves, stems, soil moisture, and the underside of leaves. Note where the problem appears and whether it is spreading.",
     mistakes: "Do not check only one plant. Do not spray before you know what problem you are trying to solve.",
-    farmMate: "Tell FarmMate the crop, symptom, where it appears, and whether nearby plants are affected.",
+    farmMate: "Tell Mama G the crop, symptom, where it appears, and whether nearby plants are affected.",
     next: "Inspect five plants today and write down the first symptom you see."
   }),
   lesson({
@@ -154,7 +154,7 @@ export const learnLessons = [
     need: "Look at older leaves, new growth, soil moisture, field drainage, and whether fertilizer or manure was applied.",
     steps: "Check if yellowing starts from bottom leaves. Check for waterlogged patches. Look for stunting. Compare affected rows with healthy rows.",
     mistakes: "Do not assume every yellow leaf is disease. Do not apply fertilizer before heavy rain or when soil is very dry.",
-    farmMate: "Ask FarmMate with the maize stage, leaf position, soil moisture, and recent fertilizer history.",
+    farmMate: "Ask Mama G with the maize stage, leaf position, soil moisture, and recent fertilizer history.",
     next: "Check whether yellowing is mostly on old leaves or the whole plant."
   }),
   lesson({
@@ -190,7 +190,7 @@ export const learnLessons = [
     need: "Check new leaves, old leaves, underside of leaves, stem growth, soil moisture, and whether symptoms are spreading.",
     steps: "Inspect several plants. Note if curling is on new growth or all leaves. Look for whiteflies or other insects. Upload a clear photo if signs are visible.",
     mistakes: "Do not assume one curled leaf means a serious disease. Do not spray without confirming the problem.",
-    farmMate: "Ask FarmMate with the crop, affected leaf position, pest signs, and whether nearby plants are affected.",
+    farmMate: "Ask Mama G with the crop, affected leaf position, pest signs, and whether nearby plants are affected.",
     next: "Inspect new leaves and nearby plants today before deciding what to do."
   }),
   lesson({
@@ -208,7 +208,7 @@ export const learnLessons = [
     need: "Crop name, planting method, row width, plant spacing, and whether the crop will branch or vine.",
     steps: "Measure the space between plants. Thin weak extra seedlings if needed. Keep paths open for inspection and airflow.",
     mistakes: "Do not plant too close just to increase plant number. Do not ignore future plant size.",
-    farmMate: "Ask FarmMate for spacing guidance for your crop and field size.",
+    farmMate: "Ask Mama G for spacing guidance for your crop and field size.",
     next: "Measure one row and compare it with the spacing your crop needs."
   }),
   lesson({
@@ -298,7 +298,7 @@ export const learnLessons = [
     need: "A rain check, wind check, leaf wetness check, product label, and a confirmed reason for spraying.",
     steps: "Check whether rain is expected in 4 to 6 hours. Check if wind is calm. Check leaves are dry. Follow the label if spraying is still needed.",
     mistakes: "Do not spray because it is routine. Do not spray in wind or before rain. Do not invent pesticide rates.",
-    farmMate: "Ask: Can I spray today? FarmMate will guide the weather checks one at a time.",
+    farmMate: "Ask: Can I spray today? Mama G will guide the weather checks one at a time.",
     next: "Confirm rain, wind, and leaf dryness before mixing any spray."
   }),
   lesson({
@@ -378,7 +378,7 @@ export const learnLessons = [
     title: "When to Ask Crop Doctor",
     category: "Pests & Diseases",
     level: "Basic Skill",
-    excerpt: "Use Crop Doctor when a clear photo can help FarmMate guide the next field check.",
+    excerpt: "Use Crop Doctor when a clear photo can help Mama G guide the next field check.",
     audience: "Farmers with visible crop symptoms",
     readTime: "3 min read",
     difficulty: "Beginner",
@@ -388,7 +388,7 @@ export const learnLessons = [
     need: "A clear photo of the affected leaf, stem, fruit, roots, or whole plant in good light.",
     steps: "Take one close photo and one wider photo if possible. Upload the clearest image. Read the next step before treating.",
     mistakes: "Do not upload blurry photos. Do not hide the affected area. Do not assume a guaranteed diagnosis.",
-    farmMate: "Ask FarmMate about the Crop Doctor result if you need help deciding what to check next.",
+    farmMate: "Ask Mama G about the Crop Doctor result if you need help deciding what to check next.",
     next: "Upload a clear crop photo when the problem is visible."
   }),
   lesson({
@@ -555,36 +555,36 @@ export const learnLessons = [
   }),
   lesson({
     slug: "how-to-use-gg-farmmate",
-    title: "How to Use GG FarmMate",
+    title: "How to Use Ask Mama G",
     category: "FarmMate Guides",
     level: "Basic Skill",
     excerpt: "Ask better questions, use live tools, and get practical next steps.",
-    audience: "Farmers using GG FarmMate",
+    audience: "Farmers using Ask Mama G",
     readTime: "3 min read",
     difficulty: "Beginner",
     cost: "Free",
     relatedLessons: ["how-to-ask-farmmate-a-good-question", "how-to-use-crop-doctor", "weekly-crop-field-check"],
     keyPoints: ["Ask one clear question at a time.", "Mention crop, symptom, and recent weather.", "Follow the next step before adding more details."],
     need: "A clear question, crop name, visible signs, recent rain or watering, and what you have already checked.",
-    steps: "Open GG FarmMate. Ask one farming question. Answer follow-up questions. Use Crop Doctor when a photo can reduce guessing.",
-    mistakes: "Do not ask many unrelated questions at once. Do not treat FarmMate as a replacement for an extension officer during serious outbreaks.",
-    farmMate: "Open FarmMate when you need one practical next step for planting, spraying, crop symptoms, watering, or harvest preparation.",
-    next: "Open GG FarmMate and ask one clear question about your farm today."
+    steps: "Open Ask Mama G. Ask one farming question. Answer follow-up questions. Use Crop Doctor when a photo can reduce guessing.",
+    mistakes: "Do not ask many unrelated questions at once. Do not treat Mama G as a replacement for an extension officer during serious outbreaks.",
+    farmMate: "Open Mama G when you need one practical next step for planting, spraying, crop symptoms, watering, or harvest preparation.",
+    next: "Open Ask Mama G and ask one clear question about your farm today."
   }),
   lesson({
     slug: "how-to-ask-farmmate-a-good-question",
-    title: "How to Ask FarmMate a Good Question",
+    title: "How to Ask Mama G a Good Question",
     category: "FarmMate Guides",
     level: "Better Practice",
     excerpt: "Get better answers by sharing the crop, problem, location context, and what you have checked.",
-    audience: "Farmers using Ask FarmMate",
+    audience: "Farmers using Ask Mama G",
     readTime: "3 min read",
     difficulty: "Beginner",
     cost: "Free",
     relatedLessons: ["how-to-use-gg-farmmate", "weekly-crop-field-check", "when-not-to-spray-because-of-weather"],
     keyPoints: ["Name the crop.", "Describe the symptom.", "Answer follow-up questions clearly."],
     need: "Crop name, symptom, crop stage, recent weather, soil moisture, and any photo if visible.",
-    steps: "Ask one question. Include crop and symptom. Say where the problem appears. Answer FarmMate's guided questions.",
+    steps: "Ask one question. Include crop and symptom. Say where the problem appears. Answer Mama G's guided questions.",
     mistakes: "Do not only write 'help me'. Do not leave out the crop name if you know it.",
     farmMate: "Use this pattern: My crop is showing this sign. What should I check first?",
     next: "Rewrite one farm question with crop, symptom, and recent condition."
@@ -594,17 +594,17 @@ export const learnLessons = [
     title: "How to Use Crop Doctor",
     category: "FarmMate Guides",
     level: "Better Practice",
-    excerpt: "Upload a clear crop photo so FarmMate can avoid guessing.",
+    excerpt: "Upload a clear crop photo so Mama G can avoid guessing.",
     audience: "Farmers checking visible crop problems",
     readTime: "3 min read",
     difficulty: "Beginner",
     cost: "Free",
     relatedLessons: ["when-to-ask-crop-doctor", "weekly-crop-field-check", "before-you-spray-three-things-to-check-first"],
     keyPoints: ["Use good light.", "Show the affected crop part clearly.", "Use the result as guidance, not a final diagnosis."],
-    need: "A clear photo of the affected leaf, stem, fruit, root, or whole plant. Good daylight helps FarmMate see visible signs.",
+    need: "A clear photo of the affected leaf, stem, fruit, root, or whole plant. Good daylight helps Mama G see visible signs.",
     steps: "Take a clear photo. Upload it to Crop Doctor. Read the main finding, what to do now, and next step.",
     mistakes: "Do not upload blurry photos. Do not crop out the affected part. Do not apply chemicals before checking the real problem.",
-    farmMate: "Ask FarmMate about the Crop Doctor result when you need help deciding what to check next.",
+    farmMate: "Ask Mama G about the Crop Doctor result when you need help deciding what to check next.",
     next: "Upload one clear crop photo when you see a visible crop problem."
   }),
   lesson({
@@ -622,7 +622,7 @@ export const learnLessons = [
     need: "Crop name, planting date or target month, region, and whether rain or irrigation is available.",
     steps: "Open Crop Calendar. Choose the crop. Review key timing points. Use the calendar with your own field observations.",
     mistakes: "Do not follow timing blindly if soil is waterlogged, too dry, or seedlings are weak.",
-    farmMate: "Ask FarmMate if a calendar step does not match what you see in the field.",
+    farmMate: "Ask Mama G if a calendar step does not match what you see in the field.",
     next: "Open Crop Calendar for one crop you plan to grow."
   }),
   lesson({
@@ -703,12 +703,12 @@ export const learnLessons = [
     category: "Video Lessons",
     level: "Better Practice",
     excerpt: "A short lesson for farmers learning how to upload crop photos for guidance.",
-    audience: "Farmers using GG FarmMate",
+    audience: "Farmers using Ask Mama G",
     readTime: "3 min video",
     difficulty: "Beginner",
     cost: "Free",
     relatedLessons: ["how-to-use-crop-doctor", "when-to-ask-crop-doctor"],
-    keyPoints: ["Take a clear photo.", "Use Crop Doctor for visible crop problems.", "Ask FarmMate what to check next."],
+    keyPoints: ["Take a clear photo.", "Use Crop Doctor for visible crop problems.", "Ask Mama G what to check next."],
     need: "A phone camera, good light, and a visible crop problem to photograph.",
     steps: "The video will show how to frame the crop photo and use the result as guidance.",
     mistakes: "Do not upload unclear photos or assume the result is guaranteed.",

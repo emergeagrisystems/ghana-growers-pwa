@@ -3,6 +3,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { PageHero } from "@/components/PageHero";
 import { siteConfig, WHATSAPP_NUMBER } from "@/data/site";
 import { createPageMetadata } from "@/lib/seo";
+import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 
 export const metadata = createPageMetadata({
   title: "Contact Us",
@@ -21,7 +22,7 @@ const contactItems: ContactItem[] = [
   {
     title: "Email",
     value: siteConfig.email,
-    href: `mailto:${siteConfig.email}`,
+    href: isPublicSubmissionAvailable("contact-enquiries") ? `mailto:${siteConfig.email}` : null,
     icon: Mail
   },
   {
@@ -32,7 +33,7 @@ const contactItems: ContactItem[] = [
   }
 ];
 
-if (WHATSAPP_NUMBER !== "233000000000") {
+if (WHATSAPP_NUMBER !== "233000000000" && isPublicSubmissionAvailable("whatsapp-leads")) {
   contactItems.push(
   {
     title: "Phone / WhatsApp",
@@ -49,7 +50,7 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Contact Us"
         title="Contact Ghana Growers"
-        description="Have a question about buying, selling, farmer registration, supplier applications or Ghana Growers? Send us a message."
+        description="Contact enquiries are currently unavailable. You can still browse Ghana Growers."
         variant="compact"
       />
       <section className="bg-white py-16">
@@ -58,7 +59,7 @@ export default function ContactPage() {
             <div className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-black text-ink">Operated by Emerge Agri Systems (E.A.Sy)</h2>
               <p className="mt-2 text-sm leading-7 text-ink/66">
-                Ghana Growers is the public agricultural platform operated by Emerge Agri Systems. Use this contact page for farmer, buyer, supplier, verification, and partnership enquiries.
+                Ghana Growers is the public agricultural platform operated by Emerge Agri Systems. Online enquiries are currently unavailable.
               </p>
             </div>
             {contactItems.map((item) => {
@@ -82,9 +83,9 @@ export default function ContactPage() {
               );
             })}
             <div className="rounded-md border border-leaf-900/10 bg-earth-50 p-5">
-              <h2 className="text-lg font-black text-ink">Best way to get a useful reply</h2>
+              <h2 className="text-lg font-black text-ink">Enquiries unavailable</h2>
               <p className="mt-2 text-sm leading-6 text-ink/62">
-                Include your role, product or service, region, district, quantity if relevant, and the best phone number for follow-up.
+                No enquiry can be submitted through this page at present.
               </p>
             </div>
           </aside>

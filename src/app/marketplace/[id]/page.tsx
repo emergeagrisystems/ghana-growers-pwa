@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BadgeCheck, MapPin } from "lucide-react";
 import { MarketplaceImageGallery } from "@/components/MarketplaceImageGallery";
+import { MarketplaceUnavailable } from "@/components/MarketplaceUnavailable";
 import { RequestConnectionButton } from "@/components/RequestConnectionButton";
 import { publicMarketplaceListings } from "@/lib/marketplace/publicListings";
 import { marketplaceTradeInformation } from "@/lib/marketplace/trade";
 import { createPageMetadata } from "@/lib/seo";
-import { getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
+import { getFarmersData, getMarketplaceListingsResult, getSuppliersData } from "@/lib/supabase/publicData";
 
 type MarketplaceListingPageProps = {
   params: {
@@ -17,13 +18,21 @@ type MarketplaceListingPageProps = {
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: MarketplaceListingPageProps) {
-  const [products, farmerResult, supplierResult] = await Promise.all([
-    getMarketplaceListingsData(),
+  const [listingResult, farmerResult, supplierResult] = await Promise.all([
+    getMarketplaceListingsResult(),
     getFarmersData(),
     getSuppliersData()
   ]);
+  if (listingResult.status === "unavailable" || farmerResult.status === "unavailable" || supplierResult.status === "unavailable") {
+    return createPageMetadata({
+      title: "Listing temporarily unavailable",
+      description: "Current listing information could not be loaded. Please try again later.",
+      path: `/marketplace/${params.id}`,
+      noIndex: true
+    });
+  }
   const listing = publicMarketplaceListings(
-    products,
+    listingResult.data,
     farmerResult.status === "ready" ? farmerResult.data : [],
     supplierResult.status === "ready" ? supplierResult.data : []
   ).find((item) => item.product.id === decodeURIComponent(params.id));
@@ -38,13 +47,16 @@ export async function generateMetadata({ params }: MarketplaceListingPageProps) 
 }
 
 export default async function MarketplaceListingPage({ params }: MarketplaceListingPageProps) {
-  const [products, farmerResult, supplierResult] = await Promise.all([
-    getMarketplaceListingsData(),
+  const [listingResult, farmerResult, supplierResult] = await Promise.all([
+    getMarketplaceListingsResult(),
     getFarmersData(),
     getSuppliersData()
   ]);
+  if (listingResult.status === "unavailable" || farmerResult.status === "unavailable" || supplierResult.status === "unavailable") {
+    return <MarketplaceUnavailable listing />;
+  }
   const listing = publicMarketplaceListings(
-    products,
+    listingResult.data,
     farmerResult.status === "ready" ? farmerResult.data : [],
     supplierResult.status === "ready" ? supplierResult.data : []
   ).find((item) => item.product.id === decodeURIComponent(params.id));

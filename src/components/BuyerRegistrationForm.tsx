@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { CheckCircle2, Send } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -26,7 +27,9 @@ const initialFormState: FormState = {
 
 const fieldClass = "gg-field";
 
-export function BuyerRegistrationForm() {
+export const BuyerRegistrationForm = withPublicSubmissionGate(BuyerRegistrationFormAvailable, "buyer-registration", "Buyer registration", false);
+
+function BuyerRegistrationFormAvailable() {
   const [form, setForm] = useState<FormState>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);

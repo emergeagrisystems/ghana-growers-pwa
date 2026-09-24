@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { ArrowRight, RotateCcw, Send } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
@@ -34,7 +35,9 @@ function createSubmissionToken() {
   return globalThis.crypto?.randomUUID?.() ?? "";
 }
 
-export function ContactEnquiryForm({ enquiryType }: { enquiryType: ContactEnquiryType }) {
+export const ContactEnquiryForm = withPublicSubmissionGate(ContactEnquiryFormAvailable, "contact-enquiries", "Contact enquiries", false);
+
+function ContactEnquiryFormAvailable({ enquiryType }: { enquiryType: ContactEnquiryType }) {
   const partnership = enquiryType === "Partnership";
   const [values, setValues] = useState<FormValues>(initialValues);
   const [submissionToken, setSubmissionToken] = useState("");

@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { Send } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -8,7 +9,9 @@ type RegistrationFormProps = {
   audience: "farmer" | "buyer" | "supplier" | "partner";
 };
 
-export function RegistrationForm({ title, audience }: RegistrationFormProps) {
+export const RegistrationForm = withPublicSubmissionGate(RegistrationFormAvailable, "network-interest", "Network registration", false);
+
+function RegistrationFormAvailable({ title, audience }: RegistrationFormProps) {
   const [submitted, setSubmitted] = useState(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {

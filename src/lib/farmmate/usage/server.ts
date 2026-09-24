@@ -11,6 +11,7 @@ type FarmMateUsageEventRow = {
 };
 
 const memoryEvents: Array<FarmMateUsageEventRow> = [];
+const USAGE_TIMEOUT_MS = 5_000;
 
 type UsageStorage = "supabase" | "memory" | "none" | "unavailable";
 
@@ -72,7 +73,8 @@ async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageToo
       "order=created_at.asc",
       "select=id,anonymous_user_hash,tool,created_at"
     ].join("&");
-    const result = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", query);
+    const result = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", query, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
+      .catch(() => ({ error: "Usage check unavailable or timed out", status: 503, data: undefined }));
 
     if (!result.error) {
       return {
@@ -119,16 +121,22 @@ async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageToo
   };
 }
 
-async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date()) {
+async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date(), requestId?: string) {
+  const hash = requestId ? crypto.createHash("sha256").update(`${anonymousUserHash}:${tool}:${requestId}`).digest("hex") : null;
   const payload = {
-    id: crypto.randomUUID(),
+    id: hash ? `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}` : crypto.randomUUID(),
     anonymous_user_hash: anonymousUserHash,
     tool,
     created_at: now.toISOString()
   };
 
   if (hasSupabaseAdminConfig()) {
-    const result = await insertSupabaseRecord("farmmate_usage_events", payload);
+    const result = await insertSupabaseRecord("farmmate_usage_events", payload, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
+      .catch(() => ({ error: "Usage write unavailable or timed out", status: 503 }));
+
+    if (requestId && result.status === 409) {
+      return { recorded: false as const, replayed: true as const, storage: "supabase" as const };
+    }
 
     if (!result.error) {
       return { recorded: true as const, storage: "supabase" as const, eventId: payload.id };
@@ -150,6 +158,9 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
     warnUsage("Using in-memory FarmMate Credits write fallback for local development.");
   }
 
+  if (memoryEvents.some((event) => event.id === payload.id)) {
+    return { recorded: false as const, replayed: true as const, storage: "memory" as const };
+  }
   memoryEvents.push(payload);
 
   return { recorded: true as const, storage: "memory" as const, eventId: payload.id };
@@ -162,7 +173,8 @@ async function rotateUsageEventId(anonymousUserHash: string, eventId: string, ne
       `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
       "tool=eq.ask_farmmate"
     ].join("&");
-    const result = await updateSupabaseRecord("farmmate_usage_events", filter, { id: nextEventId });
+    const result = await updateSupabaseRecord("farmmate_usage_events", filter, { id: nextEventId }, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
+      .catch(() => ({ error: "Consultation update unavailable or timed out", status: 503, data: undefined }));
 
     if (!result.error && result.data?.id === nextEventId) {
       return { rotated: true as const, replayed: false as const, storage: "supabase" as const, eventId: nextEventId };
@@ -176,7 +188,8 @@ async function rotateUsageEventId(anonymousUserHash: string, eventId: string, ne
         "select=id,anonymous_user_hash,tool,created_at",
         "limit=1"
       ].join("&");
-      const replayResult = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", replayQuery);
+      const replayResult = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", replayQuery, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
+        .catch(() => ({ error: "Consultation replay unavailable or timed out", status: 503, data: undefined }));
 
       if (!replayResult.error && replayResult.data?.some((row) => row.id === nextEventId)) {
         return { rotated: true as const, replayed: true as const, storage: "supabase" as const, eventId: nextEventId };
@@ -290,11 +303,13 @@ export async function checkFarmMateCreditsForDevice({
 export async function recordFarmMateUsageForDevice({
   anonymousDeviceId,
   tool,
-  now = new Date()
+  now = new Date(),
+  requestId
 }: {
   anonymousDeviceId: unknown;
   tool: FarmMateUsageTool;
   now?: Date;
+  requestId?: string;
 }) {
   const anonymousUserHash = getAnonymousUserHash(anonymousDeviceId);
 
@@ -305,11 +320,12 @@ export async function recordFarmMateUsageForDevice({
     };
   }
 
-  const writeResult = await writeUsageEvent(anonymousUserHash, tool, now);
+  const writeResult = await writeUsageEvent(anonymousUserHash, tool, now, requestId);
 
   return {
     recorded: writeResult.recorded,
     storage: writeResult.storage,
+    replayed: "replayed" in writeResult && writeResult.replayed === true,
     eventId: "eventId" in writeResult ? writeResult.eventId : undefined
   };
 }

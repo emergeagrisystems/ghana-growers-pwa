@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { WHATSAPP_NUMBER } from "@/data/site";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { trackWhatsAppLead } from "@/lib/whatsappLeadTracking";
+import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
 
 const quietRoutes = [
@@ -28,7 +29,7 @@ export function FloatingWhatsAppButton() {
   const shouldHide = isPublicFarmMatePilotPage(pathname) || quietRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   const hasOfficialWhatsApp = WHATSAPP_NUMBER !== "233000000000";
 
-  if (shouldHide || !hasOfficialWhatsApp) {
+  if (shouldHide || !hasOfficialWhatsApp || !isPublicSubmissionAvailable("whatsapp-leads")) {
     return null;
   }
 

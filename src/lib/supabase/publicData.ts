@@ -1,11 +1,11 @@
 import "server-only";
+import { isolatedSupabaseUrl } from "./isolation";
 
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import type { PublicBuyerRequest } from "@/types/publicBuyerRequest";
 import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
 import { products as fallbackProducts } from "@/data/products";
-import fallbackSuccessStories from "@/data/successStories.json";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
 import { isDemoProfileOrigin, isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
@@ -209,7 +209,7 @@ type SupabaseSuccessStory = {
 
 function supabaseConfig() {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    url: isolatedSupabaseUrl(),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
   };
 }
@@ -226,6 +226,7 @@ async function fetchRows<T>(table: string, select = "*", order = "created_at.des
   endpoint.searchParams.set("order", order);
 
   const response = await fetch(endpoint, {
+    signal: AbortSignal.timeout(10_000),
     headers: supabaseServerAuthHeaders(serviceRoleKey),
     cache: "no-store"
   }).catch(() => null);
@@ -257,6 +258,7 @@ async function fetchPublicProfileRows<T>(table: "farmers" | "suppliers"): Promis
   let response: Response;
   try {
     response = await fetch(endpoint, {
+      signal: AbortSignal.timeout(10_000),
       headers: supabaseServerAuthHeaders(serviceRoleKey),
       cache: "no-store"
     });
@@ -401,7 +403,7 @@ function farmerPhotoNeedsImport(row: SupabaseFarmer) {
 }
 
 function allowDemoPublicData() {
-  return process.env.ENABLE_DEMO_PUBLIC_DATA === "true";
+  return false;
 }
 
 function isPublicDisplayableImageUrl(url?: string | null) {
@@ -797,19 +799,48 @@ export async function getSuppliersData(): Promise<PublicProfileLoadResult<Public
   };
 }
 
-export async function getMarketplaceListingsData() {
-  const rows = await fetchRows<SupabaseListing>("marketplace_listings");
-  const demoFarmerSlugs = new Set(fallbackFarmers.filter((farmer) => isDemoProfileOrigin(farmer.source)).map((farmer) => farmer.slug));
-  const publicFallbackProducts = fallbackProducts.filter((product) => !product.farmerSlug || !demoFarmerSlugs.has(product.farmerSlug));
+export type MarketplaceListingsLoadResult = PublicProfileLoadResult<Product>;
 
-  if (!rows.length) {
-    return allowDemoPublicData() ? publicFallbackProducts : [];
+async function fetchMarketplaceRows<T>(
+  table: "marketplace_listings" | "listing_submissions",
+  select = "*"
+): Promise<PublicProfileLoadResult<T>> {
+  const { url, serviceRoleKey } = supabaseConfig();
+  if (!url || !serviceRoleKey) return { status: "unavailable", data: [], code: "configuration_missing" };
+
+  let response: Response;
+  try {
+    const endpoint = new URL(`${url.replace(/\/$/, "")}/rest/v1/${table}`);
+    endpoint.searchParams.set("select", select);
+    endpoint.searchParams.set("order", "created_at.desc");
+    response = await fetch(endpoint, {
+      signal: AbortSignal.timeout(10_000),
+      headers: supabaseServerAuthHeaders(serviceRoleKey),
+      cache: "no-store"
+    });
+  } catch {
+    return { status: "unavailable", data: [], code: "network_error" };
   }
+  if (!response.ok) return { status: "unavailable", data: [], code: "read_failed" };
+  const rows = await response.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.some((row) => !row || typeof row !== "object" || Array.isArray(row))) {
+    return { status: "unavailable", data: [], code: "invalid_response" };
+  }
+  return { status: "ready", data: rows as T[] };
+}
+
+export async function getMarketplaceListingsResult(): Promise<MarketplaceListingsLoadResult> {
+  const result = await fetchMarketplaceRows<SupabaseListing>("marketplace_listings");
+  if (result.status === "unavailable") return result;
+  const rows = result.data;
+  if (!rows.length) return { status: "ready", data: [] };
 
   const publicSubmissionRows = rows.filter((row) => row.source_submission_id || row.record_source === "public_submission");
-  const submissionStatuses = publicSubmissionRows.length
-    ? await fetchRows<SupabaseListingSubmissionStatus>("listing_submissions", "id,status,published_listing_id", "created_at.desc")
-    : [];
+  const submissionResult = publicSubmissionRows.length
+    ? await fetchMarketplaceRows<SupabaseListingSubmissionStatus>("listing_submissions", "id,status,published_listing_id")
+    : { status: "ready" as const, data: [] };
+  if (submissionResult.status === "unavailable") return submissionResult;
+  const submissionStatuses = submissionResult.data;
   const submissionStatusBySubmissionId = new Map(submissionStatuses.map((submission) => [submission.id, submission.status]));
   const submissionStatusByListingId = new Map(
     submissionStatuses
@@ -817,7 +848,18 @@ export async function getMarketplaceListingsData() {
       .map((submission) => [submission.published_listing_id as string, submission.status])
   );
 
-  return featuredSort(rows.map((row) => mapListing(row, submissionStatusByListingId, submissionStatusBySubmissionId)));
+  try {
+    return { status: "ready", data: featuredSort(rows.map((row) => mapListing(row, submissionStatusByListingId, submissionStatusBySubmissionId))) };
+  } catch {
+    return { status: "unavailable", data: [], code: "invalid_response" };
+  }
+}
+
+// Keep the existing array contract for older callers. Public Marketplace pages
+// use the status-bearing loader so a failed read is never presented as empty.
+export async function getMarketplaceListingsData(): Promise<Product[]> {
+  const result = await getMarketplaceListingsResult();
+  return result.status === "ready" ? result.data : [];
 }
 
 export async function getBuyerRequestsData() {
@@ -832,7 +874,7 @@ export async function getMarketPricesData() {
 
 export async function getSuccessStoriesData() {
   const rows = await fetchRows<SupabaseSuccessStory>("success_stories", "*", "story_date.desc");
-  const stories = rows.length > 0 ? rows.map(mapSuccessStory) : (fallbackSuccessStories as SuccessStory[]);
+  const stories = rows.length > 0 ? rows.map(mapSuccessStory) : [];
 
   return stories.filter((story) => story.status === "Published");
 }

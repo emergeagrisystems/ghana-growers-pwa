@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { Bot, Camera, Loader2, Send } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { boundedJsonRequest, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
+import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
+import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
@@ -56,7 +59,8 @@ type FollowUpAnswer = FarmMateConsultationAnswer;
 type PendingContinuationRetry = {
   farmMateResponse: FarmMateBrainResponse;
   nextConsultation: AskFarmMateConsultationState;
-  followUpAnswer: FarmMateConsultationAnswer;
+  followUpAnswer?: FarmMateConsultationAnswer;
+  isFollowUp: boolean;
 };
 
 function sectionBody(response: FarmMateBrainResponse, title: string) {
@@ -199,7 +203,7 @@ function learnedSummary(response: FarmMateBrainResponse, answers: FollowUpAnswer
     ...answers.map((answer) => answer.answer)
   ];
 
-  return summary.length ? summary.slice(0, 4) : ["FarmMate has enough information to give a first recommendation."];
+  return summary.length ? summary.slice(0, 4) : ["Mama G has enough information to give a first recommendation."];
 }
 
 function answerInsights(answers: FollowUpAnswer[]) {
@@ -265,7 +269,7 @@ function marketplaceInfoResponse(): FarmMateLocalResponseCard[] {
     },
     {
       title: "What to do now",
-      body: ["Soon, FarmMate will connect buyers to available produce through the marketplace."]
+      body: ["Mama G cannot match buyers with produce or send a sourcing request."]
     },
     {
       title: "Next step",
@@ -300,8 +304,8 @@ function weatherContextIntro(response?: FarmMateBrainResponse | null) {
 
   const lead =
     typeof weatherContext.rainChancePercent === "number"
-      ? `FarmMate is seeing a ${weatherContext.rainChancePercent}% chance of rain today for ${weatherContext.locationName}.`
-      : `FarmMate has live weather for ${weatherContext.locationName}.`;
+      ? `Mama G is seeing a ${weatherContext.rainChancePercent}% chance of rain today for ${weatherContext.locationName}.`
+      : `Mama G has live weather for ${weatherContext.locationName}.`;
 
   return {
     lead,
@@ -472,7 +476,7 @@ function storedWeatherContextForFarmMate(): WeatherDecisionSummary | undefined {
 
 function askCreditFailureMessage(reason?: string, credits?: FarmMateCreditStatus | null) {
   if (reason === "usage_tracking_unavailable") {
-    return "FarmMate is temporarily unavailable because your credit could not be checked. Please try again shortly.";
+    return "Mama G is temporarily unavailable because your credit could not be checked. Please try again shortly.";
   }
 
   if (reason === "credits_exhausted" || reason === "rapid_submission") {
@@ -482,7 +486,7 @@ function askCreditFailureMessage(reason?: string, credits?: FarmMateCreditStatus
     });
   }
 
-  return "FarmMate could not start this consultation. Your question is still here, so you can try again.";
+  return "Mama G could not confirm this consultation. Your question is still here.";
 }
 
 export function AskFarmMate({
@@ -516,6 +520,7 @@ export function AskFarmMate({
   const consultationStartInFlight = useRef(false);
   const followUpRequestInFlight = useRef(false);
   const followUpQuestionRef = useRef<HTMLFieldSetElement | null>(null);
+  useEffect(() => () => { activeRequestKey.current = "unmounted"; }, []);
   const [conversationState, setConversationState] = useState<ConversationState>({
     waitingForFollowUp: false,
     turns: []
@@ -571,7 +576,7 @@ export function AskFarmMate({
 
   async function refreshCredits() {
     try {
-      const apiResponse = await fetch("/api/farmmate/usage", {
+      const { data } = await boundedJsonRequest<{ credits?: FarmMateCreditStatus }>("/api/farmmate/usage", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -581,8 +586,7 @@ export function AskFarmMate({
           tool: "ask_farmmate",
           action: "status"
         })
-      });
-      const data = (await apiResponse.json().catch(() => null)) as { credits?: FarmMateCreditStatus } | null;
+      }, FARM_MATE_BROWSER_TIMEOUT_MS);
 
       if (data?.credits) {
         setCredits(data.credits);
@@ -614,14 +618,12 @@ export function AskFarmMate({
     setAiFallbackMessage("");
     setCreditMessage("");
     setConsultationError("");
-    if (isFollowUp) {
-      setPendingContinuationRetry(null);
-    }
+    setPendingContinuationRetry(null);
     setIsGeneratingNaturalAnswer(!awaitingFollowUp);
     setIsSubmittingFollowUp(isFollowUp);
 
     try {
-      const apiResponse = await fetch("/api/farmmate/ask", {
+      const { response: apiResponse, data } = await boundedJsonRequest<FarmMateAskApiResponse>("/api/farmmate/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -640,8 +642,7 @@ export function AskFarmMate({
           farmerAnswers: nextConsultation.answerHistory.map(({ question, answer }) => ({ question, answer })),
           localStructuredResponse: localRecommendationCards(farmMateResponse, nextConsultation.answerHistory)
         })
-      });
-      const data = (await apiResponse.json().catch(() => null)) as FarmMateAskApiResponse | null;
+      }, FARM_MATE_BROWSER_TIMEOUT_MS);
 
       if (activeRequestKey.current !== requestKey) {
         return false;
@@ -664,7 +665,7 @@ export function AskFarmMate({
             : data?.message || askCreditFailureMessage(reason, data?.credits)
         );
         if (canRetryContinuation && followUpAnswer) {
-          setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer });
+          setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer, isFollowUp });
           setConsultation({ ...nextConsultation, status: "error" });
         } else {
           setConsultation({
@@ -710,7 +711,7 @@ export function AskFarmMate({
       setShowRecommendation(true);
 
       if (data?.ok && data.kind === "final" && data.answer?.trim()) {
-        setNaturalAnswer(cleanFarmMateFinalAnswer(data.answer));
+        setNaturalAnswer(mamaGPublicText(cleanFarmMateFinalAnswer(data.answer)));
         return true;
       }
 
@@ -724,11 +725,12 @@ export function AskFarmMate({
       }
       setNaturalAnswer("");
       if (isFollowUp && followUpAnswer) {
-        setConsultationError("FarmMate could not continue this follow-up. Try it again without using another credit.");
-        setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer });
+        setConsultationError("Mama G could not confirm this follow-up. Retry this step without using another credit.");
+        setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer, isFollowUp });
         setConsultation({ ...nextConsultation, status: "error" });
       } else {
-        setConsultationError("FarmMate could not start this consultation. Your question is still here, so you can try again.");
+        setConsultationError("Mama G could not confirm this consultation. Your question is still here.");
+        setPendingContinuationRetry({ farmMateResponse, nextConsultation, isFollowUp: false });
         setConsultation({
           ...nextConsultation,
           pendingFollowUpQuestion: undefined,
@@ -775,7 +777,7 @@ export function AskFarmMate({
     setIsThinking(false);
 
     try {
-      const apiResponse = await fetch("/api/farmmate/usage", {
+      const { response: apiResponse, data } = await boundedJsonRequest<{ ok?: boolean; reason?: string; credits?: FarmMateCreditStatus }>("/api/farmmate/usage", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -785,12 +787,7 @@ export function AskFarmMate({
           tool: "ask_farmmate",
           action: "record"
         })
-      });
-      const data = (await apiResponse.json().catch(() => null)) as {
-        ok?: boolean;
-        reason?: string;
-        credits?: FarmMateCreditStatus;
-      } | null;
+      }, FARM_MATE_BROWSER_TIMEOUT_MS);
 
       if (activeRequestKey.current !== requestKey) {
         return;
@@ -821,7 +818,7 @@ export function AskFarmMate({
         return;
       }
 
-      setConsultationError("FarmMate could not start this consultation. Your question is still here, so you can try again.");
+      setConsultationError("Mama G could not confirm this consultation. Your question is still here.");
       setConsultation({ ...localConsultation, status: "error" });
       setQuestion(originalQuestion);
     } finally {
@@ -835,9 +832,10 @@ export function AskFarmMate({
     }
 
     const retry = pendingContinuationRetry;
-    followUpRequestInFlight.current = true;
+    if (retry.isFollowUp) followUpRequestInFlight.current = true;
+    else consultationStartInFlight.current = true;
     setResponse(retry.farmMateResponse);
-    setConsultation({ ...retry.nextConsultation, status: "submitting_follow_up" });
+    setConsultation({ ...retry.nextConsultation, status: retry.isFollowUp ? "submitting_follow_up" : "starting" });
     setConsultationError("");
     setShowRecommendation(false);
 
@@ -845,7 +843,7 @@ export function AskFarmMate({
       farmMateResponse: retry.farmMateResponse,
       nextConsultation: retry.nextConsultation,
       followUpAnswer: retry.followUpAnswer,
-      isFollowUp: true
+      isFollowUp: retry.isFollowUp
     });
   }
 
@@ -902,6 +900,25 @@ export function AskFarmMate({
     setActiveCropDoctorHandoff(null);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
+    const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(trimmedQuestion);
+    if (chemicalSafetyAnswer) {
+      setLocalCards([{ title: "Chemical safety", body: [chemicalSafetyAnswer] }]);
+      setConsultation({
+        consultationId: createFarmMateConsultationId(crypto.randomUUID()),
+        originalQuestion: trimmedQuestion,
+        answerHistory: [],
+        status: "complete"
+      });
+      setShowRecommendation(true);
+      setIsThinking(false);
+      consultationStartInFlight.current = false;
+      return;
+    }
+
+    if (pendingContinuationRetry && !pendingContinuationRetry.isFollowUp && trimmedQuestion === pendingContinuationRetry.nextConsultation.originalQuestion) {
+      void retryPendingFollowUp();
+      return;
+    }
     logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
     logRouterResult(routerResult);
     const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
@@ -1043,7 +1060,8 @@ export function AskFarmMate({
     });
   }
 
-  const recommendationCards = localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [];
+  const recommendationCards = (localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [])
+    .map((card) => ({ title: mamaGPublicText(card.title), body: card.body.map(mamaGPublicText) }));
   const intro = responseIntro(localCards, showRecommendation, response);
   const shouldShowGeneralGuidanceBeforeFollowUp = shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response, showRecommendation);
   const shouldShowLocalGuidance = shouldRenderLocalFarmMateGuidance({
@@ -1084,16 +1102,20 @@ export function AskFarmMate({
           <Bot size={24} aria-hidden="true" />
         </span>
         <div>
-          <h2 className="gg-card-title">Ask FarmMate</h2>
+          <h2 className="gg-card-title">Ask Mama G</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("ask_farmmate", credits)}</p>
         </div>
       </div>
 
       <form className="mt-6 grid gap-4" onSubmit={askFarmMate}>
+        <p id="ask-mama-g-disclosure" className="text-sm leading-6 text-ink/75">
+          Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. Avoid including sensitive personal information. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.
+        </p>
         <label className="grid gap-2" htmlFor="ask-farmmate-question">
           <span className="sr-only">What would you like help with today?</span>
           <textarea
             id="ask-farmmate-question"
+            aria-describedby="ask-mama-g-disclosure"
             value={question}
             onChange={(event) => {
               setQuestion(event.target.value);
@@ -1128,7 +1150,7 @@ export function AskFarmMate({
           className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-4 text-base font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
         >
           {isThinking ? <Loader2 className="animate-spin" size={20} aria-hidden="true" /> : <Send size={20} aria-hidden="true" />}
-          Ask FarmMate
+          Ask Mama G
         </button>
       </form>
 
@@ -1142,7 +1164,7 @@ export function AskFarmMate({
         {isThinking ? (
           <div className="flex max-w-[92%] items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
             <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
-            FarmMate is thinking...
+            Mama G is thinking...
           </div>
         ) : null}
 
@@ -1151,17 +1173,17 @@ export function AskFarmMate({
             {consultation?.status === "starting" && !isThinking && !isGeneratingNaturalAnswer ? (
               <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
                 <Loader2 className="shrink-0 animate-spin text-leaf-700" size={18} aria-hidden="true" />
-                FarmMate is starting your consultation...
+                Mama G is starting your consultation...
               </div>
             ) : null}
 
             {hasConsultationError ? (
               <div className="min-w-0 rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
-                <p className="break-words text-sm font-bold leading-6 text-ink/68">{consultationError}</p>
+                <p className="break-words text-sm font-bold leading-6 text-ink/68">{mamaGPublicText(consultationError)}</p>
                 <p className="mt-2 text-xs font-semibold leading-5 text-ink/55">
                   {pendingContinuationRetry
-                    ? "This stays in the same consultation and will not use another credit."
-                    : "Your original question is ready above. Tap Ask FarmMate to try again."}
+                    ? "This retries the same request. It does not automatically start a new consultation."
+                    : "Your original question is ready above."}
                 </p>
                 {pendingContinuationRetry ? (
                   <button
@@ -1170,7 +1192,7 @@ export function AskFarmMate({
                     onClick={() => void retryPendingFollowUp()}
                     className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
                   >
-                    Try this follow-up again
+                    Retry this request
                   </button>
                 ) : shouldShowCreditActions ? (
                   <Link
@@ -1222,10 +1244,10 @@ export function AskFarmMate({
                 aria-labelledby={`farmmate-follow-up-${currentFollowUp.id}`}
                 className="min-w-0 max-w-full rounded-md border border-leaf-900/10 bg-white px-4 py-4 focus:outline-none"
               >
-                <legend className="sr-only">FarmMate follow-up question</legend>
+                <legend className="sr-only">Mama G follow-up question</legend>
                 <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-leaf-700">One quick question</p>
                 <p id={`farmmate-follow-up-${currentFollowUp.id}`} className="mt-1 text-sm font-black text-ink">
-                  {currentFollowUp.question}
+                  {mamaGPublicText(currentFollowUp.question)}
                 </p>
                 <div className="mt-3 grid min-w-0 max-w-full gap-2 sm:grid-cols-2">
                   {(currentFollowUp.options ?? ["I can check this", "I am not sure", "I need help checking"]).map((option) => (
@@ -1236,7 +1258,7 @@ export function AskFarmMate({
                       onClick={() => void answerFollowUp(option)}
                       className="min-h-11 w-full min-w-0 whitespace-normal break-words rounded-md border border-leaf-900/15 bg-leaf-50 px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-white disabled:cursor-wait disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                     >
-                      {conversationalOption(currentFollowUp.id, option)}
+                      {mamaGPublicText(conversationalOption(currentFollowUp.id, option))}
                     </button>
                   ))}
                 </div>
@@ -1247,7 +1269,7 @@ export function AskFarmMate({
             {consultation?.status === "submitting_follow_up" ? (
               <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
                 <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
-                FarmMate is continuing this consultation...
+                Mama G is continuing this consultation...
               </div>
             ) : null}
 
@@ -1256,7 +1278,7 @@ export function AskFarmMate({
                 {isGeneratingNaturalAnswer ? (
                   <div className="flex max-w-[92%] items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
                     <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
-                    FarmMate is preparing your answer...
+                    Mama G is preparing your answer...
                   </div>
                 ) : naturalAnswer ? (
                   <>
@@ -1279,13 +1301,13 @@ export function AskFarmMate({
 
                 {aiFallbackMessage ? (
                   <p className="break-words rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">
-                    {aiFallbackMessage}
+                    {mamaGPublicText(aiFallbackMessage)}
                   </p>
                 ) : null}
 
                 {creditMessage ? (
                   <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
-                    <p className="break-words text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">{creditMessage}</p>
+                    <p className="break-words text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">{mamaGPublicText(creditMessage)}</p>
                     {shouldShowCreditActions ? (
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Link

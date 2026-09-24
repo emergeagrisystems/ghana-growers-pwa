@@ -1,7 +1,8 @@
+import { isolatedSupabaseUrl } from "./isolation";
 export function getSupabaseBrowserConfig() {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    url: isolatedSupabaseUrl() ?? "",
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-    isConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    isConfigured: Boolean(isolatedSupabaseUrl() && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   };
 }

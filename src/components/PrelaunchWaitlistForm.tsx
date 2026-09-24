@@ -1,11 +1,14 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { CheckCircle2, Send } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 const userTypes = ["Farmer", "Buyer", "Supplier"];
 
-export function PrelaunchWaitlistForm() {
+export const PrelaunchWaitlistForm = withPublicSubmissionGate(PrelaunchWaitlistFormAvailable, "waitlist", "Waitlist registration", false);
+
+function PrelaunchWaitlistFormAvailable() {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");

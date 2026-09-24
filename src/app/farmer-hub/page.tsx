@@ -8,7 +8,7 @@ import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "GG FarmMate",
+  title: "Ask Mama G",
   description:
     "Your AI-powered farming companion by Ghana Growers, with daily farming recommendations, weather outlook, crop planning tools, and learning tips for Ghanaian farmers.",
   path: "/farmer-hub"
@@ -26,10 +26,10 @@ export default function FarmerHubPage() {
             </p>
             <FarmMateGreeting />
             <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] text-ink sm:text-5xl lg:text-6xl">
-              GG FarmMate
+              Ask Mama G
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">
-              Ask FarmMate for farming advice, or upload a crop photo when something looks wrong.
+              Ask Mama G for farming advice, or upload a crop photo when something looks wrong.
             </p>
             <FarmMateHeroActions />
             <Suspense fallback={null}>
@@ -37,11 +37,11 @@ export default function FarmerHubPage() {
             </Suspense>
           </div>
 
-          <aside className="grid gap-4 lg:pt-10" aria-label="FarmMate daily support">
+          <aside className="grid gap-4 lg:pt-10" aria-label="Mama G daily support">
             <FarmMateWeatherFoundation />
 
             <div className="flex flex-col gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
-              <p className="font-bold text-ink/62">Testing GG FarmMate?</p>
+              <p className="font-bold text-ink/62">Testing Ask Mama G?</p>
               <Link href="/farmer-hub/feedback" className="inline-flex font-black text-leaf-700 transition hover:text-leaf-900">
                 Share feedback
               </Link>
@@ -53,7 +53,7 @@ export default function FarmerHubPage() {
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
         <div className="flex items-start gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm font-semibold leading-6 text-ink/62 shadow-sm">
           <ShieldCheck className="mt-0.5 shrink-0 text-leaf-700" size={18} aria-hidden="true" />
-          <p>FarmMate gives practical decision support. It does not replace an agricultural extension officer for serious outbreaks.</p>
+          <p>Mama G gives practical decision support. It does not replace an agricultural extension officer for serious outbreaks.</p>
         </div>
       </section>
     </main>

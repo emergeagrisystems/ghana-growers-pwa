@@ -1,12 +1,13 @@
 import { BookOpen, Clock } from "lucide-react";
 import Link from "next/link";
 import type { BlogPost } from "@/types";
+import { displayLearnCategory } from "@/lib/learnDisplay";
 
 export function BlogCard({ post }: { post: BlogPost }) {
   return (
     <article className="flex h-full flex-col rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
       <div className="flex items-start justify-between gap-4">
-        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{post.category}</p>
+        <p className="text-xs font-black uppercase tracking-wide text-earth-700">{displayLearnCategory(post.category)}</p>
         <span className="gg-icon gg-icon-standard h-9 w-9 shrink-0">
           <BookOpen size={17} aria-hidden="true" />
         </span>

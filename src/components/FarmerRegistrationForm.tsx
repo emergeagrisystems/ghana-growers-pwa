@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import Link from "next/link";
 import { CheckCircle2, FileText, ImagePlus, Send } from "lucide-react";
@@ -24,7 +25,9 @@ function createSubmissionToken() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export function FarmerRegistrationForm() {
+export const FarmerRegistrationForm = withPublicSubmissionGate(FarmerRegistrationFormAvailable, "farmer-registration", "Farmer registration", false);
+
+function FarmerRegistrationFormAvailable() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -103,7 +106,7 @@ export function FarmerRegistrationForm() {
         ) : null}
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link href="/join" className="gg-button-primary">Back to Join the Network</Link>
-          <Link href="/farmer-hub" className="gg-button-secondary">Open GG FarmMate</Link>
+          <Link href="/farmer-hub" className="gg-button-secondary">Open Ask Mama G</Link>
         </div>
       </section>
     );

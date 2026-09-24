@@ -1,3 +1,5 @@
+import { isPublicSubmissionAvailable } from "./publicSubmissionAvailability";
+
 export type WhatsAppLeadSourceType =
   | "Farmer"
   | "Supplier"
@@ -15,7 +17,7 @@ export type WhatsAppLeadPayload = {
 };
 
 export function trackWhatsAppLead(payload: WhatsAppLeadPayload) {
-  if (typeof window === "undefined") {
+  if (!isPublicSubmissionAvailable("whatsapp-leads") || typeof window === "undefined") {
     return;
   }
 

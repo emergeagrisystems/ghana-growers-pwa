@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { legacyFarmToolGate } from "@/lib/farmmate/legacy-tool-access";
 import {
   checkAssistantUsageLimit,
   getAssistantClientId,
@@ -10,6 +11,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const unavailable = legacyFarmToolGate();
+  if (unavailable) return unavailable;
+
   const body = (await request.json().catch(() => ({}))) as {
     question?: string;
     messages?: FarmerAssistantMessage[];

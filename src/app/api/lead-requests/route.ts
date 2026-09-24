@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import { insertLeadRequest } from "@/lib/leadRequests";
 
 export const runtime = "nodejs";
@@ -13,6 +14,9 @@ function clientKey(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("lead-requests");
+  if (unavailable) return unavailable;
+
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const insert = await insertLeadRequest(payload, clientKey(request));
 

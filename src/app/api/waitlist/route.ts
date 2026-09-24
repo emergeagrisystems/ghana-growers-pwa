@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import { insertApplication, type ApplicationKind } from "@/lib/applications";
 
 export const runtime = "nodejs";
@@ -8,6 +9,9 @@ function clean(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("waitlist");
+  if (unavailable) return unavailable;
+
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const name = clean(body.name);
   const phone = clean(body.phone);

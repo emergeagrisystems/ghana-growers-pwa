@@ -1,11 +1,10 @@
-import { BriefcaseBusiness, Mail } from "lucide-react";
+import { BriefcaseBusiness } from "lucide-react";
 import { PageHero } from "@/components/PageHero";
-import { siteConfig } from "@/data/site";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Careers",
-  description: "Career opportunities and CV submissions at Ghana Growers.",
+  description: "Future career opportunities at Ghana Growers. Applications are currently unavailable.",
   path: "/about/careers"
 });
 
@@ -21,7 +20,7 @@ export default function CareersPage() {
       <PageHero
         eyebrow="Careers"
         title="Work with Ghana Growers"
-        description="Ghana Growers is building a practical agricultural network across Ghana. Interested candidates can send a CV and short note for future opportunities."
+        description="Ghana Growers is building a practical agricultural network across Ghana. Applications are currently unavailable."
       />
       <section className="bg-white py-16">
         <div className="mx-auto grid max-w-5xl gap-5 px-4 sm:px-6 lg:px-8">
@@ -34,10 +33,7 @@ export default function CareersPage() {
                   <p className="text-sm text-ink/65">Future opportunity</p>
                 </div>
               </div>
-              <a className="gg-button-primary gap-2" href={`mailto:${siteConfig.email}?subject=CV submission - ${encodeURIComponent(job)}`}>
-                <Mail size={17} aria-hidden="true" />
-                Send CV
-              </a>
+              <p className="text-sm text-ink/70">Applications currently unavailable</p>
             </div>
           ))}
         </div>

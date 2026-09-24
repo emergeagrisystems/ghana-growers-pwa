@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { legacyFarmToolGate } from "@/lib/farmmate/legacy-tool-access";
 import { cropHealthDisclaimer, mockAnalyzeCropImage, type CropHealthResult } from "@/lib/cropHealth";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -151,6 +152,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const unavailable = legacyFarmToolGate();
+  if (unavailable) return unavailable;
+
   return NextResponse.json({
     ok: true,
     apiKeyConfigured: Boolean(process.env.CROP_HEALTH_API_KEY),
@@ -161,6 +165,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const unavailable = legacyFarmToolGate();
+  if (unavailable) return unavailable;
+
   if (!checkUsage(request)) {
     return NextResponse.json(
       { error: "Daily crop health check limit reached. Please try again tomorrow or contact Ghana Growers for support." },

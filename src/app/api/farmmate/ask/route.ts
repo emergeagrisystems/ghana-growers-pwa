@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
+import { mamaGPublicText } from "@/lib/farmmate/public-name";
+import { farmMateRequestKey, replayFarmMateRequest } from "@/lib/farmmate/request-replay";
+
+export const maxDuration = 60;
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput, type FarmMateAskApiInput } from "@/lib/farmmate/ai";
 import { buildFarmMateResponse, type FollowUpQuestion } from "@/lib/farmmate/decision-engine";
 import {
@@ -386,6 +391,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "invalid_device_id", fallback: true }, { status: 400 });
   }
 
+  const step = payload.isFollowUp ? JSON.stringify(payload.followUpAnswer) : "start";
+  return replayFarmMateRequest(
+    farmMateRequestKey(anonymousUserHash, "ask_farmmate", `${payload.consultationId}:${step}`),
+    farmMateRequestKey(anonymousUserHash, "ask_farmmate", "active"),
+    () => processConsultation(payload, anonymousUserHash)
+  );
+}
+
+async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHash: string) {
+
+  const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(payload.originalQuestion);
+  if (chemicalSafetyAnswer) {
+    return NextResponse.json({ ok: true, kind: "final", answer: chemicalSafetyAnswer, usageRecorded: false });
+  }
+
   const brain = authoritativeBrain(payload);
   const pendingFollowUp = nextFollowUpQuestion(payload, brain);
 
@@ -402,7 +422,7 @@ export async function POST(request: Request) {
           ok: false,
           reason: "consultation_tracking_unavailable",
           fallback: true,
-          message: "FarmMate guided follow-ups are temporarily unavailable. Please try again shortly."
+          message: "Mama G guided follow-ups are temporarily unavailable. Please try again shortly."
         },
         { status: 503 }
       );
@@ -422,7 +442,7 @@ export async function POST(request: Request) {
           reason: creditDecision.reason,
           fallback: true,
           credits: creditDecision,
-          message: askFarmMateCreditMessage(creditDecision)
+          message: mamaGPublicText(askFarmMateCreditMessage(creditDecision))
         },
         { status: usageUnavailable ? 503 : 429 }
       );
@@ -430,8 +450,17 @@ export async function POST(request: Request) {
 
     const recordResult = await recordFarmMateUsageForDevice({
       anonymousDeviceId: payload.anonymousDeviceId,
-      tool: "ask_farmmate"
+      tool: "ask_farmmate",
+      requestId: payload.consultationId
     });
+
+    if (recordResult.replayed) {
+      return NextResponse.json({
+        ok: false,
+        reason: "request_already_processed",
+        message: "This consultation was already started. Its answer cannot be recovered here; no new model request or credit has been used."
+      }, { status: 409 });
+    }
 
     if (!recordResult.recorded || !recordResult.eventId) {
       return NextResponse.json(
@@ -441,7 +470,7 @@ export async function POST(request: Request) {
           fallback: true,
           credits: await creditStatus(payload.anonymousDeviceId),
           usageRecorded: false,
-          message: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+          message: "Mama G AI is temporarily limited, but you can still use the local guidance."
         },
         { status: 503 }
       );
@@ -480,7 +509,7 @@ export async function POST(request: Request) {
         consultationId: payload.consultationId,
         credits,
         usageRecorded: true,
-        message: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+        message: "Mama G AI is temporarily limited, but you can still use the local guidance."
       });
     }
 
@@ -531,7 +560,7 @@ export async function POST(request: Request) {
           ok: false,
           reason: "consultation_tracking_unavailable",
           fallback: true,
-          message: "FarmMate could not safely continue this consultation. Please try again shortly."
+          message: "Mama G could not safely continue this consultation. Please try again shortly."
         },
         { status: 503 }
       );
@@ -574,7 +603,7 @@ export async function POST(request: Request) {
       consultationId: payload.consultationId,
       credits,
       usageRecorded: false,
-      message: "FarmMate recovered this consultation. Use the guidance below."
+      message: "Mama G recovered this consultation. Use the guidance below."
     });
   }
 
@@ -587,7 +616,7 @@ export async function POST(request: Request) {
       consultationId: payload.consultationId,
       credits,
       usageRecorded: false,
-      message: "FarmMate AI is temporarily limited, but you can still use the local guidance."
+      message: "Mama G AI is temporarily limited, but you can still use the local guidance."
     });
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isolatedSupabaseUrl } from "@/lib/supabase/isolation";
 import { isControlledPrelaunchRoute, isInternalPreviewRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
 import { isHqApprovalCountsPrelaunchRoute } from "@/lib/prelaunchAccess";
 import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
@@ -42,6 +43,13 @@ function gatedResponse(request: NextRequest) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // A first automatic branch build may precede environment configuration.
+  // Never expose inherited Production credentials or API paths in that interval.
+  if (process.env.VERCEL_ENV === "preview" && (!isolatedSupabaseUrl() || process.env.RC1_STAGING_READY !== "true")) {
+    return new NextResponse("RC1 Preview is unavailable until staging isolation is configured.", {
+      status: 503, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" }
+    });
+  }
 
   // Internal previews stay private independently of the public launch mode.
   if (isInternalPreviewRoute(pathname)) {

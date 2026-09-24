@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import { validateContactEnquiry } from "@/lib/contactEnquiryContracts";
 import {
   consumeContactEnquiryRateLimit,
@@ -24,6 +25,9 @@ function clientKey(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("contact-enquiries");
+  if (unavailable) return unavailable;
+
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
   if (typeof body.companyWebsite === "string" && body.companyWebsite.trim()) {

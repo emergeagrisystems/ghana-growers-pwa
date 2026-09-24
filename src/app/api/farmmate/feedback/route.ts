@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import {
   farmMatePilotFeedbackSuccessMessage,
   farmMatePilotFeedbackUnavailableMessage,
@@ -10,6 +11,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("farmmate-feedback");
+  if (unavailable) return unavailable;
+
   const payload = await request.json().catch(() => null);
   const validation = sanitizeFarmMatePilotFeedback(payload);
 

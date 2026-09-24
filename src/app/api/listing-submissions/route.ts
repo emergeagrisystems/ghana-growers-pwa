@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import { createListingSubmission } from "@/lib/publicSubmissions";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("listing-submissions");
+  if (unavailable) return unavailable;
+
   const formData = await request.formData().catch(() => null);
 
   if (!formData) {

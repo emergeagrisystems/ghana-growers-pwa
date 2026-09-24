@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import {
   appendBuyerRegistrationToSheet,
   sendBuyerRegistrationEmail,
@@ -9,6 +10,9 @@ import { insertApplication } from "@/lib/applications";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("buyer-registration");
+  if (unavailable) return unavailable;
+
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const validation = validateBuyerRegistration(body);
 

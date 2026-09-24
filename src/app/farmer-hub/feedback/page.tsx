@@ -4,8 +4,8 @@ import { FarmMatePilotFeedbackForm } from "@/components/FarmMatePilotFeedbackFor
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
-  title: "GG FarmMate Feedback",
-  description: "Share pilot feedback to help Ghana Growers improve GG FarmMate before wider launch.",
+  title: "Ask Mama G Feedback",
+  description: "Share pilot feedback to help Ghana Growers improve Ask Mama G before wider launch.",
   path: "/farmer-hub/feedback"
 });
 
@@ -16,15 +16,15 @@ export default function FarmMateFeedbackPage() {
         <div>
           <Link href="/farmer-hub" className="inline-flex items-center gap-2 text-sm font-black text-leaf-700">
             <ArrowLeft size={16} aria-hidden="true" />
-            Back to GG FarmMate
+            Back to Ask Mama G
           </Link>
           <p className="mt-6 inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-leaf-700 shadow-sm">
             <MessageSquareText size={16} aria-hidden="true" />
             Pilot feedback
           </p>
-          <h1 className="mt-4 text-3xl font-black leading-tight text-ink sm:text-5xl">Help improve GG FarmMate</h1>
+          <h1 className="mt-4 text-3xl font-black leading-tight text-ink sm:text-5xl">Help improve Ask Mama G</h1>
           <p className="mt-4 text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
-            Tell us what you tried, what worked, and what should be clearer before GG FarmMate reaches more farmers.
+            Tell us what you tried, what worked, and what should be clearer before Ask Mama G reaches more farmers.
           </p>
           <div className="mt-6 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm font-semibold leading-6 text-ink/62 shadow-sm">
             Please do not share phone numbers or exact farm locations here. This pilot form is only for product feedback.

@@ -22,7 +22,7 @@ import {
 type ToolKey = "ask" | "doctor" | "calendar" | "planting";
 
 const tools = [
-  { key: "ask" as const, title: "Ask FarmMate", icon: Bot, description: "Ask any farming question.", action: "Ask" },
+  { key: "ask" as const, title: "Ask Mama G", icon: Bot, description: "Ask any farming question.", action: "Ask" },
   { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Upload a crop photo for guided checks.", action: "Upload" },
   { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "Plan your season.", action: "View Calendar" },
   { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Find the best time to plant.", action: "Start" }
@@ -109,7 +109,7 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
           onClick={() => onAskFarmMateAboutThis(cropCalendarFarmMateQuestion(selectedGuide.crop, selectedRegion))}
           className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
         >
-          Ask FarmMate about this
+          Ask Mama G about this
         </button>
       </section>
     </article>
@@ -171,7 +171,7 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAb
             onClick={() => onAskFarmMateAboutThis(plantingAdvisorFarmMateQuestion(selectedGuidance.crop, selectedRegion))}
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
           >
-            Ask FarmMate about this
+            Ask Mama G about this
           </button>
         </section>
       ) : null}
@@ -287,7 +287,7 @@ export function FarmTools() {
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
             <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
               <div>
-                <p className="gg-eyebrow text-leaf-700">GG FarmMate</p>
+                <p className="gg-eyebrow text-leaf-700">Ask Mama G</p>
                 <h2 className="text-xl font-black text-ink">{activeToolMeta?.title}</h2>
               </div>
               <button

@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { MessageCircle } from "lucide-react";
 import { WHATSAPP_NUMBER } from "@/data/site";
@@ -14,7 +15,9 @@ type WhatsAppButtonProps = {
   phoneNumber?: string;
 };
 
-export function WhatsAppButton({
+export const WhatsAppButton = withPublicSubmissionGate(WhatsAppButtonAvailable, "whatsapp-leads", "WhatsApp contact", true);
+
+function WhatsAppButtonAvailable({
   message,
   label = "Contact on WhatsApp",
   className = "",

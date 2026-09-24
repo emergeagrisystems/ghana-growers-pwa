@@ -1,4 +1,5 @@
 import { supabaseServerAuthHeaders } from "./serverAuthHeaders";
+import { isolatedSupabaseUrl } from "./isolation";
 
 type InsertResponse<T> = {
   data?: T;
@@ -55,7 +56,7 @@ type RpcResponse<T> = {
 
 function supabaseConfig() {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    url: isolatedSupabaseUrl(),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
   };
 }
@@ -65,7 +66,7 @@ export function hasSupabaseAdminConfig() {
   return Boolean(url && serviceRoleKey);
 }
 
-export async function insertSupabaseRecord<T extends Record<string, unknown>>(table: string, payload: T): Promise<InsertResponse<T>> {
+export async function insertSupabaseRecord<T extends Record<string, unknown>>(table: string, payload: T, options: SupabaseRequestOptions = {}): Promise<InsertResponse<T>> {
   const { url, serviceRoleKey } = supabaseConfig();
 
   if (!url || !serviceRoleKey) {
@@ -82,7 +83,8 @@ export async function insertSupabaseRecord<T extends Record<string, unknown>>(ta
       "Content-Type": "application/json",
       Prefer: "return=representation"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal: options.signal
   });
 
   const result = (await response.json().catch(() => null)) as T[] | { message?: string; details?: string; hint?: string } | null;
@@ -99,7 +101,7 @@ export async function insertSupabaseRecord<T extends Record<string, unknown>>(ta
   return { status: response.status, data: Array.isArray(result) ? result[0] : undefined };
 }
 
-export async function selectSupabaseRecords<T extends Record<string, unknown>>(table: string, query: string): Promise<SelectResponse<T>> {
+export async function selectSupabaseRecords<T extends Record<string, unknown>>(table: string, query: string, options: SupabaseRequestOptions = {}): Promise<SelectResponse<T>> {
   const { url, serviceRoleKey } = supabaseConfig();
 
   if (!url || !serviceRoleKey) {
@@ -115,7 +117,8 @@ export async function selectSupabaseRecords<T extends Record<string, unknown>>(t
       ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": "application/json"
     },
-    cache: "no-store"
+    cache: "no-store",
+    signal: options.signal
   });
 
   const result = (await response.json().catch(() => null)) as T[] | { message?: string; details?: string; hint?: string } | null;
@@ -174,7 +177,8 @@ export async function countSupabaseRecords(
 export async function updateSupabaseRecord<T extends Record<string, unknown>>(
   table: string,
   filter: string,
-  payload: T
+  payload: T,
+  options: SupabaseRequestOptions = {}
 ): Promise<InsertResponse<T>> {
   const { url, serviceRoleKey } = supabaseConfig();
 
@@ -192,7 +196,8 @@ export async function updateSupabaseRecord<T extends Record<string, unknown>>(
       "Content-Type": "application/json",
       Prefer: "return=representation"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    signal: options.signal
   });
 
   const result = (await response.json().catch(() => null)) as T[] | { message?: string; details?: string; hint?: string } | null;

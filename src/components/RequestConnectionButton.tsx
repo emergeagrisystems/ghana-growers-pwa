@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -32,7 +33,9 @@ const successMessage = "Thank you. Ghana Growers has received your request and w
 const successTitle = "Request received";
 const successBody = "Ghana Growers will review it before connecting anyone.";
 
-export function RequestConnectionButton({
+export const RequestConnectionButton = withPublicSubmissionGate(RequestConnectionButtonAvailable, "lead-requests", "Connection requests", true);
+
+function RequestConnectionButtonAvailable({
   sourceType,
   sourceId,
   sourceName,

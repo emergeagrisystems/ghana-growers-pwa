@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import { createBuyerRequestSubmission } from "@/lib/publicSubmissions";
 
 export const runtime = "nodejs";
@@ -12,6 +13,9 @@ function clientKey(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("buyer-request-submissions");
+  if (unavailable) return unavailable;
+
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const result = await createBuyerRequestSubmission(body, clientKey(request));
 

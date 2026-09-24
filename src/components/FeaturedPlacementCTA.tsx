@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { FormEvent, useState } from "react";
 import { Star, X } from "lucide-react";
@@ -12,7 +13,9 @@ type FeaturedPlacementCTAProps = {
 
 const successMessage = "Thank you. Ghana Growers has received your featured placement enquiry and will follow up with you.";
 
-export function FeaturedPlacementCTA({ defaultRole = "Farmer", defaultProfileName = "", className = "" }: FeaturedPlacementCTAProps) {
+export const FeaturedPlacementCTA = withPublicSubmissionGate(FeaturedPlacementCTAAvailable, "featured-enquiries", "Featured placement enquiries", true);
+
+function FeaturedPlacementCTAAvailable({ defaultRole = "Farmer", defaultProfileName = "", className = "" }: FeaturedPlacementCTAProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");

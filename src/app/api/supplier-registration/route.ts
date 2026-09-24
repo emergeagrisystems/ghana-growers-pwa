@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicSubmissionGate } from "@/lib/publicSubmissionAvailability";
 import {
   cleanupPrivateApplicationMedia,
   createSupplierApplication,
@@ -30,6 +31,9 @@ function supplierSubmissionError(message: string, status = 500) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = publicSubmissionGate("supplier-registration");
+  if (unavailable) return unavailable;
+
   const contentType = request.headers.get("content-type") ?? "";
   const body = contentType.includes("multipart/form-data")
     ? await formDataToRecord(await request.formData().catch(() => new FormData()))

@@ -4,6 +4,7 @@ node_modules
 out
 supabase/.temp/
 *.tsbuildinfo
+.rc1-local/
 .env*
 !.env.example
 npm-debug.log*

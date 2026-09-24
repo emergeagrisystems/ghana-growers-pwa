@@ -1,4 +1,6 @@
+import { isolatedSupabaseUrl } from "@/lib/supabase/isolation";
 import { NextResponse } from "next/server";
+import { legacyFarmToolGate } from "@/lib/farmmate/legacy-tool-access";
 import { insertSupabaseRecord, uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 import { supabaseServerAuthHeaders } from "@/lib/supabase/serverAuthHeaders";
 import type { CropHealthResult } from "@/lib/cropHealth";
@@ -22,7 +24,7 @@ type CropHealthReportRow = {
 
 function supabaseConfig() {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    url: isolatedSupabaseUrl(),
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
   };
 }
@@ -83,6 +85,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const unavailable = legacyFarmToolGate();
+  if (unavailable) return unavailable;
+
   const sessionId = new URL(request.url).searchParams.get("sessionId")?.trim();
 
   if (!sessionId) {
@@ -99,6 +104,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unavailable = legacyFarmToolGate();
+  if (unavailable) return unavailable;
+
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("photo");
   const sessionId = formData?.get("sessionId");

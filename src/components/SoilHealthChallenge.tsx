@@ -292,7 +292,7 @@ export function SoilHealthChallenge() {
               </button>
               <Link href={farmMateHref(activeTask.farmMatePrompt)} className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-leaf-900/15 bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
                 <Bot size={18} aria-hidden="true" />
-                Ask FarmMate
+                Ask Mama G
               </Link>
             </div>
           </main>
@@ -310,7 +310,7 @@ export function SoilHealthChallenge() {
             </button>
             <Link href={farmMateHref(activeTask.farmMatePrompt)} className="focus-ring inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md border border-leaf-900/15 bg-white px-4 py-3 text-sm font-black text-ink transition hover:bg-leaf-50">
               <Bot size={18} aria-hidden="true" />
-              Ask FarmMate
+              Ask Mama G
             </Link>
           </div>
         </div>

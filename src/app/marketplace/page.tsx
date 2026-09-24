@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { MarketplaceListings } from "@/components/MarketplaceListings";
+import { MarketplaceUnavailable } from "@/components/MarketplaceUnavailable";
 import { Beef, Boxes, Carrot, PackageCheck } from "lucide-react";
 import { createPageMetadata } from "@/lib/seo";
-import { getFarmersData, getMarketplaceListingsData, getSuppliersData } from "@/lib/supabase/publicData";
+import { getFarmersData, getMarketplaceListingsResult, getSuppliersData } from "@/lib/supabase/publicData";
 import { publicMarketplaceListings } from "@/lib/marketplace/publicListings";
 import type { PublicFarmerProfile, PublicSupplierProfile } from "@/types";
 
@@ -58,13 +59,15 @@ function uniqueProfiles<T extends PublicFarmerProfile | PublicSupplierProfile>(p
 }
 
 export default async function MarketplacePage() {
-  const [products, farmerResult, supplierResult] = await Promise.all([
-    getMarketplaceListingsData(),
+  const [listingResult, farmerResult, supplierResult] = await Promise.all([
+    getMarketplaceListingsResult(),
     getFarmersData(),
     getSuppliersData()
   ]);
   const farmers = farmerResult.status === "ready" ? farmerResult.data : [];
   const suppliers = supplierResult.status === "ready" ? supplierResult.data : [];
+  const products = listingResult.status === "ready" ? listingResult.data : [];
+  const unavailable = listingResult.status === "unavailable" || farmerResult.status === "unavailable" || supplierResult.status === "unavailable";
   const publicListings = publicMarketplaceListings(products, farmers, suppliers);
   const publicProducts = publicListings.map((listing) => listing.product);
   const publicFarmers = uniqueProfiles(
@@ -133,7 +136,7 @@ export default async function MarketplacePage() {
         </div>
       </section>
 
-      <MarketplaceListings products={publicProducts} farmers={publicFarmers} suppliers={publicSuppliers} />
+      {unavailable ? <MarketplaceUnavailable /> : <MarketplaceListings products={publicProducts} farmers={publicFarmers} suppliers={publicSuppliers} />}
 
       <section className="bg-white py-8 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

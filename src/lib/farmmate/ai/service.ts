@@ -1,5 +1,6 @@
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
+import { boundedJsonRequest, FARM_MATE_TEXT_TIMEOUT_MS, FarmMateRequestTimeout } from "../request-limits";
 import { findFertilizerGuidance } from "../fertilizer-specialist";
 import { findPlantingAdvisorGuidance } from "../planting-advisor-specialist";
 import { findHarvestPostHarvestGuidance } from "../harvest-postharvest-specialist";
@@ -274,7 +275,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
   }
 
   try {
-    const response = await fetch(OPENAI_RESPONSES_URL, {
+    const { response, data } = await boundedJsonRequest<OpenAIResponsesApiResult>(OPENAI_RESPONSES_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -286,13 +287,12 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
         input: buildFarmMateVoiceLayerInput(input),
         max_output_tokens: 420
       })
-    });
+    }, FARM_MATE_TEXT_TIMEOUT_MS);
 
     if (!response.ok) {
       return { ok: false, reason: "openai_request_error", fallback: true };
     }
 
-    const data = (await response.json()) as OpenAIResponsesApiResult;
     const answer = extractOutputText(data);
 
     if (!answer) {
@@ -304,7 +304,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
     }
 
     return { ok: true, answer };
-  } catch {
-    return { ok: false, reason: "openai_request_error", fallback: true };
+  } catch (error) {
+    return { ok: false, reason: error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error", fallback: true };
   }
 }

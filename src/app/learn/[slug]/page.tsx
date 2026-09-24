@@ -6,6 +6,7 @@ import { blogPosts, getBlogPost } from "@/data/blog";
 import { learnImageForPost } from "@/lib/learnImages";
 import { createPageMetadata } from "@/lib/seo";
 import type { BlogPost } from "@/types";
+import { displayLearnCategory } from "@/lib/learnDisplay";
 
 type ArticlePageProps = {
   params: {
@@ -64,7 +65,7 @@ function actionStepIllustrationType(post: BlogPost, step: string, index: number)
   if (text.includes("manure")) return "manure";
   if (text.includes("rotation")) return "rotation";
   if (text.includes("soil") || text.includes("compost")) return index % 2 === 0 ? "compost" : "soil-cover";
-  if (text.includes("farmmate") || text.includes("photo")) return "farmmate";
+  if (text.includes("farmmate") || text.includes("mama g") || text.includes("photo")) return "farmmate";
 
   return getLearnIllustrationType(post);
 }
@@ -109,7 +110,7 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
           </ButtonLink>
           <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_14rem] lg:items-end">
             <div>
-              <p className="gg-eyebrow">{post.category}</p>
+              <p className="gg-eyebrow">{displayLearnCategory(post.category)}</p>
               <h1 className="mt-3 max-w-4xl text-3xl font-black leading-tight text-ink sm:text-4xl">{post.title}</h1>
               <p className="mt-4 max-w-3xl text-base font-semibold leading-7 text-ink/70">{post.excerpt}</p>
               <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-black text-ink/58">
@@ -225,14 +226,14 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
           <section className="rounded-md border border-leaf-900/10 bg-leaf-700 p-5 text-white shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">Ask FarmMate</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-500">Ask Mama G</p>
                 <h2 className="mt-2 text-2xl font-black">Need a next step?</h2>
                 <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/76">{farmMatePrompt}</p>
               </div>
               <ButtonLink href={farmMateHref(farmMatePrompt)} variant="secondary">
                 <span className="inline-flex items-center gap-2">
                   <Bot size={17} aria-hidden="true" />
-                  Ask FarmMate
+                  Ask Mama G
                 </span>
               </ButtonLink>
             </div>
@@ -269,7 +270,7 @@ export default function LearnArticlePage({ params }: ArticlePageProps) {
                   className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"
                 >
                   <div className="flex flex-wrap gap-2 text-xs font-black text-ink/55">
-                    <span className="rounded-md bg-leaf-50 px-2.5 py-1">{lesson.category}</span>
+                    <span className="rounded-md bg-leaf-50 px-2.5 py-1">{displayLearnCategory(lesson.category)}</span>
                     <span className="rounded-md bg-leaf-50 px-2.5 py-1">{lesson.readTime}</span>
                   </div>
                   <h3 className="mt-2 text-lg font-black leading-snug text-ink">{lesson.title}</h3>

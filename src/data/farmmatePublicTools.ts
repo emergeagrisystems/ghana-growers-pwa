@@ -31,7 +31,7 @@ const allHomepageFarmMateTools: PublicFarmMateTool[] = [
     isPubliclyAvailable: publicFeatureAvailability.marketPriceCheck
   },
   {
-    title: "Ask FarmMate",
+    title: "Ask Mama G",
     description: "Ask practical farming questions anytime.",
     icon: Bot,
     isPubliclyAvailable: true

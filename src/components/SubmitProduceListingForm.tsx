@@ -1,4 +1,5 @@
 "use client";
+import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { ArrowLeft, ArrowRight, CheckCircle2, ImagePlus, Send, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
@@ -224,7 +225,9 @@ const initialState: ListingFormState = {
   companyWebsite: ""
 };
 
-export function SubmitProduceListingForm() {
+export const SubmitProduceListingForm = withPublicSubmissionGate(SubmitProduceListingFormAvailable, "listing-submissions", "Listing submissions", false);
+
+function SubmitProduceListingFormAvailable() {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<ListingFormState>(initialState);
   const [isDraftReady, setIsDraftReady] = useState(false);
