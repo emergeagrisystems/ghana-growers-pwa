@@ -30,7 +30,7 @@ export default async function HomePage(){
       <div className={s.heroCopy}>
         <p className={s.eyebrow}>Fresh produce · Farm inputs · Smart farming</p>
         <h1 id="hero-title">Buy. <span>Sell.</span> Connect<br/>Grow smarter.</h1>
-        
+
         <div className={s.actions}><Link className={s.wineButton} href="/farmer-hub">Ask Mama G</Link><Link className={s.outlineButton} href="/marketplace">Browse Market</Link></div>
       </div>
       <form action="/marketplace" className={s.search} role="search"><label className="sr-only" htmlFor="home-search">Search produce, inputs or tools</label><input id="home-search" name="search" placeholder="Search produce, inputs or tools"/><button className={s.greenButton}>Search</button></form>

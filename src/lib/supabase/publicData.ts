@@ -3,11 +3,9 @@ import { isolatedSupabaseUrl } from "./isolation";
 
 import { buyerRequests as fallbackBuyerRequests, buyerRequestsMeta, type BuyerRequest } from "@/data/buyerRequests";
 import type { PublicBuyerRequest } from "@/types/publicBuyerRequest";
-import { farmerDirectory as fallbackFarmers } from "@/data/farmers";
 import { marketPriceMeta, marketPrices as fallbackMarketPrices, type MarketPrice } from "@/data/marketPrices";
-import { products as fallbackProducts } from "@/data/products";
 import { featuredSort, isFeaturedActive } from "@/lib/featured";
-import { isDemoProfileOrigin, isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
+import { isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
 import { cleanProductList, productDisplayName, productImageForListing, supplierServiceImageForName } from "@/lib/productDisplay";
 import { supabaseServerAuthHeaders } from "@/lib/supabase/serverAuthHeaders";
 import type { Product, PublicFarmerProfile, PublicSupplierProfile, SuccessStory, SupplierProfile, TrustProfile, TrustStatus } from "@/types";

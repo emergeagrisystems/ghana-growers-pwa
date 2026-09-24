@@ -28,6 +28,8 @@ export type MarketplaceDisplayListing = {
 };
 
 const demoSourcePattern = /(demo|seed|mock|sample|placeholder)/i;
+const explicitSyntheticSourcePattern = /^(synthetic|preview[-_]fixture|test[-_]fixture)$/i;
+const previewFixtureIdPattern = /^p09-preview(?:[-_:]|$)/i;
 const knownDemoSellerPattern = /\bfarmer\s+j\b/i;
 const inactiveStatusPattern = /(archive|inactive|draft|new|pending|review|reject|unpublish|disabled|deleted)/i;
 const publicStatusPattern = /^(active|published|listed|approved|live)$/i;
@@ -193,7 +195,10 @@ function isMarketplaceSupplierPublic(supplier: PublicSupplierProfile) {
 export function isDemoMarketplaceListing(product: Product, seller?: MarketplaceSeller) {
   const searchable = [product.id, product.ownerName, product.seller, product.farmerSlug, product.recordSource].filter(Boolean).join(" ");
 
-  return demoSourcePattern.test(searchable) || knownDemoSellerPattern.test(searchable);
+  return demoSourcePattern.test(searchable)
+    || knownDemoSellerPattern.test(searchable)
+    || explicitSyntheticSourcePattern.test(product.recordSource?.trim() ?? "")
+    || previewFixtureIdPattern.test(product.id);
 }
 
 function isPublishedPublicSubmissionListing(product: Product) {

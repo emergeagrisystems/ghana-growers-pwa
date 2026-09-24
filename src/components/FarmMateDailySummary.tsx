@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFarmMateDailySummary, type FarmMateDailySummary as FarmMateDailySummaryData } from "@/lib/farmmate/daily-summary";
+import { farmMateDailySummaries, getFarmMateDailySummary, type FarmMateDailySummary as FarmMateDailySummaryData } from "@/lib/farmmate/daily-summary";
 
 export function FarmMateDailySummary({ weatherNote }: { weatherNote?: string }) {
-  const [summary, setSummary] = useState<FarmMateDailySummaryData>(() => getFarmMateDailySummary());
+  // Static pages can be built on a different date/timezone from the visitor.
+  // Keep hydration identical; apply the visitor's daily selection after mount.
+  const [summary, setSummary] = useState<FarmMateDailySummaryData>(farmMateDailySummaries[0]);
 
   useEffect(() => {
     setSummary(getFarmMateDailySummary(new Date()));
