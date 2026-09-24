@@ -34,6 +34,11 @@ export function FarmerProfileImage({
     : isPortrait
       ? "relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-md bg-earth-50 lg:max-h-[34rem]"
       : "relative h-72 w-full overflow-hidden rounded-md bg-earth-50 sm:h-80 lg:h-[340px]";
+  const imageClass = variant === "card"
+    ? `object-cover ${landscapePositionClass}`
+    : isPortrait
+      ? "object-contain object-center"
+      : `object-cover ${landscapePositionClass}`;
 
   function detectOrientation(event: SyntheticEvent<HTMLImageElement>) {
     const { naturalHeight, naturalWidth } = event.currentTarget;
@@ -51,7 +56,7 @@ export function FarmerProfileImage({
         fallbackKind={fallbackKind}
         sizes={sizes}
         onLoad={detectOrientation}
-        className={isPortrait ? "object-contain object-center" : `object-cover ${landscapePositionClass}`}
+        className={imageClass}
       />
     </div>
   );
