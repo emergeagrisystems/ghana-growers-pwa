@@ -8426,6 +8426,19 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "RC1 provider fallback keeps the same-credit retry action visible, including a rapid retry response",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      const errorState = component.slice(component.indexOf("const hasConsultationError ="), component.indexOf("const shouldShowAnswerFeedback ="));
+      const reservationFailure = component.slice(component.indexOf("const canRetryContinuation ="), component.indexOf("setCreditReason(reason);"));
+
+      assert.equal(errorState.includes("pendingContinuationRetry !== null"), true);
+      assert.equal(component.includes("Retry this request"), true);
+      assert.equal(reservationFailure.includes('reason === "rapid_submission"'), true);
+      assert.equal(reservationFailure.includes('reason === "in_progress"'), true);
+    }
+  },
+  {
     name: "Sprint 41 documentation explains consultation credits buttons and final-only feedback",
     run: () => {
       const launchQa = repoFile("docs/FARMMATE_LAUNCH_QA.md").toLowerCase();

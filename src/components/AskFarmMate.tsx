@@ -671,7 +671,8 @@ export function AskFarmMate({
         const canRetryContinuation =
           (isFollowUp && Boolean(followUpAnswer) &&
             (reason === "usage_tracking_unavailable" || reason === "consultation_tracking_unavailable")) ||
-          (!isFollowUp && (data?.retryAvailable === true || reason === "usage_tracking_unavailable" || reason === "request_outcome_unknown"));
+          (!isFollowUp && (data?.retryAvailable === true || reason === "usage_tracking_unavailable" ||
+            reason === "request_outcome_unknown" || reason === "rapid_submission" || reason === "in_progress"));
         setCreditReason(reason);
         setConsultationError(
           reason === "usage_tracking_unavailable"
@@ -1131,7 +1132,8 @@ export function AskFarmMate({
     shouldShowLocalGuidance ? recommendationCards : []
   );
   const hasConsultationError =
-    Boolean(consultationError) && (consultation?.status === "error" || consultation?.status === "exhausted");
+    Boolean(consultationError) &&
+    (consultation?.status === "error" || consultation?.status === "exhausted" || pendingContinuationRetry !== null);
   const shouldShowAnswerFeedback =
     shouldShowFarmMateFinalControls({
       consultation,
