@@ -20,6 +20,7 @@ import {
 import { resolveAdminOptionalSource } from "../src/lib/adminOptionalSources";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, generateFarmMateNaturalAnswer, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
+import { boundedJsonRequest, FarmMateRequestTimeout } from "../src/lib/farmmate/request-limits";
 import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
@@ -5800,6 +5801,35 @@ const tests: TestCase[] = [
       assert.equal(decision.allowed, false);
       assert.equal(decision.reason, "credits_exhausted");
       assert.equal(decision.remaining, 0);
+    }
+  },
+  {
+    name: "rapid Ask FarmMate submission is blocked without spending another credit",
+    run: () => {
+      const now = new Date("2026-07-09T12:00:00.000Z");
+      const recent = [usageEvent("ask_farmmate", new Date(now.getTime() - 1_000).toISOString())];
+      const decision = getFarmMateCreditDecision("ask_farmmate", recent, now);
+
+      assert.equal(decision.allowed, false);
+      assert.equal(decision.reason, "rapid_submission");
+      assert.equal(decision.remaining, 4);
+      assert.equal(getFarmMateCreditDecision("ask_farmmate", recent, new Date(now.getTime() + 3_500)).allowed, true);
+    }
+  },
+  {
+    name: "forced provider stall becomes a bounded timeout",
+    run: async () => {
+      let signal: AbortSignal | undefined;
+      const stalledFetch = ((_url: RequestInfo | URL, init?: RequestInit) => {
+        signal = init?.signal ?? undefined;
+        return new Promise<Response>(() => undefined);
+      }) as typeof fetch;
+
+      await assert.rejects(
+        boundedJsonRequest("https://example.invalid/timeout-simulation", { method: "POST" }, 10, stalledFetch),
+        FarmMateRequestTimeout
+      );
+      assert.equal(signal?.aborted, true);
     }
   },
   {
