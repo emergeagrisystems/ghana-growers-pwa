@@ -6053,6 +6053,18 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "RC1 uncertain guided claim is checked before a bounded provider start",
+    run: () => {
+      const usageServer = repoFile("src/lib/farmmate/usage/server.ts");
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      assert.equal(usageServer.includes("A timed-out PATCH may still have committed"), true);
+      assert.equal(usageServer.indexOf("const replayQuery = [") > usageServer.indexOf("const result = await updateSupabaseRecord"), true);
+      assert.equal(route.indexOf("const attemptCount = await beginFarmMateAskGeneration") < route.indexOf("if (claim.replayed)"), true);
+      assert.equal(component.includes('reason === "consultation_tracking_unavailable"'), true);
+    }
+  },
+  {
     name: "successful OpenAI response records one usage event",
     run: () => {
       const now = new Date("2026-07-09T12:00:00.000Z");

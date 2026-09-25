@@ -669,7 +669,9 @@ export function AskFarmMate({
           clearRecoveredConsultation(nextConsultation.consultationId);
         }
         const canRetryContinuation =
-          !isFollowUp && (data?.retryAvailable === true || reason === "usage_tracking_unavailable" || reason === "request_outcome_unknown");
+          (isFollowUp && Boolean(followUpAnswer) &&
+            (reason === "usage_tracking_unavailable" || reason === "consultation_tracking_unavailable")) ||
+          (!isFollowUp && (data?.retryAvailable === true || reason === "usage_tracking_unavailable" || reason === "request_outcome_unknown"));
         setCreditReason(reason);
         setConsultationError(
           reason === "usage_tracking_unavailable"
@@ -677,7 +679,7 @@ export function AskFarmMate({
             : data?.message || askCreditFailureMessage(reason, data?.credits)
         );
         if (canRetryContinuation) {
-          setPendingContinuationRetry({ farmMateResponse, nextConsultation, isFollowUp: false });
+          setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer, isFollowUp });
           setConsultation({ ...nextConsultation, status: "error" });
         } else {
           setConsultation({

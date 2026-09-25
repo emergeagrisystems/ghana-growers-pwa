@@ -12,6 +12,7 @@ type FarmMateUsageEventRow = {
 
 const memoryEvents: Array<FarmMateUsageEventRow> = [];
 const USAGE_TIMEOUT_MS = 5_000;
+const CONTINUATION_TIMEOUT_MS = 8_000;
 
 type UsageStorage = "supabase" | "memory" | "none" | "unavailable";
 
@@ -173,38 +174,34 @@ async function rotateUsageEventId(anonymousUserHash: string, eventId: string, ne
       `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
       "tool=eq.ask_farmmate"
     ].join("&");
-    const result = await updateSupabaseRecord("farmmate_usage_events", filter, { id: nextEventId }, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
+    const result = await updateSupabaseRecord("farmmate_usage_events", filter, { id: nextEventId }, { signal: AbortSignal.timeout(CONTINUATION_TIMEOUT_MS) })
       .catch(() => ({ error: "Consultation update unavailable or timed out", status: 503, data: undefined }));
 
     if (!result.error && result.data?.id === nextEventId) {
       return { rotated: true as const, replayed: false as const, storage: "supabase" as const, eventId: nextEventId };
     }
 
-    if (!result.error) {
-      const replayQuery = [
-        `id=eq.${encodeURIComponent(nextEventId)}`,
-        `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
-        "tool=eq.ask_farmmate",
-        "select=id,anonymous_user_hash,tool,created_at",
-        "limit=1"
-      ].join("&");
-      const replayResult = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", replayQuery, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
-        .catch(() => ({ error: "Consultation replay unavailable or timed out", status: 503, data: undefined }));
+    // A timed-out PATCH may still have committed. Check the deterministic next
+    // ID before declaring failure, so a signed continuation can be resumed.
+    const replayQuery = [
+      `id=eq.${encodeURIComponent(nextEventId)}`,
+      `anonymous_user_hash=eq.${encodeURIComponent(anonymousUserHash)}`,
+      "tool=eq.ask_farmmate",
+      "select=id,anonymous_user_hash,tool,created_at",
+      "limit=1"
+    ].join("&");
+    const replayResult = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", replayQuery, { signal: AbortSignal.timeout(CONTINUATION_TIMEOUT_MS) })
+      .catch(() => ({ error: "Consultation replay unavailable or timed out", status: 503, data: undefined }));
 
-      if (!replayResult.error && replayResult.data?.some((row) => row.id === nextEventId)) {
-        return { rotated: true as const, replayed: true as const, storage: "supabase" as const, eventId: nextEventId };
-      }
-
-      if (!replayResult.error) {
-        return { rotated: false as const, storage: "supabase" as const };
-      }
-
-      warnUsage("FarmMate consultation replay could not be checked.", replayResult.error);
-
-      if (!canUseMemoryUsageFallback()) {
-        return { rotated: false as const, storage: "unavailable" as const };
-      }
+    if (!replayResult.error && replayResult.data?.some((row) => row.id === nextEventId)) {
+      return { rotated: true as const, replayed: true as const, storage: "supabase" as const, eventId: nextEventId };
     }
+
+    if (!result.error && !replayResult.error) {
+      return { rotated: false as const, storage: "supabase" as const };
+    }
+
+    if (replayResult.error) warnUsage("FarmMate consultation replay could not be checked.", replayResult.error);
 
     warnUsage("FarmMate consultation continuation could not be claimed.", result.error);
 

@@ -604,25 +604,20 @@ async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHa
     });
   }
 
-  if (claim.replayed) {
-    return NextResponse.json({
-      ok: false,
-      kind: "final",
-      fallback: true,
-      reason: "consultation_recovered",
-      consultationId: payload.consultationId,
-      credits,
-      usageRecorded: false,
-      message: "Mama G recovered this consultation. Use the guidance below."
-    });
-  }
-
   const attemptCount = await beginFarmMateAskGeneration({
     anonymousDeviceId: payload.anonymousDeviceId,
     consultationId: payload.consultationId,
     eventId: claim.eventId!
   });
   if (!attemptCount) {
+    if (claim.replayed) {
+      return NextResponse.json({
+        ok: false, kind: "final", fallback: true,
+        reason: "consultation_recovered", consultationId: payload.consultationId,
+        credits, usageRecorded: false,
+        message: "Mama G recovered this consultation. Use the guidance below."
+      });
+    }
     return NextResponse.json({
       ok: false, reason: "consultation_tracking_unavailable", fallback: true,
       consultationId: payload.consultationId, credits, usageRecorded: false,
