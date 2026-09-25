@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { isValidFarmMateConsultationId } from "@/lib/farmmate/consultation";
+import { reserveFarmMateAsk } from "@/lib/farmmate/usage/ask-recovery";
 import { checkFarmMateCreditsForDevice, getFarmMateCreditsForDevice, recordFarmMateUsageForDevice } from "@/lib/farmmate/usage/server";
 import type { FarmMateUsageTool } from "@/lib/farmmate/usage";
 
@@ -9,13 +11,13 @@ function isTool(value: unknown): value is FarmMateUsageTool {
 }
 
 async function parseRequest(request: Request) {
-  const body = (await request.json().catch(() => null)) as { anonymousDeviceId?: unknown; tool?: unknown; action?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { anonymousDeviceId?: unknown; tool?: unknown; action?: unknown; consultationId?: unknown; originalQuestion?: unknown } | null;
 
   if (!body || !isTool(body.tool)) {
     return null;
   }
 
-  return body as { anonymousDeviceId?: unknown; tool: FarmMateUsageTool; action?: "status" | "record" };
+  return body as { anonymousDeviceId?: unknown; tool: FarmMateUsageTool; action?: "status" | "record"; consultationId?: unknown; originalQuestion?: unknown };
 }
 
 export async function POST(request: Request) {
@@ -26,6 +28,27 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "record") {
+    if (body.tool === "ask_farmmate") {
+      if (!isValidFarmMateConsultationId(body.consultationId) ||
+        typeof body.originalQuestion !== "string" || !body.originalQuestion.trim() || body.originalQuestion.length > 500) {
+        return NextResponse.json({ ok: false, reason: "invalid_usage_request" }, { status: 400 });
+      }
+      const reservation = await reserveFarmMateAsk({
+        anonymousDeviceId: body.anonymousDeviceId,
+        consultationId: body.consultationId,
+        originalQuestion: body.originalQuestion,
+        guided: false,
+        completeImmediately: true
+      });
+      if (reservation.decision !== "reserved_new" && reservation.decision !== "reserved_retry" &&
+        reservation.decision !== "already_processed") {
+        return NextResponse.json({ ok: false, reason: reservation.decision }, {
+          status: reservation.decision === "usage_tracking_unavailable" ? 503 : 429
+        });
+      }
+      const credits = await getFarmMateCreditsForDevice({ anonymousDeviceId: body.anonymousDeviceId, tool: body.tool });
+      return NextResponse.json({ ok: true, credits, usageRecorded: reservation.newCredit === true });
+    }
     const decision = await checkFarmMateCreditsForDevice({
       anonymousDeviceId: body.anonymousDeviceId,
       tool: body.tool

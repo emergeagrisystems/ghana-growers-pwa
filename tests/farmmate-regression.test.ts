@@ -6001,10 +6001,53 @@ const tests: TestCase[] = [
       const component = repoFile("src/components/AskFarmMate.tsx");
       assert.equal(component.includes('setRetryCreditGate("used")'), true);
       assert.equal(component.includes('retryCreditGate !== null && !retryCreditAcknowledged'), true);
-      assert.equal(component.includes("Retrying or asking another AI question uses another credit"), true);
+      assert.equal(component.includes("same question has one recovery attempt without another credit"), true);
+      assert.equal(component.includes("A different question uses a new credit"), true);
       assert.equal(component.includes("!retryCreditAcknowledged && !chemicalSafetyAnswer"), true);
       assert.equal(component.includes("if (!chemicalSafetyAnswer) {"), true);
       assert.equal(component.includes("I understand and want to submit another Ask question."), true);
+    }
+  },
+  {
+    name: "RC1 durable Ask recovery is additive, atomic and server-only",
+    run: () => {
+      const migration = repoFile("supabase/migrations/20260925182739_rc1_farmmate_failed_attempt_recovery.sql");
+      const server = repoFile("src/lib/farmmate/usage/ask-recovery.ts");
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      assert.equal(migration.includes("pg_advisory_xact_lock"), true);
+      assert.equal(migration.includes("create unique index farmmate_ask_consultation_key_unique"), true);
+      assert.equal(migration.includes("ask_attempt_count between 0 and 2"), true);
+      assert.equal(migration.includes("'answer_unconfirmed'"), true);
+      assert.equal(migration.includes("from public, anon, authenticated"), true);
+      assert.equal(migration.includes("security invoker"), true);
+      assert.equal(/\b(drop|truncate|delete)\s+(table|from)\b/i.test(migration), false);
+      assert.equal(server.includes("createHmac"), true);
+      assert.equal(route.includes("reserveFarmMateAsk"), true);
+      assert.equal(route.includes("settleFarmMateAsk"), true);
+    }
+  },
+  {
+    name: "RC1 browser recovery stores only a digest and opaque consultation ID",
+    run: () => {
+      const recovery = repoFile("src/lib/farmmate/usage/recovery-client.ts");
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      assert.equal(recovery.includes('crypto.subtle.digest("SHA-256", bytes)'), true);
+      assert.equal(recovery.includes("JSON.stringify(attempts.slice(-5))"), true);
+      assert.equal(recovery.includes("originalQuestion"), false);
+      assert.equal(component.includes("recoverOrCreateConsultationId(trimmedQuestion)"), true);
+      assert.equal(component.includes("clearRecoveredConsultation(nextConsultation.consultationId)"), true);
+    }
+  },
+  {
+    name: "RC1 timeout diagnostic is confined to the staging branch Preview",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      const service = repoFile("src/lib/farmmate/ai/service.ts");
+      assert.equal(route.includes('process.env.VERCEL_ENV === "preview"'), true);
+      assert.equal(route.includes('process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1"'), true);
+      assert.equal(route.includes("https://ecluxmyxqofkbzcyurlf.supabase.co"), true);
+      assert.equal(service.includes("simulatedTimeout = options.forceRc1Timeout === true && rc1PreviewDiagnosticsEnabled()"), true);
+      assert.equal(service.includes("boundedJsonRequest<OpenAIResponsesApiResult>"), true);
     }
   },
   {
@@ -7963,7 +8006,7 @@ const tests: TestCase[] = [
       assert.equal(continuationBlock.includes("checkFarmMateCreditsForDevice"), false);
       assert.equal(continuationBlock.includes("recordFarmMateUsageForDevice"), false);
       assert.equal(continuationBlock.includes("claimFarmMateConsultationContinuation"), true);
-      assert.equal(route.indexOf("recordFarmMateUsageForDevice") < route.indexOf("kind: \"follow_up\""), true);
+      assert.equal(route.indexOf("reserveFarmMateAsk") < route.indexOf("kind: \"follow_up\""), true);
     }
   },
   {
@@ -8136,12 +8179,12 @@ const tests: TestCase[] = [
       assert.equal(route.includes('reason: "invalid_device_id"'), true);
       assert.equal(route.includes('reason: "invalid_consultation"'), true);
       assert.equal(route.includes('reason: "consultation_already_used"'), true);
-      assert.equal(route.indexOf("claimFarmMateConsultationContinuation") < route.lastIndexOf("generateFarmMateNaturalAnswer"), true);
+      assert.equal(route.indexOf("claimFarmMateConsultationContinuation") < route.lastIndexOf("answerAndSettle"), true);
       assert.equal(usageServer.includes('updateSupabaseRecord("farmmate_usage_events"'), true);
       assert.equal(usageServer.includes("memoryEvent.id = nextEventId"), true);
       assert.equal(usageServer.includes("replayed: true"), true);
       assert.equal(route.includes('reason: "consultation_recovered"'), true);
-      assert.equal(route.indexOf("if (claim.replayed)") < route.lastIndexOf("generateFarmMateNaturalAnswer"), true);
+      assert.equal(route.indexOf("if (claim.replayed)") < route.lastIndexOf("answerAndSettle"), true);
     }
   },
   {

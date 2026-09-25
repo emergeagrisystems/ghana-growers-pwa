@@ -32,6 +32,7 @@ import {
 } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
+import { clearRecoveredConsultation, recoverOrCreateConsultationId } from "@/lib/farmmate/usage/recovery-client";
 import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
@@ -510,6 +511,7 @@ export function AskFarmMate({
   const [localCards, setLocalCards] = useState<FarmMateLocalResponseCard[]>([]);
   const [aiFallbackMessage, setAiFallbackMessage] = useState("");
   const [retryCreditGate, setRetryCreditGate] = useState<"used" | "unknown" | null>(null);
+  const [freeRetryAvailable, setFreeRetryAvailable] = useState(false);
   const [retryCreditAcknowledged, setRetryCreditAcknowledged] = useState(false);
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
@@ -662,18 +664,20 @@ export function AskFarmMate({
           setRetryCreditGate(data?.usageRecorded === true ? "used" : "unknown");
           setRetryCreditAcknowledged(false);
         }
+        setFreeRetryAvailable(data?.retryAvailable === true);
+        if (data?.retryAvailable === false || reason === "retry_exhausted" || reason === "already_processed") {
+          clearRecoveredConsultation(nextConsultation.consultationId);
+        }
         const canRetryContinuation =
-          isFollowUp &&
-          Boolean(followUpAnswer) &&
-          (reason === "usage_tracking_unavailable" || reason === "consultation_tracking_unavailable");
+          !isFollowUp && (data?.retryAvailable === true || reason === "usage_tracking_unavailable" || reason === "request_outcome_unknown");
         setCreditReason(reason);
         setConsultationError(
           reason === "usage_tracking_unavailable"
             ? askCreditFailureMessage(reason, data?.credits)
             : data?.message || askCreditFailureMessage(reason, data?.credits)
         );
-        if (canRetryContinuation && followUpAnswer) {
-          setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer, isFollowUp });
+        if (canRetryContinuation) {
+          setPendingContinuationRetry({ farmMateResponse, nextConsultation, isFollowUp: false });
           setConsultation({ ...nextConsultation, status: "error" });
         } else {
           setConsultation({
@@ -720,11 +724,34 @@ export function AskFarmMate({
 
       if (data?.ok && data.kind === "final" && data.answer?.trim()) {
         setNaturalAnswer(mamaGPublicText(cleanFarmMateFinalAnswer(data.answer)));
+        setRetryCreditGate(null);
+        setFreeRetryAvailable(false);
+        clearRecoveredConsultation(nextConsultation.consultationId);
+        if (data.eventId && data.attemptCount) {
+          void boundedJsonRequest<{ ok: boolean }>("/api/farmmate/ask/ack", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              anonymousDeviceId: getFarmMateAnonymousDeviceId(),
+              consultationId: nextConsultation.consultationId,
+              eventId: data.eventId,
+              attemptCount: data.attemptCount
+            })
+          }, 5_000).catch(() => undefined);
+        }
         return true;
       }
 
       if (data?.fallback) {
         setAiFallbackMessage(farmMateFallbackMessage(data.message));
+        setConsultationError(data.message || "Mama G could not finish this answer. Your original question is ready to retry.");
+        setFreeRetryAvailable(data.retryAvailable === true);
+        if (data.retryAvailable === true && !isFollowUp) {
+          setPendingContinuationRetry({ farmMateResponse, nextConsultation, isFollowUp: false });
+        } else if (isFollowUp) {
+          setQuestion(nextConsultation.originalQuestion);
+        }
+        if (data.retryAvailable === false) clearRecoveredConsultation(nextConsultation.consultationId);
         if (data.usageRecorded === true) {
           setRetryCreditGate("used");
           setRetryCreditAcknowledged(false);
@@ -770,18 +797,20 @@ export function AskFarmMate({
   }
 
   async function completeLocalConsultation({
+    consultationId,
     originalQuestion,
     specialist,
     cards,
     conversationDecision
   }: {
+    consultationId: string;
     originalQuestion: string;
     specialist?: ConversationDecision["specialist"];
     cards: FarmMateLocalResponseCard[];
     conversationDecision: ConversationDecision;
   }) {
     const localConsultation = createAskFarmMateConsultation({
-      consultationId: createFarmMateConsultationId(crypto.randomUUID()),
+      consultationId,
       originalQuestion,
       specialist
     });
@@ -799,7 +828,9 @@ export function AskFarmMate({
         body: JSON.stringify({
           anonymousDeviceId: getFarmMateAnonymousDeviceId(),
           tool: "ask_farmmate",
-          action: "record"
+          action: "record",
+          consultationId,
+          originalQuestion
         })
       }, FARM_MATE_BROWSER_TIMEOUT_MS);
 
@@ -824,6 +855,7 @@ export function AskFarmMate({
       }
 
       setLocalCards(cards);
+      clearRecoveredConsultation(consultationId);
       setConsultation({ ...localConsultation, status: "complete" });
       setShowRecommendation(true);
       setConversationState(createConversationStateUpdate(conversationState, originalQuestion, conversationDecision, false));
@@ -861,7 +893,7 @@ export function AskFarmMate({
     });
   }
 
-  function askFarmMate(event?: FormEvent<HTMLFormElement>) {
+  async function askFarmMate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
 
     const trimmedQuestion = question.trim();
@@ -896,9 +928,13 @@ export function AskFarmMate({
     }
 
     consultationStartInFlight.current = true;
+    const consultationId = chemicalSafetyAnswer
+      ? createFarmMateConsultationId(crypto.randomUUID())
+      : await recoverOrCreateConsultationId(trimmedQuestion);
     if (!chemicalSafetyAnswer) {
       setRetryCreditGate(null);
       setRetryCreditAcknowledged(false);
+      setFreeRetryAvailable(false);
     }
     activeRequestKey.current = `reset-${Date.now()}`;
     setAskedQuestion(trimmedQuestion);
@@ -934,16 +970,13 @@ export function AskFarmMate({
       return;
     }
 
-    if (pendingContinuationRetry && !pendingContinuationRetry.isFollowUp && trimmedQuestion === pendingContinuationRetry.nextConsultation.originalQuestion) {
-      void retryPendingFollowUp();
-      return;
-    }
     logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
     logRouterResult(routerResult);
     const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
 
     if (conversationDecision.action === "clarify") {
       void completeLocalConsultation({
+        consultationId,
         originalQuestion: trimmedQuestion,
         specialist: conversationDecision.specialist,
         cards: clarificationResponse(),
@@ -954,6 +987,7 @@ export function AskFarmMate({
 
     if (conversationDecision.isMarketplaceInfoRequest) {
       void completeLocalConsultation({
+        consultationId,
         originalQuestion: trimmedQuestion,
         specialist: conversationDecision.specialist,
         cards: marketplaceInfoResponse(),
@@ -970,7 +1004,7 @@ export function AskFarmMate({
     const pendingFollowUpQuestion = farmMateResponse.flow?.followUpQuestions[0];
     const shouldShowRecommendation = !pendingFollowUpQuestion;
     const nextConsultation = createAskFarmMateConsultation({
-      consultationId: createFarmMateConsultationId(crypto.randomUUID()),
+      consultationId,
       originalQuestion: trimmedQuestion,
       specialist: routerResult.selectedSpecialist,
       normalizedCrop: farmMateResponse.resolvedCrop,
@@ -1167,7 +1201,9 @@ export function AskFarmMate({
           <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/75">
             <p role="alert">
               {retryCreditGate === "used"
-                ? "The last AI answer did not complete, but an Ask credit was used. Retrying or asking another AI question uses another credit; chemical safety refusals do not."
+                ? freeRetryAvailable
+                  ? "The last AI answer did not complete. The same question has one recovery attempt without another credit. A different question uses a new credit; chemical safety refusals do not."
+                  : "The last AI answer did not complete and its recovery attempt is used. A new AI question uses a new credit; chemical safety refusals do not."
                 : "The last attempt's credit outcome is uncertain. Check your remaining credits; another AI question may use a credit."}
             </p>
             <label className="mt-2 flex items-start gap-2">

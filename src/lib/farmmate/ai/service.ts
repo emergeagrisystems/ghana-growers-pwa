@@ -311,7 +311,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   return JSON.stringify(payload, null, 2);
 }
 
-export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Promise<FarmMateAiResult> {
+export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, options: { forceRc1Timeout?: boolean } = {}): Promise<FarmMateAiResult> {
   const correlationId = randomUUID();
   const startedAt = Date.now();
   const configuredModel = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
@@ -322,6 +322,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
     specialist: /^[a-z_]{1,40}$/.test(specialist) ? specialist : "unclassified_specialist"
   });
   const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const simulatedTimeout = options.forceRc1Timeout === true && rc1PreviewDiagnosticsEnabled();
 
   if (!apiKey) {
     logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "missing_api_key", elapsedMs: Date.now() - startedAt });
@@ -342,7 +343,11 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
         input: buildFarmMateVoiceLayerInput(input),
         max_output_tokens: FARM_MATE_MAX_OUTPUT_TOKENS
       })
-    }, FARM_MATE_TEXT_TIMEOUT_MS);
+    }, FARM_MATE_TEXT_TIMEOUT_MS, simulatedTimeout
+      ? (_input, init) => new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(new FarmMateRequestTimeout()), { once: true });
+        })
+      : fetch);
 
     const answer = extractOutputText(data);
     logRc1AiDiagnostic(correlationId, "provider_response", {
@@ -383,7 +388,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
     return { ok: true, answer };
   } catch (error) {
     const reason = error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error";
-    logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: reason, elapsedMs: Date.now() - startedAt });
+    logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: reason, simulatedTimeout, elapsedMs: Date.now() - startedAt });
     return { ok: false, reason, fallback: true };
   }
 }

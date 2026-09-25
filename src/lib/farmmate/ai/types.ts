@@ -35,6 +35,9 @@ export type FarmMateAskApiResponse = {
   followUp?: FarmMateFollowUpSubmission["consultationContext"]["pendingFollowUpQuestion"];
   credits?: import("../usage").FarmMateCreditStatus;
   usageRecorded?: boolean;
+  retryAvailable?: boolean;
+  eventId?: string;
+  attemptCount?: number;
 };
 
 export type FarmMateAiSuccess = {

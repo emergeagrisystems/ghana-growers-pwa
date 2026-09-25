@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
+import { beginFarmMateAskGeneration, reserveFarmMateAsk, settleFarmMateAsk } from "@/lib/farmmate/usage/ask-recovery";
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
-import { mamaGPublicText } from "@/lib/farmmate/public-name";
-import { farmMateRequestKey, replayFarmMateRequest } from "@/lib/farmmate/request-replay";
 
 export const maxDuration = 60;
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput, type FarmMateAskApiInput } from "@/lib/farmmate/ai";
@@ -26,13 +25,10 @@ import type {
   CropDoctorIssueCategory,
   CropDoctorResultType
 } from "@/lib/farmmate/crop-doctor-vision";
-import { askFarmMateCreditMessage } from "@/lib/farmmate/usage";
 import {
-  checkFarmMateCreditsForDevice,
   claimFarmMateConsultationContinuation,
   getAnonymousUserHash,
-  getFarmMateCreditsForDevice,
-  recordFarmMateUsageForDevice
+  getFarmMateCreditsForDevice
 } from "@/lib/farmmate/usage/server";
 import type { WeatherDecisionSummary } from "@/lib/farmmate/weather";
 
@@ -391,12 +387,76 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "invalid_device_id", fallback: true }, { status: 400 });
   }
 
-  const step = payload.isFollowUp ? JSON.stringify(payload.followUpAnswer) : "start";
-  return replayFarmMateRequest(
-    farmMateRequestKey(anonymousUserHash, "ask_farmmate", `${payload.consultationId}:${step}`),
-    farmMateRequestKey(anonymousUserHash, "ask_farmmate", "active"),
-    () => processConsultation(payload, anonymousUserHash)
-  );
+  return processConsultation(payload, anonymousUserHash);
+}
+
+function rc1TimeoutRequested(question: string) {
+  return process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co" &&
+    question.includes("[RC1 timeout test]");
+}
+
+function reservationError(decision: string) {
+  const unavailable = decision === "usage_tracking_unavailable";
+  const message = decision === "rapid_submission" || decision === "in_progress"
+    ? "Mama G is still handling a recent question. Wait a few seconds, then try again."
+    : decision === "credits_exhausted"
+      ? "Your Ask credits have run out for now. You can ask again after they refresh."
+      : decision === "retry_exhausted"
+        ? "This consultation has used its one recovery attempt. A new question will use a new credit."
+        : decision === "already_processed"
+          ? "This consultation was already completed. Start a new question if you need more help."
+          : unavailable
+            ? "Mama G cannot safely check credits right now. Please try again shortly."
+            : "This consultation cannot be safely continued. Start a new question.";
+  return NextResponse.json({ ok: false, reason: decision, fallback: true, message }, {
+    status: unavailable ? 503 : decision === "credits_exhausted" || decision === "rapid_submission" ? 429 : 409
+  });
+}
+
+async function answerAndSettle({
+  payload, brain, eventId, attemptCount, usageRecorded
+}: {
+  payload: FarmMateAskApiInput;
+  brain: ReturnType<typeof buildFarmMateResponse>;
+  eventId: string;
+  attemptCount: number;
+  usageRecorded: boolean;
+}) {
+  const result = await generateFarmMateNaturalAnswer(verifiedAiInput(payload, brain), {
+    forceRc1Timeout: rc1TimeoutRequested(payload.originalQuestion)
+  });
+  const settled = await settleFarmMateAsk({
+    anonymousDeviceId: payload.anonymousDeviceId,
+    consultationId: payload.consultationId,
+    eventId,
+    attemptCount,
+    success: result.ok
+  });
+  const credits = await creditStatus(payload.anonymousDeviceId);
+
+  if (!settled) {
+    return NextResponse.json({
+      ok: false, kind: "final", fallback: true, reason: "request_outcome_unknown",
+      consultationId: payload.consultationId, credits, usageRecorded,
+      retryAvailable: attemptCount < 2,
+      message: "Mama G could not confirm this answer. Wait a short while, then retry the same question without another credit."
+    }, { status: 503 });
+  }
+  if (!result.ok) {
+    return NextResponse.json({
+      ...result, kind: "final", consultationId: payload.consultationId,
+      credits, usageRecorded, retryAvailable: attemptCount < 2,
+      message: attemptCount < 2
+        ? "Mama G could not finish this answer. You can retry the same question once without another credit."
+        : "Mama G could not finish this answer. This consultation has used its recovery attempt; local guidance is still available."
+    });
+  }
+  return NextResponse.json({
+    ...result, kind: "final", consultationId: payload.consultationId,
+    credits, usageRecorded, eventId, attemptCount
+  });
 }
 
 async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHash: string) {
@@ -428,52 +488,16 @@ async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHa
       );
     }
 
-    const creditDecision = await checkFarmMateCreditsForDevice({
+    const reservation = await reserveFarmMateAsk({
       anonymousDeviceId: payload.anonymousDeviceId,
-      tool: "ask_farmmate"
+      consultationId: payload.consultationId,
+      originalQuestion: payload.originalQuestion,
+      guided: Boolean(pendingFollowUp)
     });
-
-    if (!creditDecision.allowed) {
-      const usageUnavailable = creditDecision.reason === "usage_tracking_unavailable";
-
-      return NextResponse.json(
-        {
-          ok: false,
-          reason: creditDecision.reason,
-          fallback: true,
-          credits: creditDecision,
-          message: mamaGPublicText(askFarmMateCreditMessage(creditDecision))
-        },
-        { status: usageUnavailable ? 503 : 429 }
-      );
-    }
-
-    const recordResult = await recordFarmMateUsageForDevice({
-      anonymousDeviceId: payload.anonymousDeviceId,
-      tool: "ask_farmmate",
-      requestId: payload.consultationId
-    });
-
-    if (recordResult.replayed) {
-      return NextResponse.json({
-        ok: false,
-        reason: "request_already_processed",
-        message: "This consultation was already started. Its answer cannot be recovered here; no new model request or credit has been used."
-      }, { status: 409 });
-    }
-
-    if (!recordResult.recorded || !recordResult.eventId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          reason: "usage_tracking_unavailable",
-          fallback: true,
-          credits: await creditStatus(payload.anonymousDeviceId),
-          usageRecorded: false,
-          message: "Mama G AI is temporarily limited, but you can still use the local guidance."
-        },
-        { status: 503 }
-      );
+    if (!["reserved_new", "reserved_retry", "resume_guided"].includes(reservation.decision) ||
+      !reservation.eventId || !reservation.attemptCount ||
+      (reservation.decision === "resume_guided" && !pendingFollowUp)) {
+      return reservationError(reservation.decision);
     }
 
     const credits = await creditStatus(payload.anonymousDeviceId);
@@ -481,7 +505,7 @@ async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHa
     if (pendingFollowUp) {
       const consultationToken = issueFarmMateConsultationToken({
         consultationId: payload.consultationId,
-        usageEventId: recordResult.eventId,
+        usageEventId: reservation.eventId,
         anonymousUserHash,
         originalQuestion: payload.originalQuestion,
         boundContext: boundConsultationContext(payload),
@@ -496,29 +520,15 @@ async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHa
         consultationToken,
         followUp: pendingFollowUp,
         credits,
-        usageRecorded: true
+        usageRecorded: reservation.newCredit === true
       });
     }
-
-    const result = await generateFarmMateNaturalAnswer(verifiedAiInput(payload, brain));
-
-    if (!result.ok) {
-      return NextResponse.json({
-        ...result,
-        kind: "final",
-        consultationId: payload.consultationId,
-        credits,
-        usageRecorded: true,
-        message: "Mama G AI is temporarily limited, but you can still use the local guidance."
-      });
-    }
-
-    return NextResponse.json({
-      ...result,
-      kind: "final",
-      consultationId: payload.consultationId,
-      credits,
-      usageRecorded: true
+    return answerAndSettle({
+      payload,
+      brain,
+      eventId: reservation.eventId,
+      attemptCount: reservation.attemptCount,
+      usageRecorded: reservation.newCredit === true
     });
   }
 
@@ -607,24 +617,17 @@ async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHa
     });
   }
 
-  const result = await generateFarmMateNaturalAnswer(verifiedAiInput(payload, brain));
-
-  if (!result.ok) {
-    return NextResponse.json({
-      ...result,
-      kind: "final",
-      consultationId: payload.consultationId,
-      credits,
-      usageRecorded: false,
-      message: "Mama G AI is temporarily limited, but you can still use the local guidance."
-    });
-  }
-
-  return NextResponse.json({
-    ...result,
-    kind: "final",
+  const attemptCount = await beginFarmMateAskGeneration({
+    anonymousDeviceId: payload.anonymousDeviceId,
     consultationId: payload.consultationId,
-    credits,
-    usageRecorded: false
+    eventId: claim.eventId!
   });
+  if (!attemptCount) {
+    return NextResponse.json({
+      ok: false, reason: "consultation_tracking_unavailable", fallback: true,
+      consultationId: payload.consultationId, credits, usageRecorded: false,
+      message: "Mama G could not safely continue this consultation. Please try again shortly."
+    }, { status: 503 });
+  }
+  return answerAndSettle({ payload, brain, eventId: claim.eventId!, attemptCount, usageRecorded: false });
 }
