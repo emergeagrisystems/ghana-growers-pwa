@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
 import { boundedJsonRequest, FARM_MATE_TEXT_TIMEOUT_MS, FarmMateRequestTimeout } from "../request-limits";
@@ -24,6 +25,10 @@ const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
 
 type OpenAIResponsesApiResult = {
+  status?: string;
+  incomplete_details?: { reason?: string } | null;
+  error?: { code?: string; type?: string } | null;
+  usage?: { output_tokens?: number; output_tokens_details?: { reasoning_tokens?: number } } | null;
   output_text?: string;
   output?: Array<{
     content?: Array<{
@@ -32,6 +37,39 @@ type OpenAIResponsesApiResult = {
     }>;
   }>;
 };
+
+// Operational diagnostics are deliberately limited to the isolated RC1 Preview.
+// Never log the request, response body, headers, device ID, or provider error message.
+function rc1PreviewDiagnosticsEnabled() {
+  return process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co";
+}
+
+function logRc1AiDiagnostic(correlationId: string, stage: string, fields: Record<string, string | number | boolean | null>) {
+  if (rc1PreviewDiagnosticsEnabled()) {
+    console.info("[P09-RC1 Ask AI]", JSON.stringify({ correlationId, stage, ...fields }));
+  }
+}
+
+function safeProviderState(state: string | undefined) {
+  return ["completed", "incomplete", "failed", "cancelled", "in_progress", "queued"].includes(state ?? "")
+    ? state!
+    : "unknown";
+}
+
+function safeIncompleteReason(reason: string | undefined) {
+  return ["max_output_tokens", "max_tokens", "content_filter"].includes(reason ?? "") ? reason! : "other_or_none";
+}
+
+function providerErrorCategory(status: number, data: OpenAIResponsesApiResult) {
+  if (data.error?.code === "model_not_found") return "model_unavailable";
+  if (status === 401 || status === 403) return "authentication_or_permission";
+  if (status === 429) return "rate_or_quota";
+  if (status >= 500) return "provider_server";
+  if (status >= 400) return "provider_request";
+  return "none";
+}
 
 function extractOutputText(data: OpenAIResponsesApiResult) {
   if (typeof data.output_text === "string" && data.output_text.trim()) {
@@ -268,9 +306,19 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
 }
 
 export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Promise<FarmMateAiResult> {
+  const correlationId = randomUUID();
+  const startedAt = Date.now();
+  const configuredModel = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+  const model = /^[a-z0-9._-]{1,80}$/i.test(configuredModel) ? configuredModel : "unclassified_model";
+  const specialist = input.brain.routerResult?.selectedSpecialist ?? "none";
+  logRc1AiDiagnostic(correlationId, "request_started", {
+    model,
+    specialist: /^[a-z_]{1,40}$/.test(specialist) ? specialist : "unclassified_specialist"
+  });
   const apiKey = process.env.OPENAI_API_KEY?.trim();
 
   if (!apiKey) {
+    logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "missing_api_key", elapsedMs: Date.now() - startedAt });
     return { ok: false, reason: "missing_api_key", fallback: true };
   }
 
@@ -282,29 +330,48 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL,
+        model: configuredModel,
         instructions: FARM_MATE_SYSTEM_PROMPT,
         input: buildFarmMateVoiceLayerInput(input),
         max_output_tokens: 420
       })
     }, FARM_MATE_TEXT_TIMEOUT_MS);
 
+    const answer = extractOutputText(data);
+    logRc1AiDiagnostic(correlationId, "provider_response", {
+      model,
+      httpStatus: response.status,
+      httpStatusClass: `${Math.floor(response.status / 100)}xx`,
+      providerState: safeProviderState(data.status),
+      incompleteReason: safeIncompleteReason(data.incomplete_details?.reason),
+      errorCategory: providerErrorCategory(response.status, data),
+      extractionSource: typeof data.output_text === "string" && data.output_text.trim() ? "output_text" : data.output?.length ? "output_items" : "none",
+      outputLength: answer.length,
+      outputTokens: data.usage?.output_tokens ?? null,
+      reasoningTokens: data.usage?.output_tokens_details?.reasoning_tokens ?? null,
+      elapsedMs: Date.now() - startedAt
+    });
+
     if (!response.ok) {
+      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "provider_http_error", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "openai_request_error", fallback: true };
     }
 
-    const answer = extractOutputText(data);
-
     if (!answer) {
+      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "empty_response", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "empty_response", fallback: true };
     }
 
     if (isLikelyIncompleteFarmMateAnswer(answer, input)) {
+      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "incomplete_response", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "incomplete_response", fallback: true };
     }
 
+    logRc1AiDiagnostic(correlationId, "answer_selected", { model, outputLength: answer.length, elapsedMs: Date.now() - startedAt });
     return { ok: true, answer };
   } catch (error) {
-    return { ok: false, reason: error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error", fallback: true };
+    const reason = error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error";
+    logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: reason, elapsedMs: Date.now() - startedAt });
+    return { ok: false, reason, fallback: true };
   }
 }
