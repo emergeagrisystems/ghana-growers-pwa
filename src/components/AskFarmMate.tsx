@@ -509,6 +509,8 @@ export function AskFarmMate({
   const [isGeneratingNaturalAnswer, setIsGeneratingNaturalAnswer] = useState(false);
   const [localCards, setLocalCards] = useState<FarmMateLocalResponseCard[]>([]);
   const [aiFallbackMessage, setAiFallbackMessage] = useState("");
+  const [retryCreditGate, setRetryCreditGate] = useState<"used" | "unknown" | null>(null);
+  const [retryCreditAcknowledged, setRetryCreditAcknowledged] = useState(false);
   const [credits, setCredits] = useState<FarmMateCreditStatus | null>(null);
   const [creditMessage, setCreditMessage] = useState("");
   const [creditReason, setCreditReason] = useState("");
@@ -526,12 +528,14 @@ export function AskFarmMate({
     turns: []
   });
   const [activeCropDoctorHandoff, setActiveCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
+  const safetyAnswerIsLocal = Boolean(explicitChemicalSafetyAnswer(question));
 
   const canAsk =
     question.trim().length > 0 &&
     !isThinking &&
     !isGeneratingNaturalAnswer &&
     !isSubmittingFollowUp &&
+    (!retryCreditGate || retryCreditAcknowledged || safetyAnswerIsLocal) &&
     consultation?.status !== "starting";
   const followUpQuestions = response?.flow?.followUpQuestions ?? [];
   const currentFollowUp = consultation ? consultation.pendingFollowUpQuestion : followUpQuestions[followUpIndex];
@@ -654,6 +658,10 @@ export function AskFarmMate({
 
       if (!apiResponse.ok) {
         const reason = typeof data?.reason === "string" ? data.reason : "";
+        if (data?.usageRecorded === true || reason === "request_outcome_unknown") {
+          setRetryCreditGate(data?.usageRecorded === true ? "used" : "unknown");
+          setRetryCreditAcknowledged(false);
+        }
         const canRetryContinuation =
           isFollowUp &&
           Boolean(followUpAnswer) &&
@@ -717,6 +725,10 @@ export function AskFarmMate({
 
       if (data?.fallback) {
         setAiFallbackMessage(farmMateFallbackMessage(data.message));
+        if (data.usageRecorded === true) {
+          setRetryCreditGate("used");
+          setRetryCreditAcknowledged(false);
+        }
       }
       return Boolean(data?.fallback);
     } catch {
@@ -724,6 +736,8 @@ export function AskFarmMate({
         return false;
       }
       setNaturalAnswer("");
+      setRetryCreditGate("unknown");
+      setRetryCreditAcknowledged(false);
       if (isFollowUp && followUpAnswer) {
         setConsultationError("Mama G could not confirm this follow-up. Retry this step without using another credit.");
         setPendingContinuationRetry({ farmMateResponse, nextConsultation, followUpAnswer, isFollowUp });
@@ -851,12 +865,14 @@ export function AskFarmMate({
     event?.preventDefault();
 
     const trimmedQuestion = question.trim();
+    const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(trimmedQuestion);
     if (
       !trimmedQuestion ||
       isThinking ||
       isGeneratingNaturalAnswer ||
       isSubmittingFollowUp ||
-      consultationStartInFlight.current
+      consultationStartInFlight.current ||
+      (retryCreditGate !== null && !retryCreditAcknowledged && !chemicalSafetyAnswer)
     ) {
       return;
     }
@@ -880,6 +896,10 @@ export function AskFarmMate({
     }
 
     consultationStartInFlight.current = true;
+    if (!chemicalSafetyAnswer) {
+      setRetryCreditGate(null);
+      setRetryCreditAcknowledged(false);
+    }
     activeRequestKey.current = `reset-${Date.now()}`;
     setAskedQuestion(trimmedQuestion);
     setResponse(null);
@@ -900,7 +920,6 @@ export function AskFarmMate({
     setActiveCropDoctorHandoff(null);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
-    const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(trimmedQuestion);
     if (chemicalSafetyAnswer) {
       setLocalCards([{ title: "Chemical safety", body: [chemicalSafetyAnswer] }]);
       setConsultation({
@@ -1143,6 +1162,25 @@ export function AskFarmMate({
             ))}
           </div>
         </div>
+
+        {retryCreditGate ? (
+          <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/75">
+            <p role="alert">
+              {retryCreditGate === "used"
+                ? "The last AI answer did not complete, but an Ask credit was used. Retrying or asking another AI question uses another credit; chemical safety refusals do not."
+                : "The last attempt's credit outcome is uncertain. Check your remaining credits; another AI question may use a credit."}
+            </p>
+            <label className="mt-2 flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={retryCreditAcknowledged}
+                onChange={(event) => setRetryCreditAcknowledged(event.target.checked)}
+                className="mt-1"
+              />
+              <span>I understand and want to submit another Ask question.</span>
+            </label>
+          </div>
+        ) : null}
 
         <button
           type="submit"

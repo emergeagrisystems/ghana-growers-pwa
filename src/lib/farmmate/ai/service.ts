@@ -23,6 +23,7 @@ import {
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
+const FARM_MATE_MAX_OUTPUT_TOKENS = 1_200;
 
 type OpenAIResponsesApiResult = {
   status?: string;
@@ -84,12 +85,20 @@ function extractOutputText(data: OpenAIResponsesApiResult) {
     .trim();
 }
 
-const danglingWeatherEndingPattern = /\b(?:and|or|the|a|an|to|for|with|when|if|that|because|while|before|after|whether)$/i;
+const danglingEndingPattern = /\b(?:and|or|the|a|an|to|for|with|when|if|that|because|while|before|after|whether|is|are|was|were)$/i;
 
 export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMateAiInput) {
   const trimmed = answer.trim();
 
   if (!trimmed) {
+    return true;
+  }
+
+  // A provider can return partial text with HTTP 200. No specialist may present
+  // a dangling clause or an unfinished sentence as a completed answer.
+  const withoutTrailingMarkdown = trimmed.replace(/[\s>*_`#-]+$/g, "").trim();
+  const lastLine = withoutTrailingMarkdown.split(/\n+/).pop()?.trim() ?? withoutTrailingMarkdown;
+  if (danglingEndingPattern.test(lastLine) || !/[.!?]$/.test(withoutTrailingMarkdown)) {
     return true;
   }
 
@@ -114,10 +123,7 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
     return false;
   }
 
-  const withoutTrailingMarkdown = trimmed.replace(/[\s>*_`#-]+$/g, "").trim();
-  const lastLine = withoutTrailingMarkdown.split(/\n+/).pop()?.trim() ?? withoutTrailingMarkdown;
-
-  return danglingWeatherEndingPattern.test(lastLine) || !/[.!?]$/.test(withoutTrailingMarkdown);
+  return false;
 }
 
 export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
@@ -331,9 +337,10 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
       },
       body: JSON.stringify({
         model: configuredModel,
+        ...(configuredModel === DEFAULT_MODEL ? { reasoning: { effort: "low" } } : {}),
         instructions: FARM_MATE_SYSTEM_PROMPT,
         input: buildFarmMateVoiceLayerInput(input),
-        max_output_tokens: 420
+        max_output_tokens: FARM_MATE_MAX_OUTPUT_TOKENS
       })
     }, FARM_MATE_TEXT_TIMEOUT_MS);
 
@@ -355,6 +362,11 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput): Pro
     if (!response.ok) {
       logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "provider_http_error", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "openai_request_error", fallback: true };
+    }
+
+    if (data.status !== "completed") {
+      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "provider_not_completed", elapsedMs: Date.now() - startedAt });
+      return { ok: false, reason: "incomplete_response", fallback: true };
     }
 
     if (!answer) {

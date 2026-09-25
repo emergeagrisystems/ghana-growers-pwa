@@ -19,7 +19,7 @@ import {
 } from "../src/lib/adminPriorityState";
 import { resolveAdminOptionalSource } from "../src/lib/adminOptionalSources";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
-import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
+import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, generateFarmMateNaturalAnswer, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
@@ -4703,6 +4703,56 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "crop-health fragments cannot pass as completed answers",
+    run: () => {
+      const question = "Some leaves are yellow, but I do not know the crop. What should I check first?";
+      const input = {
+        farmerQuestion: question,
+        brain: buildFarmMateResponse(question, routeFarmMateQuestion(question)),
+        farmerAnswers: [],
+        localStructuredResponse: []
+      };
+      assert.equal(input.brain.routerResult?.selectedSpecialist, "crop_health");
+      assert.equal(isLikelyIncompleteFarmMateAnswer("Because the crop is", input), true);
+      assert.equal(isLikelyIncompleteFarmMateAnswer("Check the affected leaves and identify the crop before choosing a treatment.", input), false);
+    }
+  },
+  {
+    name: "provider incomplete status is rejected even when partial text exists",
+    run: async () => {
+      const question = "Some leaves are yellow, but I do not know the crop. What should I check first?";
+      const input = {
+        farmerQuestion: question,
+        brain: buildFarmMateResponse(question, routeFarmMateQuestion(question)),
+        farmerAnswers: [],
+        localStructuredResponse: []
+      };
+      const previousFetch = globalThis.fetch;
+      const previousKey = process.env.OPENAI_API_KEY;
+      process.env.OPENAI_API_KEY = "test-only-not-a-credential";
+      globalThis.fetch = (async (_url, init) => {
+        const request = JSON.parse(String(init?.body));
+        assert.equal(request.model, "gpt-5.5");
+        assert.equal(request.max_output_tokens, 1_200);
+        assert.equal(request.reasoning.effort, "low");
+        return Response.json({
+          status: "incomplete",
+          incomplete_details: { reason: "max_output_tokens" },
+          output: [{ content: [{ type: "output_text", text: "Because the crop is" }] }]
+        });
+      }) as typeof fetch;
+      try {
+        const result = await generateFarmMateNaturalAnswer(input);
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.reason, "incomplete_response");
+      } finally {
+        globalThis.fetch = previousFetch;
+        if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+        else process.env.OPENAI_API_KEY = previousKey;
+      }
+    }
+  },
+  {
     name: "rain expected weather answer is complete",
     run: () => {
       const input = weatherAiInput("Rain is expected soon");
@@ -5913,6 +5963,18 @@ const tests: TestCase[] = [
       assert.equal(beforeFailedWrite.used, 1);
       assert.equal(afterFailedWrite.used, 1);
       assert.equal(afterFailedWrite.remaining, 4);
+    }
+  },
+  {
+    name: "an unanswered Ask cannot silently start a second credited submission",
+    run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
+      assert.equal(component.includes('setRetryCreditGate("used")'), true);
+      assert.equal(component.includes('retryCreditGate !== null && !retryCreditAcknowledged'), true);
+      assert.equal(component.includes("Retrying or asking another AI question uses another credit"), true);
+      assert.equal(component.includes("!retryCreditAcknowledged && !chemicalSafetyAnswer"), true);
+      assert.equal(component.includes("if (!chemicalSafetyAnswer) {"), true);
+      assert.equal(component.includes("I understand and want to submit another Ask question."), true);
     }
   },
   {
