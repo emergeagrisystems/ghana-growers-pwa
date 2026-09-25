@@ -311,7 +311,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   return JSON.stringify(payload, null, 2);
 }
 
-export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, options: { forceRc1Timeout?: boolean } = {}): Promise<FarmMateAiResult> {
+export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, options: { forceRc1Timeout?: boolean; forceRc1Incomplete?: boolean } = {}): Promise<FarmMateAiResult> {
   const correlationId = randomUUID();
   const startedAt = Date.now();
   const configuredModel = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
@@ -323,6 +323,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
   });
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const simulatedTimeout = options.forceRc1Timeout === true && rc1PreviewDiagnosticsEnabled();
+  const simulatedIncomplete = options.forceRc1Incomplete === true && rc1PreviewDiagnosticsEnabled();
 
   if (!apiKey) {
     logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "missing_api_key", elapsedMs: Date.now() - startedAt });
@@ -347,7 +348,12 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
       ? (_input, init) => new Promise<Response>((_resolve, reject) => {
           init?.signal?.addEventListener("abort", () => reject(new FarmMateRequestTimeout()), { once: true });
         })
-      : fetch);
+      : simulatedIncomplete
+        ? async () => new Response(JSON.stringify({
+            status: "incomplete", incomplete_details: { reason: "max_output_tokens" },
+            output_text: "The soil may"
+          }), { status: 200, headers: { "Content-Type": "application/json" } })
+        : fetch);
 
     const answer = extractOutputText(data);
     logRc1AiDiagnostic(correlationId, "provider_response", {
@@ -361,7 +367,8 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
       outputLength: answer.length,
       outputTokens: data.usage?.output_tokens ?? null,
       reasoningTokens: data.usage?.output_tokens_details?.reasoning_tokens ?? null,
-      elapsedMs: Date.now() - startedAt
+      elapsedMs: Date.now() - startedAt,
+      simulatedIncomplete
     });
 
     if (!response.ok) {
@@ -370,7 +377,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
     }
 
     if (data.status !== "completed") {
-      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "provider_not_completed", elapsedMs: Date.now() - startedAt });
+      logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "provider_not_completed", simulatedIncomplete, elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "incomplete_response", fallback: true };
     }
 

@@ -390,11 +390,10 @@ export async function POST(request: Request) {
   return processConsultation(payload, anonymousUserHash);
 }
 
-function rc1TimeoutRequested(question: string) {
+function rc1DiagnosticAllowed() {
   return process.env.VERCEL_ENV === "preview" &&
     process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co" &&
-    question.includes("[RC1 timeout test]");
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co";
 }
 
 function reservationError(decision: string) {
@@ -425,7 +424,8 @@ async function answerAndSettle({
   usageRecorded: boolean;
 }) {
   const result = await generateFarmMateNaturalAnswer(verifiedAiInput(payload, brain), {
-    forceRc1Timeout: rc1TimeoutRequested(payload.originalQuestion)
+    forceRc1Timeout: attemptCount === 1 && rc1DiagnosticAllowed() && payload.originalQuestion.includes("[RC1 timeout test]"),
+    forceRc1Incomplete: attemptCount === 1 && rc1DiagnosticAllowed() && payload.originalQuestion.includes("[RC1 incomplete test]")
   });
   const settled = await settleFarmMateAsk({
     anonymousDeviceId: payload.anonymousDeviceId,

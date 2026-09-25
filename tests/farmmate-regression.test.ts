@@ -6047,6 +6047,8 @@ const tests: TestCase[] = [
       assert.equal(route.includes('process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1"'), true);
       assert.equal(route.includes("https://ecluxmyxqofkbzcyurlf.supabase.co"), true);
       assert.equal(service.includes("simulatedTimeout = options.forceRc1Timeout === true && rc1PreviewDiagnosticsEnabled()"), true);
+      assert.equal(service.includes("simulatedIncomplete = options.forceRc1Incomplete === true && rc1PreviewDiagnosticsEnabled()"), true);
+      assert.equal(route.includes("attemptCount === 1 && rc1DiagnosticAllowed()"), true);
       assert.equal(service.includes("boundedJsonRequest<OpenAIResponsesApiResult>"), true);
     }
   },
