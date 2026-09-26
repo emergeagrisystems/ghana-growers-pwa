@@ -111,6 +111,7 @@
 .headerActions button,.headerActions a { padding:.5rem .85rem; border:1px solid var(--hp-heading); border-radius:.4rem; }
 .headerActions button:first-child,.headerActions a:first-child { background:var(--hp-maize); }
 .mobileNav { display:none; }
+.previewHeader .mobileNav .headerActions > :last-child { background:#40504a; border-color:#40504a; color:#fff; }
 .review { border-bottom:0; background:var(--hp-neutral); padding-block:.6rem; }
 .review strong { margin-bottom:0; }
 .heroMedia { position:relative; display:block; max-width:60rem; min-height:17rem; padding:0 2.5rem 0 0; }
