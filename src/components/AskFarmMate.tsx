@@ -1155,7 +1155,7 @@ export function AskFarmMate({
   return (
     <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+        <span data-mama-brand="ask-icon" className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
           <Bot size={24} aria-hidden="true" />
         </span>
         <div>
@@ -1224,6 +1224,7 @@ export function AskFarmMate({
 
         <button
           type="submit"
+          data-mama-brand="ask-submit"
           disabled={!canAsk}
           className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-4 text-base font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
         >

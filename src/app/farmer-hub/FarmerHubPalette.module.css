@@ -1,0 +1,26 @@
+.paletteRoot[data-mama-palette="wine"] {
+  --mama-preview-primary: #6b4d57;
+  --mama-preview-strong: #6b4d57;
+}
+
+.paletteRoot[data-mama-palette="teal"] {
+  --mama-preview-primary: #047f86;
+  --mama-preview-strong: #05636a;
+}
+
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-hero"]),
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-card-action"]),
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-submit"]:not(:disabled)) {
+  background: var(--mama-preview-primary);
+  color: #fff;
+}
+
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-hero"]:hover),
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-submit"]:not(:disabled):hover) {
+  background: var(--mama-preview-strong);
+  border-color: var(--mama-preview-strong);
+}
+
+.paletteRoot[data-mama-palette] :global([data-mama-brand="ask-icon"]) {
+  color: var(--mama-preview-primary);
+}

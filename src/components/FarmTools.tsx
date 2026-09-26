@@ -263,12 +263,12 @@ export function FarmTools() {
               onClick={() => openTool(tool.key)}
               className="flex min-h-48 min-w-[82vw] snap-start flex-col items-start rounded-md border border-leaf-900/10 bg-white p-5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:min-w-[44vw] md:min-w-0"
             >
-              <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
+              <span data-mama-brand={tool.key === "ask" ? "ask-icon" : undefined} className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
                 <Icon size={24} aria-hidden="true" />
               </span>
               <h3 className="mt-5 gg-card-title">{tool.title}</h3>
               <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">{tool.description}</p>
-              <span className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900">
+              <span data-mama-brand={tool.key === "ask" ? "ask-card-action" : undefined} className="mt-auto inline-flex min-h-12 items-center justify-center rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900">
                 {tool.action}
               </span>
             </button>

@@ -6,6 +6,8 @@ import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
 import { FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
 import { FarmTools } from "@/components/FarmTools";
 import { createPageMetadata } from "@/lib/seo";
+import { getPreviewMamaPalette } from "@/lib/previewMamaPalette";
+import paletteStyles from "./FarmerHubPalette.module.css";
 
 export const metadata = createPageMetadata({
   title: "Ask Mama G",
@@ -14,9 +16,10 @@ export const metadata = createPageMetadata({
   path: "/farmer-hub"
 });
 
-export default function FarmerHubPage() {
+export default function FarmerHubPage({searchParams}: {searchParams: {mamaPalette?: string | string[]}}) {
+  const mamaPalette = getPreviewMamaPalette(searchParams.mamaPalette);
   return (
-    <main className="bg-gradient-to-b from-white via-earth-50 to-leaf-50/70 text-ink">
+    <main className={`${paletteStyles.paletteRoot} bg-gradient-to-b from-white via-earth-50 to-leaf-50/70 text-ink`} data-mama-palette={mamaPalette ?? undefined}>
       <section>
         <div className="mx-auto grid max-w-7xl gap-7 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.46fr)] lg:items-start lg:px-8 lg:py-12">
           <div className="min-w-0">

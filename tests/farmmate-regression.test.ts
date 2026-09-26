@@ -2273,7 +2273,8 @@ const tests: TestCase[] = [
       assert.ok(page.includes('role="search"'));
       assert.ok(page.includes('name="search"'));
       assert.ok(page.includes('htmlFor="home-search"'));
-      assert.ok(page.includes('href="/farmer-hub"'));
+      assert.ok(page.includes('const mamaHref = mamaPalette ? `/farmer-hub?mamaPalette=${mamaPalette}` : "/farmer-hub";'));
+      assert.ok(page.includes('href={mamaHref}'));
       assert.ok(page.includes('href="/marketplace"'));
       assert.ok(page.includes("Browse Market"));
       assert.match(page, /<span[^>]*aria-disabled="true"[^>]*>All Crops/);
@@ -2320,7 +2321,7 @@ const tests: TestCase[] = [
       const gate = repoFile("src/lib/publicSubmissionAvailability.ts");
       const admin = repoFile("src/app/admin/page.tsx");
       ["Registration is not available yet.", "Connection requests are not available yet.", "AI guidance, not a confirmed diagnosis.", "Published farmers", "Published suppliers"].forEach((text) => assert.ok(page.includes(text), text));
-      assert.ok(page.includes('href="/farmer-hub"'));
+      assert.ok(page.includes('const mamaHref = mamaPalette ? `/farmer-hub?mamaPalette=${mamaPalette}` : "/farmer-hub";'));
       assert.ok(page.includes('href="/learn"'));
       assert.equal(page.includes("Market Prices"), false);
       assert.equal(page.includes("We will review your request and follow up"), false);
