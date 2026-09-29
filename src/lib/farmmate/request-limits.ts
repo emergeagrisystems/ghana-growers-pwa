@@ -2,6 +2,8 @@
 export const FARM_MATE_TEXT_TIMEOUT_MS = 20_000;
 export const FARM_MATE_VISION_TIMEOUT_MS = 25_000;
 export const FARM_MATE_BROWSER_TIMEOUT_MS = 45_000;
+// Allows Crop Doctor's bounded usage-write read-back after the image request.
+export const CROP_DOCTOR_BROWSER_TIMEOUT_MS = 55_000;
 
 export class FarmMateRequestTimeout extends Error {
   constructor() {

@@ -4,7 +4,7 @@ import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } fr
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { boundedJsonRequest, createFarmMateRequestGate, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
+import { boundedJsonRequest, createFarmMateRequestGate, CROP_DOCTOR_BROWSER_TIMEOUT_MS, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import {
   buildCropDoctorHandoffContext,
@@ -251,6 +251,7 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
     formData.append("image", selectedFile);
     formData.append("selectedCrop", selectedCrop || CROP_DOCTOR_AUTO_DETECT_VALUE);
     formData.append("selectedSymptom", selectedSymptom || "Not sure");
+    const previewUsageDiagnostic = new URLSearchParams(window.location.search).get("rc1CropUsage") === "confirm-delayed-insert";
 
     const result = await boundedJsonRequest<{
       ok?: boolean;
@@ -260,8 +261,9 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
       message?: string;
     }>("/api/farmmate/crop-doctor", {
       method: "POST",
+      ...(previewUsageDiagnostic ? { headers: { "x-rc1-crop-usage": "confirm-delayed-insert" } } : {}),
       body: formData
-    }, FARM_MATE_BROWSER_TIMEOUT_MS).catch(() => null);
+    }, CROP_DOCTOR_BROWSER_TIMEOUT_MS).catch(() => null);
     if (!analysisGate.current.isCurrent(requestToken)) return;
     analysisGate.current.finish(requestToken);
     const response = result?.response;

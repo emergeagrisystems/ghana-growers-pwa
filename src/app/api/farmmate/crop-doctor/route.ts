@@ -11,6 +11,7 @@ import {
 } from "@/lib/farmmate/crop-doctor-vision";
 import { cropDoctorCreditMessage, CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE } from "@/lib/farmmate/usage";
 import { checkFarmMateCreditsForDevice, getFarmMateCreditsForDevice, recordFarmMateUsageForDevice } from "@/lib/farmmate/usage/server";
+import { isolatedSupabaseUrl, RC1_STAGING_REF } from "@/lib/supabase/isolation";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -43,15 +44,19 @@ export async function POST(request: Request) {
   // Older clients lack a request ID. Bind their replay key to the actual image
   // bytes and context, not its filename. The image itself is not cached here.
   const replayId = requestId ?? createHash("sha256").update(Buffer.from(await image.arrayBuffer())).update(`${selectedCrop}:${selectedSymptom}`).digest("hex");
+  const simulateUncertainWrite = process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
+    isolatedSupabaseUrl() === `https://${RC1_STAGING_REF}.supabase.co` &&
+    request.headers.get("x-rc1-crop-usage") === "confirm-delayed-insert";
 
   return replayFarmMateRequest(
     farmMateRequestKey(anonymousDeviceId, "crop_doctor", replayId),
     farmMateRequestKey(anonymousDeviceId, "crop_doctor", "active"),
-    () => processCropImage(image, anonymousDeviceId, selectedCrop, selectedSymptom)
+    () => processCropImage(image, anonymousDeviceId, selectedCrop, selectedSymptom, replayId, simulateUncertainWrite)
   );
 }
 
-async function processCropImage(image: File, anonymousDeviceId: string, selectedCrop: string, selectedSymptom: string) {
+async function processCropImage(image: File, anonymousDeviceId: string, selectedCrop: string, selectedSymptom: string, requestId: string, simulateUncertainWrite: boolean) {
 
   const cleanSelectedSymptom = CROP_DOCTOR_SYMPTOMS.includes(selectedSymptom as (typeof CROP_DOCTOR_SYMPTOMS)[number])
     ? selectedSymptom
@@ -109,15 +114,20 @@ async function processCropImage(image: File, anonymousDeviceId: string, selected
 
   const record = await recordFarmMateUsageForDevice({
     anonymousDeviceId,
-    tool: "crop_doctor"
+    tool: "crop_doctor",
+    requestId,
+    simulateUncertainCropDoctorWrite: simulateUncertainWrite
   });
+  if (simulateUncertainWrite) {
+    console.info("[P09-RC1 Crop Doctor Credits] controlled_uncertain_write", JSON.stringify({ readbackConfirmed: record.recovered === true }));
+  }
 
   const credits = await getFarmMateCreditsForDevice({
     anonymousDeviceId,
     tool: "crop_doctor"
   });
 
-  if (!record.recorded) {
+  if (!record.recorded || credits.creditState === "temporarily_unavailable") {
     return NextResponse.json(
       {
         ok: false,

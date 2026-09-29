@@ -22,6 +22,7 @@ import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/fa
 import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, generateFarmMateNaturalAnswer, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
 import { analyzeCropDoctorImageWithOpenAI } from "../src/lib/farmmate/ai/vision";
 import { boundedJsonRequest, FarmMateRequestTimeout } from "../src/lib/farmmate/request-limits";
+import { recordFarmMateUsageForDevice } from "../src/lib/farmmate/usage/server";
 import {
   cleanFarmMateFinalAnswer,
   compactFollowUpSummary,
@@ -4817,6 +4818,127 @@ const tests: TestCase[] = [
         if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
         else process.env.OPENAI_API_KEY = previousKey;
       }
+    }
+  },
+  {
+    name: "Crop Doctor usage read-back confirms only the exact in-window event after an uncertain write",
+    run: async () => {
+      const previousFetch = globalThis.fetch;
+      const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const previousKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const previousEnv = process.env.VERCEL_ENV;
+      const previousBranch = process.env.VERCEL_GIT_COMMIT_REF;
+      const previousNodeEnv = process.env.NODE_ENV;
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "https://ecluxmyxqofkbzcyurlf.supabase.co";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only-not-a-credential";
+      process.env.VERCEL_ENV = "preview";
+      process.env.VERCEL_GIT_COMMIT_REF = "codex/p09-rc1";
+      process.env.NODE_ENV = "production";
+      const now = new Date("2026-09-29T10:00:00.000Z");
+      const rows = new Map<string, { id: string; anonymous_user_hash: string; tool: string; created_at: string }>();
+      let mode: "normal" | "delayed" | "unverifiable" = "normal";
+      let pending: { id: string; anonymous_user_hash: string; tool: string; created_at: string } | null = null;
+      let reads = 0;
+      globalThis.fetch = (async (url, init) => {
+        const target = new URL(String(url));
+        assert.equal(target.hostname, "ecluxmyxqofkbzcyurlf.supabase.co");
+        assert.equal(target.pathname, "/rest/v1/farmmate_usage_events");
+        if (init?.method === "POST") {
+          const row = JSON.parse(String(init.body)) as { id: string; anonymous_user_hash: string; tool: string; created_at: string };
+          if (mode === "unverifiable") throw new Error("simulated uncertain write");
+          if (mode === "delayed") {
+            pending = row;
+            throw new Error("simulated response lost before confirmation");
+          }
+          if (rows.has(row.id)) return Response.json({ message: "duplicate event" }, { status: 409 });
+          rows.set(row.id, row);
+          return Response.json([row], { status: 201 });
+        }
+        assert.equal(init?.method, "GET");
+        reads += 1;
+        if (pending && reads >= 2) {
+          rows.set(pending.id, pending);
+          pending = null;
+        }
+        const id = target.searchParams.get("id")?.replace(/^eq\./, "");
+        const owner = target.searchParams.get("anonymous_user_hash")?.replace(/^eq\./, "");
+        const tool = target.searchParams.get("tool")?.replace(/^eq\./, "");
+        const row = id ? rows.get(id) : undefined;
+        return Response.json(row && row.anonymous_user_hash === owner && row.tool === tool ? [row] : []);
+      }) as typeof fetch;
+      try {
+        const input = { anonymousDeviceId: "crop-doctor-test-device", tool: "crop_doctor" as const, now };
+        const first = await recordFarmMateUsageForDevice({ ...input, requestId: "normal-photo-12345" });
+        assert.equal(first.recorded, true);
+        assert.equal(first.replayed, false);
+        const duplicate = await recordFarmMateUsageForDevice({ ...input, requestId: "normal-photo-12345" });
+        assert.equal(duplicate.recorded, true);
+        assert.equal(duplicate.replayed, true);
+        assert.equal(duplicate.eventId, first.eventId);
+        assert.equal(rows.size, 1);
+
+        const original = rows.get(first.eventId!)!;
+        rows.set(first.eventId!, { ...original, anonymous_user_hash: "another-device" });
+        const wrongOwner = await recordFarmMateUsageForDevice({ ...input, requestId: "normal-photo-12345" });
+        assert.equal(wrongOwner.recorded, false);
+        rows.set(first.eventId!, { ...original, created_at: "2026-09-28T09:59:59.000Z" });
+        const expired = await recordFarmMateUsageForDevice({ ...input, requestId: "normal-photo-12345" });
+        assert.equal(expired.recorded, false);
+        rows.set(first.eventId!, original);
+
+        mode = "delayed";
+        reads = 0;
+        const delayed = await recordFarmMateUsageForDevice({ ...input, requestId: "delayed-photo-12345" });
+        assert.equal(delayed.recorded, true);
+        assert.equal(delayed.recovered, true);
+        assert.equal(reads, 2);
+        assert.equal(rows.size, 2);
+
+        mode = "normal";
+        reads = 0;
+        const confirmedLostResponse = await recordFarmMateUsageForDevice({
+          ...input,
+          requestId: "confirmed-photo-12345",
+          simulateUncertainCropDoctorWrite: true
+        });
+        assert.equal(confirmedLostResponse.recorded, true);
+        assert.equal(confirmedLostResponse.recovered, true);
+        assert.equal(rows.size, 3);
+        assert.equal(reads, 1);
+
+        mode = "unverifiable";
+        reads = 0;
+        const unknown = await recordFarmMateUsageForDevice({ ...input, requestId: "unknown-photo-12345" });
+        assert.equal(unknown.recorded, false);
+        assert.equal(unknown.storage, "unavailable");
+        assert.equal(rows.size, 3);
+      } finally {
+        globalThis.fetch = previousFetch;
+        if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+        else process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
+        if (previousKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+        else process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
+        if (previousEnv === undefined) delete process.env.VERCEL_ENV;
+        else process.env.VERCEL_ENV = previousEnv;
+        if (previousBranch === undefined) delete process.env.VERCEL_GIT_COMMIT_REF;
+        else process.env.VERCEL_GIT_COMMIT_REF = previousBranch;
+        if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = previousNodeEnv;
+      }
+    }
+  },
+  {
+    name: "Crop Doctor passes its per-photo request ID to usage recording and retains fail-closed credits",
+    run: () => {
+      const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
+      const client = repoFile("src/components/CropDoctor.tsx");
+      assert.equal(client.includes('formData.append("requestId", photoRequestId.current)'), true);
+      assert.equal(route.includes("processCropImage(image, anonymousDeviceId, selectedCrop, selectedSymptom, replayId, simulateUncertainWrite)"), true);
+      assert.match(route, /tool: "crop_doctor",\s*requestId/);
+      assert.equal(route.includes('credits.creditState === "temporarily_unavailable"'), true);
+      assert.equal(client.includes("CROP_DOCTOR_BROWSER_TIMEOUT_MS"), true);
+      assert.equal(route.includes('process.env.VERCEL_ENV === "preview"'), true);
+      assert.equal(route.includes('isolatedSupabaseUrl() === `https://${RC1_STAGING_REF}.supabase.co`'), true);
     }
   },
   {

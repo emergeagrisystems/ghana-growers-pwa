@@ -12,6 +12,7 @@ type FarmMateUsageEventRow = {
 
 const memoryEvents: Array<FarmMateUsageEventRow> = [];
 const USAGE_TIMEOUT_MS = 5_000;
+const CROP_DOCTOR_READBACK_TIMEOUT_MS = 3_000;
 const CONTINUATION_TIMEOUT_MS = 8_000;
 
 type UsageStorage = "supabase" | "memory" | "none" | "unavailable";
@@ -122,7 +123,38 @@ async function readUsageEvents(anonymousUserHash: string, tool: FarmMateUsageToo
   };
 }
 
-async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date(), requestId?: string) {
+async function confirmCropDoctorUsageEvent(event: FarmMateUsageEventRow, now: Date) {
+  const windowStart = new Date(now.getTime() - farmMateUsageWindowMs("crop_doctor"));
+  const query = [
+    `id=eq.${encodeURIComponent(event.id)}`,
+    `anonymous_user_hash=eq.${encodeURIComponent(event.anonymous_user_hash)}`,
+    "tool=eq.crop_doctor",
+    `created_at=gt.${encodeURIComponent(windowStart.toISOString())}`,
+    `created_at=lte.${encodeURIComponent(now.toISOString())}`,
+    "select=id,anonymous_user_hash,tool,created_at",
+    "limit=1"
+  ].join("&");
+
+  // A timed-out insert may already have committed. Read only the exact event,
+  // with two short attempts to cover a response that races the database commit.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const result = await selectSupabaseRecords<FarmMateUsageEventRow>("farmmate_usage_events", query, {
+      signal: AbortSignal.timeout(CROP_DOCTOR_READBACK_TIMEOUT_MS)
+    }).catch(() => ({ error: "Usage read-back unavailable or timed out", status: 503, data: undefined }));
+    const confirmed = result.data?.some((row) =>
+      row.id === event.id &&
+      row.anonymous_user_hash === event.anonymous_user_hash &&
+      row.tool === "crop_doctor" &&
+      new Date(row.created_at).getTime() > windowStart.getTime() &&
+      new Date(row.created_at).getTime() <= now.getTime()
+    );
+    if (confirmed) return true;
+    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  return false;
+}
+
+async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageTool, now = new Date(), requestId?: string, simulateUncertainCropDoctorWrite = false) {
   const hash = requestId ? crypto.createHash("sha256").update(`${anonymousUserHash}:${tool}:${requestId}`).digest("hex") : null;
   const payload = {
     id: hash ? `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}` : crypto.randomUUID(),
@@ -134,20 +166,33 @@ async function writeUsageEvent(anonymousUserHash: string, tool: FarmMateUsageToo
   if (hasSupabaseAdminConfig()) {
     const result = await insertSupabaseRecord("farmmate_usage_events", payload, { signal: AbortSignal.timeout(USAGE_TIMEOUT_MS) })
       .catch(() => ({ error: "Usage write unavailable or timed out", status: 503 }));
+    const simulateLostResponse = simulateUncertainCropDoctorWrite && tool === "crop_doctor" && Boolean(requestId) &&
+      process.env.VERCEL_ENV === "preview" && process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co";
+    const observedResult = simulateLostResponse && !result.error
+      ? { error: "Preview-simulated uncertain Crop Doctor write response", status: 503 }
+      : result;
 
-    if (requestId && result.status === 409) {
+    if (tool === "crop_doctor" && requestId && (observedResult.status === 409 || observedResult.error)) {
+      const confirmed = await confirmCropDoctorUsageEvent(payload, now);
+      if (confirmed) {
+        return { recorded: true as const, replayed: observedResult.status === 409, recovered: true as const, storage: "supabase" as const, eventId: payload.id };
+      }
+    }
+
+    if (requestId && observedResult.status === 409 && tool !== "crop_doctor") {
       return { recorded: false as const, replayed: true as const, storage: "supabase" as const };
     }
 
-    if (!result.error) {
+    if (!observedResult.error) {
       return { recorded: true as const, storage: "supabase" as const, eventId: payload.id };
     }
 
-    const missingTable = /farmmate_usage_events|does not exist|schema cache|relation/i.test(result.error);
-    warnUsage(missingTable ? "Usage table missing or unavailable during usage write." : "Usage write failed.", result.error);
+    const missingTable = /farmmate_usage_events|does not exist|schema cache|relation/i.test(observedResult.error);
+    warnUsage(missingTable ? "Usage table missing or unavailable during usage write." : "Usage write failed.", observedResult.error);
 
     if (!canUseMemoryUsageFallback()) {
-      return { recorded: false as const, storage: "unavailable" as const, error: result.error };
+      return { recorded: false as const, storage: "unavailable" as const, error: observedResult.error };
     }
   } else {
     warnUsage("Supabase config missing for usage tracking write.");
@@ -301,12 +346,14 @@ export async function recordFarmMateUsageForDevice({
   anonymousDeviceId,
   tool,
   now = new Date(),
-  requestId
+  requestId,
+  simulateUncertainCropDoctorWrite = false
 }: {
   anonymousDeviceId: unknown;
   tool: FarmMateUsageTool;
   now?: Date;
   requestId?: string;
+  simulateUncertainCropDoctorWrite?: boolean;
 }) {
   const anonymousUserHash = getAnonymousUserHash(anonymousDeviceId);
 
@@ -317,12 +364,13 @@ export async function recordFarmMateUsageForDevice({
     };
   }
 
-  const writeResult = await writeUsageEvent(anonymousUserHash, tool, now, requestId);
+  const writeResult = await writeUsageEvent(anonymousUserHash, tool, now, requestId, simulateUncertainCropDoctorWrite);
 
   return {
     recorded: writeResult.recorded,
     storage: writeResult.storage,
     replayed: "replayed" in writeResult && writeResult.replayed === true,
+    recovered: "recovered" in writeResult && writeResult.recovered === true,
     eventId: "eventId" in writeResult ? writeResult.eventId : undefined
   };
 }
