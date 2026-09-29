@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   cropDoctorVisionSystemPrompt,
   normalizeCropDoctorSelectedCrop,
@@ -15,6 +16,10 @@ const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
 
 type OpenAIResponsesApiResult = {
+  status?: string;
+  incomplete_details?: { reason?: string } | null;
+  error?: { code?: string; type?: string } | null;
+  usage?: { output_tokens?: number; output_tokens_details?: { reasoning_tokens?: number } } | null;
   output_text?: string;
   output?: Array<{
     content?: Array<{
@@ -23,6 +28,50 @@ type OpenAIResponsesApiResult = {
     }>;
   }>;
 };
+
+type VisionDiagnostic = {
+  correlationId: string;
+  model: string;
+  httpStatus: number | null;
+  httpStatusClass: string | null;
+  providerStatus: string;
+  incompleteReason: string;
+  outputLength: number;
+  outputTokens: number | null;
+  reasoningTokens: number | null;
+  timeoutClassification: "none" | "bounded_timeout";
+  normalizedErrorCategory: string;
+};
+
+function logVisionDiagnostic(fields: VisionDiagnostic) {
+  if (
+    process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === "codex/p09-rc1" &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") === "https://ecluxmyxqofkbzcyurlf.supabase.co"
+  ) {
+    // No request/response body, image, headers, device ID, or provider message.
+    console.info("[P09-RC1 Crop Doctor AI]", JSON.stringify(fields));
+  }
+}
+
+function safeProviderStatus(value: string | undefined) {
+  return ["completed", "incomplete", "failed", "cancelled", "in_progress", "queued"].includes(value ?? "")
+    ? value!
+    : "unknown";
+}
+
+function safeIncompleteReason(value: string | undefined) {
+  return ["max_output_tokens", "max_tokens", "content_filter"].includes(value ?? "") ? value! : "other_or_none";
+}
+
+function providerErrorCategory(status: number, data: OpenAIResponsesApiResult) {
+  if (data.error?.code === "model_not_found") return "model_unavailable";
+  if (status === 401 || status === 403) return "authentication_or_permission";
+  if (status === 429) return "rate_or_quota";
+  if (status >= 500) return "provider_server";
+  if (status >= 400) return "provider_request";
+  return "none";
+}
 
 export type CropDoctorVisionInput = {
   mimeType: string;
@@ -74,6 +123,11 @@ function parseJsonObject(text: string) {
 }
 
 export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionInput): Promise<CropDoctorVisionAiResult> {
+  const correlationId = randomUUID();
+  const configuredModel = process.env.OPENAI_VISION_MODEL?.trim() || process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+  const model = /^(?:gpt-[a-z0-9._-]{1,70}|o[1-9][a-z0-9._-]{0,70})$/i.test(configuredModel)
+    ? configuredModel
+    : "unclassified_model";
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const selectedCrop = normalizeCropDoctorSelectedCrop(input.selectedCrop);
   const selectedSymptom = input.selectedSymptom?.trim() || "Not sure";
@@ -87,6 +141,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
       : `The farmer says the crop is ${selectedCrop}. Treat this as context only and check whether the image appears consistent with that crop.`;
 
   if (!apiKey) {
+    logVisionDiagnostic({ correlationId, model, httpStatus: null, httpStatusClass: null, providerStatus: "unknown", incompleteReason: "other_or_none", outputLength: 0, outputTokens: null, reasoningTokens: null, timeoutClassification: "none", normalizedErrorCategory: "missing_api_key" });
     return { ok: false, reason: "missing_api_key", fallback: true };
   }
 
@@ -98,7 +153,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_VISION_MODEL?.trim() || process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL,
+        model: configuredModel,
         instructions: cropDoctorVisionSystemPrompt(),
         input: [
           {
@@ -120,17 +175,38 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
       })
     }, FARM_MATE_VISION_TIMEOUT_MS);
 
+    const text = extractOutputText(data);
+    const json = text ? parseJsonObject(text) : null;
+    const normalizedErrorCategory = !response.ok
+      ? providerErrorCategory(response.status, data)
+      : data.status === "incomplete"
+        ? "provider_incomplete"
+        : !text
+          ? "empty_response"
+          : !json
+            ? "invalid_output_json"
+            : "none";
+    logVisionDiagnostic({
+      correlationId,
+      model,
+      httpStatus: response.status,
+      httpStatusClass: `${Math.floor(response.status / 100)}xx`,
+      providerStatus: safeProviderStatus(data.status),
+      incompleteReason: safeIncompleteReason(data.incomplete_details?.reason),
+      outputLength: text.length,
+      outputTokens: data.usage?.output_tokens ?? null,
+      reasoningTokens: data.usage?.output_tokens_details?.reasoning_tokens ?? null,
+      timeoutClassification: "none",
+      normalizedErrorCategory
+    });
+
     if (!response.ok) {
       return { ok: false, reason: "openai_request_error", fallback: true };
     }
 
-    const text = extractOutputText(data);
-
     if (!text) {
       return { ok: false, reason: "empty_response", fallback: true };
     }
-
-    const json = parseJsonObject(text);
 
     if (!json) {
       return { ok: false, reason: "invalid_response", fallback: true };
@@ -144,6 +220,8 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
       })
     };
   } catch (error) {
-    return { ok: false, reason: error instanceof FarmMateRequestTimeout ? "model_timeout" : "openai_request_error", fallback: true };
+    const timedOut = error instanceof FarmMateRequestTimeout;
+    logVisionDiagnostic({ correlationId, model, httpStatus: null, httpStatusClass: null, providerStatus: "unknown", incompleteReason: "other_or_none", outputLength: 0, outputTokens: null, reasoningTokens: null, timeoutClassification: timedOut ? "bounded_timeout" : "none", normalizedErrorCategory: timedOut ? "model_timeout" : error instanceof SyntaxError ? "invalid_provider_json" : "transport_or_unknown" });
+    return { ok: false, reason: timedOut ? "model_timeout" : "openai_request_error", fallback: true };
   }
 }
