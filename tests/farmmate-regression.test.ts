@@ -20,6 +20,7 @@ import {
 import { resolveAdminOptionalSource } from "../src/lib/adminOptionalSources";
 import { buildFarmMateResponse, type FarmMateBrainResponse } from "../src/lib/farmmate/decision-engine";
 import { buildFarmMateVoiceLayerInput, FARM_MATE_SYSTEM_PROMPT, generateFarmMateNaturalAnswer, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai";
+import { analyzeCropDoctorImageWithOpenAI } from "../src/lib/farmmate/ai/vision";
 import { boundedJsonRequest, FarmMateRequestTimeout } from "../src/lib/farmmate/request-limits";
 import {
   cleanFarmMateFinalAnswer,
@@ -4747,6 +4748,70 @@ const tests: TestCase[] = [
         const result = await generateFarmMateNaturalAnswer(input);
         assert.equal(result.ok, false);
         if (!result.ok) assert.equal(result.reason, "incomplete_response");
+      } finally {
+        globalThis.fetch = previousFetch;
+        if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+        else process.env.OPENAI_API_KEY = previousKey;
+      }
+    }
+  },
+  {
+    name: "Crop Doctor uses bounded low-effort output and accepts only completed JSON",
+    run: async () => {
+      const previousFetch = globalThis.fetch;
+      const previousKey = process.env.OPENAI_API_KEY;
+      const previousVisionModel = process.env.OPENAI_VISION_MODEL;
+      process.env.OPENAI_API_KEY = "test-only-not-a-credential";
+      process.env.OPENAI_VISION_MODEL = "gpt-5.5";
+      let providerStatus: "incomplete" | "completed" = "incomplete";
+      globalThis.fetch = (async (_url, init) => {
+        const request = JSON.parse(String(init?.body));
+        assert.equal(request.model, "gpt-5.5");
+        assert.equal(request.max_output_tokens, 1_200);
+        assert.equal(request.reasoning.effort, "low");
+        return Response.json({
+          status: providerStatus,
+          incomplete_details: providerStatus === "incomplete" ? { reason: "max_output_tokens" } : null,
+          output: [{ content: [{ type: "output_text", text: JSON.stringify({ resultType: "no_clear_problem", mainFinding: "No clear problem is visible." }) }] }]
+        });
+      }) as typeof fetch;
+      try {
+        const input = { mimeType: "image/jpeg", base64Image: "test-image", selectedCrop: "Tomato" };
+        const incomplete = await analyzeCropDoctorImageWithOpenAI(input);
+        assert.equal(incomplete.ok, false);
+        if (!incomplete.ok) assert.equal(incomplete.reason, "incomplete_response");
+        providerStatus = "completed";
+        const complete = await analyzeCropDoctorImageWithOpenAI(input);
+        assert.equal(complete.ok, true);
+      } finally {
+        globalThis.fetch = previousFetch;
+        if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+        else process.env.OPENAI_API_KEY = previousKey;
+        if (previousVisionModel === undefined) delete process.env.OPENAI_VISION_MODEL;
+        else process.env.OPENAI_VISION_MODEL = previousVisionModel;
+      }
+    }
+  },
+  {
+    name: "Crop Doctor safely falls back on simulated provider failure and invalid JSON",
+    run: async () => {
+      const previousFetch = globalThis.fetch;
+      const previousKey = process.env.OPENAI_API_KEY;
+      process.env.OPENAI_API_KEY = "test-only-not-a-credential";
+      let failWithHttp = true;
+      globalThis.fetch = (async () => failWithHttp
+        ? Response.json({ status: "failed", error: { code: "server_error" } }, { status: 503 })
+        : Response.json({ status: "completed", output: [{ content: [{ type: "output_text", text: "{not valid json" }] }] })
+      ) as typeof fetch;
+      try {
+        const input = { mimeType: "image/jpeg", base64Image: "test-image" };
+        const providerFailure = await analyzeCropDoctorImageWithOpenAI(input);
+        assert.equal(providerFailure.ok, false);
+        if (!providerFailure.ok) assert.equal(providerFailure.reason, "openai_request_error");
+        failWithHttp = false;
+        const invalidJson = await analyzeCropDoctorImageWithOpenAI(input);
+        assert.equal(invalidJson.ok, false);
+        if (!invalidJson.ok) assert.equal(invalidJson.reason, "invalid_response");
       } finally {
         globalThis.fetch = previousFetch;
         if (previousKey === undefined) delete process.env.OPENAI_API_KEY;

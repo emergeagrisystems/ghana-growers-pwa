@@ -14,6 +14,7 @@ import { boundedJsonRequest, FARM_MATE_VISION_TIMEOUT_MS, FarmMateRequestTimeout
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-5.5";
+const CROP_DOCTOR_MAX_OUTPUT_TOKENS = 1_200;
 
 type OpenAIResponsesApiResult = {
   status?: string;
@@ -87,7 +88,7 @@ export type CropDoctorVisionAiResult =
     }
   | {
       ok: false;
-      reason: "missing_api_key" | "model_timeout" | "openai_request_error" | "empty_response" | "invalid_response";
+      reason: "missing_api_key" | "model_timeout" | "openai_request_error" | "incomplete_response" | "empty_response" | "invalid_response";
       fallback: true;
     };
 
@@ -154,6 +155,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
       },
       body: JSON.stringify({
         model: configuredModel,
+        ...(configuredModel === DEFAULT_MODEL ? { reasoning: { effort: "low" } } : {}),
         instructions: cropDoctorVisionSystemPrompt(),
         input: [
           {
@@ -171,7 +173,7 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
             ]
           }
         ],
-        max_output_tokens: 600
+        max_output_tokens: CROP_DOCTOR_MAX_OUTPUT_TOKENS
       })
     }, FARM_MATE_VISION_TIMEOUT_MS);
 
@@ -202,6 +204,10 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
 
     if (!response.ok) {
       return { ok: false, reason: "openai_request_error", fallback: true };
+    }
+
+    if (data.status !== "completed") {
+      return { ok: false, reason: "incomplete_response", fallback: true };
     }
 
     if (!text) {
