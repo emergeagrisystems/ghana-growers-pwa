@@ -17,6 +17,7 @@ export function refineAgronomyAssessment(a: AgronomyAssessment, question: string
     a.displayTitle = "Yes — we can assess the visible signs";
     a.finding = "I may not have Ghana-specific guidance for this crop, but I can still help assess its leaf spots.";
     a.why = "Spot shape, affected leaves and the spread help narrow the possibilities without guessing a disease.";
+    a.possibilities = ["On this crop, matching insect injury can support a pest-related possibility; an insect nearby alone is not proof.", "Spot appearance and progression can help distinguish tissue injury from a disease-like pattern, but cannot confirm a pathogen."];
     a.actions = ["Note the spots' colour, border or halo, and whether they are dry, wet, flat or sunken.", "Compare older and younger leaves; look for spots merging, matching insect injury and the pattern across plants."];
     a.next = "Tell me the crop name if you know it, or open Crop Doctor with a clear affected-leaf photo.";
     a.detail = ["Include both leaf surfaces and the boundary between healthy and damaged tissue. Note when the spots began and any recent field operation.", "Recent weather can help interpret spread but does not identify a pathogen. Do not assume an insect present caused the spots without matching injury."];
@@ -39,6 +40,7 @@ export function refineAgronomyAssessment(a: AgronomyAssessment, question: string
     const damage = has("Spots, streaks or chewing");
     const young = has("Younger leaves or between the veins");
     const inputs = has("Fertilizer or manure already used");
+    const noInputs = has("No fertilizer or manure");
     const age = question.match(/\b(\d{1,2})\s*weeks?\s*old\b/i)?.[0];
     if (age && !a.observed.some(v => v.includes(age))) a.observed.unshift(`Farmer supplied crop age: ${age}`);
     a.finding = wet ? "Root stress is the first lead in wet ground; more fertilizer alone will not repair stressed roots."
@@ -48,10 +50,12 @@ export function refineAgronomyAssessment(a: AgronomyAssessment, question: string
       : young ? "Younger-leaf or between-vein yellowing does not fit the simple older-leaf nitrogen clue."
       : "Yellow maize can reflect nutrient shortage, root/moisture stress or leaf injury; check the pattern before adding fertilizer.";
     a.why = inputs ? "Previous fertilizer does not rule out poor uptake. Compare root condition and leaf damage before repeating it."
+      : noInputs ? "You reported no fertilizer or manure. That makes nutrient supply worth considering, but roots, moisture and leaf damage still matter."
       : "Leaf age and pattern are more useful than yellow colour alone; soil moisture determines whether roots can take nutrients up.";
     a.actions = [
       wet ? "Check drainage and affected roots against greener plants; stop adding water to already waterlogged ground."
         : dry ? "Correct confirmed dry root-zone soil without flooding, then compare the affected plants with greener ones."
+        : noInputs ? "Older leaves yellowing from the tip in a V, without matching holes or spots, strengthens the nutrient lead; compare whether greener plants show the same pattern."
         : "Older leaves yellowing from the tip in a V, without matching holes or spots, strengthens the nutrient lead; check the previous input record.",
       damage ? "Inspect the whorl and both leaf surfaces for fresh chewing, insects or distinct lesions; photograph matching signs before treatment."
         : "Chewing holes, whorl damage or distinct spots weaken a simple nutrient explanation; inspect those signs before choosing an input.",
@@ -60,7 +64,7 @@ export function refineAgronomyAssessment(a: AgronomyAssessment, question: string
         : "If roots are sound, moisture is adequate and the older-leaf pattern persists, use a locally applicable maize nutrient plan; no rate can be chosen from colour alone."
     ];
     a.next = "Photograph an older and a younger leaf on the same affected plant beside a greener plant for comparison.";
-    a.detail = ["Map uniform versus patchy yellowing and any stunting. Wet patches, dry patches or an input strip can explain why only part of a field is affected.", "Record manure/fertilizer product, date and placement. A soil test can refine a nutrient plan, but first distinguish injured leaves and impaired roots.", "A forecast is not a measurement of root-zone moisture. No precise fertilizer rate or named pathogen is inferred from these clues."];
+    a.detail = ["Map uniform versus patchy yellowing and any stunting. Wet patches, dry patches or an input strip can explain why only part of a field is affected.", noInputs ? "No previous fertilizer or manure is recorded for this consultation. A soil test can refine a future nutrient plan, but first distinguish injured leaves and impaired roots." : "Record manure/fertilizer product, date and placement. A soil test can refine a nutrient plan, but first distinguish injured leaves and impaired roots.", "A forecast is not a measurement of root-zone moisture. No precise fertilizer rate or named pathogen is inferred from these clues."];
   }
 
   if (a.cardId === "tomato-staking") {

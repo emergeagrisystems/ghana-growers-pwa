@@ -63,8 +63,24 @@ test("E: exact uncommon-crop intent is one crop, not several crops", () => {
   assert.equal(a.cardId, "limited-crop");
   assert.equal(a.followUp, undefined);
   assert.doesNotMatch([a.finding, a.why, ...a.actions, a.next].join(" "), /Several crop types/);
+  assert.doesNotMatch(a.possibilities.join(" "), /several|multiple|many crop|kinds of plant/i);
   assert.match(a.next, /crop name|Crop Doctor/);
   assert.match(a.actions.join(" "), /border or halo|older and younger/);
+});
+test("R1: a completed no-input maize answer does not ask for an input record again", () => {
+  const a = assessAgronomyEvidence("My maize is about 4 weeks old and the leaves are becoming yellow. Should I fertilize it?", "Maize", [answer("a1-maize-yellow-pattern", "Older leaves, V from the tip"), answer("a1-maize-root-moisture", "Moist and draining"), answer("a1-maize-inputs", "No fertilizer or manure")])!;
+  assert.match(a.why, /reported no fertilizer or manure/);
+  assert.doesNotMatch([...a.actions, ...a.detail].join(" "), /check the previous input record|Record manure\/fertilizer product/i);
+  assert.match(a.actions.join(" "), /roots are sound/);
+});
+test("R1: unrelated uncommon-crop Ask does not inherit completed maize context", () => {
+  const maize = "My maize leaves are yellow";
+  buildFarmMateResponse(maize, routeFarmMateQuestion(maize));
+  const q = "I am growing a crop that is not common in Ghana. Can you still help me diagnose leaf spots?";
+  const a = buildFarmMateResponse(q, routeFarmMateQuestion(q)).agronomyEvidence!;
+  assert.equal(a.cardId, "limited-crop");
+  assert.doesNotMatch(JSON.stringify(a), /Older leaves, V|No fertilizer or manure|nitrogen-related|Several crop types/);
+  assert.equal(a.followUp, undefined);
 });
 test("F: vision instructions require differentiating signs, not removal as the check", () => {
   const p = cropDoctorVisionSystemPrompt();
