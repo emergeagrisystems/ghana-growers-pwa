@@ -46,9 +46,9 @@ export const agronomyCards: AgronomyCard[] = [
       choice("Along a sprayed or worked strip", "The field-work pattern raises input or physical injury as a possibility, not a confirmed cause.", "Record the product or operation and timing; pause the suspected operation while a local adviser checks the pattern."),
       choice("Mostly in dry areas", "Moisture stress or impaired roots are plausible; dry-looking leaves alone cannot distinguish them.", "Check moisture below the surface beside roots before adding water; compare with an unaffected area.")
     ]), q("decline-base", "What do you see at the affected stem base or roots?", [
-      choice("Soft, dark or damaged base", "Base damage makes a root/stem problem more concerning; the organism remains unconfirmed.", "Use a close-up and field pattern for prompt local plant-health assessment; avoid moving affected soil or planting material."),
-      choice("Dry soil; base looks intact", "Dryness may contribute, but intact-looking tissue does not rule out hidden root damage.", "If moisture is deficient, water the root zone carefully and compare recovery with nearby plants."),
-      choice("Base looks intact; soil is moist", "The base check has not explained the decline.", "Inspect leaf undersides, recent inputs and the progression of damage with a local extension officer.")
+      choice("Soft, dark or damaged base", "Base damage makes a root/stem problem more concerning; the organism remains unconfirmed.", "Use a close-up and field pattern for prompt local plant-health assessment; avoid moving affected soil or planting material.", "Bring the base photo and the location of the damaged patch to a local plant-health adviser."),
+      choice("Dry soil; base looks intact", "Dryness may contribute, but intact-looking tissue does not rule out hidden root damage.", "If moisture is deficient, water the root zone carefully and compare recovery with nearby plants.", "Record whether the affected plants recover after moisture is corrected; continued decline needs a root assessment."),
+      choice("Base looks intact; soil is moist", "The base check has not explained the decline.", "Inspect leaf undersides, recent inputs and the progression of damage with a local extension officer.", "Collect an underside-leaf photo to check for matching pest signs.")
     ])]
   },
   {
