@@ -6648,7 +6648,7 @@ const tests: TestCase[] = [
       assert.equal(result.whatToCheck.some((line) => line.includes("whole-plant photo may help")), true);
       assert.equal(result.whatToCheck.some((line) => line.includes("Select the crop")), true);
       assert.equal(result.recommendedActions.some((line) => line.includes("Ask Mama G")), true);
-      assert.equal(result.askFarmMatePrompt.includes("could not confirm the crop"), true);
+      assert.equal(result.askFarmMatePrompt, "What should I check next from my crop photo?");
       assert.equal(resultText.includes("named disease"), false);
       assert.equal(resultText.includes("definitely"), false);
     }
@@ -7159,9 +7159,8 @@ const tests: TestCase[] = [
         visibleSigns: ["leaf curling", "pale patches"]
       });
 
-      assert.equal(prompt.includes("I selected Cassava"), true);
-      assert.equal(prompt.includes("showing leaves curling"), true);
-      assert.equal(prompt.includes("leaf curling, pale patches"), true);
+      assert.equal(prompt, "What should I check next for my Cassava photo?");
+      assert.equal(prompt.includes("leaf curling, pale patches"), false);
       assert.equal(prompt.toLowerCase().includes("tomato"), false);
       assert.equal(prompt.toLowerCase().includes("early blight"), false);
     }
@@ -7179,7 +7178,7 @@ const tests: TestCase[] = [
         visibleSigns: ["orange spots"]
       });
 
-      assert.equal(prompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
+      assert.equal(prompt, "What should I check next for this Maize photo?");
       assert.equal(prompt.toLowerCase().includes("tomato"), false);
       assert.equal(prompt.toLowerCase().includes("early blight"), false);
     }
@@ -7195,7 +7194,7 @@ const tests: TestCase[] = [
         visibleSigns: ["brown spots"]
       });
 
-      assert.equal(prompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw brown spots. What should I check next?");
+      assert.equal(prompt, "What should I check next from my crop photo?");
     }
   },
   {
@@ -7230,7 +7229,7 @@ const tests: TestCase[] = [
       assert.equal(result.cropFromImage, "Pepper");
       assert.equal(result.photoCropMatch, "not_clear");
       assert.equal(result.resultType, "crop_not_confirmed");
-      assert.equal(result.askFarmMatePrompt.includes("could not confirm the crop"), true);
+      assert.equal(result.askFarmMatePrompt, "What should I check next from my crop photo?");
     }
   },
   {
@@ -7247,7 +7246,7 @@ const tests: TestCase[] = [
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.crop, "Pepper");
       assert.equal(result.photoCropMatch, "uncertain");
-      assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Pepper from my photo and saw curling leaves. What should I check next?");
+      assert.equal(result.askFarmMatePrompt, "What should I check next for this Pepper photo?");
     }
   },
   {
@@ -7478,7 +7477,7 @@ const tests: TestCase[] = [
 
       assert.equal(
         result.askFarmMatePrompt,
-        "I selected Cassava and uploaded a crop photo showing roots or tubers problem. Crop Doctor saw harvested roots. What should I check next?"
+        "What should I check next for my Cassava photo?"
       );
     }
   },
@@ -7560,7 +7559,8 @@ const tests: TestCase[] = [
 
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.crop, "Maize");
-      assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
+      assert.equal(result.askFarmMatePrompt, "What should I check next for this Maize photo?");
+      assert.deepEqual(buildCropDoctorHandoffContext(result).visibleSigns, ["orange spots"]);
       assert.equal(cropDoctor.includes('diagnosis.crop ?? "unconfirmed"'), true);
       assert.equal(cropDoctor.includes("askFarmMateAboutThis"), true);
       assert.equal(cropDoctor.includes("Visible-problem confidence"), true);
@@ -7579,7 +7579,7 @@ const tests: TestCase[] = [
 
       assert.equal(result.crop, null);
       assert.equal(result.resultType, "crop_not_confirmed");
-      assert.equal(result.askFarmMatePrompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw blurred leaves. What should I check next?");
+      assert.equal(result.askFarmMatePrompt, "What should I check next from my crop photo?");
       assert.equal(cropDoctor.includes("What remains unconfirmed"), true);
       assert.equal(cropDoctor.includes("Take another photo"), true);
       assert.equal(cropDoctor.includes("Choose another photo"), true);

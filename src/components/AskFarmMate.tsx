@@ -83,11 +83,11 @@ function displayedAnswerSections(answer: string) {
 }
 
 function decisionStatusFromAnswer(answer: string, response: FarmMateBrainResponse | null): FarmMateDecisionStatusValue | null {
-  if (response?.flow?.intent !== "planting" && response?.flow?.intent !== "weather-decisions") return null;
+  if (!response?.flow) return null;
   if (/not enough information|cannot tell yet|need to know/i.test(answer)) return "NOT ENOUGH INFORMATION";
   if (/do not (spray|plant|apply|harvest)|don.t (spray|plant|apply|harvest)|wait until/i.test(answer)) return "WAIT";
   if (/may be suitable|conditions look suitable/i.test(answer)) return "CHECK FIRST";
-  return null;
+  return "CHECK FIRST";
 }
 
 function conversationalOption(questionId: string, option: string) {

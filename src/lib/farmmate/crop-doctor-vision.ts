@@ -419,18 +419,15 @@ export function buildCropDoctorAskFarmMatePrompt(
     nextBestAction?: string;
   }
 ) {
-  const signs = result.visibleSigns.length ? result.visibleSigns.join(", ") : "unclear symptoms";
-  const symptom = result.selectedSymptom && result.selectedSymptom !== "Not sure" ? result.selectedSymptom.toLowerCase() : "unclear symptoms";
-
   if (hasFarmerSelectedCrop(result.selectedCrop)) {
-    return `I selected ${result.selectedCrop} and uploaded a crop photo showing ${symptom}. Crop Doctor saw ${signs}. What should I check next?`;
+    return `What should I check next for my ${result.selectedCrop} photo?`;
   }
 
   if (result.crop && result.cropConfidence !== "low" && result.resultType !== "crop_not_confirmed") {
-    return `Crop Doctor detected ${result.crop} from my photo and saw ${signs}. What should I check next?`;
+    return `What should I check next for this ${result.crop} photo?`;
   }
 
-  return `I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw ${signs}. What should I check next?`;
+  return "What should I check next from my crop photo?";
 }
 
 export function normalizeCropDoctorVisionResult(value: unknown, context: { selectedCrop?: string | null; selectedSymptom?: string | null } = {}): CropDoctorVisionResult {
