@@ -10,4 +10,4 @@ Scope: Ask UI → existing API/decision flow → refined evidence → existing p
 
 Protected: main a008a17f90013ce5fd98dd79058e2aa5c452d906; Production deployment/Supabase; staging Auth/schema; usage/retry/idempotency; weather; safety; business functionality. No migration required or authorised. No environment/security-setting change. Source register remains authoritative; unsupported chemical/rate/food-safety precision stays restricted.
 
-Return status: P09-RC1-A1R1 — RETURN FOR FOUNDER PRODUCT-QUALITY REVIEW. Founder product judgement, not automated test count, determines acceptance. If approved, qualified Ghana agronomic/post-harvest review is next. Production remains locked.
+Source review metadata and its assertion also reflect that restored gate, without bringing governance wording into normal answers. Return status: P09-RC1-A1R1 — RETURN FOR FOUNDER PRODUCT-QUALITY REVIEW. Founder product judgement, not automated test count, determines acceptance. If approved, qualified Ghana agronomic/post-harvest review is next. Production remains locked.
