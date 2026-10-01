@@ -364,7 +364,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
       >
         <div>
           <UploadCloud className={`mx-auto ${isUploadDisabled ? "text-ink/35" : "text-leaf-700"}`} size={32} aria-hidden="true" />
-          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Add a photo"}</p>
+          <p className="mt-3 text-base font-black text-ink">{isAnalysing ? "Checking your photo" : isUploadDisabled ? "No Crop Doctor checks available" : "Add a photo"}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
             {isUploadDisabled
               ? "You can still ask Mama G for guidance while you wait."
@@ -561,17 +561,18 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I could see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
               <p><strong className="text-ink">What remains unconfirmed:</strong> The crop identity and exact cause are not established from this photo.</p>
               <p><strong className="text-ink">Possible:</strong> {mamaGPublicText(diagnosis.whatThisMeans)}</p>
-              <p><strong className="text-ink">What would distinguish it:</strong> {mamaGPublicText(diagnosis.whatToCheck[0] ?? "A sharper affected-part photo in daylight may help.")}</p>
+              <div><strong className="text-ink">How to tell:</strong><ul className="mt-1 list-disc space-y-2 pl-4">{diagnosis.whatToCheck.slice(0, 2).map(line => <li key={line}>{mamaGPublicText(line)}</li>)}</ul></div>
               <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>
             </div> : <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
-              <p><strong className="text-ink">Possible issue:</strong> {mamaGPublicText(diagnosis.possibleIssue)} ({diagnosis.photoConfidenceLabel.toLowerCase()} photo confidence)</p>
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I can see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
               <p><strong className="text-ink">What it may suggest:</strong> {mamaGPublicText(diagnosis.whatThisMeans)}</p>
-              <p><strong className="text-ink">Unconfirmed:</strong> The exact cause and food/feed safety cannot be established from this photo.</p>
-              {resultCheck ? <p><strong className="text-ink">Check now:</strong> {mamaGPublicText(resultCheck)}</p> : null}
-              {resultDo ? <p><strong className="text-ink">Do now:</strong> {mamaGPublicText(resultDo)}</p> : null}
+              <p><strong className="text-ink">Unconfirmed:</strong> The exact cause is not established by a photo.</p>
+              <div><strong className="text-ink">How to tell:</strong><ul className="mt-1 list-disc space-y-2 pl-4">{diagnosis.whatToCheck.slice(0, 2).map(line => <li key={line}>{mamaGPublicText(line)}</li>)}</ul></div>
+              {resultDo && resultDo !== diagnosis.nextBestAction ? <p><strong className="text-ink">Do now:</strong> {mamaGPublicText(resultDo)}</p> : null}
               <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>
             </div>}
+            <details className="mt-3 rounded-md bg-white p-3 text-sm leading-6"><summary className="min-h-11 cursor-pointer font-black text-leaf-700">More detail</summary><ul className="list-disc space-y-2 pl-4">{diagnosis.prevention.slice(0, 3).map(line => <li key={line}>{mamaGPublicText(line)}</li>)}</ul></details>
+            <details className="mt-3 rounded-md bg-white p-3 text-sm leading-6"><summary className="min-h-11 cursor-pointer font-black text-leaf-700">Sources &amp; limitations</summary><p>AI compares visible signs using general crop-health guidance. Similar signs can have different causes; this is not professional certification or food/feed safety clearance.</p><a className="underline" href="https://www.pubs.ext.vt.edu/content/dam/pubs_ext_vt_edu/426/426-714/426-714.pdf" target="_blank" rel="noreferrer">Virginia Cooperative Extension: general plant diagnostic principles</a></details>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {unclearDiagnosis ? <><button type="button" onClick={openCameraCapture} className="min-h-12 rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white">Take another photo</button><button type="button" onClick={openImagePicker} className="min-h-12 rounded-md border border-leaf-700 bg-white px-4 py-2 text-sm font-black text-leaf-700">Choose another photo</button></> : null}

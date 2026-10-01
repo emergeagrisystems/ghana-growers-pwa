@@ -1,5 +1,6 @@
 import { AGRONOMY_REVIEW, agronomyCoverageFor, agronomySource } from "./agronomy-sources";
 import type { DecisionFlow, FollowUpQuestion } from "./decision-engine/types";
+import { refineAgronomyAssessment } from "./agronomy-refinement";
 
 export type AgronomyAnswer = { questionId: string; selectedOption: string };
 type Choice = { label: string; finding: string; action: string; next?: string };
@@ -34,7 +35,7 @@ export const agronomyCards: AgronomyCard[] = [
     questions: [q("waterlogged-system", "Which field situation applies?", [choice("Upland crop; flooding is unintended", "Unintended persistent water is a root-zone stress concern.", "Check for a safe outlet and compare roots before planning drainage or more inputs."), choice("Managed flooded rice", "Standing water is not by itself proof of damage in a managed rice system.", "Check crop stage and water management with a rice adviser; do not drain automatically.")])]
   },
   {
-    id: "decline", topic: "Wilting, dying plants and poor growth", sources: ["PSU-PATTERN", "PSU-DISORDERS"],
+    id: "decline", topic: "Wilting, dying plants and poor growth", sources: ["PSU-PATTERN", "PSU-DISORDERS", "VT-DIAG"],
     finding: "Dying plants do not identify a single disease. Start with where the damage occurs.",
     why: "A wet low patch, a spreading cluster and an application strip point to different checks; causes can overlap.",
     possibilities: ["Root-zone stress: compare soil moisture and roots in damaged and healthy areas.", "Root/stem injury or disease: look for a damaged base and progressive spread.", "Input or physical injury: compare the timing and boundary with recent field work."],
@@ -52,7 +53,7 @@ export const agronomyCards: AgronomyCard[] = [
     ])]
   },
   {
-    id: "maize-yellow", topic: "Maize yellowing differential", sources: ["UMN-YELLOW", "GH-MAIZE", "PSU-DISORDERS"],
+    id: "maize-yellow", topic: "Maize yellowing differential", sources: ["UMN-YELLOW", "GH-MAIZE", "PSU-DISORDERS", "VT-DIAG"],
     finding: "Yellow maize needs a pattern check before fertilizer is chosen.", why: "Nutrient shortage, impaired roots and other damage can look similar.",
     possibilities: ["A V-shaped yellow area from an older leaf tip can support a nitrogen-related possibility, not a diagnosis.", "Yellowing in wet patches raises root stress and nutrient uptake concerns.", "Spots, streaks or matching insect injury require a plant-health check."],
     actions: ["Compare old and new leaves on affected and healthy plants.", "Check roots and field moisture, then review previous inputs.", "Use stage and soil-test information to discuss an input plan; do not choose a rate from colour alone."],
@@ -61,6 +62,12 @@ export const agronomyCards: AgronomyCard[] = [
       choice("Older leaves, V from the tip", "A nitrogen-related issue is plausible, but root stress and field history still matter.", "Review prior manure/fertilizer and root moisture before seeking a soil-informed nutrient recommendation."),
       choice("Mainly plants in wet patches", "Root stress is a stronger lead than assuming a simple nutrient shortage.", "Check drainage and roots first; more fertilizer cannot by itself repair damaged roots."),
       choice("Spots, streaks or chewing", "A plant-health cause needs checking alongside nutrition.", "Photograph the pattern and inspect both leaf surfaces for matching pest signs.")
+      , choice("Younger leaves or between the veins", "This does not fit the simple older-leaf nitrogen clue.", "Compare new and old leaves and root condition; do not choose nitrogen from yellow colour alone.")
+      , choice("Uniform yellowing without spots or holes", "A shared nutrient or root-zone limitation is possible.", "Compare the root-zone moisture and previous input pattern with greener plants.")
+    ]), q("maize-root-moisture", "What is the soil like beside the maize roots?", [
+      choice("Dry around the roots", "Dry roots can restrict uptake even where nutrients are present.", "Correct a confirmed moisture shortage without flooding before adding more fertilizer."),
+      choice("Wet or waterlogged", "Waterlogged roots can cause yellowing that resembles nutrient shortage.", "Address unwanted standing water and inspect roots before adding fertilizer."),
+      choice("Moist and draining", "Root-zone moisture looks less limiting, so leaf pattern and input history matter more.", "Check prior inputs and matching pest or disease signs before choosing the nutrient response.")
     ]), q("maize-inputs", "What inputs have these maize plants received?", [
       choice("No fertilizer or manure", "No prior inputs makes nutrient supply worth assessing; it does not establish a deficiency.", "Take the crop stage and a soil test if available to a local adviser before selecting product and rate."),
       choice("Fertilizer or manure already used", "Prior inputs do not rule out root stress, poor uptake or an unsuitable nutrient balance.", "Record the product, amount and date for the adviser; do not repeat an application blindly.")
@@ -124,7 +131,7 @@ export const agronomyCards: AgronomyCard[] = [
     detail: ["You need a hoe or suitable tillage equipment and known planting material. Do not work saturated soil into hard clods.", "The loose-soil purpose is regional IITA evidence; the field-check sequence is a cautious synthesis, not a tested local specification."], questions: []
   },
   {
-    id: "tomato-staking", topic: "Tomato support", sources: ["UMN-STAKE"],
+    id: "tomato-staking", topic: "How to stake tomatoes", sources: ["UMN-STAKE", "RUTGERS-STAKE"],
     finding: "Support tomato growth without constricting stems; the support system depends on whether the variety keeps climbing or stays bushy.", why: "A support that suits the growth habit reduces unsupported bending and handling damage.", possibilities: [],
     actions: ["Choose firm stakes or a suitable cage/trellis for the variety and install without damaging the plant.", "Use gentle ties with room for the stem to thicken; support rather than pull the stem tightly.", "Check ties and stability as growth increases; do not remove healthy growth indiscriminately."],
     next: "Check the variety's growth habit and loosen any tie pressing into a stem.",
@@ -153,7 +160,7 @@ export const agronomyCards: AgronomyCard[] = [
     ])]
   },
   {
-    id: "grain-storage", topic: "Grain and legume storage", sources: ["FAO-GRAIN", "FAO-DRY"],
+    id: "grain-storage", topic: "Grain and legume storage", sources: ["FAO-GRAIN", "FAO-DRY", "FAO-LOWRESOURCE", "FAO-MAIZE-HANDLING"],
     finding: "Choose storage from the grain's condition, not from the bag alone.", why: "Sealing damp grain does not make it dry; a broken hermetic seal also loses protection.", possibilities: [],
     actions: ["Keep damp grain out of sealed storage and spread it for controlled drying with air movement, protected from re-wetting.", "Separate suspect grain and check moisture reliably before bagging; touch alone is not a safety test.", "Use clean intact storage, raised away from damp floors and protected from pests; inspect without repeatedly breaking a hermetic seal."],
     next: "Check whether this batch is dry, damp or showing mould before choosing the container.", detail: ["Crop, intended duration and available storage matter. No shelf life or safe moisture number is promised.", "A live forecast can help plan drying exposure, but cannot measure grain moisture."],
@@ -197,6 +204,8 @@ export type AgronomyAssessment = {
   applicability: string; finding: string; why: string; possibilities: string[];
   actions: string[]; next: string; detail: string[]; followUp?: FollowUpQuestion;
   observed: string[];
+  answerKind?: "diagnostic" | "method" | "decision" | "guidance";
+  displayTitle?: string;
 };
 
 export function selectAgronomyCard(question: string, crop?: string | null): AgronomyCard | undefined {
@@ -204,7 +213,8 @@ export function selectAgronomyCard(question: string, crop?: string | null): Agro
   const isCrop = (pattern: RegExp) => pattern.test(`${crop ?? ""} ${text}`);
   const storage = /\b(stor\w*|harvested|damp|mould|mold|drying|surplus|preserv\w*)\b/.test(text);
   let id: string | undefined;
-  if (/\bwhite\b.*\b(insects?|flies|bugs)\b/.test(text)) id = "white-insects";
+  if (/\b(uncommon|not common|unfamiliar)\b.*\bcrop\b|\bcrop\b.*\b(uncommon|not common|outside.*ghana)\b/.test(text) && /spots?|diagnos|symptom|help/.test(text)) id = "limited-crop";
+  else if (/\bwhite\b.*\b(insects?|flies|bugs)\b/.test(text)) id = "white-insects";
   else if (isCrop(/\b(tomato|tomatoes)\b/i) && /\b(rot\w*|sunken|blossom.end)\b/.test(text)) id = "tomato-rot";
   else if (isCrop(/\b(maize|corn)\b/i) && /\byellow\w*\b/.test(text)) id = "maize-yellow";
   else if (isCrop(/\b(maize|corn)\b/i) && /\b(fertili[sz]\w*|nutrient\w*|urea|npk)\b/.test(text)) id = "fertilizer";
@@ -259,7 +269,7 @@ export function assessAgronomyEvidence(question: string, crop?: string | null, a
       : card.id === "fertilizer" ? "Use the crop stage, prior inputs and soil information to confirm the intended product with a qualified local adviser."
       : card.next
     : card.next;
-  return {
+  return refineAgronomyAssessment({
     cardId: card.id, topic: card.topic, sourceIds: card.sources, reviewStatus: AGRONOMY_REVIEW, applicability,
     finding: suspectStoredFood ? "Mould or heating is a safety concern, not an ordinary storage decision. The batch cannot be declared safe here." : decisive.length ? decisive.map(({ selectedChoice }) => selectedChoice.finding).slice(-2).join(" ") : card.finding,
     why: card.why, possibilities: card.possibilities.slice(0, 3),
@@ -268,7 +278,7 @@ export function assessAgronomyEvidence(question: string, crop?: string | null, a
     detail: card.detail,
     followUp: pending && !suspectStoredFood && !declineNeedsEvidence ? { id: pending.id, question: pending.question, options: pending.choices.map((option) => option.label), requiredForConfidence: true } : undefined,
     observed: [...(context?.stage ? [`Farmer/tool-supplied stage: ${context.stage}`] : []), ...selected.map(({ item, selectedChoice }) => `${item.question} ${selectedChoice.label}`)]
-  };
+  }, question, answers);
 }
 
 export function agronomyAssessmentFlow(assessment: AgronomyAssessment, crop?: string): DecisionFlow {
@@ -280,7 +290,7 @@ export function agronomyAssessmentFlow(assessment: AgronomyAssessment, crop?: st
     recommendation: { summary: assessment.finding, confidence: "low", reasoning: assessment.possibilities.map((item, index) => ({ id: `a1-check-${index}`, observation: item, interpretation: "Conditional possibility, not a confirmed finding." })),
       sustainabilityPriority: ["prevention", "good-farming-practice"], recommendedAction: assessment.actions[0], guidance: assessment.actions.slice(1),
       nextBestAction: { id: "a1-next", label: "Next step", instruction: assessment.next, actionType: "take-farm-action" } },
-    safetyRules: [{ id: "a1-evidence-boundary", appliesToIntents: ["crop-planning"], trigger: "Source-backed candidate guidance", requiredResponse: "No confirmed diagnosis, guessed rates, food/feed safety clearance, invented weather or local prevalence. Qualified Ghana review remains required.", blocksRecommendation: false }]
+    safetyRules: [{ id: "a1-evidence-boundary", appliesToIntents: ["crop-planning"], trigger: "Source-backed guidance", requiredResponse: "No confirmed diagnosis, guessed rates, food/feed safety clearance, invented weather, local prevalence or professional-certification claim.", blocksRecommendation: false }]
   };
 }
 

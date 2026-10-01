@@ -32,7 +32,7 @@ for (const [id, question, cardId] of agronomyEvaluationCases) test(`${id}: sourc
   assert.ok(brain.agronomyEvidence!.sourceIds.length);
   assert.ok(brain.agronomyEvidence!.actions.length <= 3);
   assert.ok(brain.flow!.followUpQuestions.length <= 1);
-  assert.match(brain.agronomyEvidence!.reviewStatus, /review required/);
+  assert.match(brain.agronomyEvidence!.reviewStatus, /certification deferred/);
   const payload = JSON.parse(buildFarmMateVoiceLayerInput({ farmerQuestion: question, brain, farmerAnswers: [], localStructuredResponse: [] }));
   assert.deepEqual(payload.evidence.sourceIds, brain.agronomyEvidence!.sourceIds);
   assert.equal(payload.sources.length, brain.agronomyEvidence!.sourceIds.length);

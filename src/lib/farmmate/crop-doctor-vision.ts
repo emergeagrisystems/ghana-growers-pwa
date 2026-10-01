@@ -531,7 +531,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
         "Contact an extension officer if many plants are affected or symptoms are spreading."
       ]);
   const nextBestAction = isUnknownCrop
-    ? "Take another clear close-up or select the crop if you know it; a whole-plant photo can add context."
+    ? cleanText(source.nextBestAction, "Take a clear close-up of the affected part and select the crop if you know it.")
     : cleanText(source.nextBestAction, "Inspect five nearby plants and note whether the same signs are spreading.");
   const prevention = isUnknownCrop
     ? [
@@ -644,12 +644,16 @@ selectedCrop, selectedSymptom, photoCropMatch, cropFromImage, cropConfidence, re
 
 ${farmMateCropLibraryPromptContext()}
 
-Source-led interpretation boundary (candidate guidance, not qualified approval):
+Source-led interpretation boundary (not professional certification):
 ${JSON.stringify(agronomyCards.filter((card) => ["decline", "maize-yellow", "tomato-rot", "white-insects", "cassava-growth", "grain-storage", "root-storage"].includes(card.id)).map((card) => ({ topic: card.topic, sources: card.sources, conditionalPatterns: card.possibilities, limit: card.why })))}
-${JSON.stringify(agronomySources.filter((source) => ["PSU-PATTERN", "PSU-DISORDERS", "UMN-YELLOW", "CABI-TOMATO", "UC-WHITEFLY", "IITA-CASSAVA", "FAO-GRAIN", "FAO-ROOTS"].includes(source.id)).map((source) => ({ id: source.id, geography: source.geography, scope: source.scope, exclusions: source.exclusions })))}
+${JSON.stringify(agronomySources.filter((source) => ["VT-DIAG", "PSU-PATTERN", "PSU-DISORDERS", "UMN-YELLOW", "CABI-TOMATO", "UC-WHITEFLY", "IITA-CASSAVA", "FAO-GRAIN", "FAO-ROOTS"].includes(source.id)).map((source) => ({ id: source.id, geography: source.geography, scope: source.scope, exclusions: source.exclusions })))}
 
 Rules:
-- Separate OBSERVED in visibleSigns, POSSIBLE in whatThisMeans, UNCONFIRMED in that same explanation, and WHAT WOULD DISTINGUISH IT in whatToCheck. Use at most two evidence-supported possibilities, each with a differentiating sign. Never list every theoretical cause.
+- Separate OBSERVED in visibleSigns, POSSIBLE in whatThisMeans, UNCONFIRMED in that same explanation, and WHAT WOULD DISTINGUISH IT in whatToCheck. The UI supplies labels: do not repeat these uppercase labels in the field values. Use at most two evidence-supported possibilities, each with a differentiating sign. Never list every theoretical cause.
+- whatToCheck must discriminate, not merely say remove or consult: describe a sign and which possibility it strengthens. For fruit damage compare wound position, dry/sunken versus soft/spreading tissue; for leaf spots compare borders/halos, wet versus dry tissue and matching pest injury. These clues are not proof of a pathogen.
+- Keep whatThisMeans to two short sentences and each visible sign/check/action to one short sentence. nextBestAction is ONE specific field observation not already stated as a recommended action. Put prevention in its own optional field, not repeated in every field.
+- Removal/separation is management, not a differentiating check. When justified by decay, explain why and also help distinguish injury, moisture/handling problems and decay.
+- For harvested produce, ask for a closer fruit/root/grain view or handling context, not a whole-plant photo. Uncertain crop identity should not erase a useful next check.
 - Consider fungal-like or bacterial-like decay, viral-like distortion, insect injury, nutrient/root/water stress, heat/sun injury, physical injury, fruit disorders and storage damage only when the image supports the pattern. These are possibilities, not confirmed disease identities or Ghana prevalence claims.
 - Keep existing issueCategory values. Physical injury, heat or a pattern not fitting a sourced category can remain unknown; explain the visible pattern without forcing a diagnosis.
 - When crop identity is uncertain, still explain visible damage using these bounded general principles. Do not discard useful visible evidence simply because the crop name is uncertain.

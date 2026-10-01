@@ -110,7 +110,7 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
   const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
 
   if (isGeneralAgronomy || isCompletedGuidedConsultation) {
-    const requiredHeadings = isCompletedGuidedConsultation
+    const requiredHeadings = isCompletedGuidedConsultation && !input.brain.agronomyEvidence
       ? ["What I think", "What to do now", "What to check", "Next step"]
       : ["What I think", "What to do now", "Next step"];
 
@@ -178,7 +178,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   if (input.brain.agronomyEvidence) {
     const evidence = input.brain.agronomyEvidence;
     return JSON.stringify({
-      instruction: "Render this source-led provisional assessment. Use exactly What I think:, What to do now:, What to check:, Next step:. Main finding then why; at most three actions; one next step. Keep each section brief. Preserve conditional language and useful differentiators. Do not add facts or remedies. Do not repeat a check as an action and again as next step. Do not ask already answered questions.",
+      instruction: "Deep reasoning internally, simple answer externally. Render the source-led assessment with headings What I think:, What to do now:, Next step:. Use one short finding and one short why (together at most 55 words), up to THREE numbered actions (each at most 35 words), then ONE distinct next step (at most 30 words). For diagnostic answers preserve the evidence-supported possibilities and put sign -> possibility -> action discriminators in the primary actions, not hidden detail. For methods teach how using the supplied steps; never label a normal method CHECK FIRST. Do not repeat an action in Next step; use evidence.next. Do not add facts/remedies, ask answered questions or mention internal project/reviewer governance. Optional supporting detail belongs under What to check:, never in the primary finding.",
       farmerQuestion: input.farmerQuestion,
       selectedSpecialist: input.brain.routerResult?.selectedSpecialist,
       crop,
@@ -191,7 +191,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
         "Sources support the stated principles, not a diagnosis on this farm. Do not turn a possible cause into certainty or a list into a ranking.",
         "Use weather only when provided; it does not establish soil moisture, drainage or grain dryness. Never ask for weather already held.",
         "No rates, formulations, pesticides, chemical preservatives, food/feed clearance, aflatoxin thresholds, fermentation or cassava-processing recipes, numeric safety thresholds, veterinary/medical advice, promised yields or shelf life.",
-        "General/regional evidence must not be described as Ghana-specific. All new guidance is awaiting qualified Ghana review.",
+        "General/regional evidence must not be described as Ghana-specific. Do not claim professional certification. Ordinary source-supported methods should be practical, not a repeated disclaimer or automatic referral.",
         "Put long method detail in the existing supporting detail, not repeated paragraphs. Never remove plants as a default. Explain the reason for separation when decay is present."
       ]
     });

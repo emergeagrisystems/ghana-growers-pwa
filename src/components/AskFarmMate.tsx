@@ -9,6 +9,7 @@ import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import { agronomySource } from "@/lib/farmmate/agronomy-sources";
+import { displayedAnswerSections } from "@/lib/farmmate/answer-presentation";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
 import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
@@ -72,19 +73,9 @@ function sectionBody(response: FarmMateBrainResponse, title: string) {
   return response.sections.find((section) => section.title === title)?.body ?? [];
 }
 
-function displayedAnswerSections(answer: string) {
-  const sections = answer.split(/\n{2,}/).map((paragraph) => {
-    const match = paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step):\s*([\s\S]*)$/i);
-    return { title: match?.[1] ?? "", body: match?.[2] ?? paragraph };
-  });
-  const first = sections.find((section) => /^(What I think|What may be happening)$/i.test(section.title)) ?? sections[0];
-  const actions = sections.find((section) => /^What to do now$/i.test(section.title));
-  const next = sections.find((section) => /^Next step$/i.test(section.title));
-  return { first, actions, next, details: sections.filter((section) => section !== first && section !== actions && section !== next) };
-}
-
 function decisionStatusFromAnswer(answer: string, response: FarmMateBrainResponse | null): FarmMateDecisionStatusValue | null {
   if (!response?.flow) return null;
+  if (response.agronomyEvidence?.answerKind && response.agronomyEvidence.answerKind !== "decision") return null;
   if (/not enough information|cannot tell yet|need to know/i.test(answer)) return "NOT ENOUGH INFORMATION";
   if (/do not (spray|plant|apply|harvest)|don.t (spray|plant|apply|harvest)|wait until/i.test(answer)) return "WAIT";
   if (/may be suitable|conditions look suitable/i.test(answer)) return "CHECK FIRST";
@@ -1427,19 +1418,19 @@ export function AskFarmMate({
                       </p>
                     ) : null}
                     <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                      {answerStatus ? <div className="mb-3"><FarmMateDecisionStatus status={answerStatus} /></div> : null}
+                      {answerStatus ? <div className="mb-3"><FarmMateDecisionStatus status={answerStatus} /></div> : response?.agronomyEvidence?.displayTitle ? <h3 className="mb-2 text-base font-black text-ink">{response.agronomyEvidence.displayTitle}</h3> : null}
                       {answerSections?.first ? <p className="break-words whitespace-pre-line text-sm font-bold leading-6 text-ink [overflow-wrap:anywhere]">{answerSections.first.body}</p> : null}
-                      {answerSections?.actions ? <div className="mt-3"><h3 className="text-sm font-black text-ink">What to do now</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.actions.body}</p></div> : null}
+                      {answerSections?.actionLines.length ? <div className="mt-3"><h3 className="text-sm font-black text-ink">{response?.agronomyEvidence?.answerKind === "diagnostic" ? "How to tell — and act" : "Do now"}</h3><ol className="mt-2 list-decimal space-y-2 pl-5 text-sm font-semibold leading-6 text-ink/72">{answerSections.actionLines.map(line => <li className="break-words [overflow-wrap:anywhere]" key={line}>{line}</li>)}</ol></div> : null}
                       {answerSections?.next ? <div className="mt-3"><h3 className="text-sm font-black text-ink">Next step</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.next.body}</p></div> : null}
-                      {answerSections?.details.length ? <details className="mt-3 border-t border-leaf-900/10 pt-3"><summary className="cursor-pointer text-sm font-black text-leaf-700">More detail</summary><div className="mt-2 space-y-3">{answerSections.details.map((part) => <div key={`${part.title}-${part.body}`}><p className="text-sm font-black text-ink">{part.title}</p><p className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{part.body}</p></div>)}</div></details> : null}
+                      {answerSections?.details.length || response?.agronomyEvidence?.detail.length ? <details className="mt-3 border-t border-leaf-900/10 pt-3"><summary className="min-h-11 cursor-pointer text-sm font-black text-leaf-700">More detail</summary><div className="mt-2 space-y-3">{response?.agronomyEvidence ? response.agronomyEvidence.detail.map(line => <p key={line} className="text-sm leading-6 text-ink/72">{line}</p>) : answerSections?.details.map((part) => <div key={`${part.title}-${part.body}`}><p className="text-sm font-black text-ink">{part.title}</p><p className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{part.body}</p></div>)}</div></details> : null}
                     </section>
                     {response?.agronomyEvidence ? <details className="rounded-md border border-leaf-900/10 bg-white p-4 text-sm leading-6">
-                      <summary className="min-h-11 cursor-pointer font-black text-leaf-700">Evidence, limits &amp; method detail</summary>
+                      <summary className="min-h-11 cursor-pointer font-black text-leaf-700">Sources &amp; limitations</summary>
                       <p>{response.agronomyEvidence.applicability}</p>
-                      <p className="mt-2">Candidate guidance awaiting Ghana-qualified agronomic/post-harvest review.</p>
-                      {response.agronomyEvidence.detail.map((line) => <p className="mt-2" key={line}>{line}</p>)}
+                      <p className="mt-2">These sources support the general guidance, not a confirmed diagnosis on your farm. Mama G is not professionally certified.</p>
                       <ul className="mt-2 list-disc pl-5">{response.agronomyEvidence.sourceIds.map((id) => { const source = agronomySource(id); return <li key={id}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.title}</a> · {source.geography}</li>; })}</ul>
                     </details> : null}
+                    {response?.agronomyEvidence?.cardId === "limited-crop" && onOpenCropDoctor ? <button type="button" onClick={() => onOpenCropDoctor()} className="min-h-11 rounded-md border border-leaf-700 px-4 py-2 text-sm font-black text-leaf-700">Open Crop Doctor with a photo</button> : null}
                   </>
                 ) : null}
 
