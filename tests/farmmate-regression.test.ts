@@ -1141,13 +1141,13 @@ const tests: TestCase[] = [
       const plantHealthText = responseText(buildFarmMateResponse("My tomato leaves are yellow", routeFarmMateQuestion("My tomato leaves are yellow"))).toLowerCase();
 
       assert.equal(/\b\d+(?:\.\d+)?\s?(?:kg|g|ml|l)\b/.test(fertilizerText), false);
-      assert.equal(fertilizerText.includes("heavy rain"), true);
+      assert.equal(fertilizerText.includes("field moisture"), true);
       assert.equal(plantingText.includes("market price"), false);
       assert.equal(plantingText.includes("guaranteed"), false);
       assert.equal(harvestText.includes("shelf life"), false);
       assert.equal(harvestText.includes("buyer availability"), false);
-      assert.equal(harvestText.includes("hot sun"), true);
-      assert.equal(harvestText.includes("rotten"), true);
+      assert.equal(harvestText.includes("protected"), true);
+      assert.equal(harvestText.includes("rotting"), true);
       assert.equal(plantHealthText.includes("chemical solution"), true);
       assert.equal(plantHealthText.indexOf("prevention") < plantHealthText.indexOf("chemical solution"), true);
     }
@@ -4407,9 +4407,9 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
 
       assert.equal(response.routerResult?.selectedSpecialist, "fertilizer");
-      assert.equal(response.flow?.id, "best-fertilizer-for-maize");
-      assert.equal(response.flow?.followUpQuestions[0]?.question, "How old is the maize?");
-      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Less than 2 weeks", "2 to 4 weeks", "More than 4 weeks", "Already flowering"]);
+      assert.equal(response.flow?.id, "agronomy-evidence-fertilizer");
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What stage is the maize at?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Growing leaves, before tassels", "Tasselling or silking", "Cobs filling or mature", "I am not sure"]);
       assert.equal(response.flow?.followUpQuestions.some((followUp) => followUp.id.includes("yellow")), false);
     }
   },
@@ -4420,7 +4420,7 @@ const tests: TestCase[] = [
       const text = responseText(response).toLowerCase();
 
       assert.equal(/\b\d+(?:\.\d+)?\s?(?:kg|g|ml|l)\b/.test(text), false);
-      assert.equal(text.includes("do not guess rates"), true);
+      assert.equal(text.includes("rather than guessing"), true);
     }
   },
   {
@@ -4468,12 +4468,12 @@ const tests: TestCase[] = [
           farmerAnswers: [],
           localStructuredResponse: []
         })
-      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; crop?: string; safeUseNotes?: string[] } };
+      ) as { selectedSpecialist?: string; crop?: string; evidence: { sourceIds: string[] }; boundaries: string[] };
 
       assert.equal(payload.selectedSpecialist, "fertilizer");
-      assert.equal(payload.specialistContext?.specialist, "fertilizer");
-      assert.equal(payload.specialistContext?.crop, "Maize");
-      assert.equal(payload.specialistContext?.safeUseNotes?.some((note) => note.toLowerCase().includes("do not guess rates")), true);
+      assert.equal(payload.crop, "Maize");
+      assert.equal(payload.evidence.sourceIds.includes("GH-NUTRIENTS"), true);
+      assert.equal(payload.boundaries.some((note) => note.includes("No rates")), true);
     }
   },
   {
@@ -4530,10 +4530,10 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
       const preHarvestQuestion = "When should I harvest maize for storage?";
 
-      assert.equal(response.flow?.id, "reduce-post-harvest-losses");
-      assert.deepEqual(response.flow?.followUpQuestions.map((item) => item.id), ["loss-reduction-damage"]);
-      assert.equal(buildFarmMateResponse(preHarvestQuestion, routeFarmMateQuestion(preHarvestQuestion)).flow?.id, "when-should-i-harvest-maize");
-      assert.equal(buildFarmMateResponse("How do I store maize grain?", routeFarmMateQuestion("How do I store maize grain?")).flow?.id, "reduce-post-harvest-losses");
+      assert.equal(response.flow?.id, "agronomy-evidence-grain-storage");
+      assert.deepEqual(response.flow?.followUpQuestions.map((item) => item.id), ["a1-grain-damage"]);
+      assert.equal(buildFarmMateResponse(preHarvestQuestion, routeFarmMateQuestion(preHarvestQuestion)).flow?.id, "agronomy-evidence-maize-harvest");
+      assert.equal(buildFarmMateResponse("How do I store maize grain?", routeFarmMateQuestion("How do I store maize grain?")).flow?.id, "agronomy-evidence-grain-storage");
     }
   },
   {
@@ -5115,7 +5115,7 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse("When should I harvest maize?", router);
 
       assert.equal(router.selectedSpecialist, "harvest_postharvest");
-      assert.equal(response.flow?.id, "when-should-i-harvest-maize");
+      assert.equal(response.flow?.id, "agronomy-evidence-maize-harvest");
       assert.equal(response.resolvedCrop, "Maize");
     }
   },
@@ -5137,7 +5137,7 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse("How do I store cassava?", router);
 
       assert.equal(router.selectedSpecialist, "harvest_postharvest");
-      assert.equal(response.flow?.id, "store-cassava-after-harvest");
+      assert.equal(response.flow?.id, "agronomy-evidence-root-storage");
       assert.equal(response.resolvedCrop, "Cassava");
     }
   },
@@ -5156,8 +5156,8 @@ const tests: TestCase[] = [
     run: () => {
       const response = buildFarmMateResponse("When should I harvest maize?", routeFarmMateQuestion("When should I harvest maize?"));
 
-      assert.equal(response.flow?.followUpQuestions[0]?.question, "What stage is the maize at?");
-      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Cobs are still green", "Husks are drying", "Grains are hard", "I am not sure"]);
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What will you harvest the maize for?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Green cobs", "Dry grain", "I am not sure"]);
     }
   },
   {
@@ -5165,8 +5165,8 @@ const tests: TestCase[] = [
     run: () => {
       const response = buildFarmMateResponse("How do I store cassava?", routeFarmMateQuestion("How do I store cassava?"));
 
-      assert.equal(response.flow?.followUpQuestions[0]?.question, "Has the cassava already been harvested?");
-      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Yes, harvested today", "Yes, harvested yesterday or earlier", "Not harvested yet", "I am not sure"]);
+      assert.equal(response.flow?.followUpQuestions[0]?.question, "What is the harvest state?");
+      assert.deepEqual(response.flow?.followUpQuestions[0]?.options, ["Still in the field", "Harvested and apparently sound", "Harvested, damaged or rotting", "I am not sure"]);
     }
   },
   {
@@ -5191,7 +5191,7 @@ const tests: TestCase[] = [
     name: "OpenAI payload warns cassava not harvested guidance must not sound post-harvest",
     run: () => {
       const farmerQuestion = "How do I store cassava?";
-      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion));
+      const brain = buildFarmMateResponse(farmerQuestion, routeFarmMateQuestion(farmerQuestion), { agronomyAnswers: [{ questionId: "a1-roots-state", selectedOption: "Still in the field" }] });
       const localStructuredResponse = harvestPostHarvestGuidedRecommendationCards(brain.flow?.id, [
         { question: "Has the cassava already been harvested?", answer: "Not harvested yet" }
       ]) ?? [];
@@ -5202,14 +5202,10 @@ const tests: TestCase[] = [
           farmerAnswers: [{ question: "Has the cassava already been harvested?", answer: "Not harvested yet" }],
           localStructuredResponse
         })
-      ) as { responseRules?: string[]; localStructuredResponse?: Array<{ title: string; body: string[] }> };
-      const rules = payload.responseRules?.join(" ").toLowerCase() ?? "";
-      const localText = payload.localStructuredResponse?.flatMap((card) => [card.title, ...card.body]).join(" ").toLowerCase() ?? "";
-
-      assert.equal(rules.includes("cassava is not harvested yet"), true);
-      assert.equal(rules.includes("do not frame the answer as harvested-root storage"), true);
-      assert.equal(localText.includes("leave the rest in the ground"), true);
-      assert.equal(localText.includes("keep harvested roots in shade"), false);
+      ) as { evidence: { finding: string; actions: string[] } };
+      assert.equal(payload.evidence.finding.includes("before lifting"), true);
+      assert.equal(payload.evidence.actions.some((line) => line.includes("harvest readiness")), true);
+      assert.equal(payload.evidence.actions.some((line) => line.includes("Keep harvested")), false);
     }
   },
   {
@@ -5237,8 +5233,8 @@ const tests: TestCase[] = [
       const response = buildFarmMateResponse("How do I store cassava?", routeFarmMateQuestion("How do I store cassava?"));
       const text = responseText(response).toLowerCase();
 
-      assert.equal(text.includes("rotten"), true);
-      assert.equal(text.includes("healthy roots"), true);
+      assert.equal(text.includes("rotting"), true);
+      assert.equal(text.includes("sound roots"), true);
     }
   },
   {
@@ -5258,7 +5254,7 @@ const tests: TestCase[] = [
     run: () => {
       const response = buildFarmMateResponse("When should I harvest maize?", routeFarmMateQuestion("When should I harvest maize?"));
 
-      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Check whether maize grains are hard and husks are drying before harvesting.");
+      assert.equal(response.flow?.recommendation.nextBestAction.instruction, "Check representative cobs and arrange a reliable moisture assessment for dry-grain storage.");
       assert.equal(response.sections.find((section) => section.title === "Next Best Action")?.body.length, 1);
     }
   },
@@ -5274,14 +5270,13 @@ const tests: TestCase[] = [
           farmerAnswers: [],
           localStructuredResponse: []
         })
-      ) as { selectedSpecialist?: string; specialistContext?: { specialist?: string; crop?: string; noMarketRule?: string; harvestIndicators?: string[] } };
+      ) as { selectedSpecialist?: string; crop?: string; evidence: { sourceIds: string[]; actions: string[] }; boundaries: string[] };
 
       assert.equal(payload.selectedSpecialist, "harvest_postharvest");
-      assert.equal(payload.specialistContext?.specialist, "harvest_postharvest");
-      assert.equal(payload.specialistContext?.crop, "Maize");
-      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("market prices"), true);
-      assert.equal(payload.specialistContext?.noMarketRule?.toLowerCase().includes("guaranteed shelf life"), true);
-      assert.equal(payload.specialistContext?.harvestIndicators?.some((line) => line.toLowerCase().includes("husks")), true);
+      assert.equal(payload.crop, "Maize");
+      assert.equal(payload.evidence.sourceIds.includes("GH-MAIZE"), true);
+      assert.equal(payload.boundaries.some((line) => line.includes("shelf life")), true);
+      assert.equal(payload.evidence.actions.some((line) => line.includes("black layer")), true);
     }
   },
   {
@@ -5838,7 +5833,7 @@ const tests: TestCase[] = [
         ["Why are my seedlings leggy?", "general-agronomy-leggy-seedlings"],
         ["How do I manage weeds before planting?", "general-agronomy-weed-management"],
         ["How do I improve soil structure before planting maize?", "general-agronomy-soil-structure"],
-        ["How do I improve drainage in waterlogged soil?", "general-agronomy-drainage"],
+        ["How do I improve drainage in waterlogged soil?", "agronomy-evidence-waterlogged"],
         ["How should I prune pepper?", "general-agronomy-pepper-pruning"],
         ["Can I rotate maize with cowpea?", "general-agronomy-crop-rotation"],
         ["What are good compost use practices?", "general-agronomy-mulching-compost"],
@@ -6658,9 +6653,9 @@ const tests: TestCase[] = [
       assert.equal(cropDoctorResultHeadline(result), "Crop not confirmed");
       assert.equal(result.photoConfidenceLabel, "Unclear");
       assert.equal(result.visibleSigns.includes("serrated leaves"), true);
-      assert.equal(result.whatToCheck.some((line) => line.includes("whole-plant photo may help")), true);
-      assert.equal(result.whatToCheck.some((line) => line.includes("Select the crop")), true);
-      assert.equal(result.recommendedActions.some((line) => line.includes("Ask Mama G")), true);
+      assert.equal(result.whatToCheck.some((line) => line.includes("Compare affected")), true);
+      assert.equal(result.whatToCheck.some((line) => line.includes("both sides")), true);
+      assert.equal(result.recommendedActions.some((line) => line.includes("stem base")), true);
       assert.equal(result.askFarmMatePrompt, "What should I check next from my crop photo?");
       assert.equal(resultText.includes("named disease"), false);
       assert.equal(resultText.includes("definitely"), false);

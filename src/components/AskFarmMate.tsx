@@ -8,6 +8,7 @@ import { boundedJsonRequest, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
+import { agronomySource } from "@/lib/farmmate/agronomy-sources";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
 import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
@@ -1100,7 +1101,16 @@ export function AskFarmMate({
     let nextFollowUpQuestion = undefined;
     let nextFollowUpIndex = followUpIndex + 1;
 
-    if (response.flow?.id === "plant-melon-clarification" && selectedOption === "Watermelon") {
+    if (response.agronomyEvidence) {
+      nextResponse = buildFarmMateResponse(consultation.originalQuestion, response.routerResult, {
+        previousCropName: response.resolvedCrop,
+        agronomyAnswers: provisionalConsultation.answerHistory,
+        weatherContext: response.weatherContext,
+        toolContext: response.toolContext
+      });
+      nextFollowUpQuestion = nextResponse.flow?.followUpQuestions[0];
+      nextFollowUpIndex = 0;
+    } else if (response.flow?.id === "plant-melon-clarification" && selectedOption === "Watermelon") {
       const watermelonQuestion = "How do I plant watermelon?";
       const watermelonResponse = buildFarmMateResponse(watermelonQuestion, routeFarmMateQuestion(watermelonQuestion));
 
@@ -1423,6 +1433,13 @@ export function AskFarmMate({
                       {answerSections?.next ? <div className="mt-3"><h3 className="text-sm font-black text-ink">Next step</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.next.body}</p></div> : null}
                       {answerSections?.details.length ? <details className="mt-3 border-t border-leaf-900/10 pt-3"><summary className="cursor-pointer text-sm font-black text-leaf-700">More detail</summary><div className="mt-2 space-y-3">{answerSections.details.map((part) => <div key={`${part.title}-${part.body}`}><p className="text-sm font-black text-ink">{part.title}</p><p className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{part.body}</p></div>)}</div></details> : null}
                     </section>
+                    {response?.agronomyEvidence ? <details className="rounded-md border border-leaf-900/10 bg-white p-4 text-sm leading-6">
+                      <summary className="min-h-11 cursor-pointer font-black text-leaf-700">Evidence, limits &amp; method detail</summary>
+                      <p>{response.agronomyEvidence.applicability}</p>
+                      <p className="mt-2">Candidate guidance awaiting Ghana-qualified agronomic/post-harvest review.</p>
+                      {response.agronomyEvidence.detail.map((line) => <p className="mt-2" key={line}>{line}</p>)}
+                      <ul className="mt-2 list-disc pl-5">{response.agronomyEvidence.sourceIds.map((id) => { const source = agronomySource(id); return <li key={id}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.title}</a> · {source.geography}</li>; })}</ul>
+                    </details> : null}
                   </>
                 ) : null}
 

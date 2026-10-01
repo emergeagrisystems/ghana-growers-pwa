@@ -212,6 +212,8 @@ export const farmMateRouterRules: RouterRule[] = [
       "npk",
       "fertilizer",
       "fertiliser",
+      "fertilize",
+      "fertilise",
       "compost",
       "manure",
       "nutrient",

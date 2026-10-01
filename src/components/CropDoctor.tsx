@@ -560,12 +560,14 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
             {unclearDiagnosis ? <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I could see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
               <p><strong className="text-ink">What remains unconfirmed:</strong> The crop identity and exact cause are not established from this photo.</p>
-              <p><strong className="text-ink">What may help:</strong> A sharper affected-part photo in daylight. A second whole-plant photo can add context if useful.</p>
+              <p><strong className="text-ink">Possible:</strong> {mamaGPublicText(diagnosis.whatThisMeans)}</p>
+              <p><strong className="text-ink">What would distinguish it:</strong> {mamaGPublicText(diagnosis.whatToCheck[0] ?? "A sharper affected-part photo in daylight may help.")}</p>
               <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>
             </div> : <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
               <p><strong className="text-ink">Possible issue:</strong> {mamaGPublicText(diagnosis.possibleIssue)} ({diagnosis.photoConfidenceLabel.toLowerCase()} photo confidence)</p>
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I can see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
               <p><strong className="text-ink">What it may suggest:</strong> {mamaGPublicText(diagnosis.whatThisMeans)}</p>
+              <p><strong className="text-ink">Unconfirmed:</strong> The exact cause and food/feed safety cannot be established from this photo.</p>
               {resultCheck ? <p><strong className="text-ink">Check now:</strong> {mamaGPublicText(resultCheck)}</p> : null}
               {resultDo ? <p><strong className="text-ink">Do now:</strong> {mamaGPublicText(resultDo)}</p> : null}
               <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>

@@ -10,6 +10,8 @@ import {
   findFarmMateCropLibraryEntry,
   isFarmMateCashPerennialCrop
 } from "./crop-library";
+import { agronomyCards } from "./agronomy-evidence";
+import { agronomySources } from "./agronomy-sources";
 
 export type CropDoctorConfidence = "high" | "medium" | "low";
 export type CropDoctorPhotoCropMatch = "likely" | "uncertain" | "not_clear";
@@ -492,7 +494,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
   const cropGroup = cropEntry ? farmMateCropGroupLabel(cropEntry.displayName) ?? null : null;
   const cropFamily = cropEntry?.cropFamily ?? null;
   const isUnknownCrop = resultType === "crop_not_confirmed" || resultType === "photo_unclear";
-  const whatToCheck = isUnknownCrop
+  const whatToCheck = resultType === "photo_unclear"
     ? [
         "Check the affected part in good daylight and focus.",
         "Select the crop if you know it; a second whole-plant photo may help.",
@@ -503,7 +505,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
         "Look for insects, powder, rot, or spreading spots.",
         "Compare affected plants with healthy plants nearby."
       ]);
-  let whatThisMeans = isUnknownCrop
+  let whatThisMeans = resultType === "photo_unclear"
     ? "The photo shows some plant features, but the crop and exact problem are not clear enough to diagnose safely."
     : cleanText(
         source.whatThisMeans,
@@ -517,15 +519,15 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
     whatThisMeans = farmMateCropFamilyGuidance(confirmedCrop) ??
       "The visible signs need a closer field check before naming an exact crop-specific cause.";
   }
-  const recommendedActions = isUnknownCrop
+  const recommendedActions = resultType === "photo_unclear"
     ? [
         "Take a clearer close-up of the affected part if needed.",
         "Select the crop if you know it.",
         "Ask Mama G about the visible signs and field conditions."
       ]
     : cleanList(source.recommendedActions ?? source.recommendedAction, [
-        "Inspect 10 nearby plants for the same signs.",
-        "Remove badly affected leaves only if few plants are affected.",
+        "Compare nearby plants for the same signs.",
+        "Check the stem base, roots and leaf undersides before choosing management.",
         "Contact an extension officer if many plants are affected or symptoms are spreading."
       ]);
   const nextBestAction = isUnknownCrop
@@ -642,7 +644,18 @@ selectedCrop, selectedSymptom, photoCropMatch, cropFromImage, cropConfidence, re
 
 ${farmMateCropLibraryPromptContext()}
 
+Source-led interpretation boundary (candidate guidance, not qualified approval):
+${JSON.stringify(agronomyCards.filter((card) => ["decline", "maize-yellow", "tomato-rot", "white-insects", "cassava-growth", "grain-storage", "root-storage"].includes(card.id)).map((card) => ({ topic: card.topic, sources: card.sources, conditionalPatterns: card.possibilities, limit: card.why })))}
+${JSON.stringify(agronomySources.filter((source) => ["PSU-PATTERN", "PSU-DISORDERS", "UMN-YELLOW", "CABI-TOMATO", "UC-WHITEFLY", "IITA-CASSAVA", "FAO-GRAIN", "FAO-ROOTS"].includes(source.id)).map((source) => ({ id: source.id, geography: source.geography, scope: source.scope, exclusions: source.exclusions })))}
+
 Rules:
+- Separate OBSERVED in visibleSigns, POSSIBLE in whatThisMeans, UNCONFIRMED in that same explanation, and WHAT WOULD DISTINGUISH IT in whatToCheck. Use at most two evidence-supported possibilities, each with a differentiating sign. Never list every theoretical cause.
+- Consider fungal-like or bacterial-like decay, viral-like distortion, insect injury, nutrient/root/water stress, heat/sun injury, physical injury, fruit disorders and storage damage only when the image supports the pattern. These are possibilities, not confirmed disease identities or Ghana prevalence claims.
+- Keep existing issueCategory values. Physical injury, heat or a pattern not fitting a sourced category can remain unknown; explain the visible pattern without forcing a diagnosis.
+- When crop identity is uncertain, still explain visible damage using these bounded general principles. Do not discard useful visible evidence simply because the crop name is uncertain.
+- Do not default to removal. If separation is warranted for visible decay, explain contamination risk and pair it with a check of handling, wounds or storage condition.
+- No food/feed safety clearance, toxin threshold, chemical preservation, fermentation or cassava detoxification recipe, exact safety moisture/temperature, guessed nutrient rate or veterinary/medical claim.
+- Do not add an exact disease name absent from the source-led patterns. Do not treat earlier illustrative crop-library patterns as sourced diagnosis authority.
 - If selectedCrop is provided, use it only as farmer-provided context and check whether the image appears consistent with that crop.
 - If selectedCrop is "Not sure", "not_sure", null, or not provided, attempt to identify the crop from the image using cautious wording.
 - If the crop is unclear or the photo is poor, set cropFromImage to null and resultType to "crop_not_confirmed" or "photo_unclear".
@@ -667,7 +680,7 @@ Rules:
 - Suggest possible issue categories only: pest, disease, nutrient, water_stress, unknown.
 - Keep visibleSigns, whatToCheck, recommendedActions and prevention to maximum 3 short bullet strings each.
 - Keep mainFinding short, practical and specific to what is visible.
-- For field disease signs, mainFinding should be a farmer-friendly headline such as "Possible maize rust symptoms".
+- For field disease signs, mainFinding should describe the pattern, such as "Leaf spotting needs a closer field check", without naming a disease from visual resemblance alone.
 - Recommend simple checks and practical next steps.
 - Recommend prevention and good farming practice before chemicals.
 - Think like a field crop advisor, not a home gardening assistant.

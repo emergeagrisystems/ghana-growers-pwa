@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
+import { agronomySource } from "../agronomy-sources";
+import { agronomyScopeNote } from "../agronomy-evidence";
+import { hasUnsafeAgronomyOutput } from "../agronomy-safety";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
 import { boundedJsonRequest, FARM_MATE_TEXT_TIMEOUT_MS, FarmMateRequestTimeout } from "../request-limits";
 import { findFertilizerGuidance } from "../fertilizer-specialist";
@@ -172,6 +175,27 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       ? findGeneralAgronomyGuidance(input.farmerQuestion, Boolean(crop))
       : null;
   const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
+  if (input.brain.agronomyEvidence) {
+    const evidence = input.brain.agronomyEvidence;
+    return JSON.stringify({
+      instruction: "Render this source-led provisional assessment. Use exactly What I think:, What to do now:, What to check:, Next step:. Main finding then why; at most three actions; one next step. Keep each section brief. Preserve conditional language and useful differentiators. Do not add facts or remedies. Do not repeat a check as an action and again as next step. Do not ask already answered questions.",
+      farmerQuestion: input.farmerQuestion,
+      selectedSpecialist: input.brain.routerResult?.selectedSpecialist,
+      crop,
+      verifiedFarmerAnswers: input.farmerAnswers,
+      evidence,
+      sources: evidence.sourceIds.map((id) => { const s = agronomySource(id); return { id, title: s.title, geography: s.geography, scope: s.scope, exclusions: s.exclusions }; }),
+      liveWeather: input.brain.weatherContext?.liveWeatherAvailable ? input.brain.weatherContext : null,
+      toolContext: input.brain.toolContext ?? null,
+      boundaries: [
+        "Sources support the stated principles, not a diagnosis on this farm. Do not turn a possible cause into certainty or a list into a ranking.",
+        "Use weather only when provided; it does not establish soil moisture, drainage or grain dryness. Never ask for weather already held.",
+        "No rates, formulations, pesticides, chemical preservatives, food/feed clearance, aflatoxin thresholds, fermentation or cassava-processing recipes, numeric safety thresholds, veterinary/medical advice, promised yields or shelf life.",
+        "General/regional evidence must not be described as Ghana-specific. All new guidance is awaiting qualified Ghana review.",
+        "Put long method detail in the existing supporting detail, not repeated paragraphs. Never remove plants as a default. Explain the reason for separation when decay is present."
+      ]
+    });
+  }
   const payload = {
     instruction: isCompletedGuidedConsultation
       ? "Write the final answer for this completed guided consultation using the exact headings What I think:, What to do now:, What to check:, and Next step:. Use the verified farmer answers, preserve the approved local guidance, and do not ask another follow-up question."
@@ -182,6 +206,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     toolHandoffContext: input.brain.toolContext ?? null,
     detectedIntent: input.brain.intent,
     crop,
+    evidenceScope: agronomyScopeNote(crop),
     cropLibraryContext,
     selectedSpecialist: input.brain.routerResult?.selectedSpecialist ?? null,
     specialistContext: fertilizerContext
@@ -388,7 +413,7 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
       return { ok: false, reason: "empty_response", fallback: true };
     }
 
-    if (isLikelyIncompleteFarmMateAnswer(answer, input)) {
+    if (isLikelyIncompleteFarmMateAnswer(answer, input) || (input.brain.agronomyEvidence && hasUnsafeAgronomyOutput(answer))) {
       logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "incomplete_response", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "incomplete_response", fallback: true };
     }

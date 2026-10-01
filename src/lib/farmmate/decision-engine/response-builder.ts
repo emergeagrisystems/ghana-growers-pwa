@@ -19,6 +19,7 @@ import type { FarmMateSpecialist, RouterResult } from "../router";
 import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector";
 import { farmMateDecisionFlows } from "./flows";
 import { DecisionFlow, FarmerIntent, FollowUpQuestion } from "./types";
+import { assessAgronomyEvidence, agronomyAssessmentFlow, type AgronomyAnswer, type AgronomyAssessment } from "../agronomy-evidence";
 
 export type FarmMateResponseSection =
   | "Direct answer"
@@ -43,9 +44,11 @@ export type FarmMateBrainResponse = {
   cropDoctorContext?: CropDoctorHandoffContext;
   weatherContext?: WeatherDecisionSummary;
   toolContext?: FarmMateToolHandoff;
+  agronomyEvidence?: AgronomyAssessment;
 };
 
 export type FarmMateBrainOptions = {
+  agronomyAnswers?: AgronomyAnswer[];
   previousCropName?: string;
   cropDoctorContext?: CropDoctorHandoffContext;
   weatherContext?: WeatherDecisionSummary;
@@ -796,11 +799,33 @@ function fallbackFlow(intent: DetectedFarmMateIntent): DecisionFlow {
 }
 
 export function buildFarmMateResponse(question: string, routerResult?: RouterResult, options: FarmMateBrainOptions = {}): FarmMateBrainResponse {
-  const resolvedCrop = options.cropDoctorContext?.crop ?? resolveFarmMateCropForQuestion(question, options.previousCropName)?.displayName;
+  const resolvedCrop = options.cropDoctorContext?.crop ?? resolveFarmMateCropForQuestion(question, options.toolContext?.crop ?? options.previousCropName)?.displayName;
   const intent = {
     ...detectFarmMateIntent(question),
     cropName: resolvedCrop
   };
+  // Add evidence-led content within the existing routed/signed consultation.
+  // Photo and weather-specific workflows retain their established architecture.
+  const agronomyEvidence = !options.cropDoctorContext && routerResult?.selectedSpecialist !== "weather_decision"
+    ? assessAgronomyEvidence(question, resolvedCrop, options.agronomyAnswers, options.toolContext)
+    : undefined;
+  if (agronomyEvidence) {
+    const evidenceFlow = agronomyAssessmentFlow(agronomyEvidence, resolvedCrop);
+    return {
+      intent, routerResult, resolvedCrop, flow: evidenceFlow, agronomyEvidence,
+      confidence: "low", shouldShowCropDoctorAction: false,
+      nextBestAction: evidenceFlow.recommendation.nextBestAction,
+      weatherContext: options.weatherContext, toolContext: options.toolContext,
+      sections: [
+        { title: "Direct answer", body: [agronomyEvidence.finding] },
+        { title: "Why this may happen", body: [agronomyEvidence.why, ...agronomyEvidence.possibilities] },
+        { title: "What to check", body: agronomyEvidence.possibilities },
+        { title: "Recommended action", body: agronomyEvidence.actions },
+        { title: "Prevention", body: agronomyEvidence.detail },
+        { title: "Next Best Action", body: [agronomyEvidence.next] }
+      ]
+    };
+  }
   const matchedFlow = options.cropDoctorContext
     ? cropDoctorContextToDecisionFlow(options.cropDoctorContext, intent)
     : findBestDecisionFlow(question, intent, routerResult, resolvedCrop);

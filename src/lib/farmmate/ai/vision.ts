@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { hasUnsafeAgronomyOutput } from "../agronomy-safety";
 import {
   cropDoctorVisionSystemPrompt,
   normalizeCropDoctorSelectedCrop,
@@ -218,13 +219,10 @@ export async function analyzeCropDoctorImageWithOpenAI(input: CropDoctorVisionIn
       return { ok: false, reason: "invalid_response", fallback: true };
     }
 
-    return {
-      ok: true,
-      result: normalizeCropDoctorVisionResult(json, {
-        selectedCrop,
-        selectedSymptom
-      })
-    };
+    const candidate = normalizeCropDoctorVisionResult(json, { selectedCrop, selectedSymptom });
+    const advice = [candidate.whatThisMeans, ...candidate.recommendedActions, candidate.nextBestAction].join("\n");
+    if (hasUnsafeAgronomyOutput(advice)) return { ok: false, reason: "invalid_response", fallback: true };
+    return { ok: true, result: candidate };
   } catch (error) {
     const timedOut = error instanceof FarmMateRequestTimeout;
     logVisionDiagnostic({ correlationId, model, httpStatus: null, httpStatusClass: null, providerStatus: "unknown", incompleteReason: "other_or_none", outputLength: 0, outputTokens: null, reasoningTokens: null, timeoutClassification: timedOut ? "bounded_timeout" : "none", normalizedErrorCategory: timedOut ? "model_timeout" : error instanceof SyntaxError ? "invalid_provider_json" : "transport_or_unknown" });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { beginFarmMateAskGeneration, reserveFarmMateAsk, settleFarmMateAsk } from "@/lib/farmmate/usage/ask-recovery";
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
+import { agronomyHighRiskAnswer } from "@/lib/farmmate/agronomy-safety";
 
 export const maxDuration = 60;
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput, type FarmMateAskApiInput } from "@/lib/farmmate/ai";
@@ -291,6 +292,7 @@ function authoritativeBrain(input: FarmMateAskApiInput) {
   const routerResult = routeFarmMateQuestion(question, cropDoctorContext);
 
   return buildFarmMateResponse(question, routerResult, {
+    agronomyAnswers: input.isFollowUp ? input.consultationContext.answerHistory : [],
     cropDoctorContext,
     weatherContext,
     toolContext
@@ -473,7 +475,7 @@ async function answerAndSettle({
 
 async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHash: string) {
 
-  const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(payload.originalQuestion);
+  const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(payload.originalQuestion) ?? agronomyHighRiskAnswer(payload.originalQuestion);
   if (chemicalSafetyAnswer) {
     return NextResponse.json({ ok: true, kind: "final", answer: chemicalSafetyAnswer, usageRecorded: false });
   }
