@@ -37,6 +37,7 @@ import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditSt
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
 import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
+import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 import {
   farmMateAnswerSnippet,
   farmMateCleanAnswerForCopy,
@@ -1160,7 +1161,7 @@ export function AskFarmMate({
           <Bot size={24} aria-hidden="true" />
         </span>
         <div>
-          <h2 className="gg-card-title">Ask Mama G</h2>
+          <h2 className="sr-only">Ask Mama G</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("ask_farmmate", credits)}</p>
         </div>
       </div>
@@ -1274,7 +1275,7 @@ export function AskFarmMate({
                   >
                     Retry this request
                   </button>
-                ) : shouldShowCreditActions ? (
+                ) : shouldShowCreditActions && isPublicSubmissionAvailable("farmmate-feedback") ? (
                   <Link
                     href={FARM_MATE_FEEDBACK_CTA.href}
                     className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
@@ -1390,7 +1391,7 @@ export function AskFarmMate({
                 {creditMessage ? (
                   <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3">
                     <p className="break-words text-sm font-bold leading-6 text-ink/68 [overflow-wrap:anywhere]">{mamaGPublicText(creditMessage)}</p>
-                    {shouldShowCreditActions ? (
+                    {shouldShowCreditActions && isPublicSubmissionAvailable("farmmate-feedback") ? (
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Link
                           href={FARM_MATE_FEEDBACK_CTA.href}

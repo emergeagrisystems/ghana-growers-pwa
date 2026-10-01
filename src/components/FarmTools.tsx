@@ -57,7 +57,7 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
       <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
         <CalendarDays size={24} aria-hidden="true" />
       </span>
-      <h2 className="mt-4 gg-card-title">Crop Calendar</h2>
+      <h2 className="sr-only">Crop Calendar</h2>
       <p className="mt-2 text-sm leading-6 text-ink/66">Find the current task from your planting date, or plan before planting.</p>
 
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
@@ -153,7 +153,7 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAb
       <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
         <Sprout size={24} aria-hidden="true" />
       </span>
-      <h2 className="mt-4 gg-card-title">Planting Advisor</h2>
+      <h2 className="sr-only">Planting Advisor</h2>
       <p className="mt-2 text-sm leading-6 text-ink/66">Check your field before deciding whether to plant.</p>
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink">

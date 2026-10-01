@@ -30,6 +30,7 @@ import {
 } from "@/lib/farmmate/usage";
 import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
 import { farmMateAnswerSnippet } from "@/lib/farmmate/answer-feedback";
+import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 
 type CropDoctorCreditStatus = FarmMateCreditStatus & { storage?: string };
 const CROP_DOCTOR_IMAGE_ACCEPT = CROP_DOCTOR_ACCEPTED_IMAGE_TYPES.join(",");
@@ -342,7 +343,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
           <Camera size={24} aria-hidden="true" />
         </span>
         <div>
-          <h2 className="gg-card-title">Crop Doctor</h2>
+          <h2 className="sr-only">Crop Doctor</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
           <p className="mt-1 text-xs font-semibold text-ink/42">Free public users get 2 Crop Doctor checks every 12 hours.</p>
           <p className="mt-2 text-sm leading-6 text-ink/66">Take or choose a crop photo first. If you know the crop or symptom, add it as optional context before analysis.</p>
@@ -514,12 +515,12 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
                 >
                   Ask Mama G instead
                 </button>
-                <Link
+                {isPublicSubmissionAvailable("farmmate-feedback") ? <Link
                   href={FARM_MATE_FEEDBACK_CTA.href}
                   className="inline-flex min-h-10 items-center justify-center rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                 >
                   {FARM_MATE_FEEDBACK_CTA.label}
-                </Link>
+                </Link> : null}
               </div>
             ) : null}
           </div>
