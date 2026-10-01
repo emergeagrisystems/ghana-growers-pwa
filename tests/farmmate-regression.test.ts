@@ -4524,6 +4524,19 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "harvested wet maize routes to storage checks without repeating known facts",
+    run: () => {
+      const question = "My maize was harvested today and is still wet. I want to store it for several weeks. What should I do?";
+      const response = buildFarmMateResponse(question, routeFarmMateQuestion(question));
+      const preHarvestQuestion = "When should I harvest maize for storage?";
+
+      assert.equal(response.flow?.id, "reduce-post-harvest-losses");
+      assert.deepEqual(response.flow?.followUpQuestions.map((item) => item.id), ["loss-reduction-damage"]);
+      assert.equal(buildFarmMateResponse(preHarvestQuestion, routeFarmMateQuestion(preHarvestQuestion)).flow?.id, "when-should-i-harvest-maize");
+      assert.equal(buildFarmMateResponse("How do I store maize grain?", routeFarmMateQuestion("How do I store maize grain?")).flow?.id, "reduce-post-harvest-losses");
+    }
+  },
+  {
     name: "weather flow asks rain expectation first when live weather is unavailable",
     run: () => {
       const response = buildFarmMateResponse("Can I spray today?", routeFarmMateQuestion("Can I spray today?"));

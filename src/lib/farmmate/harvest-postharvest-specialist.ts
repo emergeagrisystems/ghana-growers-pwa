@@ -197,6 +197,10 @@ export function findHarvestPostHarvestGuidance(cropName?: string | null) {
 export function harvestPostHarvestQuestionType(question: string): HarvestPostHarvestQuestionType {
   const normalized = question.toLowerCase();
 
+  if (/\bmaize\b/.test(normalized) && /\b(harvested|post-harvest|after harvest|store|storage|storing)\b/.test(normalized) && !/\b(when|ready)\b.{0,30}\bharvest\b/.test(normalized)) {
+    return "loss-reduction";
+  }
+
   if (normalized.includes("maize") && normalized.includes("harvest")) {
     return "maize-harvest";
   }
@@ -213,7 +217,7 @@ export function harvestPostHarvestQuestionType(question: string): HarvestPostHar
     return "vegetable-transport";
   }
 
-  if (normalized.includes("before rain") || normalized.includes("rain")) {
+  if (normalized.includes("before rain") || /\brain\b/.test(normalized)) {
     return "harvest-before-rain";
   }
 

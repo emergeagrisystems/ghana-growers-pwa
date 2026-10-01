@@ -683,6 +683,19 @@ function applyToolHandoffToFlow(flow: DecisionFlow, context?: FarmMateToolHandof
   return { ...flow, followUpQuestions, requiredInformation: { ...flow.requiredInformation, crop: context.crop ?? flow.requiredInformation.crop, region: context.region ?? flow.requiredInformation.region, growthStage: context.stage ?? flow.requiredInformation.growthStage, farmPracticeContext: [...(flow.requiredInformation.farmPracticeContext ?? []), ...(context.fieldNotes ?? [])].slice(0, 8) } };
 }
 
+function applyKnownHarvestQuestionFacts(flow: DecisionFlow, question: string, resolvedCrop?: string): DecisionFlow {
+  if (flow.id !== "reduce-post-harvest-losses") return flow;
+  const hasProduce = Boolean(resolvedCrop) || /\b(vegetables|roots|tubers|grains|legumes)\b/i.test(question);
+  const hasPlan = /\b(store|stored|storage|storing|transport|transported|sell|sold|sale)\b/i.test(question);
+  return {
+    ...flow,
+    followUpQuestions: flow.followUpQuestions.filter((item) =>
+      !(hasProduce && item.id === "loss-reduction-produce") &&
+      !(hasPlan && item.id === "loss-reduction-storage")
+    )
+  };
+}
+
 function plantingContextLines(flow: DecisionFlow | undefined, resolvedCrop?: string) {
   if (!flow || flow.intent !== "planting") {
     return [];
@@ -791,7 +804,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const matchedFlow = options.cropDoctorContext
     ? cropDoctorContextToDecisionFlow(options.cropDoctorContext, intent)
     : findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
-  const flow = applyToolHandoffToFlow(matchedFlow ? applyWeatherContextToFlow(question, matchedFlow, options.weatherContext) : fallbackFlow(intent), options.toolContext);
+  const flow = applyToolHandoffToFlow(applyKnownHarvestQuestionFacts(matchedFlow ? applyWeatherContextToFlow(question, matchedFlow, options.weatherContext) : fallbackFlow(intent), question, resolvedCrop), options.toolContext);
   const knowledge = knowledgeLines(flow, intent, resolvedCrop);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
   const shouldShowCropDoctorAction = flow.recommendation.nextBestAction.actionType === "use-crop-doctor";
