@@ -1372,11 +1372,13 @@ export function AskFarmMate({
                     ) : null}
                     <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                       <div className="space-y-3">
-                        {naturalAnswer.split(/\n{2,}/).map((paragraph) => (
-                          <p key={paragraph} className="break-words text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">
-                            {paragraph}
-                          </p>
-                        ))}
+                        {naturalAnswer.split(/\n{2,}/).map((paragraph) => {
+                          const section = paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step):\s*([\s\S]*)$/i);
+                          return section ? <section key={paragraph}>
+                            <h3 className="text-sm font-black text-ink">{section[1]}</h3>
+                            <p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{section[2]}</p>
+                          </section> : <p key={paragraph} className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{paragraph}</p>;
+                        })}
                       </div>
                     </section>
                   </>

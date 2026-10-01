@@ -11,9 +11,9 @@ import {
   findCropCalendarGuide
 } from "@/lib/farmmate/crop-calendar";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
-import { cropCalendarPosition, plantingReadiness, type PlantingFieldState } from "@/lib/farmmate/experience-decisions";
+import { cropCalendarPosition, matchingWeatherForRegion, plantingReadiness, type PlantingFieldState } from "@/lib/farmmate/experience-decisions";
 import { farmMateRegions } from "@/lib/farmmate/regions";
-import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, supportedFarmMateWeatherLocations, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
+import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import {
   findPlantingAdvisorGuidance,
   plantingAdvisorCrops
@@ -135,8 +135,7 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAb
   const [field, setField] = useState<PlantingFieldState>({ planningNow: "yes", irrigation: "unknown", moisture: "unknown", prepared: "partly" });
   const [weather, setWeather] = useState<WeatherDecisionSummary | null>(null);
   const selectedGuidance = findPlantingAdvisorGuidance(selectedCrop) ?? plantingAdvisorCrops.find((guidance) => guidance.crop === "Maize") ?? null;
-  const weatherLocation = supportedFarmMateWeatherLocations.find((location) => location.name === weather?.locationName);
-  const weatherForRegion = weather && weatherLocation?.region === selectedRegion ? weather : null;
+  const weatherForRegion = matchingWeatherForRegion(weather, selectedRegion);
   const decision = plantingReadiness(field, weatherForRegion);
 
   useEffect(() => {

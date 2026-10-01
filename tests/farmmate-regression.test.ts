@@ -35,7 +35,7 @@ import {
   weatherGuidedRecommendationCards
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
-import { cropCalendarPosition, plantingReadiness, todayFarmDecision } from "../src/lib/farmmate/experience-decisions";
+import { cropCalendarPosition, matchingWeatherForRegion, plantingReadiness, todayFarmDecision } from "../src/lib/farmmate/experience-decisions";
 import { homepageFarmMateDescription, homepageFarmMateTools } from "../src/data/farmmatePublicTools";
 import { smartTools } from "../src/data/smartTools";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
@@ -5311,6 +5311,8 @@ const tests: TestCase[] = [
       assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "no", moisture: "dry", prepared: "ready" }).status, "NOT SUITABLE YET");
       assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "waterlogged", prepared: "ready" }).status, "NOT SUITABLE YET");
       assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "moist", prepared: "ready" }).status, "CONDITIONS LOOK SUITABLE");
+      assert.equal(matchingWeatherForRegion(sampleWeatherContext({ locationName: "Accra / Greater Accra" }), "Greater Accra")?.locationName, "Accra / Greater Accra");
+      assert.equal(matchingWeatherForRegion(sampleWeatherContext({ locationName: "Accra / Greater Accra" }), "Ashanti"), null);
     }
   },
   {
@@ -7741,6 +7743,7 @@ const tests: TestCase[] = [
   {
     name: "Ask FarmMate final AI response displays cleanly",
     run: () => {
+      const component = repoFile("src/components/AskFarmMate.tsx");
       const finalAnswer = cleanFarmMateFinalAnswer(
         "Based on what you told me, your maize is already flowering, the soil is dry, and no fertilizer has been applied yet.\n\nNext step: Wait until the soil has moisture before applying fertilizer."
       );
@@ -7748,6 +7751,8 @@ const tests: TestCase[] = [
       assert.equal(finalAnswer.startsWith("Based on what you told me"), true);
       assert.equal(finalAnswer.includes("What I think"), false);
       assert.equal(finalAnswer.includes("Here's what I understand"), false);
+      assert.equal(component.includes("paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step)"), true);
+      assert.equal(component.includes('<h3 className="text-sm font-black text-ink">{section[1]}</h3>'), true);
     }
   },
   {

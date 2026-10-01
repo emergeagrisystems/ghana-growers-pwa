@@ -1,5 +1,5 @@
 import type { CropCalendarGuide, CropCalendarStage } from "./crop-calendar";
-import type { WeatherDecisionSummary } from "./weather";
+import { supportedFarmMateWeatherLocations, type WeatherDecisionSummary } from "./weather";
 import { findWeatherDecisionGuidance, weatherDecisionRainChanceBand, type WeatherDecisionTask } from "./weather-decision-specialist";
 
 function firstWeek(timing: string) {
@@ -32,6 +32,14 @@ export type PlantingFieldState = {
   moisture: "moist" | "dry" | "waterlogged" | "unknown";
   prepared: "ready" | "partly" | "not-yet";
 };
+
+export function matchingWeatherForRegion(weather: WeatherDecisionSummary | null, region: string) {
+  if (!weather?.liveWeatherAvailable) return null;
+  const location = supportedFarmMateWeatherLocations.find((item) =>
+    weather.locationName === `${item.name} / ${item.region}` || weather.locationName === item.name
+  );
+  return location?.region === region ? weather : null;
+}
 
 export function plantingReadiness(field: PlantingFieldState, weather?: WeatherDecisionSummary | null) {
   if (field.moisture === "waterlogged") return {
