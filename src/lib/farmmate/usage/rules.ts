@@ -126,10 +126,13 @@ export const CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT =
   "I do not have Crop Doctor checks available right now. Can you guide me on what to check from my crop photo?";
 
 export const CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE =
-  "Crop Doctor AI is temporarily limited, but you can still ask FarmMate for guidance.";
+  "The photo analysis finished, but Crop Doctor could not confirm whether its check was recorded. Check your remaining checks before retrying, or ask Mama G what to look for.";
+
+export const CROP_DOCTOR_EXHAUSTED_MESSAGE =
+  "No Crop Doctor checks are left in this 12-hour window. You can ask Mama G or wait for checks to reset.";
 
 export const FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE =
-  "You can continue using GG FarmMate when your credits refresh. If something was confusing, please share feedback.";
+  "Your Ask Mama G questions will be available again when the 6-hour window resets.";
 
 export const FARM_MATE_FEEDBACK_CTA = {
   label: "Share feedback",
@@ -138,49 +141,49 @@ export const FARM_MATE_FEEDBACK_CTA = {
 
 export function farmMateCreditLine(tool: FarmMateUsageTool, status?: FarmMateCreditStatus | null) {
   if (!status) {
-    return tool === "ask_farmmate" ? "FarmMate Credits: checking Ask questions..." : "Crop Doctor Credits: checking checks...";
+    return tool === "ask_farmmate" ? "Checking Ask Mama G questions..." : "Checking Crop Doctor checks...";
   }
 
   if (status.creditState === "temporarily_unavailable") {
-    return tool === "ask_farmmate" ? "FarmMate Credits: temporarily unavailable" : "Crop Doctor Credits: temporarily unavailable";
+    return tool === "ask_farmmate" ? "Ask question balance unavailable. Try again shortly." : "Crop Doctor check balance unavailable. Try again shortly.";
   }
 
   if (status.isExhausted) {
-    const refreshText = status.resetAt ? `refreshes in ${status.refreshInText}` : `refreshes ${status.refreshInText}`;
+    const refreshText = status.resetAt ? `resets in ${status.refreshInText}` : `resets ${status.refreshInText}`;
 
     if (tool === "ask_farmmate") {
-      return `0 Ask questions remaining - ${refreshText}`;
+      return `0 of ${status.limit} Ask Mama G questions left · ${refreshText}`;
     }
 
-    return `0 checks remaining - ${refreshText}`;
+    return `0 of ${status.limit} Crop Doctor checks left · ${refreshText}`;
   }
 
   if (tool === "ask_farmmate") {
-    return `FarmMate Credits: ${status.remaining} Ask question${status.remaining === 1 ? "" : "s"} remaining - 5 free Ask FarmMate questions every 6 hours`;
+    return `${status.remaining} of ${status.limit} Ask Mama G questions left · Resets every ${status.windowHours} hours`;
   }
 
-  return `Crop Doctor Credits: ${status.remaining} check${status.remaining === 1 ? "" : "s"} remaining`;
+  return `${status.remaining} of ${status.limit} Crop Doctor checks left · Resets every ${status.windowHours} hours`;
 }
 
 export function cropDoctorCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
   if (decision.reason === "usage_tracking_unavailable") {
-    return CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE;
+    return "Crop Doctor could not check your balance, so no photo check started and no credit was used. Try again shortly.";
   }
 
   if (decision.reason === "rapid_submission") {
-    return "FarmMate is still checking your last photo. Please wait a few seconds before trying again.";
+    return "Crop Doctor is still checking your last photo. Wait a few seconds before trying again; no second check has started.";
   }
 
-  return FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE;
+  return CROP_DOCTOR_EXHAUSTED_MESSAGE;
 }
 
 export function askFarmMateCreditMessage(decision: Pick<FarmMateCreditDecision, "reason" | "refreshInText">) {
   if (decision.reason === "usage_tracking_unavailable") {
-    return "FarmMate AI is temporarily limited, but you can still use the local guidance.";
+    return "Mama G could not check your question balance. No new answer started. Try again shortly.";
   }
 
   if (decision.reason === "rapid_submission") {
-    return "FarmMate is still catching up. Please wait a few seconds before asking again.";
+    return "Mama G is still handling your last question. Wait a few seconds before asking again.";
   }
 
   return FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE;

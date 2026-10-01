@@ -346,7 +346,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
           <h2 className="sr-only">Crop Doctor</h2>
           <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
           <p className="mt-1 text-xs font-semibold text-ink/42">Free public users get 2 Crop Doctor checks every 12 hours.</p>
-          <p className="mt-2 text-sm leading-6 text-ink/66">Take or choose a crop photo first. If you know the crop or symptom, add it as optional context before analysis.</p>
+          <p className="mt-2 text-sm leading-6 text-ink/66">Add a photo, then share the crop or signs you notice if you know them.</p>
         </div>
       </div>
 
@@ -364,13 +364,13 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
       >
         <div>
           <UploadCloud className={`mx-auto ${isUploadDisabled ? "text-ink/35" : "text-leaf-700"}`} size={32} aria-hidden="true" />
-          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Take a crop photo"}</p>
+          <p className="mt-3 text-base font-black text-ink">{isUploadDisabled ? "No Crop Doctor checks available" : "Add a photo"}</p>
           <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
             {isUploadDisabled
               ? "You can still ask Mama G for guidance while you wait."
-              : "Take a clear photo of the affected part. If possible, also include some healthy leaves or the whole plant."}
+              : "Photograph the affected part clearly in good daylight."}
           </p>
-          {!isUploadDisabled ? <p className="mt-2 text-xs font-bold text-ink/48">Take a photo of the affected crop, or choose one from your phone.</p> : null}
+          {!isUploadDisabled ? <p className="mt-2 text-xs font-bold text-ink/48">Close-ups of leaves, fruit, stems, roots, pests or produce are welcome. A second whole-plant photo may help.</p> : null}
           <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
             <input
               ref={cameraInputRef}
@@ -390,7 +390,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               <Camera size={18} aria-hidden="true" />
-              Take Photo
+              Take photo
             </button>
             <input
               ref={galleryInputRef}
@@ -409,7 +409,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
             >
               <ImagePlus size={18} aria-hidden="true" />
-              Choose Photo
+              Choose photo
             </button>
           </div>
           <p className="mt-3 text-xs font-bold leading-5 text-ink/48">
@@ -432,7 +432,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
 
       <div className="mt-5 grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
         <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-crop">
-          Tell Mama G the crop if you know it
+          Crop (optional)
           <select
             id="crop-doctor-selected-crop"
             disabled={isAnalysing}
@@ -458,7 +458,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
         </label>
 
         <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-symptom">
-          What are you seeing? <span className="font-semibold text-ink/50">(optional)</span>
+          What do you notice? <span className="font-semibold text-ink/50">(optional)</span>
           <select
             id="crop-doctor-selected-symptom"
             disabled={isAnalysing}
@@ -477,6 +477,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
             ))}
           </select>
         </label>
+        <div className="flex flex-wrap gap-2" aria-label="Common visible signs">{["Yellow leaves", "Spots on leaves", "Holes in leaves", "Wilting", "Fruit problem", "Insects or pests"].filter((symptom) => symptomOptions.includes(symptom)).map((symptom) => <button key={symptom} type="button" aria-pressed={selectedSymptom === symptom} disabled={isAnalysing} onClick={() => { setSelectedSymptom(symptom); resetDiagnosisForFieldContext(); }} className={`min-h-10 rounded-full border px-3 text-xs font-bold ${selectedSymptom === symptom ? "border-leaf-700 bg-leaf-700 text-white" : "border-leaf-900/15 bg-white text-leaf-700"}`}>{symptom}</button>)}</div>
       </div>
 
       <div className="mt-5">
@@ -531,14 +532,14 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="gg-eyebrow text-leaf-700">Main finding</p>
-                <h3 className="mt-2 gg-card-title">{unclearDiagnosis ? "I can't identify this crop or problem clearly enough yet." : mamaGPublicText(cropDoctorResultHeadline(diagnosis))}</h3>
+                <h3 className="mt-2 gg-card-title">{unclearDiagnosis ? mamaGPublicText(diagnosis.mainFinding) : mamaGPublicText(cropDoctorResultHeadline(diagnosis))}</h3>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
                 {cropDoctorResultBadge(diagnosis)}
               </span>
             </div>
-            {!unclearDiagnosis ? <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">{diagnosis.crop ?? "Crop uncertain"} · Photo confidence: {diagnosis.photoConfidenceLabel}{diagnosisSelectedSymptom ? ` · You selected: ${diagnosisSelectedSymptom}` : ""}</p> : null}
+            <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">Crop: {diagnosis.crop ?? "unconfirmed"} ({diagnosis.cropConfidence}) · Visible-problem confidence: {diagnosis.confidence}{diagnosisSelectedSymptom ? ` · You selected: ${diagnosisSelectedSymptom}` : ""}</p>
 
             {!unclearDiagnosis && diagnosis.limitedGuidanceNote ? (
               <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
@@ -558,8 +559,9 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
 
             {unclearDiagnosis ? <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I could see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
-              <p><strong className="text-ink">What would help:</strong> A whole-plant view where useful and a close-up of the affected area, in good daylight and in focus.</p>
-              <p>Do not treat a crop or disease as confirmed from this photo.</p>
+              <p><strong className="text-ink">What remains unconfirmed:</strong> The crop identity and exact cause are not established from this photo.</p>
+              <p><strong className="text-ink">What may help:</strong> A sharper affected-part photo in daylight. A second whole-plant photo can add context if useful.</p>
+              <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>
             </div> : <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
               <p><strong className="text-ink">Possible issue:</strong> {mamaGPublicText(diagnosis.possibleIssue)} ({diagnosis.photoConfidenceLabel.toLowerCase()} photo confidence)</p>
               {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I can see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}

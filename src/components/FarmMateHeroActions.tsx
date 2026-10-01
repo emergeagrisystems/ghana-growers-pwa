@@ -15,14 +15,14 @@ export function FarmMateHeroActions() {
         onClick={() => openFarmMateTool("ask")}
         className="gg-button-primary min-h-[4.25rem] w-full px-7 py-4 text-base sm:min-h-12 sm:w-auto sm:px-6 sm:py-3 sm:text-sm"
       >
-        Ask Mama G
+        Ask a question
       </button>
       <button
         type="button"
         onClick={() => openFarmMateTool("doctor")}
         className="gg-text-link min-h-[4.25rem] w-full px-7 py-4 text-base sm:min-h-12 sm:w-auto sm:px-6 sm:py-3 sm:text-sm"
       >
-        Upload Crop Photo
+        Check a crop photo
       </button>
     </div>
   );

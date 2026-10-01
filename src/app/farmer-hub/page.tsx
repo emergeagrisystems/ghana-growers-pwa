@@ -1,4 +1,4 @@
-import { ShieldCheck, Sprout } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Suspense } from "react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
@@ -22,17 +22,11 @@ export default function FarmerHubPage({searchParams}: {searchParams: {mamaPalett
       <section>
         <div className="mx-auto grid max-w-7xl gap-7 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.46fr)] lg:items-start lg:px-8 lg:py-12">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-black uppercase tracking-[0.12em] text-leaf-700 shadow-sm">
-              <Sprout size={16} aria-hidden="true" />
-              BY GHANA GROWERS
-            </p>
             <FarmMateGreeting />
             <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] text-ink sm:text-5xl lg:text-6xl">
               Ask Mama G
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">
-              Ask Mama G for farming advice, or upload a crop photo when something looks wrong.
-            </p>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-ink/70 sm:text-lg">What do you need help with today?</p>
             <FarmMateHeroActions />
             <Suspense fallback={null}>
               <FarmTools />
@@ -47,9 +41,12 @@ export default function FarmerHubPage({searchParams}: {searchParams: {mamaPalett
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="flex items-start gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm font-semibold leading-6 text-ink/62 shadow-sm">
+        <div className="flex items-start gap-2 text-xs font-semibold leading-5 text-ink/62">
           <ShieldCheck className="mt-0.5 shrink-0 text-leaf-700" size={18} aria-hidden="true" />
-          <p>Mama G gives practical decision support. It does not replace an agricultural extension officer for serious outbreaks.</p>
+          <div>
+            <p>Mama G can make mistakes. For serious or spreading crop problems, seek a local extension officer.</p>
+            <details className="mt-1"><summary className="cursor-pointer font-bold text-leaf-700">More about safe use</summary><p className="pt-2">Check local conditions and product labels before acting. AI guidance is not a confirmed diagnosis.</p></details>
+          </div>
         </div>
       </section>
     </main>

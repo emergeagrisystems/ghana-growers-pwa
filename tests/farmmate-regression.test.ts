@@ -36,6 +36,8 @@ import {
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
 import { cropCalendarPosition, matchingWeatherForRegion, plantingReadiness, todayFarmDecision } from "../src/lib/farmmate/experience-decisions";
+import { harvestStorageDecision } from "../src/lib/farmmate/harvest-storage-guide";
+import { canonicalFarmMateToolHandoff, isFarmMateToolHandoff } from "../src/lib/farmmate/tool-handoff";
 import { homepageFarmMateDescription, homepageFarmMateTools } from "../src/data/farmmatePublicTools";
 import { smartTools } from "../src/data/smartTools";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
@@ -195,6 +197,7 @@ import {
   isCountableFarmMateSubmission,
   CROP_DOCTOR_ASK_FARMMATE_FALLBACK_PROMPT,
   CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE,
+  CROP_DOCTOR_EXHAUSTED_MESSAGE,
   FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE,
   FARM_MATE_FEEDBACK_CTA,
   cropDoctorCreditMessage,
@@ -3920,7 +3923,7 @@ const tests: TestCase[] = [
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
 
-      assert.equal(FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE.includes("Live weather is temporarily unavailable"), true);
+      assert.equal(FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE.includes("Live weather is unavailable"), true);
       assert.equal(component.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
       assert.equal(component.includes("setForecast(null)"), true);
       assert.equal(component.includes("window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY)"), true);
@@ -3979,7 +3982,7 @@ const tests: TestCase[] = [
 
       assert.equal(component.includes("day.farmingNote"), false);
       assert.equal(component.includes("<FarmMateDailySummary"), false);
-      assert.equal(component.includes("Can I farm today?"), true);
+      assert.equal(component.includes("CanIFarmTodayExperience"), true);
     }
   },
   {
@@ -4001,11 +4004,11 @@ const tests: TestCase[] = [
       const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
       const actions = repoFile("src/components/FarmMateHeroActions.tsx");
 
-      assert.equal(farmerHub.includes("Ask Mama G for farming advice, or upload a crop photo when something looks wrong."), true);
+      assert.equal(farmerHub.includes("What do you need help with today?"), true);
       assert.equal(actions.includes('openFarmMateTool("ask")'), true);
       assert.equal(actions.includes('openFarmMateTool("doctor")'), true);
-      assert.equal(actions.includes("Ask Mama G"), true);
-      assert.equal(actions.includes("Upload Crop Photo"), true);
+      assert.equal(actions.includes("Ask a question"), true);
+      assert.equal(actions.includes("Check a crop photo"), true);
       assert.equal(actions.match(/min-h-\[4\.25rem\] w-full/g)?.length, 2);
       assert.equal(actions.match(/sm:min-h-12 sm:w-auto/g)?.length, 2);
     }
@@ -4019,9 +4022,9 @@ const tests: TestCase[] = [
       assert.equal(farmerHub.includes("lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.46fr)]"), true);
       assert.equal(farmerHub.indexOf("<FarmMateHeroActions />") < farmerHub.indexOf("<FarmTools />"), true);
       assert.equal(farmerHub.indexOf("<FarmTools />") < farmerHub.indexOf("<FarmMateWeatherFoundation />"), true);
-      assert.equal(farmTools.includes('className="mt-8"'), true);
-      assert.equal(farmTools.includes("md:grid md:grid-cols-2"), true);
-      assert.equal(farmTools.includes("min-h-48"), true);
+      assert.equal(farmTools.includes('className="mt-7"'), true);
+      assert.equal(farmTools.includes("grid grid-cols-2"), true);
+      assert.equal(farmTools.includes("min-h-36"), true);
       assert.equal(farmTools.includes("lg:grid-cols-4"), false);
     }
   },
@@ -4082,7 +4085,7 @@ const tests: TestCase[] = [
       assert.equal(summary.includes("summary.todaysTip"), true);
       assert.equal(summary.includes("summary.warning"), false);
       assert.equal(weatherWidget.includes("<FarmMateDailySummary"), false);
-      assert.equal(weatherWidget.includes('aria-label="Can I farm today?"'), true);
+      assert.equal(weatherWidget.includes('id="can-i-farm-today"'), true);
     }
   },
   {
@@ -4834,7 +4837,7 @@ const tests: TestCase[] = [
       process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only-not-a-credential";
       process.env.VERCEL_ENV = "preview";
       process.env.VERCEL_GIT_COMMIT_REF = "codex/p09-rc1";
-      process.env.NODE_ENV = "production";
+      Reflect.set(process.env, "NODE_ENV", "production");
       const now = new Date("2026-09-29T10:00:00.000Z");
       const rows = new Map<string, { id: string; anonymous_user_hash: string; tool: string; created_at: string }>();
       let mode: "normal" | "delayed" | "unverifiable" = "normal";
@@ -4923,8 +4926,8 @@ const tests: TestCase[] = [
         else process.env.VERCEL_ENV = previousEnv;
         if (previousBranch === undefined) delete process.env.VERCEL_GIT_COMMIT_REF;
         else process.env.VERCEL_GIT_COMMIT_REF = previousBranch;
-        if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
-        else process.env.NODE_ENV = previousNodeEnv;
+        if (previousNodeEnv === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
+        else Reflect.set(process.env, "NODE_ENV", previousNodeEnv);
       }
     }
   },
@@ -5308,9 +5311,10 @@ const tests: TestCase[] = [
       ["Planning to plant now?", "Reliable irrigation?", "Field soil now", "Land preparation", "More planting details", "Planting readiness"].forEach((label) => assert.equal(farmTools.includes(label), true, label));
       assert.equal(farmTools.includes("selectedGuidance.spacingGuidance[0]"), true);
       assert.equal(farmTools.includes("selectedGuidance.soilPreparation[0]"), true);
-      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "no", moisture: "dry", prepared: "ready" }).status, "NOT SUITABLE YET");
-      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "waterlogged", prepared: "ready" }).status, "NOT SUITABLE YET");
-      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "moist", prepared: "ready" }).status, "CONDITIONS LOOK SUITABLE");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "no", moisture: "dry", prepared: "ready" }).status, "WAIT");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "waterlogged", prepared: "ready" }).status, "WAIT");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "moist", prepared: "ready" }).status, "CHECK FIRST");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "moist", drainage: "good", prepared: "ready" }, sampleWeatherContext({ rainChancePercent: 20 })).status, "CONDITIONS LOOK SUITABLE");
       assert.equal(matchingWeatherForRegion(sampleWeatherContext({ locationName: "Accra / Greater Accra" }), "Greater Accra")?.locationName, "Accra / Greater Accra");
       assert.equal(matchingWeatherForRegion(sampleWeatherContext({ locationName: "Accra / Greater Accra" }), "Ashanti"), null);
     }
@@ -5337,7 +5341,7 @@ const tests: TestCase[] = [
 
       assert.equal(farmTools.includes("Select crop"), true);
       assert.equal(farmTools.includes("Select region"), true);
-      assert.equal(farmTools.includes("Have you already planted?"), true);
+      assert.equal(farmTools.includes("Have you planted this crop?"), true);
       assert.equal(farmTools.includes("Planting date, if known"), true);
       assert.equal(farmTools.includes("selectedGuide.stages.map"), true);
       assert.equal(farmTools.includes("crop timeline"), true);
@@ -5361,8 +5365,10 @@ const tests: TestCase[] = [
       );
 
       const farmTools = repoFile("src/components/FarmTools.tsx");
-      assert.equal(farmTools.includes("My field is ${field.moisture}"), true);
-      assert.equal(farmTools.includes("I planted on ${plantingDate}"), true);
+      assert.equal(farmTools.includes("soil: ${field.moisture}"), true);
+      assert.equal(farmTools.includes("Planting date: ${plantingDate}"), true);
+      assert.equal(farmTools.includes('source: "calendar"'), true);
+      assert.equal(farmTools.includes('source: "planting"'), true);
       assert.equal(farmTools.match(/Ask Mama G about this/g)?.length, 2);
     }
   },
@@ -5384,13 +5390,58 @@ const tests: TestCase[] = [
       const low = sampleWeatherContext({ rainChancePercent: 20 });
       const high = sampleWeatherContext({ rainChancePercent: 80 });
       assert.equal(todayFarmDecision("spraying", low).status, "CHECK FIRST");
-      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "rain", wind: "calm", leaves: "dry" }).status, "BETTER TO WAIT");
-      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "clear", wind: "calm", leaves: "dry" }).status, "CONDITIONS MAY BE SUITABLE");
-      assert.equal(todayFarmDecision("fertilizer-before-rain", high).status, "BETTER TO WAIT");
-      assert.equal(todayFarmDecision("irrigation", null).status, "CHECK FIRST");
-      assert.equal(todayFarmDecision("planting-before-rain", high).status, "CHECK FIRST");
-      assert.equal(todayFarmDecision("harvesting-before-rain", high).status, "CHECK FIRST");
-      assert.equal(todayFarmDecision("drying-produce", high).status, "BETTER TO WAIT");
+      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "rain", wind: "calm", leaves: "dry" }).status, "WAIT");
+      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "clear", wind: "calm", leaves: "dry" }).status, "SUITABLE");
+      assert.equal(todayFarmDecision("fertilizer-before-rain", high, { heavyRainSoon: "yes", soil: "moist" }).status, "WAIT");
+      assert.equal(todayFarmDecision("irrigation", null).status, "NOT ENOUGH INFORMATION");
+      assert.equal(todayFarmDecision("planting-before-rain", high).status, "NOT ENOUGH INFORMATION");
+      assert.equal(todayFarmDecision("harvesting-before-rain", high).status, "NOT ENOUGH INFORMATION");
+      assert.equal(todayFarmDecision("drying-produce", high, { coveredArea: "no", heavyRainSoon: "yes" }).status, "WAIT");
+      assert.equal(todayFarmDecision("planting-before-rain", null, { soil: "moist", drainage: "good" }).status, "CHECK FIRST");
+    }
+  },
+  {
+    name: "RC1 structured tool handoff stays bounded and skips already-known questions",
+    run: () => {
+      const handoff = { source: "harvest" as const, question: "How should I handle and store cassava?", chips: ["Cassava", "Harvested"], crop: "Cassava", fieldNotes: ["Harvest state: harvested; condition: sound.", "Holding time: today; storage: shade."] };
+      assert.equal(isFarmMateToolHandoff(handoff), true);
+      assert.equal(canonicalFarmMateToolHandoff(handoff)?.crop, "Cassava");
+      assert.equal(isFarmMateToolHandoff({ ...handoff, fieldNotes: ["x".repeat(161)] }), false);
+      const brain = buildFarmMateResponse(handoff.question, routeFarmMateQuestion(handoff.question), { toolContext: handoff });
+      assert.equal(brain.toolContext?.source, "harvest");
+      assert.equal(brain.flow?.followUpQuestions.some((item) => item.id === "cassava-harvest-status"), false);
+      const ask = repoFile("src/components/AskFarmMate.tsx");
+      const route = repoFile("src/app/api/farmmate/ask/route.ts");
+      assert.equal(ask.includes("setActiveToolHandoff(null)"), true, "fresh Ask must drop prior tool context");
+      assert.equal(route.includes("canonicalFarmMateToolHandoff"), true, "server must validate and bind handoff");
+    }
+  },
+  {
+    name: "RC1 harvest and storage guide separates known handling from unsafe food claims",
+    run: () => {
+      const base = { crop: "Maize", state: "harvested" as const, condition: "sound" as const, duration: "short" as const, storage: "ventilated" as const };
+      assert.equal(harvestStorageDecision({ ...base, state: "unknown" }).status, "NOT ENOUGH INFORMATION");
+      assert.equal(harvestStorageDecision({ ...base, condition: "damaged" }).status, "WAIT");
+      assert.equal(harvestStorageDecision({ ...base, condition: "wet", duration: "longer" }).status, "WAIT");
+      assert.equal(harvestStorageDecision({ ...base, storage: "none", duration: "longer" }).status, "CHECK FIRST");
+      assert.equal(harvestStorageDecision({ ...base }).actions.some((action) => action.includes("ventilated")), true);
+      assert.equal(harvestStorageDecision({ ...base, crop: "Cassava", state: "standing" }).next.includes("Harvest only"), true);
+      const guide = repoFile("src/components/HarvestStorageGuide.tsx");
+      assert.equal(guide.includes("food/feed safety declarations"), true);
+      assert.equal(guide.includes('source: "harvest"'), true);
+    }
+  },
+  {
+    name: "RC1 all six weather tasks require field checks and keep a manual location path",
+    run: () => {
+      const weather = sampleWeatherContext({ rainChancePercent: 25 });
+      const tasks = ["spraying", "planting-before-rain", "fertilizer-before-rain", "irrigation", "harvesting-before-rain", "drying-produce"] as const;
+      tasks.forEach((task) => assert.equal(Boolean(todayFarmDecision(task, weather).next), true, task));
+      const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
+      assert.equal(component.includes("Location wasn't shared. Choose the nearest area instead."), true);
+      assert.equal(component.includes("supportedFarmMateWeatherLocations.map"), true);
+      assert.equal(component.includes("Use my location"), true);
+      assert.equal(component.includes("WEATHER_SELECT_EVENT"), true);
     }
   },
   {
@@ -6054,8 +6105,8 @@ const tests: TestCase[] = [
       const message = askFarmMateCreditMessage({ reason: "credits_exhausted", refreshInText: "6h 20m" });
 
       assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
-      assert.equal(message.includes("continue using GG FarmMate when your credits refresh"), true);
-      assert.equal(message.includes("share feedback"), true);
+      assert.equal(message.includes("Ask Mama G questions"), true);
+      assert.equal(message.includes("6-hour window"), true);
       assert.equal(message.includes("Learn"), false);
     }
   },
@@ -6103,7 +6154,7 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 2);
       assert.equal(status.creditState, "available");
-      assert.equal(farmMateCreditLine("crop_doctor", status), "Crop Doctor Credits: 2 checks remaining");
+      assert.equal(farmMateCreditLine("crop_doctor", status), "2 of 2 Crop Doctor checks left · Resets every 12 hours");
       assert.equal(shouldDisableCropDoctorUpload(status), false);
     }
   },
@@ -6115,7 +6166,7 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 1);
       assert.equal(status.creditState, "available");
-      assert.equal(farmMateCreditLine("crop_doctor", status), "Crop Doctor Credits: 1 check remaining");
+      assert.equal(farmMateCreditLine("crop_doctor", status), "1 of 2 Crop Doctor checks left · Resets every 12 hours");
       assert.equal(shouldDisableCropDoctorUpload(status), false);
     }
   },
@@ -6134,7 +6185,7 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 0);
       assert.equal(status.creditState, "exhausted");
-      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 checks remaining"), true);
+      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 of 2 Crop Doctor checks left"), true);
     }
   },
   {
@@ -6296,7 +6347,7 @@ const tests: TestCase[] = [
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const takePhotoIndex = cropDoctor.indexOf("Take Photo");
-      const cropSelectorIndex = cropDoctor.indexOf("Tell Mama G the crop if you know it");
+      const cropSelectorIndex = cropDoctor.indexOf("Crop (optional)");
 
       assert.ok(takePhotoIndex > 0);
       assert.ok(cropSelectorIndex > takePhotoIndex);
@@ -6341,7 +6392,7 @@ const tests: TestCase[] = [
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
 
-      assert.equal(cropDoctor.includes("What are you seeing?"), true);
+      assert.equal(cropDoctor.includes("What do you notice?"), true);
       assert.equal(cropDoctor.includes("(optional)"), true);
       assert.equal(cropDoctor.includes('id="crop-doctor-selected-symptom"'), true);
       const requiredSymptoms = [
@@ -6590,13 +6641,13 @@ const tests: TestCase[] = [
       assert.equal(result.cropGroup, null);
       assert.equal(result.resultType, "crop_not_confirmed");
       assert.equal(result.issueCategory, "unknown");
-      assert.equal(result.possibleIssue, "Crop not confirmed from this photo");
+      assert.equal(result.possibleIssue, "Unconfirmed crop; visible signs need checking before suggesting a cause");
       assert.equal(cropDoctorResultHeadline(result), "Crop not confirmed");
       assert.equal(result.photoConfidenceLabel, "Unclear");
       assert.equal(result.visibleSigns.includes("serrated leaves"), true);
-      assert.equal(result.whatToCheck.some((line) => line.includes("whole plant")), true);
+      assert.equal(result.whatToCheck.some((line) => line.includes("whole-plant photo may help")), true);
       assert.equal(result.whatToCheck.some((line) => line.includes("Select the crop")), true);
-      assert.equal(result.recommendedActions.some((line) => line.includes("Ask FarmMate")), true);
+      assert.equal(result.recommendedActions.some((line) => line.includes("Ask Mama G")), true);
       assert.equal(result.askFarmMatePrompt.includes("could not confirm the crop"), true);
       assert.equal(resultText.includes("named disease"), false);
       assert.equal(resultText.includes("definitely"), false);
@@ -6732,9 +6783,9 @@ const tests: TestCase[] = [
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
 
-      assert.equal(cropDoctor.includes("Take a photo of the affected crop, or choose one from your phone."), true);
-      assert.equal(cropDoctor.includes("Take Photo"), true);
-      assert.equal(cropDoctor.includes("Choose Photo"), true);
+      assert.equal(cropDoctor.includes("Photograph the affected part clearly in good daylight."), true);
+      assert.equal(cropDoctor.includes("Take photo"), true);
+      assert.equal(cropDoctor.includes("Choose photo"), true);
       assert.equal(cropDoctor.includes('aria-label="Take Photo"'), true);
       assert.equal(cropDoctor.includes('aria-label="Choose Photo"'), true);
     }
@@ -6916,9 +6967,9 @@ const tests: TestCase[] = [
       const decision = getFarmMateCreditDecision("crop_doctor", events, now);
       const message = cropDoctorCreditMessage(decision);
 
-      assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
-      assert.equal(message.includes("credits refresh"), true);
-      assert.equal(message.includes("share feedback"), true);
+      assert.equal(message, CROP_DOCTOR_EXHAUSTED_MESSAGE);
+      assert.equal(message.includes("12-hour window"), true);
+      assert.equal(message.includes("ask Mama G"), true);
       assert.equal(message.includes("soon"), false);
       assert.equal(message.includes("temporarily limited"), false);
     }
@@ -6962,7 +7013,7 @@ const tests: TestCase[] = [
           isExhausted: true,
           creditState: "exhausted"
         }),
-        "0 checks remaining - refreshes in 6h 20m"
+        "0 of 2 Crop Doctor checks left · resets in 6h 20m"
       );
     }
   },
@@ -6971,7 +7022,7 @@ const tests: TestCase[] = [
     run: () => {
       const message = cropDoctorCreditMessage({ reason: "credits_exhausted", refreshInText: formatRefreshIn(null) });
 
-      assert.equal(message, FARM_MATE_EXHAUSTED_FEEDBACK_MESSAGE);
+      assert.equal(message, CROP_DOCTOR_EXHAUSTED_MESSAGE);
       assert.equal(message.includes("soon"), false);
     }
   },
@@ -6990,7 +7041,7 @@ const tests: TestCase[] = [
 
       assert.equal(status.remaining, 0);
       assert.equal(shouldDisableCropDoctorAnalysis(status), true);
-      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 checks remaining"), true);
+      assert.equal(farmMateCreditLine("crop_doctor", status).startsWith("0 of 2 Crop Doctor checks left"), true);
     }
   },
   {
@@ -7016,10 +7067,10 @@ const tests: TestCase[] = [
       const decision = usageTrackingUnavailableDecision("crop_doctor", new Date("2026-07-09T12:00:00.000Z"));
       const message = cropDoctorCreditMessage(decision);
 
-      assert.equal(message, CROP_DOCTOR_TEMPORARILY_LIMITED_MESSAGE);
+      assert.equal(message.includes("no photo check started and no credit was used"), true);
       assert.equal(message.includes("Your credits refresh"), false);
       assert.equal(decision.creditState, "temporarily_unavailable");
-      assert.equal(farmMateCreditLine("crop_doctor", decision), "Crop Doctor Credits: temporarily unavailable");
+      assert.equal(farmMateCreditLine("crop_doctor", decision), "Crop Doctor check balance unavailable. Try again shortly.");
       assert.equal(farmMateCreditLine("crop_doctor", decision).includes("0 checks"), false);
     }
   },
@@ -7162,7 +7213,7 @@ const tests: TestCase[] = [
       assert.equal(result.photoCropMatch, "uncertain");
       assert.equal(
         result.mainFinding,
-        "The selected crop is maize, but the photo does not clearly show maize. Please upload a clearer photo of the affected maize plant."
+        "The crop identity is uncertain from this close-up. I can still describe visible signs, but cannot confirm a diagnosis."
       );
     }
   },
@@ -7488,8 +7539,8 @@ const tests: TestCase[] = [
 
       const metadata = `Crop: ${result.crop}`;
       assert.equal(metadata, "Crop: Maize");
-      assert.equal(cropDoctor.includes('diagnosis.crop ?? "Crop uncertain"'), true);
-      assert.equal(cropDoctor.includes("Photo confidence"), true);
+      assert.equal(cropDoctor.includes('diagnosis.crop ?? "unconfirmed"'), true);
+      assert.equal(cropDoctor.includes("Visible-problem confidence"), true);
       assert.equal(cropDoctor.includes("Crop detected:"), false);
       assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
     }
@@ -7510,9 +7561,9 @@ const tests: TestCase[] = [
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.crop, "Maize");
       assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
-      assert.equal(cropDoctor.includes('diagnosis.crop ?? "Crop uncertain"'), true);
+      assert.equal(cropDoctor.includes('diagnosis.crop ?? "unconfirmed"'), true);
       assert.equal(cropDoctor.includes("askFarmMateAboutThis"), true);
-      assert.equal(cropDoctor.includes("Photo confidence"), true);
+      assert.equal(cropDoctor.includes("Visible-problem confidence"), true);
     }
   },
   {
@@ -7529,7 +7580,7 @@ const tests: TestCase[] = [
       assert.equal(result.crop, null);
       assert.equal(result.resultType, "crop_not_confirmed");
       assert.equal(result.askFarmMatePrompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw blurred leaves. What should I check next?");
-      assert.equal(cropDoctor.includes("I can't identify this crop or problem clearly enough yet."), true);
+      assert.equal(cropDoctor.includes("What remains unconfirmed"), true);
       assert.equal(cropDoctor.includes("Take another photo"), true);
       assert.equal(cropDoctor.includes("Choose another photo"), true);
     }
@@ -7751,8 +7802,8 @@ const tests: TestCase[] = [
       assert.equal(finalAnswer.startsWith("Based on what you told me"), true);
       assert.equal(finalAnswer.includes("What I think"), false);
       assert.equal(finalAnswer.includes("Here's what I understand"), false);
-      assert.equal(component.includes("paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step)"), true);
-      assert.equal(component.includes('<h3 className="text-sm font-black text-ink">{section[1]}</h3>'), true);
+      assert.equal(component.includes("displayedAnswerSections(naturalAnswer)"), true);
+      assert.equal(component.includes("More detail"), true);
     }
   },
   {

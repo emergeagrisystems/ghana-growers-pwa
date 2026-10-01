@@ -103,7 +103,7 @@ export const CROP_DOCTOR_SYMPTOMS = Array.from(
 export const CROP_DOCTOR_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const CROP_DOCTOR_TOO_LARGE_MESSAGE = "Please upload a smaller image under 5 MB.";
 export const CROP_DOCTOR_FALLBACK_MESSAGE =
-  "FarmMate could not complete the photo check right now. You can still ask FarmMate to guide you using a description of what you see.";
+  "Crop Doctor could not complete this photo analysis. No new check was recorded for this attempt. Try another clear photo or ask Mama G what to look for.";
 
 const confidenceValues = new Set<CropDoctorConfidence>(["high", "medium", "low"]);
 const issueCategories = new Set<CropDoctorIssueCategory>(["pest", "disease", "nutrient", "water_stress", "unknown"]);
@@ -462,7 +462,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
   }
 
   if (selectedCrop !== CROP_DOCTOR_NO_SELECTED_CROP && photoCropMatch !== "likely") {
-    mainFinding = `The selected crop is ${selectedCrop.toLowerCase()}, but the photo does not clearly show ${selectedCrop.toLowerCase()}. Please upload a clearer photo of the affected ${selectedCrop.toLowerCase()} plant.`;
+    mainFinding = `The crop identity is uncertain from this close-up. I can still describe visible signs, but cannot confirm a diagnosis.`;
   }
 
   let resultType = cleanResultType(
@@ -478,23 +478,28 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
   );
 
   if (selectedCrop === CROP_DOCTOR_NO_SELECTED_CROP && !confirmedImageCrop) {
-    resultType = "crop_not_confirmed";
+    resultType = resultType === "photo_unclear" ? "photo_unclear" : "crop_not_confirmed";
     confirmedCrop = null;
     photoCropMatch = "not_clear";
     issueCategory = "unknown";
-    possibleIssue = "Crop not confirmed from this photo";
-    mainFinding = "Crop not confirmed.";
+    possibleIssue = visibleSigns.some((sign) => sign !== "unclear visible signs")
+      ? "Unconfirmed crop; visible signs need checking before suggesting a cause"
+      : "Crop and problem not confirmed from this photo";
+    mainFinding = resultType === "photo_unclear" ? "This photo is too unclear for a reliable crop check."
+      : visibleSigns.some((sign) => sign !== "unclear visible signs")
+        ? "The crop is unconfirmed, but visible signs can still be checked."
+        : "Crop and problem not confirmed.";
   }
 
   const cropEntry = findFarmMateCropLibraryEntry(confirmedCrop);
   const cropGroup = cropEntry ? farmMateCropGroupLabel(cropEntry.displayName) ?? null : null;
   const cropFamily = cropEntry?.cropFamily ?? null;
-  const isUnknownCrop = resultType === "crop_not_confirmed";
+  const isUnknownCrop = resultType === "crop_not_confirmed" || resultType === "photo_unclear";
   const whatToCheck = isUnknownCrop
     ? [
-        "Take one clear photo of the whole plant.",
-        "Take one close photo of the affected leaves, stem, fruit, root, or growing point.",
-        "Select the crop if you know it, then run the crop check again."
+        "Check the affected part in good daylight and focus.",
+        "Select the crop if you know it; a second whole-plant photo may help.",
+        "Look for the same signs on nearby plants or produce."
       ]
     : cleanList(source.whatToCheck, [
         "Check both sides of nearby affected leaves.",
@@ -517,9 +522,9 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
   }
   const recommendedActions = isUnknownCrop
     ? [
-        "Upload a clearer whole-plant and affected-part photo.",
+        "Take a clearer close-up of the affected part if needed.",
         "Select the crop if you know it.",
-        "Use Ask FarmMate to describe the visible signs and field conditions."
+        "Ask Mama G about the visible signs and field conditions."
       ]
     : cleanList(source.recommendedActions ?? source.recommendedAction, [
         "Inspect 10 nearby plants for the same signs.",
@@ -527,7 +532,7 @@ export function normalizeCropDoctorVisionResult(value: unknown, context: { selec
         "Contact an extension officer if many plants are affected or symptoms are spreading."
       ]);
   const nextBestAction = isUnknownCrop
-    ? "Upload a clear whole-plant photo and one close photo of the affected part, or select the crop if you know it."
+    ? "Take another clear close-up or select the crop if you know it; a whole-plant photo can add context."
     : cleanText(source.nextBestAction, "Inspect five nearby plants and note whether the same signs are spreading.");
   const prevention = isUnknownCrop
     ? [
@@ -644,6 +649,9 @@ Rules:
 - If selectedCrop is provided, use it only as farmer-provided context and check whether the image appears consistent with that crop.
 - If selectedCrop is "Not sure", "not_sure", null, or not provided, attempt to identify the crop from the image using cautious wording.
 - If the crop is unclear or the photo is poor, set cropFromImage to null and resultType to "crop_not_confirmed" or "photo_unclear".
+- Accept a focused close-up of leaves, fruit, stems, roots, tubers, flowers, maize cobs, seedlings, pests, post-harvest produce or a whole plant. A whole-plant image is not required.
+- Judge crop identity confidence separately from confidence in the visible problem. If crop identity is uncertain but signs are visible, describe those signs cautiously without naming a confirmed crop or disease.
+- For a genuinely blurry, dark or unusable image, say what can and cannot be seen and ask for a clearer affected-part photo. A second whole-plant view may help but is optional.
 - Do not guess a crop confidently from image alone.
 - Do not use the filename to identify the crop or issue. Use only what is visible in the image.
 - If selected crop and the image appear inconsistent, set photoCropMatch to "uncertain" and say the photo match is uncertain.
@@ -652,7 +660,7 @@ Rules:
 - Use resultType exactly as one of: no_clear_problem, possible_disease, possible_pest, possible_nutrient_issue, possible_water_stress, crop_not_confirmed, photo_unclear, harvest_or_storage_check.
 - If the photo shows harvested produce, roots, tubers or storage quality rather than a field plant, use resultType "harvest_or_storage_check".
 - If no clear health problem is visible, use resultType "no_clear_problem" and do not force a disease diagnosis.
-- If the photo is too blurry, dark, distant or incomplete, use resultType "photo_unclear".
+- If the affected part is too blurry, dark or distant to assess, use resultType "photo_unclear". A focused close-up is not incomplete simply because the whole plant is absent.
 - Focus on visible symptoms and field context from the selected crop and selected symptom.
 - Recognize crop aliases, but return the canonical crop library display name when possible.
 - Use crop groups and crop families only as cautious diagnostic context. Do not copy a tomato, pepper, or related-crop diagnosis onto another crop without evidence.

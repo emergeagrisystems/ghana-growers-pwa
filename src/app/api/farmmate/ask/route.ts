@@ -31,6 +31,7 @@ import {
   getFarmMateCreditsForDevice
 } from "@/lib/farmmate/usage/server";
 import type { WeatherDecisionSummary } from "@/lib/farmmate/weather";
+import { canonicalFarmMateToolHandoff, isFarmMateToolHandoff, type FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
 
 const cropDoctorConfidenceValues = new Set<CropDoctorConfidence>(["high", "medium", "low"]);
 const cropDoctorIssueCategoryValues = new Set<CropDoctorIssueCategory>([
@@ -136,6 +137,7 @@ function isWeatherDecisionSummary(value: unknown): value is WeatherDecisionSumma
 function hasValidFarmMateBrainContexts(value: unknown): value is {
   cropDoctorContext?: CropDoctorHandoffContext;
   weatherContext?: WeatherDecisionSummary;
+  toolContext?: FarmMateToolHandoff;
 } {
   if (!isRecord(value)) {
     return false;
@@ -143,7 +145,8 @@ function hasValidFarmMateBrainContexts(value: unknown): value is {
 
   return (
     (value.cropDoctorContext === undefined || isCropDoctorHandoffContext(value.cropDoctorContext)) &&
-    (value.weatherContext === undefined || isWeatherDecisionSummary(value.weatherContext))
+    (value.weatherContext === undefined || isWeatherDecisionSummary(value.weatherContext)) &&
+    (value.toolContext === undefined || isFarmMateToolHandoff(value.toolContext))
   );
 }
 
@@ -198,6 +201,8 @@ function isFarmMateAskApiInput(value: unknown): value is FarmMateAskApiInput {
     input.originalQuestion.trim() !== input.farmerQuestion.trim() ||
     (input.brain.cropDoctorContext !== undefined &&
       input.brain.cropDoctorContext.question.trim() !== input.originalQuestion.trim()) ||
+    (input.brain.toolContext !== undefined &&
+      input.brain.toolContext.question.trim() !== input.originalQuestion.trim()) ||
     typeof input.isFollowUp !== "boolean" ||
     typeof input.deferAnswer !== "boolean" ||
     !isValidFarmMateConsultationContext(context)
@@ -282,18 +287,21 @@ function authoritativeBrain(input: FarmMateAskApiInput) {
   const question = authoritativeQuestion(input);
   const cropDoctorContext = canonicalCropDoctorContext(input.brain.cropDoctorContext);
   const weatherContext = canonicalWeatherContext(input.brain.weatherContext);
+  const toolContext = canonicalFarmMateToolHandoff(input.brain.toolContext);
   const routerResult = routeFarmMateQuestion(question, cropDoctorContext);
 
   return buildFarmMateResponse(question, routerResult, {
     cropDoctorContext,
-    weatherContext
+    weatherContext,
+    toolContext
   });
 }
 
 function boundConsultationContext(input: FarmMateAskApiInput) {
   return {
     cropDoctorContext: canonicalCropDoctorContext(input.brain.cropDoctorContext) ?? null,
-    weatherContext: canonicalWeatherContext(input.brain.weatherContext) ?? null
+    weatherContext: canonicalWeatherContext(input.brain.weatherContext) ?? null,
+    toolContext: canonicalFarmMateToolHandoff(input.brain.toolContext) ?? null
   };
 }
 

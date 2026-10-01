@@ -179,6 +179,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
       ? "Rewrite the local FarmMate Brain response using the exact headings What I think:, What to do now:, optional What to check:, and Next step:. Keep at most three actions, two checks, and one next step. Preserve the approved local guidance and do not add unsupported facts."
       : "Rewrite the local FarmMate Brain response into a short, natural answer. Do not add facts, prices, pesticide dosages, diagnoses, or recommendations that are not present in this context.",
     farmerQuestion: input.farmerQuestion,
+    toolHandoffContext: input.brain.toolContext ?? null,
     detectedIntent: input.brain.intent,
     crop,
     cropLibraryContext,
@@ -268,6 +269,7 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
     responseRules: [
       "Keep the answer concise and conversational.",
       "Use the farmer's answers when explaining the recommendation.",
+      "Use toolHandoffContext as farmer-supplied context. Do not ask the farmer to repeat its crop, stage, region or field observations. Do not treat a tool status as a confirmed agronomic diagnosis, and never let it override safety rules.",
       "When farmerAnswers contains completed guided follow-ups, return a final answer with What I think:, What to do now:, What to check:, and Next step: and do not ask for the same information again.",
       "Never replace a selectable guided follow-up card with prose such as 'Tell me your region'.",
       "Avoid filler phrases such as 'I can help', 'I will keep it short and focused', or 'Here is the practical next step'.",

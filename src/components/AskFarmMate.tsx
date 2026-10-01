@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { Bot, Camera, Loader2, Send } from "lucide-react";
+import { FarmMateDecisionStatus, type FarmMateDecisionStatusValue } from "@/components/FarmMateDecisionStatus";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { boundedJsonRequest, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
+import type { FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
 import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
 import {
   consultationContextForApi,
@@ -26,7 +28,6 @@ import {
   generalAgronomyRecommendationCards,
   harvestPostHarvestGuidedRecommendationCards,
   shouldCompleteWeatherGuidedFlow,
-  shouldShowGeneralAgronomyGuidanceBeforeFollowUp,
   shouldRenderLocalFarmMateGuidance,
   weatherGuidedRecommendationCards
 } from "@/lib/farmmate/conversation-ui";
@@ -37,6 +38,7 @@ import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditSt
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
 import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
+import { HarvestStorageGuide } from "@/components/HarvestStorageGuide";
 import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 import {
   farmMateAnswerSnippet,
@@ -67,6 +69,25 @@ type PendingContinuationRetry = {
 
 function sectionBody(response: FarmMateBrainResponse, title: string) {
   return response.sections.find((section) => section.title === title)?.body ?? [];
+}
+
+function displayedAnswerSections(answer: string) {
+  const sections = answer.split(/\n{2,}/).map((paragraph) => {
+    const match = paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step):\s*([\s\S]*)$/i);
+    return { title: match?.[1] ?? "", body: match?.[2] ?? paragraph };
+  });
+  const first = sections.find((section) => /^(What I think|What may be happening)$/i.test(section.title)) ?? sections[0];
+  const actions = sections.find((section) => /^What to do now$/i.test(section.title));
+  const next = sections.find((section) => /^Next step$/i.test(section.title));
+  return { first, actions, next, details: sections.filter((section) => section !== first && section !== actions && section !== next) };
+}
+
+function decisionStatusFromAnswer(answer: string, response: FarmMateBrainResponse | null): FarmMateDecisionStatusValue | null {
+  if (response?.flow?.intent !== "planting" && response?.flow?.intent !== "weather-decisions") return null;
+  if (/not enough information|cannot tell yet|need to know/i.test(answer)) return "NOT ENOUGH INFORMATION";
+  if (/do not (spray|plant|apply|harvest)|don.t (spray|plant|apply|harvest)|wait until/i.test(answer)) return "WAIT";
+  if (/may be suitable|conditions look suitable/i.test(answer)) return "CHECK FIRST";
+  return null;
 }
 
 function conversationalOption(questionId: string, option: string) {
@@ -494,10 +515,12 @@ function askCreditFailureMessage(reason?: string, credits?: FarmMateCreditStatus
 export function AskFarmMate({
   prefillQuestion,
   cropDoctorHandoff,
+  toolHandoff,
   onOpenCropDoctor
 }: {
   prefillQuestion?: string;
   cropDoctorHandoff?: CropDoctorHandoffContext | null;
+  toolHandoff?: FarmMateToolHandoff | null;
   onOpenCropDoctor?: (crop?: string) => void;
 }) {
   const [question, setQuestion] = useState("");
@@ -531,6 +554,7 @@ export function AskFarmMate({
     turns: []
   });
   const [activeCropDoctorHandoff, setActiveCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
+  const [activeToolHandoff, setActiveToolHandoff] = useState<FarmMateToolHandoff | null>(null);
   const safetyAnswerIsLocal = Boolean(explicitChemicalSafetyAnswer(question));
 
   const canAsk =
@@ -550,6 +574,7 @@ export function AskFarmMate({
         if (typeof customEvent.detail === "string") {
           setQuestion(customEvent.detail);
           setActiveCropDoctorHandoff(null);
+          setActiveToolHandoff(null);
           return;
         }
 
@@ -571,9 +596,18 @@ export function AskFarmMate({
   useEffect(() => {
     if (cropDoctorHandoff) {
       setActiveCropDoctorHandoff(cropDoctorHandoff);
+      setActiveToolHandoff(null);
       setQuestion(cropDoctorHandoff.question);
     }
   }, [cropDoctorHandoff]);
+
+  useEffect(() => {
+    if (toolHandoff) {
+      setActiveToolHandoff(toolHandoff);
+      setActiveCropDoctorHandoff(null);
+      setQuestion(toolHandoff.question);
+    }
+  }, [toolHandoff]);
 
   useEffect(() => {
     if (consultation?.status === "awaiting_follow_up") {
@@ -914,6 +948,7 @@ export function AskFarmMate({
     }
 
     const handoffContext = activeCropDoctorHandoff?.question === trimmedQuestion ? activeCropDoctorHandoff : null;
+    const toolContext = activeToolHandoff?.question === trimmedQuestion ? activeToolHandoff : null;
     const conversationDecision = manageFarmMateConversation(trimmedQuestion, conversationState, handoffContext ?? undefined);
 
     if (conversationState.waitingForFollowUp && currentFollowUp) {
@@ -958,6 +993,7 @@ export function AskFarmMate({
     setIsThinking(true);
     setQuestion("");
     setActiveCropDoctorHandoff(null);
+    setActiveToolHandoff(null);
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
     if (chemicalSafetyAnswer) {
@@ -1003,7 +1039,8 @@ export function AskFarmMate({
     const farmMateResponse = buildFarmMateResponse(trimmedQuestion, routerResult, {
       previousCropName,
       cropDoctorContext: handoffContext ?? undefined,
-      weatherContext: routerResult.selectedSpecialist === "weather_decision" ? storedWeatherContextForFarmMate() : undefined
+      toolContext: toolContext ?? undefined,
+      weatherContext: routerResult.selectedSpecialist === "weather_decision" || toolContext?.source === "planting" || toolContext?.source === "weather" ? storedWeatherContextForFarmMate() : undefined
     });
     const pendingFollowUpQuestion = farmMateResponse.flow?.followUpQuestions[0];
     const shouldShowRecommendation = !pendingFollowUpQuestion;
@@ -1120,7 +1157,7 @@ export function AskFarmMate({
   const recommendationCards = (localCards.length ? localCards : response ? localRecommendationCards(response, followUpAnswers) : [])
     .map((card) => ({ title: mamaGPublicText(card.title), body: card.body.map(mamaGPublicText) }));
   const intro = responseIntro(localCards, showRecommendation, response);
-  const shouldShowGeneralGuidanceBeforeFollowUp = shouldShowGeneralAgronomyGuidanceBeforeFollowUp(response, showRecommendation);
+  const shouldShowGeneralGuidanceBeforeFollowUp = false;
   const shouldShowLocalGuidance = shouldRenderLocalFarmMateGuidance({
     isGeneratingNaturalAnswer,
     naturalAnswer,
@@ -1132,6 +1169,8 @@ export function AskFarmMate({
     naturalAnswer,
     shouldShowLocalGuidance ? recommendationCards : []
   );
+  const answerSections = naturalAnswer ? displayedAnswerSections(naturalAnswer) : null;
+  const answerStatus = naturalAnswer ? decisionStatusFromAnswer(naturalAnswer, response) : null;
   const hasConsultationError =
     Boolean(consultationError) &&
     (consultation?.status === "error" || consultation?.status === "exhausted" || pendingContinuationRetry !== null);
@@ -1167,9 +1206,10 @@ export function AskFarmMate({
       </div>
 
       <form className="mt-6 grid gap-4" onSubmit={askFarmMate}>
-        <p id="ask-mama-g-disclosure" className="text-sm leading-6 text-ink/75">
-          Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. Avoid including sensitive personal information. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.
-        </p>
+        <div id="ask-mama-g-disclosure" className="text-sm leading-6 text-ink/75">
+          <p>AI can make mistakes. Do not share sensitive information. Check product labels and ask a qualified local adviser about important crop or safety decisions.</p>
+          <details className="mt-2"><summary className="cursor-pointer font-bold text-leaf-700">About AI &amp; privacy</summary><p className="mt-2">Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.</p></details>
+        </div>
         <label className="grid gap-2" htmlFor="ask-farmmate-question">
           <span className="sr-only">What would you like help with today?</span>
           <textarea
@@ -1181,11 +1221,17 @@ export function AskFarmMate({
               if (activeCropDoctorHandoff && event.target.value !== activeCropDoctorHandoff.question) {
                 setActiveCropDoctorHandoff(null);
               }
+              if (activeToolHandoff && event.target.value !== activeToolHandoff.question) {
+                setActiveToolHandoff(null);
+              }
             }}
             placeholder="Example: Why are my tomato leaves turning yellow?"
             className="gg-field min-h-36 resize-none bg-leaf-50/70 px-4 py-4 text-base leading-7 focus:bg-white"
           />
         </label>
+
+        {activeToolHandoff?.question === question ? <div className="flex flex-wrap gap-2" aria-label="Context from farm tool">{activeToolHandoff.chips.map((chip) => <span key={chip} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">{chip}</span>)}</div> : null}
+        <HarvestStorageGuide onAsk={(handoff) => { setActiveToolHandoff(handoff); setActiveCropDoctorHandoff(null); setQuestion(handoff.question); }} />
 
         <div className="grid gap-2">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/50">Popular questions</p>
@@ -1371,15 +1417,11 @@ export function AskFarmMate({
                       </p>
                     ) : null}
                     <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
-                      <div className="space-y-3">
-                        {naturalAnswer.split(/\n{2,}/).map((paragraph) => {
-                          const section = paragraph.match(/^(What I think|What may be happening|What to do now|What to check|Next step):\s*([\s\S]*)$/i);
-                          return section ? <section key={paragraph}>
-                            <h3 className="text-sm font-black text-ink">{section[1]}</h3>
-                            <p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{section[2]}</p>
-                          </section> : <p key={paragraph} className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{paragraph}</p>;
-                        })}
-                      </div>
+                      {answerStatus ? <div className="mb-3"><FarmMateDecisionStatus status={answerStatus} /></div> : null}
+                      {answerSections?.first ? <p className="break-words whitespace-pre-line text-sm font-bold leading-6 text-ink [overflow-wrap:anywhere]">{answerSections.first.body}</p> : null}
+                      {answerSections?.actions ? <div className="mt-3"><h3 className="text-sm font-black text-ink">What to do now</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.actions.body}</p></div> : null}
+                      {answerSections?.next ? <div className="mt-3"><h3 className="text-sm font-black text-ink">Next step</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.next.body}</p></div> : null}
+                      {answerSections?.details.length ? <details className="mt-3 border-t border-leaf-900/10 pt-3"><summary className="cursor-pointer text-sm font-black text-leaf-700">More detail</summary><div className="mt-2 space-y-3">{answerSections.details.map((part) => <div key={`${part.title}-${part.body}`}><p className="text-sm font-black text-ink">{part.title}</p><p className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{part.body}</p></div>)}</div></details> : null}
                     </section>
                   </>
                 ) : null}

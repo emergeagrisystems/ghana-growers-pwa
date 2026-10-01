@@ -94,7 +94,7 @@ type NextFetchInit = RequestInit & {
 export const FARM_MATE_WEATHER_LOCATION_STORAGE_KEY = "gg-farmmate-weather-location";
 export const FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY = "gg-farmmate-weather-context";
 export const FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE =
-  "Live weather is temporarily unavailable. FarmMate can still guide you using field conditions.";
+  "Live weather is unavailable. Choose the nearest area and check field conditions; Mama G can still help with those observations.";
 
 export const supportedFarmMateWeatherLocations: FarmMateWeatherLocation[] = [
   { key: "accra", name: "Accra", region: "Greater Accra", latitude: 5.6037, longitude: -0.187 },

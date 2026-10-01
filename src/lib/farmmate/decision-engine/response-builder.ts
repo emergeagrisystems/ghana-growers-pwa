@@ -14,6 +14,7 @@ import type { WeatherDecisionSummary } from "../weather";
 import { farmMateSafetyRules } from "../safety";
 import { farmMateSustainablePractices } from "../sustainability";
 import type { CropDoctorHandoffContext } from "../crop-doctor-vision";
+import type { FarmMateToolHandoff } from "../tool-handoff";
 import type { FarmMateSpecialist, RouterResult } from "../router";
 import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector";
 import { farmMateDecisionFlows } from "./flows";
@@ -41,12 +42,14 @@ export type FarmMateBrainResponse = {
   shouldShowCropDoctorAction: boolean;
   cropDoctorContext?: CropDoctorHandoffContext;
   weatherContext?: WeatherDecisionSummary;
+  toolContext?: FarmMateToolHandoff;
 };
 
 export type FarmMateBrainOptions = {
   previousCropName?: string;
   cropDoctorContext?: CropDoctorHandoffContext;
   weatherContext?: WeatherDecisionSummary;
+  toolContext?: FarmMateToolHandoff;
 };
 
 const specialistIntentMap: Partial<Record<FarmMateSpecialist, FarmerIntent>> = {
@@ -650,6 +653,36 @@ function applyWeatherContextToFlow(question: string, flow: DecisionFlow, weather
   };
 }
 
+function applyToolHandoffToFlow(flow: DecisionFlow, context?: FarmMateToolHandoff): DecisionFlow {
+  if (!context) return flow;
+  const notes = (context.fieldNotes ?? []).join(" ").toLowerCase();
+  const known = (field: string) => new RegExp(`${field}:\\s*(?!unknown|not sure)[a-z-]+`).test(notes);
+  const followUpQuestions = flow.followUpQuestions.filter((item) => {
+    const prompt = `${item.id} ${item.question}`.toLowerCase();
+    if (context.crop && /which crop|which produce|what crop/.test(prompt)) return false;
+    if (context.region && /which region|where.*farm/.test(prompt)) return false;
+    if (context.stage && context.stage !== "Stage not confirmed" && /growth stage|what stage|planting date/.test(prompt)) return false;
+    if (context.source === "harvest") {
+      if (/already been harvested|has.*harvested/.test(prompt) && /harvest state: (standing|harvested)/.test(notes)) return false;
+      if (/rotten|mouldy|damaged|bruised/.test(prompt) && known("condition")) return false;
+      if (/stored|transported|sold soon|storage/.test(prompt) && known("storage")) return false;
+    }
+    if (context.source === "planting") {
+      if (/soil.*(moist|dry|waterlogged)|field.*soil/.test(prompt) && known("soil")) return false;
+      if (/drain/.test(prompt) && known("drainage")) return false;
+      if (/irrigation/.test(prompt) && known("irrigation")) return false;
+      if (/land.*prepar|field.*ready/.test(prompt) && known("land")) return false;
+    }
+    if (context.source === "weather") {
+      if (/wind/.test(prompt) && known("wind")) return false;
+      if (/soil.*(moist|dry|waterlogged)/.test(prompt) && known("soil")) return false;
+      if (/leaves.*(wet|dry)/.test(prompt) && known("leaves")) return false;
+    }
+    return true;
+  });
+  return { ...flow, followUpQuestions, requiredInformation: { ...flow.requiredInformation, crop: context.crop ?? flow.requiredInformation.crop, region: context.region ?? flow.requiredInformation.region, growthStage: context.stage ?? flow.requiredInformation.growthStage, farmPracticeContext: [...(flow.requiredInformation.farmPracticeContext ?? []), ...(context.fieldNotes ?? [])].slice(0, 8) } };
+}
+
 function plantingContextLines(flow: DecisionFlow | undefined, resolvedCrop?: string) {
   if (!flow || flow.intent !== "planting") {
     return [];
@@ -758,7 +791,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   const matchedFlow = options.cropDoctorContext
     ? cropDoctorContextToDecisionFlow(options.cropDoctorContext, intent)
     : findBestDecisionFlow(question, intent, routerResult, resolvedCrop);
-  const flow = matchedFlow ? applyWeatherContextToFlow(question, matchedFlow, options.weatherContext) : fallbackFlow(intent);
+  const flow = applyToolHandoffToFlow(matchedFlow ? applyWeatherContextToFlow(question, matchedFlow, options.weatherContext) : fallbackFlow(intent), options.toolContext);
   const knowledge = knowledgeLines(flow, intent, resolvedCrop);
   const isLowerConfidence = flow.recommendation.confidence !== "high";
   const shouldShowCropDoctorAction = flow.recommendation.nextBestAction.actionType === "use-crop-doctor";
@@ -795,6 +828,7 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
     nextBestAction: flow.recommendation.nextBestAction,
     cropDoctorContext: options.cropDoctorContext,
     weatherContext: options.weatherContext,
+    toolContext: options.toolContext,
     sections: [
       {
         title: "Direct answer",
