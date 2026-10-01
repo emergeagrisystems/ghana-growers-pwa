@@ -54,7 +54,7 @@ function logCropDoctorCreditState(detail: {
   });
 }
 
-export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?: (handoff: CropDoctorHandoffContext | string) => void }) {
+export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmMateAboutThis?: (handoff: CropDoctorHandoffContext | string) => void; prefillCrop?: string }) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const analysisGate = useRef(createFarmMateRequestGate());
@@ -89,6 +89,13 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
         : "Analyse Crop";
   const diagnosisHasSelectedCrop = Boolean(diagnosis?.selectedCrop && diagnosis.selectedCrop !== "Not sure");
   const diagnosisSelectedSymptom = diagnosis?.selectedSymptom && diagnosis.selectedSymptom !== "Not sure" ? diagnosis.selectedSymptom : null;
+  const unclearDiagnosis = diagnosis?.resultType === "photo_unclear" || diagnosis?.resultType === "crop_not_confirmed";
+  const resultCheck = diagnosis?.whatToCheck.find((item) => item.trim().toLowerCase() !== diagnosis.nextBestAction.trim().toLowerCase());
+  const resultDo = diagnosis?.recommendedActions.find((item) => ![resultCheck, diagnosis.nextBestAction].some((other) => other?.trim().toLowerCase() === item.trim().toLowerCase()));
+
+  useEffect(() => {
+    if (prefillCrop && CROP_DOCTOR_CROP_GROUPS.some((group) => group.crops.includes(prefillCrop))) setSelectedCrop(prefillCrop);
+  }, [prefillCrop]);
 
   useEffect(() => {
     return () => {
@@ -523,85 +530,48 @@ export function CropDoctor({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis?
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="gg-eyebrow text-leaf-700">Main finding</p>
-                <h3 className="mt-2 gg-card-title">{mamaGPublicText(cropDoctorResultHeadline(diagnosis))}</h3>
+                <h3 className="mt-2 gg-card-title">{unclearDiagnosis ? "I can't identify this crop or problem clearly enough yet." : mamaGPublicText(cropDoctorResultHeadline(diagnosis))}</h3>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-black text-leaf-700">
                 <CheckCircle2 size={17} aria-hidden="true" />
                 {cropDoctorResultBadge(diagnosis)}
               </span>
             </div>
-            <dl className="mt-4 grid gap-2 rounded-md bg-white p-3 text-sm sm:grid-cols-2">
-              {diagnosis.crop ? (
-                <div>
-                  <dt className="font-black text-ink">Crop</dt>
-                  <dd className="mt-1 font-semibold text-ink/64">{diagnosis.crop}</dd>
-                </div>
-              ) : (
-                <div>
-                  <dt className="font-black text-ink">Crop not confirmed</dt>
-                  <dd className="mt-1 font-semibold text-ink/64">Mama G could not confirm the crop from this photo.</dd>
-                </div>
-              )}
-              <div>
-                <dt className="font-black text-ink">Crop group</dt>
-                <dd className="mt-1 font-semibold text-ink/64">{diagnosis.cropGroup ?? "Not confirmed"}</dd>
-              </div>
-              <div>
-                <dt className="font-black text-ink">Photo confidence</dt>
-                <dd className="mt-1 font-semibold text-ink/64">{diagnosis.photoConfidenceLabel}</dd>
-              </div>
-              {diagnosisSelectedSymptom ? (
-                <div>
-                  <dt className="font-black text-ink">Selected symptom</dt>
-                  <dd className="mt-1 font-semibold text-ink/64">{diagnosisSelectedSymptom}</dd>
-                </div>
-              ) : null}
-            </dl>
+            {!unclearDiagnosis ? <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">{diagnosis.crop ?? "Crop uncertain"} · Photo confidence: {diagnosis.photoConfidenceLabel}{diagnosisSelectedSymptom ? ` · You selected: ${diagnosisSelectedSymptom}` : ""}</p> : null}
 
-            {diagnosis.limitedGuidanceNote ? (
+            {!unclearDiagnosis && diagnosis.limitedGuidanceNote ? (
               <p className="mt-3 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
                 {mamaGPublicText(diagnosis.limitedGuidanceNote)}
               </p>
             ) : null}
-            {diagnosis.familyGuidance ? (
+            {!unclearDiagnosis && diagnosis.familyGuidance ? (
               <p className="mt-2 rounded-md bg-white px-3 py-2 text-sm font-semibold leading-6 text-ink/68">
                 {mamaGPublicText(diagnosis.familyGuidance)}
               </p>
             ) : null}
-            {diagnosis.cashCropCaution ? (
+            {!unclearDiagnosis && diagnosis.cashCropCaution ? (
               <p className="mt-2 rounded-md border border-earth-500/20 bg-earth-50 px-3 py-2 text-sm font-bold leading-6 text-ink/70">
                 {mamaGPublicText(diagnosis.cashCropCaution)}
               </p>
             ) : null}
 
-            <div className="mt-4 grid gap-3">
-              {([
-                ["Main visible signs", diagnosis.visibleSigns],
-                ["What this may suggest", [diagnosis.whatThisMeans]],
-                ["What to check next", diagnosis.whatToCheck],
-                ["What to do now", diagnosis.recommendedActions],
-                ["Next step", [diagnosis.nextBestAction]]
-              ] as Array<[string, string[]]>).map(([label, items]) => (
-                <div key={label} className="rounded-md bg-white p-3">
-                  <p className="text-sm font-black text-ink">{label}</p>
-                  <ul className="mt-2 grid gap-1.5">
-                    {items.map((item) => (
-                      <li key={item} className="text-sm font-semibold leading-6 text-ink/66">
-                        {mamaGPublicText(item)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {unclearDiagnosis ? <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
+              {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I could see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
+              <p><strong className="text-ink">What would help:</strong> A whole-plant view where useful and a close-up of the affected area, in good daylight and in focus.</p>
+              <p>Do not treat a crop or disease as confirmed from this photo.</p>
+            </div> : <div className="mt-4 space-y-3 rounded-md bg-white p-4 text-sm font-semibold leading-6 text-ink/70">
+              <p><strong className="text-ink">Possible issue:</strong> {mamaGPublicText(diagnosis.possibleIssue)} ({diagnosis.photoConfidenceLabel.toLowerCase()} photo confidence)</p>
+              {diagnosis.visibleSigns.length ? <p><strong className="text-ink">What I can see:</strong> {mamaGPublicText(diagnosis.visibleSigns.slice(0, 2).join("; "))}</p> : null}
+              <p><strong className="text-ink">What it may suggest:</strong> {mamaGPublicText(diagnosis.whatThisMeans)}</p>
+              {resultCheck ? <p><strong className="text-ink">Check now:</strong> {mamaGPublicText(resultCheck)}</p> : null}
+              {resultDo ? <p><strong className="text-ink">Do now:</strong> {mamaGPublicText(resultDo)}</p> : null}
+              <p><strong className="text-ink">Next step:</strong> {mamaGPublicText(diagnosis.nextBestAction)}</p>
+            </div>}
 
-            <button
-              type="button"
-              onClick={askFarmMateAboutThis}
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-            >
-              Ask Mama G about this
-            </button>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {unclearDiagnosis ? <><button type="button" onClick={openCameraCapture} className="min-h-12 rounded-md bg-leaf-600 px-4 py-2 text-sm font-black text-white">Take another photo</button><button type="button" onClick={openImagePicker} className="min-h-12 rounded-md border border-leaf-700 bg-white px-4 py-2 text-sm font-black text-leaf-700">Choose another photo</button></> : null}
+              <button type="button" onClick={askFarmMateAboutThis} className={`min-h-12 rounded-md px-4 py-2 text-sm font-black ${unclearDiagnosis ? "border border-leaf-700 bg-white text-leaf-700 sm:col-span-2" : "bg-leaf-600 text-white sm:col-span-2"}`}>{unclearDiagnosis ? "Continue with Mama G" : "Ask Mama G about this"}</button>
+            </div>
 
             <FarmMateAnswerFeedback
               key={`${diagnosis.resultType}-${diagnosis.mainFinding}`}

@@ -1,5 +1,4 @@
 import { ShieldCheck, Sprout } from "lucide-react";
-import Link from "next/link";
 import { Suspense } from "react";
 import { FarmMateGreeting } from "@/components/FarmMateGreeting";
 import { FarmMateHeroActions } from "@/components/FarmMateHeroActions";
@@ -43,12 +42,6 @@ export default function FarmerHubPage({searchParams}: {searchParams: {mamaPalett
           <aside className="grid gap-4 lg:pt-10" aria-label="Mama G daily support">
             <FarmMateWeatherFoundation />
 
-            <div className="flex flex-col gap-3 rounded-md border border-leaf-900/10 bg-white/80 p-4 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
-              <p className="font-bold text-ink/62">Testing Ask Mama G?</p>
-              <Link href="/farmer-hub/feedback" className="inline-flex font-black text-leaf-700 transition hover:text-leaf-900">
-                Share feedback
-              </Link>
-            </div>
           </aside>
         </div>
       </section>

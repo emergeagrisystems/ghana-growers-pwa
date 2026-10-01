@@ -64,10 +64,12 @@ export type CropDoctorHandoffContext = {
   cropGroup: string | null;
   cropFamily: string | null;
   cropConfidence: CropDoctorConfidence;
+  photoConfidenceLabel?: CropDoctorPhotoConfidenceLabel;
   possibleIssue: string;
   issueCategory: CropDoctorIssueCategory;
   resultType: CropDoctorResultType;
   visibleSigns: string[];
+  recommendedNextCheck?: string;
   nextBestAction: string;
   familyGuidance: string | null;
   limitedGuidanceNote: string | null;
@@ -596,10 +598,12 @@ export function buildCropDoctorHandoffContext(result: CropDoctorVisionResult): C
     cropGroup: result.cropGroup,
     cropFamily: result.cropFamily,
     cropConfidence: result.cropConfidence,
+    photoConfidenceLabel: result.photoConfidenceLabel,
     possibleIssue: normalizePossibleIssueWording(result.possibleIssue),
     issueCategory: result.issueCategory,
     resultType: result.resultType,
     visibleSigns: result.visibleSigns.slice(0, 3),
+    recommendedNextCheck: result.whatToCheck[0],
     nextBestAction: result.nextBestAction,
     familyGuidance: result.familyGuidance,
     limitedGuidanceNote: result.limitedGuidanceNote,

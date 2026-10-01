@@ -6,17 +6,17 @@ import { useEffect, useState, type ReactNode } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
 import {
-  cropCalendarFarmMateQuestion,
   cropCalendarGuides,
-  cropCalendarSeasonOptions,
   farmMatePilotRegions,
   findCropCalendarGuide
 } from "@/lib/farmmate/crop-calendar";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
+import { cropCalendarPosition, plantingReadiness, type PlantingFieldState } from "@/lib/farmmate/experience-decisions";
+import { farmMateRegions } from "@/lib/farmmate/regions";
+import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, supportedFarmMateWeatherLocations, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import {
   findPlantingAdvisorGuidance,
-  plantingAdvisorCrops,
-  plantingAdvisorFarmMateQuestion
+  plantingAdvisorCrops
 } from "@/lib/farmmate/planting-advisor-specialist";
 
 type ToolKey = "ask" | "doctor" | "calendar" | "planting";
@@ -40,8 +40,17 @@ function GuidanceItem({ label, children }: { label: string; children: ReactNode 
 function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis: (question: string) => void }) {
   const [selectedCrop, setSelectedCrop] = useState("Maize");
   const [selectedRegion, setSelectedRegion] = useState("Ashanti");
-  const [selectedSeason, setSelectedSeason] = useState("");
+  const [plantingState, setPlantingState] = useState<"yes" | "not-yet" | "unknown">("yes");
+  const [plantingDate, setPlantingDate] = useState("");
+  const [observedStage, setObservedStage] = useState("");
   const selectedGuide = findCropCalendarGuide(selectedCrop) ?? cropCalendarGuides[0];
+  const position = plantingState === "yes" ? cropCalendarPosition(selectedGuide, plantingDate) : null;
+  const observedStageIndex = selectedGuide.stages.findIndex((stage) => stage.stage === observedStage);
+  const currentStage = position?.current ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex] : null);
+  const nextStage = position?.next ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex + 1] : undefined);
+  const regionNote = farmMateRegions.find((region) => region.name === selectedRegion);
+  const currentTask = currentStage?.guidance ?? (plantingState === "not-yet" ? selectedGuide.seasonNote : "Check the crop's visible growth stage in the field before using a dated stage.");
+  const stageLabel = position ? `${position.current.stage} · about week ${position.week}` : currentStage?.stage ?? (plantingState === "not-yet" ? "Before planting" : "Stage not confirmed");
 
   return (
     <article id="crop-calendar" className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft sm:p-6">
@@ -49,12 +58,12 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
         <CalendarDays size={24} aria-hidden="true" />
       </span>
       <h2 className="mt-4 gg-card-title">Crop Calendar</h2>
-      <p className="mt-2 text-sm leading-6 text-ink/66">Choose a crop and region to see a practical stage-by-stage guide.</p>
+      <p className="mt-2 text-sm leading-6 text-ink/66">Find the current task from your planting date, or plan before planting.</p>
 
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink">
           Select crop
-          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => setSelectedCrop(event.target.value)}>
+          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => { setSelectedCrop(event.target.value); setObservedStage(""); }}>
             {cropCalendarGuides.map((guide) => (
               <option key={guide.crop}>{guide.crop}</option>
             ))}
@@ -69,27 +78,34 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
           </select>
         </label>
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">
-          Planting month or season <span className="font-semibold text-ink/50">(optional)</span>
-          <select className="gg-field min-h-12 w-full max-w-full" value={selectedSeason} onChange={(event) => setSelectedSeason(event.target.value)}>
-            <option value="">Not sure yet</option>
-            {cropCalendarSeasonOptions.map((season) => (
-              <option key={season}>{season}</option>
-            ))}
+          Have you already planted?
+          <select className="gg-field min-h-12 w-full max-w-full" value={plantingState} onChange={(event) => setPlantingState(event.target.value as typeof plantingState)}>
+            <option value="yes">Yes</option>
+            <option value="not-yet">Not yet</option>
+            <option value="unknown">Not sure of the exact date</option>
           </select>
         </label>
+        {plantingState === "yes" ? <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">
+          Planting date, if known
+          <input type="date" className="gg-field min-h-12 w-full max-w-full" value={plantingDate} onChange={(event) => setPlantingDate(event.target.value)} />
+        </label> : null}
+        {plantingState !== "not-yet" && !position ? <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">If the date is unknown, what stage can you see?
+          <select className="gg-field min-h-12" value={observedStage} onChange={(event) => setObservedStage(event.target.value)}><option value="">Not sure</option>{selectedGuide.stages.map((stage) => <option key={stage.stage} value={stage.stage}>{stage.stage}</option>)}</select>
+        </label> : null}
       </div>
 
       <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Typical guide</p>
-            <h3 className="mt-1 break-words text-lg font-black text-ink">{selectedGuide.crop} in {selectedRegion}</h3>
-          </div>
-          {selectedSeason ? <span className="max-w-full rounded-md bg-white px-3 py-1.5 text-xs font-black text-leaf-700">{selectedSeason}</span> : null}
-        </div>
-        <p className="mt-3 break-words text-sm font-semibold leading-6 text-ink/68">{selectedGuide.seasonNote}</p>
-
-        <ol className="mt-5 grid min-w-0 gap-3" aria-label={`${selectedGuide.crop} crop timeline`}>
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Current stage · {selectedGuide.crop}</p>
+        <h3 className="mt-1 break-words text-lg font-black text-ink">{stageLabel}</h3>
+        <p className="mt-3 text-sm font-black text-ink">What to do now</p>
+        <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{currentTask}</p>
+        <p className="mt-3 text-sm font-black text-ink">Next important action</p>
+        <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{nextStage ? `${nextStage.timing}: ${nextStage.guidance}` : plantingState === "not-yet" ? "Check soil moisture, drainage and planting readiness before choosing a date." : "Confirm the visible stage of the crop; the date alone cannot prove its growth stage."}</p>
+        <p className="mt-3 text-xs font-semibold leading-5 text-ink/62">{regionNote ? `${selectedRegion}: ${regionNote.advisoryNotes[0]}` : `No approved district-specific calendar for ${selectedRegion}; check local conditions with an extension officer.`}</p>
+        <p className="mt-2 text-xs font-semibold leading-5 text-ink/58">Stages are approximate. Check the plant itself; weather and variety can shift timing.</p>
+        <details className="mt-4 rounded-md bg-white p-3">
+          <summary className="cursor-pointer text-sm font-black text-leaf-700">View full crop timeline</summary>
+          <ol className="mt-3 grid min-w-0 gap-3" aria-label={`${selectedGuide.crop} crop timeline`}>
           {selectedGuide.stages.map((item) => (
             <li key={`${item.timing}-${item.stage}`} className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-4">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -99,17 +115,14 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
               <p className="mt-2 break-words text-sm font-semibold leading-6 text-ink/66">{item.guidance}</p>
             </li>
           ))}
-        </ol>
-
-        <p className="mt-4 text-xs font-bold leading-5 text-ink/58">
-          Typical guide. Adjust based on rainfall, soil condition, crop growth and local extension guidance. This is not a guaranteed planting or harvest date.
-        </p>
+          </ol>
+        </details>
         <button
           type="button"
-          onClick={() => onAskFarmMateAboutThis(cropCalendarFarmMateQuestion(selectedGuide.crop, selectedRegion))}
+          onClick={() => onAskFarmMateAboutThis(`I am growing ${selectedGuide.crop} in ${selectedRegion}. ${position ? `I planted on ${plantingDate}; the calendar estimates week ${position.week}, ${position.current.stage}.` : plantingState === "not-yet" ? "I have not planted yet." : `The planting date is unknown; observed stage: ${currentStage?.stage ?? "not sure"}.`} The current task is: ${currentTask} What should I check and do next?`)}
           className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
         >
-          Ask Mama G about this
+          Ask Mama G about this stage
         </button>
       </section>
     </article>
@@ -119,7 +132,21 @@ function CropCalendarExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAbout
 function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAboutThis: (question: string) => void }) {
   const [selectedCrop, setSelectedCrop] = useState("Maize");
   const [selectedRegion, setSelectedRegion] = useState("Ashanti");
+  const [field, setField] = useState<PlantingFieldState>({ planningNow: "yes", irrigation: "unknown", moisture: "unknown", prepared: "partly" });
+  const [weather, setWeather] = useState<WeatherDecisionSummary | null>(null);
   const selectedGuidance = findPlantingAdvisorGuidance(selectedCrop) ?? plantingAdvisorCrops.find((guidance) => guidance.crop === "Maize") ?? null;
+  const weatherLocation = supportedFarmMateWeatherLocations.find((location) => location.name === weather?.locationName);
+  const weatherForRegion = weather && weatherLocation?.region === selectedRegion ? weather : null;
+  const decision = plantingReadiness(field, weatherForRegion);
+
+  useEffect(() => {
+    try {
+      const value = window.localStorage.getItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+      const parsed = value ? JSON.parse(value) as WeatherDecisionSummary : null;
+      const age = Date.now() - Date.parse(parsed?.lastUpdatedAt ?? "");
+      setWeather(parsed?.liveWeatherAvailable && age >= 0 && age <= 24 * 60 * 60 * 1000 ? parsed : null);
+    } catch { setWeather(null); }
+  }, []);
 
   return (
     <article id="planting-advisor" className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft sm:p-6">
@@ -127,7 +154,7 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAb
         <Sprout size={24} aria-hidden="true" />
       </span>
       <h2 className="mt-4 gg-card-title">Planting Advisor</h2>
-      <p className="mt-2 text-sm leading-6 text-ink/66">Find the best time to plant.</p>
+      <p className="mt-2 text-sm leading-6 text-ink/66">Check your field before deciding whether to plant.</p>
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink">
           Crop
@@ -146,29 +173,36 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis }: { onAskFarmMateAb
           </select>
         </label>
       </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-black text-ink">Planning to plant now?
+          <select className="gg-field min-h-12" value={field.planningNow} onChange={(event) => setField({ ...field, planningNow: event.target.value as PlantingFieldState["planningNow"] })}><option value="yes">Yes</option><option value="later">Not yet</option></select>
+        </label>
+        <label className="grid gap-2 text-sm font-black text-ink">Reliable irrigation?
+          <select className="gg-field min-h-12" value={field.irrigation} onChange={(event) => setField({ ...field, irrigation: event.target.value as PlantingFieldState["irrigation"] })}><option value="unknown">Not sure</option><option value="yes">Yes</option><option value="no">No</option></select>
+        </label>
+        <label className="grid gap-2 text-sm font-black text-ink">Field soil now
+          <select className="gg-field min-h-12" value={field.moisture} onChange={(event) => setField({ ...field, moisture: event.target.value as PlantingFieldState["moisture"] })}><option value="unknown">Not sure</option><option value="moist">Moist</option><option value="dry">Dry</option><option value="waterlogged">Waterlogged</option></select>
+        </label>
+        <label className="grid gap-2 text-sm font-black text-ink">Land preparation
+          <select className="gg-field min-h-12" value={field.prepared} onChange={(event) => setField({ ...field, prepared: event.target.value as PlantingFieldState["prepared"] })}><option value="partly">Partly ready</option><option value="ready">Ready</option><option value="not-yet">Not yet</option></select>
+        </label>
+      </div>
 
       {selectedGuidance ? (
         <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Typical guide</p>
-          <h3 className="mt-1 break-words text-lg font-black text-ink">{selectedGuidance.crop} in {selectedRegion}</h3>
-          <p className="mt-2 text-sm font-semibold leading-6 text-ink/62">Local timing can vary by district and current field conditions.</p>
-
-          <dl className="mt-4 grid min-w-0 gap-3">
-            <GuidanceItem label="Crop">{selectedGuidance.crop}</GuidanceItem>
-            <GuidanceItem label="Region">{selectedRegion}</GuidanceItem>
-            <GuidanceItem label="Planting suitability">{selectedGuidance.suitablePlantingConditions[0]}</GuidanceItem>
-            <GuidanceItem label="Best planting period or season note">{selectedGuidance.plantingSeasonNotes[0]}</GuidanceItem>
-            <GuidanceItem label="Spacing guidance">{selectedGuidance.spacingGuidance[0]}</GuidanceItem>
-            <GuidanceItem label="Soil preparation">{selectedGuidance.soilPreparation[0]}</GuidanceItem>
-            <GuidanceItem label="Water/rain condition">{selectedGuidance.waterRainfallNeeds[0]}</GuidanceItem>
-            <GuidanceItem label="What to avoid">{selectedGuidance.whenToDelayPlanting[0]}</GuidanceItem>
-            <GuidanceItem label="Next step">{selectedGuidance.nextBestAction}</GuidanceItem>
-          </dl>
-
-          <p className="mt-4 text-xs font-bold leading-5 text-ink/58">Adjust based on rainfall, soil condition and local extension guidance. Yield and timing are not guaranteed.</p>
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Planting readiness · {selectedGuidance.crop} · {selectedRegion}</p>
+          <h3 className="mt-1 break-words text-lg font-black text-ink">{decision.status}</h3>
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink/70">{decision.why}</p>
+          <p className="mt-3 text-sm font-black text-ink">What to check</p><p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{decision.check}</p>
+          <p className="mt-3 text-sm font-black text-ink">Next step</p><p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{decision.next}</p>
+          <p className="mt-3 text-xs font-semibold leading-5 text-ink/60">{weatherForRegion ? `Forecast context: ${weatherForRegion.locationName}, ${weatherForRegion.rainChancePercent ?? "unknown"}% rain chance. It does not measure your field.` : "No matching live regional forecast is available. Check local conditions."}</p>
+          <details className="mt-4 rounded-md bg-white p-3"><summary className="cursor-pointer text-sm font-black text-leaf-700">More planting details</summary>
+            <dl className="mt-3 grid gap-3"><GuidanceItem label="Season">{selectedGuidance.plantingSeasonNotes[0]}</GuidanceItem><GuidanceItem label="Soil preparation">{selectedGuidance.soilPreparation[0]}</GuidanceItem><GuidanceItem label="Water">{selectedGuidance.waterRainfallNeeds[0]}</GuidanceItem><GuidanceItem label="Spacing — verify locally">{selectedGuidance.spacingGuidance[0]}</GuidanceItem></dl>
+          </details>
+          <p className="mt-3 text-xs font-bold leading-5 text-ink/58">Exact timing and spacing need local agronomic review. Yield is not guaranteed.</p>
           <button
             type="button"
-            onClick={() => onAskFarmMateAboutThis(plantingAdvisorFarmMateQuestion(selectedGuidance.crop, selectedRegion))}
+            onClick={() => onAskFarmMateAboutThis(`I am considering planting ${selectedGuidance.crop} in ${selectedRegion}. I am ${field.planningNow === "yes" ? "planning to plant now" : "planning ahead"}. My field is ${field.moisture}; land is ${field.prepared}; irrigation is ${field.irrigation}. The Planting Advisor says ${decision.status.toLowerCase()}: ${decision.why} What should I check and do next?`)}
             className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 py-2.5 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:w-auto"
           >
             Ask Mama G about this
@@ -185,11 +219,17 @@ export function FarmTools() {
   const [isClosing, setIsClosing] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
   const [cropDoctorHandoff, setCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
+  const [doctorPrefillCrop, setDoctorPrefillCrop] = useState("");
   const activeToolMeta = tools.find((tool) => tool.key === activeTool);
   const sheetBackground =
     activeTool === "ask" ? "bg-gradient-to-b from-white via-earth-50 to-leaf-50" : "bg-earth-50";
 
-  function openTool(tool: ToolKey) {
+  function openTool(tool: ToolKey, fromHandoff = false) {
+    if (tool === "ask" && !fromHandoff) {
+      setPrefillQuestion("");
+      setCropDoctorHandoff(null);
+    }
+    if (tool === "doctor" && !fromHandoff) setDoctorPrefillCrop("");
     setIsClosing(false);
     setActiveTool(tool);
   }
@@ -212,9 +252,20 @@ export function FarmTools() {
     }
 
     window.addEventListener("gg-farmmate-open-tool", handleOpenTool);
+    function handleAskContext(event: Event) {
+      const question = (event as CustomEvent<string>).detail;
+      if (typeof question === "string" && question.trim()) {
+        setPrefillQuestion(question);
+        setCropDoctorHandoff(null);
+        setIsClosing(false);
+        setActiveTool("ask");
+      }
+    }
+    window.addEventListener("gg-farmmate-open-ask-with-context", handleAskContext);
 
     return () => {
       window.removeEventListener("gg-farmmate-open-tool", handleOpenTool);
+      window.removeEventListener("gg-farmmate-open-ask-with-context", handleAskContext);
     };
   }, []);
 
@@ -229,7 +280,7 @@ export function FarmTools() {
   function openAskFarmMateWithQuestion(question: string) {
     setPrefillQuestion(question);
     setCropDoctorHandoff(null);
-    openTool("ask");
+    openTool("ask", true);
   }
 
   function askFarmMateFromDoctor(handoff: CropDoctorHandoffContext | string) {
@@ -240,11 +291,12 @@ export function FarmTools() {
 
     setPrefillQuestion(handoff.question);
     setCropDoctorHandoff(handoff);
-    openTool("ask");
+    openTool("ask", true);
   }
 
-  function openCropDoctorFromAsk() {
-    openTool("doctor");
+  function openCropDoctorFromAsk(crop?: string) {
+    setDoctorPrefillCrop(crop ?? "");
+    openTool("doctor", true);
   }
 
   return (
@@ -303,7 +355,7 @@ export function FarmTools() {
             <div className="max-h-[calc(94vh-5rem)] overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
               <div className="mx-auto min-w-0 max-w-2xl">
                 {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} onOpenCropDoctor={openCropDoctorFromAsk} /> : null}
-                {activeTool === "doctor" ? <CropDoctor onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
+                {activeTool === "doctor" ? <CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
                 {activeTool === "calendar" ? <CropCalendarExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /> : null}
                 {activeTool === "planting" ? <PlantingAdvisorExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /> : null}
               </div>

@@ -84,6 +84,7 @@ function isCropDoctorHandoffContext(value: unknown): value is CropDoctorHandoffC
     isNullableShortText(value.cropFamily, 160) &&
     typeof value.cropConfidence === "string" &&
     cropDoctorConfidenceValues.has(value.cropConfidence as CropDoctorConfidence) &&
+    (value.photoConfidenceLabel === undefined || value.photoConfidenceLabel === "Likely" || value.photoConfidenceLabel === "Possible" || value.photoConfidenceLabel === "Unclear") &&
     isShortText(value.possibleIssue, 1_000) &&
     typeof value.issueCategory === "string" &&
     cropDoctorIssueCategoryValues.has(value.issueCategory as CropDoctorIssueCategory) &&
@@ -92,6 +93,7 @@ function isCropDoctorHandoffContext(value: unknown): value is CropDoctorHandoffC
     Array.isArray(value.visibleSigns) &&
     value.visibleSigns.length <= 6 &&
     value.visibleSigns.every((sign) => isShortText(sign, 500)) &&
+    (value.recommendedNextCheck === undefined || isShortText(value.recommendedNextCheck, 500)) &&
     isShortText(value.nextBestAction, 1_000) &&
     isNullableShortText(value.familyGuidance, 1_000) &&
     isNullableShortText(value.limitedGuidanceNote, 1_000) &&
@@ -244,10 +246,12 @@ function canonicalCropDoctorContext(context?: CropDoctorHandoffContext): CropDoc
     cropGroup: context.cropGroup,
     cropFamily: context.cropFamily,
     cropConfidence: context.cropConfidence,
+    photoConfidenceLabel: context.photoConfidenceLabel,
     possibleIssue: context.possibleIssue,
     issueCategory: context.issueCategory,
     resultType: context.resultType,
     visibleSigns: context.visibleSigns,
+    recommendedNextCheck: context.recommendedNextCheck,
     nextBestAction: context.nextBestAction,
     familyGuidance: context.familyGuidance,
     limitedGuidanceNote: context.limitedGuidanceNote,

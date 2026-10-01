@@ -497,7 +497,7 @@ export function AskFarmMate({
 }: {
   prefillQuestion?: string;
   cropDoctorHandoff?: CropDoctorHandoffContext | null;
-  onOpenCropDoctor?: () => void;
+  onOpenCropDoctor?: (crop?: string) => void;
 }) {
   const [question, setQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState("");
@@ -1149,6 +1149,7 @@ export function AskFarmMate({
     Boolean(intro.lead || intro.detail) &&
     (!showRecommendation || localCards.length > 0) &&
     !isGeneratingNaturalAnswer &&
+    !(consultation?.status === "awaiting_follow_up" && response?.flow?.id === "maize-not-growing-well") &&
     !naturalAnswer;
   const shouldShowCreditActions = creditReason === "credits_exhausted";
 
@@ -1345,6 +1346,8 @@ export function AskFarmMate({
               </fieldset>
             ) : null}
 
+            {!showRecommendation && consultation?.status === "awaiting_follow_up" && response?.flow?.id === "maize-not-growing-well" && onOpenCropDoctor ? <button type="button" onClick={() => onOpenCropDoctor(response.flow?.requiredInformation.crop)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-leaf-700 bg-white px-4 py-2 text-sm font-black text-leaf-700"><Camera size={17} aria-hidden="true" />A photo may help — open Crop Doctor</button> : null}
+
             {consultation?.status === "submitting_follow_up" ? (
               <div className="flex min-w-0 max-w-full items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
                 <Loader2 className="animate-spin text-leaf-700" size={18} aria-hidden="true" />
@@ -1418,7 +1421,7 @@ export function AskFarmMate({
                 {response?.shouldShowCropDoctorAction && onOpenCropDoctor ? (
                   <button
                     type="button"
-                    onClick={onOpenCropDoctor}
+                    onClick={() => onOpenCropDoctor(response?.flow?.requiredInformation.crop)}
                     className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
                   >
                     <Camera size={18} aria-hidden="true" />

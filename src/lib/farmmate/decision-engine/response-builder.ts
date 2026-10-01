@@ -199,6 +199,13 @@ function findBestDecisionFlow(question: string, intent: DetectedFarmMateIntent, 
     }
   }
 
+  if (
+    normalized.includes("maize") &&
+    (normalized.includes("not growing") || normalized.includes("poor growth") || normalizedPlain.includes("isnt growing") || normalized.includes("growing well") || normalized.includes("not doing well"))
+  ) {
+    return farmMateDecisionFlows.find((flow) => flow.id === "maize-not-growing-well");
+  }
+
   if (selectedSpecialist === "general_agronomy") {
     return findGeneralAgronomyDecisionFlow(question, Boolean(resolvedCrop));
   }
@@ -339,15 +346,15 @@ function cropDoctorContextToDecisionFlow(context: CropDoctorHandoffContext, inte
     },
     followUpQuestions: cropDoctorFollowUpQuestions(context),
     recommendation: {
-      summary: `Crop Doctor saw ${signs.slice(0, 2).join(", ")} on ${cropLabel.toLowerCase()} and flagged ${possibleIssue.toLowerCase()}.`,
-      confidence: "medium",
+      summary: `Crop Doctor saw ${signs.slice(0, 2).join(", ")} on ${cropLabel.toLowerCase()} and flagged ${possibleIssue.toLowerCase()}. Photo confidence: ${context.photoConfidenceLabel ?? context.cropConfidence}.`,
+      confidence: context.cropConfidence === "low" ? "low" : "medium",
       reasoning: signs.slice(0, 3).map((sign, index) => ({
         id: `crop-doctor-sign-${index + 1}`,
         observation: sign,
         interpretation: "This photo sign needs a quick field check before treatment."
       })),
       sustainabilityPriority: ["prevention", "good-farming-practice", "natural-low-cost-solution", "chemical-recommendation-if-appropriate"],
-      recommendedAction: "Check the affected leaves, nearby plants and leaf undersides before choosing treatment.",
+      recommendedAction: context.recommendedNextCheck ?? "Check the affected leaves, nearby plants and leaf undersides before choosing treatment.",
       guidance: [
         "Check both sides of affected leaves.",
         "Compare affected plants with nearby healthy plants.",

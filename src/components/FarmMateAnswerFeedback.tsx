@@ -89,6 +89,8 @@ export function FarmMateAnswerFeedback({
     }
   }
 
+  if (!feedbackAvailable) return null;
+
   return (
     <section className="mt-3 min-w-0 max-w-full overflow-hidden rounded-md border border-leaf-900/10 bg-white/80 p-3">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">

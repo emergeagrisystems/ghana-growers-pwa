@@ -35,6 +35,7 @@ import {
   weatherGuidedRecommendationCards
 } from "../src/lib/farmmate/conversation-ui";
 import { farmMateDailySummaries, getFarmMateDailySummary, getFarmMateGreetingForHour } from "../src/lib/farmmate/daily-summary";
+import { cropCalendarPosition, plantingReadiness, todayFarmDecision } from "../src/lib/farmmate/experience-decisions";
 import { homepageFarmMateDescription, homepageFarmMateTools } from "../src/data/farmmatePublicTools";
 import { smartTools } from "../src/data/smartTools";
 import { getCurrentLearnChallenge, isChallengeComplete, learnChallenges, nextOpenChallengeDay } from "../src/lib/learn-challenges";
@@ -945,7 +946,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "pilot header contains only Mama G navigation and marks unowned feedback unavailable",
+    name: "farmer-hub header contains only Mama G navigation without pilot status",
     run: () => {
       const header = repoFile("src/components/Header.tsx");
       const pilotHeader = header.slice(header.indexOf("function PilotHeader"), header.indexOf("export function Header"));
@@ -954,7 +955,7 @@ const tests: TestCase[] = [
       assert.equal(pilotHeader.includes('href="/farmer-hub/feedback"'), false);
       assert.equal(pilotHeader.includes("GhanaGrowersLogo"), true);
       assert.equal(pilotHeader.includes("Ask Mama G"), true);
-      assert.equal(pilotHeader.includes("Feedback unavailable"), true);
+      assert.equal(pilotHeader.includes("Feedback unavailable"), false);
       ["/buy", "/sell", "/directory", "/marketplace", "/join", "Join the Network", "/about", "/contact", "/learn"].forEach((link) => {
         assert.equal(pilotHeader.includes(link), false, link);
       });
@@ -967,7 +968,7 @@ const tests: TestCase[] = [
       const feedbackPage = repoFile("src/app/farmer-hub/feedback/page.tsx");
       const manifest = JSON.parse(repoFile("public/manifest.json")) as { start_url?: string };
 
-      assert.equal(farmerHub.includes('href="/farmer-hub/feedback"'), true);
+      assert.equal(farmerHub.includes('href="/farmer-hub/feedback"'), false);
       assert.equal(farmerHub.includes('href="/learn'), false);
       assert.equal(farmerHub.includes("Learn Something Today"), false);
       assert.equal(feedbackPage.includes('href="/farmer-hub"'), true);
@@ -3977,8 +3978,8 @@ const tests: TestCase[] = [
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
 
       assert.equal(component.includes("day.farmingNote"), false);
-      assert.equal(component.includes("<FarmMateDailySummary weatherNote={weatherNote} />"), true);
-      assert.equal(component.match(/weatherNote=\{weatherNote\}/g)?.length, 1);
+      assert.equal(component.includes("<FarmMateDailySummary"), false);
+      assert.equal(component.includes("Can I farm today?"), true);
     }
   },
   {
@@ -4080,7 +4081,8 @@ const tests: TestCase[] = [
       assert.equal(summary.includes("weatherNote || summary.rainOutlookNote"), true);
       assert.equal(summary.includes("summary.todaysTip"), true);
       assert.equal(summary.includes("summary.warning"), false);
-      assert.equal(weatherWidget.indexOf('aria-label="Detailed 3-day weather forecast"') < weatherWidget.indexOf("<FarmMateDailySummary weatherNote={weatherNote} />"), true);
+      assert.equal(weatherWidget.includes("<FarmMateDailySummary"), false);
+      assert.equal(weatherWidget.includes('aria-label="Can I farm today?"'), true);
     }
   },
   {
@@ -4090,12 +4092,11 @@ const tests: TestCase[] = [
       const actionsIndex = farmerHub.indexOf("<FarmMateHeroActions />");
       const toolsIndex = farmerHub.indexOf("<FarmTools />");
       const weatherIndex = farmerHub.indexOf("<FarmMateWeatherFoundation />");
-      const feedbackIndex = farmerHub.indexOf('href="/farmer-hub/feedback"');
 
       assert.ok(actionsIndex > 0);
       assert.ok(toolsIndex > actionsIndex);
       assert.ok(weatherIndex > toolsIndex);
-      assert.ok(feedbackIndex > weatherIndex);
+      assert.equal(farmerHub.includes("Testing Ask Mama G?"), false);
     }
   },
   {
@@ -5301,27 +5302,15 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Planting Advisor pilot result exposes practical selected-crop guidance",
+    name: "Planting Advisor gives a field-based readiness decision",
     run: () => {
       const farmTools = repoFile("src/components/FarmTools.tsx");
-      const requiredLabels = [
-        "Crop",
-        "Region",
-        "Planting suitability",
-        "Best planting period or season note",
-        "Spacing guidance",
-        "Soil preparation",
-        "Water/rain condition",
-        "What to avoid",
-        "Next step"
-      ];
-
-      requiredLabels.forEach((label) => assert.equal(farmTools.includes(`label=\"${label}\"`), true, label));
+      ["Planning to plant now?", "Reliable irrigation?", "Field soil now", "Land preparation", "More planting details", "Planting readiness"].forEach((label) => assert.equal(farmTools.includes(label), true, label));
       assert.equal(farmTools.includes("selectedGuidance.spacingGuidance[0]"), true);
       assert.equal(farmTools.includes("selectedGuidance.soilPreparation[0]"), true);
-      assert.equal(farmTools.includes("selectedGuidance.whenToDelayPlanting[0]"), true);
-      assert.equal(farmTools.includes("selectedGuidance.nextBestAction"), true);
-      assert.equal(farmTools.includes("Local timing can vary by district"), true);
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "no", moisture: "dry", prepared: "ready" }).status, "NOT SUITABLE YET");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "waterlogged", prepared: "ready" }).status, "NOT SUITABLE YET");
+      assert.equal(plantingReadiness({ planningNow: "yes", irrigation: "yes", moisture: "moist", prepared: "ready" }).status, "CONDITIONS LOOK SUITABLE");
     }
   },
   {
@@ -5346,11 +5335,12 @@ const tests: TestCase[] = [
 
       assert.equal(farmTools.includes("Select crop"), true);
       assert.equal(farmTools.includes("Select region"), true);
-      assert.equal(farmTools.includes("Planting month or season"), true);
+      assert.equal(farmTools.includes("Have you already planted?"), true);
+      assert.equal(farmTools.includes("Planting date, if known"), true);
       assert.equal(farmTools.includes("selectedGuide.stages.map"), true);
       assert.equal(farmTools.includes("crop timeline"), true);
-      assert.equal(farmTools.includes("Typical guide"), true);
-      assert.equal(farmTools.includes("not a guaranteed planting or harvest date"), true);
+      assert.equal(farmTools.includes("View full crop timeline"), true);
+      assert.equal(cropCalendarPosition(cropCalendarGuides[0], "2026-09-01", new Date("2026-09-22T12:00:00"))?.week, 4);
       assert.equal(calendarData.includes("Mar-Jun"), false);
       assert.equal(calendarData.includes("guaranteed yield"), false);
       assert.equal(calendarData.includes("market price"), false);
@@ -5369,9 +5359,45 @@ const tests: TestCase[] = [
       );
 
       const farmTools = repoFile("src/components/FarmTools.tsx");
-      assert.equal(farmTools.includes("plantingAdvisorFarmMateQuestion(selectedGuidance.crop, selectedRegion)"), true);
-      assert.equal(farmTools.includes("cropCalendarFarmMateQuestion(selectedGuide.crop, selectedRegion)"), true);
+      assert.equal(farmTools.includes("My field is ${field.moisture}"), true);
+      assert.equal(farmTools.includes("I planted on ${plantingDate}"), true);
       assert.equal(farmTools.match(/Ask Mama G about this/g)?.length, 2);
+    }
+  },
+  {
+    name: "dated Crop Calendar chooses a current stage and rejects an unknown or future date",
+    run: () => {
+      const guide = cropCalendarGuides[0];
+      const current = cropCalendarPosition(guide, "2026-09-01", new Date("2026-09-22T12:00:00"));
+      assert.equal(current?.week, 4);
+      assert.equal(current?.current.stage, "Weed and feed");
+      assert.equal(current?.next?.stage, "Scout the crop");
+      assert.equal(cropCalendarPosition(guide, "", new Date("2026-09-22T12:00:00")), null);
+      assert.equal(cropCalendarPosition(guide, "2026-10-01", new Date("2026-09-22T12:00:00")), null);
+    }
+  },
+  {
+    name: "weather task decisions keep daily probability separate from field and spray-window checks",
+    run: () => {
+      const low = sampleWeatherContext({ rainChancePercent: 20 });
+      const high = sampleWeatherContext({ rainChancePercent: 80 });
+      assert.equal(todayFarmDecision("spraying", low).status, "CHECK FIRST");
+      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "rain", wind: "calm", leaves: "dry" }).status, "BETTER TO WAIT");
+      assert.equal(todayFarmDecision("spraying", low, { rainWindow: "clear", wind: "calm", leaves: "dry" }).status, "CONDITIONS MAY BE SUITABLE");
+      assert.equal(todayFarmDecision("fertilizer-before-rain", high).status, "BETTER TO WAIT");
+      assert.equal(todayFarmDecision("irrigation", null).status, "CHECK FIRST");
+      assert.equal(todayFarmDecision("planting-before-rain", high).status, "CHECK FIRST");
+      assert.equal(todayFarmDecision("harvesting-before-rain", high).status, "CHECK FIRST");
+      assert.equal(todayFarmDecision("drying-produce", high).status, "BETTER TO WAIT");
+    }
+  },
+  {
+    name: "vague maize problem uses three guided questions before the answer",
+    run: () => {
+      const flow = buildFarmMateResponse("My maize is not doing well").flow;
+      assert.equal(flow?.id, "maize-not-growing-well");
+      assert.deepEqual(flow?.followUpQuestions.map((item) => item.id), ["maize-visible-problem", "maize-growth-stage", "maize-field-extent"]);
+      assert.equal(flow?.followUpQuestions.every((item) => (item.options?.length ?? 0) > 0), true);
     }
   },
   {
@@ -7448,7 +7474,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Crop Doctor result shows selected crop in unified crop metadata",
+    name: "Crop Doctor result keeps selected crop and confidence in a compact summary",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
@@ -7460,15 +7486,14 @@ const tests: TestCase[] = [
 
       const metadata = `Crop: ${result.crop}`;
       assert.equal(metadata, "Crop: Maize");
-      assert.equal(cropDoctor.includes('>Crop</dt>'), true);
-      assert.equal(cropDoctor.includes("Crop group"), true);
+      assert.equal(cropDoctor.includes('diagnosis.crop ?? "Crop uncertain"'), true);
       assert.equal(cropDoctor.includes("Photo confidence"), true);
       assert.equal(cropDoctor.includes("Crop detected:"), false);
       assert.equal(cropDoctorResultHeadline(result).includes("Crop detected"), false);
     }
   },
   {
-    name: "Crop Doctor result shows detected crop in unified crop metadata",
+    name: "Crop Doctor detected crop reaches the compact result and Mama G handoff",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
@@ -7483,13 +7508,13 @@ const tests: TestCase[] = [
       assert.equal(result.selectedCrop, "Not sure");
       assert.equal(result.crop, "Maize");
       assert.equal(result.askFarmMatePrompt, "Crop Doctor detected Maize from my photo and saw orange spots. What should I check next?");
-      assert.equal(cropDoctor.includes('>Crop</dt>'), true);
-      assert.equal(cropDoctor.includes("{diagnosis.crop}"), true);
+      assert.equal(cropDoctor.includes('diagnosis.crop ?? "Crop uncertain"'), true);
+      assert.equal(cropDoctor.includes("askFarmMateAboutThis"), true);
       assert.equal(cropDoctor.includes("Photo confidence"), true);
     }
   },
   {
-    name: "Crop Doctor result shows Crop not confirmed when model is unsure",
+    name: "Crop Doctor unclear result offers retake and no false diagnosis",
     run: () => {
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
       const result = normalizeCropDoctorVisionResult({
@@ -7502,8 +7527,9 @@ const tests: TestCase[] = [
       assert.equal(result.crop, null);
       assert.equal(result.resultType, "crop_not_confirmed");
       assert.equal(result.askFarmMatePrompt, "I uploaded a crop photo, but Crop Doctor could not confirm the crop. It saw blurred leaves. What should I check next?");
-      assert.equal(cropDoctor.includes("Crop not confirmed"), true);
-      assert.equal(cropDoctor.includes("Mama G could not confirm the crop from this photo."), true);
+      assert.equal(cropDoctor.includes("I can't identify this crop or problem clearly enough yet."), true);
+      assert.equal(cropDoctor.includes("Take another photo"), true);
+      assert.equal(cropDoctor.includes("Choose another photo"), true);
     }
   },
   {
@@ -7973,9 +7999,9 @@ const tests: TestCase[] = [
       const hubPage = repoFile("src/app/farmer-hub/page.tsx");
       const feedbackPage = repoFile("src/app/farmer-hub/feedback/page.tsx");
 
-      assert.equal(hubPage.includes("Testing Ask Mama G?"), true);
-      assert.equal(hubPage.includes("Share feedback"), true);
-      assert.equal(hubPage.includes('href="/farmer-hub/feedback"'), true);
+      assert.equal(hubPage.includes("Testing Ask Mama G?"), false);
+      assert.equal(hubPage.includes("Share feedback"), false);
+      assert.equal(hubPage.includes('href="/farmer-hub/feedback"'), false);
       assert.equal(feedbackPage.includes("FarmMatePilotFeedbackForm"), true);
       assert.equal(feedbackPage.includes("Help improve Ask Mama G"), true);
       assert.ok(repoFile("src/components/FarmMatePilotFeedbackForm.tsx").includes('withPublicSubmissionGate(FarmMatePilotFeedbackFormAvailable, "farmmate-feedback"'));

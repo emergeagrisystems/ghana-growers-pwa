@@ -1694,22 +1694,22 @@ export const farmMateDecisionFlows: DecisionFlow[] = [
     },
     followUpQuestions: [
       {
-        id: "maize-leaf-colour",
-        question: "Are the older leaves pale yellow, purple, or still green?",
+        id: "maize-visible-problem",
+        question: "What are you seeing on the maize?",
         requiredForConfidence: true,
-        options: ["Pale yellow", "Purple", "Still green"]
+        options: ["Yellow leaves", "Wilting", "Spots", "Holes", "Poor growth", "Other or not sure"]
       },
       {
-        id: "maize-waterlogging",
-        question: "Has the plot been dry, flooded or waterlogged recently?",
+        id: "maize-growth-stage",
+        question: "How old is the crop, approximately?",
         requiredForConfidence: true,
-        options: ["Dry", "Flooded or waterlogged", "Neither"]
+        options: ["Seedling", "Growing leaves", "Flowering or cobs", "Not sure"]
       },
       {
-        id: "maize-pest-damage",
-        question: "Do you see holes, frass or damage in the maize whorl?",
+        id: "maize-field-extent",
+        question: "How much of the field is affected?",
         requiredForConfidence: true,
-        options: ["Yes", "No", "Not sure"]
+        options: ["A few plants", "One area", "Most of the field", "Not sure"]
       }
     ],
     recommendation: {

@@ -2,7 +2,8 @@
 
 import { CloudSun, Loader2, LocateFixed, MapPin, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { FarmMateDailySummary } from "@/components/FarmMateDailySummary";
+import { todayFarmDecision } from "@/lib/farmmate/experience-decisions";
+import type { WeatherDecisionTask } from "@/lib/farmmate/weather-decision-specialist";
 import {
   FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY,
   FARM_MATE_WEATHER_LOCATION_STORAGE_KEY,
@@ -85,8 +86,15 @@ export function FarmMateWeatherFoundation() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLocating, setIsLocating] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<WeatherDecisionTask | "">("");
+  const [sprayChecks, setSprayChecks] = useState({ rainWindow: "unknown", wind: "unknown", leaves: "unknown" });
   const selectedLocationKey = request.type === "location" ? request.locationKey : "browser-location";
-  const weatherNote = forecast?.decisionSummary.summaryNote;
+  const decision = selectedTask ? todayFarmDecision(selectedTask, isLoading ? null : forecast?.decisionSummary, sprayChecks) : null;
+  const taskChoices: Array<{ task: WeatherDecisionTask; label: string }> = [
+    { task: "spraying", label: "Spray" }, { task: "planting-before-rain", label: "Plant" },
+    { task: "fertilizer-before-rain", label: "Apply fertilizer" }, { task: "irrigation", label: "Water / irrigate" },
+    { task: "harvesting-before-rain", label: "Harvest" }, { task: "drying-produce", label: "Dry produce" }
+  ];
   const selectedLocationLabel = useMemo(() => {
     if (request.type === "browser") {
       return request.label;
@@ -110,6 +118,8 @@ export function FarmMateWeatherFoundation() {
 
     async function loadForecast() {
       setIsLoading(true);
+      setForecast(null);
+      window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
       setMessage("");
 
       try {
@@ -150,6 +160,9 @@ export function FarmMateWeatherFoundation() {
   }, [request]);
 
   function selectLocation(locationKey: string) {
+    setForecast(null);
+    setIsLoading(true);
+    window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
     window.localStorage.setItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, locationKey);
     setRequest({ type: "location", locationKey });
   }
@@ -163,6 +176,9 @@ export function FarmMateWeatherFoundation() {
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        setForecast(null);
+        setIsLoading(true);
+        window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
         window.localStorage.removeItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY);
         setRequest({
           type: "browser",
@@ -266,7 +282,34 @@ export function FarmMateWeatherFoundation() {
           </div>
         )}
       </div>
-      <FarmMateDailySummary weatherNote={weatherNote} />
+      <section className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft" aria-label="Can I farm today?">
+        <h3 className="text-lg font-black text-ink">Can I farm today?</h3>
+        <p className="mt-1 text-sm font-semibold text-ink/65">What do you want to do today?</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {taskChoices.map(({ task, label }) => <button key={task} type="button" onClick={() => setSelectedTask(task)} aria-pressed={selectedTask === task} className={`min-h-11 rounded-md border px-3 py-2 text-sm font-black ${selectedTask === task ? "border-leaf-700 bg-leaf-50 text-leaf-900" : "border-leaf-900/15 bg-white text-leaf-700"}`}>{label}</button>)}
+        </div>
+        {selectedTask === "spraying" ? <div className="mt-4 grid gap-2">
+          <label className="grid gap-1 text-xs font-black text-ink">Rain in the next 4–6 hours?
+            <select className="gg-field min-h-11" value={sprayChecks.rainWindow} onChange={(event) => setSprayChecks({ ...sprayChecks, rainWindow: event.target.value })}><option value="unknown">Not sure</option><option value="rain">Likely</option><option value="clear">No rain expected</option></select>
+          </label>
+          <label className="grid gap-1 text-xs font-black text-ink">Wind at the field?
+            <select className="gg-field min-h-11" value={sprayChecks.wind} onChange={(event) => setSprayChecks({ ...sprayChecks, wind: event.target.value })}><option value="unknown">Not sure</option><option value="strong">Strong</option><option value="calm">Calm</option></select>
+          </label>
+          <label className="grid gap-1 text-xs font-black text-ink">Leaves now?
+            <select className="gg-field min-h-11" value={sprayChecks.leaves} onChange={(event) => setSprayChecks({ ...sprayChecks, leaves: event.target.value })}><option value="unknown">Not sure</option><option value="wet">Wet</option><option value="dry">Dry</option></select>
+          </label>
+        </div> : null}
+        {decision ? <div className="mt-4 rounded-md bg-leaf-50 p-4" aria-live="polite">
+          <h4 className="text-sm font-black text-leaf-900">{decision.status}</h4>
+          <p className="mt-2 text-sm font-semibold leading-6 text-ink/72">{decision.why}</p>
+          <p className="mt-2 text-sm font-black text-ink">What to check</p><p className="text-sm font-semibold leading-6 text-ink/72">{decision.check}</p>
+          <p className="mt-2 text-sm font-black text-ink">Next action</p><p className="text-sm font-semibold leading-6 text-ink/72">{decision.next}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {selectedTask === "planting-before-rain" ? <button type="button" className="min-h-11 rounded-md bg-leaf-600 px-3 text-sm font-black text-white" onClick={() => window.dispatchEvent(new CustomEvent("gg-farmmate-open-tool", { detail: "planting" }))}>Check planting readiness</button> : null}
+            <button type="button" className="min-h-11 rounded-md border border-leaf-700 px-3 text-sm font-black text-leaf-700" onClick={() => window.dispatchEvent(new CustomEvent("gg-farmmate-open-ask-with-context", { detail: `I am near ${forecast?.location.name ?? selectedLocationLabel}. I want to ${taskChoices.find((choice) => choice.task === selectedTask)?.label.toLowerCase()}. ${forecast ? `Today's forecast shows ${forecast.today.rainChancePercent ?? "unknown"}% rain chance, updated ${forecast.lastUpdatedAt}.` : "Live weather is unavailable."} This tool says ${decision.status.toLowerCase()}: ${decision.why} What should I check before acting?` }))}>Ask Mama G about this</button>
+          </div>
+        </div> : null}
+      </section>
     </div>
   );
 }
