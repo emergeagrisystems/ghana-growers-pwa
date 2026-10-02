@@ -138,6 +138,9 @@ test("new A2 refusals precede quota reservation without touching its implementat
   assert.match(body, /answer: chemicalSafetyAnswer, usageRecorded: false/);
   const ui = readFileSync("src/components/AskFarmMate.tsx", "utf8");
   assert.match(ui, /safetyAnswerIsLocal = Boolean\(explicitChemicalSafetyAnswer\(question\) \?\? enterpriseHighRiskAnswer/);
+  const intro = ui.slice(ui.indexOf("function responseIntro"), ui.indexOf("function localRecommendationCards"));
+  assert.match(intro, /card\.title === "Feed and enterprise safety"\)\) return \{ lead: "", detail: "" \}/);
+  assert.ok(intro.indexOf('card.title === "Feed and enterprise safety"') < intro.indexOf("Send one clear question"));
 });
 test("A1 crop and chemical boundaries still take effect; A2 does not claim old crop questions", () => {
   const q = "How many ml of pesticide should I spray on my maize?";

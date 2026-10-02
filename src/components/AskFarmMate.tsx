@@ -331,6 +331,8 @@ function weatherContextIntro(response?: FarmMateBrainResponse | null) {
 }
 
 function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean, response?: FarmMateBrainResponse | null) {
+  // A clear safety refusal must not be labelled as an unclear farmer question.
+  if (localCards.some(card => card.title === "Feed and enterprise safety")) return { lead: "", detail: "" };
   if (!showRecommendation && isFarmEnterpriseAssessment(response?.agronomyEvidence)) {
     const evidence = response!.agronomyEvidence!;
     return { lead: `${evidence.displayTitle}. ${evidence.finding}`, detail: evidence.why };
