@@ -8,7 +8,9 @@ import { boundedJsonRequest, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
-import { agronomySource } from "@/lib/farmmate/agronomy-sources";
+import { farmMateKnowledgeSource as agronomySource } from "@/lib/farmmate/enterprise-sources";
+import { isFarmEnterpriseAssessment } from "@/lib/farmmate/enterprise-knowledge";
+import { enterpriseHighRiskAnswer } from "@/lib/farmmate/enterprise-safety";
 import { diagnosticActionParts, displayedAnswerSections, farmerFacingFinding } from "@/lib/farmmate/answer-presentation";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
@@ -329,6 +331,10 @@ function weatherContextIntro(response?: FarmMateBrainResponse | null) {
 }
 
 function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendation: boolean, response?: FarmMateBrainResponse | null) {
+  if (!showRecommendation && isFarmEnterpriseAssessment(response?.agronomyEvidence)) {
+    const evidence = response!.agronomyEvidence!;
+    return { lead: `${evidence.displayTitle}. ${evidence.finding}`, detail: evidence.why };
+  }
   if (localCards.some((card) => card.body.some((line) => line.toLowerCase().includes("buy produce")))) {
     return {
       lead: "Buying through Ghana Growers",
@@ -547,7 +553,7 @@ export function AskFarmMate({
   });
   const [activeCropDoctorHandoff, setActiveCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
   const [activeToolHandoff, setActiveToolHandoff] = useState<FarmMateToolHandoff | null>(null);
-  const safetyAnswerIsLocal = Boolean(explicitChemicalSafetyAnswer(question));
+  const safetyAnswerIsLocal = Boolean(explicitChemicalSafetyAnswer(question) ?? enterpriseHighRiskAnswer(question));
 
   const canAsk =
     question.trim().length > 0 &&
@@ -927,7 +933,7 @@ export function AskFarmMate({
     event?.preventDefault();
 
     const trimmedQuestion = question.trim();
-    const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(trimmedQuestion);
+    const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(trimmedQuestion) ?? enterpriseHighRiskAnswer(trimmedQuestion);
     if (
       !trimmedQuestion ||
       isThinking ||
@@ -989,7 +995,7 @@ export function AskFarmMate({
 
     const routerResult = routeFarmMateQuestion(trimmedQuestion, handoffContext ?? undefined);
     if (chemicalSafetyAnswer) {
-      setLocalCards([{ title: "Chemical safety", body: [chemicalSafetyAnswer] }]);
+      setLocalCards([{ title: explicitChemicalSafetyAnswer(trimmedQuestion) ? "Chemical safety" : "Feed and enterprise safety", body: [chemicalSafetyAnswer] }]);
       setConsultation({
         consultationId: createFarmMateConsultationId(crypto.randomUUID()),
         originalQuestion: trimmedQuestion,
@@ -1431,7 +1437,7 @@ export function AskFarmMate({
                     {response?.agronomyEvidence ? <details className="rounded-md border border-leaf-900/10 bg-white p-4 text-sm leading-6">
                       <summary className="min-h-11 cursor-pointer font-black text-leaf-700">Sources &amp; limitations</summary>
                       <p>{response.agronomyEvidence.applicability}</p>
-                      <p className="mt-2">These sources support the general guidance, not a confirmed diagnosis on your farm. Mama G is not professionally certified.</p>
+                      <p className="mt-2">{isFarmEnterpriseAssessment(response.agronomyEvidence) ? "These sources explain general production and planning, not approval of a feed, substrate or business. Mama G is not professionally certified." : "These sources support the general guidance, not a confirmed diagnosis on your farm. Mama G is not professionally certified."}</p>
                       <ul className="mt-2 list-disc pl-5">{response.agronomyEvidence.sourceIds.map((id) => { const source = agronomySource(id); return <li key={id}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.title}</a> · {source.geography}</li>; })}</ul>
                     </details> : null}
                     {response?.agronomyEvidence?.cardId === "limited-crop" && onOpenCropDoctor ? <button type="button" onClick={() => onOpenCropDoctor()} className="min-h-11 rounded-md border border-leaf-700 px-4 py-2 text-sm font-black text-leaf-700">Open Crop Doctor with a photo</button> : null}

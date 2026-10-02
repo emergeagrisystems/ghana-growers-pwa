@@ -1,6 +1,7 @@
 import type { FarmMateSpecialist } from "../router";
 
 export type ConversationTopic =
+  | "farm_enterprises"
   | "plant_health"
   | "marketplace_info"
   | "fertilizer"

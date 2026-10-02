@@ -1,4 +1,5 @@
 export type FarmMateSpecialist =
+  | "farm_enterprises"
   | "crop_health"
   | "pest_disease"
   | "weather_decision"

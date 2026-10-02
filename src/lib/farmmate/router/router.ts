@@ -1,4 +1,5 @@
 import { farmMateRouterRules } from "./rules";
+import { recognizeFarmEnterprise } from "../enterprise-topics";
 import { detectFarmMateCropFromQuestion } from "../crop-context";
 import { findFarmMateCropLibraryEntry } from "../crop-library";
 import type { FarmMateRouterContext, RouterConfidence, RouterResult, RouterRule } from "./types";
@@ -61,6 +62,13 @@ export function routeFarmMateQuestion(question: string, context: FarmMateRouterC
       suggestedFallbackSpecialist: "crop_health",
       detectedCrop: detectedCrop ?? undefined
     };
+  }
+
+  const enterprise = recognizeFarmEnterprise(question);
+  if (enterprise) {
+    return { selectedSpecialist: "farm_enterprises", confidence: "high", matchedKeywords: [enterprise.id],
+      reason: "Explicit agricultural-enterprise topic; use its curated pack or state the coverage limit.",
+      suggestedFallbackSpecialist: "farm_enterprises" };
   }
 
   const matches = farmMateRouterRules

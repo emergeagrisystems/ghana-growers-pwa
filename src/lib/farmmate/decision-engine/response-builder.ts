@@ -20,6 +20,7 @@ import { detectFarmMateIntent, DetectedFarmMateIntent } from "./intent-detector"
 import { farmMateDecisionFlows } from "./flows";
 import { DecisionFlow, FarmerIntent, FollowUpQuestion } from "./types";
 import { assessAgronomyEvidence, agronomyAssessmentFlow, type AgronomyAnswer, type AgronomyAssessment } from "../agronomy-evidence";
+import { assessFarmEnterpriseQuestion } from "../enterprise-knowledge";
 
 export type FarmMateResponseSection =
   | "Direct answer"
@@ -806,13 +807,15 @@ export function buildFarmMateResponse(question: string, routerResult?: RouterRes
   };
   // Add evidence-led content within the existing routed/signed consultation.
   // Photo and weather-specific workflows retain their established architecture.
-  const agronomyEvidence = !options.cropDoctorContext && routerResult?.selectedSpecialist !== "weather_decision"
+  const enterpriseEvidence = !options.cropDoctorContext && !options.toolContext ? assessFarmEnterpriseQuestion(question, options.agronomyAnswers) : undefined;
+  const agronomyEvidence = enterpriseEvidence ?? (!options.cropDoctorContext && routerResult?.selectedSpecialist !== "weather_decision"
     ? assessAgronomyEvidence(question, resolvedCrop, options.agronomyAnswers, options.toolContext)
-    : undefined;
+    : undefined);
   if (agronomyEvidence) {
-    const evidenceFlow = agronomyAssessmentFlow(agronomyEvidence, resolvedCrop);
+    const evidenceFlow = agronomyAssessmentFlow(agronomyEvidence, enterpriseEvidence ? undefined : resolvedCrop);
     return {
-      intent, routerResult, resolvedCrop, flow: evidenceFlow, agronomyEvidence,
+      intent: enterpriseEvidence ? { intent: "crop-planning", label: "crop_planning", matchedKeywords: [] } : intent,
+      routerResult, resolvedCrop: enterpriseEvidence ? undefined : resolvedCrop, flow: evidenceFlow, agronomyEvidence,
       confidence: "low", shouldShowCropDoctorAction: false,
       nextBestAction: evidenceFlow.recommendation.nextBestAction,
       weatherContext: options.weatherContext, toolContext: options.toolContext,

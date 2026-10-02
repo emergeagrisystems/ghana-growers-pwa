@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { beginFarmMateAskGeneration, reserveFarmMateAsk, settleFarmMateAsk } from "@/lib/farmmate/usage/ask-recovery";
 import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { agronomyHighRiskAnswer } from "@/lib/farmmate/agronomy-safety";
+import { enterpriseHighRiskAnswer } from "@/lib/farmmate/enterprise-safety";
 
 export const maxDuration = 60;
 import { generateFarmMateNaturalAnswer, type FarmMateAiInput, type FarmMateAskApiInput } from "@/lib/farmmate/ai";
@@ -475,7 +476,7 @@ async function answerAndSettle({
 
 async function processConsultation(payload: FarmMateAskApiInput, anonymousUserHash: string) {
 
-  const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(payload.originalQuestion) ?? agronomyHighRiskAnswer(payload.originalQuestion);
+  const chemicalSafetyAnswer = explicitChemicalSafetyAnswer(payload.originalQuestion) ?? enterpriseHighRiskAnswer(payload.originalQuestion) ?? agronomyHighRiskAnswer(payload.originalQuestion);
   if (chemicalSafetyAnswer) {
     return NextResponse.json({ ok: true, kind: "final", answer: chemicalSafetyAnswer, usageRecorded: false });
   }

@@ -1,4 +1,5 @@
 import { detectFarmMateCropFromQuestion } from "../crop-context";
+import { recognizeFarmEnterprise } from "../enterprise-topics";
 import type { FarmMateSpecialist } from "../router";
 import type { ConversationDecision, ConversationManagerContext, ConversationState, ConversationTopic } from "./types";
 
@@ -206,6 +207,13 @@ export function manageFarmMateConversation(message: string, state: ConversationS
       specialist: hasCropDoctorContext ? "crop_doctor" : "general_farming",
       isMarketplaceInfoRequest: false
     };
+  }
+
+  // A2: "produce BSF frass" is an enterprise question, not a produce-market request.
+  // Explicit new enterprise questions never inherit an unrelated crop consultation.
+  if (recognizeFarmEnterprise(message)) {
+    return { action: "reset", topic: "farm_enterprises", specialist: "farm_enterprises",
+      resetReason: "new_intent", shouldKeepContext: false, isMarketplaceInfoRequest: false };
   }
 
   if (isShortFollowUpAnswer(message)) {

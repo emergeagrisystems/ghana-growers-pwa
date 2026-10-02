@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { FARM_MATE_SYSTEM_PROMPT } from "./system-prompt";
-import { agronomySource } from "../agronomy-sources";
+import { farmMateKnowledgeSource as agronomySource } from "../enterprise-sources";
+import { isFarmEnterpriseAssessment } from "../enterprise-knowledge";
+import { hasUnsafeEnterpriseOutput } from "../enterprise-safety";
 import { agronomyScopeNote } from "../agronomy-evidence";
 import { hasUnsafeAgronomyOutput } from "../agronomy-safety";
 import type { FarmMateAiInput, FarmMateAiResult } from "./types";
@@ -105,6 +107,12 @@ export function isLikelyIncompleteFarmMateAnswer(answer: string, input: FarmMate
     return true;
   }
 
+  if (isFarmEnterpriseAssessment(input.brain.agronomyEvidence)) {
+    return !["What I think", "What to do now", "Next step"].every(heading =>
+      new RegExp(`(?:^|\\n)\\s*(?:#+\\s*)?${heading}\\s*:`, "i").test(trimmed)) ||
+      trimmed.split(/\s+/).length > 220 || (trimmed.match(/^\s*\d+[.)]\s+/gm) ?? []).length > 3;
+  }
+
   const isGeneralAgronomy =
     input.brain.routerResult?.selectedSpecialist === "general_agronomy" || input.brain.flow?.id.startsWith("general-agronomy-");
   const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
@@ -177,6 +185,15 @@ export function buildFarmMateVoiceLayerInput(input: FarmMateAiInput) {
   const isCompletedGuidedConsultation = input.farmerAnswers.length > 0;
   if (input.brain.agronomyEvidence) {
     const evidence = input.brain.agronomyEvidence;
+    if (isFarmEnterpriseAssessment(evidence)) {
+      return JSON.stringify({
+        instruction: "Render only the supplied Farm Enterprises & Diversification assessment. Use headings What I think:, What to do now:, Next step:. Combine finding and why in at most 60 words, use at most THREE numbered actions, and ONE next step from evidence.next. Keep the whole answer under 190 words. Do not add facts, recipes, rates, named providers, approvals or promises. Do not turn institutional reports or experiments into permissions or prescriptions. Do not force crop-disease, weather or Crop Doctor advice into an enterprise question. Preserve the explicit limits of any non-BSF pack. Supporting detail and sources are shown separately; omit internal review/process language. Never provide feed inclusion percentages, formulations, veterinary treatment, contaminant clearance, frass rates, processing safety thresholds or profit forecasts, even when the farmer requests them.",
+        farmerQuestion: input.farmerQuestion, selectedSpecialist: "farm_enterprises", crop: null,
+        evidence, verifiedFarmerAnswers: input.farmerAnswers,
+        sources: evidence.sourceIds.map(id => { const s = agronomySource(id); return { id, title: s.title, geography: s.geography, scope: s.scope, exclusions: s.exclusions }; }),
+        boundaries: ["Curated content only; no runtime retrieval or model-memory additions.", "Research evidence is not a farm feeding prescription, product certification or regulatory clearance.", "Never replace the existing balanced ration with an invented recipe."]
+      });
+    }
     return JSON.stringify({
       instruction: "Deep reasoning internally, simple answer externally. Render the source-led assessment with headings What I think:, What to do now:, Next step:. Use one short finding and one short why (together at most 55 words), up to THREE numbered actions (each at most 35 words), then ONE distinct next step (at most 30 words). For diagnostic comparisons preserve the evidence-supported possibilities and differentiating signs in the primary actions, not hidden detail. Start each with a short bold observation label, then short natural sentences explaining its possible meaning and practical action. Use the form **Observation:** Possible meaning. Practical action. Do not use arrows or telegraphic chains; retain uncertainty and all relevant differentiators. For a limited-crop answer preserve evidence.finding verbatim, including may not have Ghana-specific guidance. For methods teach how using the supplied steps; never label a normal method CHECK FIRST. Do not repeat an action in Next step; use evidence.next. Do not add facts/remedies, ask answered questions or mention internal project/reviewer governance. Optional supporting detail belongs under What to check:, never in the primary finding.",
       farmerQuestion: input.farmerQuestion,
@@ -413,7 +430,8 @@ export async function generateFarmMateNaturalAnswer(input: FarmMateAiInput, opti
       return { ok: false, reason: "empty_response", fallback: true };
     }
 
-    if (isLikelyIncompleteFarmMateAnswer(answer, input) || (input.brain.agronomyEvidence && hasUnsafeAgronomyOutput(answer))) {
+    if (isLikelyIncompleteFarmMateAnswer(answer, input) || (input.brain.agronomyEvidence && hasUnsafeAgronomyOutput(answer)) ||
+      (isFarmEnterpriseAssessment(input.brain.agronomyEvidence) && hasUnsafeEnterpriseOutput(answer))) {
       logRc1AiDiagnostic(correlationId, "fallback_selected", { model, category: "incomplete_response", elapsedMs: Date.now() - startedAt });
       return { ok: false, reason: "incomplete_response", fallback: true };
     }

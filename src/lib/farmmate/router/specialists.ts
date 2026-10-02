@@ -2,6 +2,11 @@ import type { FarmMateSpecialistProfile } from "./types";
 
 export const farmMateSpecialists: FarmMateSpecialistProfile[] = [
   {
+    specialist: "farm_enterprises",
+    title: "Farm Enterprises & Diversification",
+    description: "Source-backed Ghana BSF guidance and explicitly limited planning support for other farm enterprises."
+  },
+  {
     specialist: "crop_health",
     title: "Crop Health",
     description: "Handles crop symptoms, wilting, yellow leaves, poor growth and plant stress."
