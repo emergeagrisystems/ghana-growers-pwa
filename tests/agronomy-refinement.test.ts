@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { assessAgronomyEvidence, type AgronomyAnswer } from "../src/lib/farmmate/agronomy-evidence";
-import { displayedAnswerSections } from "../src/lib/farmmate/answer-presentation";
+import { diagnosticActionParts, displayedAnswerSections, farmerFacingFinding, UNCOMMON_CROP_SCOPE_NOTE } from "../src/lib/farmmate/answer-presentation";
+import { buildFarmMateVoiceLayerInput } from "../src/lib/farmmate/ai/service";
+import { readFileSync } from "node:fs";
 import { buildFarmMateResponse } from "../src/lib/farmmate/decision-engine/response-builder";
 import { routeFarmMateQuestion } from "../src/lib/farmmate/router";
 import { cropDoctorVisionSystemPrompt, normalizeCropDoctorVisionResult } from "../src/lib/farmmate/crop-doctor-vision";
@@ -101,4 +103,54 @@ test("presentation removes literal duplicated next action without inventing a re
   const s = displayedAnswerSections("What I think: Main.\n\nWhat to do now:\n1. Take a photo.\n2. Compare plants.\n\nNext step: Take a photo.");
   assert.deepEqual(s.actionLines, ["Compare plants."]);
   assert.equal(s.next?.body, "Take a photo.");
+});
+
+test("final minor: guided follow-up goes directly to the existing question UI", () => {
+  const ui = readFileSync("src/components/AskFarmMate.tsx", "utf8");
+  assert.doesNotMatch(ui, /Let's narrow this down|I will ask one quick question at a time/);
+  assert.match(ui, />One quick question</);
+  assert.match(ui, /mamaGPublicText\(currentFollowUp.question\)/);
+  assert.match(ui, /answerFollowUp\(option\)/);
+  const q = "Why are my okra plants dying?";
+  assert.equal(assessAgronomyEvidence(q, "Okra")?.followUp?.id, "a1-decline-pattern");
+});
+test("final minor: labelled diagnostic prose preserves meaning and action", () => {
+  const body = "Moisture stress is more likely. Water the root zone gently and watch whether the plant recovers.";
+  for (const line of [`**Dry soil:** ${body}`, `**Dry soil**: ${body}`, `Dry soil: ${body}`]) {
+    assert.deepEqual(diagnosticActionParts(line), { label: "Dry soil", body });
+  }
+  const parsed = displayedAnswerSections(`What I think: Check roots.\nWhat to do now:\n1. **Dry soil:** ${body}\nNext step: Compare two plants.`);
+  assert.deepEqual(diagnosticActionParts(parsed.actionLines[0]), { label: "Dry soil", body });
+  assert.equal(parsed.next?.body, "Compare two plants.");
+});
+test("final minor: legacy arrows render as sign and sentences without changing uncertainty", () => {
+  for (const arrow of ["->", "→", "⇒", "-->"]) {
+    assert.deepEqual(diagnosticActionParts(`Dry soil ${arrow} moisture shortage possible ${arrow} water gently without flooding`), {
+      label: "Dry soil", body: "Moisture shortage possible. Water gently without flooding."
+    });
+  }
+  assert.deepEqual(diagnosticActionParts("Insect nearby → not proof → do not spray from appearance alone"), {
+    label: "Insect nearby", body: "Not proof. Do not spray from appearance alone."
+  });
+  assert.deepEqual(diagnosticActionParts("Use soft ties with room for growth."), { body: "Use soft ties with room for growth." });
+});
+test("final minor: unknown crop scope remains negative even if provider omits not", () => {
+  const q = "I am growing a crop that is not common in Ghana. Can you still help me diagnose leaf spots?";
+  const brain = buildFarmMateResponse(q, routeFarmMateQuestion(q));
+  const a = brain.agronomyEvidence!;
+  assert.equal(a.cardId, "limited-crop");
+  assert.equal(a.finding, "I may not have Ghana-specific guidance for this crop, but I can still help assess the visible signs.");
+  assert.equal(farmerFacingFinding("I may have Ghana-specific guidance for this crop.", a), `${UNCOMMON_CROP_SCOPE_NOTE} ${a.why}`);
+  assert.equal(farmerFacingFinding("Unchanged other answer", {cardId: "maize-yellow", why: "Other evidence"}), "Unchanged other answer");
+  const payload = JSON.parse(buildFarmMateVoiceLayerInput({ farmerQuestion:q, brain, farmerAnswers:[], localStructuredResponse:[] }));
+  assert.match(payload.instruction, /short bold observation label/);
+  assert.match(payload.instruction, /Do not use arrows/);
+  assert.match(payload.instruction, /preserve evidence.finding verbatim/);
+  assert.match(payload.boundaries.join(" "), /No rates.*pesticides.*food\/feed clearance/);
+});
+test("final minor: UI uses real bold sign markup and the scoped finding guard", () => {
+  const ui = readFileSync("src/components/AskFarmMate.tsx", "utf8");
+  assert.match(ui, /<strong className="font-bold text-ink">\{action.label\}:<\/strong>/);
+  assert.match(ui, /farmerFacingFinding\(answerSections.first.body, response\?\.agronomyEvidence\)/);
+  assert.doesNotMatch(ui, /dangerouslySetInnerHTML/);
 });

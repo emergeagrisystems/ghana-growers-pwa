@@ -9,7 +9,7 @@ import { explicitChemicalSafetyAnswer } from "@/lib/farmmate/chemical-safety";
 import { mamaGPublicText } from "@/lib/farmmate/public-name";
 import { buildFarmMateResponse, FarmMateBrainResponse } from "@/lib/farmmate/decision-engine";
 import { agronomySource } from "@/lib/farmmate/agronomy-sources";
-import { displayedAnswerSections } from "@/lib/farmmate/answer-presentation";
+import { diagnosticActionParts, displayedAnswerSections, farmerFacingFinding } from "@/lib/farmmate/answer-presentation";
 import type { CropDoctorHandoffContext } from "@/lib/farmmate/crop-doctor-vision";
 import type { FarmMateToolHandoff } from "@/lib/farmmate/tool-handoff";
 import type { FarmMateAskApiResponse, FarmMateLocalResponseCard } from "@/lib/farmmate/ai/types";
@@ -371,8 +371,8 @@ function responseIntro(localCards: FarmMateLocalResponseCard[], showRecommendati
   }
 
   return {
-    lead: "Let's narrow this down.",
-    detail: "I will ask one quick question at a time."
+    lead: "",
+    detail: ""
   };
 }
 
@@ -1171,6 +1171,7 @@ export function AskFarmMate({
     shouldShowLocalGuidance ? recommendationCards : []
   );
   const answerSections = naturalAnswer ? displayedAnswerSections(naturalAnswer) : null;
+  const hasDiagnosticActions = response?.agronomyEvidence?.answerKind === "diagnostic" || response?.agronomyEvidence?.cardId === "limited-crop";
   const answerStatus = naturalAnswer ? decisionStatusFromAnswer(naturalAnswer, response) : null;
   const hasConsultationError =
     Boolean(consultationError) &&
@@ -1419,8 +1420,11 @@ export function AskFarmMate({
                     ) : null}
                     <section className="rounded-md border border-leaf-900/10 bg-white px-4 py-4">
                       {answerStatus ? <div className="mb-3"><FarmMateDecisionStatus status={answerStatus} /></div> : response?.agronomyEvidence?.displayTitle ? <h3 className="mb-2 text-base font-black text-ink">{response.agronomyEvidence.displayTitle}</h3> : null}
-                      {answerSections?.first ? <p className="break-words whitespace-pre-line text-sm font-bold leading-6 text-ink [overflow-wrap:anywhere]">{answerSections.first.body}</p> : null}
-                      {answerSections?.actionLines.length ? <div className="mt-3"><h3 className="text-sm font-black text-ink">{response?.agronomyEvidence?.answerKind === "diagnostic" ? "How to tell — and act" : "Do now"}</h3><ol className="mt-2 list-decimal space-y-2 pl-5 text-sm font-semibold leading-6 text-ink/72">{answerSections.actionLines.map(line => <li className="break-words [overflow-wrap:anywhere]" key={line}>{line}</li>)}</ol></div> : null}
+                      {answerSections?.first ? <p className="break-words whitespace-pre-line text-sm font-bold leading-6 text-ink [overflow-wrap:anywhere]">{farmerFacingFinding(answerSections.first.body, response?.agronomyEvidence)}</p> : null}
+                      {answerSections?.actionLines.length ? <div className="mt-3"><h3 className="text-sm font-black text-ink">{response?.agronomyEvidence?.answerKind === "diagnostic" ? "How to tell — and act" : "Do now"}</h3><ol className={`mt-2 list-decimal space-y-2 pl-5 text-sm leading-6 text-ink/72 ${hasDiagnosticActions ? "font-normal" : "font-semibold"}`}>{answerSections.actionLines.map(line => {
+                        const action = hasDiagnosticActions ? diagnosticActionParts(line) : { body: line };
+                        return <li className="break-words [overflow-wrap:anywhere]" key={line}>{action.label ? <><strong className="font-bold text-ink">{action.label}:</strong>{" "}</> : null}{action.body}</li>;
+                      })}</ol></div> : null}
                       {answerSections?.next ? <div className="mt-3"><h3 className="text-sm font-black text-ink">Next step</h3><p className="mt-1 break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{answerSections.next.body}</p></div> : null}
                       {answerSections?.details.length || response?.agronomyEvidence?.detail.length ? <details className="mt-3 border-t border-leaf-900/10 pt-3"><summary className="min-h-11 cursor-pointer text-sm font-black text-leaf-700">More detail</summary><div className="mt-2 space-y-3">{response?.agronomyEvidence ? response.agronomyEvidence.detail.map(line => <p key={line} className="text-sm leading-6 text-ink/72">{line}</p>) : answerSections?.details.map((part) => <div key={`${part.title}-${part.body}`}><p className="text-sm font-black text-ink">{part.title}</p><p className="break-words whitespace-pre-line text-sm font-semibold leading-6 text-ink/72 [overflow-wrap:anywhere]">{part.body}</p></div>)}</div></details> : null}
                     </section>

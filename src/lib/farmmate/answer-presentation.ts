@@ -1,3 +1,29 @@
+export const UNCOMMON_CROP_SCOPE_NOTE = "I may not have Ghana-specific guidance for this crop, but I can still help assess the visible signs.";
+
+/** Keep scope copy factual even if the provider drops the negation. */
+export function farmerFacingFinding(body: string, evidence?: { cardId: string; why: string }) {
+  return evidence?.cardId === "limited-crop"
+    ? `${UNCOMMON_CROP_SCOPE_NOTE} ${evidence.why}`.trim()
+    : body;
+}
+
+/** Presentation only: retain each sign, qualification and action, without adding advice. */
+export function diagnosticActionParts(line: string): { label?: string; body: string } {
+  const arrows = line.split(/\s*(?:-{1,2}>|[→⇒])\s*/);
+  if (arrows.length > 1 && arrows.every(part => part.trim())) {
+    const label = arrows[0].replace(/^\*\*|\*\*$/g, "").replace(/:$/, "").trim();
+    const body = arrows.slice(1).map(part => {
+      const sentence = part.trim().replace(/^[a-z](?=[a-z])/, letter => letter.toUpperCase());
+      return /[.!?;:]$/.test(sentence) ? sentence : `${sentence}.`;
+    }).join(" ");
+    return { label, body };
+  }
+  const labelled = line.match(/^\*\*([^*\n]+?):\*\*\s+([\s\S]+)$/)
+    ?? line.match(/^\*\*([^*\n]+?)\*\*:\s+([\s\S]+)$/)
+    ?? line.match(/^([^:\n]{1,100}):\s+([\s\S]+)$/);
+  return labelled ? { label: labelled[1], body: labelled[2] } : { body: line };
+}
+
 /** Parse provider sections without making agronomic decisions or changing accounting. */
 export function displayedAnswerSections(answer: string) {
   const headings = "What I think|What may be happening|What to do now|What to check|Next step|More detail";

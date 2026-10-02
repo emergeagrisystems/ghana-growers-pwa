@@ -1,4 +1,5 @@
 import type { AgronomyAnswer, AgronomyAssessment } from "./agronomy-evidence";
+import { UNCOMMON_CROP_SCOPE_NOTE } from "./answer-presentation";
 
 /** Bounded refinements of existing cards, not a new router or knowledge service. */
 export function refineAgronomyAssessment(a: AgronomyAssessment, question: string, answers: AgronomyAnswer[]): AgronomyAssessment {
@@ -15,7 +16,7 @@ export function refineAgronomyAssessment(a: AgronomyAssessment, question: string
     // ONE unnamed/uncommon crop is not evidence that multiple crops are affected.
     a.answerKind = "guidance";
     a.displayTitle = "Yes — we can assess the visible signs";
-    a.finding = "I may not have Ghana-specific guidance for this crop, but I can still help assess its leaf spots.";
+    a.finding = UNCOMMON_CROP_SCOPE_NOTE;
     a.why = "Spot shape, affected leaves and the spread help narrow the possibilities without guessing a disease.";
     a.possibilities = ["On this crop, matching insect injury can support a pest-related possibility; an insect nearby alone is not proof.", "Spot appearance and progression can help distinguish tissue injury from a disease-like pattern, but cannot confirm a pathogen."];
     a.actions = ["Note the spots' colour, border or halo, and whether they are dry, wet, flat or sunken.", "Compare older and younger leaves; look for spots merging, matching insect injury and the pattern across plants."];
