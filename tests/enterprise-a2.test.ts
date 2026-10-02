@@ -159,6 +159,9 @@ test("enterprise enquiries reset unrelated crop context and preserve explicit Cr
   assert.equal(fresh.brain.agronomyEvidence?.cardId, "decline");
 });
 test("fallback asks one purpose, then stays useful without claiming a production pack", () => {
+  const nonBsfWasteQuestion = "How do I manage manure in a poultry farming business?";
+  assert.equal(enterpriseHighRiskAnswer(nonBsfWasteQuestion), null);
+  assert.equal(assessFarmEnterpriseQuestion(nonBsfWasteQuestion)?.cardId, "enterprise-poultry-limited");
   for (const q of ["I want information about mushroom farming.", "Tell me about snail farming in Ghana."]) {
     const first = assessFarmEnterpriseQuestion(q)!;
     assert.ok(first.followUp);
