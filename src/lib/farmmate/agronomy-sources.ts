@@ -5,7 +5,7 @@ export type AgronomySource = {
   scope: string; exclusions: string;
 };
 export const AGRONOMY_CHECKED_ON = "2026-10-01";
-export const AGRONOMY_REVIEW = "Not professionally certified; qualified Ghana agronomic/post-harvest review required after founder product-quality approval";
+export const AGRONOMY_REVIEW = "Not professionally certified; external agronomic/post-harvest certification DEFERRED — PLANNED POST-LAUNCH; not an initial-launch blocker or automatic next gate after founder product-quality approval";
 export const agronomySources: AgronomySource[] = [
   { id: "VT-DIAG", title: "Virginia Cooperative Extension: Diagnosing Plant Problems", url: "https://www.pubs.ext.vt.edu/content/dam/pubs_ext_vt_edu/426/426-714/426-714.pdf", geography: "United States; general diagnostic principles", date: "2018", applicability: "general", scope: "Compare root health, moisture, matching pest injury, spread and field-work patterns. Wilting has multiple possible causes; visual clues are not pathogen confirmation.", exclusions: "No Ghana disease prevalence, named crop diagnosis, chemical treatment or ornamental/cold-climate recommendations transferred." },
   { id: "RUTGERS-STAKE", title: "Rutgers NJAES: Tomato training techniques", url: "https://njaes.rutgers.edu/fs678/", geography: "New Jersey, United States; support mechanics only", date: "Page date not stated; checked 2026-10-01", applicability: "general", scope: "Stakes/cages, soft figure-eight ties, room for stem growth and support as plants grow.", exclusions: "No US climate/calendar, numeric spacing, pruning prescription, rates or food-safety statements imported." },

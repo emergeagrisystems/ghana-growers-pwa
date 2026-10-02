@@ -32,7 +32,7 @@ for (const [id, question, cardId] of agronomyEvaluationCases) test(`${id}: sourc
   assert.ok(brain.agronomyEvidence!.sourceIds.length);
   assert.ok(brain.agronomyEvidence!.actions.length <= 3);
   assert.ok(brain.flow!.followUpQuestions.length <= 1);
-  assert.match(brain.agronomyEvidence!.reviewStatus, /review required after founder product-quality approval/);
+  assert.equal(brain.agronomyEvidence!.reviewStatus, "Not professionally certified; external agronomic/post-harvest certification DEFERRED — PLANNED POST-LAUNCH; not an initial-launch blocker or automatic next gate after founder product-quality approval");
   const payload = JSON.parse(buildFarmMateVoiceLayerInput({ farmerQuestion: question, brain, farmerAnswers: [], localStructuredResponse: [] }));
   assert.deepEqual(payload.evidence.sourceIds, brain.agronomyEvidence!.sourceIds);
   assert.equal(payload.sources.length, brain.agronomyEvidence!.sourceIds.length);
