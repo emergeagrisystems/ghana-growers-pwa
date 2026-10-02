@@ -67,7 +67,9 @@ These priorities are hypotheses based on relevance/risk/source availability, not
 
 ## Verification and rollback
 
-Automated checkpoint: **449 FarmMate + 44 business/security + 47 A1/A1R1 + 28 A2 checks passed**. TypeScript check passed. Local Next.js production build passed (115 static pages generated; non-fatal webpack cache warning). Tests use controlled provider responses; they make no live model or database call. The A2 test file iterates every question-bank entry and checks routing, source references, concise authored output and safety outcomes. Build/test output is not agronomic certification.
+Automated checkpoint before Preview: **449 FarmMate + 44 business/security + 47 A1/A1R1 + 28 A2 checks passed**. TypeScript check passed. Local Next.js production build passed (115 static pages generated; non-fatal webpack cache warning). Tests use controlled provider responses; they make no live model or database call. The A2 test file iterates every question-bank entry and checks routing, source references, concise authored output and safety outcomes. Build/test output is not agronomic certification.
+
+Live Preview found a display integration issue in the mushroom fallback: the legacy filler cleaner removes `I can help` at a line start, leaving `you frame...`. A deterministic regression reproduces that exact clipping from the authored sentence. A2 now preserves the source-scoped provider text instead of applying that cleaner; the A1/A1R1 cleaning path is unchanged. This adds the 29th A2 test. The final validation register records the rerun and corrected deployment rather than labelling the initial clipped result a pass.
 
 Final commit/deployment identity, actual mobile/live answers and credit impact are recorded in the returned founder validation register after deployment. Unrun cases must not be labelled live passes.
 

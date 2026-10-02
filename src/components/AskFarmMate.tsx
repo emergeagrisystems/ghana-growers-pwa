@@ -759,7 +759,12 @@ export function AskFarmMate({
       setShowRecommendation(true);
 
       if (data?.ok && data.kind === "final" && data.answer?.trim()) {
-        setNaturalAnswer(mamaGPublicText(cleanFarmMateFinalAnswer(data.answer)));
+        // The legacy filler cleaner removes "I can help" even when it begins a
+        // meaningful sentence. A2's source-scoped answer must retain that subject.
+        // Keep the approved A1/A1R1 presentation path unchanged.
+        setNaturalAnswer(mamaGPublicText(isFarmEnterpriseAssessment(farmMateResponse.agronomyEvidence)
+          ? data.answer.trim()
+          : cleanFarmMateFinalAnswer(data.answer)));
         setRetryCreditGate(null);
         setFreeRetryAvailable(false);
         clearRecoveredConsultation(nextConsultation.consultationId);

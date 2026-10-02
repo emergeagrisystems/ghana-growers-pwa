@@ -12,6 +12,8 @@ import { buildFarmMateResponse } from "../src/lib/farmmate/decision-engine/respo
 import { manageFarmMateConversation } from "../src/lib/farmmate/conversation-manager";
 import { buildFarmMateVoiceLayerInput, generateFarmMateNaturalAnswer, isLikelyIncompleteFarmMateAnswer } from "../src/lib/farmmate/ai/service";
 import { displayedAnswerSections } from "../src/lib/farmmate/answer-presentation";
+import { cleanFarmMateFinalAnswer } from "../src/lib/farmmate/conversation-ui";
+import { isFarmEnterpriseAssessment } from "../src/lib/farmmate/enterprise-knowledge";
 import { agronomyHighRiskAnswer } from "../src/lib/farmmate/agronomy-safety";
 import { explicitChemicalSafetyAnswer } from "../src/lib/farmmate/chemical-safety";
 import type { FarmMateAiInput } from "../src/lib/farmmate/ai/types";
@@ -181,6 +183,16 @@ test("A2 output validator keeps concise complete sections; sources remain collap
   assert.match(ui, /Sources &amp; limitations/);
   assert.match(ui, /More detail/);
   assert.doesNotMatch(a, /awaiting.*review|Project 00|A2|developer|certification.*gate/);
+});
+test("A2 meaningful opening survives the legacy filler-cleaning trap without changing A1", () => {
+  const q = "I want information about mushroom farming.";
+  const answer = authoredAnswer(q).replace("What I think: ", "What I think:\n");
+  assert.match(displayedAnswerSections(cleanFarmMateFinalAnswer(answer)).first!.body, /^you frame/);
+  const displayed = isFarmEnterpriseAssessment(input(q).brain.agronomyEvidence) ? answer.trim() : cleanFarmMateFinalAnswer(answer);
+  assert.match(displayedAnswerSections(displayed).first!.body, /^I can help you frame/);
+  const ui = readFileSync("src/components/AskFarmMate.tsx", "utf8");
+  assert.match(ui, /isFarmEnterpriseAssessment\(farmMateResponse\.agronomyEvidence\)\s*\? data\.answer\.trim\(\)\s*: cleanFarmMateFinalAnswer\(data\.answer\)/);
+  assert.equal(cleanFarmMateFinalAnswer("I can help.\nCrop guidance stays unchanged."), "Crop guidance stays unchanged.");
 });
 test("controlled provider simulation rejects unsafe A2 output through existing failure recovery result", async () => {
   const originalFetch = globalThis.fetch;
