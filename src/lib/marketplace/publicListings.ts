@@ -297,6 +297,7 @@ function publicMarketplaceDescription(product: Product, sellerName: string, loca
 }
 
 export function toMarketplaceDisplayListing(product: Product, seller: MarketplaceSeller): MarketplaceDisplayListing {
+  const { whatsappNumber: _privateWhatsapp, internalOperationsNotes: _privateNotes, ...publicProduct } = product;
   const sellerName = titleCaseMarketplaceValue(
     seller.kind === "farmer" ? seller.profile.farmName : seller.kind === "supplier" ? seller.profile.companyName : seller.sellerName
   );
@@ -310,20 +311,16 @@ export function toMarketplaceDisplayListing(product: Product, seller: Marketplac
   const displayCategory = displayMarketplaceCategory(product);
   const title = normalizePublicMarketplaceProductName(product.name);
   const description = publicMarketplaceDescription(product, sellerName, location);
-  const isPublicSubmission = isPublishedPublicSubmissionListing(product);
-
   return {
     product: {
-      ...product,
+      ...publicProduct,
       name: title,
       category: titleCaseMarketplaceValue(displayCategory),
       location: titleCaseMarketplaceValue(product.location),
       region: titleCaseMarketplaceValue(product.region),
       seller: sellerName,
       ownerName: sellerName,
-      description,
-      whatsappNumber: isPublicSubmission ? undefined : product.whatsappNumber,
-      internalOperationsNotes: isPublicSubmission ? undefined : product.internalOperationsNotes
+      description
     },
     seller,
     href: `/marketplace/${encodeURIComponent(product.id)}`,

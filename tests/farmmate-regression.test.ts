@@ -1231,79 +1231,30 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Submit Listing page uses the approved public route and pending-review copy",
+    name: "Submit Listing remains preserved but closed for Stage 1",
     run: () => {
       const page = repoFile("src/app/submit-listing/page.tsx");
-      const oldPage = repoFile("src/app/submit-produce-listing/page.tsx");
-      const sitemap = repoFile("src/app/sitemap.ts");
-      const sellPage = repoFile("src/app/sell/page.tsx");
-      const marketplacePage = repoFile("src/app/marketplace/page.tsx");
-
-      assert.equal(page.includes('title: "Submit a Listing"'), true);
-      assert.equal(page.includes("Tell us what you are selling. Ghana Growers will review the information before your listing appears publicly."), true);
-      assert.equal(page.includes("Submit Produce Listing"), false);
-      assert.equal(page.includes("fresh produce, livestock, farm inputs, tools and equipment"), true);
-      assert.equal(oldPage.includes('redirect("/submit-listing")'), true);
-      assert.equal(sitemap.includes('"/submit-listing"'), true);
-      assert.equal(sitemap.includes('"/submit-produce-listing"'), false);
-      assert.equal(sellPage.includes('href: "/submit-listing"'), true);
-      assert.equal(marketplacePage.includes('href="/submit-listing"'), true);
+      const route = repoFile("src/app/api/listing-submissions/route.ts");
+      const form = repoFile("src/components/SubmitProduceListingForm.tsx");
+      assert.ok(page.includes("PublicWorkflowClosed"));
+      assert.ok(page.includes('getPublicWorkflowState("listing-submissions")'));
+      assert.ok(route.includes('publicSubmissionGate("listing-submissions")'));
+      assert.ok(form.includes("withPublicSubmissionGate"));
+      assert.ok(repoFile("src/app/submit-produce-listing/page.tsx").includes('redirect("/submit-listing")'));
     }
   },
   {
-    name: "Sell page presents clear reviewed pathways without duplicate or unavailable journeys",
+    name: "Sell route is truthfully contained without deleting Stage 2 foundations",
     run: () => {
       const sellPage = repoFile("src/app/sell/page.tsx");
       const middleware = repoFile("src/middleware.ts");
       const adminPage = repoFile("src/app/admin/page.tsx");
 
-      assert.equal(sellPage.includes("SELL ON GHANA GROWERS"), true);
-      assert.equal(sellPage.includes("What do you want to sell?"), true);
-      assert.equal(sellPage.includes("Every submission is reviewed before it appears publicly."), true);
-
-      assert.equal(sellPage.includes('title: "Sell Farm Produce"'), true);
-      assert.equal(sellPage.includes('cta: "Submit Produce"'), true);
-      assert.equal(sellPage.includes('title: "List Farm Inputs & Tools"'), true);
-      assert.equal(sellPage.includes('cta: "Submit Farm Inputs"'), true);
-      assert.equal(sellPage.includes('title: "Offer Agricultural Services"'), true);
-      assert.equal(sellPage.includes('cta: "Apply to Offer Services"'), true);
-      assert.equal(sellPage.match(/href: "\/submit-listing"/g)?.length, 2);
-      assert.equal(sellPage.match(/href: "\/become-a-supplier"/g)?.length, 1);
-      assert.equal(sellPage.includes("/join/farmer"), false);
-
-      assert.equal(sellPage.includes("What happens next?"), true);
-      assert.equal(sellPage.includes("Submit your details"), true);
-      assert.equal(sellPage.includes("We check the information"), true);
-      assert.equal(sellPage.includes("Approved submissions go public"), true);
-      assert.equal(sellPage.includes("Buyers send enquiries"), true);
-      assert.equal(sellPage.includes("may ask for more information"), true);
-      assert.equal(sellPage.includes("Prices, quantities and delivery are confirmed during follow-up."), true);
-
-      assert.equal(sellPage.includes("Before you submit"), true);
-      assert.equal(sellPage.includes("Submitting does not guarantee approval, publication or a sale."), true);
-      assert.equal(sellPage.includes("Ghana Growers may contact you for more information."), true);
-      assert.equal(sellPage.includes("Availability, quantities, prices, pickup and delivery are confirmed during follow-up."), true);
-      assert.equal(sellPage.includes("Private contact details are not shown publicly."), true);
-      assert.equal(sellPage.includes('href="/contact"'), true);
-      assert.equal(sellPage.includes("Contact Ghana Growers"), true);
-
-      for (const removedCopy of [
-        "reach buyers across Ghana",
-        "Reach More Buyers",
-        "Build trust before contact",
-        "Digital Visibility",
-        "Ready to reach more buyers?",
-        "Your profile or listing can go live",
-        'cta: "Become a Supplier"',
-        'cta: "List Service"'
-      ]) {
-        assert.equal(sellPage.includes(removedCopy), false, removedCopy);
-      }
-
-      assert.equal(sellPage.includes("min-h-11"), true);
-      assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
-      assert.equal(middleware.includes('new URL("/launching-soon", request.url)'), true);
-      assert.equal(adminPage.includes('redirect("/admin/login")'), true);
+      assert.ok(sellPage.includes("MarketplaceStage2Notice"));
+      assert.ok(repoFile("src/components/MarketplaceStage2Notice.tsx").includes("The Marketplace is not public yet."));
+      assert.ok(repoFile("src/components/SubmitProduceListingForm.tsx").includes("withPublicSubmissionGate"));
+      assert.ok(adminPage.includes("AdminDashboard"));
+      assert.ok(middleware.includes("SITE_PRELAUNCH"));
     }
   },
   {
@@ -1616,7 +1567,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Unified buyer enquiries use private lead_requests instead of new request tables",
+    name: "Unified buyer enquiry architecture remains private while its public route is closed",
     run: () => {
       const migration = repoFile("supabase/legacy-migrations/pre-baseline/034_unified_buyer_enquiries.sql");
       const precheck = repoFile("supabase/review/precheck_034_unified_buyer_enquiries.sql");
@@ -1634,6 +1585,15 @@ const tests: TestCase[] = [
         leadRequests.indexOf("const snapshot: LeadRequestSnapshot"),
         leadRequests.indexOf("return {", leadRequests.indexOf("const snapshot: LeadRequestSnapshot"))
       );
+
+      assert.ok(migration.includes("create table if not exists public.lead_requests"));
+      assert.ok(migration.includes("revoke all on table public.lead_requests from anon"));
+      assert.ok(leadRequests.includes('insertSupabaseRecord("lead_requests"'));
+      assert.ok(leadRoute.includes('publicSubmissionGate("lead-requests")'));
+      assert.ok(buyerRoute.includes('publicSubmissionGate("buyer-request-submissions")'));
+      assert.ok(modal.includes("withPublicSubmissionGate"));
+      assert.ok(marketplaceDetail.includes("MarketplaceStage2Notice"));
+      assert.equal(marketplaceDetail.includes("getMarketplaceListingsResult"), false);
 
       assert.equal(migration.includes("begin;"), true);
       assert.equal(migration.includes("commit;"), true);
@@ -1692,8 +1652,8 @@ const tests: TestCase[] = [
       assert.equal(modal.includes('formData.getAll("productInterest")'), true);
       assert.equal(modal.includes("readOnly={readOnly}"), true);
 
-      assert.equal(marketplaceDetail.includes('requestSource="marketplace_listing"'), true);
-      assert.equal(marketplaceDetail.includes("listingSummary={{"), true);
+      assert.equal(marketplaceDetail.includes('requestSource="marketplace_listing"'), false);
+      assert.equal(marketplaceDetail.includes("listingSummary={{"), false);
       assert.equal(farmerProfile.includes('requestSource="farmer_profile"'), true);
       assert.equal(farmerProfile.includes("productOptions={products}"), true);
       assert.equal(supplierProfile.includes('requestSource="supplier_profile"'), true);
@@ -2249,54 +2209,35 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "RC1 homepage follows the current approved section order and real-data boundary",
+    name: "Gate A homepage follows approved section order and real-data boundary",
     run: () => {
-      const page = repoFile("src/app/page.tsx");
-      const styles = repoFile("src/app/HomePage.module.css");
-      const sections = ["s.hero", "s.platform", "s.mama", "s.market", "s.registration", "s.farmers", "s.process", "s.metrics", "s.learn"];
-      const positions = sections.map((name) => page.indexOf("className={" + name + "}"));
-      positions.forEach((position, index) => {
-        assert.ok(position >= 0, sections[index]);
-        if (index) assert.ok(position > positions[index - 1], "approved section order");
+      const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
+      const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
+      const gateASections = ["styles.hero", "styles.gateways", "styles.directory", "styles.mama", "styles.registration", "styles.categorySection", "styles.howItWorks"];
+      const gateAPositions = gateASections.map((name) => page.indexOf("className={" + name + "}"));
+      gateAPositions.forEach((position, index) => {
+        assert.ok(position >= 0, gateASections[index]);
+        if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["Buy.", "Sell.", "Connect", "Grow smarter.", "Ask Mama G", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()"].forEach((text) => assert.ok(page.includes(text), text));
-      ["Brand Lab", "Private Design Lab", "Design example", "dev-preview", "p09-preview-farmer", "Market Prices"].forEach((text) => assert.equal(page.includes(text), false, text));
-      assert.ok(page.includes('farmers.status === "ready"'));
-      assert.ok(page.includes('farmers.status === "unavailable"'));
-      assert.ok(page.includes("No farmer profiles are published yet."));
-      assert.ok(page.includes("Photo unavailable"));
-      assert.ok(styles.includes("grid-template-columns"));
+      ["Find Farms, Produce &amp; Suppliers", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
+      assert.ok(page.includes('farmerResult.status === "ready"'));
+      assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
-      assert.match(styles, /min-height:\s*4[48]px/);
+      assert.match(styles, /min-height:48px/);
     }
   },
   {
-    name: "RC1 homepage discovery uses honest category links and keeps All Crops non-live",
+    name: "Gate A homepage uses locked categories and no public Market discovery",
     run: () => {
-      const page = repoFile("src/app/page.tsx");
-      const styles = repoFile("src/app/HomePage.module.css");
-      assert.ok(page.includes('action="/marketplace"'));
-      assert.ok(page.includes('role="search"'));
-      assert.ok(page.includes('name="search"'));
-      assert.ok(page.includes('htmlFor="home-search"'));
-      assert.ok(page.includes('const mamaHref = mamaPalette ? `/farmer-hub?mamaPalette=${mamaPalette}` : "/farmer-hub";'));
-      assert.ok(page.includes('href={mamaHref}'));
-      assert.ok(page.includes('href="/marketplace"'));
-      assert.ok(page.includes("Browse Market"));
-      assert.match(page, /<span[^>]*aria-disabled="true"[^>]*>All Crops/);
-      assert.equal(/<Link[^>]*>All Crops/.test(page), false);
-      ["Fruits and Vegetables", "Livestock & Dairy", "Tubers & Plantain", "Farm Equipment", "Seeds and Planting Material"].forEach((text) => assert.ok(page.includes(text), text));
-      assert.ok(page.includes("Category illustrations do not show available stock."));
-      assert.ok(page.includes("Ghana Growers does not provide checkout or shipping."));
-      assert.ok(page.includes("Request Produce · Unavailable"));
-      assert.ok(page.includes("Join Ghana Growers · Unavailable"));
-      assert.match(page, /<button disabled[^>]*>Request Produce/);
-      assert.match(page, /<button disabled[^>]*>Join Ghana Growers/);
-      assert.ok(page.includes("PublicCardRail"));
-      assert.ok(styles.includes("overflow-x:auto") || styles.includes("overflow-x: auto"));
+      const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
+      const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
+      ["Fresh Produce", "Grains & Staples", "Livestock & Poultry", "Seeds & Agricultural Inputs", "Farm Equipment & Tools"].forEach((text) => assert.ok(page.includes(text), text));
+      assert.ok(page.includes("buyerWorkflow.publicMessage"));
+      assert.equal(page.includes('href="/marketplace"'), false);
+      assert.equal(page.includes('href="/learn"'), false);
+      assert.ok(styles.includes("overflow-x:auto"));
       assert.ok(styles.includes("scroll-snap-type"));
-      assert.ok(styles.includes("#6b4d57"));
-      assert.ok(styles.includes("rc1-phone-narrow"));
+      assert.ok(page.includes("/stage1-media/"));
     }
   },
   {
@@ -2317,90 +2258,78 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "RC1 homepage and product pages retain truthful availability and protected business logic",
+    name: "Gate A public copy and workflow availability share one server authority",
     run: () => {
-      const page = repoFile("src/app/page.tsx");
-      const shell = repoFile("src/components/homepage/PublicShell.tsx");
-      const supplierPage = repoFile("src/app/supplier-directory/page.tsx");
-      const supplierDirectory = repoFile("src/components/SupplierDirectory.tsx");
+      const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
+      const shell = repoFile("src/components/homepage/Stage1PublicShell.tsx");
       const marketplacePage = repoFile("src/app/marketplace/page.tsx");
       const gate = repoFile("src/lib/publicSubmissionAvailability.ts");
       const admin = repoFile("src/app/admin/page.tsx");
-      ["Registration is not available yet.", "Connection requests are not available yet.", "AI guidance, not a confirmed diagnosis.", "Published farmers", "Published suppliers"].forEach((text) => assert.ok(page.includes(text), text));
-      assert.ok(page.includes('const mamaHref = mamaPalette ? `/farmer-hub?mamaPalette=${mamaPalette}` : "/farmer-hub";'));
-      assert.ok(page.includes('href="/learn"'));
-      assert.equal(page.includes("Market Prices"), false);
-      assert.equal(page.includes("We will review your request and follow up"), false);
-      assert.ok(shell.includes("Human support is not available yet"));
-      assert.ok(gate.includes("return false;"));
-      assert.ok(gate.includes("No information can be submitted here."));
-      assert.ok(supplierPage.includes("Agricultural supplier profiles are coming soon."));
-      assert.ok(supplierDirectory.includes("No public supplier profiles yet."));
-      assert.ok(supplierDirectory.includes("Approved profiles will appear here as they become available."));
-      assert.ok(marketplacePage.includes("Availability, quantities, prices and delivery are confirmed during follow-up."));
-      assert.equal(marketplacePage.includes("from farmers and suppliers across Ghana"), false);
-      assert.ok(admin.includes('redirect("/admin/login")'));
+      assert.ok(page.includes("getPublicWorkflowState"));
+      assert.ok(repoFile("src/app/join/page.tsx").includes("getPublicWorkflowState"));
+      assert.ok(gate.includes("const workflowStates"));
+      assert.ok(marketplacePage.includes("MarketplaceStage2Notice"));
+      assert.ok(admin.includes("AdminDashboard"));
+      assert.equal(shell.includes('"Market"'), false);
     }
   },
   {
-    name: "RC1 public shell uses the current approved wordmark while legacy protected identity remains available",
+    name: "Gate A public shell uses the approved Stage 1 navigation",
     run: () => {
       const logo = repoFile("src/components/GhanaGrowersLogo.tsx");
       const header = repoFile("src/components/Header.tsx");
       const footer = repoFile("src/components/Footer.tsx");
-      const shell = repoFile("src/components/homepage/PublicShell.tsx");
+      const shell = repoFile("src/components/homepage/Stage1PublicShell.tsx");
       const prelaunch = repoFile("src/components/PrelaunchShell.tsx");
       const launchingSoon = repoFile("src/app/launching-soon/page.tsx");
       assert.ok(logo.includes('alt={decorative ? "" : "Ghana Growers"}'));
-      assert.ok(header.includes("<PublicHeader />"));
-      assert.ok(footer.includes("<PublicFooter />"));
-      assert.ok(shell.includes('className={s.brand}>GHANA GROWERS</Link>'));
-      assert.ok(shell.includes('<Link href="/">GHANA GROWERS</Link>'));
+      assert.ok(header.includes("<Stage1PublicHeader />"));
+      assert.ok(footer.includes("<Stage1PublicFooter />"));
+      assert.ok(shell.includes("GHANA GROWERS"));
+      assert.ok(shell.includes("Ask Mama G"));
+      assert.ok(shell.includes("Farms & Suppliers"));
+      assert.equal(shell.includes('"Market"'), false);
+      assert.equal(shell.includes('"Learn"'), false);
       assert.ok(prelaunch.includes("GhanaGrowersLogo"));
       assert.ok(launchingSoon.includes('layout="stacked"'));
-      [header, footer, shell, prelaunch].forEach((source) => assert.equal(source.includes("Sprout"), false));
     }
   },
   {
-    name: "RC1 public header preserves approved navigation order and keyboard mobile controls",
+    name: "Gate A public header preserves approved navigation and keyboard mobile controls",
     run: () => {
-      const shell = repoFile("src/components/homepage/PublicShell.tsx");
-      const labels = ["Ask Mama G", "Farms & Suppliers", "Market", "Learn"];
-      const positions = labels.map((label) => shell.indexOf('["' + label + '"'));
+      const shell = repoFile("src/components/homepage/Stage1PublicShell.tsx");
+      const labels = ["Ask Mama G", "Farms & Suppliers"];
+      const positions = labels.map((label) => shell.indexOf(label));
       positions.forEach((position, index) => {
         assert.ok(position >= 0, labels[index]);
         if (index) assert.ok(position > positions[index - 1]);
       });
       assert.ok(shell.includes('aria-label="Main navigation"'));
       assert.ok(shell.includes('aria-label="Mobile navigation"'));
-      assert.ok(shell.includes('aria-controls="rc1-mobile-menu"'));
+      assert.ok(shell.includes('aria-controls="stage1-mobile-menu"'));
       assert.ok(shell.includes("aria-expanded={open}"));
       assert.match(shell, /(?:event|e)\.key\s*===?\s*"Escape"/);
       assert.ok(shell.includes("trigger.current?.focus()"));
       assert.ok(shell.includes("setOpen(false)"));
       assert.ok((shell.match(/aria-current=/g) ?? []).length >= 2, "desktop and mobile identify the active page");
-      assert.match(shell, /<button disabled[^>]*title="Listing submissions are unavailable"/);
-      assert.match(shell, /<button disabled[^>]*title="Registration is unavailable"/);
+      assert.match(shell, /disabled className={styles\.join}/);
     }
   },
   {
-    name: "RC1 Market navigation preserves Marketplace as the canonical buyer destination",
+    name: "Gate A removes Market navigation and truthfully contains legacy routes",
     run: () => {
-      const shell = repoFile("src/components/homepage/PublicShell.tsx");
+      const shell = repoFile("src/components/homepage/Stage1PublicShell.tsx");
       const legacyBuyPage = repoFile("src/app/buy/page.tsx");
       const homepage = repoFile("src/app/page.tsx");
       const marketplace = repoFile("src/app/marketplace/page.tsx");
-      assert.match(shell, /\["Market",\s*"\/marketplace"/);
-      assert.ok(shell.includes("links.map"));
+      assert.equal(shell.includes("/marketplace"), false);
       assert.ok(legacyBuyPage.includes('permanentRedirect(`/marketplace${query ? `?${query}` : ""}`)'));
       assert.ok(legacyBuyPage.includes('const supportedMarketplaceParameters = ["search", "category"]'));
       assert.equal(legacyBuyPage.includes("Source Fresh Produce"), false);
       assert.equal(legacyBuyPage.includes('permanentRedirect("/buy")'), false);
-      assert.ok(homepage.includes('href="/marketplace"'));
-      assert.ok(homepage.includes("Browse Market"));
-      assert.ok(marketplace.includes('href="#marketplace-listings"'));
-      assert.ok(marketplace.includes('href="/submit-buyer-request"'));
-      assert.ok(marketplace.includes('href="/submit-listing"'));
+      assert.ok(homepage.includes("Stage1Homepage"));
+      assert.ok(marketplace.includes("MarketplaceStage2Notice"));
+      assert.ok(repoFile("src/app/marketplace/[id]/page.tsx").includes("MarketplaceStage2Notice"));
       assert.ok(repoFile("src/components/SubmitBuyerRequestForm.tsx").includes("withPublicSubmissionGate"));
       assert.ok(repoFile("src/components/SubmitProduceListingForm.tsx").includes("withPublicSubmissionGate"));
     }
@@ -2449,7 +2378,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Manifest and social metadata use approved launch identity assets",
+    name: "Manifest, social metadata and Gate A homepage identity remain aligned",
     run: () => {
       const manifest = JSON.parse(repoFile("public/manifest.json")) as {
         background_color?: string;
@@ -2459,6 +2388,7 @@ const tests: TestCase[] = [
       const layout = repoFile("src/app/layout.tsx");
       const seo = repoFile("src/lib/seo.ts");
       const homepage = repoFile("src/app/page.tsx");
+      const implementation = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const middleware = repoFile("src/middleware.ts");
 
       assert.equal(manifest.background_color, "#F7F3E8");
@@ -2471,9 +2401,8 @@ const tests: TestCase[] = [
       assert.equal(layout.includes("width: 1200"), true);
       assert.equal(layout.includes("height: 630"), true);
       assert.equal(seo.includes('defaultOgImage = "/images/ghana-growers-social.png"'), true);
-      assert.equal(homepage.includes("Buy."), true);
-      assert.equal(homepage.includes("Sell."), true);
-      assert.equal(homepage.includes("Grow smarter."), true);
+      assert.equal(homepage.includes("Stage1Homepage"), true);
+      assert.equal(implementation.includes("Find Farms, Produce &amp; Suppliers"), true);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
       assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);
@@ -2578,7 +2507,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Farmer registration uses the private application workflow",
+    name: "Farmer registration foundation remains private while the public page is closed",
     run: () => {
       const route = readFileSync(join(process.cwd(), "src/app/api/farmer-registration/route.ts"), "utf8");
       const page = readFileSync(join(process.cwd(), "src/app/join/farmer/page.tsx"), "utf8");
@@ -2588,9 +2517,10 @@ const tests: TestCase[] = [
       assert.match(route, /uploadPrivateApplicationMedia/);
       assert.match(route, /cleanupPrivateApplicationMedia/);
       assert.doesNotMatch(route, /convertFarmerApplicationToProfile|createListingSubmission/);
-      assert.match(page, /Register your farm with Ghana Growers/);
-      assert.match(page, /FarmerRegistrationForm/);
-      assert.doesNotMatch(page, /Applications are temporarily unavailable/);
+      assert.match(route, /publicSubmissionGate\("farmer-registration"\)/);
+      assert.match(page, /PublicWorkflowClosed/);
+      assert.match(page, /getPublicWorkflowState\("farmer-registration"\)/);
+      assert.match(repoFile("src/components/FarmerRegistrationForm.tsx"), /withPublicSubmissionGate/);
     }
   },
   {
@@ -3412,7 +3342,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Marketplace detail gallery and request action stay focused",
+    name: "Marketplace detail foundations stay recoverable behind Stage 2 containment",
     run: () => {
       const gallery = repoFile("src/components/MarketplaceImageGallery.tsx");
       const detailPage = repoFile("src/app/marketplace/[id]/page.tsx");
@@ -3421,8 +3351,9 @@ const tests: TestCase[] = [
       assert.equal(gallery.includes("setActiveImage(image)"), true);
       assert.equal(gallery.includes("const isActive = image === resolvedActiveImage"), true);
       assert.equal(gallery.includes("aria-pressed={isActive}"), true);
-      assert.equal((detailPage.match(/<RequestConnectionButton/g) ?? []).length, 1);
-      assert.equal(detailPage.includes("<MarketplaceImageGallery"), true);
+      assert.equal(detailPage.includes("MarketplaceStage2Notice"), true);
+      assert.equal(detailPage.includes("<MarketplaceImageGallery"), false);
+      assert.equal(repoFile("src/components/RequestConnectionButton.tsx").includes("withPublicSubmissionGate"), true);
     }
   },
   {
@@ -8956,8 +8887,9 @@ const tests: TestCase[] = [
       assert.equal(farmerRoute.includes("uploadPrivateApplicationMedia"), true);
       assert.equal(farmerRoute.includes("cleanupPrivateApplicationMedia"), true);
       assert.doesNotMatch(farmerRoute, /convertFarmerApplicationToProfile|createListingSubmission/);
-      assert.equal(farmerPage.includes("FarmerRegistrationForm"), true);
-      assert.equal(farmerPage.includes("Registration does not publish a profile automatically"), true);
+      assert.equal(farmerPage.includes("PublicWorkflowClosed"), true);
+      assert.equal(farmerPage.includes('getPublicWorkflowState("farmer-registration")'), true);
+      assert.equal(repoFile("src/components/FarmerRegistrationForm.tsx").includes("FarmerRegistrationFormAvailable"), true);
     }
   },
   {
@@ -9444,7 +9376,8 @@ const tests: TestCase[] = [
       assert.equal(sourcingForm.includes("within one business day"), false);
       assert.equal(sourcingPage.includes("We Match"), false);
       assert.equal(sourcingPage.includes("Supply Begins"), false);
-      assert.equal(sourcingPage.includes("Where possible, we compare the request"), true);
+      assert.equal(sourcingPage.includes("PublicWorkflowClosed"), true);
+      assert.equal(sourcingPage.includes('getPublicWorkflowState("lead-requests")'), true);
       assert.equal(sourcingForm.includes("Your contact details and request information are kept private and are not shown publicly."), true);
       assert.equal(sourcingForm.includes("Submitting a request does not guarantee availability or a match."), true);
 
@@ -9468,10 +9401,10 @@ const tests: TestCase[] = [
       assert.equal(privacy.includes("Contact and partnership enquiries may include your name"), true);
       assert.equal(layout.includes("Trusted Agriculture Platform for Ghana"), false);
       assert.equal(layout.includes("Buy. Sell. Grow."), true);
-      assert.match(homepage, /title:\s*"Ghana Growers \| Buy\. Sell\. Connect\. Grow smarter\."/);
+      assert.match(homepage, /title:\s*"Ghana Growers \| Find Farms, Produce & Suppliers"/);
       assert.equal(
         homepage.includes(
-          "Find farms, produce, agricultural supplies and practical farming guidance in Ghana."
+          "Find published farms and agricultural suppliers in Ghana, and get practical support from Mama G."
         ),
         true
       );

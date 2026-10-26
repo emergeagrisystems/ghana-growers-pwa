@@ -1,0 +1,365 @@
+{
+  "schema_version": "1.0",
+  "package_id": "ghana-growers-stage1-homepage-media-2026-10-26",
+  "package_zip": "ghana-growers-stage1-homepage-media-final-2026-10-26.zip",
+  "package_sha256": "885CEE95300D506AE164F7A55F1CF6752C05F5016515B638B16602759A049864",
+  "generated_at": "2026-10-26T19:48:12.885Z",
+  "processing": [
+    "format_conversion",
+    "compression",
+    "responsive_resizing",
+    "locked_crop_application"
+  ],
+  "original_public_files": [],
+  "metadata_note": "The original PNGs retain the provider hf-job-id marker. WebP conversion does not retain it; generation IDs and hashes are preserved here instead of fabricating replacement metadata.",
+  "derivatives": [
+    {
+      "asset_id": "hero-clay-map",
+      "source_file": "originals/hero-clay-map__1b817c13-028a-45e2-82d5-69743a02c774.png",
+      "source_sha256": "25EC2FF92DECDC3B8E820C1986FC5DF154C6F0212A3FAF0C462B6AFF6FC80D3C",
+      "generation_id": "1b817c13-028a-45e2-82d5-69743a02c774",
+      "derivative": "public/stage1-media/hero-clay-map-640.webp",
+      "derivative_sha256": "7A29E632BE8D5BB1E4E7170748F0757AB768579A3E122DEF36383E1146C59F53",
+      "width": 640,
+      "height": 478,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_figma_composition",
+        "instruction": "Retain the founder-approved clay-map placement and responsive visibility. Do not reinterpret or redraw the map."
+      },
+      "claim_boundary": "Illustrative network concept only; not evidence of member locations, routes, fulfilment or coverage."
+    },
+    {
+      "asset_id": "hero-clay-map",
+      "source_file": "originals/hero-clay-map__1b817c13-028a-45e2-82d5-69743a02c774.png",
+      "source_sha256": "25EC2FF92DECDC3B8E820C1986FC5DF154C6F0212A3FAF0C462B6AFF6FC80D3C",
+      "generation_id": "1b817c13-028a-45e2-82d5-69743a02c774",
+      "derivative": "public/stage1-media/hero-clay-map-1088.webp",
+      "derivative_sha256": "6878F60252A97C67473B43228326DF26527F67430721E8E55779CB3423189C5D",
+      "width": 1088,
+      "height": 812,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_figma_composition",
+        "instruction": "Retain the founder-approved clay-map placement and responsive visibility. Do not reinterpret or redraw the map."
+      },
+      "claim_boundary": "Illustrative network concept only; not evidence of member locations, routes, fulfilment or coverage."
+    },
+    {
+      "asset_id": "hero-clay-map",
+      "source_file": "originals/hero-clay-map__1b817c13-028a-45e2-82d5-69743a02c774.png",
+      "source_sha256": "25EC2FF92DECDC3B8E820C1986FC5DF154C6F0212A3FAF0C462B6AFF6FC80D3C",
+      "generation_id": "1b817c13-028a-45e2-82d5-69743a02c774",
+      "derivative": "public/stage1-media/hero-clay-map-1600.webp",
+      "derivative_sha256": "5C586F41697ED57C0A2815D2DF38EE6D77B1504AFC192B679B5FFD13C55C67DE",
+      "width": 1600,
+      "height": 1195,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_figma_composition",
+        "instruction": "Retain the founder-approved clay-map placement and responsive visibility. Do not reinterpret or redraw the map."
+      },
+      "claim_boundary": "Illustrative network concept only; not evidence of member locations, routes, fulfilment or coverage."
+    },
+    {
+      "asset_id": "registration-r1",
+      "source_file": "originals/registration-r1__136938d9-da1c-42d7-b2ed-463a260a8e09.png",
+      "source_sha256": "D4FD6D146F3BEF287230DB6D9F908F9998985E00943A2BF5F2E68EF58028CB41",
+      "generation_id": "136938d9-da1c-42d7-b2ed-463a260a8e09",
+      "derivative": "public/stage1-media/registration-r1-720.webp",
+      "derivative_sha256": "B2B0399B7A3147A3AE0AF9D570ADC52EE80F54D979A2FA6B83D9F3354CC67323",
+      "width": 720,
+      "height": 480,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_section_crop",
+        "reference": "reference/registration-approved-layout-reference.png",
+        "instruction": "Keep the phone screen dark and empty. Do not add an interface, text or approval cue."
+      },
+      "claim_boundary": "Illustrative registration context only; not evidence of an application, registration or approval."
+    },
+    {
+      "asset_id": "registration-r1",
+      "source_file": "originals/registration-r1__136938d9-da1c-42d7-b2ed-463a260a8e09.png",
+      "source_sha256": "D4FD6D146F3BEF287230DB6D9F908F9998985E00943A2BF5F2E68EF58028CB41",
+      "generation_id": "136938d9-da1c-42d7-b2ed-463a260a8e09",
+      "derivative": "public/stage1-media/registration-r1-1200.webp",
+      "derivative_sha256": "21EA8AAE7AD7287556AD6B66E27AFBAF6DD9F0F249F45D39A80480A620942CCE",
+      "width": 1200,
+      "height": 800,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_section_crop",
+        "reference": "reference/registration-approved-layout-reference.png",
+        "instruction": "Keep the phone screen dark and empty. Do not add an interface, text or approval cue."
+      },
+      "claim_boundary": "Illustrative registration context only; not evidence of an application, registration or approval."
+    },
+    {
+      "asset_id": "registration-r1",
+      "source_file": "originals/registration-r1__136938d9-da1c-42d7-b2ed-463a260a8e09.png",
+      "source_sha256": "D4FD6D146F3BEF287230DB6D9F908F9998985E00943A2BF5F2E68EF58028CB41",
+      "generation_id": "136938d9-da1c-42d7-b2ed-463a260a8e09",
+      "derivative": "public/stage1-media/registration-r1-1600.webp",
+      "derivative_sha256": "59CBEC4CA189C567C05C10B3D0C64F9F69C6C27374489260BED133A9A899BE55",
+      "width": 1600,
+      "height": 1067,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "mode": "preserve_existing_section_crop",
+        "reference": "reference/registration-approved-layout-reference.png",
+        "instruction": "Keep the phone screen dark and empty. Do not add an interface, text or approval cue."
+      },
+      "claim_boundary": "Illustrative registration context only; not evidence of an application, registration or approval."
+    },
+    {
+      "asset_id": "fresh-produce-f1",
+      "source_file": "originals/fresh-produce-f1__2e6e4a6b-17d3-497a-a7a4-3ccf3d72826a.png",
+      "source_sha256": "C811FDF81774832699AF7AF0B41A57049415E43408AE23E41E05F00984C44C0A",
+      "generation_id": "2e6e4a6b-17d3-497a-a7a4-3ccf3d72826a",
+      "derivative": "public/stage1-media/fresh-produce-116.webp",
+      "derivative_sha256": "E7DC68BF4B8B8528DC671BD6E5DEADE83A22B810259504752BD97A2F4D20F1B1",
+      "width": 116,
+      "height": 116,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.45,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/fresh-produce-desktop-168.png",
+        "narrow_reference": "crops/fresh-produce-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative produce category image; not evidence of current stock or a listing."
+    },
+    {
+      "asset_id": "fresh-produce-f1",
+      "source_file": "originals/fresh-produce-f1__2e6e4a6b-17d3-497a-a7a4-3ccf3d72826a.png",
+      "source_sha256": "C811FDF81774832699AF7AF0B41A57049415E43408AE23E41E05F00984C44C0A",
+      "generation_id": "2e6e4a6b-17d3-497a-a7a4-3ccf3d72826a",
+      "derivative": "public/stage1-media/fresh-produce-168.webp",
+      "derivative_sha256": "31947C751CE7A1B4B86C61CD64C75464170F0BF33480B886897D4267BA21D945",
+      "width": 168,
+      "height": 168,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.45,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/fresh-produce-desktop-168.png",
+        "narrow_reference": "crops/fresh-produce-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative produce category image; not evidence of current stock or a listing."
+    },
+    {
+      "asset_id": "grains-staples-g1",
+      "source_file": "originals/grains-staples-g1__b8402ce7-f789-4c8d-8d4e-ccfe0c3b79f2.png",
+      "source_sha256": "33484023E7747F22FD77BD43563553A09E9037B78B1602324496A9428D87B2ED",
+      "generation_id": "b8402ce7-f789-4c8d-8d4e-ccfe0c3b79f2",
+      "derivative": "public/stage1-media/grains-staples-116.webp",
+      "derivative_sha256": "D0D5F3424B225B7C19CD9BC988A0F80FE3A923A6B817EAEEB74DDA25DD69C321",
+      "width": 116,
+      "height": 116,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.48,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/grains-staples-desktop-168.png",
+        "narrow_reference": "crops/grains-staples-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative category image; not evidence of current stock, volume or a listing."
+    },
+    {
+      "asset_id": "grains-staples-g1",
+      "source_file": "originals/grains-staples-g1__b8402ce7-f789-4c8d-8d4e-ccfe0c3b79f2.png",
+      "source_sha256": "33484023E7747F22FD77BD43563553A09E9037B78B1602324496A9428D87B2ED",
+      "generation_id": "b8402ce7-f789-4c8d-8d4e-ccfe0c3b79f2",
+      "derivative": "public/stage1-media/grains-staples-168.webp",
+      "derivative_sha256": "51A5E3BEF095CD969E4C0F03E7CDD20D4665FC680B7DA8276FACE2117E711ED7",
+      "width": 168,
+      "height": 168,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.48,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/grains-staples-desktop-168.png",
+        "narrow_reference": "crops/grains-staples-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative category image; not evidence of current stock, volume or a listing."
+    },
+    {
+      "asset_id": "livestock-poultry-l1",
+      "source_file": "originals/livestock-poultry-l1__c52bb514-9b45-43ff-b88b-116bcdfcff2f.png",
+      "source_sha256": "969B93919563AEFA8C56ACB1AC094AE6BF39EEF4BA2A9F76D08EC710CD32531D",
+      "generation_id": "c52bb514-9b45-43ff-b88b-116bcdfcff2f",
+      "derivative": "public/stage1-media/livestock-poultry-116.webp",
+      "derivative_sha256": "4F674225886B15CD0E31DB2905D7D195FA33E9645716A307BACC46A0A6264B0B",
+      "width": 116,
+      "height": 116,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.43,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/livestock-poultry-desktop-168.png",
+        "narrow_reference": "crops/livestock-poultry-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative livestock category image; goats do not claim poultry availability."
+    },
+    {
+      "asset_id": "livestock-poultry-l1",
+      "source_file": "originals/livestock-poultry-l1__c52bb514-9b45-43ff-b88b-116bcdfcff2f.png",
+      "source_sha256": "969B93919563AEFA8C56ACB1AC094AE6BF39EEF4BA2A9F76D08EC710CD32531D",
+      "generation_id": "c52bb514-9b45-43ff-b88b-116bcdfcff2f",
+      "derivative": "public/stage1-media/livestock-poultry-168.webp",
+      "derivative_sha256": "A757BA48C5CAC486D043E81186AB54CCD53A6E068A94EFBEE25357E268D1E1A6",
+      "width": 168,
+      "height": 168,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.43,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/livestock-poultry-desktop-168.png",
+        "narrow_reference": "crops/livestock-poultry-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative livestock category image; goats do not claim poultry availability."
+    },
+    {
+      "asset_id": "seeds-inputs-i1",
+      "source_file": "originals/seeds-inputs-i1__68d7c86e-1525-4d91-a27e-1fafefe6b538.png",
+      "source_sha256": "AABF381316C331B8C9A7C7C3D96885DC1BD2417E0EAAA7A60EA9940E0C6907A2",
+      "generation_id": "68d7c86e-1525-4d91-a27e-1fafefe6b538",
+      "derivative": "public/stage1-media/inputs-supplies-116.webp",
+      "derivative_sha256": "59D2EB2DFD429709C30706827C76BEE7625A48C1BF8AFEF2CE2300599E33BEAD",
+      "width": 116,
+      "height": 116,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.49,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/inputs-supplies-desktop-168.png",
+        "narrow_reference": "crops/inputs-supplies-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative category image; sacks are unbranded and do not represent a specific product or recommendation."
+    },
+    {
+      "asset_id": "seeds-inputs-i1",
+      "source_file": "originals/seeds-inputs-i1__68d7c86e-1525-4d91-a27e-1fafefe6b538.png",
+      "source_sha256": "AABF381316C331B8C9A7C7C3D96885DC1BD2417E0EAAA7A60EA9940E0C6907A2",
+      "generation_id": "68d7c86e-1525-4d91-a27e-1fafefe6b538",
+      "derivative": "public/stage1-media/inputs-supplies-168.webp",
+      "derivative_sha256": "A32F57DC9FF095171C90C982127B31FF01A9743C0C2558AE71E66F94D2DC4830",
+      "width": 168,
+      "height": 168,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.49,
+          "y": 0.5
+        },
+        "desktop_reference": "crops/inputs-supplies-desktop-168.png",
+        "narrow_reference": "crops/inputs-supplies-narrow-116.png"
+      },
+      "claim_boundary": "Illustrative category image; sacks are unbranded and do not represent a specific product or recommendation."
+    },
+    {
+      "asset_id": "farm-equipment-tools-ea",
+      "source_file": "originals/farm-equipment-tools-ea__5c8632a9-60f9-49dd-a75a-e94dc8854ce0.png",
+      "source_sha256": "5788DF1606634B92128641122719AB8FE7F6B99BF81CEA65807CD28A3B96EC74",
+      "generation_id": "5c8632a9-60f9-49dd-a75a-e94dc8854ce0",
+      "derivative": "public/stage1-media/equipment-a-tools-116.webp",
+      "derivative_sha256": "88A8B0794202AFE7A5A68915EF5F4CBA1AAE0FC050636C31A063D8709A5CD92E",
+      "width": 116,
+      "height": 116,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.46,
+          "y": 0.52
+        },
+        "desktop_reference": "crops/equipment-a-tools-desktop-168.png",
+        "narrow_reference": "crops/equipment-a-tools-narrow-116.png"
+      },
+      "claim_boundary": "Generic category image; no manufacturer affiliation, product endorsement or current availability claim."
+    },
+    {
+      "asset_id": "farm-equipment-tools-ea",
+      "source_file": "originals/farm-equipment-tools-ea__5c8632a9-60f9-49dd-a75a-e94dc8854ce0.png",
+      "source_sha256": "5788DF1606634B92128641122719AB8FE7F6B99BF81CEA65807CD28A3B96EC74",
+      "generation_id": "5c8632a9-60f9-49dd-a75a-e94dc8854ce0",
+      "derivative": "public/stage1-media/equipment-a-tools-168.webp",
+      "derivative_sha256": "33080239C0B172C2B7D8112EC6A35F3038065C9E345215F81842975A6E2BCE4A",
+      "width": 168,
+      "height": 168,
+      "format": "webp",
+      "hf_job_id_retained": false,
+      "crop_authority": {
+        "shape": "circle",
+        "object_fit": "cover",
+        "focus": {
+          "x": 0.46,
+          "y": 0.52
+        },
+        "desktop_reference": "crops/equipment-a-tools-desktop-168.png",
+        "narrow_reference": "crops/equipment-a-tools-narrow-116.png"
+      },
+      "claim_boundary": "Generic category image; no manufacturer affiliation, product endorsement or current availability claim."
+    }
+  ],
+  "how_it_works_video": {
+    "source_file": "hf_20260911_164640_781ce448-a7be-4a65-bdb0-e948caab9991.mp4",
+    "source_sha256": "832197988D0D339B2796367D91BA4083B88C29D73BD240CDD9838CDCA7B3762D",
+    "public_file": "public/stage1-media/how-it-works-stage1.mp4",
+    "public_sha256": "832197988D0D339B2796367D91BA4083B88C29D73BD240CDD9838CDCA7B3762D",
+    "generation_id": "781ce448-a7be-4a65-bdb0-e948caab9991",
+    "playback": {
+      "muted": true,
+      "autoplay": "when reduced motion is not requested",
+      "loop": false,
+      "replay_control": true
+    }
+  }
+}

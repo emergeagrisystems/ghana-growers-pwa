@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmmate-regression.test.js && node .farmmate-test-dist/tests/farmer-registration.test.js && node .farmmate-test-dist/tests/farmer-application-admin.test.js && node .farmmate-test-dist/tests/contact-enquiries.test.js && node .farmmate-test-dist/tests/hq-approval-counts.test.js",
+    "test": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmmate-regression.test.js && node .farmmate-test-dist/tests/farmer-registration.test.js && node .farmmate-test-dist/tests/farmer-application-admin.test.js && node .farmmate-test-dist/tests/contact-enquiries.test.js && node .farmmate-test-dist/tests/hq-approval-counts.test.js && node .farmmate-test-dist/tests/admin-queue-notification.test.js && node .farmmate-test-dist/tests/gate-a-stage1.test.js",
     "test:contact-enquiries": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/contact-enquiries.test.js",
     "test:contact-enquiries-database": "node tests/contact-enquiries-database.integration.mjs",
     "test:farmer-registration": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmer-registration.test.js",

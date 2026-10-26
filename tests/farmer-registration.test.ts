@@ -131,12 +131,13 @@ test("public farmer route uses private service foundations and no publication si
   assert.match(profileService, /launch_ready: false/);
 });
 
-test("farmer application UI preserves failure values and replaces the form on success", () => {
+test("farmer application UI foundation remains recoverable while the public page is closed", () => {
   const form = repoFile("src/components/FarmerRegistrationForm.tsx");
   const page = repoFile("src/app/join/farmer/page.tsx");
 
-  assert.match(page, /Register your farm with Ghana Growers\./);
-  assert.match(page, /<FarmerRegistrationForm \/>/);
+  assert.match(page, /PublicWorkflowClosed/);
+  assert.match(page, /getPublicWorkflowState\("farmer-registration"\)/);
+  assert.match(form, /withPublicSubmissionGate/);
   assert.match(form, /if \(submitted\)/);
   assert.match(form, /Application received/);
   assert.match(form, /Your entries are still here/);
@@ -148,23 +149,21 @@ test("farmer application UI preserves failure values and replaces the form on su
   assert.match(form, /farmer-application-media|Files stay private/);
 });
 
-test("Join pathways separate buyers, farmer registration, listings and supplier applications", () => {
+test("Join pathways stay independently closed while their private foundations remain", () => {
   const joinPage = repoFile("src/app/join/page.tsx");
   const buyerPage = repoFile("src/app/join/buyer/page.tsx");
   const supplierPage = repoFile("src/app/become-a-supplier/page.tsx");
   const supplierRoute = repoFile("src/app/api/supplier-registration/route.ts");
 
-  assert.match(joinPage, /Browse Marketplace/);
-  assert.match(joinPage, /Request sourcing support/);
-  assert.match(joinPage, /Register as a Farmer/);
-  assert.match(joinPage, /Submit Produce/);
-  assert.match(joinPage, /Apply as a Supplier/);
-  assert.match(joinPage, /Submit Farm Inputs/);
-  assert.match(joinPage, /registration creates a private application/i);
+  assert.match(joinPage, /getPublicWorkflowState\("farmer-registration"\)/);
+  assert.match(joinPage, /getPublicWorkflowState\("supplier-registration"\)/);
+  assert.match(joinPage, /getPublicWorkflowState\("lead-requests"\)/);
+  assert.match(joinPage, /Registration is not open yet/);
   assert.doesNotMatch(joinPage, /partner/i);
   assert.match(buyerPage, /permanentRedirect\("\/marketplace"\)/);
   assert.doesNotMatch(buyerPage, /buyer_applications|BuyerRegistrationForm/);
-  assert.match(supplierPage, /Apply to join as a supplier/);
+  assert.match(supplierPage, /PublicWorkflowClosed/);
+  assert.match(supplierPage, /getPublicWorkflowState\("supplier-registration"\)/);
   assert.doesNotMatch(supplierPage, /trusted supplier|across Ghana|one business day/i);
   assert.match(supplierRoute, /createSupplierApplication/);
 });

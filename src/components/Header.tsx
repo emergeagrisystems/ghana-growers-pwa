@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PublicHeader } from "@/components/homepage/PublicShell";
+import { Stage1PublicHeader } from "@/components/homepage/Stage1PublicShell";
 import { usePathname } from "next/navigation";
 import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
 import { isPublicFarmMatePilotPage } from "@/lib/farmmate/pilot-access";
@@ -34,5 +34,5 @@ export function Header({ showFullNavigation = true }: { showFullNavigation?: boo
     return <PilotHeader />;
   }
 
-  return showFullNavigation ? <PublicHeader /> : null;
+  return showFullNavigation ? <Stage1PublicHeader /> : null;
 }

@@ -621,7 +621,6 @@ export function mapSupplierPublicProfile(row: SupabaseSupplier): PublicSupplierP
     companyOverview: overview,
     serviceCoverageArea: row.service_coverage_area ?? `${row.district} and surrounding districts`,
     photos: supplierImageUrls(row, services),
-    website: row.website ?? undefined,
     verificationStatus,
     status: "Active",
     verificationDate: row.verification_date ?? undefined,

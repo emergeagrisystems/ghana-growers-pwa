@@ -12,22 +12,50 @@ export type PublicSubmissionWorkflow =
   | "farmmate-feedback"
   | "network-interest";
 
-// RC1 has no identified receiver with tested receipt/failure evidence for these
-// workflows. Reopening requires that evidence and an explicit release decision.
-// This gate is deliberately not controlled by a browser or deployment variable.
-export function isPublicSubmissionAvailable(_workflow: PublicSubmissionWorkflow): boolean {
-  return false;
+export type PublicWorkflowState = {
+  workflow: PublicSubmissionWorkflow;
+  available: false;
+  publicLabel: string;
+  publicMessage: string;
+};
+
+// One server-owned, default-closed authority controls both public copy and API
+// availability. Each workflow remains independent so a later founder decision
+// can open one without silently opening the others.
+const workflowStates: Record<PublicSubmissionWorkflow, Omit<PublicWorkflowState, "workflow">> = {
+  "farmer-registration": { available: false, publicLabel: "Farmer registration closed", publicMessage: "Farmer registration is not open yet." },
+  "supplier-registration": { available: false, publicLabel: "Supplier registration closed", publicMessage: "Supplier and service registration is not open yet." },
+  "buyer-registration": { available: false, publicLabel: "Buyer registration closed", publicMessage: "Buyer registration is not open." },
+  "listing-submissions": { available: false, publicLabel: "Listing submissions closed", publicMessage: "Public listing submissions are not open yet." },
+  "buyer-request-submissions": { available: false, publicLabel: "Buyer enquiries closed", publicMessage: "Managed buyer enquiries are not open yet." },
+  "lead-requests": { available: false, publicLabel: "Managed enquiries closed", publicMessage: "Managed sourcing enquiries are not open yet." },
+  "contact-enquiries": { available: false, publicLabel: "Contact form closed", publicMessage: "The public contact form is not open yet." },
+  "featured-enquiries": { available: false, publicLabel: "Featured enquiries closed", publicMessage: "Featured enquiries are not open yet." },
+  "waitlist": { available: false, publicLabel: "Waitlist closed", publicMessage: "The waitlist is not open." },
+  "whatsapp-leads": { available: false, publicLabel: "WhatsApp leads closed", publicMessage: "WhatsApp lead capture is not open." },
+  "farmmate-feedback": { available: false, publicLabel: "Feedback closed", publicMessage: "Public FarmMate feedback is not open." },
+  "network-interest": { available: false, publicLabel: "Network interest closed", publicMessage: "Network interest submissions are not open." }
+};
+
+export function getPublicWorkflowState(workflow: PublicSubmissionWorkflow): PublicWorkflowState {
+  return { workflow, ...workflowStates[workflow] };
+}
+
+export function isPublicSubmissionAvailable(workflow: PublicSubmissionWorkflow): boolean {
+  return getPublicWorkflowState(workflow).available;
 }
 
 export const PUBLIC_SUBMISSION_UNAVAILABLE = "This service is currently unavailable. No information can be submitted here.";
 
 export function publicSubmissionGate(workflow: PublicSubmissionWorkflow): Response | null {
-  if (isPublicSubmissionAvailable(workflow)) return null;
+  const state = getPublicWorkflowState(workflow);
+  if (state.available) return null;
+
   return Response.json({
     ok: false,
     code: "PUBLIC_SUBMISSION_UNAVAILABLE",
-    message: PUBLIC_SUBMISSION_UNAVAILABLE,
-    error: PUBLIC_SUBMISSION_UNAVAILABLE,
-    errors: { form: PUBLIC_SUBMISSION_UNAVAILABLE }
+    message: state.publicMessage,
+    error: state.publicMessage,
+    errors: { form: state.publicMessage }
   }, { status: 503, headers: { "Cache-Control": "no-store" } });
 }

@@ -260,7 +260,6 @@ export type PublicSupplierProfile = {
   companyOverview: string;
   serviceCoverageArea: string;
   photos: string[];
-  website?: string;
   verificationStatus: string;
   status?: string;
   verificationDate?: string;

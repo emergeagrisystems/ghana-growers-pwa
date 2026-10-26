@@ -4,8 +4,6 @@ import {
   BadgeCheck,
   Building2,
   CheckCircle2,
-  ExternalLink,
-  Globe2,
   MapPin,
   PackageCheck,
   ShieldCheck,
@@ -61,18 +59,6 @@ function SupplierVerificationBadge({ status }: { status: string }) {
       Verified by Ghana Growers
     </span>
   );
-}
-
-function websiteLabel(url?: string) {
-  if (!url) {
-    return "Available on request";
-  }
-
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
 }
 
 function deliverySupportFor(supplier: PublicSupplierProfile) {
@@ -155,8 +141,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
     { icon: PackageCheck, label: "Active Listings", value: `${supplierListings.length}` },
     { icon: MapPin, label: "Service Area", value: supplier.serviceCoverageArea },
     { icon: Truck, label: "Delivery / Support", value: deliverySupport },
-    { icon: ShieldCheck, label: "Verification Status", value: supplier.verificationStatus },
-    { icon: Globe2, label: "Website", value: websiteLabel(supplier.website) }
+    { icon: ShieldCheck, label: "Verification Status", value: supplier.verificationStatus }
   ];
   const trustItems = [
     { icon: BadgeCheck, label: "Verified by Ghana Growers" },
@@ -228,17 +213,6 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
               className="mt-5 w-full"
               helperText="Ghana Growers reviews your request before helping route the connection."
             />
-            {supplier.website ? (
-              <a
-                href={supplier.website}
-                target="_blank"
-                rel="noreferrer"
-                className="focus-ring mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-leaf-900/10 bg-white px-4 py-3 text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50"
-              >
-                Visit Website
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              </a>
-            ) : null}
           </div>
         </div>
       </section>
@@ -400,17 +374,6 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                   productOptions={supplier.productsServices}
                   className="mt-4 w-full bg-white text-leaf-800 hover:bg-earth-50"
                 />
-                {supplier.website ? (
-                  <a
-                    href={supplier.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-black text-white hover:text-earth-300"
-                  >
-                    {websiteLabel(supplier.website)}
-                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                  </a>
-                ) : null}
               </section>
 
               {supplier.verificationStatus === "Verified" ? (
