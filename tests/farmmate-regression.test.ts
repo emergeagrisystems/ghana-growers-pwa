@@ -2232,7 +2232,8 @@ const tests: TestCase[] = [
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
       ["Fresh Produce", "Grains & Staples", "Livestock & Poultry", "Seeds & Agricultural Inputs", "Farm Equipment & Tools"].forEach((text) => assert.ok(page.includes(text), text));
-      assert.ok(page.includes("buyerWorkflow.publicMessage"));
+      assert.ok(page.includes("Buyer requests are currently closed"));
+      assert.ok(page.includes('href="/submit-buyer-request"'));
       assert.equal(page.includes('href="/marketplace"'), false);
       assert.equal(page.includes('href="/learn"'), false);
       assert.ok(styles.includes("overflow-x:auto"));
@@ -2265,8 +2266,12 @@ const tests: TestCase[] = [
       const marketplacePage = repoFile("src/app/marketplace/page.tsx");
       const gate = repoFile("src/lib/publicSubmissionAvailability.ts");
       const admin = repoFile("src/app/admin/page.tsx");
-      assert.ok(page.includes("getPublicWorkflowState"));
+      assert.ok(page.includes('href="/join"'));
+      assert.ok(page.includes('href="/submit-listing"'));
+      assert.ok(page.includes('href="/submit-buyer-request"'));
       assert.ok(repoFile("src/app/join/page.tsx").includes("getPublicWorkflowState"));
+      assert.ok(repoFile("src/app/submit-listing/page.tsx").includes("getPublicWorkflowState"));
+      assert.ok(repoFile("src/app/submit-buyer-request/page.tsx").includes("getPublicWorkflowState"));
       assert.ok(gate.includes("const workflowStates"));
       assert.ok(marketplacePage.includes("MarketplaceStage2Notice"));
       assert.ok(admin.includes("AdminDashboard"));
@@ -2312,7 +2317,7 @@ const tests: TestCase[] = [
       assert.ok(shell.includes("trigger.current?.focus()"));
       assert.ok(shell.includes("setOpen(false)"));
       assert.ok((shell.match(/aria-current=/g) ?? []).length >= 2, "desktop and mobile identify the active page");
-      assert.match(shell, /disabled className={styles\.join}/);
+      assert.match(shell, /<Link href="\/join" className={styles\.join}>Join<\/Link>/);
     }
   },
   {

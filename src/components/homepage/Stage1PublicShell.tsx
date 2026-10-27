@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { Leaf, Menu, Plus, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -33,10 +34,7 @@ export function Stage1PublicHeader() {
   return (
     <header className={`${styles.header} ${foundationFont.className}`}>
       <nav className={styles.navigation} aria-label="Main navigation">
-        <Link href="/" className={styles.brand}>
-          <Leaf size={24} aria-hidden="true" />
-          <span>GHANA GROWERS</span>
-        </Link>
+        <Link href="/" className={styles.brand}>GHANA GROWERS</Link>
         <div className={styles.desktopLinks}>
           {publicLinks.map((item) => (
             <Link href={item.href} key={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>
@@ -45,10 +43,7 @@ export function Stage1PublicHeader() {
           ))}
         </div>
         <div className={styles.navActions}>
-          <button type="button" disabled className={styles.join} title="Registration is not open yet">
-            <Plus size={18} aria-hidden="true" />
-            Join
-          </button>
+          <Link href="/join" className={styles.join}>Join</Link>
           <button ref={trigger} type="button" className={styles.menuButton} onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="stage1-mobile-menu" aria-label={open ? "Close navigation" : "Open navigation"}>
             {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>
@@ -57,7 +52,8 @@ export function Stage1PublicHeader() {
       {open ? (
         <nav id="stage1-mobile-menu" className={styles.mobileMenu} aria-label="Mobile navigation">
           {publicLinks.map((item) => <Link href={item.href} key={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>{item.label}</Link>)}
-          <p>Registration and sourcing enquiries are not open yet.</p>
+          <Link href="/join">Join</Link>
+          <p>Registration and sourcing enquiries remain closed.</p>
         </nav>
       ) : null}
     </header>
@@ -78,6 +74,11 @@ export function Stage1PublicFooter() {
           <Link href="/">GHANA GROWERS</Link>
           <strong>Direct Connections. Smart Innovations.</strong>
           <p>Find farms, produce and agricultural suppliers across Ghana.</p>
+          <div className={styles.socials} aria-label="Social channels coming soon">
+            <span aria-label="YouTube unavailable"><img src="/rc1/bb023.svg" alt="" /></span>
+            <span aria-label="Instagram unavailable"><img src="/rc1/61009.svg" alt="" /></span>
+            <span aria-label="Facebook unavailable"><img src="/rc1/e4c93.svg" alt="" /></span>
+          </div>
         </div>
         <div className={styles.destinations}>
           {footerGroups.map((group) => <nav aria-label={group.title} key={group.title}><h2>{group.title}</h2>{group.links.map((item) => <Link key={item.label} href={item.href}>{item.label}</Link>)}</nav>)}

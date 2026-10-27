@@ -35,16 +35,18 @@ export function HowItWorksVideo() {
   };
 
   return (
-    <div className={styles.frame} data-generated-media-disclosure="pending-founder-placement">
-      <video
-        ref={videoRef}
-        className={styles.video}
-        src="/stage1-media/how-it-works-stage1.mp4"
-        muted
-        playsInline
-        preload="metadata"
-        aria-label="Illustrative farming sequence showing a farmer inspecting crops"
-      />
+    <div className={styles.column}>
+      <div className={styles.frame}>
+        <video
+          ref={videoRef}
+          className={styles.video}
+          src="/stage1-media/how-it-works-stage1.mp4"
+          muted
+          playsInline
+          preload="metadata"
+          aria-label="Illustrative farming sequence showing a farmer inspecting crops"
+        />
+      </div>
       <button type="button" className={styles.replay} onClick={replay}>
         <RotateCcw size={16} aria-hidden="true" />
         Replay
