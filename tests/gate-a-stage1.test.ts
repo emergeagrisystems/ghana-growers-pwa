@@ -65,3 +65,19 @@ test("Homepage maps to the four approved responsive authorities", () => {
   assert.match(styles, /@media\(max-width:360px\)/);
   assert.match(styles, /scroll-snap-type/);
 });
+
+test("Homepage restores the approved Mama G composition", () => {
+  const page = file("src/components/homepage/Stage1Homepage.tsx");
+  const styles = file("src/components/homepage/Stage1Homepage.module.css");
+
+  assert.doesNotMatch(page, /START HERE|What would you like to do\?/);
+  assert.match(page, /styles\.mamaHeading/);
+  assert.match(page, /styles\.mamaShowcase/);
+  for (const title of ["Ask Mama G", "Check a crop problem", "Plan your crop", "Harvest & Storage", "Farm with the weather"]) {
+    assert.ok(page.includes(title), title);
+  }
+  assert.match(styles, /\.phone :global\(\.rc1-phone-tablet\),\.phone :global\(\.rc1-phone-mobile\),\.phone :global\(\.rc1-phone-narrow\)\{display:none\}/);
+  assert.match(styles, /\.phone :global\(\.rc1-phone-desktop\)\{display:none\}\.phone :global\(\.rc1-phone-tablet\)\{display:block\}/);
+  assert.match(styles, /\.phone :global\(\.rc1-phone-tablet\)\{display:none\}\.phone :global\(\.rc1-phone-mobile\)\{display:block\}/);
+  assert.match(styles, /\.phone :global\(\.rc1-phone-mobile\)\{display:none\}\.phone :global\(\.rc1-phone-narrow\)\{display:block\}/);
+});

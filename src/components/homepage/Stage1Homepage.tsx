@@ -59,8 +59,7 @@ export async function Stage1Homepage() {
         </div>
       </section>
 
-      <section className={styles.gateways} aria-labelledby="gateway-title">
-        <div className={styles.sectionHeading}><p className={styles.eyebrow}>START HERE</p><h2 id="gateway-title">What would you like to do?</h2></div>
+      <section className={styles.gateways} aria-label="Start here">
         <div className={styles.gatewayGrid}>
           <article className={styles.gatewayCard}><Store aria-hidden="true" /><h3>Show What You Offer</h3><p>{farmerWorkflow.publicMessage} {supplierWorkflow.publicMessage}</p><span className={styles.closedAction}>Registration closed</span></article>
           <article className={`${styles.gatewayCard} ${styles.mamaGateway}`}><Sprout aria-hidden="true" /><h3>Mama G — Digital Farm Mate</h3><p>Ask a farming question or use practical farm tools.</p><Link href="/farmer-hub">Ask Mama G <ArrowRight size={17} aria-hidden="true" /></Link></article>
@@ -84,8 +83,11 @@ export async function Stage1Homepage() {
       </section>
 
       <section className={styles.mama} aria-labelledby="mama-title">
-        <div className={styles.phone}><ApprovedMamaGPhone /></div>
-        <div className={styles.mamaContent}><p className={styles.eyebrow}>MEET MAMA G</p><h2 id="mama-title">Your digital farm mate</h2><p>Practical support for questions, crop checks, planning, harvest and weather-aware farm decisions.</p><div className={styles.mamaFeatures}>{mamaFeatures.map(({ title, copy, icon: Icon }) => <article key={title}><span><Icon size={21} aria-hidden="true" /></span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div><Link href="/farmer-hub" className={styles.primaryButton}>Ask Mama G <ArrowRight size={18} aria-hidden="true" /></Link><p className={styles.aiNote}>Mama G uses AI and can make mistakes. Check labels and seek qualified local advice for important decisions.</p></div>
+        <div className={styles.mamaHeading}><p className={styles.mamaTitle}>Meet Mama G</p><h2 id="mama-title">Your digital farm mate</h2></div>
+        <div className={styles.mamaShowcase}>
+          <div className={styles.phone}><ApprovedMamaGPhone /></div>
+          <div className={styles.mamaFeatures}>{mamaFeatures.map(({ title, copy, icon: Icon }) => <article key={title}><span><Icon size={21} aria-hidden="true" /></span><div><h3>{title}</h3><p>{copy}</p></div><ArrowRight className={styles.featureArrow} size={17} aria-hidden="true" /></article>)}</div>
+        </div>
       </section>
 
       <section className={styles.registration} aria-labelledby="registration-title">
