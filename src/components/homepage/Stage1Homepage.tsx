@@ -26,6 +26,8 @@ const mamaFeatures = [
   { title: "Farm with the weather", copy: "Use live forecast context for farm tasks.", icon: CloudSun }
 ] as const;
 
+const GENERATED_MEDIA_DISCLOSURE = "Illustrative AI-generated imagery. It does not depict actual Ghana Growers members, farms or transactions.";
+
 export async function Stage1Homepage() {
   const [farmerResult, supplierResult] = await Promise.all([getFarmersData(), getSuppliersData()]);
   const farmers = farmerResult.status === "ready" ? farmerResult.data.slice(0, 4) : [];
@@ -51,8 +53,9 @@ export async function Stage1Homepage() {
           <picture>
             <source media="(max-width: 520px)" srcSet="/stage1-media/hero-clay-map-640.webp" />
             <source media="(max-width: 1100px)" srcSet="/stage1-media/hero-clay-map-1088.webp" />
-            <img src="/stage1-media/hero-clay-map-1600.webp" alt="Illustrative clay map of Ghana with agricultural produce and connection markers" width="1600" height="1195" fetchPriority="high" />
+            <img src="/stage1-media/hero-clay-map-1600.webp" alt="Illustrative clay map of Ghana with agricultural produce and connection markers" width="1600" height="1195" fetchPriority="high" aria-describedby="hero-generated-media-disclosure" />
           </picture>
+          <p id="hero-generated-media-disclosure" className={styles.imageDisclosure}>{GENERATED_MEDIA_DISCLOSURE}</p>
         </div>
       </section>
 
@@ -86,13 +89,14 @@ export async function Stage1Homepage() {
       </section>
 
       <section className={styles.registration} aria-labelledby="registration-title">
-        <div className={styles.registrationMedia}><picture><source media="(max-width: 520px)" srcSet="/stage1-media/registration-r1-720.webp" /><source media="(max-width: 1100px)" srcSet="/stage1-media/registration-r1-1200.webp" /><img src="/stage1-media/registration-r1-1600.webp" alt="Illustrative farmer holding a phone in a farm setting" width="1600" height="1067" loading="lazy" decoding="async" /></picture></div>
+        <div className={styles.registrationMedia}><picture><source media="(max-width: 520px)" srcSet="/stage1-media/registration-r1-720.webp" /><source media="(max-width: 1100px)" srcSet="/stage1-media/registration-r1-1200.webp" /><img src="/stage1-media/registration-r1-1600.webp" alt="Illustrative farmer holding a phone in a farm setting" width="1600" height="1067" loading="lazy" decoding="async" aria-describedby="registration-generated-media-disclosure" /></picture><p id="registration-generated-media-disclosure" className={styles.imageDisclosure}>{GENERATED_MEDIA_DISCLOSURE}</p></div>
         <div className={styles.registrationCopy}><p className={styles.eyebrow}>JOIN THE NETWORK</p><h2 id="registration-title">Are you a farmer or supplier?</h2><p>Join Ghana Growers and help buyers discover your farm, products or services. Basic listing is planned to be free.</p><button type="button" disabled className={styles.lightButton} title={farmerWorkflow.publicMessage}><Plus size={18} aria-hidden="true" />Get Listed Free</button><p>{farmerWorkflow.publicMessage}</p></div>
       </section>
 
       <section className={styles.categorySection} aria-labelledby="category-title">
         <div className={styles.sectionHeading}><p className={styles.eyebrow}>EXPLORE</p><h2 id="category-title">Explore agricultural categories</h2></div>
-        <div className={styles.categoryRail} aria-label="Agricultural categories">{categories.map((category) => <article key={category.title}><picture><source media="(max-width: 520px)" srcSet={`/stage1-media/${category.stem}-116.webp`} /><img src={`/stage1-media/${category.stem}-168.webp`} alt="" width="168" height="168" /></picture><h3>{category.title}</h3></article>)}</div>
+        <div className={styles.categoryRail} role="group" aria-label="Agricultural categories" aria-describedby="category-generated-media-disclosure">{categories.map((category) => <article key={category.title}><picture><source media="(max-width: 520px)" srcSet={`/stage1-media/${category.stem}-116.webp`} /><img src={`/stage1-media/${category.stem}-168.webp`} alt="" width="168" height="168" /></picture><h3>{category.title}</h3></article>)}</div>
+        <p id="category-generated-media-disclosure" className={styles.categoryDisclosure}>{GENERATED_MEDIA_DISCLOSURE}</p>
         <div className={styles.categoryActions}><button type="button" disabled className={styles.secondaryButton} title={buyerWorkflow.publicMessage}>Request Produce</button><Link href="/directory" className={styles.primaryButton}>Browse Farms &amp; Suppliers</Link></div>
       </section>
 
