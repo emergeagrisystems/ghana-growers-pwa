@@ -29,6 +29,7 @@ test("Stage 1 intake uses four independent server-only controls that default clo
     const route = source(page);
     assert.match(route, new RegExp(`getPublicWorkflowState\\(\"${workflow}\"\\)`));
     assert.match(route, new RegExp(form));
+    assert.match(route, /publicSubmissionAvailable/);
     assert.match(route, /if \(!state\.available\)[\s\S]*PublicWorkflowClosed/);
   }
 });

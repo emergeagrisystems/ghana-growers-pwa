@@ -24,7 +24,7 @@ export default function JoinFarmerPage() {
             {["Manual review before any public profile", "Needs Information follow-up where required", "Private contact details and documents", "No guarantee of approval, buyers, sales or publication"].map((item) => <div key={item} className="flex items-start gap-3"><CheckCircle2 size={18} className="mt-0.5 shrink-0 text-leaf-700" aria-hidden="true" /><p className="text-sm leading-6 text-ink/68">{item}</p></div>)}
           </div>
         </aside>
-        <FarmerRegistrationForm />
+        <FarmerRegistrationForm publicSubmissionAvailable />
       </div>
     </div>
   );

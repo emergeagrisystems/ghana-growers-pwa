@@ -24,9 +24,11 @@ export function withPublicSubmissionGate<Props extends object>(
   title: string,
   compact = false
 ) {
-  return function PublicSubmissionGate(props: Props) {
-    return isPublicSubmissionAvailable(workflow)
-      ? <ActiveForm {...props} />
+  return function PublicSubmissionGate(props: Props & { publicSubmissionAvailable?: boolean }) {
+    const { publicSubmissionAvailable, ...activeProps } = props;
+    const available = publicSubmissionAvailable ?? isPublicSubmissionAvailable(workflow);
+    return available
+      ? <ActiveForm {...activeProps as Props} />
       : <PublicSubmissionUnavailable title={title} compact={compact} />;
   };
 }
