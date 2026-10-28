@@ -9,7 +9,7 @@ export const metadata = {
   description: "Secure Supabase Auth login for Ghana Growers administrators."
 };
 
-export default async function AdminLoginPage({ searchParams }: { searchParams?: { next?: string | string[] } }) {
+export default async function AdminLoginPage({ searchParams }: { searchParams?: { next?: string | string[]; password?: string | string[] } }) {
   const requestedReturnPath = Array.isArray(searchParams?.next) ? searchParams?.next[0] : searchParams?.next;
   const returnTo = safeAdminReturnPath(requestedReturnPath);
   const currentAdmin = await getAdminUserFromAccessToken(cookies().get(adminAccessCookie)?.value);
@@ -18,5 +18,6 @@ export default async function AdminLoginPage({ searchParams }: { searchParams?: 
     redirect(returnTo);
   }
 
-  return <AdminLoginForm returnTo={returnTo} />;
+  const passwordState = Array.isArray(searchParams?.password) ? searchParams?.password[0] : searchParams?.password;
+  return <AdminLoginForm returnTo={returnTo} passwordUpdated={passwordState === "updated"} />;
 }

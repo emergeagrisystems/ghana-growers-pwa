@@ -3,12 +3,12 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function AdminLoginForm({ returnTo = "/admin" }: { returnTo?: string }) {
+export function AdminLoginForm({ returnTo = "/admin", passwordUpdated = false }: { returnTo?: string; passwordUpdated?: boolean }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(passwordUpdated ? "Password updated. Sign in with your new password." : "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 

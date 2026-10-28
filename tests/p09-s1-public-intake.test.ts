@@ -83,6 +83,27 @@ test("buyer intake writes to the protected lead_requests queue", () => {
   assert.match(form, /form\.reset\(\);/);
 });
 
+test("admin password recovery uses a dedicated token-safe reset screen", () => {
+  const forgotRoute = source("src/app/api/admin/auth/forgot-password/route.ts");
+  const resetPage = source("src/app/admin/reset-password/page.tsx");
+  const resetForm = source("src/components/AdminResetPasswordForm.tsx");
+  const recovery = source("src/lib/adminPasswordRecovery.ts");
+
+  assert.match(forgotRoute, /\/admin\/reset-password/);
+  assert.match(forgotRoute, /VERCEL_BRANCH_URL/);
+  assert.match(forgotRoute, /hostname\.endsWith\("\.vercel\.app"\)/);
+  assert.doesNotMatch(forgotRoute, /redirectTo[^\n]*\/admin\/login/);
+  assert.match(forgotRoute, /Cache-Control/);
+  assert.match(resetPage, /robots: \{ index: false, follow: false \}/);
+  assert.match(resetForm, /window\.history\.replaceState/);
+  assert.match(resetForm, /autoComplete="new-password"/);
+  assert.match(recovery, /type\"\) !== \"recovery\"/);
+  assert.match(recovery, /app_metadata\?\.role !== "admin"/);
+  assert.match(recovery, /supabase\.auth\.updateUser\(\{ password \}\)/);
+  assert.match(recovery, /supabase\.auth\.signOut\(\{ scope: "local" \}\)/);
+  assert.doesNotMatch(resetForm + recovery, /console\.(log|info|warn|error)/);
+});
+
 test("optional product availability dates are stored as null rather than invalid empty dates", () => {
   const service = source("src/lib/publicSubmissions.ts");
   assert.match(service, /available_from_date: clean\(formData\.get\("availableFromDate"\)\) \|\| null/);
