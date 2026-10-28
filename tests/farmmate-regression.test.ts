@@ -9384,7 +9384,7 @@ const tests: TestCase[] = [
       assert.equal(sourcingPage.includes("We Match"), false);
       assert.equal(sourcingPage.includes("Supply Begins"), false);
       assert.equal(sourcingPage.includes("PublicWorkflowClosed"), true);
-      assert.equal(sourcingPage.includes('getPublicWorkflowState("lead-requests")'), true);
+      assert.equal(sourcingPage.includes('getPublicWorkflowState("buyer-request-submissions")'), true);
       assert.equal(sourcingForm.includes("Your contact details and request information are kept private and are not shown publicly."), true);
       assert.equal(sourcingForm.includes("Submitting a request does not guarantee availability or a match."), true);
 
