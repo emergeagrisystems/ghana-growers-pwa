@@ -43,6 +43,9 @@ test("supplier intake matches the farmer security baseline without Sheets or ema
   }
   assert.match(security, /consume_lead_request_rate_limit/);
   assert.doesNotMatch(route + validation, /appendSupplierRegistrationToSheet|sendSupplierRegistrationEmail|RESEND_API_KEY|GOOGLE_SHEETS/);
+  const form = source("src/components/SupplierOnboardingForm.tsx");
+  assert.match(form, /data\.reference/);
+  assert.match(form, /Application reference:/);
 });
 
 test("application review supports Needs Information and bounded correction without replacing identity", () => {

@@ -18,6 +18,7 @@ function SupplierOnboardingFormAvailable() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [reference, setReference] = useState("");
   const [submissionToken, setSubmissionToken] = useState("");
 
   useEffect(() => setSubmissionToken(crypto.randomUUID()), []);
@@ -40,6 +41,7 @@ function SupplierOnboardingFormAvailable() {
       const data = (await response.json()) as {
         ok?: boolean;
         message?: string;
+        reference?: string;
         errors?: FormErrors;
       };
 
@@ -49,6 +51,7 @@ function SupplierOnboardingFormAvailable() {
       }
 
       form.reset();
+      setReference(data.reference ?? "");
       setSubmitted(true);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "We could not submit your supplier application. Please check the details and try again.");
@@ -68,6 +71,7 @@ function SupplierOnboardingFormAvailable() {
         <p className="mt-3 max-w-2xl text-base leading-7 text-ink/68">
           Ghana Growers will review the information and may contact you for more details. An application does not publish a supplier profile automatically.
         </p>
+        {reference ? <p className="mt-3 text-sm font-black text-leaf-800">Application reference: {reference}</p> : null}
         <div className="mt-6 grid gap-3">
           {[
             "Review your application",
