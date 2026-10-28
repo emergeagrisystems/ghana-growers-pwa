@@ -19,6 +19,18 @@ test("Stage 1 intake uses four independent server-only controls that default clo
   assert.match(authority, /process\.env\[control\][\s\S]*=== "true"/);
   assert.match(authority, /: false/);
   assert.match(authority, /"lead-requests": "PUBLIC_INTAKE_BUYER_ENQUIRIES_ENABLED"/);
+
+  for (const [page, form, workflow] of [
+    ["src/app/join/farmer/page.tsx", "FarmerRegistrationForm", "farmer-registration"],
+    ["src/app/become-a-supplier/page.tsx", "SupplierOnboardingForm", "supplier-registration"],
+    ["src/app/submit-listing/page.tsx", "SubmitProduceListingForm", "listing-submissions"],
+    ["src/app/submit-buyer-request/page.tsx", "SubmitBuyerRequestForm", "buyer-request-submissions"]
+  ]) {
+    const route = source(page);
+    assert.match(route, new RegExp(`getPublicWorkflowState\\(\"${workflow}\"\\)`));
+    assert.match(route, new RegExp(form));
+    assert.match(route, /if \(!state\.available\)[\s\S]*PublicWorkflowClosed/);
+  }
 });
 
 test("supplier intake matches the farmer security baseline without Sheets or email side effects", () => {
