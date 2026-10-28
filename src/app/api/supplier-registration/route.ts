@@ -7,10 +7,14 @@ import {
 } from "@/lib/profileApplications";
 import { validateApplicationMedia, type ApplicationMediaKind } from "@/lib/profileApplicationContracts";
 import {
-  appendSupplierRegistrationToSheet,
-  sendSupplierRegistrationEmail,
   validateSupplierRegistration
 } from "@/lib/supplierRegistration";
+import {
+  consumeSupplierApplicationRateLimit,
+  createSupplierApplicationReference,
+  findExistingSupplierApplication,
+  supplierApplicationSecurity
+} from "@/lib/supplierApplicationSubmissions";
 import { hasSupabaseAdminConfig } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -30,6 +34,16 @@ function supplierSubmissionError(message: string, status = 500) {
   return NextResponse.json({ ok: false, errors: { form: message } }, { status });
 }
 
+function clientKey(request: Request) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")?.trim()
+    || "public";
+}
+
+function duplicateSuccess(reference?: string) {
+  return NextResponse.json({ ok: true, duplicate: true, message: "We've received your supplier application.", reference });
+}
+
 export async function POST(request: Request) {
   const unavailable = publicSubmissionGate("supplier-registration");
   if (unavailable) return unavailable;
@@ -38,6 +52,11 @@ export async function POST(request: Request) {
   const body = contentType.includes("multipart/form-data")
     ? await formDataToRecord(await request.formData().catch(() => new FormData()))
     : ((await request.json().catch(() => ({}))) as Record<string, unknown>);
+
+  if (typeof body.companyWebsite === "string" && body.companyWebsite.trim()) {
+    return NextResponse.json({ ok: true, message: "We've received your supplier application." });
+  }
+
   const validation = validateSupplierRegistration(body);
 
   if (!validation.ok || !validation.data) {
@@ -48,7 +67,9 @@ export async function POST(request: Request) {
     return supplierSubmissionError("Supplier applications are temporarily unavailable. Please try again later.", 503);
   }
 
-  const media = pendingMedia(body);
+  const mediaResult = pendingMedia(body);
+  if (mediaResult.error) return NextResponse.json({ ok: false, errors: { [mediaResult.error.field]: mediaResult.error.message } }, { status: 400 });
+  const media = mediaResult.items;
   for (const item of media) {
     const fileValidation = validateApplicationMedia({
       contentType: item.file.type,
@@ -61,7 +82,19 @@ export async function POST(request: Request) {
     }
   }
 
-  const applicationId = crypto.randomUUID();
+  const security = await supplierApplicationSecurity(validation.data, clientKey(request), media);
+  if (!security) return supplierSubmissionError("Supplier applications are temporarily unavailable. Please try again later.", 503);
+
+  const existing = await findExistingSupplierApplication(security);
+  if (existing.error) return supplierSubmissionError(existing.error, existing.status);
+  if (existing.conflict) return supplierSubmissionError("This application was already submitted with different information. Start a new application to send revised details.", 409);
+  if (existing.duplicate) return duplicateSuccess(existing.reference);
+
+  const rateLimit = await consumeSupplierApplicationRateLimit(security.rateLimitKey);
+  if (rateLimit.error) return supplierSubmissionError(rateLimit.error, rateLimit.status);
+
+  const applicationId = security.applicationId;
+  const applicationReference = createSupplierApplicationReference();
   const uploadedPaths: string[] = [];
   let privateLogoPath: string | null = null;
   const privatePhotoPaths: string[] = [];
@@ -129,7 +162,13 @@ export async function POST(request: Request) {
     private_document_paths: [],
     gg_standard_agreement: validation.data.ggStandardAgreement,
     source: "public_supplier_application",
-    source_metadata: { form_version: 3 },
+    source_metadata: {
+      form_version: 4,
+      application_reference: applicationReference,
+      submission_key: security.submissionKey,
+      payload_fingerprint: security.payloadFingerprint,
+      dedupe_key: security.dedupeKey
+    },
     notes: [
       `Supplier categories: ${validation.data.categories.join(", ")}`,
       `Regions served: ${validation.data.regionsServed.join(", ")}`,
@@ -146,45 +185,31 @@ export async function POST(request: Request) {
       feature: "supplier_applications",
       code: application?.status ?? "request_failed"
     });
+    if (application?.status === 409) {
+      const retry = await findExistingSupplierApplication(security);
+      if (retry.conflict) return supplierSubmissionError("This application was already submitted with different information. Start a new application to send revised details.", 409);
+      if (retry.duplicate) return duplicateSuccess(retry.reference);
+    }
     return supplierSubmissionError("Could not save your supplier application. Please try again.", application?.status ?? 502);
-  }
-
-  const integrations = { supabase: true, googleSheets: false, email: false };
-  try {
-    const sheetResult = await appendSupplierRegistrationToSheet(validation.data);
-    integrations.googleSheets = sheetResult.configured;
-  } catch {
-    console.warn("Supplier application notification failed", {
-      route: "/api/supplier-registration",
-      feature: "google_sheets",
-      code: "notification_failed"
-    });
-  }
-
-  try {
-    const emailResult = await sendSupplierRegistrationEmail(validation.data);
-    integrations.email = emailResult.configured;
-  } catch {
-    console.warn("Supplier application notification failed", {
-      route: "/api/supplier-registration",
-      feature: "email",
-      code: "notification_failed"
-    });
   }
 
   return NextResponse.json({
     ok: true,
     message: "We've received your supplier application.",
-    integrations
-  });
+    reference: applicationReference
+  }, { status: 201 });
 }
 
-function pendingMedia(body: Record<string, unknown>): PendingMedia[] {
-  const logo = body.logoImage instanceof File && body.logoImage.size > 0 ? [body.logoImage] : [];
+function pendingMedia(body: Record<string, unknown>): { items: PendingMedia[]; error?: { field: PendingMedia["errorField"]; message: string } } {
+  const logo = fileValues(body.logoImage);
   const photos = fileValues(body.productPhotos);
   const certificates = fileValues(body.certificates);
 
-  return [
+  if (logo.length > 1) return { items: [], error: { field: "logoImageUrl", message: "Choose one supplier logo or business image." } };
+  if (photos.length > 4) return { items: [], error: { field: "photoUrls", message: "Choose up to four product or business photos." } };
+  if (certificates.length > 3) return { items: [], error: { field: "certificateUrls", message: "Choose up to three supporting certificates." } };
+
+  return { items: [
     ...logo.map((file): PendingMedia => ({
       file,
       group: "logo",
@@ -209,7 +234,7 @@ function pendingMedia(body: Record<string, unknown>): PendingMedia[] {
       typeError: "Upload certificates as PDF, JPG, PNG, or WEBP files.",
       sizeError: "Each certificate must be 8MB or smaller."
     }))
-  ];
+  ] };
 }
 
 function fileValues(value: unknown) {

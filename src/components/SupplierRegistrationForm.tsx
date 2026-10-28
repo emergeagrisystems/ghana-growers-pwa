@@ -2,7 +2,7 @@
 import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailable";
 
 import { CheckCircle2, ImagePlus, Send, X } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
 import { supplierCategories } from "@/data/supplierCategories";
 import type { SupplierRegistrationPayload } from "@/lib/supplierRegistration";
@@ -54,6 +54,9 @@ function SupplierRegistrationFormAvailable() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [logoPreview, setLogoPreview] = useState("");
+  const [submissionToken, setSubmissionToken] = useState("");
+
+  useEffect(() => setSubmissionToken(crypto.randomUUID()), []);
 
   function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -139,6 +142,8 @@ function SupplierRegistrationFormAvailable() {
       return;
     }
 
+    if (!submissionToken) return;
+
     setIsSubmitting(true);
 
     try {
@@ -161,6 +166,7 @@ function SupplierRegistrationFormAvailable() {
       setSuccessMessage(data.message ?? "Thank you. Your supplier registration has been submitted.");
       setForm(initialFormState);
       setLogoPreview("");
+      setSubmissionToken(crypto.randomUUID());
       event.currentTarget.reset();
     } catch {
       setErrorMessage("We could not submit your registration. Please check the form and try again.");
@@ -171,6 +177,8 @@ function SupplierRegistrationFormAvailable() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
+      <input type="hidden" name="submissionToken" value={submissionToken} />
+      <input name="companyWebsite" type="text" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <div className="grid gap-4 md:grid-cols-2">
         <TextField label="Company Name (optional)" name="companyName" value={form.companyName} error={errors.companyName} onChange={(value) => updateField("companyName", value)} />
         <TextField label="Contact Person" name="contactPerson" value={form.contactPerson} error={errors.contactPerson} onChange={(value) => updateField("contactPerson", value)} />
@@ -250,8 +258,8 @@ function SupplierRegistrationFormAvailable() {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="gg-button-primary gap-2"
+          disabled={isSubmitting || !submissionToken}
+          className="gg-button-primary gap-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={17} aria-hidden="true" />
           {isSubmitting ? "Submitting..." : "Submit Supplier Registration"}

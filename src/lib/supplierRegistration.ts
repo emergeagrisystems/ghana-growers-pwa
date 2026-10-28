@@ -1,5 +1,3 @@
-import { supplierRegistrationNotifications } from "@/data/notificationConfig";
-import { appendValuesToGoogleSheet } from "@/lib/googleSheets";
 import {
   normalizeServiceAreas,
   normalizeSupplierCategories,
@@ -32,6 +30,7 @@ export type SupplierRegistrationPayload = {
   certificateUrls: string[];
   ggStandardAgreement: boolean;
   privacyAccepted: boolean;
+  submissionToken: string;
 };
 
 export type SupplierRegistrationResult = {
@@ -87,7 +86,8 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
     photoUrls: cleanArray(input.photoUrls),
     certificateUrls: cleanArray(input.certificateUrls),
     ggStandardAgreement: input.ggStandardAgreement === true,
-    privacyAccepted: input.privacyAccepted === true || input.ggStandardAgreement === true
+    privacyAccepted: input.privacyAccepted === true || input.ggStandardAgreement === true,
+    submissionToken: clean(input.submissionToken, 64)
   };
   const errors: SupplierRegistrationResult["errors"] = {};
   const requiredFields: Array<keyof SupplierRegistrationPayload> = isOnboardingFlow
@@ -149,6 +149,10 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
     errors.privacyAccepted = "You must accept the privacy notice.";
   }
 
+  if (!isSupplierSubmissionToken(data.submissionToken)) {
+    errors.submissionToken = "Please refresh this page and try again.";
+  }
+
   return {
     ok: Object.keys(errors).length === 0,
     errors,
@@ -156,76 +160,6 @@ export function validateSupplierRegistration(input: Record<string, unknown>): Su
   };
 }
 
-export async function appendSupplierRegistrationToSheet(data: SupplierRegistrationPayload) {
-  const sheetName = process.env.GOOGLE_SHEETS_SUPPLIER_SHEET_NAME || supplierRegistrationNotifications.googleSheetName;
-  const submittedAt = new Date().toISOString();
-
-  return appendValuesToGoogleSheet(sheetName, "A:S", [[
-    submittedAt,
-    data.companyName,
-    data.contactPerson,
-    data.phone,
-    data.whatsapp,
-    data.email,
-    data.region,
-    data.district,
-    data.categories.join(", ") || data.supplierCategory,
-    data.productsServicesOffered,
-    data.regionsServed.join(", ") || data.deliveryCoverage,
-    data.websiteUrl,
-    data.businessDescription,
-    data.logoImageUrl,
-    data.registrationNumber,
-    data.yearsInBusiness,
-    data.photoUrls.join(", "),
-    data.certificateUrls.join(", "),
-    data.ggStandardAgreement ? "Yes" : "No"
-  ]]);
-}
-
-export async function sendSupplierRegistrationEmail(data: SupplierRegistrationPayload) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-
-  if (!resendApiKey || supplierRegistrationNotifications.adminEmails.length === 0) {
-    return { configured: false };
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from: process.env.SUPPLIER_REGISTRATION_FROM_EMAIL || supplierRegistrationNotifications.fromEmail,
-      to: supplierRegistrationNotifications.adminEmails,
-      subject: `${supplierRegistrationNotifications.subjectPrefix}: ${data.companyName || data.contactPerson}`,
-      text: [
-        `Business Name: ${data.businessName || data.companyName}`,
-        `Contact Person: ${data.contactPerson}`,
-        `Phone: ${data.phone}`,
-        `WhatsApp: ${data.whatsapp}`,
-        `Email: ${data.email || "Not provided"}`,
-        `Region: ${data.region || "Not provided"}`,
-        `District: ${data.district}`,
-        `Supplier Categories: ${data.categories.join(", ") || data.supplierCategory}`,
-        `Regions Served: ${data.regionsServed.join(", ") || data.deliveryCoverage}`,
-        `Products/Services Offered: ${data.productsServicesOffered}`,
-        `Website: ${data.websiteUrl || "None"}`,
-        `Registration Number: ${data.registrationNumber || "None"}`,
-        `Years in Business: ${data.yearsInBusiness || "Not provided"}`,
-        `Logo/Image: ${data.logoImageUrl || "None"}`,
-        `Photos: ${data.photoUrls.join(", ") || "None"}`,
-        `Certificates: ${data.certificateUrls.join(", ") || "None"}`,
-        `Description: ${data.businessDescription || "None"}`,
-        `GG Standard Agreement: ${data.ggStandardAgreement ? "Yes" : "No"}`
-      ].join("\n")
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to send supplier registration email.");
-  }
-
-  return { configured: true };
+export function isSupplierSubmissionToken(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

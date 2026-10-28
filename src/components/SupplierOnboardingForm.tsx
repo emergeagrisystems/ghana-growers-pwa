@@ -3,7 +3,7 @@ import { withPublicSubmissionGate } from "@/components/PublicSubmissionUnavailab
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, ImagePlus, Send } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { ghanaRegions } from "@/data/ghanaRegions";
 import { supplierCategories } from "@/data/supplierCategories";
 
@@ -18,11 +18,15 @@ function SupplierOnboardingFormAvailable() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submissionToken, setSubmissionToken] = useState("");
+
+  useEffect(() => setSubmissionToken(crypto.randomUUID()), []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrors({});
     setErrorMessage("");
+    if (!submissionToken) return;
     setIsSubmitting(true);
 
     const form = event.currentTarget;
@@ -92,6 +96,8 @@ function SupplierOnboardingFormAvailable() {
   return (
     <form id="supplier-application" onSubmit={handleSubmit} className="rounded-xl border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-8">
       <input type="hidden" name="onboardingFlow" value="true" />
+      <input type="hidden" name="submissionToken" value={submissionToken} />
+      <input name="companyWebsite" type="text" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       <div>
         <p className="text-xs font-black uppercase tracking-[0.18em] text-earth-700">Supplier Application</p>
         <h2 className="mt-3 text-3xl font-black text-ink">Tell us about your business</h2>
@@ -164,7 +170,7 @@ function SupplierOnboardingFormAvailable() {
       {errorMessage ? <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm font-bold text-tomato">{errorMessage}</p> : null}
 
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button type="submit" disabled={isSubmitting} className="gg-button-primary gap-2">
+        <button type="submit" disabled={isSubmitting || !submissionToken} className="gg-button-primary gap-2 disabled:cursor-not-allowed disabled:opacity-60">
           <Send size={17} aria-hidden="true" />
           {isSubmitting ? "Submitting..." : "Submit Supplier Application"}
         </button>
