@@ -1473,7 +1473,7 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Dedicated admin listing-submission workspace supports review and publication actions",
+    name: "Dedicated admin listing-submission workspace supports private review and seller association",
     run: () => {
       const page = repoFile("src/app/admin/listing-submissions/page.tsx");
       const workspace = repoFile("src/components/AdminListingSubmissionsWorkspace.tsx");
@@ -1499,19 +1499,21 @@ const tests: TestCase[] = [
       assert.equal(workspace.includes("Mark Under Review"), true);
       assert.equal(workspace.includes("Request More Information"), true);
       assert.equal(workspace.includes("Save Draft"), true);
-      assert.equal(workspace.includes("Approve and Publish"), true);
+      assert.equal(workspace.includes("Approve and Publish"), false);
+      assert.equal(workspace.includes("Approved seller association"), true);
       assert.equal(workspace.includes("Mark Sold Out"), true);
       assert.equal(workspace.includes("Internal notes"), true);
       assert.equal(workspace.includes("Seller-facing message"), true);
       assert.equal(workspace.includes('Public {kind === "card" ? "card" : "detail"} preview'), true);
       assert.equal(workspace.includes("/api/admin/listing-submissions/images"), true);
       assert.equal(api.includes("requireAdminUser"), true);
-      assert.equal(api.includes("convertListingSubmission"), true);
+      assert.equal(api.includes("convertListingSubmission"), false);
+      assert.equal(api.includes("Stage 1 intake review cannot publish or convert submissions into Stage 2 records"), true);
       assert.equal(api.includes('searchParams.get("kind")'), true);
       assert.equal(api.includes("kind === \"listing\" ? await getPublicListingSubmissions() : await getPublicSubmissions()"), true);
       assert.equal(api.includes("export const revalidate = 0"), true);
       assert.equal(api.includes('"Cache-Control": "no-store, max-age=0"'), true);
-      assert.equal(api.includes('allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"])'), true);
+      assert.equal(api.includes('allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Paused", "Rejected", "Expired"])'), true);
       assert.equal(imageApi.includes("requireAdminUser"), true);
       assert.equal(imageApi.includes('bucket: "listing-submissions"'), true);
       assert.equal(imageApi.includes("Cache-Control"), true);
@@ -1629,7 +1631,7 @@ const tests: TestCase[] = [
       assert.equal(leadRequests.includes('callSupabaseRpc<RateLimitResult>("consume_lead_request_rate_limit"'), true);
       assert.equal(leadRequests.includes("leadRequestRateLimitKey"), true);
       assert.equal(leadRequests.includes("leadRequestDedupeKey"), true);
-      assert.equal(leadRequests.includes("duplicateLeadRequestWarning"), true);
+      assert.equal(leadRequests.includes("duplicateLeadRequest"), true);
       assert.equal(leadRequests.includes("isMarketplaceListingPublicStatus(product)"), true);
       assert.equal(leadRequests.includes("isDemoMarketplaceListing(product)"), true);
       assert.equal(leadRequests.includes("submissionStatus !== \"Published\""), true);
@@ -1991,7 +1993,7 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("admin-recommendation-panel"), true);
       assert.equal(adminDashboard.includes("sourcingCaseStatusClass"), true);
       assert.equal(listingWorkspace.includes('className="admin-listing-workspace'), true);
-      assert.equal(listingWorkspace.includes('tone="primary"'), true);
+      assert.equal(listingWorkspace.includes("Approved seller association"), true);
       assert.equal(listingWorkspace.includes('tone="destructive"'), true);
       assert.equal(adminPage.includes("getAdminUserFromAccessToken"), true);
       assert.equal(listingPage.includes("getAdminUserFromAccessToken"), true);

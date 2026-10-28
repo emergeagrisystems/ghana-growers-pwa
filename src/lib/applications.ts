@@ -333,7 +333,7 @@ export async function updateApplicationReview({
       : "Under Review";
   const reviewState = verificationDecision === "Not Reviewed" ? "In Review" : verificationDecision === "Needs Information" ? "In Review" : "Decision Recorded";
   const now = new Date().toISOString();
-  const update = await updateSupabaseRecord(tableByKind[kind], `id=eq.${encodeURIComponent(id)}`, {
+  const reviewUpdate: Record<string, unknown> = {
     ...safeCorrections,
     status,
     review_state: reviewState,
@@ -341,10 +341,11 @@ export async function updateApplicationReview({
     admin_notes: adminNotes?.trim().slice(0, 4000) || null,
     reviewed_at: now,
     reviewed_by: adminEmail,
-    approved_at: verificationDecision === "Verified" ? now : null,
-    rejected_at: verificationDecision === "Rejected" ? now : null,
     updated_at: now
-  });
+  };
+  if (verificationDecision === "Verified") reviewUpdate.approved_at = now;
+  if (verificationDecision === "Rejected") reviewUpdate.rejected_at = now;
+  const update = await updateSupabaseRecord(tableByKind[kind], `id=eq.${encodeURIComponent(id)}`, reviewUpdate);
   if (!update.error) {
     await logAdminActivity({
       adminEmail,
