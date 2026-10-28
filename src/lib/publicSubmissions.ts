@@ -828,6 +828,50 @@ export async function getPublicListingSubmissions() {
   };
 }
 
+export async function updateListingSellerAssociation({
+  submissionId,
+  sellerKind,
+  profileId,
+  adminEmail
+}: {
+  submissionId: string;
+  sellerKind: "farmer" | "supplier";
+  profileId: string;
+  adminEmail: string;
+}) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(profileId)) {
+    return { status: 400, error: "Enter a valid seller profile ID." };
+  }
+
+  const table = sellerKind === "farmer" ? "farmers" : "suppliers";
+  const profile = await selectSupabaseRecords<{ id: string; status?: string | null; launch_ready?: boolean | null }>(
+    table,
+    `select=id,status,launch_ready&id=eq.${encodeURIComponent(profileId)}&limit=1`
+  );
+  const seller = profile.data?.[0];
+  if (profile.error || !seller) return { status: profile.status >= 400 ? profile.status : 404, error: "The selected seller profile was not found." };
+  if (seller.status !== "Active" || seller.launch_ready !== true) {
+    return { status: 409, error: "Only an approved, launch-ready active seller profile can be associated." };
+  }
+
+  const update = await updateSupabaseRecord("listing_submissions", `id=eq.${encodeURIComponent(submissionId)}`, {
+    seller_match_status: "Matched",
+    matched_farmer_id: sellerKind === "farmer" ? profileId : null,
+    matched_supplier_id: sellerKind === "supplier" ? profileId : null,
+    updated_at: new Date().toISOString()
+  });
+  if (!update.error) {
+    await logAdminActivity({
+      adminEmail,
+      actionType: "Edit",
+      entityType: "Listing Submission",
+      entityId: submissionId,
+      entityName: `associated with ${sellerKind} profile ${profileId}`
+    });
+  }
+  return update;
+}
+
 export async function getPublicSubmissions() {
   const listings = await getPublicListingSubmissions();
   const error = listings.error;

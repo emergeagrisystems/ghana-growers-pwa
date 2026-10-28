@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
 import {
-  convertBuyerRequestSubmission,
-  convertListingSubmission,
   getPublicListingSubmissions,
   getPublicSubmissions,
+  updateListingSellerAssociation,
   updateSubmissionStatus,
-  type BuyerRequestSubmission,
-  type ListingSubmission,
   type SubmissionKind,
   type SubmissionStatus
 } from "@/lib/publicSubmissions";
@@ -17,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const allowedKinds = new Set<SubmissionKind>(["listing", "buyer-request"]);
-const allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"]);
+const allowedStatuses = new Set<SubmissionStatus>(["New", "Needs Information", "Under Review", "Approved", "Paused", "Rejected", "Expired"]);
 
 export async function GET(request: Request) {
   const adminUser = await requireAdminUser(request);
@@ -51,7 +48,25 @@ export async function PATCH(request: Request) {
     adminNotes?: string;
     sellerMessage?: string;
     currentHistory?: Array<Record<string, unknown>> | null;
+    action?: "status" | "seller-association";
+    sellerKind?: "farmer" | "supplier";
+    profileId?: string;
   };
+
+  if (body.action === "seller-association") {
+    if (body.kind !== "listing" || !body.id || !body.sellerKind || !body.profileId) {
+      return NextResponse.json({ error: "Listing, seller type and profile ID are required." }, { status: 400 });
+    }
+    const result = await updateListingSellerAssociation({
+      submissionId: body.id,
+      sellerKind: body.sellerKind,
+      profileId: body.profileId,
+      adminEmail: adminUser.email
+    });
+    return result.error
+      ? NextResponse.json({ error: result.error }, { status: result.status })
+      : NextResponse.json({ ok: true, record: result.data });
+  }
 
   if (!body.kind || !allowedKinds.has(body.kind) || !body.id || !body.status || !allowedStatuses.has(body.status)) {
     return NextResponse.json({ error: "Submission type, ID, and valid status are required." }, { status: 400 });
@@ -82,30 +97,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    kind?: SubmissionKind;
-    submission?: ListingSubmission | BuyerRequestSubmission;
-  };
-
-  if (body.kind === "listing" && body.submission) {
-    const insert = await convertListingSubmission(body.submission as ListingSubmission, adminUser.email);
-
-    if (insert.error) {
-      return NextResponse.json({ error: insert.error || "Could not convert listing submission." }, { status: insert.status });
-    }
-
-    return NextResponse.json({ ok: true, record: insert.data });
-  }
-
-  if (body.kind === "buyer-request" && body.submission) {
-    const insert = await convertBuyerRequestSubmission(body.submission as BuyerRequestSubmission, adminUser.email);
-
-    if (insert.error) {
-      return NextResponse.json({ error: "Could not convert buyer request submission." }, { status: insert.status });
-    }
-
-    return NextResponse.json({ ok: true, record: insert.data });
-  }
-
-  return NextResponse.json({ error: "Submission type and record are required." }, { status: 400 });
+  return NextResponse.json({
+    error: "Stage 1 intake review cannot publish or convert submissions into Stage 2 records."
+  }, { status: 409 });
 }

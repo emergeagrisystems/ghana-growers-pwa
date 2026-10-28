@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, Pause, Send, XCircle, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, ExternalLink, Pause, XCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { adminCountPillClass, adminPrioritySeverity, type AdminPrioritySeverity } from "@/lib/adminPriorityState";
@@ -9,7 +9,7 @@ import type { AdminUser } from "@/lib/adminAuth";
 import type { ListingSubmission, SubmissionStatus } from "@/lib/publicSubmissions";
 import type { Product } from "@/types";
 
-const statuses: SubmissionStatus[] = ["New", "Needs Information", "Under Review", "Approved", "Published", "Paused", "Rejected", "Expired"];
+const statuses: SubmissionStatus[] = ["New", "Needs Information", "Under Review", "Approved", "Paused", "Rejected", "Expired"];
 
 export function AdminListingSubmissionsWorkspace({
   currentAdmin,
@@ -25,6 +25,8 @@ export function AdminListingSubmissionsWorkspace({
   const [selectedId, setSelectedId] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [sellerMessage, setSellerMessage] = useState("");
+  const [sellerKind, setSellerKind] = useState<"farmer" | "supplier">("farmer");
+  const [sellerProfileId, setSellerProfileId] = useState("");
   const [error, setError] = useState(initialError);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(!initialSubmissions.length && !initialError);
@@ -51,6 +53,8 @@ export function AdminListingSubmissionsWorkspace({
       setSelectedId(selected.id);
       setAdminNotes(selected.admin_notes ?? "");
       setSellerMessage(selected.seller_message ?? "");
+      setSellerKind(selected.matched_supplier_id ? "supplier" : "farmer");
+      setSellerProfileId(selected.matched_supplier_id ?? selected.matched_farmer_id ?? "");
     }
   }, [selected]);
 
@@ -98,22 +102,28 @@ export function AdminListingSubmissionsWorkspace({
     await loadSubmissions();
   }
 
-  async function publishSubmission(submission: ListingSubmission) {
+  async function saveSellerAssociation(submission: ListingSubmission) {
     setNotice("");
     setError("");
     const response = await fetch("/api/admin/submissions", {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "listing", submission: { ...submission, admin_notes: adminNotes, seller_message: sellerMessage } })
+      body: JSON.stringify({
+        action: "seller-association",
+        kind: "listing",
+        id: submission.id,
+        sellerKind,
+        profileId: sellerProfileId.trim()
+      })
     }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { error?: string } | null;
 
     if (!response?.ok || result?.error) {
-      setError(result?.error ?? "Could not publish submission.");
+      setError(result?.error ?? "Could not associate the seller profile.");
       return;
     }
 
-    setNotice("Submission approved and published.");
+    setNotice("Approved seller profile associated. The submission remains private.");
     await loadSubmissions();
   }
 
@@ -130,7 +140,7 @@ export function AdminListingSubmissionsWorkspace({
               <p className="gg-eyebrow text-earth-700/75">Listing Submissions</p>
               <h1 className="mt-2 text-3xl font-black text-ink sm:text-4xl">Public listing review workspace</h1>
               <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-ink/62">
-                Review farmer and supplier product submissions before they become public marketplace listings.
+                Review private farmer and supplier product submissions. Stage 2 Marketplace publication remains unavailable.
               </p>
             </div>
             <p className="admin-context-panel px-3 py-2 text-sm font-bold text-ink/65">
@@ -238,7 +248,20 @@ export function AdminListingSubmissionsWorkspace({
             <div className="admin-context-panel mt-5 p-4">
               <h3 className="font-black text-ink">Uploaded photos</h3>
               <AdminSubmissionImages submission={selected} />
-              <p className="mt-3 text-xs font-semibold text-ink/50">Pending images are private until an admin approves and publishes the listing.</p>
+              <p className="mt-3 text-xs font-semibold text-ink/50">Submission images remain private throughout Stage 1 intake review.</p>
+            </div>
+
+            <div className="admin-context-panel mt-5 p-4">
+              <h3 className="font-black text-ink">Approved seller association</h3>
+              <p className="mt-1 text-xs font-semibold leading-5 text-ink/55">Associate this private submission with an existing active, launch-ready profile. This does not create or publish a Marketplace listing.</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-[180px_1fr_auto]">
+                <select value={sellerKind} onChange={(event) => setSellerKind(event.target.value as "farmer" | "supplier")} className="gg-field" aria-label="Seller profile type">
+                  <option value="farmer">Farmer profile</option>
+                  <option value="supplier">Supplier profile</option>
+                </select>
+                <input value={sellerProfileId} onChange={(event) => setSellerProfileId(event.target.value)} className="gg-field" placeholder="Approved profile UUID" aria-label="Approved seller profile ID" />
+                <button type="button" onClick={() => void saveSellerAssociation(selected)} className="admin-action-secondary focus-ring px-4 text-xs">Save association</button>
+              </div>
             </div>
 
             <div className="mt-5 grid gap-4 xl:grid-cols-2">
@@ -261,7 +284,6 @@ export function AdminListingSubmissionsWorkspace({
               <ActionButton tone="warning" icon={AlertTriangle} label="Request More Information" onClick={() => updateStatus(selected, "Needs Information", "More information requested")} />
               <ActionButton tone="tertiary" icon={ClipboardCheck} label="Save Draft" onClick={() => updateStatus(selected, selected.status, "Draft saved")} />
               <ActionButton icon={CheckCircle2} label="Approve" onClick={() => updateStatus(selected, "Approved")} />
-              <ActionButton tone="primary" icon={Send} label="Approve and Publish" onClick={() => publishSubmission(selected)} />
               <ActionButton tone="warning" icon={Pause} label="Pause" onClick={() => updateStatus(selected, "Paused")} />
               <ActionButton tone="destructive" icon={XCircle} label="Reject" onClick={() => updateStatus(selected, "Rejected")} />
               <ActionButton tone="warning" icon={AlertTriangle} label="Mark Sold Out" onClick={() => updateStatus(selected, "Paused", "Marked sold out for inventory V1")} />
