@@ -25,11 +25,12 @@ function SubmitBuyerRequestFormAvailable() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setSuccess("");
     setError("");
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     const response = await fetch("/api/buyer-request-submissions", {
       method: "POST",
@@ -45,7 +46,7 @@ function SubmitBuyerRequestFormAvailable() {
       return;
     }
 
-    event.currentTarget.reset();
+    form.reset();
     setReference(result.reference ?? "");
     setSuccess(result.message ?? "We have received your sourcing request.");
   }

@@ -607,7 +607,7 @@ export async function createListingSubmission(formData: FormData, clientKey = "p
     minimum_order_unit: clean(formData.get("minimumOrderUnit")),
     availability: clean(formData.get("availability")),
     supply_frequency: clean(formData.get("supplyFrequency")),
-    available_from_date: clean(formData.get("availableFromDate")),
+    available_from_date: clean(formData.get("availableFromDate")) || null,
     grade_description: clean(formData.get("gradeDescription")),
     delivery_details: clean(formData.get("deliveryDetails")),
     pickup_location: clean(formData.get("pickupLocation")),

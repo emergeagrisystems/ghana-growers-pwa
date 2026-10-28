@@ -75,4 +75,12 @@ test("buyer intake writes to the protected lead_requests queue", () => {
   assert.match(service, /createGenericSourcingLeadRequest/);
   assert.match(leads, /insertSupabaseRecord\("lead_requests"/);
   assert.match(leads, /consume_lead_request_rate_limit/);
+  const form = source("src/components/SubmitBuyerRequestForm.tsx");
+  assert.match(form, /const form = event\.currentTarget;/);
+  assert.match(form, /form\.reset\(\);/);
+});
+
+test("optional product availability dates are stored as null rather than invalid empty dates", () => {
+  const service = source("src/lib/publicSubmissions.ts");
+  assert.match(service, /available_from_date: clean\(formData\.get\("availableFromDate"\)\) \|\| null/);
 });
