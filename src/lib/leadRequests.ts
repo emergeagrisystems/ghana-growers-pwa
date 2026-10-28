@@ -649,7 +649,11 @@ function trustedProductSelection(requestedProduct: string, productOptions?: stri
   return uniqueRequested.length > 0 ? uniqueRequested.join(", ") : options.slice(0, 3).join(", ");
 }
 
-async function duplicateLeadRequestWarning(dedupeKey: string) {
+function leadRequestReference(id?: string | null) {
+  return id ? `BR-${id.replace(/-/g, "").slice(0, 10).toUpperCase()}` : undefined;
+}
+
+async function duplicateLeadRequest(dedupeKey: string) {
   const since = new Date(Date.now() - dedupeWindowMinutes * 60 * 1000).toISOString();
   const recent = await selectSupabaseRecords<Pick<LeadRequestRecord, "id" | "status" | "created_at">>(
     "lead_requests",
@@ -657,10 +661,10 @@ async function duplicateLeadRequestWarning(dedupeKey: string) {
   );
 
   if (recent.error) {
-    return "";
+    return null;
   }
 
-  return recent.data?.[0] ? "Ghana Growers has already received this request. We will review the earlier request first." : "";
+  return recent.data?.[0] ?? null;
 }
 
 async function resolveTrustedSource(payload: Record<string, unknown>): Promise<TrustedSourceResult> {
@@ -843,10 +847,15 @@ export async function insertLeadRequest(payload: Record<string, unknown>, client
     return { status: normalized.status, error: normalized.error };
   }
 
-  const duplicateWarning = await duplicateLeadRequestWarning(normalized.data.request_dedupe_key);
+  const duplicate = await duplicateLeadRequest(normalized.data.request_dedupe_key);
 
-  if (duplicateWarning) {
-    return { status: 200, duplicate: true, message: duplicateWarning };
+  if (duplicate) {
+    return {
+      status: 200,
+      duplicate: true,
+      reference: leadRequestReference(duplicate.id),
+      message: "Ghana Growers has already received this request. We will review the earlier request first."
+    };
   }
 
   const rateLimit = await consumeDurableLeadRequestRateLimit(normalized.rateLimitKey);
@@ -865,10 +874,17 @@ export async function insertLeadRequest(payload: Record<string, unknown>, client
       entityId: (insert.data as { id?: string } | undefined)?.id ?? null,
       entityName: `${normalized.data.requester_name} requested ${normalized.data.source_name}`
     });
+    return {
+      ...insert,
+      reference: leadRequestReference((insert.data as { id?: string } | undefined)?.id),
+      message: "We have received your sourcing request. Ghana Growers aims to review or acknowledge it within two Ghana business days."
+    };
   } else if (duplicateInsertError(insert.error)) {
+    const confirmed = await duplicateLeadRequest(normalized.data.request_dedupe_key);
     return {
       status: 200,
       duplicate: true,
+      reference: leadRequestReference(confirmed?.id),
       message: "Ghana Growers has already received this request. We will review the earlier request first."
     };
   }

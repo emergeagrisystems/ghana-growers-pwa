@@ -21,6 +21,7 @@ function SubmitBuyerRequestFormAvailable() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reference, setReference] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +36,7 @@ function SubmitBuyerRequestFormAvailable() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { ok?: boolean; message?: string; error?: string } | null;
+    const result = (await response?.json().catch(() => null)) as { ok?: boolean; message?: string; reference?: string; error?: string } | null;
 
     setIsSubmitting(false);
 
@@ -45,12 +46,13 @@ function SubmitBuyerRequestFormAvailable() {
     }
 
     event.currentTarget.reset();
+    setReference(result.reference ?? "");
     setSuccess(result.message ?? "We have received your sourcing request.");
   }
 
   return (
     <form onSubmit={handleSubmit} className="min-w-0 rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      {success ? <SourcingConfirmation message={success} /> : null}
+      {success ? <SourcingConfirmation message={success} reference={reference} /> : null}
 
       <fieldset disabled={Boolean(success)} className={success ? "hidden" : ""}>
         <input type="text" name="companyWebsite" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
@@ -103,7 +105,7 @@ function SubmitBuyerRequestFormAvailable() {
   );
 }
 
-function SourcingConfirmation({ message }: { message: string }) {
+function SourcingConfirmation({ message, reference }: { message: string; reference: string }) {
   return (
     <section role="status" className="rounded-md bg-leaf-50 p-5 text-ink ring-1 ring-leaf-900/10">
       <div className="flex gap-3">
@@ -111,6 +113,7 @@ function SourcingConfirmation({ message }: { message: string }) {
         <div>
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Sourcing request received</p>
           <h2 className="mt-2 text-2xl font-black text-ink">{message}</h2>
+          {reference ? <p className="mt-2 text-sm font-black text-leaf-800">Reference: {reference}</p> : null}
           <p className="mt-3 text-sm leading-6 text-ink/68">
             Our team will review your requirements and follow up where a suitable option may be available.
           </p>

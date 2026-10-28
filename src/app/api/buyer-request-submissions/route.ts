@@ -25,6 +25,8 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
+    reference: "reference" in result ? result.reference : undefined,
+    duplicate: "duplicate" in result ? result.duplicate : false,
     message: "message" in result ? result.message : "We have received your sourcing request."
   }, { status: "duplicate" in result && result.duplicate ? 200 : 201 });
 }
