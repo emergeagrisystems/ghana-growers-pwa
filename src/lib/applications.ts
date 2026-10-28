@@ -10,6 +10,7 @@ import { insertSupabaseRecord, updateSupabaseRecord } from "@/lib/supabase/admin
 
 export type ApplicationKind = "farmer" | "buyer" | "supplier";
 export type ApplicationStatus = "New" | "Pending" | "Under Review" | "Approved" | "Rejected" | "Converted";
+export type ApplicationVerificationDecision = "Not Reviewed" | "Verified" | "Rejected" | "Needs Information";
 export type ApplicationQueueState = "loaded" | "unavailable" | "error";
 
 export type ApplicationRecord = {
@@ -285,5 +286,73 @@ export async function updateApplicationStatus({
     });
   }
 
+  return update;
+}
+
+const correctionFields: Record<Exclude<ApplicationKind, "buyer">, Set<string>> = {
+  farmer: new Set([
+    "applicant_name", "farm_name", "phone_number", "whatsapp_number", "email", "region", "district", "location",
+    "production_details", "current_availability", "supply_frequency", "harvest_season", "delivery_preference", "application_message"
+  ]),
+  supplier: new Set([
+    "business_or_farm_name", "business_name", "contact_person", "phone", "whatsapp_number", "email", "region", "district",
+    "products_or_services", "website_url", "registration_number", "business_description", "years_in_business"
+  ])
+};
+
+export async function updateApplicationReview({
+  kind,
+  id,
+  verificationDecision,
+  adminNotes,
+  corrections,
+  adminEmail,
+  entityName
+}: {
+  kind: Exclude<ApplicationKind, "buyer">;
+  id: string;
+  verificationDecision: ApplicationVerificationDecision;
+  adminNotes?: string;
+  corrections?: Record<string, unknown>;
+  adminEmail: string;
+  entityName: string;
+}) {
+  const safeCorrections: Record<string, string | null> = {};
+  for (const [field, value] of Object.entries(corrections ?? {})) {
+    if (!correctionFields[kind].has(field)) return { status: 400, error: `Field ${field} cannot be corrected through application review.` };
+    if (value !== null && typeof value !== "string") return { status: 400, error: `Field ${field} must be text.` };
+    const cleaned = typeof value === "string" ? value.trim() : null;
+    if (cleaned && cleaned.length > 4000) return { status: 400, error: `Field ${field} is too long.` };
+    safeCorrections[field] = cleaned || null;
+  }
+
+  const status: ApplicationStatus = verificationDecision === "Verified"
+    ? "Approved"
+    : verificationDecision === "Rejected"
+      ? "Rejected"
+      : "Under Review";
+  const reviewState = verificationDecision === "Not Reviewed" ? "In Review" : verificationDecision === "Needs Information" ? "In Review" : "Decision Recorded";
+  const now = new Date().toISOString();
+  const update = await updateSupabaseRecord(tableByKind[kind], `id=eq.${encodeURIComponent(id)}`, {
+    ...safeCorrections,
+    status,
+    review_state: reviewState,
+    verification_decision: verificationDecision,
+    admin_notes: adminNotes?.trim().slice(0, 4000) || null,
+    reviewed_at: now,
+    reviewed_by: adminEmail,
+    approved_at: verificationDecision === "Verified" ? now : null,
+    rejected_at: verificationDecision === "Rejected" ? now : null,
+    updated_at: now
+  });
+  if (!update.error) {
+    await logAdminActivity({
+      adminEmail,
+      actionType: Object.keys(safeCorrections).length > 0 ? "Edit" : actionByStatus[status],
+      entityType: entityByKind[kind],
+      entityId: id,
+      entityName
+    });
+  }
   return update;
 }

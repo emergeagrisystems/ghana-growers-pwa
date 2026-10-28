@@ -14,9 +14,23 @@ export type PublicSubmissionWorkflow =
 
 export type PublicWorkflowState = {
   workflow: PublicSubmissionWorkflow;
-  available: false;
+  available: boolean;
   publicLabel: string;
   publicMessage: string;
+};
+
+type IntakeControl =
+  | "PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED"
+  | "PUBLIC_INTAKE_SUPPLIER_REGISTRATION_ENABLED"
+  | "PUBLIC_INTAKE_PRODUCT_LISTING_ENABLED"
+  | "PUBLIC_INTAKE_BUYER_ENQUIRIES_ENABLED";
+
+const intakeControlByWorkflow: Partial<Record<PublicSubmissionWorkflow, IntakeControl>> = {
+  "farmer-registration": "PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED",
+  "supplier-registration": "PUBLIC_INTAKE_SUPPLIER_REGISTRATION_ENABLED",
+  "listing-submissions": "PUBLIC_INTAKE_PRODUCT_LISTING_ENABLED",
+  "buyer-request-submissions": "PUBLIC_INTAKE_BUYER_ENQUIRIES_ENABLED",
+  "lead-requests": "PUBLIC_INTAKE_BUYER_ENQUIRIES_ENABLED"
 };
 
 // One server-owned, default-closed authority controls both public copy and API
@@ -38,7 +52,9 @@ const workflowStates: Record<PublicSubmissionWorkflow, Omit<PublicWorkflowState,
 };
 
 export function getPublicWorkflowState(workflow: PublicSubmissionWorkflow): PublicWorkflowState {
-  return { workflow, ...workflowStates[workflow] };
+  const control = intakeControlByWorkflow[workflow];
+  const available = control ? process.env[control]?.trim().toLowerCase() === "true" : false;
+  return { workflow, ...workflowStates[workflow], available };
 }
 
 export function isPublicSubmissionAvailable(workflow: PublicSubmissionWorkflow): boolean {

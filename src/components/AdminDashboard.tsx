@@ -383,6 +383,7 @@ type ApplicationRecord = {
   private_farm_image_paths?: string[] | null;
   private_produce_image_paths?: string[] | null;
   private_document_paths?: string[] | null;
+  verification_decision?: "Not Reviewed" | "Verified" | "Rejected" | "Needs Information" | null;
 };
 type ListingSubmissionRecord = {
   id: string;
@@ -3852,10 +3853,14 @@ function AdminOptionalQueueNotice({
 function FarmerApplicationsWorkspace({
   applications,
   onUpdate,
+  onNeedsInformation,
+  onCorrect,
   onConvert
 }: {
   applications: ApplicationRecord[];
   onUpdate: (application: ApplicationRecord, status: ApplicationStatus) => Promise<void>;
+  onNeedsInformation: (application: ApplicationRecord) => Promise<void>;
+  onCorrect: (application: ApplicationRecord) => Promise<void>;
   onConvert: (application: ApplicationRecord) => Promise<void>;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -4021,6 +4026,8 @@ function FarmerApplicationsWorkspace({
 
             <div className="flex flex-wrap gap-2 border-t border-leaf-900/10 pt-5">
               <button type="button" onClick={() => void onUpdate(selected, "Under Review")} className="admin-action-tertiary">Mark Under Review</button>
+              <button type="button" onClick={() => void onNeedsInformation(selected)} className="admin-action-warning">Needs Information</button>
+              <button type="button" onClick={() => void onCorrect(selected)} className="admin-action-secondary">Correct Original Application</button>
               <button type="button" onClick={() => void onUpdate(selected, "Approved")} className="admin-action-primary">Approve</button>
               <button type="button" onClick={() => void onUpdate(selected, "Rejected")} className="admin-action-destructive">Reject</button>
               <button type="button" onClick={() => void onConvert(selected)} disabled={selected.status !== "Approved" && !selected.linked_farmer_id} className="admin-action-primary disabled:cursor-not-allowed disabled:opacity-50">
@@ -6596,6 +6603,73 @@ export function AdminDashboard({
     void loadActivity();
   }
 
+  async function requestApplicationInformation(application: ApplicationRecord) {
+    const adminNotes = window.prompt("Record what information is needed. Ghana Growers will contact the applicant manually.", "")?.trim();
+    if (!adminNotes) return;
+    const kind = application.user_type === "Supplier" ? "supplier" : "farmer";
+    const response = await fetch("/api/admin/applications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "review",
+        kind,
+        id: application.id,
+        verificationDecision: "Needs Information",
+        adminNotes,
+        entityName: application.business_or_farm_name || application.name
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string; record?: ApplicationRecord } | null;
+    if (!response?.ok) {
+      if (response?.status === 401) window.location.href = "/admin/login";
+      setApplicationErrors((current) => ({ ...current, [kind]: result?.error ?? "Could not record the information request." }));
+      return;
+    }
+    setApplications((current) => ({
+      ...current,
+      [kind]: current[kind].map((item) => item.id === application.id
+        ? { ...item, ...(result?.record ?? {}), status: "Under Review", verification_decision: "Needs Information" }
+        : item)
+    }));
+    setNotice(`${application.name} marked Needs Information.`);
+    void loadActivity();
+  }
+
+  async function correctApplicationField(application: ApplicationRecord) {
+    const farmerFields = ["applicant_name", "farm_name", "phone_number", "whatsapp_number", "email", "region", "district", "location", "production_details", "current_availability", "supply_frequency", "harvest_season", "delivery_preference", "application_message"];
+    const supplierFields = ["business_name", "contact_person", "phone", "whatsapp_number", "email", "region", "district", "products_or_services", "website_url", "registration_number", "business_description", "years_in_business"];
+    const kind = application.user_type === "Supplier" ? "supplier" : "farmer";
+    const allowed = kind === "supplier" ? supplierFields : farmerFields;
+    const field = window.prompt(`Enter one field to correct:\n${allowed.join(", ")}`, "")?.trim();
+    if (!field || !allowed.includes(field)) {
+      if (field) setApplicationErrors((current) => ({ ...current, [kind]: "Choose one of the listed correction fields." }));
+      return;
+    }
+    const value = window.prompt(`Enter the corrected value for ${field}. The original application identity and reference will be preserved.`, "");
+    if (value === null) return;
+    const response = await fetch("/api/admin/applications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "review",
+        kind,
+        id: application.id,
+        verificationDecision: application.verification_decision || "Not Reviewed",
+        corrections: { [field]: value },
+        entityName: application.business_or_farm_name || application.name
+      })
+    }).catch(() => null);
+    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+    if (!response?.ok) {
+      if (response?.status === 401) window.location.href = "/admin/login";
+      setApplicationErrors((current) => ({ ...current, [kind]: result?.error ?? "Could not correct the application." }));
+      return;
+    }
+    setNotice(`${application.name} application corrected without creating a duplicate.`);
+    await loadApplicationQueue(kind);
+    void loadActivity();
+  }
+
   async function convertProfileApplication(kind: "farmer" | "supplier", application: ApplicationRecord) {
     const linkedProfileId = kind === "farmer" ? application.linked_farmer_id : application.linked_supplier_id;
     if (linkedProfileId) {
@@ -6654,9 +6728,16 @@ export function AdminDashboard({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        action: "review",
         kind: "supplier",
         id: application.id,
-        status: nextStatus,
+        verificationDecision: action === "approve-only"
+          ? "Verified"
+          : action === "request-changes"
+            ? "Needs Information"
+            : action === "reject" || action === "archive"
+              ? "Rejected"
+              : "Not Reviewed",
         entityName: applicationName(application)
       })
     }).catch(() => null);
@@ -7809,6 +7890,8 @@ export function AdminDashboard({
                   <FarmerApplicationsWorkspace
                     applications={applications.farmer}
                     onUpdate={updateApplication}
+                    onNeedsInformation={requestApplicationInformation}
+                    onCorrect={correctApplicationField}
                     onConvert={(application) => convertProfileApplication("farmer", application)}
                   />
                 ) : applicationTab === "farmer" ? (
@@ -9089,6 +9172,14 @@ export function AdminDashboard({
                                 className="admin-action-warning w-full"
                               >
                                 {pendingSupplierReviewAction === "Under Review" ? "Requesting..." : "Request Changes"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void correctApplicationField(reviewingSupplier)}
+                                disabled={isUpdatingSupplierReview}
+                                className="admin-action-secondary w-full"
+                              >
+                                Correct Original Application
                               </button>
                               <button
                                 type="button"

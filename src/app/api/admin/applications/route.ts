@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
-import { getApplicationQueue, updateApplicationStatus, updateSupplierEditorial, type ApplicationKind, type ApplicationStatus } from "@/lib/applications";
+import { getApplicationQueue, updateApplicationReview, updateApplicationStatus, updateSupplierEditorial, type ApplicationKind, type ApplicationStatus, type ApplicationVerificationDecision } from "@/lib/applications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,7 +73,10 @@ export async function PATCH(request: Request) {
     id?: string;
     status?: ApplicationStatus;
     entityName?: string;
-    action?: "status" | "supplier-editorial";
+    action?: "status" | "review" | "supplier-editorial";
+    verificationDecision?: ApplicationVerificationDecision;
+    adminNotes?: string;
+    corrections?: Record<string, unknown>;
     editorial?: {
       launchStatus?: string;
       homepageCandidate?: boolean;
@@ -84,6 +87,26 @@ export async function PATCH(request: Request) {
       launchReady?: boolean;
     };
   };
+
+  if (body.action === "review") {
+    if ((body.kind !== "farmer" && body.kind !== "supplier") || !body.id || !body.verificationDecision) {
+      return NextResponse.json({ error: "Application, ID and review decision are required." }, { status: 400 });
+    }
+    const allowedDecisions = new Set<ApplicationVerificationDecision>(["Not Reviewed", "Verified", "Rejected", "Needs Information"]);
+    if (!allowedDecisions.has(body.verificationDecision)) return NextResponse.json({ error: "Choose a valid review decision." }, { status: 400 });
+    const update = await updateApplicationReview({
+      kind: body.kind,
+      id: body.id,
+      verificationDecision: body.verificationDecision,
+      adminNotes: body.adminNotes,
+      corrections: body.corrections,
+      adminEmail: adminUser.email,
+      entityName: body.entityName || body.id
+    });
+    return update.error
+      ? NextResponse.json({ error: update.error }, { status: update.status })
+      : NextResponse.json({ ok: true, record: update.data });
+  }
 
   if (body.action === "supplier-editorial") {
     if (body.kind !== "supplier" || !body.id || !body.editorial) {
