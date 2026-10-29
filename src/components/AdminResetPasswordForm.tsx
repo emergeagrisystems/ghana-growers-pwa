@@ -1,11 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  recoveryCredentialsFromHash,
-  recoveryLinkErrorFromHash,
-  type RecoveryCredentials,
+  beginAdminPasswordRecovery,
   updateAdminPasswordFromRecovery
 } from "@/lib/adminPasswordRecovery";
 
@@ -13,7 +11,6 @@ const minimumPasswordLength = 12;
 
 export function AdminResetPasswordForm() {
   const router = useRouter();
-  const credentials = useRef<RecoveryCredentials | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,30 +18,31 @@ export function AdminResetPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    credentials.current = recoveryCredentialsFromHash(hash);
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code")?.trim();
 
-    // Recovery credentials arrive in the fragment. Remove them before the user
-    // interacts with the page so they are not retained in copied URLs or telemetry.
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    // Remove the one-time code before rendering an interactive recovery form.
+    window.history.replaceState(null, "", window.location.pathname);
 
-    if (!credentials.current) {
-      setError(
-        recoveryLinkErrorFromHash(hash)
-          ? "This recovery link is invalid or has expired. Request one new link from Admin Login."
-          : "Open this page from a fresh Ghana Growers password-recovery email."
-      );
+    if (!code) {
+      setError("Open this page from a fresh Ghana Growers password-recovery email.");
       return;
     }
 
-    setReady(true);
+    void beginAdminPasswordRecovery(code).then((result) => {
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setReady(true);
+    });
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
-    if (!credentials.current) {
+    if (!ready) {
       setError("This recovery link is invalid or has expired. Request one new link.");
       return;
     }
@@ -58,12 +56,10 @@ export function AdminResetPasswordForm() {
     }
 
     setSubmitting(true);
-    const result = await updateAdminPasswordFromRecovery({ credentials: credentials.current, password: newPassword });
+    const result = await updateAdminPasswordFromRecovery(newPassword);
     setSubmitting(false);
     setNewPassword("");
     setConfirmPassword("");
-    credentials.current = null;
-
     if (!result.ok) {
       setError(result.error);
       return;

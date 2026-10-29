@@ -145,30 +145,6 @@ export async function signInAdminWithPassword(email: string, password: string) {
   };
 }
 
-export async function requestAdminPasswordReset(email: string, redirectTo?: string) {
-  const { url, anonKey } = supabaseAuthConfig();
-
-  if (!url || !anonKey) {
-    return { error: "Supabase Auth is not configured." };
-  }
-
-  const response = await fetch(`${url}/auth/v1/recover`, {
-    method: "POST",
-    headers: {
-      apikey: anonKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ email, redirect_to: redirectTo })
-  });
-  const result = (await response.json().catch(() => null)) as { msg?: string; error_description?: string } | null;
-
-  if (!response.ok) {
-    return { error: result?.error_description || result?.msg || "Could not send password reset email." };
-  }
-
-  return { ok: true };
-}
-
 export async function getAdminAuthorizationFromAccessToken(accessToken?: string): Promise<AdminSessionResult> {
   const { url, anonKey } = supabaseAuthConfig();
 

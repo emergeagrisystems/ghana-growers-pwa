@@ -1,59 +1,40 @@
-import { createClient, type SupportedStorage } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserConfig } from "@/lib/supabase/browser";
 
-export type RecoveryCredentials = {
-  accessToken: string;
-  refreshToken: string;
-};
+const recoveryStorageKey = "ghana-growers-admin-recovery-pkce-v1";
 
-export function recoveryCredentialsFromHash(hash: string): RecoveryCredentials | null {
-  const params = new URLSearchParams(hash.replace(/^#/, ""));
-  if (params.get("type") !== "recovery") return null;
-
-  const accessToken = params.get("access_token")?.trim();
-  const refreshToken = params.get("refresh_token")?.trim();
-  if (!accessToken || !refreshToken) return null;
-
-  return { accessToken, refreshToken };
-}
-
-export function recoveryLinkErrorFromHash(hash: string) {
-  const params = new URLSearchParams(hash.replace(/^#/, ""));
-  return params.has("error") || params.has("error_code");
-}
-
-function memoryStorage(): SupportedStorage {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => void values.set(key, value),
-    removeItem: (key) => void values.delete(key)
-  };
-}
-
-export async function updateAdminPasswordFromRecovery({
-  credentials,
-  password
-}: {
-  credentials: RecoveryCredentials;
-  password: string;
-}) {
+function recoveryClient() {
   const config = getSupabaseBrowserConfig();
-  if (!config.isConfigured) return { ok: false as const, error: "Password recovery is unavailable on this Preview." };
+  if (!config.isConfigured) return null;
 
-  const supabase = createClient(config.url, config.anonKey, {
+  return createClient(config.url, config.anonKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,
+      flowType: "pkce",
       persistSession: true,
-      storage: memoryStorage()
+      storageKey: recoveryStorageKey
     }
   });
+}
 
-  const session = await supabase.auth.setSession({
-    access_token: credentials.accessToken,
-    refresh_token: credentials.refreshToken
-  });
+export async function requestAdminPasswordRecovery(email: string, redirectTo: string) {
+  const supabase = recoveryClient();
+  if (!supabase) return { ok: false as const, error: "Password recovery is unavailable on this Preview." };
+
+  const result = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (result.error) {
+    return { ok: false as const, error: "Could not send reset instructions. Try again shortly." };
+  }
+
+  return { ok: true as const };
+}
+
+export async function beginAdminPasswordRecovery(code: string) {
+  const supabase = recoveryClient();
+  if (!supabase) return { ok: false as const, error: "Password recovery is unavailable on this Preview." };
+
+  const session = await supabase.auth.exchangeCodeForSession(code);
   if (session.error || !session.data.user) {
     return { ok: false as const, error: "This recovery link is invalid or has expired. Request one new link." };
   }
@@ -62,6 +43,19 @@ export async function updateAdminPasswordFromRecovery({
   if (user.error || user.data.user?.app_metadata?.role !== "admin") {
     await supabase.auth.signOut({ scope: "local" });
     return { ok: false as const, error: "This account is not authorised for Ghana Growers administration." };
+  }
+
+  return { ok: true as const };
+}
+
+export async function updateAdminPasswordFromRecovery(password: string) {
+  const supabase = recoveryClient();
+  if (!supabase) return { ok: false as const, error: "Password recovery is unavailable on this Preview." };
+
+  const user = await supabase.auth.getUser();
+  if (user.error || user.data.user?.app_metadata?.role !== "admin") {
+    await supabase.auth.signOut({ scope: "local" });
+    return { ok: false as const, error: "This recovery session is invalid or has expired. Request one new link." };
   }
 
   const updated = await supabase.auth.updateUser({ password });

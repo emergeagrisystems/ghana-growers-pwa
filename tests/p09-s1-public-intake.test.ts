@@ -83,24 +83,28 @@ test("buyer intake writes to the protected lead_requests queue", () => {
   assert.match(form, /form\.reset\(\);/);
 });
 
-test("admin password recovery uses a dedicated token-safe reset screen", () => {
-  const forgotRoute = source("src/app/api/admin/auth/forgot-password/route.ts");
+test("admin password recovery uses PKCE across the protected Preview boundary", () => {
+  const loginPage = source("src/app/admin/login/page.tsx");
+  const loginForm = source("src/components/AdminLoginForm.tsx");
   const resetPage = source("src/app/admin/reset-password/page.tsx");
   const resetForm = source("src/components/AdminResetPasswordForm.tsx");
   const recovery = source("src/lib/adminPasswordRecovery.ts");
 
-  assert.match(forgotRoute, /\/admin\/reset-password/);
-  assert.match(forgotRoute, /VERCEL_BRANCH_URL/);
-  assert.match(forgotRoute, /hostname\.endsWith\("\.vercel\.app"\)/);
-  assert.doesNotMatch(forgotRoute, /redirectTo[^\n]*\/admin\/login/);
-  assert.match(forgotRoute, /Cache-Control/);
+  assert.match(loginPage, /\/admin\/reset-password/);
+  assert.match(loginPage, /VERCEL_BRANCH_URL/);
+  assert.match(loginPage, /hostname\.endsWith\("\.vercel\.app"\)/);
+  assert.match(loginForm, /requestAdminPasswordRecovery/);
+  assert.match(recovery, /flowType: "pkce"/);
+  assert.match(recovery, /resetPasswordForEmail\(email, \{ redirectTo \}\)/);
+  assert.match(recovery, /exchangeCodeForSession\(code\)/);
   assert.match(resetPage, /robots: \{ index: false, follow: false \}/);
+  assert.match(resetPage, /referrer: "no-referrer"/);
   assert.match(resetForm, /window\.history\.replaceState/);
   assert.match(resetForm, /autoComplete="new-password"/);
-  assert.match(recovery, /type\"\) !== \"recovery\"/);
   assert.match(recovery, /app_metadata\?\.role !== "admin"/);
   assert.match(recovery, /supabase\.auth\.updateUser\(\{ password \}\)/);
   assert.match(recovery, /supabase\.auth\.signOut\(\{ scope: "local" \}\)/);
+  assert.doesNotMatch(recovery, /access_token|refresh_token/);
   assert.doesNotMatch(resetForm + recovery, /console\.(log|info|warn|error)/);
 });
 

@@ -2,8 +2,17 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { requestAdminPasswordRecovery } from "@/lib/adminPasswordRecovery";
 
-export function AdminLoginForm({ returnTo = "/admin", passwordUpdated = false }: { returnTo?: string; passwordUpdated?: boolean }) {
+export function AdminLoginForm({
+  returnTo = "/admin",
+  passwordUpdated = false,
+  recoveryRedirectTo
+}: {
+  returnTo?: string;
+  passwordUpdated?: boolean;
+  recoveryRedirectTo: string;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,21 +56,15 @@ export function AdminLoginForm({ returnTo = "/admin", passwordUpdated = false }:
     }
 
     setIsResetting(true);
-    const response = await fetch("/api/admin/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    }).catch(() => null);
+    const result = await requestAdminPasswordRecovery(email.trim().toLowerCase(), recoveryRedirectTo);
     setIsResetting(false);
 
-    const result = (await response?.json().catch(() => null)) as { error?: string; message?: string } | null;
-
-    if (!response?.ok) {
-      setError(result?.error ?? "Could not send reset instructions.");
+    if (!result.ok) {
+      setError(result.error);
       return;
     }
 
-    setMessage(result?.message ?? "Password reset instructions sent.");
+    setMessage("Password reset instructions have been sent if this admin account exists.");
   }
 
   return (
