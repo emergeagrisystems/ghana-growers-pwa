@@ -128,7 +128,10 @@ async function main() {
     assert.equal((await generateFarmMateNaturalAnswer(input)).ok, false);
     assert.equal((await analyzeCropDoctorImageWithOpenAI({ mimeType: "image/png", base64Image: "test" })).ok, false);
 
-    globalThis.fetch = async () => new Response(JSON.stringify({ output_text: "not JSON" }));
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      status: "completed",
+      output_text: "not JSON"
+    }));
     assert.deepEqual(await analyzeCropDoctorImageWithOpenAI({ mimeType: "image/png", base64Image: "test" }), { ok: false, reason: "invalid_response", fallback: true });
 
     globalThis.setTimeout = ((callback: (...args: unknown[]) => void) => originalTimeout(callback, 10)) as typeof setTimeout;
