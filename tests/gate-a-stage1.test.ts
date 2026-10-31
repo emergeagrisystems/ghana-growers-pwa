@@ -78,12 +78,12 @@ test("Homepage restores the approved Mama G composition", () => {
     assert.ok(page.includes(title), title);
   }
   assert.match(page, /FounderApprovedMamaGPhone/);
-  assert.match(phone, /homepage-mama-g-phone\.png/);
+  assert.match(phone, /homepage-mama-g-approved-layered\.png/);
   assert.match(styles, /\.rc1-approved-mama-g-phone/);
-  assert.match(styles, /width:310px/);
-  assert.match(styles, /width:276px/);
-  assert.match(styles, /width:260px/);
-  assert.match(styles, /width:220px/);
+  assert.match(styles, /width:400px/);
+  assert.match(styles, /width:270px/);
+  assert.match(styles, /width:247px/);
+  assert.match(styles, /width:224px/);
 });
 
 test("Homepage keeps the three founder-approved closed-state entry choices", () => {

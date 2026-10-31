@@ -14,3 +14,11 @@
 @media(min-width:701px) and (max-width:900px){.navigation{min-height:76px;gap:18px}.desktopLinks{display:flex;gap:18px}.desktopLinks a{font-size:12px}.navActions{margin-left:0}}
 @media(max-width:700px){.navigation{min-height:76px}}
 @media(max-width:520px){.navigation{min-height:70px}.brand{font-size:16px}.join{min-width:72px}}
+
+/* Current approved responsive shell; destination list and menu logic unchanged. */
+.header{border-bottom:0}.navigation{min-height:96px}
+.header,.footer{font-variation-settings:"opsz" 14}
+.destinations h2{color:#f4a62a;font-weight:700;letter-spacing:0}
+.footerBottom{border-top-color:#f4a62a}
+@media(min-width:701px) and (max-width:900px){.navigation{min-height:76px}.desktopLinks{display:none}.navActions{margin-left:auto}}
+@media(max-width:700px){.navigation{min-height:68px;padding-inline:16px}.brand{font-size:12px}.join{min-height:44px;min-width:76px}.menuButton{width:44px;min-height:44px}.navActions{gap:8px}.footer{padding-top:32px}}

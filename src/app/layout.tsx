@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
+import { PublicVisualScope } from "@/components/PublicVisualScope";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
@@ -85,7 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         ) : null}
         <Header showFullNavigation={showPublicShell} />
-        <main>{children}</main>
+        <main><PublicVisualScope>{children}</PublicVisualScope></main>
         {showPublicShell ? <Footer /> : null}
         {showPublicShell ? <FloatingWhatsAppButton /> : null}
       </body>

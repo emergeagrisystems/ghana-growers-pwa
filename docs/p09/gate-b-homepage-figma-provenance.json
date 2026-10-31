@@ -1,17 +1,29 @@
 {
   "schema_version": "1.0",
-  "recorded_at": "2026-10-27",
+  "recorded_at": "2026-10-31",
   "authority": {
     "figma_file": "Xfg7973wsLKi5e82o8ETFb",
     "homepage_frames": {
-      "1440": "1487:1293",
-      "768": "1518:1630",
+      "320": "1518:2221",
       "390": "1518:1930",
-      "320": "1518:2221"
+      "768": "1518:1630",
+      "1440": "1487:1293"
     },
-    "mama_g_artwork_node": "844:26178"
+    "mama_g_artwork_node": "1487:2358"
   },
   "asset": {
+    "source": "Unmodified native Figma PNG export of complete approved layered composition, node1487:2358",
+    "public_path": "public/rc1/homepage-mama-g-approved-layered.png",
+    "sha256": "3CEFCDB966A79579A43C8CF202F7877828806E50F1C24E96F80495B5D5B9CE42",
+    "width": 400,
+    "height": 680,
+    "format": "png",
+    "alpha_min": 0,
+    "alpha_max": 255,
+    "claim_boundary": "Illustrative Mama G interface artwork only; it is not a live interface, operational evidence, a farmer record, or proof of service availability."
+  },
+  "public_disclosure_decision": "Visible AI-generated-media process labels and overlays were removed by founder direction. Internal provenance and truthful alt/claim safeguards remain controlled in repository records.",
+  "historical_asset": {
     "source": "Founder-approved Figma export from node 844:26178",
     "public_path": "public/rc1/homepage-mama-g-phone.png",
     "sha256": "4831B968261A1D17746AF205D141D3739C37585010A0998E2F2ED44DDC3074DC",
@@ -19,6 +31,5 @@
     "height": 1402,
     "format": "png",
     "claim_boundary": "Illustrative Mama G interface artwork only; it is not a live interface, operational evidence, a farmer record, or proof of service availability."
-  },
-  "public_disclosure_decision": "Visible AI-generated-media process labels and overlays were removed by founder direction. Internal provenance and truthful alt/claim safeguards remain controlled in repository records."
+  }
 }

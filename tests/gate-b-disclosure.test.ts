@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
@@ -19,6 +20,9 @@ test("Gate B preserves internal source provenance and claim boundaries", () => {
 
   assert.equal(media.package_sha256, "885CEE95300D506AE164F7A55F1CF6752C05F5016515B638B16602759A049864");
   assert.ok(media.derivatives.every((item: { source_sha256: string; generation_id: string; claim_boundary: string }) => item.source_sha256 && item.generation_id && item.claim_boundary));
-  assert.equal(phone.asset.sha256, "4831B968261A1D17746AF205D141D3739C37585010A0998E2F2ED44DDC3074DC");
+  assert.equal(phone.historical_asset.sha256, "4831B968261A1D17746AF205D141D3739C37585010A0998E2F2ED44DDC3074DC");
+  assert.equal(phone.authority.mama_g_artwork_node, "1487:2358");
+  assert.equal(createHash("sha256").update(readFileSync(join(process.cwd(), phone.asset.public_path))).digest("hex").toUpperCase(), phone.asset.sha256);
+  assert.notEqual(phone.asset.sha256, phone.historical_asset.sha256);
   assert.match(phone.asset.claim_boundary, /illustrative/i);
 });

@@ -1,0 +1,18 @@
+.scope{
+ --gg-forest-trust:6 79 67;
+ --gg-morning-ivory:254 251 247;
+ --gg-forest-ink:18 59 53;
+ --gg-harvest-gold:244 166 42;
+ --gg-morning-mist:242 247 245;
+ --gg-border-mist:217 226 222;
+ --gg-page-background:rgb(var(--gg-morning-ivory));
+ --gg-section-background:rgb(var(--gg-morning-mist));
+ --gg-text:rgb(var(--gg-forest-ink));
+ --gg-heading:rgb(var(--gg-forest-trust));
+ --gg-action:rgb(var(--gg-harvest-gold));
+ --gg-brand-background:rgb(var(--gg-forest-trust));
+ --gg-border:rgb(var(--gg-border-mist));
+ color:var(--gg-text);background:var(--gg-page-background);font-variation-settings:"opsz" 14;
+}
+.scope :global(.gg-editorial-heading),.scope :global(.gg-hero-title){font-family:inherit;font-weight:500;letter-spacing:0}
+.scope :global(.gg-button-primary),.scope :global(.gg-button-secondary),.scope :global(.gg-text-link){font-weight:600}

@@ -169,3 +169,81 @@
   .categoryRail article{min-width:120px;flex-basis:120px}
   .categoryRail img{width:104px}
 }
+
+/* 31 Oct post-launch correction. Authority: docs/p09/postlaunch-authority-ledger-2026-10-31.md */
+.homepage{font-variation-settings:"opsz" 14}
+.homepage h1,.homepage h2,.homepage h3{letter-spacing:0}
+.hero{grid-template-columns:minmax(0,680px) minmax(0,544px);gap:24px;min-height:608px;padding:32px 96px 48px;background:#f5efe4}
+.heroCopy{max-width:680px}
+.heroCopy h1{font-size:64px;line-height:72px;letter-spacing:0;color:#0a423a}
+.heroCopy h1::after{width:88px;height:5px;background:#d99100}
+.heroCopy>p:not(.availability){max-width:680px;margin-top:16px;color:#0b0b0b;font-size:18px;line-height:28px}
+.hero .actions{margin-top:28px}
+.heroMedia{aspect-ratio:544/528;mix-blend-mode:multiply}
+.gateways{padding-block:40px;background:#f7f6f0}
+.gatewayCard{display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:12px;row-gap:12px;align-items:start}
+.gatewayCard h3{margin:0;align-self:center;line-height:22px}
+.gatewayCard p,.gatewayCard a{grid-column:1/-1;margin:0}
+.gatewayCard a{align-self:end}
+.directory{background:#f7f6f0}
+.mama{padding:64px 96px;gap:48px;background:#f5f5f5}
+.mamaTitle,.mamaHeading h2{font-size:48px;line-height:54px}
+.mamaShowcase{grid-template-columns:400px minmax(0,480px);gap:80px;width:min(100%,960px);align-items:center}
+.phone{display:flex;justify-content:flex-start;align-items:flex-start}
+.phone :global(.rc1-approved-mama-g-phone){width:400px;max-width:100%;height:auto;margin:0}
+.mamaFeatures{gap:18px}
+.mamaFeatures article{min-height:102px;gap:12px;padding:18px;border-radius:10px}
+.mamaFeatures article>span{background:#fff2cf}
+.mamaFeatures article:nth-child(2)>span{background:#eaf4ef}
+.mamaFeatures article:nth-child(3)>span{background:#f4eee7}
+.mamaFeatures article:nth-child(4)>span{background:#fff2cf}
+.mamaFeatures article:nth-child(5)>span{background:#eaf5f8}
+.mamaFeatures h3{font-size:18px;line-height:24px}
+.mamaFeatures p{font-size:14px;line-height:21px}
+.howItWorks{grid-template-columns:minmax(0,560px) minmax(0,584px);gap:56px;padding:48px max(40px,calc((100% - 1200px)/2));background:#f6f6f6;align-items:center}
+.steps .eyebrow{color:var(--green);letter-spacing:0}
+.steps h2{font-size:32px;line-height:36px}
+.steps ol{margin-top:20px;gap:18px}
+@media(max-width:980px){
+ .hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;min-height:424px;padding:52px 40px;background:var(--warm)}
+ .heroCopy h1{font-size:48px;line-height:52px;color:var(--green)}
+ .heroCopy h1::after{display:none}
+ .heroCopy>p:not(.availability){font-size:16px;line-height:24px;color:var(--muted);margin-top:18px}
+ .hero .actions{gap:10px;margin-top:18px}
+ .hero .actions a{flex:1;padding-inline:10px;text-align:center}
+ .heroMedia{aspect-ratio:330/320}
+ .gateways{padding:30px 40px;background:var(--cream)}
+ .directory{background:var(--warm)}
+ .mama{padding:44px 40px;gap:30px;background:var(--cool)}
+ .mamaTitle,.mamaHeading h2{font-size:36px;line-height:42px}
+ .mamaShowcase{grid-template-columns:270px minmax(0,1fr);gap:40px;width:100%}
+ .phone :global(.rc1-approved-mama-g-phone){width:270px}
+ .mamaFeatures{gap:10px}
+ .mamaFeatures article{min-height:70px;padding:14px}
+ .mamaFeatures h3{font-size:15px;line-height:20px}
+ .mamaFeatures p{font-size:13px;line-height:19px}
+ .howItWorks{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;padding:36px 40px;background:var(--cool)}
+ .steps h2{font-size:24px;line-height:32px}
+ .steps h3{font-size:16px;line-height:22px}
+ .steps li p{font-size:13px;line-height:19px}
+}
+@media(max-width:700px){
+ .hero{grid-template-columns:1fr;gap:20px;padding:36px 16px;min-height:0}
+ .heroCopy h1{font-size:40px;line-height:44px}
+ .heroCopy>p:not(.availability){font-size:15px;line-height:23px;margin-top:20px}
+ .hero .actions{margin-top:20px;gap:20px}
+ .heroMedia{width:300px;max-width:100%;aspect-ratio:300/276}
+ .gateways{padding:28px 16px}
+ .mama{padding:40px 16px;gap:22px}
+ .mamaTitle,.mamaHeading h2{font-size:32px;line-height:38px}
+ .mamaShowcase{grid-template-columns:minmax(0,1fr);gap:22px}
+ .phone :global(.rc1-approved-mama-g-phone){width:247px}
+ .mamaFeatures article{min-height:0;padding:14px;gap:12px}
+ .howItWorks{display:flex;align-items:stretch;gap:22px;padding:36px 16px}
+}
+@media(max-width:360px){
+ .heroCopy h1{font-size:36px;line-height:40px}
+ .heroMedia{width:288px}
+ .phone :global(.rc1-approved-mama-g-phone){width:224px}
+ .mamaTitle,.mamaHeading h2{font-size:30px;line-height:36px}
+}
