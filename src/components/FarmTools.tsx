@@ -356,20 +356,43 @@ export function FarmTools() {
   useEffect(() => {
     const node = workspace.current;
     const viewport = window.visualViewport;
-    if (!node || !viewport) return;
+    if (!node) return;
+    let frame = 0;
     function fit() {
-      if (!node || !viewport) return;
-      const top = Math.max(0, node.getBoundingClientRect().top - viewport.offsetTop);
-      node.style.setProperty("--adviser-height", Math.max(180, viewport.height - top) + "px");
+      if (!node) return;
+      const top = node.getBoundingClientRect().top - (viewport?.offsetTop ?? 0);
+      const editing = node.querySelector("form:focus-within #ask-farmmate-question") !== null;
+      // A negative top is real when the document scrolled before focus. Keep it
+      // in the height so the composer lands at the visible bottom. Leave both
+      // document scroll and the independently scrolling consultation untouched.
+      const start = editing && window.matchMedia("(max-width: 700px)").matches ? top : Math.max(0, top);
+      const available = Math.max(0, (viewport?.height ?? window.innerHeight) - start);
+      node.style.setProperty("--adviser-height", available + "px");
+    }
+    function scheduleFit() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    }
+    function onPageScroll() {
+      // Ordinary page scrolling must still allow access to the footer. Input
+      // focus and keyboard resize/pan each get their own fresh measurement.
+      if (!node?.querySelector("form:focus-within #ask-farmmate-question")) scheduleFit();
     }
     fit();
-    viewport.addEventListener("resize", fit);
-    viewport.addEventListener("scroll", fit);
-    window.addEventListener("scroll", fit, { passive: true });
+    node.addEventListener("focusin", scheduleFit);
+    node.addEventListener("focusout", scheduleFit);
+    viewport?.addEventListener("resize", scheduleFit);
+    viewport?.addEventListener("scroll", scheduleFit);
+    window.addEventListener("resize", scheduleFit);
+    window.addEventListener("scroll", onPageScroll, { passive: true });
     return () => {
-      viewport.removeEventListener("resize", fit);
-      viewport.removeEventListener("scroll", fit);
-      window.removeEventListener("scroll", fit);
+      cancelAnimationFrame(frame);
+      node.removeEventListener("focusin", scheduleFit);
+      node.removeEventListener("focusout", scheduleFit);
+      viewport?.removeEventListener("resize", scheduleFit);
+      viewport?.removeEventListener("scroll", scheduleFit);
+      window.removeEventListener("resize", scheduleFit);
+      window.removeEventListener("scroll", onPageScroll);
     };
   }, []);
 

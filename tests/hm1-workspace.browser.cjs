@@ -47,7 +47,24 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       const start = page.locator("#home-adviser-question");
       await start.waitFor();
       await page.evaluate(() => document.fonts.ready);
+      assert.equal((await hero.getByRole("heading",{level:1}).textContent()).trim(), "Ask Mama G. Discover more.");
+      await page.emulateMedia({reducedMotion:"reduce"});
+      assert.ok(await hero.locator("p span").first().evaluate(el => getComputedStyle(el).animationName === "none"));
+      assert.ok(await hero.getByRole("link",{name:"Browse Farms & Suppliers"}).evaluate(el => getComputedStyle(el).transitionDuration === "0s"));
       await snap("homepage");
+      if (width <= 768) {
+        const menu = page.getByRole("button",{name:"Open navigation"});
+        await menu.focus();
+        await menu.press("Enter");
+        const nav = page.getByRole("navigation",{name:"Mobile navigation"});
+        assert.deepEqual(await nav.getByRole("link").allTextContents(), ["Ask Mama G","Farms & Suppliers","Join"]);
+        assert.equal(await nav.locator("p").count(), 0);
+        await page.keyboard.press("Tab");
+        assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("href")), "/farmer-hub");
+        await snap("menu");
+        await page.keyboard.press("Escape");
+        assert.ok(await menu.evaluate(el => document.activeElement === el));
+      }
       await start.fill(question);
       await page.getByRole("button", {name:"Continue with my draft"}).click();
       const field = page.locator("#ask-farmmate-question");
@@ -60,6 +77,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       const checkWidth = () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
       assert.ok(await checkWidth());
       await snap("ask");
+      const adviserNav = page.getByRole("navigation",{name:"Adviser navigation"});
+      for (const target of await adviserNav.getByRole("button").all()) {
+        const rect = await target.boundingBox();
+        assert.ok(rect.width >= 44 && rect.height >= 44);
+      }
       await field.focus();
       await page.setViewportSize({width, height: 365});
       await page.waitForFunction(() => {
@@ -78,6 +100,14 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       assert.ok(logs.every(message => !message.includes(question)));
       await page.getByRole("navigation", { name:"Adviser navigation" }).getByRole("button", {name:"Crop Doctor"}).click();
       assert.ok(await page.locator("#crop-doctor-disclosure").isVisible());
+      assert.match(await page.locator("#crop-doctor-disclosure").innerText(), /AI provider processes the photo/);
+      const privacy = page.locator("details").filter({has:page.getByText("About AI & privacy",{exact:true})});
+      assert.equal(await privacy.getAttribute("open"), null);
+      assert.ok(await privacy.evaluate(el => !!(document.querySelector('[aria-describedby="crop-doctor-disclosure"]').compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
+      await privacy.locator("summary").click();
+      assert.match(await privacy.innerText(), /personal documents/);
+      await snap("crop-privacy");
+      await privacy.locator("summary").click();
       const photo = page.getByLabel("Choose Photo", {exact:true});
       await photo.setInputFiles({ name:"hm1-control.png", mimeType:"image/png",
         buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZCkAAAAASUVORK5CYII=","base64") });
@@ -107,7 +137,67 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       const scrolls = await panel.evaluate(el => { el.scrollTop = el.scrollHeight; return el.scrollHeight > el.clientHeight && el.scrollTop > 0; });
       assert.ok(scrolls, "long answers scroll within the consultation");
       assert.ok(await send.evaluate(el => el.getBoundingClientRect().bottom <= innerHeight));
-      evidence.push({width, homepage:true, handoff:true, preSendApi:0, sendOperations:1, privateNavigation:true, reducedViewport:true,
+      const keyboardCycles = [];
+      if (width < 700) {
+        // Reproduce the failed deployed case: inner reading position AND outer
+        // scroll retained. The earlier test had covered only a clean viewport.
+        const cdp = await context.newCDPSession(page);
+        await cdp.send("Emulation.setSafeAreaInsetsOverride", {insets:{bottom:20}});
+        await page.waitForFunction(() => parseFloat(getComputedStyle(document.querySelector('nav[aria-label="Adviser navigation"]')).paddingBottom) >= 25);
+        const reading = await panel.evaluate(el => { el.scrollTop = Math.floor(el.scrollHeight / 3); return el.scrollTop; });
+        await page.evaluate(() => window.scrollTo(0,282));
+        await page.waitForFunction(() => scrollY >= 200);
+        await field.evaluate(el => el.focus({preventScroll:true}));
+        for (const shortHeight of [365,320,390]) {
+          await page.setViewportSize({width,height:shortHeight});
+          await page.waitForFunction(() => {
+            const v = window.visualViewport;
+            return ["#ask-farmmate-question",'[aria-label="Send question"]'].every(selector => {
+              const el = document.querySelector(selector), r = el.getBoundingClientRect();
+              const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+              return r.top >= v.offsetTop - 1 && r.bottom <= v.offsetTop + v.height + 1 && el.contains(hit);
+            });
+          });
+          assert.ok(await field.evaluate(el => document.activeElement === el));
+          assert.ok(await checkWidth());
+          keyboardCycles.push(await send.evaluate(el => ({
+            pageScroll: scrollY, readScroll: document.querySelector('[aria-label="Consultation"]').scrollTop,
+            visualHeight: visualViewport.height, visualTop: visualViewport.offsetTop,
+            sendTop: el.getBoundingClientRect().top, sendBottom: el.getBoundingClientRect().bottom,
+            navBottomPadding: getComputedStyle(document.querySelector('nav[aria-label="Adviser navigation"]')).paddingBottom,
+            fieldFocused: document.activeElement.id === "ask-farmmate-question", hitTest: "passed"
+          })));
+          if (shortHeight === 365) {
+            // Model a keyboard that pans the visual viewport independently of
+            // the document. Only this test installs the temporary geometry.
+            await page.evaluate(() => {
+              Object.defineProperty(visualViewport,"offsetTop",{configurable:true,value:36});
+              Object.defineProperty(visualViewport,"height",{configurable:true,value:innerHeight-74});
+              visualViewport.dispatchEvent(new Event("scroll"));
+            });
+            await page.waitForFunction(() => {
+              const v = visualViewport;
+              const app = document.querySelector('[aria-label="Mama G workspace"]').getBoundingClientRect();
+              if (Math.abs(app.bottom - (v.height + v.offsetTop)) > 1) return false;
+              return ["#ask-farmmate-question",'[aria-label="Send question"]'].every(selector => {
+                const r = document.querySelector(selector).getBoundingClientRect();
+                return r.top >= v.offsetTop && r.bottom <= v.offsetTop + v.height;
+              });
+            });
+            await page.evaluate(() => {
+              delete visualViewport.offsetTop;
+              delete visualViewport.height;
+              visualViewport.dispatchEvent(new Event("resize"));
+            });
+          }
+          if (shortHeight === 365) await snap("retained-scroll-keyboard");
+          await page.setViewportSize({width,height});
+          await page.waitForFunction(() => innerHeight === 844);
+          assert.ok(Math.abs(await panel.evaluate(el => el.scrollTop) - reading) < 3, "preserve the reading position");
+        }
+        await cdp.detach();
+      }
+      evidence.push({width, homepage:true, handoff:true, preSendApi:0, sendOperations:1, privateNavigation:true, reducedViewport:true, keyboardCycles,
         physicalKeyboard:"not exercised", longResponseControls:true, cropDisclosureAndFileSelection:true, controlledPhotoFailures:1, tools:true, freshAskEmpty:true, reloadEmpty:true});
       await context.close();
     }

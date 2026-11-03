@@ -351,7 +351,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
       </div>
 
       <p id="crop-doctor-disclosure" className="mt-5 text-sm leading-6 text-ink/75">
-        Crop Doctor uses AI to analyse the crop photo you upload. The image may be processed by our AI service provider to identify possible crop-health issues. Do not upload photos containing people, personal documents or other sensitive information. Results are guidance, not a confirmed diagnosis.
+        Our AI provider processes the photo you send. Show only the crop. Keep people, documents and private details out. Results are guidance, not a diagnosis.
       </p>
 
       <div
@@ -596,6 +596,10 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
           </div>
         ) : null}
       </div>
+      <details className="mt-5 border-t border-leaf-900/15 pt-2 text-sm leading-6 text-ink/75">
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-leaf-700">About AI &amp; privacy</summary>
+        <p>Crop Doctor uses AI to analyse the crop photo you upload. The image may be processed by our AI service provider to identify possible crop-health issues. Do not upload photos containing people, personal documents or other sensitive information. Results are guidance, not a confirmed diagnosis.</p>
+      </details>
     </article>
   );
 }

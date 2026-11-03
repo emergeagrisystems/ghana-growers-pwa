@@ -22,3 +22,11 @@
 .footerBottom{border-top-color:#f4a62a}
 @media(min-width:701px) and (max-width:900px){.navigation{min-height:76px}.desktopLinks{display:none}.navActions{margin-left:auto}}
 @media(max-width:700px){.navigation{min-height:68px;padding-inline:16px}.brand{font-size:12px}.join{min-height:44px;min-width:76px}.menuButton{width:44px;min-height:44px}.navActions{gap:8px}.footer{padding-top:32px}}
+@media (max-width: 900px) {
+  .mobileMenu { grid-template-columns: minmax(0, 1fr); gap: 4px; padding-block: 8px 14px; border-block: 1px solid #d7dfd7; background: #fbfaf4; box-shadow: 0 8px 14px #14382a0c; }
+  .mobileMenu a { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; min-height: 46px; color: #17473b; background: #fff; border: 1px solid #e2e6dc; border-radius: 8px; text-decoration: none; }
+  .mobileMenu a::after { content: ""; width: 7px; height: 7px; border: solid currentColor; border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
+  .mobileMenu a[aria-current] { border-inline-start: 4px solid #24604e; background: #e6eee3; font-weight: 750; }
+  .mobileMenu a:last-child { background: #40504a; border-color: #40504a; color: #fff; }
+  .mobileMenu a:focus-visible, .menuButton:focus-visible { outline: 3px solid #215ea2; outline-offset: 2px; }
+}

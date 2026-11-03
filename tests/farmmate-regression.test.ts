@@ -2246,7 +2246,7 @@ const tests: TestCase[] = [
         assert.ok(position >= 0, gateASections[index]);
         if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["Find Farms, Produce &amp; Suppliers", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
+      ["Ask Mama G. <span>Discover more.</span>", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
       assert.ok(page.includes('farmerResult.status === "ready"'));
       assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
@@ -2434,7 +2434,7 @@ const tests: TestCase[] = [
       assert.equal(layout.includes("height: 630"), true);
       assert.equal(seo.includes('defaultOgImage = "/images/ghana-growers-social.png"'), true);
       assert.equal(homepage.includes("Stage1Homepage"), true);
-      assert.equal(implementation.includes("Find Farms, Produce &amp; Suppliers"), true);
+      assert.equal(implementation.includes("Ask Mama G. <span>Discover more.</span>"), true);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
       assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);

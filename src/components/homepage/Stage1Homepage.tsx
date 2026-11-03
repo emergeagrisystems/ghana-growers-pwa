@@ -34,8 +34,8 @@ export async function Stage1Homepage() {
     <main className={`${styles.homepage} ${foundationFont.className}`}>
       <section className={styles.hero} aria-labelledby="homepage-hero-title">
         <div className={styles.heroCopy}>
-          <h1 id="homepage-hero-title">Find Farms, Produce &amp; Suppliers</h1>
-          <p>Discover farms and suppliers across Ghana. Get practical growing advice from Mama G.</p>
+          <h1 id="homepage-hero-title">Ask Mama G. <span>Discover more.</span></h1>
+          <p>Get farming guidance from Mama G. Explore <span className={styles.ecosystem}>farms, produce and suppliers</span> in the Ghana Growers directory — the starting point for a growing agricultural marketplace.</p>
           <div className={styles.actions}>
             <Link href="/directory" className={styles.primaryButton}>Browse Farms &amp; Suppliers</Link>
             <Link href="/join" className={styles.secondaryButton}>Registration information</Link>

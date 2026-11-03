@@ -52,8 +52,7 @@ export function Stage1PublicHeader() {
       {open ? (
         <nav id="stage1-mobile-menu" className={styles.mobileMenu} aria-label="Mobile navigation">
           {publicLinks.map((item) => <Link href={item.href} key={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>{item.label}</Link>)}
-          <Link href="/join">Join</Link>
-          <p>Registration and sourcing enquiries remain closed.</p>
+          <Link href="/join" aria-current={pathname === "/join" || pathname.startsWith("/join/") ? "page" : undefined}>Join</Link>
         </nav>
       ) : null}
     </header>

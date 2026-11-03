@@ -67,9 +67,12 @@
   .panel { grid-row: 1; border: 0; border-radius: 0; }
   .panelTitle { padding: 8px 14px; }
   .brand { display: none; }
-  .nav { grid-row: 2; padding: 3px 6px max(3px, env(safe-area-inset-bottom)); flex-direction: row; gap: 5px; background: #fffdf8; border-top: 1px solid var(--line); }
-  .nav button { flex: 1; flex-direction: column; gap: 1px; justify-content: center; min-height: 44px; font-size: 12px; padding: 3px; }
-  .nav button[aria-current] { background: #deebe2; color: var(--forest); }
+  .nav { grid-row: 2; position: relative; padding: 5px max(8px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); flex-direction: row; gap: 6px; background: #fffdf7; border-top: 1px solid #c8d5cc; box-shadow: 0 -3px 10px #14382a0d; }
+  .nav button { flex: 1; position: relative; flex-direction: column; gap: 2px; justify-content: center; min-width: 44px; min-height: 47px; color: #42584d; font-size: 12px; padding: 4px; }
+  .nav button[aria-current] { background: #e4eee1; color: #064f43; font-weight: 750; }
+  .nav button[aria-current]::before { position: absolute; content: ""; top: 0; width: 24px; height: 3px; border-radius: 0 0 3px 3px; background: currentColor; }
+  .nav button[aria-current] svg { stroke-width: 2.5; }
+  .nav button:focus-visible { outline-offset: -2px; }
   .composer { padding: 6px 10px 4px; }
   .toolGrid { gap: 7px; }
 }
