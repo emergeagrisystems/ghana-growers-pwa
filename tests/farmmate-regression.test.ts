@@ -1027,7 +1027,7 @@ const tests: TestCase[] = [
         assert.equal(component.includes(`"${suggestion}"`), true);
       }
 
-      assert.equal(component.includes("Try a question"), true);
+      assert.equal(component.includes('aria-label="Suggested questions"'), true);
       assert.equal(component.includes("Tomato leaves turning yellow"), false);
     }
   },
@@ -1045,7 +1045,7 @@ const tests: TestCase[] = [
     run: () => {
       const component = repoFile("src/components/AskFarmMate.tsx");
       assert.ok(component.includes("suggestions.slice(0, 2).map"));
-      assert.ok(component.includes("!askedQuestion && <div className={styles.starters}"));
+      assert.ok(component.includes("!askedQuestion && <div className={styles.intro}"));
       assert.ok(component.includes("onClick={() => setQuestion(suggestion)}"));
     }
   },
@@ -2246,7 +2246,7 @@ const tests: TestCase[] = [
         assert.ok(position >= 0, gateASections[index]);
         if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["Ask Mama G. <span>Discover more.</span>", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
+      ["<EcosystemHeadline />", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
       assert.ok(page.includes('farmerResult.status === "ready"'));
       assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
@@ -2434,7 +2434,7 @@ const tests: TestCase[] = [
       assert.equal(layout.includes("height: 630"), true);
       assert.equal(seo.includes('defaultOgImage = "/images/ghana-growers-social.png"'), true);
       assert.equal(homepage.includes("Stage1Homepage"), true);
-      assert.equal(implementation.includes("Ask Mama G. <span>Discover more.</span>"), true);
+      assert.equal(implementation.includes("<EcosystemHeadline />"), true);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
       assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);
@@ -3889,7 +3889,7 @@ const tests: TestCase[] = [
       assert.equal(FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE.includes("Live weather is unavailable"), true);
       assert.equal(component.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
       assert.equal(component.includes("setForecast(null)"), true);
-      assert.equal(component.includes("window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY)"), true);
+      assert.equal(component.includes("saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY)"), true);
     }
   },
   {
@@ -3899,8 +3899,8 @@ const tests: TestCase[] = [
 
       assert.equal(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, "gg-farmmate-weather-location");
       assert.equal(component.includes("FARM_MATE_WEATHER_LOCATION_STORAGE_KEY"), true);
-      assert.equal(component.includes("setItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY"), true);
-      assert.equal(component.includes("window.localStorage.removeItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY)"), true);
+      assert.equal(component.includes("saveWeatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, locationKey)"), true);
+      assert.equal(component.includes("saveWeatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY)"), true);
       assert.equal(component.includes("latitude: position.coords.latitude"), true);
       assert.equal(component.includes("FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY"), true);
     }
@@ -3966,8 +3966,8 @@ const tests: TestCase[] = [
     run: () => {
       const hub = repoFile("src/components/FarmTools.tsx");
       const ask = repoFile("src/components/AskFarmMate.tsx");
-      assert.ok(ask.includes("What do you need help with today?"));
-      for (const key of ["ask", "doctor", "tools"]) assert.ok(hub.includes('key: "' + key + '"'));
+      assert.ok(ask.includes("What would you like to ask?"));
+      for (const key of ["ask", "doctor", "storage", "tools"]) assert.ok(hub.includes('key: "' + key + '"'));
       assert.ok(hub.includes("<AskFarmMate"));
       assert.ok(hub.includes("<CropDoctor"));
     }
@@ -3979,7 +3979,7 @@ const tests: TestCase[] = [
       const css = repoFile("src/components/AdviserWorkspace.module.css");
       assert.ok(hub.includes('aria-label="Adviser navigation"'));
       assert.ok(hub.includes('aria-label="Adviser support"'));
-      assert.ok(css.includes("grid-template-columns: minmax(142px, 180px) minmax(0, 1fr)"));
+      assert.ok(css.includes("grid-template-columns: 152px minmax(0,1fr) 216px"));
       assert.ok(css.includes(".conversation, .toolPane"));
     }
   },
@@ -4048,9 +4048,9 @@ const tests: TestCase[] = [
     run: () => {
       const css = repoFile("src/components/AdviserWorkspace.module.css");
       const hub = repoFile("src/components/FarmTools.tsx");
-      assert.ok(css.includes(".panel { grid-row: 1;"));
-      assert.ok(css.includes("grid-row: 2;"));
-      assert.ok(hub.includes("weatherOpen && <FarmMateWeatherFoundation"));
+      assert.ok(css.includes(".panel { grid-row: 2;"));
+      assert.ok(css.includes(".nav { grid-row: 3;"));
+      assert.ok(hub.includes("<FarmMateWeatherFoundation compact"));
       assert.ok(hub.includes("FARM_MATE_TOOL_LIMITS.ask_farmmate"));
       assert.ok(hub.includes("FARM_MATE_TOOL_LIMITS.crop_doctor"));
     }

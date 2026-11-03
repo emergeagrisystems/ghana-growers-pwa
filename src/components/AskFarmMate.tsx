@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Camera, Loader2, Send } from "lucide-react";
+import { Camera, Loader2, Send } from "lucide-react";
 import { FarmMateDecisionStatus, type FarmMateDecisionStatusValue } from "@/components/FarmMateDecisionStatus";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { boundedJsonRequest, FARM_MATE_BROWSER_TIMEOUT_MS } from "@/lib/farmmate/request-limits";
@@ -44,7 +44,6 @@ import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditSt
 import { FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, type WeatherDecisionSummary } from "@/lib/farmmate/weather";
 import { GENERAL_AGRONOMY_UNKNOWN_CROP_NOTE } from "@/lib/farmmate/general-agronomy-specialist";
 import { FarmMateAnswerFeedback } from "@/components/FarmMateAnswerFeedback";
-import { HarvestStorageGuide } from "@/components/HarvestStorageGuide";
 import { isPublicSubmissionAvailable } from "@/lib/publicSubmissionAvailability";
 import {
   farmMateAnswerSnippet,
@@ -1211,23 +1210,8 @@ export function AskFarmMate({
   const shouldShowCreditActions = creditReason === "credits_exhausted";
 
   return (
-    <article id="assistant" className={styles.ask}>
+    <article id="assistant" className={styles.ask} data-empty={!askedQuestion && !retryCreditGate}>
       <div ref={conversationView} className={styles.conversation} aria-label="Consultation">
-        {!askedQuestion && <div className={styles.welcome}>
-          <span className={styles.bot}><Bot size={22} aria-hidden="true" /></span>
-          <small>FIELD NOTES / ASK</small>
-          <h2>What do you need help with today?</h2>
-          <p>Tell Mama G what you see on your farm.</p>
-        </div>}
-        {activeToolHandoff?.question === question ? <div className="flex flex-wrap gap-2" aria-label="Context from farm tool">{activeToolHandoff.chips.map((chip) => <span key={chip} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">{chip}</span>)}</div> : null}
-        {!askedQuestion && <div className={styles.starters}>
-          <p className={styles.smallTitle}>Try a question</p>
-          {suggestions.slice(0, 2).map(suggestion => <button key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}<span aria-hidden="true">↗</span></button>)}
-          {onOpenCropDoctor && <button type="button" className={styles.photoAction} onClick={() => onOpenCropDoctor()}><Camera aria-hidden="true" size={20} /> Check a crop photo</button>}
-        </div>}
-        <details className={styles.details}><summary>Harvest and storage guide</summary>
-        <HarvestStorageGuide onAsk={(handoff) => { setActiveToolHandoff(handoff); setActiveCropDoctorHandoff(null); setQuestion(handoff.question); }} />
-        </details>
         <details className={styles.details}><summary>Question balance and safe use</summary>
           <p>{FARM_MATE_TOOL_LIMITS.ask_farmmate.limit} Ask questions per rolling {FARM_MATE_TOOL_LIMITS.ask_farmmate.windowHours} hours.</p>
           <p>{credits ? farmMateCreditLine("ask_farmmate", credits) : balanceChecked ? "Balance unavailable. You can check again." : "Check your current balance before sending."}</p>
@@ -1482,6 +1466,13 @@ export function AskFarmMate({
       </div>
       </div>
       <form className={styles.composer} onSubmit={askFarmMate}>
+        {!askedQuestion && <div className={styles.intro}>
+          <h2>What would you like to ask?</h2>
+          <div className={styles.starters} aria-label="Suggested questions">
+            {suggestions.slice(0, 2).map(suggestion => <button key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}</button>)}
+          </div>
+        </div>}
+        {activeToolHandoff?.question === question ? <div className="flex flex-wrap gap-2" aria-label="Context from farm tool">{activeToolHandoff.chips.map((chip) => <span key={chip} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">{chip}</span>)}</div> : null}
         <label className="sr-only" htmlFor="ask-farmmate-question">Your farming question</label>
         <div className={styles.inputRow}>
           <textarea
@@ -1506,6 +1497,7 @@ export function AskFarmMate({
             {isThinking ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}<span>Send</span>
           </button>
         </div>
+        {onOpenCropDoctor && <button type="button" className={styles.photoAction} aria-label="Check a crop photo" onClick={() => onOpenCropDoctor()}><Camera size={20} aria-hidden="true" /> Crop photo</button>}
         <div id="ask-mama-g-disclosure" className={styles.privacy}>
           <p>AI can make mistakes. Avoid sensitive details. Check labels and seek qualified local advice.</p>
           <details className="mt-2"><summary className="cursor-pointer font-bold text-leaf-700">About AI &amp; privacy</summary><p className="mt-2">Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.</p></details>

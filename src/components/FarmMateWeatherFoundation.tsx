@@ -2,6 +2,7 @@
 
 import { CloudRain, CloudSun, Loader2, LocateFixed, MapPin, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import styles from "./AdviserWorkspace.module.css";
 import { FarmMateDecisionStatus, type FarmMateDecisionStatusValue } from "@/components/FarmMateDecisionStatus";
 import { todayFarmDecision, type FarmTaskChecks } from "@/lib/farmmate/experience-decisions";
 import type { WeatherDecisionTask } from "@/lib/farmmate/weather-decision-specialist";
@@ -41,6 +42,18 @@ const WEATHER_USE_LOCATION_EVENT = "gg-farmmate-weather-use-location";
 
 function notifyWeatherUpdate(update: WeatherUpdate) {
   window.dispatchEvent(new CustomEvent<WeatherUpdate>(WEATHER_UPDATE_EVENT, { detail: update }));
+}
+
+// A browser can deny storage while still allowing a live area-only forecast.
+function weatherPreference(key: string): string | null {
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+
+function saveWeatherPreference(key: string, value?: string) {
+  try {
+    if (value === undefined) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch { /* Keep the current forecast in memory for this visit. */ }
 }
 
 function storedWeatherSummary(): WeatherDecisionSummary | null {
@@ -101,11 +114,11 @@ function requestUrl(request: WeatherRequest) {
   return `/api/farmmate/weather?${params.toString()}`;
 }
 
-export function FarmMateWeatherFoundation() {
-  const [request, setRequest] = useState<WeatherRequest>({ type: "location", locationKey: "accra" });
+export function FarmMateWeatherFoundation({ compact = false }: { compact?: boolean }) {
+  const [request, setRequest] = useState<WeatherRequest>({ type: "location", locationKey: "" });
   const [forecast, setForecast] = useState<FarmMateWeatherForecast | null>(null);
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const selectedLocationKey = request.type === "location" ? request.locationKey : "browser-location";
   const selectedLocationLabel = useMemo(() => {
@@ -118,7 +131,7 @@ export function FarmMateWeatherFoundation() {
   }, [request]);
 
   useEffect(() => {
-    const savedLocation = window.localStorage.getItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY);
+    const savedLocation = weatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY);
     const location = supportedFarmMateWeatherLocations.find((item) => item.key === savedLocation);
 
     if (location) {
@@ -127,12 +140,13 @@ export function FarmMateWeatherFoundation() {
   }, []);
 
   useEffect(() => {
+    if (request.type === "location" && !request.locationKey) return;
     let cancelled = false;
 
     async function loadForecast() {
       setIsLoading(true);
       setForecast(null);
-      window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+      saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
       setMessage("");
 
       try {
@@ -143,22 +157,22 @@ export function FarmMateWeatherFoundation() {
           return;
         }
 
-        if (data?.ok && data.forecast) {
+        if (response.ok && data?.ok && data.forecast?.location?.name && Array.isArray(data.forecast.days) && data.forecast.days.length) {
           setForecast(data.forecast);
           const summary = storedWeatherContextFromForecast(data.forecast);
-          window.localStorage.setItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, JSON.stringify(summary));
+          saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY, JSON.stringify(summary));
           notifyWeatherUpdate({ summary, message: "", locationKey: data.forecast.location.key ?? selectedLocationKey });
           return;
         }
 
         setForecast(null);
-        window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+        saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
         setMessage(data?.message || FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE);
         notifyWeatherUpdate({ summary: null, message: data?.message || FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE, locationKey: selectedLocationKey });
       } catch {
         if (!cancelled) {
           setForecast(null);
-          window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+          saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
           setMessage(FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE);
           notifyWeatherUpdate({ summary: null, message: FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE, locationKey: selectedLocationKey });
         }
@@ -179,8 +193,8 @@ export function FarmMateWeatherFoundation() {
   function selectLocation(locationKey: string) {
     setForecast(null);
     setIsLoading(true);
-    window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
-    window.localStorage.setItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, locationKey);
+    saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+    saveWeatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY, locationKey);
     notifyWeatherUpdate({ summary: null, message: "Checking live weather...", locationKey });
     setRequest({ type: "location", locationKey });
   }
@@ -198,8 +212,8 @@ export function FarmMateWeatherFoundation() {
       (position) => {
         setForecast(null);
         setIsLoading(true);
-        window.localStorage.removeItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
-        window.localStorage.removeItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY);
+        saveWeatherPreference(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
+        saveWeatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY);
         setRequest({
           type: "browser",
           latitude: position.coords.latitude,
@@ -236,6 +250,30 @@ export function FarmMateWeatherFoundation() {
     };
   });
 
+  if (compact) {
+    const today = forecast?.days[0];
+    return <section className={styles.weatherStrip} aria-label="Farm weather">
+      <label htmlFor="workspace-weather-area"><CloudSun size={19} aria-hidden="true" /> Farm weather</label>
+      <select id="workspace-weather-area" value={selectedLocationKey} onChange={event => selectLocation(event.target.value)}>
+        <option disabled value="">Choose your area</option>
+        {request.type === "browser" && <option value="browser-location">Your current area</option>}
+        {supportedFarmMateWeatherLocations.map(area => <option value={area.key} key={area.key}>{area.name}</option>)}
+      </select>
+      <div role="status" className={styles.weatherStatus}>
+        {isLoading && "Checking live weather…"}
+        {message && <p>{message} {request.type === "location" && selectedLocationKey &&
+          <button type="button" className="min-h-11 underline" onClick={() => selectLocation(selectedLocationKey)}>Try again</button>}</p>}
+        {forecast && today && <>
+          <strong>{mainTemperatureLine(today, forecast.currentTemperatureC)} · {rainLine(today)}</strong>
+          <small>{updatedLine(forecast)}</small>
+          <details><summary>3-day forecast</summary>
+            {forecast.days.map(day => <p key={day.date}>{day.label} · {temperatureLine(day)} · {rainLine(day)}</p>)}
+          </details>
+        </>}
+      </div>
+    </section>;
+  }
+
   return (
     <div className="grid gap-4">
       <div className="rounded-md border border-leaf-900/10 bg-white/95 p-4 shadow-soft">
@@ -260,6 +298,7 @@ export function FarmMateWeatherFoundation() {
               value={selectedLocationKey}
               onChange={(event) => selectLocation(event.target.value)}
             >
+              <option disabled value="">Choose your area</option>
               {request.type === "browser" ? <option value="browser-location">Your current area</option> : null}
               {supportedFarmMateWeatherLocations.map((location) => (
                 <option key={location.key} value={location.key}>
@@ -381,14 +420,14 @@ export function CanIFarmTodayExperience({
   onOpenPlantingAdvisor: (checks: FarmTaskChecks) => void;
 }) {
   const [weather, setWeather] = useState<WeatherDecisionSummary | null>(null);
-  const [locationKey, setLocationKey] = useState("accra");
+  const [locationKey, setLocationKey] = useState("");
   const [weatherMessage, setWeatherMessage] = useState("");
   const [selectedTask, setSelectedTask] = useState<WeatherDecisionTask | "">("");
   const [checks, setChecks] = useState<FarmTaskChecks>({});
 
   useEffect(() => {
     setWeather(storedWeatherSummary());
-    setLocationKey(window.localStorage.getItem(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY) || "accra");
+    setLocationKey(weatherPreference(FARM_MATE_WEATHER_LOCATION_STORAGE_KEY) || "");
     function handleUpdate(event: Event) {
       const update = (event as CustomEvent<WeatherUpdate>).detail;
       setWeather(update.summary);
@@ -413,8 +452,9 @@ export function CanIFarmTodayExperience({
     {weatherMessage ? <p role="status" className="mt-2 text-sm font-bold text-earth-700">{weatherMessage}</p> : null}
     <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
       <label className="grid gap-1 text-sm font-black text-ink">Weather area
-        <select className="gg-field min-h-11" value={locationKey} onChange={(event) => { setLocationKey(event.target.value); window.dispatchEvent(new CustomEvent(WEATHER_SELECT_EVENT, { detail: event.target.value })); }}>
+        <select className="gg-field min-h-11" aria-label="Area for task decision" value={locationKey} onChange={(event) => { setLocationKey(event.target.value); window.dispatchEvent(new CustomEvent(WEATHER_SELECT_EVENT, { detail: event.target.value })); }}>
           {locationKey === "browser-location" ? <option value="browser-location">Your current area</option> : null}
+          <option value="" disabled>Choose your area</option>
           {supportedFarmMateWeatherLocations.map((location) => <option key={location.key} value={location.key}>{location.name} / {location.region}</option>)}
         </select>
       </label>

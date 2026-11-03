@@ -1,0 +1,58 @@
+{
+  "status": "PROVISIONAL — founder visual acceptance open. Protected Preview only.",
+  "provider": "OpenAI native ChatGPT/Codex image generation",
+  "model": "Native image generator; underlying model version not exposed by tool",
+  "generation": "exec-6d78f002-aa42-462d-b1df-30c3e36fba82",
+  "date": "2026-11-03",
+  "prompt": "Create one original photorealistic editorial agricultural landscape for a Ghana Growers website banner, wide landscape 16:9. Cultivated Ghanaian vegetable field at early golden morning light, gently undulating green beds of leafy crops following a diagonal perspective across reddish earth, a weathered harvest crate with a small amount of fresh garden produce and a simple black drip line in the central middle foreground, banana and scattered trees on the horizon, natural quiet haze, lush West African growing season. Main subject near center slightly right so portrait crops work. Keep left quarter shaded and right edge calm for overlay text; still show rich authentic photographic detail in the middle and foreground. People-free, no logos, no labels, no text, no maps, no interfaces, no collage, no synthetic glossy lighting. Single credible scene. It is an illustrative landscape, no identifiable real farm.",
+  "inputs": "Text only; no reference photograph, people, logo or identifiable listed operation.",
+  "use": "Illustrative background only. No inference of membership, real farm, location, stock or transactions. One native generation. No paid API or Higgsfield credits used.",
+  "terms": {
+    "checked": "2026-11-03",
+    "sources": [
+      "https://openai.com/policies/terms-of-use/",
+      "https://openai.com/policies/eu-terms-of-use/",
+      "https://openai.com/policies/services-agreement/"
+    ],
+    "assessment": "OpenAI assigns its interest in output to the customer to the extent permitted by applicable law. Outputs may be similar to other outputs. Account terms and third-party rights still apply. This record does not establish exclusivity or final release clearance."
+  },
+  "files": [
+    {
+      "path": "Founder evidence package/hero-original.png (outside public assets)",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "bytes": 2759576,
+      "sha256": "54f5be5dc1d44a0b1472975721705f8b4613efe31818ae41b686654ebf037da9"
+    },
+    {
+      "path": "public/hm1/hm1-growing-field-mobile.webp",
+      "dimensions": [
+        740,
+        940
+      ],
+      "bytes": 131906,
+      "sha256": "42e4ac9891434c0641f701a1ef55fbedb7f6cdfc568846b024aaebeeb6e0a144"
+    },
+    {
+      "path": "public/hm1/hm1-growing-field-tablet.webp",
+      "dimensions": [
+        1080,
+        608
+      ],
+      "bytes": 145318,
+      "sha256": "f0b6961701f8e2f8cd9faa73af4e1f48855e3e200e94c104f555ff2fe08dc12b"
+    },
+    {
+      "path": "public/hm1/hm1-growing-field-wide.webp",
+      "dimensions": [
+        1680,
+        946
+      ],
+      "bytes": 269972,
+      "sha256": "6e3e5de036d35e84c1728834168ad1d77a24abab7032e305b3c47d3676c7aee2"
+    }
+  ],
+  "processing": "WebP quality 84. Wide and tablet preserve full composition. Portrait 740 × 940 uses crop centred at 62% x, 55% y. No retouching."
+}

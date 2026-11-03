@@ -209,92 +209,76 @@
  .mamaTitle,.mamaHeading h2{font-size:30px;line-height:36px}
 }
 
-/* HM1 keeps the licensed map in its original slot until photo rights are cleared. */
-.homeAsk { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 24px; width: min(100%, 860px); justify-self: center; padding: 14px 18px; border-radius: 14px; border: 1px solid #d8e0d9; background: white; box-shadow: 0 6px 20px #123b350b; }
-.homeAsk label { display: flex; align-items: center; gap: 10px; color: #064f43; }
-.homeAsk label strong, .homeAsk label small { display: block; }
-.homeAsk label small, .homeAsk > p { font-size: 12px; color: #425b51; }
-.homeAsk > p { grid-column: 2; }
-.draftRow { display: flex; align-items: center; padding: 3px; gap: 5px; background: #f6f8f4; border: 1px solid #819c8f; border-radius: 9px; }
-.draftRow input { min-width: 0; flex: 1; padding: 8px; background: transparent; color: #123b35; font: inherit; font-size: 16px; }
-.draftRow button { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 7px; background: #064f43; color: white; }
-.draftRow button:disabled { background: #536b5e; }
-@media (max-width: 700px) {
-  .homeAsk { grid-template-columns: minmax(0,1fr); gap: 8px; padding: 12px; }
-  .homeAsk > p { grid-column: 1; }
+
+/* The Hero shares the gateway content edges. Its photograph is illustrative. */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  margin: 16px max(40px,calc((100vw - 1232px) / 2)) 0; border-radius: 20px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(245px, 306px);
+  align-items: center; gap: 55px 32px; padding: clamp(36px, 5vw, 74px) clamp(26px, 4vw, 62px) 18px;
+  min-height: 480px; color: white; background: #234335;
+}
+.fieldPhoto, .fieldPhoto img, .hero::after { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fieldPhoto { z-index: -2; }
+.fieldPhoto img { object-fit: cover; object-position: 50% 58%; }
+.hero::after { z-index: -1; content: ""; background: linear-gradient(90deg,rgba(8,32,22,.87),rgba(8,32,22,.46) 45%,rgba(8,32,22,.10) 72%), linear-gradient(0deg,#122c2266,transparent 36%); }
+.heroCopy { min-width: 0; }
+.headline { position: relative; }
+.headline h1 { font-size: clamp(40px,4.4vw,69px); line-height: 1.13; font-weight: 650; letter-spacing: -.05em; }
+.categoryLine { display: block; padding-bottom: .13em; white-space: nowrap; }
+.categoryLine mark { display: inline-block; color: #143729; background: #e4ec99; padding: 0 .13em .045em; border-radius: .09em; }
+.headline button { position: absolute; bottom: -3px; right: 0; display: grid; place-items: center; width: 44px; height: 44px; color: white; background: #18382fe8; border: 1px solid #d9e3c8; border-radius: 50%; }
+.heroCopy > p { margin: 18px 0 22px; max-width: 39ch; font-size: clamp(16px,1.4vw,20px); line-height: 1.45; }
+.actions { display: flex; gap: 10px; align-items: stretch; }
+.actions a { min-height: 48px; text-align: center; }
+.hero .primaryButton { background: #f2c66b; color: #18382d; border-color: #f2c66b; }
+.hero .secondaryButton { background: #17382ddc; color: white; border-color: #f1f2df; }
+.homeAsk { display: grid; align-content: start; gap: 10px; padding: 22px; border: 1px solid #e7e3d0; border-radius: 16px; box-shadow: 0 8px 30px #17342525; color: #17392c; background: #fffdf3; }
+.homeAsk label { display: flex; align-items: center; gap: 9px; font-size: 22px; }
+.homeAsk p { font-size: 14px; line-height: 1.45; color: #3c5146; }
+.homeAsk p b { font-weight: 650; }
+.homeAsk small { font-size: 11px; color: #4a5d52; }
+.draftRow { display: grid; gap: 8px; }
+.draftRow input { width: 100%; min-width: 0; min-height: 46px; padding: 10px; border-radius: 8px; border: 1px solid #8a9f90; color: #17392c; background: white; font-size: 16px; }
+.draftRow button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 12px; background: #064f43; color: white; border-radius: 8px; font-weight: 650; }
+.draftRow button:disabled { background: #52685c; }
+.dock { grid-column: 1 / -1; align-self: end; justify-self: center; display: flex; align-items: stretch; padding: 5px 12px; border-radius: 18px; background: #fffdf5; color: #254337; box-shadow: 0 4px 16px #152b2440; }
+.dock > * { width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 10px; font-size: 13px; font-weight: 650; }
+.dock svg { width: 20px; height: 20px; }
+.dock small { font-size: 10px; line-height: 1; }
+.dockAsk i { display: grid; place-items: center; border-radius: 50%; background: #075548; color: #fff; width: 40px; height: 40px; margin-top: -17px; border: 3px solid #fffdf5; }
+.dock a:hover { background: #ebefdf; }
+.hero :is(a,button,input):focus-visible { outline: 3px solid #0c58a1; outline-offset: 2px; box-shadow: 0 0 0 5px white; }
+@media (prefers-reduced-motion: no-preference) {
+  .categoryLine mark { animation: category-reveal .32s ease-out; }
+  @keyframes category-reveal { from { transform: translateY(.11em); opacity: .65; } to { transform: none; opacity: 1; } }
+  .hero :is(a,button) { transition: transform .14s ease, filter .14s ease; }
+  .hero :is(a,button):active { transform: translateY(2px); }
+  .actions a:hover { filter: brightness(1.10); }
 }
 
-/* The cleared clay map is the Hero illustration. Fade its paper edge into
-   the field without changing the source pixels or implying network coverage. */
-.hero {
-  isolation: isolate;
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
-  grid-template-areas: "title art" "body art" "actions art" "ask ask";
-  align-content: center;
-  align-items: center;
-  gap: 18px clamp(20px, 3vw, 48px);
-  padding: clamp(40px, 5vw, 78px) max(28px, calc((100% - 1248px) / 2)) 34px;
-  background: radial-gradient(ellipse at 83% 27%, #dce5d4 0, transparent 49%), linear-gradient(118deg, #fffaf0 12%, #f3ead7 72%, #e1e7da);
-  border-bottom: 1px solid #dedbcd;
+@media (min-width:701px) and (max-width:980px) {
+  .hero { gap: 30px 18px; padding: 40px 24px 15px; grid-template-columns: minmax(0,1fr) 220px; }
+  .headline h1 { font-size: clamp(31px,4.1vw,42px); }
+  .headline button { bottom: -6px; }
+  .homeAsk { padding: 16px; }
+  .hero .actions a { padding: 8px 10px; font-size: 14px; }
 }
-.heroCopy { display: contents; }
-.heroCopy h1 {
-  grid-area: title;
-  align-self: end;
-  color: #103f34;
-  font-size: clamp(46px, 5.6vw, 84px);
-  font-weight: 600;
-  line-height: 1.01;
-  letter-spacing: -.045em;
-}
-.heroCopy h1::before { display: block; content: ""; width: 44px; height: 4px; background: #cf8c1b; margin-bottom: 18px; }
-.heroCopy h1 span { display: block; color: #3b624c; }
-.heroCopy > p { grid-area: body; max-width: 51ch; color: #314940; font-size: clamp(16px, 1.32vw, 19px); line-height: 1.5; }
-.ecosystem { font-weight: 650; color: #184f3e; }
-.heroMedia {
-  grid-area: art;
-  min-width: 0;
-  mix-blend-mode: multiply;
-  mask-image: radial-gradient(ellipse at center, #000 53%, transparent 76%);
-}
-.heroMedia picture, .heroMedia img { display: block; width: 100%; }
-.heroMedia img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 48%; }
-.hero .actions { grid-area: actions; align-self: start; display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px; }
-.hero .actions a { min-height: 46px; padding-inline: 18px; border-radius: 9px; font-size: 15px; }
-.hero .primaryButton { color: white; box-shadow: 0 3px 9px #12453420; }
-.hero .secondaryButton { color: #164b3b; background: #fffaf0; }
-.hero .homeAsk { grid-area: ask; width: min(100%, 940px); margin-top: 7px; padding: 16px 20px; border-color: #c9d7c8; box-shadow: 0 8px 24px #163d2910; }
-@media (max-width: 980px) {
-  .hero { gap: 16px; padding: 32px 28px 25px; }
-}
-@media (max-width: 700px) {
-  .hero {
-    grid-template-columns: minmax(0, 1fr) 33%;
-    grid-template-areas: "title art" "body body" "actions actions" "ask ask";
-    gap: 14px 0;
-    overflow: clip;
-    padding: 22px 16px 20px;
-  }
-  .heroCopy h1 { position: relative; z-index: 1; align-self: center; font-size: clamp(32px, 8.7vw, 54px); }
-  .heroCopy h1::before { width: 32px; height: 3px; margin-bottom: 12px; }
-  .heroMedia { width: 135%; justify-self: center; }
-  .heroMedia img { aspect-ratio: 1.21; object-position: 52% 50%; }
-  .heroCopy > p { font-size: 16px; line-height: 1.45; }
-  .hero .actions a { flex: 1 1 0; width: auto; min-width: 0; padding: 8px; text-align: center; font-size: 14px; }
-  .hero .homeAsk { margin-top: 0; padding: 12px; }
-}
-@media (max-width: 360px) {
-  .hero { grid-template-columns: minmax(0, 1fr) 29%; }
-  .heroCopy h1 { font-size: 30px; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .hero .actions a, .homeAsk button { transition: background-color 150ms, box-shadow 150ms, transform 150ms; }
-  .hero .actions a:active, .homeAsk button:not(:disabled):active { transform: translateY(1px); }
-  .ecosystem { animation: ecosystem-emphasis 650ms ease-out both; }
-  @keyframes ecosystem-emphasis { from { color: #314940; } to { color: #184f3e; } }
-}
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .hero .actions a:hover { transform: translateY(-1px); box-shadow: 0 5px 12px #12453420; }
+@media (max-width:700px) {
+  .hero { margin: 10px 16px 0; border-radius: 16px; display: grid; grid-template-columns: minmax(0,1fr); gap: 26px; padding: 32px 18px 16px; min-height: 0; }
+  .hero::after { background: linear-gradient(110deg,#092e21ce,transparent 92%),linear-gradient(0deg,#122c2266,transparent 60%); }
+  .fieldPhoto img { object-position: 58% 50%; }
+  .headline h1 { font-size: clamp(32px,8.5vw,48px); }
+  .headline button { right: 0; bottom: -4px; }
+  .heroCopy > p { font-size: 16px; margin: 12px 0 16px; max-width: 30ch; }
+  .hero .actions { gap: 7px; flex-wrap: wrap; }
+  .hero .actions a { width: auto; min-height: 45px; padding: 8px 11px; font-size: 14px; }
+  .homeAsk { gap: 6px; padding: 13px; border-radius: 12px; }
+  .homeAsk label { font-size: 19px; }
+  .homeAsk p { font-size: 13px; }
+  .draftRow { display: flex; gap: 5px; }
+  .draftRow input { flex: 1; }
+  .draftRow button { font-size: 13px; padding-inline: 9px; }
+  .draftRow button svg { display: none; }
+  .dock { display: none; }
 }

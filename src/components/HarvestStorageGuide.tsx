@@ -13,8 +13,8 @@ export function HarvestStorageGuide({ onAsk }: { onAsk: (handoff: FarmMateToolHa
   const result = harvestStorageDecision(input);
   function set<K extends keyof HarvestStorageInput>(key: K, value: HarvestStorageInput[K]) { setInput((current) => ({ ...current, [key]: value })); }
 
-  return <details className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-    <summary className="cursor-pointer text-sm font-black text-leaf-700">Harvest and storage guide</summary>
+  return <section className="rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
+    <h2 className="text-base font-bold text-leaf-700">Harvest and storage guide</h2>
     <p className="mt-2 text-sm leading-6 text-ink/65">Work from crop and harvest condition to a practical next action. This is general guidance, not a food-safety clearance.</p>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className="grid gap-1 text-sm font-bold">Crop<select className="gg-field min-h-11" value={input.crop} onChange={(event) => set("crop", event.target.value)}><option value="">Choose crop</option>{farmMateCropOptionsByGroup().map((group) => <optgroup key={group.group} label={group.label}>{group.crops.map((crop) => <option key={crop.displayName} value={crop.displayName}>{crop.displayName}</option>)}</optgroup>)}</select></label>
@@ -26,5 +26,5 @@ export function HarvestStorageGuide({ onAsk }: { onAsk: (handoff: FarmMateToolHa
     <div className="mt-4 rounded-md bg-white p-4" aria-live="polite"><FarmMateDecisionStatus status={result.status} /><p className="mt-2 text-sm font-semibold leading-6 text-ink/75">{result.reason}</p>{result.actions.length ? <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm font-semibold leading-6 text-ink/70">{result.actions.map((action) => <li key={action}>{action}</li>)}</ol> : null}<p className="mt-2 text-sm font-bold text-ink">Next step: {result.next}</p></div>
     {input.crop && input.state !== "unknown" ? <button type="button" className="mt-3 min-h-11 rounded-md bg-leaf-600 px-4 text-sm font-black text-white" onClick={() => onAsk({ source: "harvest", question: `How should I handle and store ${input.crop}?`, chips: [input.crop, input.state === "standing" ? "Not harvested" : "Harvested", input.duration], crop: input.crop, status: result.status, fieldNotes: [`Harvest state: ${input.state}; condition: ${input.condition}.`, `Holding time: ${input.duration}; storage: ${input.storage}.`, `Guide status: ${result.reason}`] })}>Ask Mama G about this harvest</button> : null}
     <p className="mt-3 text-xs font-semibold leading-5 text-ink/55">No exact moisture or temperature thresholds, chemical preservatives, stored-produce pesticides, fermentation, cassava processing or food/feed safety declarations are given here. These need qualified review.</p>
-  </details>;
+  </section>;
 }

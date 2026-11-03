@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Camera, CloudSun, Grid2X2, MessageCircle, Sprout } from "lucide-react";
+import { ArrowLeft, CalendarDays, Camera, CloudSun, Grid2X2, MessageCircle, PackageOpen, Sprout } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
+import { HarvestStorageGuide } from "./HarvestStorageGuide";
 import { CropDoctor } from "@/components/CropDoctor";
 import { CanIFarmTodayExperience, FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
 import { takeHomeDraft } from "@/lib/farmmate/home-draft";
@@ -24,7 +25,7 @@ import {
   plantingAdvisorCrops
 } from "@/lib/farmmate/planting-advisor-specialist";
 
-type ToolKey = "ask" | "doctor" | "calendar" | "planting" | "weather";
+type ToolKey = "ask" | "doctor" | "calendar" | "planting" | "weather" | "storage";
 
 const tools = [
   { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Check a crop problem" },
@@ -272,7 +273,6 @@ export function FarmTools() {
   const [activeTool, setActiveTool] = useState<ToolKey | "tools">("ask");
   const workspace = useRef<HTMLElement>(null);
   const imported = useRef(false);
-  const [weatherOpen, setWeatherOpen] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
   const [cropDoctorHandoff, setCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
   const [toolHandoff, setToolHandoff] = useState<FarmMateToolHandoff | null>(null);
@@ -281,7 +281,7 @@ export function FarmTools() {
   const [knownCrop, setKnownCrop] = useState("");
   const [knownRegion, setKnownRegion] = useState("");
   const knownRegionTouched = useRef(false);
-  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "tools" ? "Farm tools" : tools.find(tool => tool.key === activeTool)?.title;
+  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "storage" ? "Storage Advisor" : activeTool === "tools" ? "Farm tools" : tools.find(tool => tool.key === activeTool)?.title;
   const openTool = useCallback((tool: ToolKey, fromHandoff = false) => {
     if (tool === "ask" && !fromHandoff) {
       setPrefillQuestion("");
@@ -308,7 +308,7 @@ export function FarmTools() {
     }
     const tool = searchParams.get("tool");
 
-    if (tool === "ask" || tool === "doctor" || tool === "calendar" || tool === "planting" || tool === "weather") {
+    if (tool === "ask" || tool === "doctor" || tool === "calendar" || tool === "planting" || tool === "weather" || tool === "storage") {
       openTool(tool);
     }
   }, [searchParams, openTool]);
@@ -328,7 +328,7 @@ export function FarmTools() {
     function handleOpenTool(event: Event) {
       const tool = (event as CustomEvent<ToolKey>).detail;
 
-      if (["ask", "doctor", "calendar", "planting", "weather"].includes(tool)) {
+      if (["ask", "doctor", "calendar", "planting", "weather", "storage"].includes(tool)) {
         openTool(tool);
       }
     }
@@ -367,6 +367,7 @@ export function FarmTools() {
       // document scroll and the independently scrolling consultation untouched.
       const start = editing && window.matchMedia("(max-width: 700px)").matches ? top : Math.max(0, top);
       const available = Math.max(0, (viewport?.height ?? window.innerHeight) - start);
+      node.toggleAttribute("data-keyboard-fit", editing && ((viewport?.height ?? window.innerHeight) < 540 || top < -70));
       node.style.setProperty("--adviser-height", available + "px");
     }
     function scheduleFit() {
@@ -431,46 +432,44 @@ export function FarmTools() {
   const forwards = [
     { key: "ask", label: "Ask", Icon: MessageCircle },
     { key: "doctor", label: "Crop Doctor", Icon: Camera },
+    { key: "storage", label: "Storage Advisor", Icon: PackageOpen },
     { key: "tools", label: "Tools", Icon: Grid2X2 }
   ] as const;
 
   return <section ref={workspace} className={styles.workspace} aria-label="Mama G workspace">
     <nav className={styles.nav} aria-label="Adviser navigation">
-      <div className={styles.brand}><Sprout aria-hidden="true" /><span>FIELD ADVISER<strong>Mama G</strong></span></div>
       {forwards.map(({ key, label, Icon }) =>
         <button type="button" key={key}
-          aria-current={(activeTool === key || (key === "tools" && activeTool !== "ask" && activeTool !== "doctor")) ? "page" : undefined}
+          aria-label={label}
+          aria-current={(activeTool === key || (key === "tools" && !forwards.some(item => item.key === activeTool))) ? "page" : undefined}
           onClick={() => key === "tools" ? setActiveTool("tools") : openTool(key)}>
-          <Icon size={19} aria-hidden="true" />{label}
+          <Icon size={19} aria-hidden="true" />{key === "storage" ? <span>Storage<span className={styles.desktopLabel}> Advisor</span></span> : label}
         </button>
       )}
     </nav>
 
     <div className={styles.panel}>
       <header className={styles.panelTitle}><div><h1>{title}</h1><p>Your agricultural adviser</p></div>
-        {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" &&
+        {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" && activeTool !== "storage" &&
           <button type="button" onClick={() => setActiveTool("tools")}><ArrowLeft size={16} /> All tools</button>}
       </header>
       {activeTool === "ask" && <div className={styles.askPane}>
         <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} />
       </div>}
       {activeTool === "doctor" && <div className={styles.toolPane}><CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /></div>}
+      {activeTool === "storage" && <div className={styles.toolPane}><HarvestStorageGuide onAsk={openAskFarmMateWithQuestion} /></div>}
       {activeTool === "tools" && <div className={styles.toolPane}>
         <h2 className={styles.smallTitle}>Choose a farm tool</h2>
         <div className={styles.toolGrid}>{tools.map(({ key, icon: Icon, title: label, description }) =>
           <button type="button" key={key} onClick={() => openTool(key)}><Icon aria-hidden="true" /><strong>{label}</strong><span>{description}</span></button>)}</div>
-        <details className={styles.mobileSupport} open={weatherOpen} onToggle={e => setWeatherOpen(e.currentTarget.open)}>
-          <summary>Local weather and field conditions</summary>
-          {weatherOpen && <FarmMateWeatherFoundation />}
-        </details>
       </div>}
       {activeTool === "calendar" && <div className={styles.toolPane}><CropCalendarExperience knownCrop={knownCrop} knownRegion={knownRegion} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
       {activeTool === "planting" && <div className={styles.toolPane}><PlantingAdvisorExperience knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
-      {activeTool === "weather" && <div className={styles.toolPane}><FarmMateWeatherFoundation /><CanIFarmTodayExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
+      {activeTool === "weather" && <div className={styles.toolPane}><CanIFarmTodayExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
     </div>
 
     <aside className={styles.support} aria-label="Adviser support">
-      <button className={styles.weatherLink} onClick={() => { setActiveTool("tools"); setWeatherOpen(true); }} type="button"><CloudSun /><small>DAILY SUPPORT</small><strong>Farm weather</strong><span>Choose your area →</span></button>
+      <FarmMateWeatherFoundation compact />
       <div><small>QUESTION AND PHOTO LIMITS</small><p>{ask.limit} Ask questions per {ask.windowHours} hours</p><p>{doctor.limit} crop checks per {doctor.windowHours} hours</p></div>
       <div><small>SAFE USE</small><p>For serious or spreading crop problems, seek a local extension officer.</p></div>
     </aside>

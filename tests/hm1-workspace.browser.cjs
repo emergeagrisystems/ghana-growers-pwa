@@ -19,6 +19,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       const question = "How should I water young maize in dry soil?";
       const logs = [], requests = [], routes = [];
       let longAnswerCheck = false;
+      let weatherOutcome = "failure";
+      let completeWeather;
+
       page.on("console", event => logs.push(event.text()));
       page.on("pageerror", error => { throw error; });
       page.on("request", request => routes.push(request.url()));
@@ -28,6 +31,17 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         if (!url.pathname.startsWith("/api/")) return route.continue();
         const body = route.request().headers()["content-type"]?.includes("application/json") ? route.request().postDataJSON() || {} : {};
         requests.push({ path: url.pathname, action: body.action });
+        if (url.pathname === "/api/farmmate/weather") {
+          if (weatherOutcome === "missing") return route.fulfill({json:{ok:true, forecast:{location:{name:"Kumasi"},days:[]}}});
+          if (weatherOutcome === "success") {
+            await new Promise(resolve => {completeWeather = resolve;});
+            const days = ["Today","Tomorrow","Day after tomorrow"].map((label,i) => ({
+              date: "2026-11-0" + (3+i),label,temperatureMaxC:29,temperatureMinC:21,rainChancePercent:20
+            }));
+            return route.fulfill({json:{ok:true,forecast:{location:{name:"Kumasi",key:"kumasi"},days,
+              lastUpdatedAt:new Date().toISOString(),decisionSummary:{locationName:"Kumasi",liveWeatherAvailable:true}}}});
+          }
+        }
         if (longAnswerCheck && url.pathname === "/api/farmmate/ask") return route.fulfill({
           json: { ok: true, kind: "final", answer: Array.from({length: 40}, (_, i) => "Layout verification paragraph " + (i + 1) + ".").join("\n\n") }
         });
@@ -42,15 +56,22 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       };
       await page.goto(base.href);
       const hero = page.locator("section[aria-labelledby=homepage-hero-title]");
-      assert.equal(await hero.getByRole("link", {name:"Browse Farms & Suppliers"}).getAttribute("href"), "/directory");
-      assert.equal(await hero.getByRole("link", {name:"Registration information"}).getAttribute("href"), "/join");
+      assert.equal(await hero.getByRole("link", {name:"Search Farms & Suppliers"}).getAttribute("href"), "/directory");
+      assert.equal(await hero.getByRole("link", {name:"Get Listed Free"}).getAttribute("href"), "/join");
       const start = page.locator("#home-adviser-question");
       await start.waitFor();
       await page.evaluate(() => document.fonts.ready);
-      assert.equal((await hero.getByRole("heading",{level:1}).textContent()).trim(), "Ask Mama G. Discover more.");
+      const mark = hero.locator("mark");
+      const dock = page.getByRole("navigation",{name:"Homepage quick access",includeHidden:true});
+      assert.equal(await dock.isVisible(), width > 700);
+      const heightBefore = (await hero.boundingBox()).height;
+      await page.waitForFunction(() => document.querySelector("h1 mark")?.textContent !== "Farms.");
+      await hero.getByRole("button",{name:"Pause changing headline"}).click();
+      assert.equal((await hero.boundingBox()).height, heightBefore);
       await page.emulateMedia({reducedMotion:"reduce"});
-      assert.ok(await hero.locator("p span").first().evaluate(el => getComputedStyle(el).animationName === "none"));
-      assert.ok(await hero.getByRole("link",{name:"Browse Farms & Suppliers"}).evaluate(el => getComputedStyle(el).transitionDuration === "0s"));
+      await page.waitForFunction(() => document.querySelector("h1 mark")?.textContent === "Farms.");
+      assert.equal(await mark.evaluate(el => getComputedStyle(el).animationName), "none");
+      assert.ok(await hero.getByRole("link",{name:"Search Farms & Suppliers"}).evaluate(el => getComputedStyle(el).transitionDuration === "0s"));
       await snap("homepage");
       if (width <= 768) {
         const menu = page.getByRole("button",{name:"Open navigation"});
@@ -66,7 +87,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         assert.ok(await menu.evaluate(el => document.activeElement === el));
       }
       await start.fill(question);
-      await page.getByRole("button", {name:"Continue with my draft"}).click();
+      await page.getByRole("button", {name:"Ask Mama G",exact:true}).click();
       const field = page.locator("#ask-farmmate-question");
       await page.waitForFunction(value => document.querySelector("#ask-farmmate-question")?.value === value, question);
       await page.waitForFunction(() => location.pathname === "/farmer-hub" && !location.hash && !location.search);
@@ -123,12 +144,38 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         await page.getByRole("button",{name:"All tools"}).click();
       }
       await snap("tools");
+      await adviserNav.getByRole("button",{name:"Storage Advisor"}).click();
+      await page.getByRole("heading",{name:"Storage Advisor",exact:true}).waitFor();
+      await page.getByRole("combobox",{name:/^Crop\b/}).selectOption({label:"Maize"});
+      await page.getByLabel("Harvest state").selectOption("harvested");
+      await page.getByLabel("Known condition").selectOption("wet");
+      const preStorage = requests.length;
+      await page.getByRole("button",{name:"Ask Mama G about this harvest"}).click();
+      await page.waitForFunction(() => document.querySelector("#ask-farmmate-question")?.value.includes("store Maize"));
+      assert.equal(requests.length,preStorage);
+      await adviserNav.getByRole("button",{name:"Tools",exact:true}).click();
       await page.getByRole("navigation",{name:"Adviser navigation"}).getByRole("button",{name:"Ask",exact:true}).click();
       assert.equal(await field.inputValue(), "", "fresh Ask cannot inherit the previous tool draft");
       await page.reload();
       await field.waitFor();
       assert.equal(await field.inputValue(), "", "reload cannot replay a draft");
       assert.ok(await checkWidth());
+      const area = page.locator("#workspace-weather-area");
+      await area.selectOption("accra");
+      const weather = page.getByRole("region",{name:"Farm weather",exact:true});
+      await weather.getByText(/Live weather is unavailable/).waitFor();
+      weatherOutcome = "missing";
+      await Promise.all([page.waitForResponse(r => r.url().includes("/api/farmmate/weather")),area.selectOption("tamale")]);
+      await weather.getByText(/Live weather is unavailable/).waitFor();
+      weatherOutcome = "success";
+      await Promise.all([page.waitForRequest(r => r.url().includes("locationKey=kumasi")),area.selectOption("kumasi")]);
+      await weather.getByText("Checking live weather…").waitFor();
+      assert.equal(typeof completeWeather, "function");
+      completeWeather();
+      await weather.getByText(/20% chance of rain/).first().waitFor();
+      await weather.getByText("3-day forecast").click();
+      assert.ok(await weather.getByText(/Tomorrow ·/).isVisible());
+      await weather.getByText("3-day forecast").click();
       longAnswerCheck = true;
       await field.fill("How do I stake tomatoes?");
       await Promise.all([page.waitForResponse(r => r.url().endsWith("/api/farmmate/ask") && r.status() === 200), send.click()]);
@@ -145,7 +192,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         await cdp.send("Emulation.setSafeAreaInsetsOverride", {insets:{bottom:20}});
         await page.waitForFunction(() => parseFloat(getComputedStyle(document.querySelector('nav[aria-label="Adviser navigation"]')).paddingBottom) >= 25);
         const reading = await panel.evaluate(el => { el.scrollTop = Math.floor(el.scrollHeight / 3); return el.scrollTop; });
-        await page.evaluate(() => window.scrollTo(0,282));
+        await page.evaluate(() => window.scrollTo(0,343));
         await page.waitForFunction(() => scrollY >= 200);
         await field.evaluate(el => el.focus({preventScroll:true}));
         for (const shortHeight of [365,320,390]) {

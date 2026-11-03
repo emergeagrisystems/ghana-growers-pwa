@@ -19,15 +19,16 @@ export function HomeAskEntry() {
   }
 
   return <form className={styles.homeAsk} onSubmit={continueWithDraft} action="/farmer-hub">
-    <label htmlFor="home-adviser-question"><MessageCircle size={24} aria-hidden="true" />
-      <span><strong>Ask Mama G</strong><small>Your agricultural adviser</small></span>
+    <label htmlFor="home-adviser-question"><MessageCircle size={23} aria-hidden="true" />
+      <strong>Ask Mama G</strong>
     </label>
+    <p><b>Your agricultural adviser.</b> Get help with crops, planting and everyday farming decisions.</p>
     <div className={styles.draftRow}>
       <input id="home-adviser-question" value={question} maxLength={HOME_DRAFT_LIMIT}
         onChange={event => setQuestion(event.target.value)} autoComplete="off" required
-        aria-describedby="home-ask-hint" placeholder="What is happening on your farm?" />
-      <button type="submit" disabled={!question.trim()} aria-label="Continue with my draft"><ArrowRight size={21} /></button>
+        aria-describedby="home-ask-hint" placeholder="Ask a farming question…" />
+      <button type="submit" disabled={!question.trim()}>Ask Mama G <ArrowRight size={16} aria-hidden="true" /></button>
     </div>
-    <p id="home-ask-hint">Review and edit your question before sending.</p>
+    <small id="home-ask-hint">Review and edit your question before sending.</small>
   </form>;
 }

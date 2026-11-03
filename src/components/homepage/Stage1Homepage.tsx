@@ -1,9 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
-import { ArrowRight, CalendarDays, Camera, CloudSun, PackageCheck, ShoppingBasket, Sprout, Store, Wheat } from "lucide-react";
+import { ArrowRight, CalendarDays, Camera, CloudSun, ClipboardList, MessagesSquare, PackageCheck, ShoppingBasket, Sprout, Store, Wheat } from "lucide-react";
 import Link from "next/link";
 import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { FounderApprovedMamaGPhone } from "@/components/homepage/FounderApprovedMamaGPhone";
 import { HowItWorksVideo } from "@/components/homepage/HowItWorksVideo";
+import { EcosystemHeadline } from "./EcosystemHeadline";
 import { HomeAskEntry } from "@/components/homepage/HomeAskEntry";
 import { foundationFont } from "@/components/homepage-foundation/font";
 import { cleanFarmerLocation, farmerCardProducts } from "@/lib/farmerDirectory";
@@ -33,22 +34,27 @@ export async function Stage1Homepage() {
   return (
     <main className={`${styles.homepage} ${foundationFont.className}`}>
       <section className={styles.hero} aria-labelledby="homepage-hero-title">
+        <picture className={styles.fieldPhoto}>
+          <source media="(max-width: 700px)" srcSet="/hm1/hm1-growing-field-mobile.webp" />
+          <source media="(max-width: 1100px)" srcSet="/hm1/hm1-growing-field-tablet.webp" />
+          <img src="/hm1/hm1-growing-field-wide.webp" alt="" width="1680" height="946" fetchPriority="high" />
+        </picture>
         <div className={styles.heroCopy}>
-          <h1 id="homepage-hero-title">Ask Mama G. <span>Discover more.</span></h1>
-          <p>Get farming guidance from Mama G. Explore <span className={styles.ecosystem}>farms, produce and suppliers</span> in the Ghana Growers directory — the starting point for a growing agricultural marketplace.</p>
+          <EcosystemHeadline />
+          <p>Discover farms, crops, seeds, livestock and farm equipment across Ghana.</p>
           <div className={styles.actions}>
-            <Link href="/directory" className={styles.primaryButton}>Browse Farms &amp; Suppliers</Link>
-            <Link href="/join" className={styles.secondaryButton}>Registration information</Link>
+            <Link href="/directory" className={styles.primaryButton}>Search Farms &amp; Suppliers</Link>
+            <Link href="/join" className={styles.secondaryButton}>Get Listed Free</Link>
           </div>
         </div>
-        <div className={styles.heroMedia}>
-          <picture>
-            <source media="(max-width: 520px)" srcSet="/stage1-media/hero-clay-map-640.webp" />
-            <source media="(max-width: 1100px)" srcSet="/stage1-media/hero-clay-map-1088.webp" />
-            <img src="/stage1-media/hero-clay-map-1600.webp" alt="Illustrative clay map of Ghana with agricultural produce and connection markers" width="1600" height="1195" fetchPriority="high" />
-          </picture>
-        </div>
         <HomeAskEntry />
+        <nav aria-label="Homepage quick access" className={styles.dock}>
+          <Link href="/directory"><Wheat />Farms</Link>
+          <Link href="/supplier-directory"><Store />Suppliers</Link>
+          <Link href="/farmer-hub" className={styles.dockAsk}><i><Sprout /></i>Mama G</Link>
+          <Link href="/submit-buyer-request" aria-label="Request — enquiries currently closed"><ClipboardList />Request</Link>
+          <span aria-disabled="true"><MessagesSquare />WhatsApp<small>Unavailable</small></span>
+        </nav>
       </section>
 
       <section className={styles.gateways} aria-label="Start here">

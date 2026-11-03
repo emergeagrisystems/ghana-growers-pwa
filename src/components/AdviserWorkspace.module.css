@@ -81,3 +81,54 @@
   .panelTitle p { display: none; }
   .privacy > p { font-size: 11px; }
 }
+
+.workspace { grid-template-columns: 152px minmax(0,1fr) 216px; gap: 16px; background: #f0f3ec; }
+.nav { align-self: start; border-radius: 14px; background: #fffef8; border: 1px solid var(--line); padding: 6px; }
+.nav button { text-align: left; line-height: 1.2; font-size: 14px; }
+.nav button:hover:not([aria-current]) { background: #edf3e8; }
+.nav button:active { box-shadow: inset 0 0 0 2px #598273; }
+.ask[data-empty="true"] { background: #fbfcf8; }
+.ask[data-empty="true"] .composer { order: -1; margin: clamp(10px,2vw,25px); margin-bottom: 0; padding: clamp(12px,2vw,22px); border: 1px solid #c6d5c9; border-radius: 14px; background: #f3f6ea; }
+.ask[data-empty="true"] .conversation { padding-top: 6px; }
+.intro h2 { font-size: clamp(18px,1.6vw,24px); line-height: 1.2; font-weight: 650; }
+.starters { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.starters button { font-size: 12px; font-weight: 550; min-height: 36px; padding: 5px 10px; border-radius: 20px; background: white; color: var(--forest); }
+.inputRow { background: white; }
+.photoAction { display: inline-flex; gap: 5px; min-height: 40px; align-items: center; font-size: 13px; font-weight: 650; color: var(--forest); }
+.support .weatherStrip { display: grid; gap: 8px; color: white; background: #114c3f; }
+.weatherStrip label { display: flex; align-items: center; gap: 7px; font-weight: 650; }
+.weatherStrip select { min-width: 0; width: 100%; min-height: 44px; border-radius: 7px; padding: 4px 6px; border: 1px solid #c3cfc0; color: #193c30; background: #fffdf5; }
+.weatherStatus { font-size: 13px; }
+.weatherStatus:empty { display: none; }
+.weatherStatus small { display: block; font-size: 11px; letter-spacing: 0; font-weight: 500; margin-top: 4px; }
+.weatherStatus summary { padding: 8px 0; cursor: pointer; }
+@media (min-width:701px) and (max-width:1050px) {
+  .workspace { grid-template-columns: 120px minmax(0,1fr) 163px; gap: 8px; }
+  .support { display: block; }
+  .support > * { padding: 10px; }
+}
+
+@media (max-width:700px) {
+  .workspace { grid-template: auto minmax(0,1fr) auto / minmax(0,1fr); gap: 0; }
+  .support { display: block; grid-area: 1 / 1; max-height: min(27dvh,160px); }
+  .support > :not(.weatherStrip) { display: none; }
+  .support .weatherStrip { margin: 0; padding: 4px 12px; grid-template-columns: auto minmax(0,1fr); gap: 2px 10px; align-items: center; border: 0; border-radius: 0; }
+  .weatherStrip label { font-size: 13px; }
+  .weatherStrip select { min-height: 44px; }
+  .weatherStatus { grid-column: 1/-1; }
+  .weatherStatus strong, .weatherStatus small { display: inline; margin-right: 6px; }
+  .panel { grid-row: 2; }
+  .nav { grid-row: 3; align-self: stretch; border-radius: 0; padding: 5px max(8px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .nav button { font-size: 12px; text-align: center; padding: 4px 1px; }
+  .desktopLabel { display: none; }
+  .ask[data-empty="true"] .composer { margin: 8px 9px 0; padding: 10px; }
+  .starters button { min-height: 44px; font-size: 11px; padding: 5px 7px; }
+  .workspace[data-keyboard-fit] .ask[data-empty="true"] .composer { order: 0; }
+  .workspace[data-keyboard-fit] .support { display: none; }
+  .workspace[data-keyboard-fit] .intro { display: none; }
+
+}
+@media (max-height:490px) {
+    .workspace[data-keyboard-fit] .intro { display: none; }
+  .composer .privacy { font-size: 11px; }
+}
