@@ -213,10 +213,10 @@
 /* The Hero shares the gateway content edges. Its photograph is illustrative. */
 .hero {
   position: relative; isolation: isolate; overflow: hidden;
-  margin: 16px max(40px,calc((100vw - 1232px) / 2)) 0; border-radius: 20px;
+  margin: 0;
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(245px, 306px);
-  align-items: center; gap: 55px 32px; padding: clamp(36px, 5vw, 74px) clamp(26px, 4vw, 62px) 18px;
-  min-height: 480px; color: white; background: #234335;
+  align-items: center; gap: 32px; padding: 112px max(40px,calc((100% - 1232px) / 2)) 64px;
+  min-height: 530px; color: white; background: #234335;
 }
 .fieldPhoto, .fieldPhoto img, .hero::after { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fieldPhoto { z-index: -2; }
@@ -242,8 +242,8 @@
 .draftRow input { width: 100%; min-width: 0; min-height: 46px; padding: 10px; border-radius: 8px; border: 1px solid #8a9f90; color: #17392c; background: white; font-size: 16px; }
 .draftRow button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 12px; background: #064f43; color: white; border-radius: 8px; font-weight: 650; }
 .draftRow button:disabled { background: #52685c; }
-.dock { grid-column: 1 / -1; align-self: end; justify-self: center; display: flex; align-items: stretch; padding: 5px 12px; border-radius: 18px; background: #fffdf5; color: #254337; box-shadow: 0 4px 16px #152b2440; }
-.dock > * { width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 10px; font-size: 13px; font-weight: 650; }
+.dock { display: none; }
+.dock > * { min-width: 0; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 8px; font-size: 12px; font-weight: 650; }
 .dock svg { width: 20px; height: 20px; }
 .dock small { font-size: 10px; line-height: 1; }
 .dockAsk i { display: grid; place-items: center; border-radius: 50%; background: #075548; color: #fff; width: 40px; height: 40px; margin-top: -17px; border: 3px solid #fffdf5; }
@@ -258,14 +258,14 @@
 }
 
 @media (min-width:701px) and (max-width:980px) {
-  .hero { gap: 30px 18px; padding: 40px 24px 15px; grid-template-columns: minmax(0,1fr) 220px; }
+  .hero { gap: 30px 18px; padding: 100px 40px 44px; grid-template-columns: minmax(0,1fr) 220px; }
   .headline h1 { font-size: clamp(31px,4.1vw,42px); }
   .headline button { bottom: -6px; }
   .homeAsk { padding: 16px; }
   .hero .actions a { padding: 8px 10px; font-size: 14px; }
 }
 @media (max-width:700px) {
-  .hero { margin: 10px 16px 0; border-radius: 16px; display: grid; grid-template-columns: minmax(0,1fr); gap: 26px; padding: 32px 18px 16px; min-height: 0; }
+  .hero { margin: 0; display: grid; grid-template-columns: minmax(0,1fr); gap: 26px; padding: 93px 18px 22px; min-height: 0; }
   .hero::after { background: linear-gradient(110deg,#092e21ce,transparent 92%),linear-gradient(0deg,#122c2266,transparent 60%); }
   .fieldPhoto img { object-position: 58% 50%; }
   .headline h1 { font-size: clamp(32px,8.5vw,48px); }
@@ -280,5 +280,8 @@
   .draftRow input { flex: 1; }
   .draftRow button { font-size: 13px; padding-inline: 9px; }
   .draftRow button svg { display: none; }
-  .dock { display: none; }
+  .dock { position: fixed; z-index: 40; inset: auto 0 0; display: flex; align-items: stretch; gap: 1px; padding: 4px max(5px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left)); border-top: 1px solid #a9b9a5; box-shadow: 0 -3px 14px #153a2c24; background: #fffdf5; color: #204a38; }
+  .dockAsk i { margin-top: -9px; }
+  :global(html):has(.dock) { scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+
 }

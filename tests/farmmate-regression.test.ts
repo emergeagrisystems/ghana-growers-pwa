@@ -140,6 +140,7 @@ import {
   FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY,
   FARM_MATE_WEATHER_LOCATION_STORAGE_KEY,
   FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE,
+  currentWeatherCondition,
   mapOpenMeteoForecast,
   supportedFarmMateWeatherLocations,
   validateFarmMateWeatherRequest,
@@ -3893,6 +3894,20 @@ const tests: TestCase[] = [
     }
   },
   {
+    name: "current conditions require a provider code and a valid observation time",
+    run: () => {
+      const data = sampleWeatherData();
+      const area = supportedFarmMateWeatherLocations[0];
+      const clear = mapOpenMeteoForecast({...data, current:{...data.current, weather_code:0}},area);
+      assert.equal(currentWeatherCondition(clear?.currentWeatherCode),"Clear");
+      assert.equal(clear?.observedAt,"2026-07-14T08:00:00.000Z");
+      assert.equal(currentWeatherCondition(61),"Rain");
+      assert.equal(currentWeatherCondition(300),undefined);
+      assert.equal(currentWeatherCondition(mapOpenMeteoForecast(data,area)?.currentWeatherCode),undefined);
+      assert.equal(mapOpenMeteoForecast({...data,current:{...data.current,time:"unavailable"}},area)?.observedAt,undefined);
+    }
+  },
+  {
     name: "weather location selector saves selected location only",
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
@@ -3967,7 +3982,7 @@ const tests: TestCase[] = [
       const hub = repoFile("src/components/FarmTools.tsx");
       const ask = repoFile("src/components/AskFarmMate.tsx");
       assert.ok(ask.includes("What would you like to ask?"));
-      for (const key of ["ask", "doctor", "storage", "tools"]) assert.ok(hub.includes('key: "' + key + '"'));
+      for (const key of ["weather", "ask", "doctor", "tools"]) assert.ok(hub.includes('key: "' + key + '"'));
       assert.ok(hub.includes("<AskFarmMate"));
       assert.ok(hub.includes("<CropDoctor"));
     }
@@ -5402,7 +5417,7 @@ const tests: TestCase[] = [
       assert.equal(component.includes("Location wasn't shared. Choose the nearest area instead."), true);
       assert.equal(component.includes("supportedFarmMateWeatherLocations.map"), true);
       assert.equal(component.includes("Use my location"), true);
-      assert.equal(component.includes("WEATHER_SELECT_EVENT"), true);
+      assert.equal(component.includes("weatherState.forecast?.decisionSummary"), true);
     }
   },
   {
@@ -6747,8 +6762,8 @@ const tests: TestCase[] = [
       const cropDoctor = repoFile("src/components/CropDoctor.tsx");
 
       assert.equal(cropDoctor.includes("Photograph the affected part clearly in good daylight."), true);
-      assert.equal(cropDoctor.includes("Take photo"), true);
-      assert.equal(cropDoctor.includes("Choose photo"), true);
+      assert.equal(cropDoctor.includes("Take a photo"), true);
+      assert.equal(cropDoctor.includes("Choose from gallery"), true);
       assert.equal(cropDoctor.includes('aria-label="Take Photo"'), true);
       assert.equal(cropDoctor.includes('aria-label="Choose Photo"'), true);
     }
@@ -6839,7 +6854,7 @@ const tests: TestCase[] = [
       const route = repoFile("src/app/api/farmmate/crop-doctor/route.ts");
       const vision = repoFile("src/lib/farmmate/ai/vision.ts");
 
-      assert.equal(cropDoctor.includes("Analyse Crop"), true);
+      assert.equal(cropDoctor.includes("Analyse photo"), true);
       assert.equal(cropDoctor.includes("Take or choose a photo first"), true);
       assert.equal(cropDoctor.includes('formData.append("image", selectedFile)'), true);
       assert.equal(cropDoctor.includes('formData.append("selectedCrop", selectedCrop || CROP_DOCTOR_AUTO_DETECT_VALUE)'), true);
@@ -6851,7 +6866,7 @@ const tests: TestCase[] = [
       assert.equal(vision.includes("Farmer-selected crop:"), true);
       assert.equal(vision.includes("Farmer-selected symptom:"), true);
       assert.equal(cropDoctor.includes("shouldDisableCropDoctorAnalysis(credits)"), true);
-      assert.equal(cropDoctor.includes("!selectedFile || isAnalysing || isAnalysisDisabled"), true);
+      assert.equal(cropDoctor.includes("!selectedFile || !consented || isAnalysing || isAnalysisDisabled"), true);
       assert.equal(cropDoctor.includes("buildCropDoctorHandoffContext(diagnosis)"), true);
     }
   },

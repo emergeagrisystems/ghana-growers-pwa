@@ -132,3 +132,24 @@
     .workspace[data-keyboard-fit] .intro { display: none; }
   .composer .privacy { font-size: 11px; }
 }
+
+.weatherShortcut { display: none; }
+.toolPane { background: #fcfbf5; }
+.ask[data-empty="true"] .composer { background: #faf3df; }
+@media (max-width:700px) {
+  .workspace { background: #ebece2; }
+  .workspace .support { display: none; }
+  .weatherShortcut { display: flex; align-items: center; gap: 7px; grid-area: 1/1; min-width: 0; min-height: 44px; margin: 4px 8px 6px; padding: 7px 12px; border: 1px solid #bfcebf; border-radius: 10px; color: #193e32; background: #fffdf6; text-align: left; line-height: 1.18; font-size: 13px; }
+  .weatherShortcut span { flex: 1; text-align: right; }
+  .weatherShortcut svg { flex-shrink: 0; }
+  .workspace[data-keyboard-fit] .weatherShortcut, .workspace:has(.ask[data-empty="false"]) .weatherShortcut { display: none; }
+  .nav { background: #0e493c; border-color: #073e32; gap: 3px; }
+  .nav button { color: #fffdf2; background: transparent; font-size: 12px; min-height: 49px; line-height: 1.15; padding: 4px 2px; }
+  .nav button:hover:not([aria-current]) { background: #205b4a; }
+  .nav button[aria-current] { color: #123d30; background: #fff1c9; border-radius: 12px; }
+  .nav button[aria-current]::before { display: none; }
+  .nav button[aria-current] svg { stroke-width: 2.8px; }
+  .nav button:focus-visible { outline-color: #ffbf47; }
+  .inputRow { border: 1.5px solid #637b6b; }
+  .panel { background: #fffdf8; }
+}

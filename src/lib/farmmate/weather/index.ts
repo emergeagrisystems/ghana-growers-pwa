@@ -33,6 +33,8 @@ export type WeatherDecisionSummary = {
 export type FarmMateWeatherForecast = {
   location: FarmMateWeatherLocation;
   currentTemperatureC?: number;
+  currentWeatherCode?: number;
+  observedAt?: string;
   rainChancePercent?: number;
   humidityPercent?: number;
   windSpeedKph?: number;
@@ -70,7 +72,9 @@ export type FarmMateWeatherResult =
     };
 
 type OpenMeteoForecastResponse = {
+  utc_offset_seconds?: number;
   current?: {
+    weather_code?: number;
     temperature_2m?: number;
     relative_humidity_2m?: number;
     wind_speed_10m?: number;
@@ -258,9 +262,15 @@ export function mapOpenMeteoForecast(data: OpenMeteoForecastResponse, location: 
     return null;
   }
 
-  const lastUpdatedAt = data.current?.time ? new Date(data.current.time).toISOString() : new Date().toISOString();
+  const time = data.current?.time;
+  const zoned = time && /(?:Z|[+-]\d{2}:?\d{2})$/i.test(time);
+  const instant = time ? Date.parse(zoned ? time : time + "Z") - (zoned ? 0 : (data.utc_offset_seconds ?? 0) * 1000) : NaN;
+  const observedAt = Number.isFinite(instant) ? new Date(instant).toISOString() : undefined;
+  const lastUpdatedAt = observedAt ?? new Date().toISOString();
   const forecastWithoutSummary = {
     location,
+    observedAt,
+    currentWeatherCode: data.current?.weather_code,
     currentTemperatureC: roundNumber(data.current?.temperature_2m),
     rainChancePercent: days[0].rainChancePercent,
     humidityPercent: roundNumber(data.current?.relative_humidity_2m),
@@ -279,11 +289,26 @@ export function mapOpenMeteoForecast(data: OpenMeteoForecastResponse, location: 
   };
 }
 
+// Open-Meteo WMO codes for current conditions. Unknown codes remain neutral.
+export function currentWeatherCondition(code?: number) {
+  if (code === 0) return "Clear";
+  if (code === 1) return "Mainly clear";
+  if (code === 2) return "Partly cloudy";
+  if (code === 3) return "Overcast";
+  if (code === 45 || code === 48) return "Fog";
+  if ([51,53,55,56,57].includes(code ?? -1)) return "Drizzle";
+  if ([61,63,65,66,67].includes(code ?? -1)) return "Rain";
+  if ([80,81,82].includes(code ?? -1)) return "Rain showers";
+  if ([71,73,75,77,85,86].includes(code ?? -1)) return "Snow";
+  if ([95,96,99].includes(code ?? -1)) return "Thunderstorm";
+  return undefined;
+}
+
 function openMeteoUrl(location: FarmMateWeatherLocation) {
   const params = new URLSearchParams({
     latitude: String(location.latitude),
     longitude: String(location.longitude),
-    current: "temperature_2m,relative_humidity_2m,wind_speed_10m",
+    current: "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
     daily: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max",
     timezone: "auto",
     forecast_days: "3"

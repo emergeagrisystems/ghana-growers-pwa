@@ -48,13 +48,7 @@ export async function Stage1Homepage() {
           </div>
         </div>
         <HomeAskEntry />
-        <nav aria-label="Homepage quick access" className={styles.dock}>
-          <Link href="/directory"><Wheat />Farms</Link>
-          <Link href="/supplier-directory"><Store />Suppliers</Link>
-          <Link href="/farmer-hub" className={styles.dockAsk}><i><Sprout /></i>Mama G</Link>
-          <Link href="/submit-buyer-request" aria-label="Request — enquiries currently closed"><ClipboardList />Request</Link>
-          <span aria-disabled="true"><MessagesSquare />WhatsApp<small>Unavailable</small></span>
-        </nav>
+
       </section>
 
       <section className={styles.gateways} aria-label="Start here">
@@ -110,6 +104,13 @@ export async function Stage1Homepage() {
         <HowItWorksVideo />
         <div className={styles.steps}><p className={styles.eyebrow}>HOW IT WORKS</p><h2 id="how-title">Simple as 1, 2, 3.</h2><ol><li><span>1</span><div><h3>Search</h3><p>Browse farms, produce, agricultural suppliers and services.</p></div></li><li><span>2</span><div><h3>Enquire</h3><p>Buyer requests are currently closed while the managed enquiry service is prepared.</p></div></li><li><span>3</span><div><h3>Connect</h3><p>When enabled, Ghana Growers will coordinate suitable introductions where possible.</p></div></li></ol></div>
       </section>
+      <nav aria-label="Homepage quick access" className={styles.dock}>
+          <Link href="/directory"><Wheat />Farms</Link>
+          <Link href="/supplier-directory"><Store />Suppliers</Link>
+          <Link href="/farmer-hub" className={styles.dockAsk}><i><Sprout /></i>Mama G</Link>
+          <Link href="/submit-buyer-request" aria-label="Request — enquiries currently closed"><ClipboardList />Request</Link>
+          <span aria-disabled="true"><MessagesSquare />WhatsApp<small>Unavailable</small></span>
+        </nav>
     </main>
   );
 }

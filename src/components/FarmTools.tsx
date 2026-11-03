@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { HarvestStorageGuide } from "./HarvestStorageGuide";
 import { CropDoctor } from "@/components/CropDoctor";
-import { CanIFarmTodayExperience, FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
+import { CanIFarmTodayExperience, FarmMateWeatherFoundation, useFarmWeather, WeatherShortcut } from "@/components/FarmMateWeatherFoundation";
 import { takeHomeDraft } from "@/lib/farmmate/home-draft";
 import { FARM_MATE_TOOL_LIMITS } from "@/lib/farmmate/usage/rules";
 import styles from "./AdviserWorkspace.module.css";
@@ -28,7 +28,7 @@ import {
 type ToolKey = "ask" | "doctor" | "calendar" | "planting" | "weather" | "storage";
 
 const tools = [
-  { key: "doctor" as const, title: "Crop Doctor", icon: Camera, description: "Check a crop problem" },
+  { key: "storage" as const, title: "Storage tips", icon: PackageOpen, description: "Handle and store your harvest" },
   { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "What should I do now?" },
   { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Am I ready to plant?" },
   { key: "weather" as const, title: "Can I Farm Today?", icon: CloudSun, description: "Check today's farm conditions" }
@@ -270,6 +270,8 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownReg
 
 export function FarmTools() {
   const searchParams = useSearchParams();
+  const weather = useFarmWeather();
+  const [askSession, setAskSession] = useState(0);
   const [activeTool, setActiveTool] = useState<ToolKey | "tools">("ask");
   const workspace = useRef<HTMLElement>(null);
   const imported = useRef(false);
@@ -281,13 +283,9 @@ export function FarmTools() {
   const [knownCrop, setKnownCrop] = useState("");
   const [knownRegion, setKnownRegion] = useState("");
   const knownRegionTouched = useRef(false);
-  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "storage" ? "Storage Advisor" : activeTool === "tools" ? "Farm tools" : tools.find(tool => tool.key === activeTool)?.title;
+  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "doctor" ? "Crop Doctor" : activeTool === "weather" ? "Today" : activeTool === "storage" ? "Storage tips" : activeTool === "tools" ? "All Tools" : tools.find(tool => tool.key === activeTool)?.title;
   const openTool = useCallback((tool: ToolKey, fromHandoff = false) => {
-    if (tool === "ask" && !fromHandoff) {
-      setPrefillQuestion("");
-      setCropDoctorHandoff(null);
-      setToolHandoff(null);
-    }
+    if (tool === "ask" && fromHandoff) setAskSession(id => id + 1);
     if (tool === "doctor" && !fromHandoff) setDoctorPrefillCrop("");
     if (tool === "planting" && !fromHandoff) setPlantingPrefillChecks(null);
     setActiveTool(tool);
@@ -429,33 +427,33 @@ export function FarmTools() {
 
   const ask = FARM_MATE_TOOL_LIMITS.ask_farmmate;
   const doctor = FARM_MATE_TOOL_LIMITS.crop_doctor;
-  const forwards = [
-    { key: "ask", label: "Ask", Icon: MessageCircle },
+  const tabs = [
+    { key: "weather", label: "Today", Icon: CloudSun },
+    { key: "ask", label: "Ask Mama G", Icon: MessageCircle },
     { key: "doctor", label: "Crop Doctor", Icon: Camera },
-    { key: "storage", label: "Storage Advisor", Icon: PackageOpen },
-    { key: "tools", label: "Tools", Icon: Grid2X2 }
+    { key: "tools", label: "All Tools", Icon: Grid2X2 }
   ] as const;
-
-  return <section ref={workspace} className={styles.workspace} aria-label="Mama G workspace">
+  return <section ref={workspace} className={styles.workspace} aria-label="Mama G workspace" data-tool={activeTool}>
     <nav className={styles.nav} aria-label="Adviser navigation">
-      {forwards.map(({ key, label, Icon }) =>
-        <button type="button" key={key}
-          aria-label={label}
-          aria-current={(activeTool === key || (key === "tools" && !forwards.some(item => item.key === activeTool))) ? "page" : undefined}
+      {tabs.map(({key,label,Icon}) => {
+        const subtool = activeTool === "calendar" || activeTool === "planting";
+        return <button type="button" key={key} aria-label={label}
+          aria-current={activeTool === key || (key === "tools" && (subtool || activeTool === "storage")) ? "page" : undefined}
           onClick={() => key === "tools" ? setActiveTool("tools") : openTool(key)}>
-          <Icon size={19} aria-hidden="true" />{key === "storage" ? <span>Storage<span className={styles.desktopLabel}> Advisor</span></span> : label}
-        </button>
-      )}
+          <Icon size={20} aria-hidden="true" /><span>{label}</span>
+        </button>;
+      })}
     </nav>
+    {activeTool === "ask" && <WeatherShortcut weather={weather} onOpen={() => openTool("weather")} />}
 
     <div className={styles.panel}>
       <header className={styles.panelTitle}><div><h1>{title}</h1><p>Your agricultural adviser</p></div>
-        {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" && activeTool !== "storage" &&
+        {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" && activeTool !== "weather" &&
           <button type="button" onClick={() => setActiveTool("tools")}><ArrowLeft size={16} /> All tools</button>}
       </header>
-      {activeTool === "ask" && <div className={styles.askPane}>
-        <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} />
-      </div>}
+      <div hidden={activeTool !== "ask"} className={styles.askPane}>
+        <AskFarmMate key={askSession} prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} />
+      </div>
       {activeTool === "doctor" && <div className={styles.toolPane}><CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /></div>}
       {activeTool === "storage" && <div className={styles.toolPane}><HarvestStorageGuide onAsk={openAskFarmMateWithQuestion} /></div>}
       {activeTool === "tools" && <div className={styles.toolPane}>
@@ -465,11 +463,11 @@ export function FarmTools() {
       </div>}
       {activeTool === "calendar" && <div className={styles.toolPane}><CropCalendarExperience knownCrop={knownCrop} knownRegion={knownRegion} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
       {activeTool === "planting" && <div className={styles.toolPane}><PlantingAdvisorExperience knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
-      {activeTool === "weather" && <div className={styles.toolPane}><CanIFarmTodayExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
+      {activeTool === "weather" && <div className={styles.toolPane}><FarmMateWeatherFoundation weather={weather} /><CanIFarmTodayExperience weatherState={weather} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
     </div>
 
     <aside className={styles.support} aria-label="Adviser support">
-      <FarmMateWeatherFoundation compact />
+      <FarmMateWeatherFoundation compact weather={weather} />
       <div><small>QUESTION AND PHOTO LIMITS</small><p>{ask.limit} Ask questions per {ask.windowHours} hours</p><p>{doctor.limit} crop checks per {doctor.windowHours} hours</p></div>
       <div><small>SAFE USE</small><p>For serious or spreading crop problems, seek a local extension officer.</p></div>
     </aside>

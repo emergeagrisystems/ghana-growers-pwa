@@ -33,12 +33,17 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         requests.push({ path: url.pathname, action: body.action });
         if (url.pathname === "/api/farmmate/weather") {
           if (weatherOutcome === "missing") return route.fulfill({json:{ok:true, forecast:{location:{name:"Kumasi"},days:[]}}});
+          if (weatherOutcome === "stale") {
+            const observedAt = new Date(Date.now() - 36 * 3600000).toISOString();
+            const days = ["Today","Tomorrow","Day after tomorrow"].map((label,i) => ({date:"2026-11-0"+(3+i),label,temperatureMaxC:32,rainChancePercent:95}));
+            return route.fulfill({json:{ok:true,forecast:{location:{name:"Accra",key:"accra"},days,observedAt,lastUpdatedAt:observedAt,currentTemperatureC:28,currentWeatherCode:0,decisionSummary:{liveWeatherAvailable:true}}}});
+          }
           if (weatherOutcome === "success") {
             await new Promise(resolve => {completeWeather = resolve;});
             const days = ["Today","Tomorrow","Day after tomorrow"].map((label,i) => ({
               date: "2026-11-0" + (3+i),label,temperatureMaxC:29,temperatureMinC:21,rainChancePercent:20
             }));
-            return route.fulfill({json:{ok:true,forecast:{location:{name:"Kumasi",key:"kumasi"},days,
+            return route.fulfill({json:{ok:true,forecast:{location:{name:"Kumasi",key:"kumasi"},days,currentTemperatureC:29,currentWeatherCode:3,observedAt:new Date().toISOString(),
               lastUpdatedAt:new Date().toISOString(),decisionSummary:{locationName:"Kumasi",liveWeatherAvailable:true}}}});
           }
         }
@@ -63,7 +68,16 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       await page.evaluate(() => document.fonts.ready);
       const mark = hero.locator("mark");
       const dock = page.getByRole("navigation",{name:"Homepage quick access",includeHidden:true});
-      assert.equal(await dock.isVisible(), width > 700);
+      assert.equal(await dock.isVisible(), width <= 700);
+      const bounds = await hero.boundingBox();
+      assert.equal(bounds.x,0);
+      assert.equal(bounds.width,await page.evaluate(() => document.documentElement.clientWidth));
+      if (width <= 700) {
+        assert.deepEqual(await dock.locator(":scope > *").allTextContents(),["Farms","Suppliers","Mama G","Request","WhatsAppUnavailable"]);
+        assert.equal(await dock.locator("[aria-disabled=true]").getAttribute("href"),null);
+        const footer = page.locator("footer").last();
+        assert.ok(await footer.evaluate(el => parseFloat(getComputedStyle(el).paddingBottom)) >= (await dock.boundingBox()).height);
+      }
       const heightBefore = (await hero.boundingBox()).height;
       await page.waitForFunction(() => document.querySelector("h1 mark")?.textContent !== "Farms.");
       await hero.getByRole("button",{name:"Pause changing headline"}).click();
@@ -103,6 +117,10 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         const rect = await target.boundingBox();
         assert.ok(rect.width >= 44 && rect.height >= 44);
       }
+      assert.deepEqual(await adviserNav.getByRole("button").allTextContents(),["Today","Ask Mama G","Crop Doctor","All Tools"]);
+      await adviserNav.getByRole("button",{name:"Today",exact:true}).click();
+      await adviserNav.getByRole("button",{name:"Ask Mama G",exact:true}).click();
+      assert.equal(await field.inputValue(),question + " After planting.");
       await field.focus();
       await page.setViewportSize({width, height: 365});
       await page.waitForFunction(() => {
@@ -121,31 +139,46 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       assert.ok(logs.every(message => !message.includes(question)));
       await page.getByRole("navigation", { name:"Adviser navigation" }).getByRole("button", {name:"Crop Doctor"}).click();
       assert.ok(await page.locator("#crop-doctor-disclosure").isVisible());
-      assert.match(await page.locator("#crop-doctor-disclosure").innerText(), /AI provider processes the photo/);
-      const privacy = page.locator("details").filter({has:page.getByText("About AI & privacy",{exact:true})});
+      assert.match(await page.locator("#crop-doctor-disclosure").innerText(), /AI provider processes your photo/);
+      const privacy = page.locator("#crop-doctor details").filter({has:page.getByText("About AI & privacy",{exact:true})});
       assert.equal(await privacy.getAttribute("open"), null);
-      assert.ok(await privacy.evaluate(el => !!(document.querySelector('[aria-describedby="crop-doctor-disclosure"]').compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
+      assert.ok(await privacy.evaluate(el => !!(document.querySelector('#crop-doctor-disclosure').compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)));
       await privacy.locator("summary").click();
       assert.match(await privacy.innerText(), /personal documents/);
       await snap("crop-privacy");
       await privacy.locator("summary").click();
-      const photo = page.getByLabel("Choose Photo", {exact:true});
-      await photo.setInputFiles({ name:"hm1-control.png", mimeType:"image/png",
-        buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZCkAAAAASUVORK5CYII=","base64") });
-      assert.equal(requests.filter(r => r.path.endsWith("crop-doctor")).length, 0, "selecting a photo never sends it");
+      const analyse = page.getByRole("button",{name:"Analyse photo",exact:true});
+      const fixture = { name:"hm1-control.png", mimeType:"image/png", buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZCkAAAAASUVORK5CYII=","base64") };
+      const camera = page.getByRole("button",{name:"Take a photo",exact:true});
+      const gallery = page.getByRole("button",{name:"Choose from gallery",exact:true});
+      const [cameraChooser] = await Promise.all([page.waitForEvent("filechooser"),camera.click()]);
+      assert.equal(await cameraChooser.element().getAttribute("capture"),"environment");
+      await cameraChooser.setFiles([]);
+      assert.equal(await page.getByAltText("Selected crop preview").count(),0);
+      const [galleryChooser] = await Promise.all([page.waitForEvent("filechooser"),gallery.click()]);
+      assert.equal(await galleryChooser.element().getAttribute("capture"),null);
+      await galleryChooser.setFiles(fixture);
+      const consent = page.getByRole("checkbox",{name:/agree to send/});
+      assert.ok(!await analyse.isEnabled());
+      await consent.check();
+      await page.getByRole("button",{name:"Change photo"}).click();
+      await page.getByLabel("Take Photo",{exact:true}).setInputFiles({...fixture,name:"replacement.png"});
+      assert.ok(!await consent.isChecked());
+      assert.ok(!await analyse.isEnabled());
+      assert.equal(requests.filter(r=>r.path.endsWith("crop-doctor")).length,0);
+      await consent.check();
       await snap("crop-doctor");
-      await Promise.all([page.waitForResponse(r => r.url().endsWith("/api/farmmate/crop-doctor") && r.status() === 503),
-        page.getByRole("button",{name:"Analyse Crop"}).click()]);
-      assert.equal(requests.filter(r => r.path.endsWith("crop-doctor")).length, 1);
+      await Promise.all([page.waitForResponse(r=>r.url().endsWith("/api/farmmate/crop-doctor") && r.status()===503),analyse.click()]);
+      assert.equal(requests.filter(r=>r.path.endsWith("crop-doctor")).length,1);
       await page.getByText(/Mama G could not confirm the photo check/).waitFor();
-      await page.getByRole("button", {name:"Tools",exact:true}).click();
-      for (const name of ["Crop Calendar","Planting Advisor","Can I Farm Today?"]) {
+      await page.getByRole("button", {name:"All Tools",exact:true}).click();
+      for (const name of ["Crop Calendar","Planting Advisor"]) {
         await page.getByRole("button",{name:new RegExp(name.replace("?","\\?"))}).first().click();
-        await page.getByRole("button",{name:"All tools"}).click();
+        await page.getByRole("button",{name:"All Tools",exact:true}).first().click();
       }
       await snap("tools");
-      await adviserNav.getByRole("button",{name:"Storage Advisor"}).click();
-      await page.getByRole("heading",{name:"Storage Advisor",exact:true}).waitFor();
+      await page.getByRole("button",{name:/^Storage tips/}).click();
+      await page.getByRole("heading",{name:"Storage tips",exact:true}).waitFor();
       await page.getByRole("combobox",{name:/^Crop\b/}).selectOption({label:"Maize"});
       await page.getByLabel("Harvest state").selectOption("harvested");
       await page.getByLabel("Known condition").selectOption("wet");
@@ -153,29 +186,39 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       await page.getByRole("button",{name:"Ask Mama G about this harvest"}).click();
       await page.waitForFunction(() => document.querySelector("#ask-farmmate-question")?.value.includes("store Maize"));
       assert.equal(requests.length,preStorage);
-      await adviserNav.getByRole("button",{name:"Tools",exact:true}).click();
-      await page.getByRole("navigation",{name:"Adviser navigation"}).getByRole("button",{name:"Ask",exact:true}).click();
-      assert.equal(await field.inputValue(), "", "fresh Ask cannot inherit the previous tool draft");
+      await adviserNav.getByRole("button",{name:"All Tools",exact:true}).click();
+      await page.getByRole("navigation",{name:"Adviser navigation"}).getByRole("button",{name:"Ask Mama G",exact:true}).click();
+      assert.match(await field.inputValue(), /store Maize/, "tab navigation preserves the active draft");
       await page.reload();
       await field.waitFor();
       assert.equal(await field.inputValue(), "", "reload cannot replay a draft");
       assert.ok(await checkWidth());
-      const area = page.locator("#workspace-weather-area");
+      if(width < 700) await page.getByRole("button",{name:/Choose your area.*Farm weather/}).click();
+      else await adviserNav.getByRole("button",{name:"Today",exact:true}).click();
+      const area = page.locator("#farmmate-weather-location");
+      const today = page.locator('[aria-label="Mama G workspace"] [class*="toolPane"]').filter({has:area});
       await area.selectOption("accra");
-      const weather = page.getByRole("region",{name:"Farm weather",exact:true});
-      await weather.getByText(/Live weather is unavailable/).waitFor();
+      await today.getByText(/Live weather is unavailable/).waitFor();
       weatherOutcome = "missing";
-      await Promise.all([page.waitForResponse(r => r.url().includes("/api/farmmate/weather")),area.selectOption("tamale")]);
-      await weather.getByText(/Live weather is unavailable/).waitFor();
+      await Promise.all([page.waitForResponse(r=>r.url().includes("/api/farmmate/weather")),area.selectOption("tamale")]);
+      await today.getByText(/Live weather is unavailable/).waitFor();
       weatherOutcome = "success";
-      await Promise.all([page.waitForRequest(r => r.url().includes("locationKey=kumasi")),area.selectOption("kumasi")]);
-      await weather.getByText("Checking live weather…").waitFor();
-      assert.equal(typeof completeWeather, "function");
+      await Promise.all([page.waitForRequest(r=>r.url().includes("locationKey=kumasi")),area.selectOption("kumasi")]);
+      await today.getByText("Loading live weather...").waitFor();
       completeWeather();
-      await weather.getByText(/20% chance of rain/).first().waitFor();
-      await weather.getByText("3-day forecast").click();
-      assert.ok(await weather.getByText(/Tomorrow ·/).isVisible());
-      await weather.getByText("3-day forecast").click();
+      await today.getByText("Tomorrow",{exact:true}).filter({visible:true}).waitFor();
+      await adviserNav.getByRole("button",{name:"Ask Mama G",exact:true}).click();
+      if(width < 700) {
+        const strip=page.getByRole("button",{name:/Kumasi.*29°C.*Overcast/});
+        await strip.waitFor();
+        assert.ok(!(await strip.innerText()).includes("%"));
+      }
+      await adviserNav.getByRole("button",{name:"Today",exact:true}).click();
+      weatherOutcome = "stale";
+      await area.selectOption("accra");
+      await today.getByText("Weather out of date",{exact:true}).waitFor();
+      await adviserNav.getByRole("button",{name:"Ask Mama G",exact:true}).click();
+      if(width < 700) assert.ok(await page.getByRole("button",{name:/Accra.*Weather out of date/}).isVisible());
       longAnswerCheck = true;
       await field.fill("How do I stake tomatoes?");
       await Promise.all([page.waitForResponse(r => r.url().endsWith("/api/farmmate/ask") && r.status() === 200), send.click()]);
@@ -245,7 +288,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         await cdp.detach();
       }
       evidence.push({width, homepage:true, handoff:true, preSendApi:0, sendOperations:1, privateNavigation:true, reducedViewport:true, keyboardCycles,
-        physicalKeyboard:"not exercised", longResponseControls:true, cropDisclosureAndFileSelection:true, controlledPhotoFailures:1, tools:true, freshAskEmpty:true, reloadEmpty:true});
+        physicalKeyboard:"not exercised", longResponseControls:true, cropDisclosureAndFileSelection:true, controlledPhotoFailures:1, cameraCancellation:true, gallerySelection:true, replacementClearsConsent:true, navigationPreservesDraft:true, currentConditionsAndStaleWeather:true, tools:true, reloadEmpty:true});
       await context.close();
     }
     if (output) await fs.writeFile(path.join(output,"local-browser-results.json"),JSON.stringify(evidence,null,2));

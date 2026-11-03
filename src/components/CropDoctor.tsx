@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope, UploadCloud } from "lucide-react";
+import { Camera, CheckCircle2, ImagePlus, Loader2, Stethoscope } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -66,6 +66,8 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
   }, []);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [consented, setConsented] = useState(false);
+  const [changingPhoto, setChangingPhoto] = useState(false);
   const [fileName, setFileName] = useState("");
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [hasDiagnosis, setHasDiagnosis] = useState(false);
@@ -80,14 +82,14 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
   const isAnalysisDisabled = shouldDisableCropDoctorAnalysis(credits);
   const isUploadDisabled = isAnalysing || shouldDisableCropDoctorUpload(credits);
   const symptomOptions = cropDoctorSymptomsForCrop(selectedCrop);
-  const isAnalyseButtonDisabled = !selectedFile || isAnalysing || isAnalysisDisabled;
+  const isAnalyseButtonDisabled = !selectedFile || !consented || isAnalysing || isAnalysisDisabled;
   const analyseButtonText = isAnalysing
     ? "Mama G is checking your crop photo..."
     : !selectedFile
       ? "Take or choose a photo first"
       : isAnalysisDisabled
         ? "No Crop Doctor checks available"
-        : "Analyse Crop";
+        : "Analyse photo";
   const diagnosisHasSelectedCrop = Boolean(diagnosis?.selectedCrop && diagnosis.selectedCrop !== "Not sure");
   const diagnosisSelectedSymptom = diagnosis?.selectedSymptom && diagnosis.selectedSymptom !== "Not sure" ? diagnosis.selectedSymptom : null;
   const unclearDiagnosis = diagnosis?.resultType === "photo_unclear" || diagnosis?.resultType === "crop_not_confirmed";
@@ -184,6 +186,8 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
     setSelectedImage(URL.createObjectURL(file));
     photoRequestId.current = crypto.randomUUID();
     setSelectedFile(file);
+    setConsented(false);
+    setChangingPhoto(false);
     setFileName(file.name);
     setDiagnosis(null);
     setHasDiagnosis(false);
@@ -219,7 +223,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
   }
 
   async function analyseCrop() {
-    if (!selectedImage || !selectedFile || isAnalysing) {
+    if (!selectedImage || !selectedFile || !consented || isAnalysing) {
       return;
     }
 
@@ -338,86 +342,49 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
 
   return (
     <article id="crop-doctor" className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-soft sm:p-6">
-      <div className="flex items-start gap-3">
-        <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
-          <Camera size={24} aria-hidden="true" />
-        </span>
-        <div>
-          <h2 className="sr-only">Crop Doctor</h2>
-          <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("crop_doctor", credits)}</p>
-          <p className="mt-1 text-xs font-semibold text-ink/42">Free public users get 2 Crop Doctor checks every 12 hours.</p>
-          <p className="mt-2 text-sm leading-6 text-ink/66">Add a photo, then share the crop or signs you notice if you know them.</p>
-        </div>
+      <h2 className="text-lg font-bold text-ink">Add a crop photo</h2>
+      <p id="crop-doctor-disclosure" className="mt-1 text-sm leading-5 text-ink/80">When you tap Analyse photo, our AI provider processes your photo. Show only the crop.</p>
+      <div hidden={Boolean(selectedImage) && !changingPhoto} className="mt-3 grid gap-2 sm:grid-cols-2">
+        <input
+          ref={cameraInputRef}
+          id="crop-doctor-camera-capture"
+          type="file"
+          accept={CROP_DOCTOR_IMAGE_ACCEPT}
+          capture="environment"
+          className="hidden"
+          onChange={handleImageChange}
+          disabled={isUploadDisabled}
+          aria-label="Take Photo"
+        />
+        <button
+          type="button"
+          onClick={openCameraCapture}
+          disabled={isUploadDisabled}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+        >
+          <Camera size={18} aria-hidden="true" />
+          Take a photo
+        </button>
+        <input
+          ref={galleryInputRef}
+          id="crop-doctor-photo-picker"
+          type="file"
+          accept={CROP_DOCTOR_IMAGE_ACCEPT}
+          className="hidden"
+          onChange={handleImageChange}
+          disabled={isUploadDisabled}
+          aria-label="Choose Photo"
+        />
+        <button
+          type="button"
+          onClick={openImagePicker}
+          disabled={isUploadDisabled}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
+        >
+          <ImagePlus size={18} aria-hidden="true" />
+          Choose from gallery
+        </button>
       </div>
-
-      <p id="crop-doctor-disclosure" className="mt-5 text-sm leading-6 text-ink/75">
-        Our AI provider processes the photo you send. Show only the crop. Keep people, documents and private details out. Results are guidance, not a diagnosis.
-      </p>
-
-      <div
-        aria-disabled={isUploadDisabled}
-        className={`mt-5 grid min-h-44 place-items-center rounded-md border-2 border-dashed p-5 text-center transition ${
-          isUploadDisabled
-            ? "cursor-not-allowed border-ink/10 bg-ink/5 opacity-75"
-            : "border-leaf-700/20 bg-leaf-50 hover:border-leaf-700/45 hover:bg-white"
-        }`}
-      >
-        <div>
-          <UploadCloud className={`mx-auto ${isUploadDisabled ? "text-ink/35" : "text-leaf-700"}`} size={32} aria-hidden="true" />
-          <p className="mt-3 text-base font-black text-ink">{isAnalysing ? "Checking your photo" : isUploadDisabled ? "No Crop Doctor checks available" : "Add a photo"}</p>
-          <p className="mt-1 text-sm font-semibold leading-6 text-ink/58">
-            {isUploadDisabled
-              ? "You can still ask Mama G for guidance while you wait."
-              : "Photograph the affected part clearly in good daylight."}
-          </p>
-          {!isUploadDisabled ? <p className="mt-2 text-xs font-bold text-ink/48">Close-ups of leaves, fruit, stems, roots, pests or produce are welcome. A second whole-plant photo may help.</p> : null}
-          <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
-            <input
-              ref={cameraInputRef}
-              id="crop-doctor-camera-capture"
-              type="file"
-              accept={CROP_DOCTOR_IMAGE_ACCEPT}
-              capture="environment"
-              className="sr-only"
-              onChange={handleImageChange}
-              disabled={isUploadDisabled}
-              aria-label="Take Photo"
-            />
-            <button
-              type="button"
-              onClick={openCameraCapture}
-              disabled={isUploadDisabled}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-            >
-              <Camera size={18} aria-hidden="true" />
-              Take photo
-            </button>
-            <input
-              ref={galleryInputRef}
-              id="crop-doctor-photo-picker"
-              type="file"
-              accept={CROP_DOCTOR_IMAGE_ACCEPT}
-              className="sr-only"
-              onChange={handleImageChange}
-              disabled={isUploadDisabled}
-              aria-label="Choose Photo"
-            />
-            <button
-              type="button"
-              onClick={openImagePicker}
-              disabled={isUploadDisabled}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-            >
-              <ImagePlus size={18} aria-hidden="true" />
-              Choose photo
-            </button>
-          </div>
-          <p className="mt-3 text-xs font-bold leading-5 text-ink/48">
-            JPG, PNG, or WEBP under 5 MB. On desktop, Take Photo may open the normal file picker if camera capture is not supported.
-          </p>
-        </div>
-      </div>
-
       {selectedImage ? (
         <div className="mt-5">
           <div className="overflow-hidden rounded-md border border-leaf-900/10 bg-leaf-50">
@@ -426,76 +393,93 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
           <div className="mt-3 flex items-center gap-2 text-sm font-bold text-ink/62">
             <ImagePlus className="text-leaf-700" size={18} aria-hidden="true" />
             {fileName || "Crop photo selected"}
+            <button type="button" disabled={isUploadDisabled} aria-expanded={changingPhoto} className="ml-auto min-h-11 px-2 font-bold text-leaf-700 underline" onClick={() => setChangingPhoto(value => !value)}>Change photo</button>
           </div>
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-3 rounded-md border border-leaf-900/10 bg-leaf-50 p-4">
-        <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-crop">
-          Crop (optional)
-          <select
-            id="crop-doctor-selected-crop"
-            disabled={isAnalysing}
-            className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
-            value={selectedCrop}
-            onChange={(event) => {
-              setSelectedCrop(event.target.value);
-              setSelectedSymptom("");
-              resetDiagnosisForFieldContext();
-            }}
+      {selectedFile && <>
+        <details className="mt-3 rounded-md border border-leaf-900/10 bg-leaf-50 px-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-bold">Crop and signs (optional)</summary><div className="grid gap-3 pb-3">
+          <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-crop">
+            Crop (optional)
+            <select
+              id="crop-doctor-selected-crop"
+              disabled={isAnalysing}
+              className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
+              value={selectedCrop}
+              onChange={(event) => {
+                setSelectedCrop(event.target.value);
+                setSelectedSymptom("");
+                resetDiagnosisForFieldContext();
+              }}
+            >
+              <option value="">Detect automatically</option>
+              {CROP_DOCTOR_CROP_GROUPS.map((group) => (
+                <optgroup key={group.group} label={group.label}>
+                  {group.crops.map((crop) => (
+                    <option key={crop} value={crop}>
+                      {crop}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-symptom">
+            What do you notice? <span className="font-semibold text-ink/50">(optional)</span>
+            <select
+              id="crop-doctor-selected-symptom"
+              disabled={isAnalysing}
+              className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
+              value={selectedSymptom}
+              onChange={(event) => {
+                setSelectedSymptom(event.target.value);
+                resetDiagnosisForFieldContext();
+              }}
+            >
+              <option value="">Not sure</option>
+              {symptomOptions.map((symptom) => (
+                <option key={symptom} value={symptom}>
+                  {symptom}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex flex-wrap gap-2" aria-label="Common visible signs">{["Yellow leaves", "Spots on leaves", "Holes in leaves", "Wilting", "Fruit problem", "Insects or pests"].filter((symptom) => symptomOptions.includes(symptom)).map((symptom) => <button key={symptom} type="button" aria-pressed={selectedSymptom === symptom} disabled={isAnalysing} onClick={() => { setSelectedSymptom(symptom); resetDiagnosisForFieldContext(); }} className={`min-h-10 rounded-full border px-3 text-xs font-bold ${selectedSymptom === symptom ? "border-leaf-700 bg-leaf-700 text-white" : "border-leaf-900/15 bg-white text-leaf-700"}`}>{symptom}</button>)}</div>
+        </div>
+
+        </details>
+        <div className="mt-3">
+          <label className="mb-2 flex min-h-11 items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" checked={consented} disabled={isAnalysing} onChange={event => setConsented(event.target.checked)} />
+            I agree to send this crop photo for AI analysis.
+          </label>
+          <button
+            type="button"
+            onClick={analyseCrop}
+            aria-describedby="crop-doctor-disclosure"
+            disabled={isAnalyseButtonDisabled}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
           >
-            <option value="">Detect automatically</option>
-            {CROP_DOCTOR_CROP_GROUPS.map((group) => (
-              <optgroup key={group.group} label={group.label}>
-                {group.crops.map((crop) => (
-                  <option key={crop} value={crop}>
-                    {crop}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
+            {isAnalysing ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Stethoscope size={18} aria-hidden="true" />}
+            {analyseButtonText}
+          </button>
+          {isAnalysisDisabled && selectedFile ? (
+            <p className="mt-2 text-xs font-bold leading-5 text-ink/48">{mamaGPublicText(creditMessage || "Crop Doctor checks are not available right now.")}</p>
+          ) : null}
+        </div>
 
-        <label className="grid gap-2 text-sm font-black text-ink" htmlFor="crop-doctor-selected-symptom">
-          What do you notice? <span className="font-semibold text-ink/50">(optional)</span>
-          <select
-            id="crop-doctor-selected-symptom"
-            disabled={isAnalysing}
-            className="gg-field min-h-12 w-full min-w-0 max-w-full bg-white"
-            value={selectedSymptom}
-            onChange={(event) => {
-              setSelectedSymptom(event.target.value);
-              resetDiagnosisForFieldContext();
-            }}
-          >
-            <option value="">Not sure</option>
-            {symptomOptions.map((symptom) => (
-              <option key={symptom} value={symptom}>
-                {symptom}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="flex flex-wrap gap-2" aria-label="Common visible signs">{["Yellow leaves", "Spots on leaves", "Holes in leaves", "Wilting", "Fruit problem", "Insects or pests"].filter((symptom) => symptomOptions.includes(symptom)).map((symptom) => <button key={symptom} type="button" aria-pressed={selectedSymptom === symptom} disabled={isAnalysing} onClick={() => { setSelectedSymptom(symptom); resetDiagnosisForFieldContext(); }} className={`min-h-10 rounded-full border px-3 text-xs font-bold ${selectedSymptom === symptom ? "border-leaf-700 bg-leaf-700 text-white" : "border-leaf-900/15 bg-white text-leaf-700"}`}>{symptom}</button>)}</div>
-      </div>
+      </>}
 
-      <div className="mt-5">
-        <button
-          type="button"
-          onClick={analyseCrop}
-          aria-describedby="crop-doctor-disclosure"
-          disabled={isAnalyseButtonDisabled}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-3 text-sm font-black text-white transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-        >
-          {isAnalysing ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Stethoscope size={18} aria-hidden="true" />}
-          {analyseButtonText}
-        </button>
-        {isAnalysisDisabled && selectedFile ? (
-          <p className="mt-2 text-xs font-bold leading-5 text-ink/48">{mamaGPublicText(creditMessage || "Crop Doctor checks are not available right now.")}</p>
-        ) : null}
-      </div>
-
+      <p className="mt-3 text-xs font-bold text-ink/65">{farmMateCreditLine("crop_doctor", credits)}</p>
+      <details className="mt-2 text-sm text-ink/75"><summary className="min-h-11 cursor-pointer py-3 font-semibold text-leaf-700">Photo tips</summary>
+        <p>Photograph the affected part clearly in good daylight. Close-ups are welcome. Use JPG, PNG or WebP under 5 MB. If the camera is unavailable, choose from your gallery.</p>
+      </details>
+      <details className="mt-5 border-t border-leaf-900/15 pt-2 text-sm leading-6 text-ink/75">
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-leaf-700">About AI &amp; privacy</summary>
+        <p>Crop Doctor uses AI to analyse the crop photo you upload. The image may be processed by our AI service provider to identify possible crop-health issues. Do not upload photos containing people, personal documents or other sensitive information. Results are guidance, not a confirmed diagnosis.</p>
+      </details>
       <div className="mt-5" aria-live="polite">
         {isAnalysing ? (
           <div className="flex items-center gap-2 rounded-md bg-leaf-50 px-4 py-3 text-sm font-black text-ink/70">
@@ -596,10 +580,7 @@ export function CropDoctor({ onAskFarmMateAboutThis, prefillCrop }: { onAskFarmM
           </div>
         ) : null}
       </div>
-      <details className="mt-5 border-t border-leaf-900/15 pt-2 text-sm leading-6 text-ink/75">
-        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-leaf-700">About AI &amp; privacy</summary>
-        <p>Crop Doctor uses AI to analyse the crop photo you upload. The image may be processed by our AI service provider to identify possible crop-health issues. Do not upload photos containing people, personal documents or other sensitive information. Results are guidance, not a confirmed diagnosis.</p>
-      </details>
+
     </article>
   );
 }

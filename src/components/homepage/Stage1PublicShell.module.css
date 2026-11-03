@@ -30,3 +30,11 @@
   .mobileMenu a:last-child { background: #40504a; border-color: #40504a; color: #fff; }
   .mobileMenu a:focus-visible, .menuButton:focus-visible { outline: 3px solid #215ea2; outline-offset: 2px; }
 }
+
+.homeHeader { height: 0; background: transparent; }
+.homeHeader .navigation { position: relative; top: 10px; width: min(calc(100% - 32px),1232px); min-height: 60px; padding: 5px 18px; border: 1px solid #e8e1d1; border-radius: 15px; background: rgba(255,251,240,.96); box-shadow: 0 3px 16px #142f211a; }
+.homeHeader .mobileMenu { position: relative; top: 10px; margin: 4px 16px 0; border-radius: 12px; max-height: 65dvh; overflow-y: auto; }
+@media(max-width:700px) {
+  .homeHeader .navigation { min-height: 54px; padding: 4px 9px; gap: 6px; }
+  .homeFooter { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+}

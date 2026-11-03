@@ -32,7 +32,7 @@ export function Stage1PublicHeader() {
   }, [open]);
 
   return (
-    <header className={`${styles.header} ${foundationFont.className}`}>
+    <header className={`${styles.header} ${pathname === "/" ? styles.homeHeader : ""} ${foundationFont.className}`}>
       <nav className={styles.navigation} aria-label="Main navigation">
         <Link href="/" className={styles.brand}>GHANA GROWERS</Link>
         <div className={styles.desktopLinks}>
@@ -66,8 +66,9 @@ const footerGroups = [
 ] as const;
 
 export function Stage1PublicFooter() {
+  const pathname = usePathname();
   return (
-    <footer className={`${styles.footer} ${foundationFont.className}`}>
+    <footer className={`${styles.footer} ${pathname === "/" ? styles.homeFooter : ""} ${foundationFont.className}`}>
       <div className={styles.columns}>
         <div className={styles.footerBrand}>
           <Link href="/">GHANA GROWERS</Link>
