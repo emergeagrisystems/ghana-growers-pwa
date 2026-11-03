@@ -36,6 +36,8 @@ import {
   weatherGuidedRecommendationCards
 } from "@/lib/farmmate/conversation-ui";
 import { routeFarmMateQuestion, type RouterResult } from "@/lib/farmmate/router";
+import styles from "./AdviserWorkspace.module.css";
+import { FARM_MATE_TOOL_LIMITS } from "@/lib/farmmate/usage/rules";
 import { farmMateCreditLine, getFarmMateAnonymousDeviceId } from "@/lib/farmmate/usage/client";
 import { clearRecoveredConsultation, recoverOrCreateConsultationId } from "@/lib/farmmate/usage/recovery-client";
 import { askFarmMateCreditMessage, FARM_MATE_FEEDBACK_CTA, type FarmMateCreditStatus } from "@/lib/farmmate/usage";
@@ -445,24 +447,22 @@ function logRouterResult(routerResult: RouterResult) {
   console.info("FarmMate Router confidence:", routerResult.confidence);
 }
 
-function logBrainContext(question: string, response: FarmMateBrainResponse) {
+function logBrainContext(response: FarmMateBrainResponse) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info("FarmMate current user question:", question);
   console.info("FarmMate detected crop:", response.resolvedCrop ?? "none");
   console.info("FarmMate selected specialist:", response.routerResult?.selectedSpecialist ?? "none");
   console.info("FarmMate selected decision flow crop/context:", response.flow?.requiredInformation.crop ?? "none");
   console.info("FarmMate weather context:", response.weatherContext?.locationName ?? "none");
 }
 
-function logConversationDecision(message: string, state: ConversationState, decision: ConversationDecision, selectedSpecialist?: string) {
+function logConversationDecision(state: ConversationState, decision: ConversationDecision, selectedSpecialist?: string) {
   if (process.env.NODE_ENV !== "development") {
     return;
   }
 
-  console.info("FarmMate incoming message:", message);
   console.info("FarmMate active topic:", state.activeTopic ?? "none");
   console.info("FarmMate conversation decision:", decision.action);
   console.info("FarmMate reset reason:", decision.resetReason ?? "none");
@@ -637,9 +637,11 @@ export function AskFarmMate({
     }
   }
 
+  const [balanceChecked, setBalanceChecked] = useState(false);
+  const conversationView = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    void refreshCredits();
-  }, []);
+    if (askedQuestion && conversationView.current) conversationView.current.scrollTop = 0;
+  }, [askedQuestion]);
 
   async function requestConsultationStep({
     farmMateResponse,
@@ -964,7 +966,7 @@ export function AskFarmMate({
       );
 
       if (selectedOption) {
-        logConversationDecision(trimmedQuestion, conversationState, conversationDecision, conversationDecision.specialist);
+        logConversationDecision(conversationState, conversationDecision, conversationDecision.specialist);
         void answerFollowUp(selectedOption);
         setQuestion("");
         return;
@@ -1015,7 +1017,7 @@ export function AskFarmMate({
       return;
     }
 
-    logConversationDecision(trimmedQuestion, conversationState, conversationDecision, routerResult.selectedSpecialist);
+    logConversationDecision(conversationState, conversationDecision, routerResult.selectedSpecialist);
     logRouterResult(routerResult);
     const previousCropName = conversationDecision.shouldKeepContext && !routerResult.detectedCrop ? conversationState.activeCropName : undefined;
 
@@ -1057,7 +1059,7 @@ export function AskFarmMate({
       pendingFollowUpQuestion
     });
 
-    logBrainContext(trimmedQuestion, farmMateResponse);
+    logBrainContext(farmMateResponse);
     setResponse(farmMateResponse);
     setConsultation(nextConsultation);
     setShowRecommendation(shouldShowRecommendation);
@@ -1209,60 +1211,29 @@ export function AskFarmMate({
   const shouldShowCreditActions = creditReason === "credits_exhausted";
 
   return (
-    <article id="assistant" className="rounded-md border border-leaf-900/10 bg-white/95 p-5 shadow-soft sm:p-6">
-      <div className="flex items-start gap-3">
-        <span data-mama-brand="ask-icon" className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
-          <Bot size={24} aria-hidden="true" />
-        </span>
-        <div>
-          <h2 className="sr-only">Ask Mama G</h2>
-          <p className="mt-1 text-xs font-bold text-ink/48">{farmMateCreditLine("ask_farmmate", credits)}</p>
-        </div>
-      </div>
-
-      <form className="mt-6 grid gap-4" onSubmit={askFarmMate}>
-        <div id="ask-mama-g-disclosure" className="text-sm leading-6 text-ink/75">
-          <p>AI can make mistakes. Do not share sensitive information. Check product labels and ask a qualified local adviser about important crop or safety decisions.</p>
-          <details className="mt-2"><summary className="cursor-pointer font-bold text-leaf-700">About AI &amp; privacy</summary><p className="mt-2">Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.</p></details>
-        </div>
-        <label className="grid gap-2" htmlFor="ask-farmmate-question">
-          <span className="sr-only">What would you like help with today?</span>
-          <textarea
-            id="ask-farmmate-question"
-            aria-describedby="ask-mama-g-disclosure"
-            value={question}
-            onChange={(event) => {
-              setQuestion(event.target.value);
-              if (activeCropDoctorHandoff && event.target.value !== activeCropDoctorHandoff.question) {
-                setActiveCropDoctorHandoff(null);
-              }
-              if (activeToolHandoff && event.target.value !== activeToolHandoff.question) {
-                setActiveToolHandoff(null);
-              }
-            }}
-            placeholder="Example: Why are my tomato leaves turning yellow?"
-            className="gg-field min-h-36 resize-none bg-leaf-50/70 px-4 py-4 text-base leading-7 focus:bg-white"
-          />
-        </label>
-
+    <article id="assistant" className={styles.ask}>
+      <div ref={conversationView} className={styles.conversation} aria-label="Consultation">
+        {!askedQuestion && <div className={styles.welcome}>
+          <span className={styles.bot}><Bot size={22} aria-hidden="true" /></span>
+          <small>FIELD NOTES / ASK</small>
+          <h2>What do you need help with today?</h2>
+          <p>Tell Mama G what you see on your farm.</p>
+        </div>}
         {activeToolHandoff?.question === question ? <div className="flex flex-wrap gap-2" aria-label="Context from farm tool">{activeToolHandoff.chips.map((chip) => <span key={chip} className="rounded-full bg-leaf-50 px-3 py-1 text-xs font-bold text-leaf-700">{chip}</span>)}</div> : null}
+        {!askedQuestion && <div className={styles.starters}>
+          <p className={styles.smallTitle}>Try a question</p>
+          {suggestions.slice(0, 2).map(suggestion => <button key={suggestion} type="button" onClick={() => setQuestion(suggestion)}>{suggestion}<span aria-hidden="true">↗</span></button>)}
+          {onOpenCropDoctor && <button type="button" className={styles.photoAction} onClick={() => onOpenCropDoctor()}><Camera aria-hidden="true" size={20} /> Check a crop photo</button>}
+        </div>}
+        <details className={styles.details}><summary>Harvest and storage guide</summary>
         <HarvestStorageGuide onAsk={(handoff) => { setActiveToolHandoff(handoff); setActiveCropDoctorHandoff(null); setQuestion(handoff.question); }} />
-
-        <div className="grid gap-2">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/50">Popular questions</p>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0" aria-label="Suggested questions">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => setQuestion(suggestion)}
-                className="min-h-11 shrink-0 rounded-md border border-leaf-900/15 bg-white px-3 py-2 text-left text-sm font-black text-leaf-700 transition hover:border-leaf-700 hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:shrink"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
+        </details>
+        <details className={styles.details}><summary>Question balance and safe use</summary>
+          <p>{FARM_MATE_TOOL_LIMITS.ask_farmmate.limit} Ask questions per rolling {FARM_MATE_TOOL_LIMITS.ask_farmmate.windowHours} hours.</p>
+          <p>{credits ? farmMateCreditLine("ask_farmmate", credits) : balanceChecked ? "Balance unavailable. You can check again." : "Check your current balance before sending."}</p>
+          <button type="button" onClick={async () => { await refreshCredits(); setBalanceChecked(true); }}>Check remaining questions</button>
+          <p>For serious or spreading crop problems, seek a local extension officer.</p>
+        </details>
 
         {retryCreditGate ? (
           <div className="rounded-md border border-earth-500/25 bg-earth-50 px-4 py-3 text-sm font-bold leading-6 text-ink/75">
@@ -1285,16 +1256,7 @@ export function AskFarmMate({
           </div>
         ) : null}
 
-        <button
-          type="submit"
-          data-mama-brand="ask-submit"
-          disabled={!canAsk}
-          className="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-md bg-leaf-600 px-5 py-4 text-base font-black text-white shadow-sm transition hover:bg-leaf-900 disabled:cursor-not-allowed disabled:bg-ink/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-        >
-          {isThinking ? <Loader2 className="animate-spin" size={20} aria-hidden="true" /> : <Send size={20} aria-hidden="true" />}
-          Ask Mama G
-        </button>
-      </form>
+
 
       <div className="mt-5 space-y-3" aria-live="polite">
         {askedQuestion ? (
@@ -1518,6 +1480,37 @@ export function AskFarmMate({
           </div>
         ) : null}
       </div>
+      </div>
+      <form className={styles.composer} onSubmit={askFarmMate}>
+        <label className="sr-only" htmlFor="ask-farmmate-question">Your farming question</label>
+        <div className={styles.inputRow}>
+          <textarea
+            id="ask-farmmate-question"
+            aria-describedby="ask-mama-g-disclosure"
+            rows={2} maxLength={500}
+            value={question}
+            onChange={(event) => {
+              setQuestion(event.target.value);
+              if (activeCropDoctorHandoff && event.target.value !== activeCropDoctorHandoff.question) {
+                setActiveCropDoctorHandoff(null);
+              }
+              if (activeToolHandoff && event.target.value !== activeToolHandoff.question) {
+                setActiveToolHandoff(null);
+              }
+            }}
+            placeholder="Ask your farming question…"
+            className={styles.input}
+          />
+
+          <button type="submit" disabled={!canAsk} data-mama-brand="ask-submit" aria-label="Send question">
+            {isThinking ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}<span>Send</span>
+          </button>
+        </div>
+        <div id="ask-mama-g-disclosure" className={styles.privacy}>
+          <p>AI can make mistakes. Avoid sensitive details. Check labels and seek qualified local advice.</p>
+          <details className="mt-2"><summary className="cursor-pointer font-bold text-leaf-700">About AI &amp; privacy</summary><p className="mt-2">Ask Mama G uses AI to help answer farming questions. Your question may be processed by our AI service provider to generate a response. AI guidance can be incomplete or mistaken, so check product labels and seek qualified local advice for important crop, chemical or safety decisions.</p></details>
+        </div>
+      </form>
     </article>
   );
 }

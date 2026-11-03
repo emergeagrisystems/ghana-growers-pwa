@@ -1,4 +1,5 @@
 import { runInNewContext } from "node:vm";
+import { prepareHomeDraft, takeHomeDraft, HOME_DRAFT_LIMIT } from "../src/lib/farmmate/home-draft";
 import { createHmac } from "node:crypto";
 import { JsxEmit, ModuleKind, ScriptTarget, transpileModule } from "typescript";
 import { createElement } from "react";
@@ -534,6 +535,30 @@ async function assertPreviewDenied(response: NextResponse, mode: string) {
 
 const tests: TestCase[] = [
   {
+    name: "Homepage draft is bounded, single use, and bound to the intended navigation",
+    run: () => {
+      const question = "How should I water maize?";
+      const ticket = prepareHomeDraft(question);
+      assert.match(ticket, /^[a-f0-9-]{36}$/i);
+      assert.equal(takeHomeDraft(ticket), question);
+      assert.equal(takeHomeDraft(ticket), "");
+      const prior = prepareHomeDraft(question);
+      assert.equal(takeHomeDraft(null), "");
+      assert.equal(takeHomeDraft(prior), "");
+      const old = prepareHomeDraft(question);
+      prepareHomeDraft("A different question");
+      assert.equal(takeHomeDraft(old), "");
+      assert.throws(() => prepareHomeDraft(" "));
+      assert.throws(() => prepareHomeDraft("x".repeat(HOME_DRAFT_LIMIT + 1)));
+      const expired = prepareHomeDraft(question);
+      const now = Date.now;
+      try {
+        Date.now = () => now() + 61_000;
+        assert.equal(takeHomeDraft(expired), "");
+      } finally { Date.now = now; }
+    }
+  },
+  {
     name: "RC1 Preview middleware fails closed before API or page access when staging isolation is missing",
     run: async () => {
       const staging = "https://ecluxmyxqofkbzcyurlf.supabase.co";
@@ -1002,7 +1027,7 @@ const tests: TestCase[] = [
         assert.equal(component.includes(`"${suggestion}"`), true);
       }
 
-      assert.equal(component.includes("Popular questions"), true);
+      assert.equal(component.includes("Try a question"), true);
       assert.equal(component.includes("Tomato leaves turning yellow"), false);
     }
   },
@@ -1016,13 +1041,12 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Ask FarmMate suggestions use compact horizontal mobile scrolling",
+    name: "Ask starters show two concise editable prompts before the consultation",
     run: () => {
       const component = repoFile("src/components/AskFarmMate.tsx");
-
-      assert.equal(component.includes("overflow-x-auto"), true);
-      assert.equal(component.includes("sm:flex-wrap"), true);
-      assert.equal(component.includes("shrink-0"), true);
+      assert.ok(component.includes("suggestions.slice(0, 2).map"));
+      assert.ok(component.includes("!askedQuestion && <div className={styles.starters}"));
+      assert.ok(component.includes("onClick={() => setQuestion(suggestion)}"));
     }
   },
   {
@@ -3938,33 +3962,25 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "FarmMate hero clarifies and preserves both mobile actions",
+    name: "Adviser workspace exposes the real Ask, Crop Doctor and tools navigation",
     run: () => {
-      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
-      const actions = repoFile("src/components/FarmMateHeroActions.tsx");
-
-      assert.equal(farmerHub.includes("What do you need help with today?"), true);
-      assert.equal(actions.includes('openFarmMateTool("ask")'), true);
-      assert.equal(actions.includes('openFarmMateTool("doctor")'), true);
-      assert.equal(actions.includes("Ask a question"), true);
-      assert.equal(actions.includes("Check a crop photo"), true);
-      assert.equal(actions.match(/min-h-\[4\.25rem\] w-full/g)?.length, 2);
-      assert.equal(actions.match(/sm:min-h-12 sm:w-auto/g)?.length, 2);
+      const hub = repoFile("src/components/FarmTools.tsx");
+      const ask = repoFile("src/components/AskFarmMate.tsx");
+      assert.ok(ask.includes("What do you need help with today?"));
+      for (const key of ["ask", "doctor", "tools"]) assert.ok(hub.includes('key: "' + key + '"'));
+      assert.ok(hub.includes("<AskFarmMate"));
+      assert.ok(hub.includes("<CropDoctor"));
     }
   },
   {
-    name: "FarmMate pilot homepage is tool-first on desktop",
+    name: "Desktop adviser keeps navigation, consultation and support in one workspace",
     run: () => {
-      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
-      const farmTools = repoFile("src/components/FarmTools.tsx");
-
-      assert.equal(farmerHub.includes("lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.46fr)]"), true);
-      assert.equal(farmerHub.indexOf("<FarmMateHeroActions />") < farmerHub.indexOf("<FarmTools />"), true);
-      assert.equal(farmerHub.indexOf("<FarmTools />") < farmerHub.indexOf("<FarmMateWeatherFoundation />"), true);
-      assert.equal(farmTools.includes('className="mt-7"'), true);
-      assert.equal(farmTools.includes("grid grid-cols-2"), true);
-      assert.equal(farmTools.includes("min-h-36"), true);
-      assert.equal(farmTools.includes("lg:grid-cols-4"), false);
+      const hub = repoFile("src/components/FarmTools.tsx");
+      const css = repoFile("src/components/AdviserWorkspace.module.css");
+      assert.ok(hub.includes('aria-label="Adviser navigation"'));
+      assert.ok(hub.includes('aria-label="Adviser support"'));
+      assert.ok(css.includes("grid-template-columns: minmax(142px, 180px) minmax(0, 1fr)"));
+      assert.ok(css.includes(".conversation, .toolPane"));
     }
   },
   {
@@ -4028,17 +4044,15 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "mobile FarmMate order puts actions and tools before weather summary and feedback",
+    name: "Mobile adviser keeps the workspace above primary navigation and loads weather on demand",
     run: () => {
-      const farmerHub = repoFile("src/app/farmer-hub/page.tsx");
-      const actionsIndex = farmerHub.indexOf("<FarmMateHeroActions />");
-      const toolsIndex = farmerHub.indexOf("<FarmTools />");
-      const weatherIndex = farmerHub.indexOf("<FarmMateWeatherFoundation />");
-
-      assert.ok(actionsIndex > 0);
-      assert.ok(toolsIndex > actionsIndex);
-      assert.ok(weatherIndex > toolsIndex);
-      assert.equal(farmerHub.includes("Testing Ask Mama G?"), false);
+      const css = repoFile("src/components/AdviserWorkspace.module.css");
+      const hub = repoFile("src/components/FarmTools.tsx");
+      assert.ok(css.includes(".panel { grid-row: 1;"));
+      assert.ok(css.includes("grid-row: 2;"));
+      assert.ok(hub.includes("weatherOpen && <FarmMateWeatherFoundation"));
+      assert.ok(hub.includes("FARM_MATE_TOOL_LIMITS.ask_farmmate"));
+      assert.ok(hub.includes("FARM_MATE_TOOL_LIMITS.crop_doctor"));
     }
   },
   {
@@ -4273,7 +4287,7 @@ const tests: TestCase[] = [
         assert.equal(launchQa.includes(limitation), true, limitation);
       });
 
-      assert.equal(farmerHub.includes("FarmMateWeatherFoundation"), true);
+      assert.equal(repoFile("src/components/FarmTools.tsx").includes("FarmMateWeatherFoundation"), true);
       assert.equal(farmerHub.includes("FarmTools"), true);
       assert.equal(launchQa.includes("Learn and Soil Health Challenge"), false);
     }
@@ -5405,8 +5419,10 @@ const tests: TestCase[] = [
     run: () => {
       const farmTools = repoFile("src/components/FarmTools.tsx");
 
-      assert.equal(farmTools.includes("overflow-x-hidden overflow-y-auto"), true);
-      assert.equal(farmTools.includes("min-w-0 max-w-2xl"), true);
+      const style = repoFile("src/components/AdviserWorkspace.module.css");
+      assert.ok(style.includes("overflow-x: hidden"));
+      assert.ok(style.includes("overflow-y: auto"));
+      assert.ok(farmTools.includes("className={styles.toolPane}"));
       assert.equal(farmTools.includes("gg-field min-h-12 w-full max-w-full"), true);
       assert.equal(farmTools.includes("min-h-11 w-full"), true);
       assert.equal(farmTools.includes("sm:grid-cols-2"), true);

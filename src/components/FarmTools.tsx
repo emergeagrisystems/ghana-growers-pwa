@@ -1,11 +1,14 @@
 "use client";
 
-import { CalendarDays, Camera, CloudSun, Sprout, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, Camera, CloudSun, Grid2X2, MessageCircle, Sprout } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
 import { CropDoctor } from "@/components/CropDoctor";
-import { CanIFarmTodayExperience } from "@/components/FarmMateWeatherFoundation";
+import { CanIFarmTodayExperience, FarmMateWeatherFoundation } from "@/components/FarmMateWeatherFoundation";
+import { takeHomeDraft } from "@/lib/farmmate/home-draft";
+import { FARM_MATE_TOOL_LIMITS } from "@/lib/farmmate/usage/rules";
+import styles from "./AdviserWorkspace.module.css";
 import {
   cropCalendarGuides,
   farmMatePilotRegions,
@@ -266,10 +269,10 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownReg
 
 export function FarmTools() {
   const searchParams = useSearchParams();
-  const [activeTool, setActiveTool] = useState<ToolKey | null>(null);
-  const activeToolRef = useRef<ToolKey | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const dashboardPosition = useRef(0);
+  const [activeTool, setActiveTool] = useState<ToolKey | "tools">("ask");
+  const workspace = useRef<HTMLElement>(null);
+  const imported = useRef(false);
+  const [weatherOpen, setWeatherOpen] = useState(false);
   const [prefillQuestion, setPrefillQuestion] = useState("");
   const [cropDoctorHandoff, setCropDoctorHandoff] = useState<CropDoctorHandoffContext | null>(null);
   const [toolHandoff, setToolHandoff] = useState<FarmMateToolHandoff | null>(null);
@@ -278,12 +281,8 @@ export function FarmTools() {
   const [knownCrop, setKnownCrop] = useState("");
   const [knownRegion, setKnownRegion] = useState("");
   const knownRegionTouched = useRef(false);
-  const activeToolMeta = activeTool === "ask" ? { title: "Ask Mama G" } : tools.find((tool) => tool.key === activeTool);
-  const sheetBackground =
-    activeTool === "ask" ? "bg-gradient-to-b from-white via-earth-50 to-leaf-50" : "bg-earth-50";
-
+  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "tools" ? "Farm tools" : tools.find(tool => tool.key === activeTool)?.title;
   const openTool = useCallback((tool: ToolKey, fromHandoff = false) => {
-    if (!activeToolRef.current) dashboardPosition.current = window.scrollY;
     if (tool === "ask" && !fromHandoff) {
       setPrefillQuestion("");
       setCropDoctorHandoff(null);
@@ -291,12 +290,22 @@ export function FarmTools() {
     }
     if (tool === "doctor" && !fromHandoff) setDoctorPrefillCrop("");
     if (tool === "planting" && !fromHandoff) setPlantingPrefillChecks(null);
-    setIsClosing(false);
-    activeToolRef.current = tool;
     setActiveTool(tool);
   }, []);
 
   useEffect(() => {
+    if (!imported.current) {
+      imported.current = true;
+      const fragment = window.location.hash;
+      const receipt = /^#draft-([a-f0-9-]{36})$/i.exec(fragment)?.[1] ?? null;
+      const question = takeHomeDraft(receipt);
+      if (receipt) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      if (question) {
+        setPrefillQuestion(question);
+        openTool("ask", true);
+        return;
+      }
+    }
     const tool = searchParams.get("tool");
 
     if (tool === "ask" || tool === "doctor" || tool === "calendar" || tool === "planting" || tool === "weather") {
@@ -342,15 +351,27 @@ export function FarmTools() {
     };
   }, [openTool]);
 
-  function closeTool() {
-    setIsClosing(true);
-    window.setTimeout(() => {
-      setActiveTool(null);
-      activeToolRef.current = null;
-      setIsClosing(false);
-      window.scrollTo({ top: dashboardPosition.current, behavior: "auto" });
-    }, 180);
-  }
+  // Size the workspace to the visible viewport as the software keyboard moves.
+  // Keep the same textarea mounted so focus and IME composition survive resizes.
+  useEffect(() => {
+    const node = workspace.current;
+    const viewport = window.visualViewport;
+    if (!node || !viewport) return;
+    function fit() {
+      if (!node || !viewport) return;
+      const top = Math.max(0, node.getBoundingClientRect().top - viewport.offsetTop);
+      node.style.setProperty("--adviser-height", Math.max(180, viewport.height - top) + "px");
+    }
+    fit();
+    viewport.addEventListener("resize", fit);
+    viewport.addEventListener("scroll", fit);
+    window.addEventListener("scroll", fit, { passive: true });
+    return () => {
+      viewport.removeEventListener("resize", fit);
+      viewport.removeEventListener("scroll", fit);
+      window.removeEventListener("scroll", fit);
+    };
+  }, []);
 
   function openAskFarmMateWithQuestion(handoff: string | FarmMateToolHandoff) {
     setPrefillQuestion(typeof handoff === "string" ? handoff : handoff.question);
@@ -382,109 +403,53 @@ export function FarmTools() {
     knownRegionTouched.current = Boolean(region);
   }
 
-  return (
-    <section className="mt-7">
-      <div className="mb-3">
-        <h2 className="text-lg font-black text-ink sm:text-xl">Farm tools</h2>
-      </div>
+  const ask = FARM_MATE_TOOL_LIMITS.ask_farmmate;
+  const doctor = FARM_MATE_TOOL_LIMITS.crop_doctor;
+  const forwards = [
+    { key: "ask", label: "Ask", Icon: MessageCircle },
+    { key: "doctor", label: "Crop Doctor", Icon: Camera },
+    { key: "tools", label: "Tools", Icon: Grid2X2 }
+  ] as const;
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <button
-              key={tool.key}
-              type="button"
-              onClick={() => openTool(tool.key)}
-              className="flex min-h-36 min-w-0 flex-col items-start rounded-md border border-leaf-900/10 bg-white p-3.5 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-leaf-700/25 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600 sm:min-h-40 sm:p-5"
-            >
-              <span className="grid h-9 w-9 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-700/10">
-                <Icon size={20} aria-hidden="true" />
-              </span>
-              <h3 className="mt-3 text-sm font-black leading-5 text-ink sm:text-base">{tool.title}</h3>
-              <p className="mt-1 text-xs font-semibold leading-5 text-ink/65 sm:text-sm">{tool.description}</p>
-            </button>
-          );
-        })}
-      </div>
+  return <section ref={workspace} className={styles.workspace} aria-label="Mama G workspace">
+    <nav className={styles.nav} aria-label="Adviser navigation">
+      <div className={styles.brand}><Sprout aria-hidden="true" /><span>FIELD ADVISER<strong>Mama G</strong></span></div>
+      {forwards.map(({ key, label, Icon }) =>
+        <button type="button" key={key}
+          aria-current={(activeTool === key || (key === "tools" && activeTool !== "ask" && activeTool !== "doctor")) ? "page" : undefined}
+          onClick={() => key === "tools" ? setActiveTool("tools") : openTool(key)}>
+          <Icon size={19} aria-hidden="true" />{label}
+        </button>
+      )}
+    </nav>
 
-      {activeTool ? (
-        <div
-          className={`fixed inset-0 z-50 bg-ink/35 backdrop-blur-[2px] ${isClosing ? "animate-[farmFadeOut_180ms_ease-in_forwards]" : "animate-[farmFadeIn_180ms_ease-out]"}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={activeToolMeta?.title}
-        >
-          <div className={`absolute inset-x-0 bottom-0 max-h-[94vh] overflow-hidden rounded-t-xl ${sheetBackground} shadow-2xl ${isClosing ? "animate-[farmSheetOut_180ms_ease-in_forwards]" : "animate-[farmSheetIn_240ms_cubic-bezier(0.2,0.8,0.2,1)]"}`}>
-            <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12 mt-3" aria-hidden="true" />
-            <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 border-b border-leaf-900/10 px-4 py-4 sm:px-6">
-              <div>
-                {activeTool !== "ask" ? <p className="gg-eyebrow text-leaf-700">Ask Mama G</p> : null}
-                <h2 className="text-xl font-black text-ink">{activeToolMeta?.title}</h2>
-              </div>
-              <button
-                type="button"
-                onClick={closeTool}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-ink shadow-sm ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-                aria-label="Close tool"
-              >
-                <X size={22} aria-hidden="true" />
-              </button>
-            </div>
+    <div className={styles.panel}>
+      <header className={styles.panelTitle}><div><h1>{title}</h1><p>Your agricultural adviser</p></div>
+        {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" &&
+          <button type="button" onClick={() => setActiveTool("tools")}><ArrowLeft size={16} /> All tools</button>}
+      </header>
+      {activeTool === "ask" && <div className={styles.askPane}>
+        <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} />
+      </div>}
+      {activeTool === "doctor" && <div className={styles.toolPane}><CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /></div>}
+      {activeTool === "tools" && <div className={styles.toolPane}>
+        <h2 className={styles.smallTitle}>Choose a farm tool</h2>
+        <div className={styles.toolGrid}>{tools.map(({ key, icon: Icon, title: label, description }) =>
+          <button type="button" key={key} onClick={() => openTool(key)}><Icon aria-hidden="true" /><strong>{label}</strong><span>{description}</span></button>)}</div>
+        <details className={styles.mobileSupport} open={weatherOpen} onToggle={e => setWeatherOpen(e.currentTarget.open)}>
+          <summary>Local weather and field conditions</summary>
+          {weatherOpen && <FarmMateWeatherFoundation />}
+        </details>
+      </div>}
+      {activeTool === "calendar" && <div className={styles.toolPane}><CropCalendarExperience knownCrop={knownCrop} knownRegion={knownRegion} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
+      {activeTool === "planting" && <div className={styles.toolPane}><PlantingAdvisorExperience knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
+      {activeTool === "weather" && <div className={styles.toolPane}><FarmMateWeatherFoundation /><CanIFarmTodayExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
+    </div>
 
-            <div className="max-h-[calc(94vh-5rem)] overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-6">
-              <div className="mx-auto min-w-0 max-w-2xl">
-                {activeTool === "ask" ? <AskFarmMate prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} /> : null}
-                {activeTool === "doctor" ? <CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /> : null}
-                {activeTool === "calendar" ? <CropCalendarExperience knownCrop={knownCrop} knownRegion={knownRegion} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /> : null}
-                {activeTool === "planting" ? <PlantingAdvisorExperience knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /> : null}
-                {activeTool === "weather" ? <CanIFarmTodayExperience onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /> : null}
-              </div>
-            </div>
-          </div>
-          <style jsx global>{`
-            @keyframes farmSheetIn {
-              from {
-                transform: translateY(18%);
-                opacity: 0.96;
-              }
-              to {
-                transform: translateY(0);
-                opacity: 1;
-              }
-            }
-
-            @keyframes farmSheetOut {
-              from {
-                transform: translateY(0);
-                opacity: 1;
-              }
-              to {
-                transform: translateY(12%);
-                opacity: 0;
-              }
-            }
-
-            @keyframes farmFadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
-            }
-
-            @keyframes farmFadeOut {
-              from {
-                opacity: 1;
-              }
-              to {
-                opacity: 0;
-              }
-            }
-          `}</style>
-        </div>
-      ) : null}
-    </section>
-  );
+    <aside className={styles.support} aria-label="Adviser support">
+      <button className={styles.weatherLink} onClick={() => { setActiveTool("tools"); setWeatherOpen(true); }} type="button"><CloudSun /><small>DAILY SUPPORT</small><strong>Farm weather</strong><span>Choose your area →</span></button>
+      <div><small>QUESTION AND PHOTO LIMITS</small><p>{ask.limit} Ask questions per {ask.windowHours} hours</p><p>{doctor.limit} crop checks per {doctor.windowHours} hours</p></div>
+      <div><small>SAFE USE</small><p>For serious or spreading crop problems, seek a local extension officer.</p></div>
+    </aside>
+  </section>;
 }

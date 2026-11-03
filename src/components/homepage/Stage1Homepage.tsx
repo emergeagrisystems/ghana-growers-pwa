@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { FounderApprovedMamaGPhone } from "@/components/homepage/FounderApprovedMamaGPhone";
 import { HowItWorksVideo } from "@/components/homepage/HowItWorksVideo";
+import { HomeAskEntry } from "@/components/homepage/HomeAskEntry";
 import { foundationFont } from "@/components/homepage-foundation/font";
 import { cleanFarmerLocation, farmerCardProducts } from "@/lib/farmerDirectory";
 import { getFarmersData, getSuppliersData } from "@/lib/supabase/publicData";
@@ -34,10 +35,10 @@ export async function Stage1Homepage() {
       <section className={styles.hero} aria-labelledby="homepage-hero-title">
         <div className={styles.heroCopy}>
           <h1 id="homepage-hero-title">Find Farms, Produce &amp; Suppliers</h1>
-          <p>Ghana&apos;s hub for local farms, wholesale buyers and agricultural suppliers — grow and trade with confidence.</p>
+          <p>Discover farms and suppliers across Ghana. Get practical growing advice from Mama G.</p>
           <div className={styles.actions}>
-            <Link href="/join" className={styles.primaryButton}>Register Your Farm or Shop</Link>
-            <Link href="/directory" className={styles.secondaryButton}>Browse Farms &amp; Suppliers</Link>
+            <Link href="/directory" className={styles.primaryButton}>Browse Farms &amp; Suppliers</Link>
+            <Link href="/join" className={styles.secondaryButton}>Registration information</Link>
           </div>
         </div>
         <div className={styles.heroMedia}>
@@ -47,6 +48,7 @@ export async function Stage1Homepage() {
             <img src="/stage1-media/hero-clay-map-1600.webp" alt="Illustrative clay map of Ghana with agricultural produce and connection markers" width="1600" height="1195" fetchPriority="high" />
           </picture>
         </div>
+        <HomeAskEntry />
       </section>
 
       <section className={styles.gateways} aria-label="Start here">

@@ -247,3 +247,22 @@
  .phone :global(.rc1-approved-mama-g-phone){width:224px}
  .mamaTitle,.mamaHeading h2{font-size:30px;line-height:36px}
 }
+
+/* HM1 keeps the licensed map in its original slot until photo rights are cleared. */
+.homeAsk { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 24px; width: min(100%, 860px); justify-self: center; padding: 14px 18px; border-radius: 14px; border: 1px solid #d8e0d9; background: white; box-shadow: 0 6px 20px #123b350b; }
+.homeAsk label { display: flex; align-items: center; gap: 10px; color: #064f43; }
+.homeAsk label strong, .homeAsk label small { display: block; }
+.homeAsk label small, .homeAsk > p { font-size: 12px; color: #425b51; }
+.homeAsk > p { grid-column: 2; }
+.draftRow { display: flex; align-items: center; padding: 3px; gap: 5px; background: #f6f8f4; border: 1px solid #819c8f; border-radius: 9px; }
+.draftRow input { min-width: 0; flex: 1; padding: 8px; background: transparent; color: #123b35; font: inherit; font-size: 16px; }
+.draftRow button { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 7px; background: #064f43; color: white; }
+.draftRow button:disabled { background: #536b5e; }
+.heroCopy > p:not(.eyebrow):not(.availability) { max-width: 34em; margin-top: 16px; font-size: 18px; line-height: 1.5; color: #344842; }
+@media (max-width: 700px) {
+  .hero .actions { gap: 8px; }
+  .hero .actions a { width: auto; min-width: 0; min-height: 44px; font-size: 14px; }
+  .heroCopy > p:not(.eyebrow):not(.availability) { font-size: 15px; line-height: 23px; }
+  .homeAsk { grid-template-columns: minmax(0,1fr); gap: 8px; padding: 12px; }
+  .homeAsk > p { grid-column: 1; }
+}
