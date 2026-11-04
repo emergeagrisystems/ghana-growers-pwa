@@ -26,9 +26,8 @@ export function HomeAskEntry() {
     <div className={styles.draftRow}>
       <input id="home-adviser-question" value={question} maxLength={HOME_DRAFT_LIMIT}
         onChange={event => setQuestion(event.target.value)} autoComplete="off" required
-        aria-describedby="home-ask-hint" placeholder="Ask a farming question…" />
+        placeholder="Ask a farming question…" />
       <button type="submit" disabled={!question.trim()}>Ask Mama G <ArrowRight size={16} aria-hidden="true" /></button>
     </div>
-    <small id="home-ask-hint">Review and edit your question before sending.</small>
   </form>;
 }

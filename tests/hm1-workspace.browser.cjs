@@ -69,6 +69,36 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       const mark = hero.locator("mark");
       const dock = page.getByRole("navigation",{name:"Homepage quick access",includeHidden:true});
       assert.equal(await dock.isVisible(), width <= 700);
+      const openingHeight = width === 320 ? 568 : width === 1440 ? 900 : height;
+      await page.setViewportSize({width, height: openingHeight});
+      const visibleBottom = await dock.isVisible() ? (await dock.boundingBox()).y : openingHeight;
+      const offer = page.getByRole("heading",{name:"Show What You Offer"});
+      const card = page.locator("article").filter({has:offer});
+      assert.equal(await page.evaluate(() => scrollY), 0);
+      assert.ok((await card.boundingBox()).y >= visibleBottom - 9);
+      assert.ok((await offer.boundingBox()).y >= visibleBottom);
+      assert.ok((await card.locator("p").boundingBox()).y >= visibleBottom);
+      assert.equal(await start.getAttribute("aria-describedby"), null);
+      assert.ok(await hero.getByRole("textbox",{name:"Ask Mama G",exact:true}).isVisible());
+      assert.equal(await hero.getByText("Review and edit your question before sending.").count(), 0);
+      const draftButton = await hero.getByRole("button",{name:"Ask Mama G",exact:true}).boundingBox();
+      await snap("unscrolled-homepage");
+      assert.ok(draftButton.y + draftButton.height <= visibleBottom,
+        `At ${width}×${openingHeight}, draft button ends at ${draftButton.y + draftButton.height} and visible content ends at ${visibleBottom}`);
+      if (width === 320) {
+        const normalHeight = (await hero.boundingBox()).height;
+        const largeText = await page.addStyleTag({content:"main form p { font-size: 200% !important; }"});
+        assert.ok((await hero.boundingBox()).height > normalHeight);
+        await start.focus();
+        await page.waitForFunction(() => {
+          const el = document.activeElement;
+          const r = el.getBoundingClientRect();
+          return el.id === "home-adviser-question" && document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === el;
+        });
+        await largeText.evaluate(el => el.remove());
+        await page.evaluate(() => window.scrollTo({top:0,behavior:"instant"}));
+      }
+      await page.setViewportSize({width,height});
       const bounds = await hero.boundingBox();
       assert.equal(bounds.x,0);
       assert.equal(bounds.width,await page.evaluate(() => document.documentElement.clientWidth));

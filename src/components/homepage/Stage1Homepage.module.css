@@ -153,9 +153,9 @@
 }
 
 /* 31 Oct post-launch correction. Authority: docs/p09/postlaunch-authority-ledger-2026-10-31.md */
-.homepage{font-variation-settings:"opsz" 14}
+.homepage{font-variation-settings:"opsz" 14;--gateway-inset:40px;--dock-reserve:0px}
 .homepage h1,.homepage h2,.homepage h3{letter-spacing:0}
-.gateways{padding-block:40px;background:#f7f6f0}
+.gateways{padding-block:var(--gateway-inset);background:#f7f6f0}
 .gatewayCard{display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:12px;row-gap:12px;align-items:start}
 .gatewayCard h3{margin:0;align-self:center;line-height:22px}
 .gatewayCard p,.gatewayCard a{grid-column:1/-1;margin:0}
@@ -180,7 +180,8 @@
 .steps h2{font-size:32px;line-height:36px}
 .steps ol{margin-top:20px;gap:18px}
 @media(max-width:980px){
- .gateways{padding:30px 40px;background:var(--cream)}
+ .homepage{--gateway-inset:30px}
+ .gateways{padding:var(--gateway-inset) 40px;background:var(--cream)}
  .directory{background:var(--warm)}
  .mama{padding:44px 40px;gap:30px;background:var(--cool)}
  .mamaTitle,.mamaHeading h2{font-size:36px;line-height:42px}
@@ -196,7 +197,8 @@
  .steps li p{font-size:13px;line-height:19px}
 }
 @media(max-width:700px){
- .gateways{padding:28px 16px}
+ .homepage{--gateway-inset:28px;--dock-target:52px;--dock-reserve:calc(var(--dock-target) + 9px + env(safe-area-inset-bottom))}
+ .gateways{padding:var(--gateway-inset) 16px}
  .mama{padding:40px 16px;gap:22px}
  .mamaTitle,.mamaHeading h2{font-size:32px;line-height:38px}
  .mamaShowcase{grid-template-columns:minmax(0,1fr);gap:22px}
@@ -216,7 +218,9 @@
   margin: 0;
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(245px, 306px);
   align-items: center; gap: 32px; padding: 112px max(40px,calc((100% - 1232px) / 2)) 64px;
-  min-height: 530px; color: white; background: #234335;
+  /* Leave an eight-pixel glimpse of the first gateway at the visible edge. */
+  min-height: calc(100svh - var(--dock-reserve) - var(--gateway-inset) - 8px);
+  color: white; background: #234335;
 }
 .fieldPhoto, .fieldPhoto img, .hero::after { position: absolute; inset: 0; width: 100%; height: 100%; }
 .fieldPhoto { z-index: -2; }
@@ -237,13 +241,12 @@
 .homeAsk label { display: flex; align-items: center; gap: 9px; font-size: 22px; }
 .homeAsk p { font-size: 14px; line-height: 1.45; color: #3c5146; }
 .homeAsk p b { font-weight: 650; }
-.homeAsk small { font-size: 11px; color: #4a5d52; }
 .draftRow { display: grid; gap: 8px; }
 .draftRow input { width: 100%; min-width: 0; min-height: 46px; padding: 10px; border-radius: 8px; border: 1px solid #8a9f90; color: #17392c; background: white; font-size: 16px; }
 .draftRow button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 12px; background: #064f43; color: white; border-radius: 8px; font-weight: 650; }
 .draftRow button:disabled { background: #52685c; }
 .dock { display: none; }
-.dock > * { min-width: 0; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 8px; font-size: 12px; font-weight: 650; }
+.dock > * { min-width: 0; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--dock-target); border-radius: 8px; font-size: 12px; font-weight: 650; }
 .dock svg { width: 20px; height: 20px; }
 .dock small { font-size: 10px; line-height: 1; }
 .dockAsk i { display: grid; place-items: center; border-radius: 50%; background: #075548; color: #fff; width: 40px; height: 40px; margin-top: -17px; border: 3px solid #fffdf5; }
@@ -265,7 +268,7 @@
   .hero .actions a { padding: 8px 10px; font-size: 14px; }
 }
 @media (max-width:700px) {
-  .hero { margin: 0; display: grid; grid-template-columns: minmax(0,1fr); gap: 26px; padding: 93px 18px 22px; min-height: 0; }
+  .hero { grid-template-columns: minmax(0,1fr); align-content: space-around; gap: 26px; padding: 93px 18px 22px; }
   .hero::after { background: linear-gradient(110deg,#092e21ce,transparent 92%),linear-gradient(0deg,#122c2266,transparent 60%); }
   .fieldPhoto img { object-position: 58% 50%; }
   .headline h1 { font-size: clamp(32px,8.5vw,48px); }
@@ -284,4 +287,7 @@
   .dockAsk i { margin-top: -9px; }
   :global(html):has(.dock) { scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 
+}
+@media (max-width:700px) and (max-height:620px) {
+  .hero { padding-top: 76px; gap: 10px; }
 }
