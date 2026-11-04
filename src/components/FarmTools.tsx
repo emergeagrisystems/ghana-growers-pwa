@@ -69,7 +69,7 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
   const currentStage = position?.current ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex] : null);
   const nextStage = position?.next ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex + 1] : undefined);
   const currentTask = !selectedCrop ? "Choose a crop first." : currentStage?.guidance ?? (plantingState === "not-yet" ? selectedGuide.seasonNote : plantingState === "unselected" ? "First say whether this crop has been planted." : "Check the crop's visible growth stage in the field before using a dated stage.");
-  const stageLabel = !selectedCrop ? "Choose a crop" : position ? `${position.current.stage} · about week ${position.week}` : currentStage?.stage ?? (plantingState === "not-yet" ? "Before planting" : plantingState === "unselected" ? "Not enough information" : "Stage not confirmed");
+  const stageLabel = !selectedCrop ? "Choose a crop" : position ? `${position.current.stage} · about week ${position.week}` : currentStage?.observation ?? (plantingState === "not-yet" ? "Before planting" : plantingState === "unselected" ? "Not enough information" : "Stage not confirmed");
 
   useEffect(() => { setSelectedRegion(knownRegion); }, [knownRegion]);
   useEffect(() => { setSelectedCrop(findCropCalendarGuide(knownCrop)?.crop ?? ""); }, [knownCrop]);
@@ -108,7 +108,7 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
           <input type="date" className="gg-field min-h-12 w-full max-w-full" value={plantingDate} onChange={(event) => setPlantingDate(event.target.value)} />
         </label> : null}
         {plantingState === "unknown" && <Choices label="What growth stage can you see?" value={observedStage} onChange={setObservedStage}
-          options={selectedGuide.stages.map(stage => [stage.stage, stage.stage] as const)} />}
+          options={selectedGuide.stages.flatMap(stage => stage.observation ? [[stage.stage, stage.observation] as const] : [])} />}
       </div>
 
       {selectedCrop && (currentStage || plantingState === "not-yet") && <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
@@ -116,7 +116,7 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
         <p className="mt-1 text-sm font-semibold leading-6">{currentTask}</p>
         <p className="mt-3 text-sm"><b>Current stage</b> · {stageLabel}</p>
         <p className="mt-3 text-sm font-black text-ink">Coming next</p>
-        <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{!selectedCrop ? "Choose the crop to view its approximate stages." : nextStage ? `${nextStage.timing}: ${nextStage.guidance}` : plantingState === "not-yet" ? "Check soil moisture, drainage and planting readiness before choosing a date." : "Confirm the visible stage of the crop; the date alone cannot prove its growth stage."}</p>
+        <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{!selectedCrop ? "Choose the crop to view its approximate stages." : nextStage ? (position ? `${nextStage.timing}: ${nextStage.guidance}` : nextStage.guidance) : plantingState === "not-yet" ? "Check soil moisture, drainage and planting readiness before choosing a date." : "Confirm the visible stage of the crop; the date alone cannot prove its growth stage."}</p>
         <p className="mt-3 text-xs font-semibold leading-5 text-ink/62">{selectedRegion ? `${selectedRegion} is context only; this timeline is approximate, not a region-specific planting window.` : "This timeline is approximate, not a region-specific planting window."}</p>
         <p className="mt-2 text-xs font-semibold leading-5 text-ink/58">Stages are approximate. Check the plant itself; weather and variety can shift timing.</p>
         {selectedCrop ? <details className="mt-4 rounded-md bg-white p-3">
