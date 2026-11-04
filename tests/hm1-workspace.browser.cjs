@@ -86,6 +86,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       assert.ok(draftButton.y + draftButton.height <= visibleBottom,
         `At ${width}×${openingHeight}, draft button ends at ${draftButton.y + draftButton.height} and visible content ends at ${visibleBottom}`);
       if (width === 320) {
+        const gutter = await page.addStyleTag({content:"html { scrollbar-gutter: stable; }"});
+        const narrowButton = await hero.getByRole("button",{name:"Ask Mama G",exact:true}).boundingBox();
+        assert.ok(narrowButton.y + narrowButton.height <= visibleBottom);
         const normalHeight = (await hero.boundingBox()).height;
         const largeText = await page.addStyleTag({content:"main form p { font-size: 200% !important; }"});
         assert.ok((await hero.boundingBox()).height > normalHeight);
@@ -96,6 +99,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
           return el.id === "home-adviser-question" && document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === el;
         });
         await largeText.evaluate(el => el.remove());
+        await gutter.evaluate(el => el.remove());
         await page.evaluate(() => window.scrollTo({top:0,behavior:"instant"}));
       }
       await page.setViewportSize({width,height});
