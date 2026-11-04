@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Camera, CloudSun, Grid2X2, MessageCircle, PackageOpen, Sprout } from "lucide-react";
+import { ArrowLeft, CalendarDays, Camera, ChevronRight, CloudSun, Grid2X2, MessageCircle, PackageOpen, Sprout } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AskFarmMate } from "@/components/AskFarmMate";
@@ -28,11 +28,20 @@ import {
 type ToolKey = "ask" | "doctor" | "calendar" | "planting" | "weather" | "storage";
 
 const tools = [
-  { key: "storage" as const, title: "Storage tips", icon: PackageOpen, description: "Handle and store your harvest" },
-  { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "What should I do now?" },
-  { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Am I ready to plant?" },
-  { key: "weather" as const, title: "Can I Farm Today?", icon: CloudSun, description: "Check today's farm conditions" }
+  { key: "planting" as const, title: "Planting Advisor", icon: Sprout, description: "Check whether your field is ready to plant." },
+  { key: "calendar" as const, title: "Crop Calendar", icon: CalendarDays, description: "Find your crop’s stage and what to do next." },
+  { key: "storage" as const, title: "Storage tips", icon: PackageOpen, description: "Get help handling and storing your harvest." }
 ];
+
+function Choices<T extends string>({ label, value, options, onChange }: {
+  label: string; value: T; options: ReadonlyArray<readonly [T, string]>; onChange: (value: T) => void;
+}) {
+  return <fieldset className={styles.choiceGroup}><legend>{label}</legend><div>
+    {options.map(([key, text]) => <label key={key}>
+      <input type="radio" name={label} checked={value === key} onChange={() => onChange(key)} />{text}
+    </label>)}
+  </div></fieldset>;
+}
 
 function GuidanceItem({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -49,21 +58,21 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
   knownRegion: string;
   onContextChange: (crop: string, region: string) => void;
 }) {
-  const [selectedCrop, setSelectedCrop] = useState(knownCrop);
+  const [selectedCrop, setSelectedCrop] = useState(findCropCalendarGuide(knownCrop)?.crop ?? "");
   const [selectedRegion, setSelectedRegion] = useState(knownRegion);
   const [plantingState, setPlantingState] = useState<"unselected" | "yes" | "not-yet" | "unknown">("unselected");
   const [plantingDate, setPlantingDate] = useState("");
   const [observedStage, setObservedStage] = useState("");
   const selectedGuide = findCropCalendarGuide(selectedCrop) ?? cropCalendarGuides[0];
   const position = plantingState === "yes" ? cropCalendarPosition(selectedGuide, plantingDate) : null;
-  const observedStageIndex = selectedGuide.stages.findIndex((stage) => stage.stage === observedStage);
+  const observedStageIndex = plantingState === "unknown" ? selectedGuide.stages.findIndex((stage) => stage.stage === observedStage) : -1;
   const currentStage = position?.current ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex] : null);
   const nextStage = position?.next ?? (observedStageIndex >= 0 ? selectedGuide.stages[observedStageIndex + 1] : undefined);
   const currentTask = !selectedCrop ? "Choose a crop first." : currentStage?.guidance ?? (plantingState === "not-yet" ? selectedGuide.seasonNote : plantingState === "unselected" ? "First say whether this crop has been planted." : "Check the crop's visible growth stage in the field before using a dated stage.");
-  const stageLabel = !selectedCrop ? "Crop not selected" : position ? `${position.current.stage} · about week ${position.week}` : currentStage?.stage ?? (plantingState === "not-yet" ? "Before planting" : plantingState === "unselected" ? "Not enough information" : "Stage not confirmed");
+  const stageLabel = !selectedCrop ? "Choose a crop" : position ? `${position.current.stage} · about week ${position.week}` : currentStage?.stage ?? (plantingState === "not-yet" ? "Before planting" : plantingState === "unselected" ? "Not enough information" : "Stage not confirmed");
 
   useEffect(() => { setSelectedRegion(knownRegion); }, [knownRegion]);
-  useEffect(() => { setSelectedCrop(knownCrop); }, [knownCrop]);
+  useEffect(() => { setSelectedCrop(findCropCalendarGuide(knownCrop)?.crop ?? ""); }, [knownCrop]);
 
   return (
     <article id="crop-calendar" className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft sm:p-6">
@@ -74,18 +83,9 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
       <p className="mt-2 text-sm leading-6 text-ink/66">Find the current task from your planting date, or plan before planting.</p>
 
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
-        <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">
-          Have you planted this crop?
-          <select className="gg-field min-h-12 w-full max-w-full" value={plantingState} onChange={(event) => setPlantingState(event.target.value as typeof plantingState)}>
-            <option value="unselected">Choose one</option>
-            <option value="yes">Yes, I know the date</option>
-            <option value="unknown">Yes, but I do not know the date</option>
-            <option value="not-yet">Not yet</option>
-          </select>
-        </label>
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink">
           Select crop
-          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => { setSelectedCrop(event.target.value); setObservedStage(""); onContextChange(event.target.value, selectedRegion); }}>
+          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => { setSelectedCrop(event.target.value); setObservedStage(""); setPlantingDate(""); setPlantingState("unselected"); onContextChange(event.target.value, selectedRegion); }}>
             <option value="">Choose crop</option>
             {cropCalendarGuides.map((guide) => (
               <option key={guide.crop}>{guide.crop}</option>
@@ -101,20 +101,20 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
             ))}
           </select>
         </label>
+        {selectedCrop && <Choices label="Have you planted this crop?" value={plantingState} onChange={setPlantingState}
+          options={[["yes", "I know the planting date"], ["unknown", "I’m unsure of the date"], ["not-yet", "Not planted yet"]]} />}
         {plantingState === "yes" ? <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">
           Planting date, if known
           <input type="date" className="gg-field min-h-12 w-full max-w-full" value={plantingDate} onChange={(event) => setPlantingDate(event.target.value)} />
         </label> : null}
-        {plantingState !== "not-yet" && plantingState !== "unselected" && !position ? <label className="grid min-w-0 gap-2 text-sm font-black text-ink sm:col-span-2">If the date is unknown, what stage can you see?
-          <select className="gg-field min-h-12" value={observedStage} onChange={(event) => setObservedStage(event.target.value)}><option value="">Not sure</option>{selectedGuide.stages.map((stage) => <option key={stage.stage} value={stage.stage}>{stage.stage}</option>)}</select>
-        </label> : null}
+        {plantingState === "unknown" && <Choices label="What growth stage can you see?" value={observedStage} onChange={setObservedStage}
+          options={selectedGuide.stages.map(stage => [stage.stage, stage.stage] as const)} />}
       </div>
 
-      <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Current stage{selectedCrop ? ` · ${selectedGuide.crop}` : ""}</p>
-        <h3 className="mt-1 break-words text-lg font-black text-ink">{stageLabel}</h3>
-        <p className="mt-3 text-sm font-black text-ink">What to do now</p>
-        <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{currentTask}</p>
+      {selectedCrop && (currentStage || plantingState === "not-yet") && <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
+        <h3 className="font-black">What to do now</h3>
+        <p className="mt-1 text-sm font-semibold leading-6">{currentTask}</p>
+        <p className="mt-3 text-sm"><b>Current stage</b> · {stageLabel}</p>
         <p className="mt-3 text-sm font-black text-ink">Coming next</p>
         <p className="mt-1 text-sm font-semibold leading-6 text-ink/70">{!selectedCrop ? "Choose the crop to view its approximate stages." : nextStage ? `${nextStage.timing}: ${nextStage.guidance}` : plantingState === "not-yet" ? "Check soil moisture, drainage and planting readiness before choosing a date." : "Confirm the visible stage of the crop; the date alone cannot prove its growth stage."}</p>
         <p className="mt-3 text-xs font-semibold leading-5 text-ink/62">{selectedRegion ? `${selectedRegion} is context only; this timeline is approximate, not a region-specific planting window.` : "This timeline is approximate, not a region-specific planting window."}</p>
@@ -150,22 +150,23 @@ function CropCalendarExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion
         >
           Ask Mama G about this stage
         </button>
-      </section>
+      </section>}
     </article>
   );
 }
 
-function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion, onContextChange, initialChecks }: {
+function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownRegion, onContextChange, initialChecks, weather }: {
   onAskFarmMateAboutThis: (handoff: FarmMateToolHandoff) => void;
   knownCrop: string;
   knownRegion: string;
   onContextChange: (crop: string, region: string) => void;
   initialChecks?: FarmTaskChecks | null;
+  weather: WeatherDecisionSummary | null;
 }) {
   const [selectedCrop, setSelectedCrop] = useState(knownCrop);
   const [selectedRegion, setSelectedRegion] = useState(knownRegion);
   const [field, setField] = useState<PlantingFieldState>({ planningNow: "yes", irrigation: "unknown", moisture: "unknown", drainage: "unknown", prepared: "unknown" });
-  const [weather, setWeather] = useState<WeatherDecisionSummary | null>(null);
+  const [step, setStep] = useState(0);
   const selectedGuidance = findPlantingAdvisorGuidance(selectedCrop) ?? null;
   const weatherForRegion = matchingWeatherForRegion(weather, selectedRegion);
   const decision = plantingReadiness(field, weatherForRegion);
@@ -181,15 +182,6 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownReg
     }));
   }, [initialChecks]);
 
-  useEffect(() => {
-    try {
-      const value = window.localStorage.getItem(FARM_MATE_WEATHER_CONTEXT_STORAGE_KEY);
-      const parsed = value ? JSON.parse(value) as WeatherDecisionSummary : null;
-      const age = Date.now() - Date.parse(parsed?.lastUpdatedAt ?? "");
-      setWeather(parsed?.liveWeatherAvailable && age >= 0 && age <= 24 * 60 * 60 * 1000 ? parsed : null);
-    } catch { setWeather(null); }
-  }, []);
-
   return (
     <article id="planting-advisor" className="min-w-0 overflow-hidden rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft sm:p-6">
       <span className="gg-icon bg-leaf-50 text-leaf-700 ring-leaf-700/10">
@@ -200,7 +192,7 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownReg
       <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
         <label className="grid min-w-0 gap-2 text-sm font-black text-ink">
           Crop
-          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => { setSelectedCrop(event.target.value); onContextChange(event.target.value, selectedRegion); }}>
+          <select className="gg-field min-h-12 w-full max-w-full" value={selectedCrop} onChange={(event) => { setStep(0); setSelectedCrop(event.target.value); onContextChange(event.target.value, selectedRegion); }}>
             <option value="">Choose crop</option>
             {plantingAdvisorCrops.map((guidance) => (
               <option key={guidance.crop}>{guidance.crop}</option>
@@ -217,25 +209,22 @@ function PlantingAdvisorExperience({ onAskFarmMateAboutThis, knownCrop, knownReg
           </select>
         </label>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-black text-ink">Planning to plant now?
-          <select className="gg-field min-h-12" value={field.planningNow} onChange={(event) => setField({ ...field, planningNow: event.target.value as PlantingFieldState["planningNow"] })}><option value="yes">Yes</option><option value="later">Not yet</option></select>
-        </label>
-        <label className="grid gap-2 text-sm font-black text-ink">Reliable irrigation?
-          <select className="gg-field min-h-12" value={field.irrigation} onChange={(event) => setField({ ...field, irrigation: event.target.value as PlantingFieldState["irrigation"] })}><option value="unknown">Not sure</option><option value="yes">Yes</option><option value="no">No</option></select>
-        </label>
-        <label className="grid gap-2 text-sm font-black text-ink">Field soil now
-          <select className="gg-field min-h-12" value={field.moisture} onChange={(event) => setField({ ...field, moisture: event.target.value as PlantingFieldState["moisture"] })}><option value="unknown">Not sure</option><option value="moist">Moist</option><option value="dry">Dry</option><option value="waterlogged">Waterlogged</option></select>
-        </label>
-        <label className="grid gap-2 text-sm font-black text-ink">Field drainage
-          <select className="gg-field min-h-12" value={field.drainage} onChange={(event) => setField({ ...field, drainage: event.target.value as PlantingFieldState["drainage"] })}><option value="unknown">Not sure</option><option value="good">Drains well</option><option value="poor">Drains poorly</option></select>
-        </label>
-        <label className="grid gap-2 text-sm font-black text-ink">Land preparation
-          <select className="gg-field min-h-12" value={field.prepared} onChange={(event) => setField({ ...field, prepared: event.target.value as PlantingFieldState["prepared"] })}><option value="unknown">Not sure</option><option value="partly">Partly ready</option><option value="ready">Ready</option><option value="not-yet">Not yet</option></select>
-        </label>
-      </div>
+      {selectedGuidance && selectedRegion && <div className={styles.checkSteps}>
+        <p className={styles.stepLabel}>Field checks · {step === 0 ? "1 of 2" : "2 of 2"}</p>
+        {step === 0 ? <>
+          <Choices label="Field soil now" value={field.moisture} options={[["unknown","Not sure"],["moist","Moist"],["dry","Dry"],["waterlogged","Waterlogged"]]} onChange={moisture => setField({...field,moisture})} />
+          <Choices label="Field drainage" value={field.drainage ?? "unknown"} options={[["unknown","Not sure"],["good","Drains well"],["poor","Drains poorly"]]} onChange={drainage => setField({...field,drainage})} />
+          <button type="button" className={styles.stepAction} onClick={() => setStep(1)}>Continue to preparation</button>
+        </> : <>
+          <button type="button" className={styles.textAction} onClick={() => setStep(0)}>Review soil and drainage</button>
+          <Choices label="Planning to plant now?" value={field.planningNow} options={[["yes","Yes"],["later","Not yet"]]} onChange={planningNow => setField({...field,planningNow})} />
+          <Choices label="Reliable irrigation?" value={field.irrigation} options={[["unknown","Not sure"],["yes","Yes"],["no","No"]]} onChange={irrigation => setField({...field,irrigation})} />
+          <Choices label="Land preparation" value={field.prepared} options={[["unknown","Not sure"],["partly","Partly ready"],["ready","Ready"],["not-yet","Not yet"]]} onChange={prepared => setField({...field,prepared})} />
+          {step === 1 && <button type="button" className={styles.stepAction} onClick={() => setStep(2)}>See planting readiness</button>}
+        </>}
+      </div>}
 
-      {selectedGuidance ? (
+      {selectedGuidance && selectedRegion && step === 2 ? (
         <section className="mt-5 min-w-0 rounded-md bg-leaf-50 p-4 sm:p-5" aria-live="polite">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-leaf-700">Planting readiness · {selectedGuidance.crop}{selectedRegion ? ` · ${selectedRegion}` : ""}</p>
           <div className="mt-2"><FarmMateDecisionStatus status={decision.status as FarmMateDecisionStatusValue} /></div>
@@ -283,7 +272,7 @@ export function FarmTools() {
   const [knownCrop, setKnownCrop] = useState("");
   const [knownRegion, setKnownRegion] = useState("");
   const knownRegionTouched = useRef(false);
-  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "doctor" ? "Crop Doctor" : activeTool === "weather" ? "Today" : activeTool === "storage" ? "Storage tips" : activeTool === "tools" ? "All Tools" : tools.find(tool => tool.key === activeTool)?.title;
+  const title = activeTool === "ask" ? "Ask Mama G" : activeTool === "doctor" ? "Crop Doctor" : activeTool === "weather" ? "Today" : activeTool === "storage" ? "Storage tips" : activeTool === "tools" ? "Farm Tools" : tools.find(tool => tool.key === activeTool)?.title;
   const openTool = useCallback((tool: ToolKey, fromHandoff = false) => {
     if (tool === "ask" && fromHandoff) setAskSession(id => id + 1);
     if (tool === "doctor" && !fromHandoff) setDoctorPrefillCrop("");
@@ -431,7 +420,7 @@ export function FarmTools() {
     { key: "weather", label: "Today", Icon: CloudSun },
     { key: "ask", label: "Ask Mama G", Icon: MessageCircle },
     { key: "doctor", label: "Crop Doctor", Icon: Camera },
-    { key: "tools", label: "All Tools", Icon: Grid2X2 }
+    { key: "tools", label: "Farm Tools", Icon: Grid2X2 }
   ] as const;
   return <section ref={workspace} className={styles.workspace} aria-label="Mama G workspace" data-tool={activeTool}>
     <nav className={styles.nav} aria-label="Adviser navigation">
@@ -447,9 +436,9 @@ export function FarmTools() {
     {activeTool === "ask" && <WeatherShortcut weather={weather} onOpen={() => openTool("weather")} />}
 
     <div className={styles.panel}>
-      <header className={styles.panelTitle}><div><h1>{title}</h1><p>Your agricultural adviser</p></div>
+      <header className={styles.panelTitle}><div><h1>{title}</h1>{(activeTool === "ask" || activeTool === "doctor") && <p>Your agricultural adviser</p>}</div>
         {activeTool !== "ask" && activeTool !== "doctor" && activeTool !== "tools" && activeTool !== "weather" &&
-          <button type="button" onClick={() => setActiveTool("tools")}><ArrowLeft size={16} /> All tools</button>}
+          <button type="button" onClick={() => setActiveTool("tools")}><ArrowLeft size={16} aria-hidden="true" /> Farm Tools</button>}
       </header>
       <div hidden={activeTool !== "ask"} className={styles.askPane}>
         <AskFarmMate key={askSession} prefillQuestion={prefillQuestion} cropDoctorHandoff={cropDoctorHandoff} toolHandoff={toolHandoff} onOpenCropDoctor={openCropDoctorFromAsk} />
@@ -457,13 +446,15 @@ export function FarmTools() {
       {activeTool === "doctor" && <div className={styles.toolPane}><CropDoctor prefillCrop={doctorPrefillCrop} onAskFarmMateAboutThis={askFarmMateFromDoctor} /></div>}
       {activeTool === "storage" && <div className={styles.toolPane}><HarvestStorageGuide onAsk={openAskFarmMateWithQuestion} /></div>}
       {activeTool === "tools" && <div className={styles.toolPane}>
-        <h2 className={styles.smallTitle}>Choose a farm tool</h2>
         <div className={styles.toolGrid}>{tools.map(({ key, icon: Icon, title: label, description }) =>
-          <button type="button" key={key} onClick={() => openTool(key)}><Icon aria-hidden="true" /><strong>{label}</strong><span>{description}</span></button>)}</div>
+          <button type="button" key={key} onClick={() => openTool(key)}><Icon aria-hidden="true" /><span><strong>{label}</strong>{description}</span><ChevronRight size={18} aria-hidden="true" /></button>)}</div>
       </div>}
       {activeTool === "calendar" && <div className={styles.toolPane}><CropCalendarExperience knownCrop={knownCrop} knownRegion={knownRegion} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
-      {activeTool === "planting" && <div className={styles.toolPane}><PlantingAdvisorExperience knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
-      {activeTool === "weather" && <div className={styles.toolPane}><FarmMateWeatherFoundation weather={weather} /><CanIFarmTodayExperience weatherState={weather} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { setPlantingPrefillChecks(checks); openTool("planting", true); }} /></div>}
+      {activeTool === "planting" && <div className={styles.toolPane}><PlantingAdvisorExperience weather={weather.stale ? null : weather.forecast?.decisionSummary ?? null} knownCrop={knownCrop} knownRegion={knownRegion} initialChecks={plantingPrefillChecks} onContextChange={rememberFarmContext} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} /></div>}
+      {activeTool === "weather" && <div className={styles.toolPane}><FarmMateWeatherFoundation weather={weather} /><CanIFarmTodayExperience weatherState={weather} onAskFarmMateAboutThis={openAskFarmMateWithQuestion} onOpenPlantingAdvisor={(checks) => { const area = supportedFarmMateWeatherLocations.find(item => item.key === weather.selectedLocationKey);
+        if (area) setKnownRegion(area.region);
+        setPlantingPrefillChecks(checks);
+        openTool("planting", true); }} /></div>}
     </div>
 
     <aside className={styles.support} aria-label="Adviser support">

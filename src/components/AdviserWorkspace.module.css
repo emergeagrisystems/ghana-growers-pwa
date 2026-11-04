@@ -55,8 +55,9 @@
 .support p { margin-top: 8px; font-size: 14px; }
 .support .weatherLink { display: grid; gap: 8px; background: var(--forest); color: white; }
 .weatherLink strong { font-size: 20px; }
-.toolGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 12px 0; }
-.toolGrid button { display: grid; gap: 8px; color: var(--forest); }
+.toolGrid { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; }
+.toolGrid button { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 72px; background: #fffdf7; color: var(--forest); }
+.toolGrid strong { display: block; margin-bottom: 2px; font-size: 16px; }
 .toolGrid span { font-weight: 450; font-size: 14px; }
 @media (max-width: 1050px) {
   .workspace { grid-template-columns: 130px minmax(0, 1fr); padding: 12px; gap: 12px; }
@@ -153,3 +154,36 @@
   .inputRow { border: 1.5px solid #637b6b; }
   .panel { background: #fffdf8; }
 }
+
+.todayWeather, .todayTasks { padding: clamp(12px, 2vw, 20px); border: 1px solid var(--line); border-radius: 14px; }
+.todayWeather { background: #e5eddd; }
+.todayTasks { margin-top: 12px; background: #fffdf8; }
+.weatherHeader, .taskSelection { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.todayWeather h2, .todayTasks h2 { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.todayTasks > p { margin: 4px 0 10px; }
+.textAction, .stepAction { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 5px 10px; border-radius: 8px; font-weight: 650; }
+.textAction { color: var(--forest); text-decoration: underline; text-underline-offset: 3px; }
+.stepAction { justify-content: center; color: white; background: var(--forest); }
+.areaPicker, .checkSteps { display: grid; gap: 10px; }
+.areaPicker { padding: 8px 0; }
+.areaPicker select { min-height: 44px; }
+.observation, .taskSelection strong { display: flex; align-items: center; gap: 10px; }
+.observation small, .observation strong { display: block; }
+.observation small, .updated, .stepLabel { font-size: 12px; }
+.observation strong { font-size: 20px; }
+.forecast { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.forecast caption { text-align: left; font-weight: 700; }
+.forecast th:first-child { text-align: left; }
+.forecast th, .forecast td { padding: 3px 2px; border-bottom: 1px solid #c1d0b9; }
+.forecast thead { font-size: 12px; }
+.updated { margin-top: 6px; }
+.taskTiles { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.taskTiles button { min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 9px; border: 1px solid #b5c4b6; color: var(--forest); background: white; text-align: left; font-size: 14px; font-weight: 650; }
+.taskTiles svg { flex-shrink: 0; }
+.checkSteps { margin-top: 16px; }
+.choiceGroup { min-width: 0; grid-column: 1/-1; }
+.choiceGroup legend { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.choiceGroup > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.choiceGroup label { display: flex; align-items: center; min-height: 44px; padding: 6px 10px; gap: 6px; border: 1px solid #b5c4b6; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.choiceGroup label:has(:checked) { border-color: var(--forest); background: #e5eddd; }
+.choiceGroup input { accent-color: var(--forest); }

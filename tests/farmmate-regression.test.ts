@@ -3936,21 +3936,16 @@ const tests: TestCase[] = [
     name: "mobile weather shows compact day temperature and rain rows",
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
-      const mobileForecast = component.slice(
-        component.indexOf('aria-label="Compact 3-day weather forecast"'),
-        component.indexOf('aria-label="Detailed 3-day weather forecast"')
-      );
+      const mobileForecast = component.slice(component.indexOf("<table"),component.indexOf("</table>"));
       const forecast = mapOpenMeteoForecast(sampleWeatherData(), supportedFarmMateWeatherLocations[0]);
 
       assert.ok(forecast);
       assert.equal(forecast.currentTemperatureC, 29);
       assert.equal(forecast.tomorrow.temperatureMaxC, 30);
-      assert.equal(component.includes('className="mt-3 grid gap-1.5 sm:hidden"'), true);
-      assert.equal(mobileForecast.includes("day.label"), true);
-      assert.equal(mobileForecast.includes("mainTemperatureLine(day"), true);
-      assert.equal(mobileForecast.includes("forecast.currentTemperatureC"), true);
-      assert.equal(mobileForecast.includes("rainLine(day)"), true);
-      assert.equal(mobileForecast.includes("temperatureLine(day)"), false);
+      assert.ok(mobileForecast.includes("day.temperatureMaxC") && mobileForecast.includes("day.temperatureMinC"));
+      assert.ok(mobileForecast.includes("day.rainChancePercent"));
+      assert.ok(!mobileForecast.includes("currentTemperatureC"));
+      assert.ok(component.includes('timeZone: "Africa/Accra"'));
     }
   },
   {
@@ -3964,16 +3959,13 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "desktop weather keeps compact detailed forecast cards",
+    name: "desktop weather sidebar retains its area selector and detailed forecast disclosure",
     run: () => {
       const component = repoFile("src/components/FarmMateWeatherFoundation.tsx");
-      const desktopForecast = component.slice(component.indexOf('aria-label="Detailed 3-day weather forecast"'));
-
-      assert.equal(component.includes('className="mt-3 hidden grid-cols-3 gap-2 sm:grid"'), true);
-      assert.equal(desktopForecast.includes("day.label"), true);
-      assert.equal(desktopForecast.includes("temperatureLine(day)"), true);
-      assert.equal(desktopForecast.includes("rainLine(day)"), true);
-      assert.equal(desktopForecast.includes("min-h-28"), true);
+      const sidebar = component.slice(component.indexOf("if (compact)"), component.indexOf("return <section className={styles.todayWeather}"));
+      assert.ok(sidebar.includes("workspace-weather-area"));
+      assert.ok(sidebar.includes("<details><summary>") && sidebar.includes("forecast.days.map"));
+      assert.ok(sidebar.includes("temperatureLine(day)") && sidebar.includes("rainLine(day)"));
     }
   },
   {
@@ -4092,7 +4084,7 @@ const tests: TestCase[] = [
 
       assert.equal(component.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
       assert.equal(routeSource.includes("FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE"), true);
-      assert.equal(component.includes("Weather guidance"), true);
+      assert.ok(component.includes("{message && <p>{message}</p>}") && component.includes("Refresh forecast"));
     }
   },
   {

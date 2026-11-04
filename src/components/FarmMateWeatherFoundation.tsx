@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Cloud, CloudFog, CloudLightning, Snowflake, Thermometer, CloudRain, CloudSun, Loader2, LocateFixed, MapPin, Sun } from "lucide-react";
+import { ChevronRight, Cloud, CloudFog, CloudLightning, Snowflake, Thermometer, CloudRain, CloudSun, Droplets, Leaf, LocateFixed, Shovel, SprayCan, Sprout, Sun, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./AdviserWorkspace.module.css";
 import { FarmMateDecisionStatus, type FarmMateDecisionStatusValue } from "@/components/FarmMateDecisionStatus";
@@ -57,12 +57,6 @@ function temperatureLine(day: FarmMateWeatherForecast["days"][number]) {
   }
 
   return "--";
-}
-
-function mainTemperatureLine(day: FarmMateWeatherForecast["days"][number], currentTemperatureC?: number) {
-  const temperature = currentTemperatureC ?? day.temperatureMaxC ?? day.temperatureMinC;
-
-  return typeof temperature === "number" ? `${temperature}\u00b0C` : "--";
 }
 
 function rainLine(day: FarmMateWeatherForecast["days"][number]) {
@@ -247,7 +241,8 @@ export function WeatherShortcut({weather,onOpen}:{weather: WeatherState; onOpen:
 
 export function FarmMateWeatherFoundation({weather,compact = false}: {weather: WeatherState; compact?: boolean}) {
   const {request,forecast,message,isLoading,isLocating,selectedLocationKey,selectedLocationLabel,selectLocation,requestBrowserLocation,stale} = weather;
-  const {text} = currentReading(weather);
+  const {text, Icon} = currentReading(weather);
+  const [choosingArea, setChoosingArea] = useState(false);
   if (compact) {
     const today = forecast?.days[0];
     return <section className={styles.weatherStrip} aria-label="Farm weather">
@@ -272,103 +267,51 @@ export function FarmMateWeatherFoundation({weather,compact = false}: {weather: W
     </section>;
   }
 
-  return (
-    <div className="grid gap-4">
-      <div className="rounded-md border border-leaf-900/10 bg-white/95 p-4 shadow-soft">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-2">
-            <CloudSun className="text-leaf-700" size={18} aria-hidden="true" />
-            <div>
-              <h2 className="gg-eyebrow text-leaf-700">{stale ? "Previous forecast" : "3-day forecast"}</h2>
-              {forecast && <p className="text-sm font-bold">{text}</p>}
-              <p className="mt-1 text-xs font-bold text-ink/55">
-                {forecast ? updatedLine(forecast, stale) : isLoading ? `Checking weather for ${selectedLocationLabel}` : "Weather guidance"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-2 sm:min-w-[16rem]">
-            <label className="sr-only" htmlFor="farmmate-weather-location">
-              Choose weather location
-            </label>
-            <select
-              id="farmmate-weather-location"
-              className="gg-field min-h-10 bg-white px-3 py-2 text-xs font-black"
-              value={selectedLocationKey}
-              onChange={(event) => selectLocation(event.target.value)}
-            >
-              <option disabled value="">Choose your area</option>
-              {request.type === "browser" ? <option value="browser-location">Your current area</option> : null}
-              {supportedFarmMateWeatherLocations.map((location) => (
-                <option key={location.key} value={location.key}>
-                  {location.name} / {location.region}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={requestBrowserLocation}
-              disabled={isLocating}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-leaf-700 ring-1 ring-leaf-900/10 transition hover:bg-leaf-50 disabled:cursor-wait disabled:text-ink/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf-600"
-            >
-              {isLocating ? <Loader2 className="animate-spin" size={14} aria-hidden="true" /> : <LocateFixed size={14} aria-hidden="true" />}
-              Use my location
-            </button>
-          </div>
-        </div>
-
-        {(message || stale) && request.type === "location" && request.locationKey && <button type="button" className="min-h-11 text-sm font-bold text-leaf-700 underline" onClick={() => selectLocation(request.locationKey)}>Refresh forecast</button>}
-        {message && forecast ? <p role="status" className="mt-3 rounded-md bg-earth-50 px-3 py-2 text-xs font-bold text-ink">{message}</p> : null}
-        {isLoading ? (
-          <div className="mt-3 flex min-h-24 items-center justify-center rounded-md bg-white text-sm font-black text-ink/60 shadow-sm ring-1 ring-leaf-900/5 sm:min-h-28">
-            <Loader2 className="mr-2 animate-spin text-leaf-700" size={18} aria-hidden="true" />
-            Loading live weather...
-          </div>
-        ) : forecast ? (
-          <>
-            <div className="mt-3 grid gap-1.5 sm:hidden" aria-label="Compact 3-day weather forecast">
-              {forecast.days.map((day, index) => (
-                <div key={day.date} className="grid min-h-12 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-md bg-white px-3 py-2.5 shadow-sm ring-1 ring-leaf-900/5">
-                  <p className="min-w-0 text-xs font-black leading-4 text-ink/72">{stale ? day.date : day.label}</p>
-                  <p className="text-sm font-black text-leaf-900">{mainTemperatureLine(day, index === 0 ? forecast.currentTemperatureC : undefined)}</p>
-                  <p className="text-right text-[0.68rem] font-bold leading-4 text-ink/58">{rainLine(day)}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 hidden grid-cols-3 gap-2 sm:grid" aria-label="Detailed 3-day weather forecast">
-              {forecast.days.map((day) => (
-                <div key={day.date} className="flex min-h-28 flex-col items-center justify-center rounded-md bg-white px-3 py-3 text-center shadow-sm ring-1 ring-leaf-900/5">
-                  <div className="flex items-center justify-center gap-1.5 text-ink/70">
-                    <Sun size={15} strokeWidth={2.2} className="shrink-0 text-leaf-700" aria-hidden="true" />
-                    <p className="text-xs font-bold leading-tight">{stale ? day.date : day.label}</p>
-                  </div>
-                  <p className="mt-3 text-2xl font-bold leading-none text-leaf-900">{temperatureLine(day)}</p>
-                  <p className="mt-3 text-xs font-bold leading-4 text-ink/58">{rainLine(day)}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="mt-3 rounded-md bg-white px-4 py-4 text-sm font-bold leading-6 text-ink/66 shadow-sm ring-1 ring-leaf-900/5">
-            <div className="flex gap-2">
-              <MapPin className="mt-0.5 shrink-0 text-leaf-700" size={16} aria-hidden="true" />
-              <p>{message || (selectedLocationKey ? FARM_MATE_WEATHER_UNAVAILABLE_MESSAGE : "Choose your area to see the forecast.")}</p>
-            </div>
-          </div>
-        )}
-      </div>
+  return <section className={styles.todayWeather} aria-label="Area weather">
+    <div className={styles.weatherHeader}>
+      {selectedLocationKey && <h2>{selectedLocationLabel}</h2>}
+      <button type="button" className={styles.textAction} aria-expanded={choosingArea} aria-controls="today-area-picker" onClick={() => setChoosingArea(!choosingArea)}>
+        {selectedLocationKey ? "Change area" : "Choose your area"}
+      </button>
     </div>
-  );
+    <div id="today-area-picker" hidden={!choosingArea} className={styles.areaPicker}>
+      <label htmlFor="farmmate-weather-location">Nearest area</label>
+      <select id="farmmate-weather-location" className="gg-field" value={selectedLocationKey} onChange={event => {selectLocation(event.target.value); setChoosingArea(false);}}>
+        <option disabled value="">Choose your area</option>
+        {request.type === "browser" && <option value="browser-location">Your current area</option>}
+        {supportedFarmMateWeatherLocations.map(area => <option key={area.key} value={area.key}>{area.name} / {area.region}</option>)}
+      </select>
+      <button type="button" className={styles.textAction} disabled={isLocating} onClick={requestBrowserLocation}><LocateFixed size={16} aria-hidden="true" />{isLocating ? "Finding area…" : "Use my location"}</button>
+    </div>
+    <div role="status">
+      {isLoading && <p>Loading live weather...</p>}
+      {message && <p>{message}</p>}
+      {forecast && <p className={styles.observation}><Icon size={26} aria-hidden="true"/><span><small>Current conditions</small><strong>{text}</strong></span></p>}
+      {!selectedLocationKey && !message && <p>Choose the nearest area to see its forecast.</p>}
+    </div>
+    {forecast && <>
+      <table className={styles.forecast}><caption>{stale ? "Previous forecast" : "3-day forecast"}</caption>
+        <thead><tr><th scope="col">Day</th><th scope="col">High</th><th scope="col">Low</th><th scope="col">Rain chance</th></tr></thead>
+        <tbody>{forecast.days.map((day,index) => <tr key={day.date}>
+          <th scope="row">{stale ? day.date : index < 2 ? day.label : new Intl.DateTimeFormat("en-GH",{weekday:"short",timeZone:"Africa/Accra"}).format(new Date(day.date+"T12:00:00Z"))}</th>
+          <td>{day.temperatureMaxC != null ? day.temperatureMaxC+"°C" : "—"}</td>
+          <td>{day.temperatureMinC != null ? day.temperatureMinC+"°C" : "—"}</td>
+          <td>{day.rainChancePercent != null ? day.rainChancePercent+"%" : "—"}</td>
+        </tr>)}</tbody>
+      </table>
+      <p className={styles.updated}>{updatedLine(forecast,stale)}</p>
+    </>}
+    {(message || stale) && selectedLocationKey && <button type="button" className={styles.textAction} onClick={() => request.type === "location" ? selectLocation(request.locationKey) : requestBrowserLocation()}>Refresh forecast</button>}
+  </section>;
 }
 
-const taskChoices: Array<{ task: WeatherDecisionTask; label: string }> = [
-  { task: "spraying", label: "Spray" },
-  { task: "planting-before-rain", label: "Plant" },
-  { task: "fertilizer-before-rain", label: "Apply fertilizer" },
-  { task: "irrigation", label: "Water / irrigate" },
-  { task: "harvesting-before-rain", label: "Harvest" },
-  { task: "drying-produce", label: "Dry produce" }
+const taskChoices: Array<{ task: WeatherDecisionTask; label: string; icon: LucideIcon }> = [
+  { task: "planting-before-rain", label: "Plant", icon: Sprout },
+  { task: "spraying", label: "Spray", icon: SprayCan },
+  { task: "irrigation", label: "Water", icon: Droplets },
+  { task: "harvesting-before-rain", label: "Harvest", icon: Shovel },
+  { task: "fertilizer-before-rain", label: "Apply fertiliser", icon: Leaf },
+  { task: "drying-produce", label: "Dry produce", icon: Sun }
 ];
 
 type TaskQuestion = { key: keyof FarmTaskChecks; label: string; choices: Array<{ value: string; label: string }> };
@@ -428,20 +371,21 @@ export function CanIFarmTodayExperience({
   const decision = selectedTask ? todayFarmDecision(selectedTask, weather, checks) : null;
   const selectedLabel = taskChoices.find((choice) => choice.task === selectedTask)?.label ?? "this task";
   const rain = weather?.rainChancePercent;
-  const RainIcon = currentReading(weatherState).Icon;
+  const SelectedIcon = taskChoices.find(choice => choice.task === selectedTask)?.icon ?? Sprout;
 
-  return <article id="can-i-farm-today" className="rounded-md border border-leaf-900/10 bg-white p-4 shadow-soft sm:p-6">
-    <h2 className="mb-3 text-lg font-bold">Can I Farm Today?</h2>
-    <div className="flex items-center gap-2 rounded-md bg-leaf-50 px-3 py-3 text-sm font-bold text-ink">
-      <RainIcon size={20} className={`shrink-0 ${typeof rain === "number" && rain >= 40 ? "text-sky-700" : "text-earth-700"}`} aria-hidden="true" />
-      <span>{weather ? `${weather.locationName} · ${typeof rain === "number" ? `${rain}% daily rain chance` : "Rain chance unavailable"}` : "Live weather unavailable"}</span>
-    </div>
-    <p className="mt-2 text-xs font-semibold text-ink/60">{weather ? `Updated ${new Date(weather.lastUpdatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Daily probability does not show exact rain timing or your field.` : "Choose the nearest area and check conditions at your field."}</p>
-
-    <h2 className="mt-5 text-base font-black text-ink">What do you want to do today?</h2>
-    <div className="mt-3 grid grid-cols-2 gap-2">
-      {taskChoices.map(({ task, label }) => <button key={task} type="button" aria-pressed={selectedTask === task} onClick={() => { setSelectedTask(task); setChecks({}); }} className={`min-h-12 rounded-md border px-3 py-2 text-left text-sm font-black ${selectedTask === task ? "border-leaf-700 bg-leaf-50 text-leaf-900" : "border-leaf-900/15 bg-white text-leaf-700"}`}>{label}</button>)}
-    </div>
+  return <article id="can-i-farm-today" className={styles.todayTasks}>
+    <h2>Can I Farm Today?</h2>
+    {selectedTask ? <div className={styles.taskSelection}>
+      <strong><SelectedIcon size={21} aria-hidden="true" />{selectedLabel}</strong>
+      <button type="button" className={styles.textAction} onClick={() => {setSelectedTask(""); setChecks({});}}>Change task</button>
+    </div> : <>
+      <p>What are you planning to do?</p>
+      <div className={styles.taskTiles}>
+        {taskChoices.map(({ task, label, icon: Icon }) => <button key={task} type="button" onClick={() => setSelectedTask(task)}>
+          <Icon size={21} aria-hidden="true" />{label}
+        </button>)}
+      </div>
+    </>}
     {selectedTask ? <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {(fieldQuestions[selectedTask] ?? []).map((field) => <label key={field.key} className="grid gap-1 text-sm font-black text-ink">{field.label}
         <select className="gg-field min-h-11" value={checks[field.key] ?? "unknown"} onChange={(event) => setChecks((current) => ({ ...current, [field.key]: event.target.value }))}>{field.choices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}</select>

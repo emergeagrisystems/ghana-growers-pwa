@@ -226,7 +226,7 @@
 .fieldPhoto { z-index: -2; }
 .fieldPhoto img { object-fit: cover; object-position: 50% 58%; }
 .hero::after { z-index: -1; content: ""; background: linear-gradient(90deg,rgba(8,32,22,.87),rgba(8,32,22,.46) 45%,rgba(8,32,22,.10) 72%), linear-gradient(0deg,#122c2266,transparent 36%); }
-.heroCopy { min-width: 0; }
+.heroCopy { min-width: 0; position: relative; top: clamp(16px, 3.5svh, 32px); }
 .headline { position: relative; }
 .headline h1 { font-size: clamp(40px,4.4vw,69px); line-height: 1.13; font-weight: 650; letter-spacing: -.05em; }
 .categoryLine { display: block; padding-bottom: .13em; white-space: nowrap; }
@@ -273,6 +273,7 @@
   .fieldPhoto img { object-position: 58% 50%; }
   .headline h1 { font-size: clamp(32px,8.5vw,48px); }
   .headline button { right: 0; bottom: -4px; }
+  .heroCopy { top: min(20px, 2.4svh); }
   .heroCopy > p { font-size: 16px; margin: 12px 0 16px; max-width: 30ch; }
   .hero .actions { gap: 7px; flex-wrap: wrap; }
   .hero .actions a { width: auto; min-height: 45px; padding: 8px 11px; font-size: 14px; }
@@ -290,6 +291,7 @@
 }
 @media (max-width:700px) and (max-height:620px) {
   .hero { padding-top: 76px; gap: 10px; }
+  .heroCopy { top: 3px; }
   .heroCopy > p { margin-block: 6px 8px; }
   .homeAsk { padding-block: 9px; }
 }
