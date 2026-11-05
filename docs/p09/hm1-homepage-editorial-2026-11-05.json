@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-05",
+  "status": "Illustrative candidates for founder review in Protected Preview",
+  "provider": "OpenAI native ChatGPT/Codex image generation",
+  "model": "Version not exposed by the native generator",
+  "allowance": "Two built-in generations under existing Work access. No separately billed API or Higgsfield generation.",
+  "use_boundary": "Illustrative scenes. Do not identify the person as Farmer David, a listed member, or the scenes as actual Ghana Growers operations or transactions.",
+  "assets": [
+    {
+      "generation_id": "exec-b22ebaaf-a8d9-4e8a-9188-827f0237222f",
+      "prompt": "Create a single original editorial photograph for an illustrative Ghanaian nursery story. Horizontal 3:2 composition, natural daylight through a simple slatted shade-net nursery. A Ghanaian woman grower in practical muted indigo work clothes quietly concentrates on easing a young green vegetable seedling from a plug tray, her two anatomically credible hands gently supporting the root plug. Compose a medium-close work portrait: face around 47 percent from left, both hands grouped centrally below her face; keep face and hands within central 60 percent for a mobile crop. Texture of the black propagation trays, nursery bench and soft mesh in the background, rich living greens, warm realistic skin tones, thoughtful expression. The grower looks at the plants, not the lens. Visually calm edges. Realistic documentary camera, subtle texture and natural contrast. No type, logos, watermarks, glamour styling, name, visible writing, or identifiable real individual. One decisive moment.",
+      "placement": "Farmer or supplier registration image",
+      "original_location": "Work 09 founder review package outside the web root",
+      "original": {
+        "filename": "nursery-original.png",
+        "dimensions": [
+          1536,
+          1024
+        ],
+        "bytes": 2779367,
+        "sha256": "3869953fe2a16236674873806e792cf8b52f937a15d65ff09e04cdf963f4d901"
+      },
+      "derivatives": [
+        {
+          "filename": "nursery-desktop.webp",
+          "dimensions": [
+            1200,
+            800
+          ],
+          "bytes": 146344,
+          "sha256": "159ce1c61fc83abfa79f6abfcbefddea23f8245bf9bbd8f12e376f3932df4bd2",
+          "served_path": "/hm1/nursery-desktop.webp",
+          "processing": "Full 3:2 composition resized"
+        },
+        {
+          "filename": "nursery-mobile.webp",
+          "dimensions": [
+            800,
+            600
+          ],
+          "bytes": 85248,
+          "sha256": "4ab7190c80703fe55f46e81f33299d4933e7592ca91da3e6cef0d3c8e6a59876",
+          "served_path": "/hm1/nursery-mobile.webp",
+          "processing": "Centre-biased 4:3 crop and resize"
+        }
+      ]
+    },
+    {
+      "generation_id": "exec-4353aff5-5c88-4c5d-aba7-63bbb5286a21",
+      "prompt": "Create a single original landscape 3:2 editorial still photograph viewed straight down at a working produce collection table. Open coarse woven sack filled with dry golden maize kernels on the left, small unbranded mechanical weighing scale with a metal pan toward upper right (no readable dial markings), only a pair of credible dark-brown hands gently holding and inspecting a small sample of kernels near the centre. Simple worn warm wood table, quiet diagonal of light from an open doorway, a few loose kernels. Frame the sack rim, both hands and scale close enough to remain recognisable in a 4:3 near-centre crop. Tactile working objects, honest daylight, warm neutral palette, photorealistic documentary detail, no face, no payment, no handshake, no cash, no branded equipment, no writing or numbers, no private details, no captions or borders.",
+      "placement": "How it works still",
+      "original_location": "Work 09 founder review package outside the web root",
+      "original": {
+        "filename": "maize-table-original.png",
+        "dimensions": [
+          1536,
+          1024
+        ],
+        "bytes": 3028224,
+        "sha256": "df359587a59a27885eae60000c8f10329616b088ee6fb4048eafaf127bb51301"
+      },
+      "derivatives": [
+        {
+          "filename": "maize-table-desktop.webp",
+          "dimensions": [
+            1200,
+            800
+          ],
+          "bytes": 185606,
+          "sha256": "35d2ef2bae8af7319e2ffdd6747439038a3184df02994ae3473d6f68274dabea",
+          "served_path": "/hm1/maize-table-desktop.webp",
+          "processing": "Full 3:2 composition resized"
+        },
+        {
+          "filename": "maize-table-mobile.webp",
+          "dimensions": [
+            800,
+            600
+          ],
+          "bytes": 101578,
+          "sha256": "9c25335b867e66135e3cf2c9b8feeab06566142db91275d8b39fa071f7176752",
+          "served_path": "/hm1/maize-table-mobile.webp",
+          "processing": "Centre-biased 4:3 crop and resize"
+        }
+      ]
+    }
+  ]
+}

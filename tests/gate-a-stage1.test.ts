@@ -57,7 +57,7 @@ test("only optimized Stage 1 derivatives are in the public media directory", () 
 test("Homepage maps to the four approved responsive authorities", () => {
   const page = file("src/components/homepage/Stage1Homepage.tsx");
   const styles = file("src/components/homepage/Stage1Homepage.module.css");
-  for (const section of ["hero", "gateways", "directory", "mama", "registration", "categorySection", "howItWorks"]) {
+  for (const section of ["hero", "buyerSection", "directory", "mama", "registration", "categorySection", "howItWorks"]) {
     assert.match(page, new RegExp(`styles\\.${section}`));
   }
   assert.match(styles, /@media\(max-width:980px\)/);
@@ -74,7 +74,7 @@ test("Homepage restores the approved Mama G composition", () => {
   assert.doesNotMatch(page, /START HERE|What would you like to do\?/);
   assert.match(page, /styles\.mamaHeading/);
   assert.match(page, /styles\.mamaShowcase/);
-  for (const title of ["Ask Mama G", "Check a crop problem", "Plan your crop", "Harvest & Storage", "Farm with the weather"]) {
+  for (const title of ["Ask Mama G", "Crop Doctor", "Crop Calendar & Planting Advisor", "Storage tips", "Today’s farm weather"]) {
     assert.ok(page.includes(title), title);
   }
   assert.match(page, /FounderApprovedMamaGPhone/);
@@ -90,7 +90,10 @@ test("Homepage keeps the three founder-approved closed-state entry choices", () 
   const page = file("src/components/homepage/Stage1Homepage.tsx");
   assert.match(page, /href="\/join"[^>]*>Register Your Farm or Shop/);
   assert.match(page, /href="\/submit-listing"[^>]*>List a Product/);
-  assert.match(page, /href="\/submit-buyer-request"[^>]*>Are you a buyer\? Request Product/);
+  assert.match(page, /getPublicWorkflowState\("buyer-request-submissions"\)/);
+  assert.match(page, /disabled aria-describedby="buyer-availability">Submit Buyer Request/);
+  assert.match(page, /Requests currently closed/);
+  assert.doesNotMatch(page, /HowItWorksVideo|<video|Show What You Offer/);
   assert.match(page, /styles\.directoryTabs/);
   assert.match(page, /styles\.railCue/);
 });

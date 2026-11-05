@@ -2237,17 +2237,17 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Gate A homepage follows approved section order and real-data boundary",
+    name: "HM1 homepage follows the founder-approved section order and real-data boundary",
     run: () => {
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
-      const gateASections = ["styles.hero", "styles.gateways", "styles.directory", "styles.mama", "styles.registration", "styles.categorySection", "styles.howItWorks"];
+      const gateASections = ["styles.hero", "styles.buyerSection", "styles.directory", "styles.mama", "styles.categorySection", "styles.registration", "styles.howItWorks"];
       const gateAPositions = gateASections.map((name) => page.indexOf("className={" + name + "}"));
       gateAPositions.forEach((position, index) => {
         assert.ok(position >= 0, gateASections[index]);
         if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["<EcosystemHeadline />", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "HowItWorksVideo"].forEach((text) => assert.ok(page.includes(text), text));
+      ["<EcosystemHeadline />", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "maize-table-desktop.webp"].forEach((text) => assert.ok(page.includes(text), text));
       assert.ok(page.includes('farmerResult.status === "ready"'));
       assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
