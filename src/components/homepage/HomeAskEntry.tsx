@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { CalendarDays, Leaf, MessageCircle, PackageCheck, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { HOME_DRAFT_LIMIT, prepareHomeDraft } from "@/lib/farmmate/home-draft";
@@ -12,7 +12,11 @@ export function HomeAskEntry() {
 
   function continueWithDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!question.trim()) return;
+    if (!question.trim()) {
+      setQuestion("");
+      router.push("/farmer-hub");
+      return;
+    }
     const receipt = prepareHomeDraft(question);
     setQuestion("");
     router.push("/farmer-hub#draft-" + receipt);
@@ -22,12 +26,16 @@ export function HomeAskEntry() {
     <label htmlFor="home-adviser-question"><MessageCircle size={23} aria-hidden="true" />
       <strong>Ask Mama G</strong>
     </label>
-    <p><b>Your agricultural adviser.</b> Get help with crops, planting and everyday farming decisions.</p>
+    <ul className={styles.askBenefits}>
+      <li><Leaf aria-hidden="true" />Check crop problems</li>
+      <li><CalendarDays aria-hidden="true" />Plan planting</li>
+      <li><PackageCheck aria-hidden="true" />Get storage tips</li>
+    </ul>
     <div className={styles.draftRow}>
       <input id="home-adviser-question" value={question} maxLength={HOME_DRAFT_LIMIT}
-        onChange={event => setQuestion(event.target.value)} autoComplete="off" required
+        onChange={event => setQuestion(event.target.value)} autoComplete="off"
         placeholder="Ask a farming question…" />
-      <button type="submit" disabled={!question.trim()}>Ask Mama G <ArrowRight size={16} aria-hidden="true" /></button>
+      <button type="submit"><Zap size={16} aria-hidden="true" />Try for free</button>
     </div>
   </form>;
 }

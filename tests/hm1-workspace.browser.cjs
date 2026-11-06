@@ -78,20 +78,20 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       assert.equal(await page.evaluate(() => scrollY), 0);
       assert.ok((await card.boundingBox()).y >= visibleBottom - 9);
       assert.ok((await offer.boundingBox()).y >= visibleBottom);
-      assert.ok((await card.locator("p").boundingBox()).y >= visibleBottom);
+      assert.ok((await card.locator("p").first().boundingBox()).y >= visibleBottom);
       assert.equal(await start.getAttribute("aria-describedby"), null);
       assert.ok(await hero.getByRole("textbox",{name:"Ask Mama G",exact:true}).isVisible());
       assert.equal(await hero.getByText("Review and edit your question before sending.").count(), 0);
-      const draftButton = await hero.getByRole("button",{name:"Ask Mama G",exact:true}).boundingBox();
+      const draftButton = await hero.getByRole("button",{name:"Try for free",exact:true}).boundingBox();
       await snap("unscrolled-homepage");
       assert.ok(draftButton.y + draftButton.height <= visibleBottom,
         `At ${width}×${openingHeight}, draft button ends at ${draftButton.y + draftButton.height} and visible content ends at ${visibleBottom}`);
       if (width === 320) {
         const gutter = await page.addStyleTag({content:"html { scrollbar-gutter: stable; }"});
-        const narrowButton = await hero.getByRole("button",{name:"Ask Mama G",exact:true}).boundingBox();
+        const narrowButton = await hero.getByRole("button",{name:"Try for free",exact:true}).boundingBox();
         assert.ok(narrowButton.y + narrowButton.height <= visibleBottom);
         const normalHeight = (await hero.boundingBox()).height;
-        const largeText = await page.addStyleTag({content:"main form p { font-size: 200% !important; }"});
+        const largeText = await page.addStyleTag({content:"main form li { font-size: 200% !important; line-height: 1.5 !important; }"});
         assert.ok((await hero.boundingBox()).height > normalHeight);
         await start.focus();
         await page.waitForFunction(() => {
@@ -108,8 +108,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
       assert.equal(bounds.x,0);
       assert.equal(bounds.width,await page.evaluate(() => document.documentElement.clientWidth));
       if (width <= 700) {
-        assert.deepEqual(await dock.locator(":scope > *").allTextContents(),["Farms","Suppliers","Mama G","Request","WhatsAppUnavailable"]);
-        assert.equal(await dock.locator("[aria-disabled=true]").getAttribute("href"),null);
+        assert.deepEqual(await dock.locator(":scope > *").allTextContents(),["Farms","Suppliers","Mama G","Request","WhatsApp"]);
+        assert.equal(await dock.getByRole("link",{name:"WhatsApp",exact:true}).getAttribute("href"),"https://wa.me/233208508868");
         const footer = page.locator("footer").last();
         assert.ok(await footer.evaluate(el => parseFloat(getComputedStyle(el).paddingBottom)) >= (await dock.boundingBox()).height);
       }
@@ -135,8 +135,17 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
         await page.keyboard.press("Escape");
         assert.ok(await menu.evaluate(el => document.activeElement === el));
       }
+      for (const blank of ["", "   "]) {
+        await start.fill(blank);
+        await hero.getByRole("button", {name:"Try for free",exact:true}).click();
+        await page.waitForURL("**/farmer-hub");
+        assert.equal(await page.locator("#ask-farmmate-question").inputValue(), "");
+        assert.equal(requests.length, 0, "blank entry must not call AI or usage endpoints");
+        await page.goto(base.href);
+        await start.waitFor();
+      }
       await start.fill(question);
-      await page.getByRole("button", {name:"Ask Mama G",exact:true}).click();
+      await page.getByRole("button", {name:"Try for free",exact:true}).click();
       const field = page.locator("#ask-farmmate-question");
       await page.waitForFunction(value => document.querySelector("#ask-farmmate-question")?.value === value, question);
       await page.waitForFunction(() => location.pathname === "/farmer-hub" && !location.hash && !location.search);

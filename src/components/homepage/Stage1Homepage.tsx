@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
-import { ArrowRight, CalendarDays, Camera, CloudSun, ClipboardList, Megaphone, MessagesSquare, PackageCheck, Sprout, Store, Wheat } from "lucide-react";
+import { ArrowRight, CalendarDays, Camera, CloudSun, ClipboardList, MessagesSquare, PackageCheck, Sprout, Store, Wheat } from "lucide-react";
 import Link from "next/link";
 import { FarmerProfileImage } from "@/components/FarmerProfileImage";
 import { FounderApprovedMamaGPhone } from "@/components/homepage/FounderApprovedMamaGPhone";
 import { MamaGFeatureList } from "./MamaGFeatureList";
 import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
-import { EcosystemHeadline } from "./EcosystemHeadline";
+import { EcosystemHeadline, HeadlineControl, HeroHeadlineProvider } from "./EcosystemHeadline";
 import { HomeAskEntry } from "@/components/homepage/HomeAskEntry";
 import { foundationFont } from "@/components/homepage-foundation/font";
 import { cleanFarmerLocation, farmerCardProducts } from "@/lib/farmerDirectory";
@@ -41,24 +41,34 @@ export async function Stage1Homepage() {
           <source media="(max-width: 1100px)" srcSet="/hm1/hm1-growing-field-tablet.webp" />
           <img src="/hm1/hm1-growing-field-wide.webp" alt="" width="1680" height="946" fetchPriority="high" />
         </picture>
-        <div className={styles.heroCopy}>
-          <EcosystemHeadline />
-          <p>Discover farms, crops, seeds, livestock and farm equipment across Ghana.</p>
-          <div className={styles.actions}>
-            <Link href="/directory" className={styles.primaryButton}>Search Farms &amp; Suppliers</Link>
-            <Link href="/join" className={styles.secondaryButton}>Get Listed Free</Link>
+        <HeroHeadlineProvider>
+          <div className={styles.heroCopy}>
+            <EcosystemHeadline />
+            <p>Discover farms, crops, seeds, livestock and farm equipment across Ghana.</p>
+            <div className={styles.actions}>
+              <Link href="/directory" className={styles.primaryButton}>Search Farms &amp; Suppliers</Link>
+              <Link href="/join" className={styles.secondaryButton}>Get Listed Free</Link>
+            </div>
           </div>
-        </div>
-        <HomeAskEntry />
-
+          <div className={styles.heroAssistant}>
+            <HomeAskEntry />
+            <HeadlineControl />
+          </div>
+        </HeroHeadlineProvider>
       </section>
 
       <section className={styles.buyerSection} aria-labelledby="buyer-title">
         <div className={styles.buyerBanner}>
-          <span className={styles.buyerIcon}><Megaphone aria-hidden="true" /></span>
+          <span className={styles.buyerIcon}>
+            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M4 12h5l12-6v20L9 20H4zM7 21h5l2 7H9z" />
+              <path d="M25 10l3-2m-2 8h4m-5 6l3 2" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+          </span>
           <div className={styles.buyerCopy}>
             <h2 id="buyer-title">Tell Farmers What You Need</h2>
             <p>For wholesale buyers, restaurants, market traders, farmers, agribusinesses and households.</p>
+            <p className={styles.buyerExample}><strong>Example request</strong><span>20 crates of tomatoes · Kumasi · Next week</span></p>
           </div>
           <div className={styles.buyerAction}>
             {buyerRequests.available ? (
@@ -136,7 +146,7 @@ export async function Stage1Homepage() {
           <Link href="/supplier-directory"><Store />Suppliers</Link>
           <Link href="/farmer-hub" className={styles.dockAsk}><i><Sprout /></i>Mama G</Link>
           <Link href="/submit-buyer-request" aria-label="Request — enquiries currently closed"><ClipboardList />Request</Link>
-          <span aria-disabled="true"><MessagesSquare />WhatsApp<small>Unavailable</small></span>
+          <a href="https://wa.me/233208508868" target="_blank" rel="noopener noreferrer"><MessagesSquare aria-hidden="true" />WhatsApp</a>
         </nav>
     </main>
   );

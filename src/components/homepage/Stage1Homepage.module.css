@@ -202,12 +202,15 @@
 .fieldPhoto { z-index: -2; }
 .fieldPhoto img { object-fit: cover; object-position: 50% 58%; }
 .hero::after { z-index: -1; content: ""; background: linear-gradient(90deg,rgba(8,32,22,.87),rgba(8,32,22,.46) 45%,rgba(8,32,22,.10) 72%), linear-gradient(0deg,#122c2266,transparent 36%); }
-.heroCopy { min-width: 0; position: relative; top: clamp(16px, 3.5svh, 32px); }
+.heroCopy { min-width: 0; position: relative; top: calc(clamp(16px, 3.5svh, 32px) + 32px); }
 .headline { position: relative; }
 .headline h1 { font-size: clamp(40px,4.4vw,69px); line-height: 1.13; font-weight: 650; letter-spacing: -.05em; }
 .categoryLine { display: block; padding-bottom: .13em; white-space: nowrap; }
 .categoryLine mark { display: inline-block; color: #143729; background: #e4ec99; padding: 0 .13em .045em; border-radius: .09em; }
-.headline button { position: absolute; bottom: -3px; right: 0; display: grid; place-items: center; width: 44px; height: 44px; color: white; background: #18382fe8; border: 1px solid #d9e3c8; border-radius: 50%; }
+/* Compensate for the control below the card while moving the card with the copy. */
+.heroAssistant { min-width: 0; position: relative; top: 61px; }
+.headlineControl { display: flex; justify-content: flex-end; height: 44px; margin-top: 11px; }
+.headlineControl button { display: grid; place-items: center; width: 44px; height: 44px; color: white; background: #18382fe8; border: 1px solid #d9e3c8; border-radius: 50%; }
 .heroCopy > p { margin: 18px 0 22px; max-width: 39ch; font-size: clamp(16px,1.4vw,20px); line-height: 1.45; }
 .actions { display: flex; gap: 10px; align-items: stretch; }
 .actions a { min-height: 48px; text-align: center; }
@@ -215,12 +218,14 @@
 .hero .secondaryButton { background: #17382ddc; color: white; border-color: #f1f2df; }
 .homeAsk { display: grid; align-content: start; gap: 10px; padding: 22px; border: 1px solid #e7e3d0; border-radius: 16px; box-shadow: 0 8px 30px #17342525; color: #17392c; background: #fffdf3; }
 .homeAsk label { display: flex; align-items: center; gap: 9px; font-size: 22px; }
-.homeAsk p { font-size: 14px; line-height: 1.45; color: #3c5146; }
-.homeAsk p b { font-weight: 650; }
+.askBenefits { display: grid; gap: 5px; list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 18px; color: #3c5146; }
+.askBenefits li { display: flex; align-items: center; gap: 6px; }
+.askBenefits svg { flex: 0 0 15px; width: 15px; height: 15px; }
 .draftRow { display: grid; gap: 8px; }
 .draftRow input { width: 100%; min-width: 0; min-height: 46px; padding: 10px; border-radius: 8px; border: 1px solid #8a9f90; color: #17392c; background: white; font-size: 16px; }
-.draftRow button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 12px; background: #064f43; color: white; border-radius: 8px; font-weight: 650; }
-.draftRow button:disabled { background: #52685c; }
+.draftRow button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding-inline: 12px; background: #fffdf3; color: #17392c; border: 1.5px solid #21543e; border-radius: 8px; font-weight: 700; white-space: nowrap; }
+.draftRow button:hover { background: #eef2df; }
+.draftRow button svg { flex: 0 0 16px; }
 .dock { display: none; }
 .dock > * { min-width: 0; display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--dock-target); border-radius: 8px; font-size: 12px; font-weight: 650; }
 .dock svg { width: 20px; height: 20px; }
@@ -239,7 +244,6 @@
 @media (min-width:701px) and (max-width:980px) {
   .hero { gap: 30px 18px; padding: 100px 40px 44px; grid-template-columns: minmax(0,1fr) 220px; }
   .headline h1 { font-size: clamp(31px,4.1vw,42px); }
-  .headline button { bottom: -6px; }
   .homeAsk { padding: 16px; }
   .hero .actions a { padding: 8px 10px; font-size: 14px; }
 }
@@ -248,18 +252,19 @@
   .hero::after { background: linear-gradient(110deg,#092e21ce,transparent 92%),linear-gradient(0deg,#122c2266,transparent 60%); }
   .fieldPhoto img { object-position: 58% 50%; }
   .headline h1 { font-size: clamp(32px,8.5vw,48px); }
-  .headline button { right: 0; bottom: -4px; }
-  .heroCopy { top: min(20px, 2.4svh); }
+  .heroCopy { top: calc(min(20px, 2.4svh) + 29px); }
+  .heroAssistant { top: 55px; }
   .heroCopy > p { font-size: 16px; margin: 12px 0 16px; max-width: 30ch; }
   .hero .actions { gap: 7px; flex-wrap: wrap; }
   .hero .actions a { width: auto; min-height: 45px; padding: 8px 11px; font-size: 14px; }
   .homeAsk { gap: 6px; padding: 13px; border-radius: 12px; }
   .homeAsk label { font-size: 19px; }
-  .homeAsk p { font-size: 13px; }
+  .askBenefits { grid-template-columns: 1fr 1fr; gap: 3px 8px; font-size: 12px; line-height: 16px; }
+  .askBenefits li:first-child { grid-column: 1 / -1; }
   .draftRow { display: flex; gap: 5px; }
   .draftRow input { flex: 1; }
   .draftRow button { font-size: 13px; padding-inline: 9px; }
-  .draftRow button svg { display: none; }
+
   .dock { position: fixed; z-index: 40; inset: auto 0 0; display: flex; align-items: stretch; gap: 1px; padding: 4px max(5px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left)); border-top: 1px solid #a9b9a5; box-shadow: 0 -3px 14px #153a2c24; background: #fffdf5; color: #204a38; }
   .dockAsk i { margin-top: -9px; }
   :global(html):has(.dock) { scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
@@ -268,8 +273,21 @@
 @media (max-width:700px) and (max-height:620px) {
   .hero { padding-top: 76px; gap: 10px; }
   .heroCopy { top: 3px; }
+  .heroAssistant { top: 0; }
   .heroCopy > p { margin-block: 6px 8px; }
   .homeAsk { padding-block: 9px; }
+}
+
+/* Use the card's width on short phones so both controls fit without shrinking type. */
+@media (max-width:360px) and (max-height:620px) {
+  .hero { gap: 8px; padding-bottom: 26px; }
+  .homeAsk { grid-template-columns: minmax(0,1fr) 114px; gap: 4px 8px; padding-block: 4px; }
+  .homeAsk label { grid-column: 1; grid-row: 1; }
+  .homeAsk label > svg { display: none; }
+  .askBenefits { grid-column: 1; grid-row: 2; grid-template-columns: 1fr; gap: 2px; line-height: 14px; }
+  .askBenefits li:first-child { grid-column: 1; }
+  .draftRow { grid-column: 2; grid-row: 1 / 3; display: grid; gap: 6px; align-content: center; }
+  .draftRow input { padding-inline: 6px; }
 }
 
 /* Sections below the retained HM1 Hero */
@@ -278,19 +296,22 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 22px;
-  border: 1px solid #d6dfc9;
+  border: 1px solid #e6d7aa;
+  border-left: 5px solid #d7ae48;
   border-radius: 14px;
   padding: 22px 28px;
-  background: #eff3e4;
+  background: #fcf3d9;
 }
 .buyerIcon, .featureIcon { display: grid; place-items: center; color: var(--green); }
-.buyerIcon { width: 54px; height: 54px; border-radius: 50%; background: #dce8ca; }
-.buyerIcon svg { width: 29px; height: 29px; }
+.buyerIcon { width: 58px; height: 58px; border-radius: 50%; background: #ebc66b; color: #173c2d; }
+.buyerIcon svg { width: 34px; height: 34px; }
 .buyerCopy h2 { font-size: clamp(21px, 2vw, 30px); font-weight: 700; line-height: 1.15; }
 .buyerCopy p { margin-top: 6px; max-width: 68ch; color: var(--muted); font-size: 15px; line-height: 1.5; }
-.buyerAction { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 14px; }
+.buyerCopy .buyerExample { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 9px; color: #344634; font-size: 13px; }
+.buyerExample strong { white-space: nowrap; }
+.buyerAction { border-left: 1px solid #ddcea6; padding-left: 22px; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px 14px; }
 .buyerAction span { color: #44564a; font-size: 13px; font-weight: 600; }
-.buyerAction button { min-height: 44px; padding: 8px 15px; border: 1px solid #aebbad; border-radius: 8px; background: #e4e9df; color: #46534a; font-weight: 650; cursor: not-allowed; }
+.buyerAction button { min-height: 44px; padding: 8px 15px; border: 1px solid #aebbad; border-radius: 8px; background: #eee6cd; color: #46534a; font-weight: 650; cursor: not-allowed; }
 .directoryTop .textLink { display: inline-flex; align-items: center; flex-shrink: 0; }
 .categoryRail:focus-visible, .profileCard:focus-within { outline: 3px solid var(--focus); outline-offset: -3px; }
 .profileBody a { width: 44px; height: 44px; }
@@ -324,8 +345,11 @@
   .buyerBanner { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 16px; align-items: start; }
   .buyerIcon { width: 38px; height: 38px; }
   .buyerIcon svg { width: 23px; height: 23px; }
-  .buyerCopy p { font-size: 14px; }
-  .buyerAction { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+  .buyerCopy { display: contents; }
+  .buyerCopy h2 { align-self: center; }
+  .buyerCopy p { grid-column: 1 / -1; margin-top: 0; font-size: 14px; }
+  .buyerCopy .buyerExample { margin-top: 0; }
+  .buyerAction { grid-column: 1 / -1; flex-direction: column-reverse; align-items: flex-end; border-left: 0; padding-left: 0; }
   .directoryTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   .directoryTop .textLink { white-space: nowrap; }
   .profileRail .profileCard { min-width: 0; flex: 0 0 min(80%, 284px); }
