@@ -1186,7 +1186,7 @@ function SuccessMessage({ reference, message }: { reference?: string; message: s
       {reference ? <p className="mt-2 text-sm font-black uppercase tracking-wide text-earth-700">Reference: {reference}</p> : null}
       <p className="mt-3 text-sm font-semibold leading-6 text-ink/65">{message}</p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        <a href="/marketplace" className="gg-button-secondary justify-center">Return to Marketplace</a>
+        <a href="/directory" className="gg-button-secondary justify-center">Browse farms and suppliers</a>
         <a href="/sell" className="gg-button-primary justify-center">Back to Sell page</a>
       </div>
     </div>

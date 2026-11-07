@@ -86,8 +86,8 @@ function SupplierOnboardingFormAvailable() {
           ))}
         </div>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-          <Link href="/marketplace" className="gg-button-primary">
-            Explore Marketplace
+          <Link href="/directory" className="gg-button-primary">
+            Browse farms and suppliers
           </Link>
           <Link href="/" className="gg-button-secondary">
             Return Home

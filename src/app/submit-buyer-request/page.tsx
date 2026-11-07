@@ -4,11 +4,14 @@ import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import { createPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const metadata = createPageMetadata({
+export function generateMetadata() {
+  const state = getPublicWorkflowState("buyer-request-submissions");
+  return createPageMetadata({
   title: "Request Product",
-  description: "Send a private product sourcing request for Ghana Growers to review.",
+  description: state.available ? "Send a private product sourcing request for Ghana Growers to review." : state.publicMessage,
   path: "/submit-buyer-request"
-});
+  });
+}
 
 export default function SubmitBuyerRequestPage() {
   const state = getPublicWorkflowState("buyer-request-submissions");

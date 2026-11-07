@@ -1604,7 +1604,7 @@ const tests: TestCase[] = [
       const publicSubmissions = repoFile("src/lib/publicSubmissions.ts");
       const leadRoute = repoFile("src/app/api/lead-requests/route.ts");
       const buyerRoute = repoFile("src/app/api/buyer-request-submissions/route.ts");
-      const modal = repoFile("src/components/RequestConnectionButton.tsx");
+      const modal = repoFile("src/components/ProfileEnquiryForm.tsx");
       const marketplaceDetail = repoFile("src/app/marketplace/[id]/page.tsx");
       const farmerProfile = repoFile("src/app/farmer-directory/[slug]/page.tsx");
       const supplierProfile = repoFile("src/app/supplier-directory/[slug]/page.tsx");
@@ -2113,7 +2113,7 @@ const tests: TestCase[] = [
   {
     name: "Request connection modal closes only after confirmed server success",
     run: () => {
-      const modal = repoFile("src/components/RequestConnectionButton.tsx");
+      const modal = repoFile("src/components/ProfileEnquiryForm.tsx");
 
       assert.equal(modal.includes("submitLockedRef"), true);
       assert.equal(modal.includes("if (isSubmitting || submitLockedRef.current)"), true);
@@ -2241,13 +2241,13 @@ const tests: TestCase[] = [
     run: () => {
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
-      const gateASections = ["styles.hero", "styles.buyerSection", "styles.directory", "styles.mama", "styles.categorySection", "styles.registration", "styles.howItWorks"];
-      const gateAPositions = gateASections.map((name) => page.indexOf("className={" + name + "}"));
+      const gateASections = ["styles.hero}", "styles.buyerSection}", "<CategoryStrip", "Farm Showcase", "Agro-Supplier Showcase", "<MamaGShowcase", "styles.registration}", "styles.howItWorks}"];
+      const gateAPositions = gateASections.map((name) => page.indexOf(name));
       gateAPositions.forEach((position, index) => {
         assert.ok(position >= 0, gateASections[index]);
         if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["<EcosystemHeadline />", "ApprovedMamaGPhone", "getFarmersData()", "getSuppliersData()", "maize-table-desktop.webp"].forEach((text) => assert.ok(page.includes(text), text));
+      ["<EcosystemHeadline />", "<MamaGShowcase", "getFarmersData()", "getSuppliersData()", "maize-table-desktop.webp"].forEach((text) => assert.ok(page.includes(text), text));
       assert.ok(page.includes('farmerResult.status === "ready"'));
       assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
@@ -2255,18 +2255,19 @@ const tests: TestCase[] = [
     }
   },
   {
-    name: "Gate A homepage uses locked categories and no public Market discovery",
+    name: "Homepage uses the 15 founder-supplied categories and keeps Market deferred",
     run: () => {
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
-      ["Fresh Produce", "Grains & Staples", "Livestock & Poultry", "Seeds & Agricultural Inputs", "Farm Equipment & Tools"].forEach((text) => assert.ok(page.includes(text), text));
+      const strip = repoFile("src/components/homepage/CategoryStrip.tsx");
+      ["Fruits & Vegetables","Legumes","Livestock","Seeds","Grain","Honey","Farmland","Herbs & Spices","Farm Equipment","Meat","Oil","Nuts & Edible Seeds","Eggs","Poultry","Tubers"].forEach(label => assert.ok(strip.includes(`"${label}"`),label));
       assert.ok(page.includes("Buyer requests are currently closed"));
       assert.ok(page.includes('href="/submit-buyer-request"'));
       assert.equal(page.includes('href="/marketplace"'), false);
       assert.equal(page.includes('href="/learn"'), false);
       assert.ok(styles.includes("overflow-x:auto"));
       assert.ok(styles.includes("scroll-snap-type"));
-      assert.ok(page.includes("/stage1-media/"));
+      assert.ok(strip.includes("/hm1/nov07/"));
     }
   },
   {
@@ -2316,7 +2317,7 @@ const tests: TestCase[] = [
       const prelaunch = repoFile("src/components/PrelaunchShell.tsx");
       const launchingSoon = repoFile("src/app/launching-soon/page.tsx");
       assert.ok(logo.includes('alt={decorative ? "" : "Ghana Growers"}'));
-      assert.ok(header.includes("<Stage1PublicHeader />"));
+      assert.ok(header.includes("<Stage1PublicHeader buyerRequestsOpen={buyerRequestsOpen}"));
       assert.ok(footer.includes("<Stage1PublicFooter />"));
       assert.ok(shell.includes("GHANA GROWERS"));
       assert.ok(shell.includes("Ask Mama G"));
@@ -3386,7 +3387,7 @@ const tests: TestCase[] = [
       assert.equal(gallery.includes("aria-pressed={isActive}"), true);
       assert.equal(detailPage.includes("MarketplaceStage2Notice"), true);
       assert.equal(detailPage.includes("<MarketplaceImageGallery"), false);
-      assert.equal(repoFile("src/components/RequestConnectionButton.tsx").includes("withPublicSubmissionGate"), true);
+      assert.equal(repoFile("src/components/ProfileEnquiryForm.tsx").includes("withPublicSubmissionGate"), true);
     }
   },
   {

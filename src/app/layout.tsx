@@ -4,6 +4,7 @@ import "./globals.css";
 import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
 import { PublicVisualScope } from "@/components/PublicVisualScope";
 import { Footer } from "@/components/Footer";
+import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
 import { siteConfig } from "@/data/site";
@@ -85,7 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </a>
           </div>
         ) : null}
-        <Header showFullNavigation={showPublicShell} />
+        <Header showFullNavigation={showPublicShell} buyerRequestsOpen={getPublicWorkflowState("lead-requests").available} />
         <main><PublicVisualScope>{children}</PublicVisualScope></main>
         {showPublicShell ? <Footer /> : null}
         {showPublicShell ? <FloatingWhatsAppButton /> : null}

@@ -38,3 +38,5 @@
   .homeHeader .navigation { min-height: 54px; padding: 4px 9px; gap: 6px; }
   .homeFooter { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
+.header .buyerPill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 18px; border: 1.5px solid var(--stage1-green); border-radius: 999px; color: var(--stage1-green); font-weight: 700; white-space: nowrap; }
+@media (max-width: 900px) { .header .buyerPill { display: none; } }

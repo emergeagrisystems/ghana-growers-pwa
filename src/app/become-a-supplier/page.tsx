@@ -4,11 +4,14 @@ import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import { createPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const metadata = createPageMetadata({
+export function generateMetadata() {
+  const state = getPublicWorkflowState("supplier-registration");
+  return createPageMetadata({
   title: "Apply to Join as a Supplier",
-  description: "Submit a private supplier or agricultural-service application for Ghana Growers to review.",
+  description: state.available ? "Submit a private supplier or agricultural-service application for Ghana Growers to review." : state.publicMessage,
   path: "/become-a-supplier"
-});
+  });
+}
 
 export default function BecomeSupplierPage() {
   const state = getPublicWorkflowState("supplier-registration");

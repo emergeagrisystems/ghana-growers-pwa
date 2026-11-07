@@ -28,6 +28,7 @@ export type LeadRequestSnapshot = {
   category?: string;
   source?: string;
   marketplaceListingId?: string;
+  contactConsent?: boolean;
 };
 
 export type LeadRequestRecord = {
@@ -136,6 +137,7 @@ type FarmerRow = {
   farm_name: string;
   region: string;
   district: string;
+  launch_ready: boolean | null;
   farm_type: FarmerProfile["farmType"] | string;
   products: string[] | null;
   verification_status: string | null;
@@ -147,6 +149,7 @@ type SupplierRow = {
   id: string;
   slug: string | null;
   company_name: string;
+  source: string | null;
   contact_person: string | null;
   region: string;
   district: string;
@@ -444,7 +447,9 @@ function profileQuery(value: string, select: string) {
 function farmerProfileFromRow(row: FarmerRow): FarmerProfile {
   return {
     id: row.id,
-    slug: row.slug ?? slugify(row.farm_name),
+    slug: row.slug ?? "",
+    status: row.status ?? undefined,
+    launchReady: row.launch_ready === true,
     farmName: row.farm_name,
     contactName: row.farmer_name ?? row.farm_name,
     region: row.region,
@@ -466,7 +471,8 @@ function farmerProfileFromRow(row: FarmerRow): FarmerProfile {
 function supplierProfileFromRow(row: SupplierRow): SupplierProfile {
   return {
     id: row.id,
-    slug: row.slug ?? slugify(row.company_name),
+    slug: row.slug ?? "",
+    source: row.source ?? undefined,
     companyName: row.company_name,
     contactPerson: row.contact_person ?? row.company_name,
     supplierCategory: row.category as SupplierProfile["supplierCategory"],
@@ -487,7 +493,7 @@ function supplierProfileFromRow(row: SupplierRow): SupplierProfile {
 async function getPublicFarmerBySource(sourceId: string) {
   const result = await selectSupabaseRecords<FarmerRow>(
     "farmers",
-    profileQuery(sourceId, "id,slug,farmer_name,farm_name,region,district,farm_type,products,verification_status,status,source")
+    profileQuery(sourceId, "id,slug,farmer_name,farm_name,region,district,farm_type,products,verification_status,status,source,launch_ready")
   );
   const row = result.data?.[0];
 
@@ -503,7 +509,7 @@ async function getPublicFarmerBySource(sourceId: string) {
 async function getPublicSupplierBySource(sourceId: string) {
   const result = await selectSupabaseRecords<SupplierRow>(
     "suppliers",
-    profileQuery(sourceId, "id,slug,company_name,contact_person,region,district,category,products_services,verification_status,status")
+    profileQuery(sourceId, "id,slug,company_name,contact_person,region,district,category,products_services,verification_status,status,source")
   );
   const row = result.data?.[0];
 
@@ -783,6 +789,10 @@ export async function normalizeLeadRequestPayload(payload: Record<string, unknow
     return { error: "Please complete all required fields.", status: 400 };
   }
 
+  if (payload.contactConsent !== true && payload.contactConsent !== "yes") {
+    return { error: "Confirm that Ghana Growers may contact you about this request.", status: 400 };
+  }
+
   const trustedSource = await resolveTrustedSource(payload);
 
   if ("error" in trustedSource) {
@@ -822,7 +832,10 @@ export async function normalizeLeadRequestPayload(payload: Record<string, unknow
       source_type: trustedSource.source_type,
       source_id: trustedSource.source_id,
       source_name: trustedSource.source_name,
-      source_page: sourcePage || null,
+      source_page: trustedSource.request_source === "farmer_profile" ? `/farmer-directory/${trustedSource.source_slug}`
+        : trustedSource.request_source === "supplier_profile" ? `/supplier-directory/${trustedSource.source_slug}`
+        : trustedSource.request_source === "generic_sourcing" ? (sourcePage === "/farmer-directory" ? sourcePage : "/submit-buyer-request")
+        : sourcePage || null,
       status: "New" as LeadRequestStatus,
       request_source: trustedSource.request_source,
       marketplace_listing_id: "marketplace_listing_id" in trustedSource ? trustedSource.marketplace_listing_id : null,
@@ -833,7 +846,7 @@ export async function normalizeLeadRequestPayload(payload: Record<string, unknow
       whatsapp_same_as_phone: whatsappSameAsPhone,
       delivery_location: deliveryLocation,
       required_by: requiredBy || null,
-      listing_snapshot: "listing_snapshot" in trustedSource ? trustedSource.listing_snapshot : null,
+      listing_snapshot: { ...trustedSource.listing_snapshot, contactConsent: true },
       request_dedupe_key: requestDedupeKey
     } satisfies LeadRequestInsertPayload,
     rateLimitKey
@@ -867,24 +880,27 @@ export async function insertLeadRequest(payload: Record<string, unknown>, client
   const insert = await insertSupabaseRecord("lead_requests", normalized.data);
 
   if (!insert.error) {
+    const receivedId = (insert.data as {id?: string} | undefined)?.id ?? (await duplicateLeadRequest(normalized.data.request_dedupe_key))?.id;
+    if (!receivedId) return { status: 503, error: "We could not confirm your request. Please try again." };
     await logAdminActivity({
       adminEmail: "Public submission",
       actionType: "Create",
       entityType: "Lead Request",
-      entityId: (insert.data as { id?: string } | undefined)?.id ?? null,
+      entityId: receivedId,
       entityName: `${normalized.data.requester_name} requested ${normalized.data.source_name}`
     });
     return {
       ...insert,
-      reference: leadRequestReference((insert.data as { id?: string } | undefined)?.id),
+      reference: leadRequestReference(receivedId),
       message: "We have received your sourcing request. Ghana Growers aims to review or acknowledge it within two Ghana business days."
     };
   } else if (duplicateInsertError(insert.error)) {
     const confirmed = await duplicateLeadRequest(normalized.data.request_dedupe_key);
+    if (!confirmed?.id) return { status: 503, error: "We could not confirm your earlier request. Please try again." };
     return {
       status: 200,
       duplicate: true,
-      reference: leadRequestReference(confirmed?.id),
+      reference: leadRequestReference(confirmed.id),
       message: "Ghana Growers has already received this request. We will review the earlier request first."
     };
   }

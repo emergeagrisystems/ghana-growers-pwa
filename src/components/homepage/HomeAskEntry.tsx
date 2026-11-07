@@ -4,6 +4,7 @@ import { CalendarDays, Leaf, MessageCircle, PackageCheck, Zap } from "lucide-rea
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { HOME_DRAFT_LIMIT, prepareHomeDraft } from "@/lib/farmmate/home-draft";
+import { MamaWordmark } from "./MamaWordmark";
 import styles from "./Stage1Homepage.module.css";
 
 export function HomeAskEntry() {
@@ -24,7 +25,7 @@ export function HomeAskEntry() {
 
   return <form className={styles.homeAsk} onSubmit={continueWithDraft} action="/farmer-hub">
     <label htmlFor="home-adviser-question"><MessageCircle size={23} aria-hidden="true" />
-      <strong>Ask Mama G</strong>
+      <strong>Ask <MamaWordmark treatment="light" /></strong>
     </label>
     <ul className={styles.askBenefits}>
       <li><Leaf aria-hidden="true" />Check crop problems</li>

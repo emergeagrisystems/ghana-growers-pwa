@@ -1,0 +1,34 @@
+{
+  "source": "Founder handoff 2026-11-07",
+  "sources": {
+    "Agricultural-categories-15-icons.png": "f888b5105eed9831696c48282f337573ae7952d2cfdfcbff68cbe38c6e591fc1",
+    "Mama-G-wordmark-A-and-B.png": "0147fed8267d513e11687b740baa2d8c0e147b22555fdca2a6ffc2af6b053312"
+  },
+  "categories": "Original 5-column by 3-row sheet, cut in reading order. Exterior paper removed and each illustration centred in an ivory circle.",
+  "wordmarks": "A/B silhouettes from the supplied colour board, mapped to the specified flat colours.",
+  "demo": "Local captures of the real tools with fictional inputs and controlled weather. No AI requests or photo uploads.",
+  "files": {
+    "demo-ask.webp": "f7f2a4d5f97857fcb0449e3df861f2f34428f14330898b2c69a806849b1f850c",
+    "demo-doctor.webp": "c091264e6d48f1ff606de81454f413138e8d98f5411e836749c1df42ebaf4389",
+    "demo-planting.webp": "5f1b4681af1b58e9e82e19cfa9b15f80e4399276c6112ace8c10fd9ace484526",
+    "demo-storage.webp": "7ad1164f97406df59cedc0f6a0470ad7c52325b098a81dcb1582f1d98ea486f8",
+    "demo-weather.webp": "145cc6110703961aa85b0f09163d394d3089e73c5ddc184d8c93fac380591950",
+    "eggs.webp": "5416b212dce4bbd7794bc9fea79dde1ae17b3dd366c0254b22bfd8a53eaf38b8",
+    "farm-equipment.webp": "d315ac318a26711fdde877c7727fbfb04861ccdd9871d81cad77dd22e347e2ea",
+    "farmland.webp": "8d6143de8794dff4c2f5aca61039b9ace3265b611334de9d89771104b2596bc6",
+    "fruits-vegetables.webp": "0970ab7088fde440c70a9eeed7b8bb5827c06330ceced0c2853a43a0367bf5e4",
+    "grain.webp": "f586f2b7ffbde783d2bc0d73461f9b5f649293b9285ef1d0f0d7d2e03c5a250a",
+    "herbs-spices.webp": "bf8d997403e9027edae298696dc8dd7af0124b6f4f3f28b35bc8f876ad1a217f",
+    "honey.webp": "f97ef8ec4d85aae3e9a2a02721ed8e1eb39f271e5457b003b28719a4c590e2d0",
+    "legumes.webp": "28a1012f9e389e14435cde696db2f784ce55218f3754f352f5b3a0909833d304",
+    "livestock.webp": "e05103619dd5c9eea668338bdbdddb022da19e63131967a8ca66d5a5532fe292",
+    "mama-g-dark.png": "3dc34f213bc9c6b54817d2ab60a4189f7d0be76ecff309fc72f263b1a212533c",
+    "mama-g-light.png": "3a5f08a908ae7f1d3173d9afaf4a74a00e9700db9bee59b96da75028f1747657",
+    "meat.webp": "359d25b485185a351801878f8b8731eb2bc76be2b56c7541d8c74d31c0db4fb2",
+    "nuts-edible-seeds.webp": "a20b9bb1adbe333c0a3bcdfa4d267e357d8f15651a10062b25b9eff4c12fb784",
+    "oil.webp": "3918ac91699829a59b0f0a81d6bcba356c4e386ab53e4f7b3b50073b2f0e6bf2",
+    "poultry.webp": "b04389e856dabedd765e9aba23e7ad368891ea0fbac84d2ce84ddebc9e18930d",
+    "seeds.webp": "061f3a1cca3296f3c857e36602b531159e7f5ad185ee3d83c51f6d1b6e0a760b",
+    "tubers.webp": "b1694bb92bdcef92ed50d34a7e0c825a40a2412e4f9032d3c654ba897d2f5cd0"
+  }
+}

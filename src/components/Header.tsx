@@ -23,7 +23,7 @@ function PilotHeader() {
   );
 }
 
-export function Header({ showFullNavigation = true }: { showFullNavigation?: boolean }) {
+export function Header({ showFullNavigation = true, buyerRequestsOpen }: { showFullNavigation?: boolean; buyerRequestsOpen: boolean }) {
   const pathname = usePathname();
 
   if (pathname.startsWith("/admin/profiles/")) {
@@ -34,5 +34,5 @@ export function Header({ showFullNavigation = true }: { showFullNavigation?: boo
     return <PilotHeader />;
   }
 
-  return showFullNavigation ? <Stage1PublicHeader /> : null;
+  return showFullNavigation ? <Stage1PublicHeader buyerRequestsOpen={buyerRequestsOpen} /> : null;
 }

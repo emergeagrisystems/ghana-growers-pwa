@@ -5,11 +5,14 @@ import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import { createPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const metadata = createPageMetadata({
+export function generateMetadata() {
+  const state = getPublicWorkflowState("farmer-registration");
+  return createPageMetadata({
   title: "Register Your Farm",
-  description: "Submit a private farmer application for Ghana Growers to review. Registration does not publish a public profile automatically.",
+  description: state.available ? "Submit a private farmer application for Ghana Growers to review. Registration does not publish a public profile automatically." : state.publicMessage,
   path: "/join/farmer"
-});
+  });
+}
 
 export default function JoinFarmerPage() {
   const state = getPublicWorkflowState("farmer-registration");

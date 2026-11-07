@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 
+import { getPublicWorkflowState, type PublicSubmissionWorkflow } from "../src/lib/publicSubmissionAvailability";
+
 const source = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 test("Stage 1 intake uses four independent server-only controls that default closed", () => {
@@ -111,4 +113,23 @@ test("admin password recovery uses PKCE across the protected Preview boundary", 
 test("optional product availability dates are stored as null rather than invalid empty dates", () => {
   const service = source("src/lib/publicSubmissions.ts");
   assert.match(service, /available_from_date: clean\(formData\.get\("availableFromDate"\)\) \|\| null/);
+});
+
+test("opening one workflow changes only its own label and destination state", () => {
+  const entries = [["farmer-registration","FARMER_REGISTRATION"],["supplier-registration","SUPPLIER_REGISTRATION"],["listing-submissions","PRODUCT_LISTING"],["buyer-request-submissions","BUYER_ENQUIRIES"]] as const;
+  const before = entries.map(([,key]) => process.env["PUBLIC_INTAKE_"+key+"_ENABLED"]);
+  try {
+    for (const [open] of entries) {
+      for (const [workflow,key] of entries) process.env["PUBLIC_INTAKE_"+key+"_ENABLED"] = String(workflow === open);
+      for (const [workflow] of entries) {
+        const state = getPublicWorkflowState(workflow);
+        assert.equal(state.available, workflow === open);
+        assert.equal(/closed/i.test(state.publicLabel), !state.available);
+      }
+      assert.equal(getPublicWorkflowState("lead-requests").available, open === "buyer-request-submissions");
+      for (const workflow of ["buyer-registration","contact-enquiries","waitlist","whatsapp-leads"] as PublicSubmissionWorkflow[]) assert.equal(getPublicWorkflowState(workflow).available,false);
+    }
+  } finally {
+    entries.forEach(([,key],i) => {const variable="PUBLIC_INTAKE_"+key+"_ENABLED";if(before[i]===undefined)delete process.env[variable];else process.env[variable]=before[i];});
+  }
 });

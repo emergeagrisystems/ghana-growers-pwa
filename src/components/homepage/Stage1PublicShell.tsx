@@ -13,7 +13,7 @@ const publicLinks = [
   { label: "Farms & Suppliers", href: "/directory" }
 ] as const;
 
-export function Stage1PublicHeader() {
+export function Stage1PublicHeader({ buyerRequestsOpen }: { buyerRequestsOpen: boolean }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
@@ -31,6 +31,8 @@ export function Stage1PublicHeader() {
     return () => document.removeEventListener("keydown", close);
   }, [open]);
 
+  const buyerLabel = buyerRequestsOpen ? "Buyer Requests" : "Buyer Requests · Closed";
+
   return (
     <header className={`${styles.header} ${pathname === "/" ? styles.homeHeader : ""} ${foundationFont.className}`}>
       <nav className={styles.navigation} aria-label="Main navigation">
@@ -43,6 +45,7 @@ export function Stage1PublicHeader() {
           ))}
         </div>
         <div className={styles.navActions}>
+          <Link href="/submit-buyer-request" className={styles.buyerPill}>{buyerLabel}</Link>
           <Link href="/join" className={styles.join}>Join</Link>
           <button ref={trigger} type="button" className={styles.menuButton} onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="stage1-mobile-menu" aria-label={open ? "Close navigation" : "Open navigation"}>
             {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
@@ -52,6 +55,7 @@ export function Stage1PublicHeader() {
       {open ? (
         <nav id="stage1-mobile-menu" className={styles.mobileMenu} aria-label="Mobile navigation">
           {publicLinks.map((item) => <Link href={item.href} key={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>{item.label}</Link>)}
+          <Link href="/submit-buyer-request" aria-current={pathname === "/submit-buyer-request" ? "page" : undefined}>{buyerLabel}</Link>
           <Link href="/join" aria-current={pathname === "/join" || pathname.startsWith("/join/") ? "page" : undefined}>Join</Link>
         </nav>
       ) : null}

@@ -99,6 +99,10 @@ function SubmitBuyerRequestFormAvailable() {
           <p className="font-bold text-ink">Submitting a request does not guarantee availability or a match.</p>
         </div>
 
+        <label className="mt-4 flex items-start gap-2 text-sm font-semibold">
+          <input type="checkbox" name="contactConsent" value="yes" required className="mt-1" />
+          I agree that Ghana Growers may contact me about this private request.
+        </label>
         <SubmitButton isSubmitting={isSubmitting} label="Request Supply" />
       </fieldset>
       <Messages error={error} />
@@ -129,8 +133,8 @@ function SourcingConfirmation({ message, reference }: { message: string; referen
         ))}
       </div>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link href="/marketplace" className="gg-button-primary">
-          Browse Marketplace
+        <Link href="/directory" className="gg-button-primary">
+          Browse farms and suppliers
         </Link>
         <Link href="/" className="gg-button-secondary">
           Return Home

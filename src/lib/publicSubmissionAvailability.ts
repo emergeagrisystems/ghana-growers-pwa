@@ -51,10 +51,18 @@ const workflowStates: Record<PublicSubmissionWorkflow, Omit<PublicWorkflowState,
   "network-interest": { available: false, publicLabel: "Network interest closed", publicMessage: "Network interest submissions are not open." }
 };
 
+const openCopy: Partial<Record<PublicSubmissionWorkflow, Pick<PublicWorkflowState, "publicLabel" | "publicMessage">>> = {
+  "farmer-registration": { publicLabel: "Register your farm", publicMessage: "Apply for a free farmer profile. Ghana Growers reviews it before publication." },
+  "supplier-registration": { publicLabel: "Register your business", publicMessage: "Apply for a free supplier or service profile. Ghana Growers reviews it before publication." },
+  "listing-submissions": { publicLabel: "List a Product", publicMessage: "Send your product details for private staff review." },
+  "buyer-request-submissions": { publicLabel: "Submit Buyer Request", publicMessage: "Tell Ghana Growers what you need. Your request goes privately to our team." },
+  "lead-requests": { publicLabel: "Request a connection", publicMessage: "Send a private request to the Ghana Growers team." }
+};
+
 export function getPublicWorkflowState(workflow: PublicSubmissionWorkflow): PublicWorkflowState {
   const control = intakeControlByWorkflow[workflow];
   const available = control ? process.env[control]?.trim().toLowerCase() === "true" : false;
-  return { workflow, ...workflowStates[workflow], available };
+  return { workflow, ...workflowStates[workflow], ...(available ? openCopy[workflow] : {}), available };
 }
 
 export function isPublicSubmissionAvailable(workflow: PublicSubmissionWorkflow): boolean {

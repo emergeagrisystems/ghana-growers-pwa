@@ -65,10 +65,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       assert.equal(await dock.getByRole('link',{name:'WhatsApp',includeHidden:true}).getAttribute('href'),'https://wa.me/233208508868');
       assert.equal(await dock.getByText('Unavailable',{exact:true}).count(),0);
       const buyer = page.getByRole('region',{name:'Tell Farmers What You Need'});
-      assert.equal(await buyer.getByRole('button',{name:'Submit Buyer Request'}).isDisabled(),true);
+      if (process.env.HM1_BUYER_OPEN==='true') assert.equal(await buyer.getByRole('link',{name:'Submit Buyer Request'}).getAttribute('href'),'/submit-buyer-request');
+      else assert.equal(await buyer.getByRole('button',{name:'Submit Buyer Request'}).isDisabled(),true);
       assert.equal(await buyer.getByText('Example request',{exact:true}).count(),1);
       assert.equal(await buyer.getByText('20 crates of tomatoes · Kumasi · Next week',{exact:true}).count(),1);
-      assert.equal(await buyer.getByText('Requests currently closed',{exact:true}).count(),1);
+      assert.equal(await buyer.getByText('Requests currently closed',{exact:true}).count(),process.env.HM1_BUYER_OPEN==='true'?0:1);
       for (const value of ['', '   ', 'How can I store harvested maize?']) {
         await page.goto(origin);
         const input = page.locator('#home-adviser-question');
@@ -94,4 +95,3 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
     if(process.env.HM1_EVIDENCE_DIR) await fs.writeFile(path.join(process.env.HM1_EVIDENCE_DIR,'hero-entry-results.json'),JSON.stringify(results,null,2));
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error.message);process.exit(1)});
-

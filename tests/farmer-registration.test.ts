@@ -149,16 +149,18 @@ test("farmer application UI foundation remains recoverable while the public page
   assert.match(form, /farmer-application-media|Files stay private/);
 });
 
-test("Join pathways stay independently closed while their private foundations remain", () => {
+test("Join pathways use each independent switch and link to the matching intake", () => {
   const joinPage = repoFile("src/app/join/page.tsx");
   const buyerPage = repoFile("src/app/join/buyer/page.tsx");
   const supplierPage = repoFile("src/app/become-a-supplier/page.tsx");
   const supplierRoute = repoFile("src/app/api/supplier-registration/route.ts");
 
-  assert.match(joinPage, /getPublicWorkflowState\("farmer-registration"\)/);
-  assert.match(joinPage, /getPublicWorkflowState\("supplier-registration"\)/);
-  assert.match(joinPage, /getPublicWorkflowState\("lead-requests"\)/);
-  assert.match(joinPage, /Registration is not open yet/);
+  for (const workflow of ["farmer-registration","supplier-registration","listing-submissions","buyer-request-submissions"]) {
+    assert.ok(joinPage.includes(`workflow: "${workflow}"`));
+  }
+  assert.match(joinPage, /getPublicWorkflowState\(workflow\)/);
+  assert.match(joinPage, /href=\{href\}/);
+  assert.doesNotMatch(joinPage, /title="Registration is not open yet/);
   assert.doesNotMatch(joinPage, /partner/i);
   assert.match(buyerPage, /permanentRedirect\("\/marketplace"\)/);
   assert.doesNotMatch(buyerPage, /buyer_applications|BuyerRegistrationForm/);

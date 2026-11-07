@@ -54,46 +54,31 @@ test("only optimized Stage 1 derivatives are in the public media directory", () 
   assert.ok(existsSync(join(process.cwd(), "docs", "p09", "gate-a-media-provenance.json")));
 });
 
-test("Homepage maps to the four approved responsive authorities", () => {
+test("Homepage places the category strip and independent showcases in the founder-approved order", () => {
   const page = file("src/components/homepage/Stage1Homepage.tsx");
-  const styles = file("src/components/homepage/Stage1Homepage.module.css");
-  for (const section of ["hero", "buyerSection", "directory", "mama", "registration", "categorySection", "howItWorks"]) {
-    assert.match(page, new RegExp(`styles\\.${section}`));
-  }
-  assert.match(styles, /@media\(max-width:980px\)/);
-  assert.match(styles, /@media\(max-width:700px\)/);
-  assert.match(styles, /@media\(max-width:360px\)/);
-  assert.match(styles, /scroll-snap-type/);
+  const ordered = ["homepage-hero-title", "Tell Farmers What You Need", "<CategoryStrip", "Farm Showcase", "Agro-Supplier Showcase", "<MamaGShowcase", "JOIN THE NETWORK", "HOW IT WORKS"];
+  const positions = ordered.map(label => page.indexOf(label));
+  assert.ok(positions.every((position, i) => position >= 0 && (i === 0 || position > positions[i-1])));
+  assert.match(page, /farmerResult\.status === "unavailable"/);
+  assert.match(page, /supplierResult\.status === "unavailable"/);
+  assert.doesNotMatch(page, /styles\.directoryTabs|Top Farms &amp; Agro-Suppliers|categoryIntro/);
 });
 
-test("Homepage restores the approved Mama G composition", () => {
-  const page = file("src/components/homepage/Stage1Homepage.tsx");
-  const styles = file("src/components/homepage/Stage1Homepage.module.css");
-  const phone = file("src/components/homepage/FounderApprovedMamaGPhone.tsx");
-
-  assert.doesNotMatch(page, /START HERE|What would you like to do\?/);
-  assert.match(page, /styles\.mamaHeading/);
-  assert.match(page, /styles\.mamaShowcase/);
-  for (const title of ["Ask Mama G", "Crop Doctor", "Crop Calendar & Planting Advisor", "Storage tips", "Today’s farm weather"]) {
-    assert.ok(page.includes(title), title);
+test("Homepage uses static actual-tool images for the five feature demonstrations", () => {
+  const exhibit = file("src/components/homepage/MamaGShowcase.tsx");
+  for (const stem of ["doctor", "ask", "planting", "storage", "weather"]) {
+    assert.ok(existsSync(join(process.cwd(), "public/hm1/nov07", `demo-${stem}.webp`)), stem);
   }
-  assert.match(page, /FounderApprovedMamaGPhone/);
-  assert.match(phone, /homepage-mama-g-approved-layered\.png/);
-  assert.match(styles, /\.rc1-approved-mama-g-phone/);
-  assert.match(styles, /width:400px/);
-  assert.match(styles, /width:270px/);
-  assert.match(styles, /width:247px/);
-  assert.match(styles, /width:224px/);
+  assert.doesNotMatch(exhibit, /fetch\(|\/api\/|<iframe/);
+  assert.match(exhibit, /href="\/farmer-hub"/);
 });
 
-test("Homepage keeps the three founder-approved closed-state entry choices", () => {
+test("Homepage keeps independent founder-approved entry destinations", () => {
   const page = file("src/components/homepage/Stage1Homepage.tsx");
-  assert.match(page, /href="\/join"[^>]*>Register Your Farm or Shop/);
-  assert.match(page, /href="\/submit-listing"[^>]*>List a Product/);
-  assert.match(page, /getPublicWorkflowState\("buyer-request-submissions"\)/);
+  for (const href of ["/join", "/join/farmer", "/become-a-supplier", "/submit-listing", "/submit-buyer-request", "/farmer-directory", "/supplier-directory"]) {
+    assert.ok(page.includes(`href="${href}"`), href);
+  }
   assert.match(page, /disabled aria-describedby="buyer-availability">Submit Buyer Request/);
   assert.match(page, /Requests currently closed/);
   assert.doesNotMatch(page, /HowItWorksVideo|<video|Show What You Offer/);
-  assert.match(page, /styles\.directoryTabs/);
-  assert.match(page, /styles\.railCue/);
 });
