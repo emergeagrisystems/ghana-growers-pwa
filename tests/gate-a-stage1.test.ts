@@ -64,12 +64,16 @@ test("Homepage places the category strip and independent showcases in the founde
   assert.doesNotMatch(page, /styles\.directoryTabs|Top Farms &amp; Agro-Suppliers|categoryIntro/);
 });
 
-test("Homepage uses static actual-tool images for the five feature demonstrations", () => {
+test("Homepage keeps one approved illustration across five independently selectable features", () => {
   const exhibit = file("src/components/homepage/MamaGShowcase.tsx");
-  for (const stem of ["doctor", "ask", "planting", "storage", "weather"]) {
-    assert.ok(existsSync(join(process.cwd(), "public/hm1/nov07", `demo-${stem}.webp`)), stem);
-  }
-  assert.doesNotMatch(exhibit, /fetch\(|\/api\/|<iframe/);
+  const handset = "/rc1/homepage-mama-g-approved-layered.png";
+  assert.ok(existsSync(join(process.cwd(), "public", handset)));
+  assert.ok(exhibit.includes(`href="${handset}"`));
+  assert.deepEqual(Array.from(exhibit.matchAll(/tab: "([^"]+)"/g), match => match[1]),
+    ["Crop Doctor", "Ask Mama G", "Planting", "Storage", "Weather"]);
+  assert.match(exhibit, /<Handset \/>/);
+  assert.match(exhibit, /Sample weather/);
+  assert.doesNotMatch(exhibit, /fetch\(|\/api\/|<iframe|demo-\$\{/);
   assert.match(exhibit, /href="\/farmer-hub"/);
 });
 

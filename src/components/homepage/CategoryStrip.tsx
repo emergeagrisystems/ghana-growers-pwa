@@ -2,7 +2,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useVisiblePlayback } from "./ExhibitControls";
 import styles from "./Refinements.module.css";
 
@@ -15,6 +15,7 @@ const categories = [
 ] as const;
 
 export function CategoryStrip() {
+  const inkFilter = useId();
   const playback = useVisiblePlayback();
   const rail = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ overflow: false, start: true, end: false });
@@ -46,6 +47,13 @@ export function CategoryStrip() {
   const manualStep = (direction: number) => { playback.setPaused(true); step(direction); };
 
   return <div ref={playback.ref} className={styles.categories}>
+    <svg className={styles.inkDefinition} aria-hidden="true" focusable="false" width="0" height="0">
+      <defs><filter id={inkFilter} colorInterpolationFilters="sRGB">
+        {/* Map the original outlines and shading to forest ink. Preserve the transparent paper. */}
+        <feColorMatrix type="matrix" values="0 0 0 0 .024  0 0 0 0 .310  0 0 0 0 .263  -.32 -1.07 -.11 0 1.22" />
+        <feComposite in2="SourceAlpha" operator="in" />
+      </filter></defs>
+    </svg>
     <div className={styles.categoryHead}>
       <div><p className={styles.eyebrow}>Explore</p><h2 id="category-title">Agricultural categories</h2></div>
       {edges.overflow && <div className={styles.controls} aria-label="Category controls">
@@ -60,7 +68,7 @@ export function CategoryStrip() {
         playback.setPaused(true);
         if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
       }}>
-      {categories.map(([label,stem]) => <li key={stem}><span><img src={`/hm1/nov07/${stem}.webp`} width="100" height="100" loading="lazy" alt="" /></span><strong>{label}</strong></li>)}
+      {categories.map(([label,stem]) => <li key={stem}><span><img src={`/hm1/nov07/${stem}.webp`} width="46" height="46" loading="lazy" alt="" style={{filter: `url(#${inkFilter})`}} /></span><strong>{label}</strong></li>)}
     </ul>
   </div>;
 }

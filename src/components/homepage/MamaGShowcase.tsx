@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { Pause, Play, Wifi } from "lucide-react";
+import { CloudSun, LayoutGrid, MessageSquareText, Pause, Play, ScanLine } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useVisiblePlayback } from "./ExhibitControls";
@@ -9,32 +9,48 @@ import { MamaWordmark } from "./MamaWordmark";
 import styles from "./Refinements.module.css";
 
 const slides = [
-  { tab: "Crop Doctor", name: "Crop Doctor", image: "doctor", question: "What’s eating my okro leaves?", detail: "Take a photo of the damage. See what might be causing it and what to check next." },
-  { tab: "Ask Mama G", name: "Ask Mama G", image: "ask", question: "How far apart should I plant my okro?", detail: "Ask in your own words and get practical steps for your farm." },
-  { tab: "Planting", name: "Crop Calendar & Planting Advisor", image: "planting", question: "Is my field ready to plant?", detail: "Check your soil before you plant. Once your crop is growing, see what to do next." },
-  { tab: "Storage", name: "Storage Tips", image: "storage", question: "How do I keep my maize until market day?", detail: "See how to dry and store maize or pack fresh tomatoes after harvest." },
-  { tab: "Weather", name: "Today’s Farm Weather", image: "weather", question: "Is rain likely on the farm today?", detail: "Check the chance of rain in your area before you plant, weed or harvest." }
+  { tab: "Crop Doctor", name: "Crop Doctor", question: "What’s eating my okro leaves?", detail: "Take a photo of the damage. See what might be causing it and what to check next." },
+  { tab: "Ask Mama G", name: "Ask Mama G", question: "How far apart should I plant my okro?", detail: "Ask in your own words and get practical steps for your farm." },
+  { tab: "Planting", name: "Crop Calendar & Planting Advisor", question: "Is my field ready to plant?", detail: "Check your soil before you plant. Once your crop is growing, see what to do next." },
+  { tab: "Storage", name: "Storage Tips", question: "How do I keep my maize until market day?", detail: "See how to dry and store maize or pack fresh tomatoes after harvest." },
+  { tab: "Weather", name: "Today’s Farm Weather", question: "Is rain likely on the farm today?", detail: "Check the chance of rain in your area before you plant, weed or harvest." }
 ] as const;
 
-function Handset({ slide }: { slide: (typeof slides)[number] }) {
+const illustratedTabs = [
+  ["Today", CloudSun], ["Ask Mama G", MessageSquareText],
+  ["Crop Doctor", ScanLine], ["Farm Tools", LayoutGrid],
+] as const;
+
+function Handset() {
   return (
     <figure className={styles.demoScreen}>
-      <div className={styles.phone}>
-        <div className={styles.earpiece} aria-hidden="true"><i /></div>
-        <div className={styles.deviceStatus} aria-hidden="true">
-          <span>9:41</span>
-          <div className={styles.indicators}>
-            <span className={styles.signal}><i /><i /><i /><i /></span>
-            <Wifi size={16} strokeWidth={2.5} />
-            <span>78%</span>
-            <span className={styles.battery}><i /></span>
-          </div>
-        </div>
-        <img key={slide.image} src={`/hm1/nov07/demo-${slide.image}.webp`}
-          alt={`Example screen from ${slide.name}`} width="390" height="680" loading="lazy" />
-        <div className={styles.gesture} aria-hidden="true"><i /></div>
-      </div>
-      <figcaption>Example tool screen</figcaption>
+      <svg className={styles.phone} viewBox="0 0 400 680" role="img"
+        aria-label="Illustrated handset showing Agoo! 👋 Mama G, sample weather and a crop photo check.">
+        <image href="/rc1/homepage-mama-g-approved-layered.png" width="400" height="680" />
+        {/* Overlay only the outdated screen content in the artwork's native coordinates. */}
+        <g fill="white">
+          <rect x="50" y="120" width="300" height="121" fill="#04545A" />
+          <text x="70" y="145" fontSize="14" fontWeight="650">Sample weather · Accra</text>
+          <text x="68" y="196" fontSize="49" fontWeight="700">28°C</text>
+          <CloudSun x="257" y="154" width="53" height="53" stroke="#FFF2CD" strokeWidth="1.6" />
+          <text x="70" y="222" fontSize="15">Partly cloudy</text>
+        </g>
+        <g fill="#244747">
+          <path d="M50 537H350V614Q350 636 335 638H65Q50 636 50 614Z" fill="#FCFCFA" />
+          <rect x="59" y="541" width="282" height="38" rx="19" fill="white" stroke="#78908A" />
+          <MessageSquareText x="72" y="551" width="18" height="18" />
+          <text x="100" y="565" fontSize="13">Ask Mama G…</text>
+          <path d="M56 587H344" stroke="#D5DEDA" />
+          {illustratedTabs.map(([label, Icon], i) => {
+            const x = 88 + i * 75;
+            return <g key={label}>
+              {i === 1 && <rect x={x-36} y="590" width="72" height="44" rx="9" fill="#DFECE7" />}
+              <Icon x={x-9} y="594" width="18" height="18" />
+              <text x={x} y="627" textAnchor="middle" fontSize="11.5" fontWeight="650">{label}</text>
+            </g>;
+          })}
+        </g>
+      </svg>
     </figure>
   );
 }
@@ -54,7 +70,7 @@ export function MamaGShowcase() {
 
   return <section className={styles.showcase} aria-labelledby="mama-title">
     <div className={styles.showcaseInner} ref={playback.ref}>
-      <header><h2 id="mama-title">Meet <MamaWordmark treatment="dark" /> — Your Digital FarmMate</h2>
+      <header><h2 id="mama-title">Meet <MamaWordmark treatment="light" /> — Your Digital FarmMate</h2>
         <p>Agricultural intelligence for Ghanaian farmers and the crops they grow.</p></header>
       <div className={styles.exhibit} onTouchStart={e => {start.current={x:e.touches[0].clientX,y:e.touches[0].clientY};}}
         onTouchCancel={() => {start.current=null;}}
@@ -64,7 +80,7 @@ export function MamaGShowcase() {
           start.current=null;
           if (Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)*1.4) select(index+(dx<0?1:-1));
         }}>
-        <Handset slide={slide} />
+        <Handset />
         <div className={styles.featureBody}>
           <div className={styles.slideCopy} aria-live={playback.paused || playback.reduced ? "polite" : "off"}>
             {slides.map(item => <div key={item.tab} aria-hidden={item!==slide} className={item===slide?styles.activeCopy:styles.hiddenCopy}>
