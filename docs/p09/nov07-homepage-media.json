@@ -29,6 +29,14 @@
     "oil.webp": "3918ac91699829a59b0f0a81d6bcba356c4e386ab53e4f7b3b50073b2f0e6bf2",
     "poultry.webp": "b04389e856dabedd765e9aba23e7ad368891ea0fbac84d2ce84ddebc9e18930d",
     "seeds.webp": "061f3a1cca3296f3c857e36602b531159e7f5ad185ee3d83c51f6d1b6e0a760b",
-    "tubers.webp": "b1694bb92bdcef92ed50d34a7e0c825a40a2412e4f9032d3c654ba897d2f5cd0"
+    "tubers.webp": "b1694bb92bdcef92ed50d34a7e0c825a40a2412e4f9032d3c654ba897d2f5cd0",
+    "pepper-harvest-desktop.webp": "132d0a895b13a345f273578dbb786dca4bd4bad2bba9785a7ecbc652589861d0",
+    "pepper-harvest-mobile.webp": "b9508de1fcbc149104682257aa70cca7d5db1694b12a581cc1bd6d78f4c703bd"
+  },
+  "pepperHarvest": {
+    "use": "Illustrative photograph for the Homepage farmer/supplier registration promotion only. No claim of membership or location.",
+    "package": "Ghana-Growers-Work-09-Phone-and-Harvest.zip",
+    "master_sha256": "6abe1994d6db42003031cbb487af1206dccbb8e901a7068c261b7009e410a3bd",
+    "derivatives": "Founder-supplied desktop (1200 x 800) and mobile (720 x 540) WebPs served at their intrinsic proportions."
   }
 }

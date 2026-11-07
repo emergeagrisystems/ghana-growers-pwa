@@ -80,7 +80,7 @@ export async function Stage1Homepage() {
           </div>
         </div>
         {farmerResult.status === "unavailable" ? <p role="status" className={refine.compactNotice}>Published farms are temporarily unavailable. Please try again later.</p>
-          : farmers.length ? <div className={`${styles.profileRail} ${refine.profileGrid}`} aria-label="Published farms">
+          : farmers.length ? <div className={refine.profileGrid} aria-label="Published farms">
             {farmers.map((farmer) => <article className={styles.profileCard} key={farmer.slug}><div className={styles.profileImage}>{farmer.hasRealPhoto && farmer.mainImage ? <FarmerProfileImage src={farmer.mainImage} alt={`${farmer.farmName} farm photo`} variant="card" fallbackKind="farmer" sizes="(max-width: 700px) 284px, (max-width: 980px) 50vw, 280px" /> : <span><Wheat aria-hidden="true" />Photo not available</span>}</div><div className={styles.profileBody}><h3>{farmer.farmName}</h3><p className={styles.productChip}>{farmerCardProducts(farmer).slice(0, 3).join(" · ") || "Profile details available"}</p><p>{cleanFarmerLocation(farmer)}</p><Link href={`/farmer-directory/${farmer.slug}`} aria-label={`View ${farmer.farmName} profile`}><ArrowRight aria-hidden="true" /></Link></div></article>)}
           </div> : <p className={refine.compactNotice}>No farms are published yet.</p>}
       </section>
@@ -93,16 +93,25 @@ export async function Stage1Homepage() {
           </div>
         </div>
         {supplierResult.status === "unavailable" ? <p role="status" className={refine.compactNotice}>Published suppliers are temporarily unavailable. Please try again later.</p>
-          : suppliers.length ? <div className={`${styles.profileRail} ${refine.profileGrid}`} aria-label="Published suppliers">
+          : suppliers.length ? <div className={refine.profileGrid} aria-label="Published suppliers">
             {suppliers.map((supplier) => <article className={styles.profileCard} key={supplier.slug}><div className={styles.profileImage}>{supplier.photos[0] ? <img src={supplier.photos[0]} alt={`${supplier.companyName} supplier profile`} /> : <span><Store aria-hidden="true" />Photo not available</span>}</div><div className={styles.profileBody}><h3>{supplier.companyName}</h3><p className={styles.productChip}>{supplier.productsServices.slice(0, 3).join(" · ") || "Supplier details available"}</p><p>{supplier.district}, {supplier.region}</p><Link href={`/supplier-directory/${supplier.slug}`} aria-label={`View ${supplier.companyName} profile`}><ArrowRight aria-hidden="true" /></Link></div></article>)}
           </div> : <p className={refine.compactNotice}>Supply farm inputs, equipment or services? <Link href="/become-a-supplier">Add your business here.</Link></p>}
       </section>
 
       <MamaGShowcase />
 
-      <section className={styles.registration} aria-labelledby="registration-title">
-        <div className={styles.registrationMedia}><picture><source media="(max-width: 700px)" srcSet="/hm1/nursery-mobile.webp" /><img src="/hm1/nursery-desktop.webp" alt="Grower tending young seedlings in trays under nursery shade netting" width="1200" height="800" loading="lazy" decoding="async" /></picture></div>
-        <div className={styles.registrationCopy}><p className={styles.eyebrow}>JOIN THE NETWORK</p><h2 id="registration-title">Are you a farmer or supplier?</h2><p>Join Ghana Growers and help buyers discover your farm, products or services.</p><Link href="/submit-listing" className={styles.lightButton}>List a Product{!productOpen && " · Closed"}</Link></div>
+      <section className={refine.harvest} aria-labelledby="registration-title">
+        <div className={refine.harvestCopy}>
+          <p className={styles.eyebrow}>JOIN THE NETWORK</p>
+          <h2 id="registration-title">Are you a farmer or supplier?</h2>
+          <p>Join Ghana Growers and help buyers discover your farm, products or services.</p>
+          <Link href="/submit-listing" className={refine.harvestButton}>List a Product{!productOpen && " · Closed"}</Link>
+        </div>
+        <picture className={refine.harvestPhoto}>
+          <source media="(max-width: 700px)" srcSet="/hm1/nov07/pepper-harvest-mobile.webp" width="720" height="540" />
+          <img src="/hm1/nov07/pepper-harvest-desktop.webp" width="1200" height="800"
+            alt="Grower holding freshly harvested red peppers above a wooden crate." loading="lazy" decoding="async" />
+        </picture>
       </section>
 
       <section className={styles.howItWorks} id="how-it-works" aria-labelledby="how-title">

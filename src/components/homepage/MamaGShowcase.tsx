@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Wifi } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useVisiblePlayback } from "./ExhibitControls";
@@ -15,6 +15,29 @@ const slides = [
   { tab: "Storage", name: "Storage Tips", image: "storage", question: "How do I keep my maize until market day?", detail: "See how to dry and store maize or pack fresh tomatoes after harvest." },
   { tab: "Weather", name: "Today’s Farm Weather", image: "weather", question: "Is rain likely on the farm today?", detail: "Check the chance of rain in your area before you plant, weed or harvest." }
 ] as const;
+
+function Handset({ slide }: { slide: (typeof slides)[number] }) {
+  return (
+    <figure className={styles.demoScreen}>
+      <div className={styles.phone}>
+        <div className={styles.earpiece} aria-hidden="true"><i /></div>
+        <div className={styles.deviceStatus} aria-hidden="true">
+          <span>9:41</span>
+          <div className={styles.indicators}>
+            <span className={styles.signal}><i /><i /><i /><i /></span>
+            <Wifi size={16} strokeWidth={2.5} />
+            <span>78%</span>
+            <span className={styles.battery}><i /></span>
+          </div>
+        </div>
+        <img key={slide.image} src={`/hm1/nov07/demo-${slide.image}.webp`}
+          alt={`Example screen from ${slide.name}`} width="390" height="680" loading="lazy" />
+        <div className={styles.gesture} aria-hidden="true"><i /></div>
+      </div>
+      <figcaption>Example tool screen</figcaption>
+    </figure>
+  );
+}
 
 export function MamaGShowcase() {
   const [index, setIndex] = useState(0);
@@ -41,7 +64,7 @@ export function MamaGShowcase() {
           start.current=null;
           if (Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)*1.4) select(index+(dx<0?1:-1));
         }}>
-        <figure className={styles.demoScreen}><div className={styles.phone}><img key={slide.image} src={`/hm1/nov07/demo-${slide.image}.webp`} alt={`Example screen from ${slide.name}`} width="390" height="680" loading="lazy" /></div><figcaption>Example tool screen</figcaption></figure>
+        <Handset slide={slide} />
         <div className={styles.featureBody}>
           <div className={styles.slideCopy} aria-live={playback.paused || playback.reduced ? "polite" : "off"}>
             {slides.map(item => <div key={item.tab} aria-hidden={item!==slide} className={item===slide?styles.activeCopy:styles.hiddenCopy}>

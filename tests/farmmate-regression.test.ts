@@ -2241,7 +2241,7 @@ const tests: TestCase[] = [
     run: () => {
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
       const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
-      const gateASections = ["styles.hero}", "styles.buyerSection}", "<CategoryStrip", "Farm Showcase", "Agro-Supplier Showcase", "<MamaGShowcase", "styles.registration}", "styles.howItWorks}"];
+      const gateASections = ["styles.hero}", "styles.buyerSection}", "<CategoryStrip", "Farm Showcase", "Agro-Supplier Showcase", "<MamaGShowcase", 'aria-labelledby="registration-title"', "styles.howItWorks}"];
       const gateAPositions = gateASections.map((name) => page.indexOf(name));
       gateAPositions.forEach((position, index) => {
         assert.ok(position >= 0, gateASections[index]);
