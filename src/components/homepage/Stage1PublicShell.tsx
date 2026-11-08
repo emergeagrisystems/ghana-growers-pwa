@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { foundationFont } from "@/components/homepage-foundation/font";
+import { useCategoryMotion } from "./CategoryMotionPreference";
 import styles from "./Stage1PublicShell.module.css";
 
 const publicLinks = [
@@ -71,6 +72,7 @@ const footerGroups = [
 
 export function Stage1PublicFooter() {
   const pathname = usePathname();
+  const { reduceMotion, deviceReduced, changePreference } = useCategoryMotion();
   return (
     <footer className={`${styles.footer} ${pathname === "/" ? styles.homeFooter : ""} ${foundationFont.className}`}>
       <div className={styles.columns}>
@@ -90,6 +92,11 @@ export function Stage1PublicFooter() {
       </div>
       <div className={styles.footerBottom}>
         <p>© {new Date().getFullYear()} Ghana Growers</p>
+        <label id="category-motion" className={styles.motionPreference}>
+          <input type="checkbox" checked={deviceReduced || reduceMotion === true} disabled={reduceMotion === null || deviceReduced}
+            onChange={event => changePreference(event.target.checked)} />
+          Reduce category motion{reduceMotion !== null && deviceReduced && " (device setting)"}
+        </label>
         <p>Powered by Emerge Agri Systems (E.A.Sy.)</p>
       </div>
     </footer>

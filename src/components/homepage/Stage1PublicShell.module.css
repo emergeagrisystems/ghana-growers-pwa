@@ -40,3 +40,7 @@
 }
 .header .buyerPill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 18px; border: 1.5px solid var(--stage1-green); border-radius: 999px; color: var(--stage1-green); font-weight: 700; white-space: nowrap; }
 @media (max-width: 900px) { .header .buyerPill { display: none; } }
+.motionPreference { display:inline-flex; align-items:center; gap:8px; min-height:44px; width:fit-content; color:#fffdf6; font-size:14px; }
+.motionPreference input { width:18px; height:18px; accent-color:#f2c66b; }
+.motionPreference input:focus-visible { outline:3px solid #f2c66b; outline-offset:3px; }
+@media (min-width:521px) { .footerBottom { align-items:center; } }

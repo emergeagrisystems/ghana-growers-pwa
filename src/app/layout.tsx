@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
 import { PublicVisualScope } from "@/components/PublicVisualScope";
+import { CategoryMotionProvider } from "@/components/homepage/CategoryMotionPreference";
 import { Footer } from "@/components/Footer";
 import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import { Header } from "@/components/Header";
@@ -87,8 +88,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         ) : null}
         <Header showFullNavigation={showPublicShell} buyerRequestsOpen={getPublicWorkflowState("lead-requests").available} />
-        <main><PublicVisualScope>{children}</PublicVisualScope></main>
-        {showPublicShell ? <Footer /> : null}
+        <CategoryMotionProvider>
+          <main><PublicVisualScope>{children}</PublicVisualScope></main>
+          {showPublicShell ? <Footer /> : null}
+        </CategoryMotionProvider>
         {showPublicShell ? <FloatingWhatsAppButton /> : null}
       </body>
     </html>

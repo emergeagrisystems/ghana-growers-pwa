@@ -6,9 +6,6 @@
 .showcaseActions,.selectors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .selectors button { display:inline-flex; min-height:44px; min-width:44px; align-items:center; justify-content:center; border-radius:999px; border:1px solid #a8b5aa; }
 .inkDefinition { position:absolute; pointer-events:none; }
-.motionPreference { display:inline-flex; min-height:44px; align-items:center; gap:8px; color:#344842; font-size:14px; }
-.motionPreference input { accent-color:#064f43; width:17px; height:17px; }
-.motionPreference input:focus-visible { outline:3px solid #215ea2; outline-offset:2px; }
 .categoryWindow { --category-gap:clamp(8px,1.4vw,20px); margin-top:18px; overflow:clip; }
 .categoryRail { display:flex; flex-wrap:wrap; list-style:none; gap:var(--category-gap); margin:0; padding:4px 0 12px; }
 .categoryRail li { flex:0 0 92px; text-align:center; color:#193e34; }

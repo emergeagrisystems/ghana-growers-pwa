@@ -2266,6 +2266,8 @@ const tests: TestCase[] = [
       assert.equal(page.includes('href="/marketplace"'), false);
       assert.equal(page.includes('href="/learn"'), false);
       assert.match(strip, /role="list" aria-hidden="true"/);
+      assert.doesNotMatch(strip, /type="checkbox"|Reduce category motion/);
+      assert.match(repoFile("src/components/homepage/Stage1PublicShell.tsx"), /<label id="category-motion"[\s\S]*?Reduce category motion/);
       assert.ok(strip.includes("categories.length * 5.5"));
       assert.ok(styles.includes("prefers-reduced-motion:no-preference"));
       assert.ok(styles.includes("animation-timing-function:linear"));
