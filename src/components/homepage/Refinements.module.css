@@ -6,9 +6,19 @@
 .showcaseActions,.selectors { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .selectors button { display:inline-flex; min-height:44px; min-width:44px; align-items:center; justify-content:center; border-radius:999px; border:1px solid #a8b5aa; }
 .inkDefinition { position:absolute; pointer-events:none; }
-.categoryRail { display:flex; flex-wrap:wrap; position:relative; list-style:none; gap:clamp(8px,1.4vw,20px); margin:20px 0 0; padding:4px 2px 12px; scrollbar-width:none; }
-.categoryRail::-webkit-scrollbar { display:none; }
-.categoryRail li { flex:0 0 92px; scroll-snap-align:start; text-align:center; color:#193e34; }
+.motionPreference { display:inline-flex; min-height:44px; align-items:center; gap:8px; color:#344842; font-size:14px; }
+.motionPreference input { accent-color:#064f43; width:17px; height:17px; }
+.motionPreference input:focus-visible { outline:3px solid #215ea2; outline-offset:2px; }
+.categoryWindow { --category-gap:clamp(8px,1.4vw,20px); margin-top:18px; overflow:clip; }
+.categoryRail { display:flex; flex-wrap:wrap; list-style:none; gap:var(--category-gap); margin:0; padding:4px 0 12px; }
+.categoryRail li { flex:0 0 92px; text-align:center; color:#193e34; }
+.categoryRail[aria-hidden=true] { display:none; }
+@media (prefers-reduced-motion:no-preference) {
+  .categoryTrack[data-gliding=true] { display:flex; width:max-content; animation-name:categoryGlide; animation-timing-function:linear; animation-iteration-count:infinite; }
+  .categoryTrack[data-gliding=true] .categoryRail { display:flex; flex:none; flex-wrap:nowrap; padding-inline-end:var(--category-gap); }
+}
+/* Both lists include the same trailing gutter. One half-track is one exact cycle. */
+@keyframes categoryGlide { from { transform:translateX(0); } to { transform:translateX(-50%); } }
 .categoryRail li span { display:grid; place-items:center; margin-inline:auto; width:58px; height:58px; border:1px solid #d7d8c9; border-radius:50%; background:#fffdf6; }
 /* The illustration fills 190 of 224 source pixels: a 46px image yields 39px of ink. */
 .categoryRail img { display:block; width:46px; height:46px; object-fit:contain; }
@@ -44,11 +54,10 @@
 .categories :is(ul,button):focus-visible { outline:3px solid #215ea2; outline-offset:2px; }
 @media (prefers-reduced-motion:no-preference) { .activeCopy { animation:appear .28s ease-out; } @keyframes appear { from {opacity:.35} to {opacity:1} } }
 @media(max-width:700px) {
-  .categoryRail li { flex-basis:clamp(76px,calc((100% - 24px)/3.45),104px); }
+  .categoryRail li { flex-basis:clamp(76px,23vw,104px); }
   .categoryRail li span { width:50px; height:50px; }
   .categoryRail img { width:40px; height:40px; }
   .categoryHead { align-items:center; gap:8px; }
-  .categoryRail { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
   .showcaseHead { gap:10px; }
   .showcaseActions a { min-width:0; width:auto; font-size:14px; padding-inline:12px; }
   .profileGrid { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; padding-bottom:6px; }

@@ -2258,15 +2258,18 @@ const tests: TestCase[] = [
     name: "Homepage uses the 15 founder-supplied categories and keeps Market deferred",
     run: () => {
       const page = repoFile("src/components/homepage/Stage1Homepage.tsx");
-      const styles = repoFile("src/components/homepage/Stage1Homepage.module.css");
+      const styles = repoFile("src/components/homepage/Refinements.module.css");
       const strip = repoFile("src/components/homepage/CategoryStrip.tsx");
       ["Fruits & Vegetables","Legumes","Livestock","Seeds","Grain","Honey","Farmland","Herbs & Spices","Farm Equipment","Meat","Oil","Nuts & Edible Seeds","Eggs","Poultry","Tubers"].forEach(label => assert.ok(strip.includes(`"${label}"`),label));
       assert.ok(page.includes("Buyer requests are currently closed"));
       assert.ok(page.includes('href="/submit-buyer-request"'));
       assert.equal(page.includes('href="/marketplace"'), false);
       assert.equal(page.includes('href="/learn"'), false);
-      assert.ok(styles.includes("overflow-x:auto"));
-      assert.ok(styles.includes("scroll-snap-type"));
+      assert.match(strip, /role="list" aria-hidden="true"/);
+      assert.ok(strip.includes("categories.length * 5.5"));
+      assert.ok(styles.includes("prefers-reduced-motion:no-preference"));
+      assert.ok(styles.includes("animation-timing-function:linear"));
+      assert.ok(styles.includes("translateX(-50%)"));
       assert.ok(strip.includes("/hm1/nov07/"));
     }
   },
