@@ -1,0 +1,67 @@
+{
+  "selection": "2026-11-08 founder release handoff",
+  "provenance": "Generated illustrative editorial artwork. Do not attribute the growers to directory members.",
+  "usage": {
+    "registration": "Use the desktop or mobile wide okro-harvest image on the white registration section. Both growers, baskets and crop rows remain visible.",
+    "join": "Optional decorative desktop header uses the compact rendition of the same okro-harvest source used in the approved Join design. Hide this decoration on small screens.",
+    "how_it_works": "Use the final drawing with the illustrated Farms & Suppliers header and View Profile gesture. Keep the full fingertip, button and handset visible. The mobile WebP retains the original 3:2 aspect ratio."
+  },
+  "files": [
+    {
+      "file": "source/how-it-works-view-profile.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2290002,
+      "sha256": "cef8e17ae725d501b1ff2b1ca16e826cbe2b156aa4b065b86b2b0bf97ec8cd47",
+      "alt_text": "Illustration of a hand tapping View Profile in the Farms & Suppliers directory."
+    },
+    {
+      "file": "source/registration-okro-harvest.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 3432405,
+      "sha256": "6961e3bca3e52967f536d0d9c86debc60517a6b2edd9dee6c9f54ea707ec1300",
+      "alt_text": "Two growers harvesting okro in a field, with one carrying a basket along a row."
+    },
+    {
+      "file": "web/how-it-works-view-profile-desktop.webp",
+      "width": 1200,
+      "height": 800,
+      "bytes": 85134,
+      "sha256": "58c9eb27b21031f901ba3171054727bc6b5fef0e4e0c041dd3d97472f2eadcc5",
+      "alt_text": "Illustration of a hand tapping View Profile in the Farms & Suppliers directory."
+    },
+    {
+      "file": "web/how-it-works-view-profile-mobile.webp",
+      "width": 720,
+      "height": 480,
+      "bytes": 32414,
+      "sha256": "b04a5d25f230e518b848a65900176f912f321c96fbd8c5de525835c3615c032f",
+      "alt_text": "Illustration of a hand tapping View Profile in the Farms & Suppliers directory."
+    },
+    {
+      "file": "web/join-okro-banner.webp",
+      "width": 639,
+      "height": 426,
+      "bytes": 74370,
+      "sha256": "d6338d49da052fe3069e41800b742e540ecf680cbf49e20d67f1ecdcb0508af9",
+      "alt_text": ""
+    },
+    {
+      "file": "web/registration-okro-harvest-desktop.webp",
+      "width": 1200,
+      "height": 800,
+      "bytes": 215212,
+      "sha256": "618d795e1ad11c88bec03871c2ae94ed9908ef36068e78956a009eb0fd1b4173",
+      "alt_text": "Two growers harvesting okro in a field, with one carrying a basket along a row."
+    },
+    {
+      "file": "web/registration-okro-harvest-mobile.webp",
+      "width": 720,
+      "height": 540,
+      "bytes": 100920,
+      "sha256": "8c77329c9e390773a508219d522724b2f2d7dd502e730d3748e430480a9b5640",
+      "alt_text": "Two growers harvesting okro in a field, with one carrying a basket along a row."
+    }
+  ]
+}

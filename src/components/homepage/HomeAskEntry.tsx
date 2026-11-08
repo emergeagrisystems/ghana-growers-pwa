@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Leaf, MessageCircle, PackageCheck, Zap } from "lucide-react";
+import { CalendarDays, Leaf, PackageCheck, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { HOME_DRAFT_LIMIT, prepareHomeDraft } from "@/lib/farmmate/home-draft";
@@ -24,7 +24,7 @@ export function HomeAskEntry() {
   }
 
   return <form className={styles.homeAsk} onSubmit={continueWithDraft} action="/farmer-hub">
-    <label htmlFor="home-adviser-question"><MessageCircle size={23} aria-hidden="true" />
+    <label htmlFor="home-adviser-question">
       <strong>Ask <MamaWordmark treatment="light" /></strong>
     </label>
     <ul className={styles.askBenefits}>

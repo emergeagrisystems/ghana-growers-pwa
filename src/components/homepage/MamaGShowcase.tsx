@@ -70,7 +70,7 @@ export function MamaGShowcase() {
 
   return <section className={styles.showcase} aria-labelledby="mama-title">
     <div className={styles.showcaseInner} ref={playback.ref}>
-      <header><h2 id="mama-title">Meet <MamaWordmark treatment="light" /> — Your Digital FarmMate</h2>
+      <header><h2 id="mama-title"><MamaWordmark treatment="light" /> — Your Digital FarmMate</h2>
         <p>Agricultural intelligence for Ghanaian farmers and the crops they grow.</p></header>
       <div className={styles.exhibit} onTouchStart={e => {start.current={x:e.touches[0].clientX,y:e.touches[0].clientY};}}
         onTouchCancel={() => {start.current=null;}}
@@ -84,6 +84,7 @@ export function MamaGShowcase() {
         <div className={styles.featureBody}>
           <div className={styles.slideCopy} aria-live={playback.paused || playback.reduced ? "polite" : "off"}>
             {slides.map(item => <div key={item.tab} aria-hidden={item!==slide} className={item===slide?styles.activeCopy:styles.hiddenCopy}>
+              <p className={styles.featurePosition}>Feature {slides.indexOf(item) + 1} of {slides.length} · {item.tab}</p>
               <p className={styles.featureName}>{item.name}</p><h3>{item.question}</h3><p>{item.detail}</p>
             </div>)}
           </div>

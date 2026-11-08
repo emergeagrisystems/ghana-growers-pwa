@@ -1,3 +1,4 @@
+import { directoryReturn, type DirectorySearchParams } from "@/lib/directoryNavigation";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -24,6 +25,7 @@ import { getBuyerRequestsData, getFarmersData, getMarketplaceListingsData } from
 export const dynamic = "force-dynamic";
 
 type FarmerProfilePageProps = {
+  searchParams?: DirectorySearchParams;
   params: {
     slug: string;
   };
@@ -189,7 +191,8 @@ function activeListingMatchesProduct(listingName: string, product: string) {
   return cleanedListing.includes(cleanedProduct) || cleanedProduct.includes(cleanedListing);
 }
 
-export default async function FarmerProfilePage({ params }: FarmerProfilePageProps) {
+export default async function FarmerProfilePage({ params, searchParams }: FarmerProfilePageProps) {
+  const returnTo = directoryReturn(searchParams);
   const [farmerResult, marketplaceProducts, buyerRequests] = await Promise.all([
     getFarmersData(),
     getMarketplaceListingsData(),
@@ -261,6 +264,7 @@ export default async function FarmerProfilePage({ params }: FarmerProfilePagePro
   return (
     <>
       <section className="border-b border-leaf-900/10 bg-earth-50">
+        {returnTo && <Link href={returnTo} className="focus-ring mx-auto block max-w-7xl px-4 pt-4 text-sm font-bold text-leaf-800">← Back to directory results</Link>}
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-7 sm:px-6 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:px-8 lg:py-9">
           <div>
             <div className="relative overflow-hidden rounded-md border border-white bg-white p-2 shadow-soft">

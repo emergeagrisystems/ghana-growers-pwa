@@ -34,7 +34,7 @@ export default async function SupplierDirectoryPage({ searchParams }: SupplierDi
     <>
       <PageHero
         eyebrow="Supplier Directory"
-        title={hasPublicSuppliers ? "Find Farm Suppliers Across Ghana" : "Agricultural supplier profiles are coming soon."}
+        title="Suppliers & Services"
         variant="compact"
         description={hasPublicSuppliers
           ? "Browse approved public supplier profiles and find agricultural products and services."

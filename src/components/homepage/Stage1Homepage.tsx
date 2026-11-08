@@ -75,7 +75,7 @@ export async function Stage1Homepage() {
       <section className={styles.directory} aria-labelledby="farmer-title">
         <div className={refine.showcaseHead}><h2 id="farmer-title">Farm Showcase</h2>
           <div className={refine.showcaseActions}>
-            <Link className={styles.primaryButton} href="/farmer-directory">Browse all farms</Link>
+            <Link className={styles.primaryButton} href="/directory?scope=farms">Browse all farms</Link>
             <Link className={styles.secondaryButton} href="/join/farmer">+ Add my Farm{!farmerOpen && " · Closed"}</Link>
           </div>
         </div>
@@ -88,7 +88,7 @@ export async function Stage1Homepage() {
       <section className={styles.directory} aria-labelledby="supplier-title">
         <div className={refine.showcaseHead}><h2 id="supplier-title">Agro-Supplier Showcase</h2>
           <div className={refine.showcaseActions}>
-            <Link className={styles.primaryButton} href="/supplier-directory">Browse all suppliers</Link>
+            <Link className={styles.primaryButton} href="/directory?scope=suppliers">Browse all suppliers</Link>
             <Link className={styles.secondaryButton} href="/become-a-supplier">+ Add my Business{!supplierOpen && " · Closed"}</Link>
           </div>
         </div>
@@ -104,26 +104,29 @@ export async function Stage1Homepage() {
         <div className={refine.harvestCopy}>
           <p className={styles.eyebrow}>JOIN THE NETWORK</p>
           <h2 id="registration-title">Are you a farmer or supplier?</h2>
-          <p>Join Ghana Growers and help buyers discover your farm, products or services.</p>
-          <Link href="/submit-listing" className={refine.harvestButton}>List a Product{!productOpen && " · Closed"}</Link>
+          <p>Show buyers what you grow or supply. Every farm and agri-shop that joins gives buyers more choice and helps our farming community reach new customers.</p>
+          <div className={refine.harvestActions}>
+            <Link href="/submit-listing" className={refine.harvestButton}>List a Product{!productOpen && " · Closed"}</Link>
+            <Link href="/join" className={refine.harvestSecondary}>+ Add my Farm or Agri-Shop{!farmerOpen && !supplierOpen && " · Closed"}</Link>
+          </div>
         </div>
         <picture className={refine.harvestPhoto}>
-          <source media="(max-width: 700px)" srcSet="/hm1/nov07/pepper-harvest-mobile.webp" width="720" height="540" />
-          <img src="/hm1/nov07/pepper-harvest-desktop.webp" width="1200" height="800"
-            alt="Grower holding freshly harvested red peppers above a wooden crate." loading="lazy" decoding="async" />
+          <source media="(max-width: 700px)" srcSet="/hm1/nov08/registration-okro-harvest-mobile.webp" width="720" height="540" />
+          <img src="/hm1/nov08/registration-okro-harvest-desktop.webp" width="1200" height="800"
+            alt="Two growers harvesting okro in a field, with one carrying a basket along a row." loading="lazy" decoding="async" />
         </picture>
       </section>
 
       <section className={styles.howItWorks} id="how-it-works" aria-labelledby="how-title">
         <picture className={styles.collectionPhoto}>
-          <source media="(max-width: 700px)" srcSet="/hm1/maize-table-mobile.webp" />
-          <img src="/hm1/maize-table-desktop.webp" alt="Hands inspecting maize kernels beside an open sack and a small weighing scale" width="1200" height="800" loading="lazy" decoding="async" />
+          <source media="(max-width: 700px)" srcSet="/hm1/nov08/how-it-works-view-profile-mobile.webp" />
+          <img src="/hm1/nov08/how-it-works-view-profile-desktop.webp" alt="Illustration of a hand tapping View Profile in the Farms &amp; Suppliers directory." width="1200" height="800" loading="lazy" decoding="async" />
         </picture>
         <div className={styles.steps}><p className={styles.eyebrow}>HOW IT WORKS</p><h2 id="how-title">Simple as 1, 2, 3.</h2><ol><li><span>1</span><div><h3>Search</h3><p>Browse farms, produce, agricultural suppliers and services.</p></div></li><li><span>2</span><div><h3>Enquire</h3><p>{buyerRequests.available ? "Send a private request with the product, quantity and area you need." : "Buyer requests are currently closed."}</p></div></li><li><span>3</span><div><h3>Connect</h3><p>Ghana Growers reviews requests and coordinates introductions where possible.</p></div></li></ol></div>
       </section>
       <nav aria-label="Homepage quick access" className={styles.dock}>
-          <Link href="/farmer-directory"><Wheat />Farms</Link>
-          <Link href="/supplier-directory"><Store />Suppliers</Link>
+          <Link href="/directory?scope=farms"><Wheat />Farms</Link>
+          <Link href="/directory?scope=suppliers"><Store />Suppliers</Link>
           <Link href="/farmer-hub" className={styles.dockAsk}><i><Sprout /></i>Mama G</Link>
           <Link href="/submit-buyer-request" aria-label={buyerRequests.available ? "Request — submit a private buyer request" : "Request — enquiries currently closed"}><ClipboardList />Request{!buyerRequests.available && <small>Closed</small>}</Link>
           <a href="https://wa.me/233208508868" target="_blank" rel="noopener noreferrer"><MessagesSquare aria-hidden="true" />WhatsApp</a>

@@ -2,8 +2,20 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { directoryFilters, directoryQuery, directoryReturn } from "../src/lib/directoryNavigation";
+import { publicSupplierBadge } from "../src/lib/publicDirectoryBadge";
 
 const file = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
+
+test("Directory keeps filters in same-origin return links and uses only recorded supplier categories", () => {
+  assert.deepEqual(directoryFilters({scope: "//elsewhere.test", q: [" maize "]}), {scope:"all", q:"maize"});
+  assert.equal(directoryReturn({from:"directory", scope:"suppliers", q:"Seeds & tools"}), "/directory?scope=suppliers&q=Seeds+%26+tools");
+  assert.equal(directoryReturn({from:"https://elsewhere.test"}), undefined);
+  assert.equal(directoryQuery("all", "", true), "?from=directory");
+  assert.equal(publicSupplierBadge("Seeds"), "Supplier");
+  assert.equal(publicSupplierBadge("Logistics & Transport"), "Service provider");
+  for (const value of [null, "Other", "Seeds, Logistics", "services for farms"]) assert.equal(publicSupplierBadge(value), "Supplier / service");
+});
 
 test("Gate A public navigation omits Stage 2 Market and deferred Learn", () => {
   const shell = file("src/components/homepage/Stage1PublicShell.tsx");
@@ -79,7 +91,7 @@ test("Homepage keeps one approved illustration across five independently selecta
 
 test("Homepage keeps independent founder-approved entry destinations", () => {
   const page = file("src/components/homepage/Stage1Homepage.tsx");
-  for (const href of ["/join", "/join/farmer", "/become-a-supplier", "/submit-listing", "/submit-buyer-request", "/farmer-directory", "/supplier-directory"]) {
+  for (const href of ["/join", "/join/farmer", "/become-a-supplier", "/submit-listing", "/submit-buyer-request", "/directory?scope=farms", "/directory?scope=suppliers"]) {
     assert.ok(page.includes(`href="${href}"`), href);
   }
   assert.match(page, /disabled aria-describedby="buyer-availability">Submit Buyer Request/);

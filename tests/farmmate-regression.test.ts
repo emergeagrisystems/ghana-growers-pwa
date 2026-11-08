@@ -2247,7 +2247,7 @@ const tests: TestCase[] = [
         assert.ok(position >= 0, gateASections[index]);
         if (index) assert.ok(position > gateAPositions[index - 1], "approved Gate A section order");
       });
-      ["<EcosystemHeadline />", "<MamaGShowcase", "getFarmersData()", "getSuppliersData()", "maize-table-desktop.webp"].forEach((text) => assert.ok(page.includes(text), text));
+      ["<EcosystemHeadline />", "<MamaGShowcase", "getFarmersData()", "getSuppliersData()", "how-it-works-view-profile-desktop.webp"].forEach((text) => assert.ok(page.includes(text), text));
       assert.ok(page.includes('farmerResult.status === "ready"'));
       assert.ok(page.includes('farmerResult.status === "unavailable"'));
       assert.ok(styles.includes("focus-visible"));
@@ -2451,7 +2451,8 @@ const tests: TestCase[] = [
       const notFound = repoFile("src/app/not-found.tsx");
       const publicError = repoFile("src/app/error.tsx");
 
-      assert.equal(supplierPage.includes("Agricultural supplier profiles are coming soon."), true);
+      assert.equal(supplierPage.includes('title="Suppliers & Services"'), true);
+      assert.equal(supplierPage.includes('result.status === "unavailable"'), true);
       assert.equal(supplierDirectory.includes("No public supplier profiles yet."), true);
       assert.equal(supplierDirectory.includes("Approved profiles will appear here as they become available."), true);
       assert.equal(notFound.includes("This page could not be found."), true);
@@ -9422,8 +9423,9 @@ const tests: TestCase[] = [
       assert.equal(farmerProfile.includes("cleanFarmerLocation(farmer)"), true);
       assert.equal(repoFile("src/lib/adminProfileEditor.ts").includes("publicLocation: cleanFarmerLocation(preview)"), true);
 
-      assert.equal(directory.includes("Explore the Ghana Growers Directory."), true);
-      assert.equal(directory.includes("Supplier profiles coming soon"), true);
+      assert.equal(directory.includes("Farms &amp; Suppliers"), true);
+      assert.equal(directory.includes("getSuppliersData()"), true);
+      assert.equal(directory.includes("Supplier profiles coming soon"), false);
       assert.equal(directory.includes("across Ghana"), false);
       assert.equal(farmerDirectory.includes("Meet farmers on Ghana Growers."), true);
       assert.equal(farmerDirectory.includes("Across Ghana"), false);

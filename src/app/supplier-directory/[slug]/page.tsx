@@ -1,3 +1,4 @@
+import { directoryReturn, type DirectorySearchParams } from "@/lib/directoryNavigation";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -22,6 +23,7 @@ import type { Product, PublicSupplierProfile } from "@/types";
 export const dynamic = "force-dynamic";
 
 type SupplierProfilePageProps = {
+  searchParams?: DirectorySearchParams;
   params: {
     slug: string;
   };
@@ -111,7 +113,8 @@ function listingMatchesSupplier(listing: Product, supplier: PublicSupplierProfil
   );
 }
 
-export default async function SupplierProfilePage({ params }: SupplierProfilePageProps) {
+export default async function SupplierProfilePage({ params, searchParams }: SupplierProfilePageProps) {
+  const returnTo = directoryReturn(searchParams);
   const [supplierResult, marketplaceProducts] = await Promise.all([
     getSuppliersData(),
     getMarketplaceListingsData()
@@ -225,7 +228,7 @@ export default async function SupplierProfilePage({ params }: SupplierProfilePag
                 <p className="text-sm font-black uppercase tracking-wide text-earth-700">Supplier Snapshot</p>
                 <h2 className="mt-2 text-2xl font-black text-ink">Service readiness at a glance</h2>
               </div>
-              <Link href="/supplier-directory" className="text-sm font-black text-leaf-700 hover:text-leaf-800">
+              <Link href={returnTo ?? "/supplier-directory"} className="text-sm font-black text-leaf-700 hover:text-leaf-800">
                 Back to Directory
               </Link>
             </div>

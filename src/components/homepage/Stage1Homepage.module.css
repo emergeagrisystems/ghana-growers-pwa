@@ -358,6 +358,6 @@
   .categoryRail article { scroll-snap-stop: always; }
   .featureColumn { width: 100%; gap: 16px; }
   .mamaFeatures li { padding: 12px 0; }
-  .registrationMedia, .collectionPhoto img { aspect-ratio: 4 / 3; }
+  .registrationMedia { aspect-ratio: 4 / 3; }
   .registrationMedia { min-height: 0; }
 }
