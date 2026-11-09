@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { adminDestinations } from "@/lib/adminDestinations";
+import s from "./staff.module.css";
+export function Tools(){return <><header className={s.title}><div><small>Staff workspace</small><h1>All admin tools</h1></div></header><div className={s.tools}><section className={s.panel}><h2>Staff work</h2>{[["Profiles","/admin?view=profiles"],["Private buyer requests","/admin?view=buyer"],["Product submissions","/admin/listing-submissions"],["Farmer import","/admin/import/farmers"],["Launch checklist","/admin/launch-checklist"],["Buyers","/admin?section=buyers"],["Market prices","/admin?section=market-prices"]].map(([name,url])=><Link key={name} href={url}>{name}</Link>)}</section>{adminDestinations.map(g=><section key={g.group} className={s.panel}><h2>{g.group}</h2>{g.items.map(i=><Link href={"/admin?tool="+i.key} key={i.key}>{i.label}</Link>)}</section>)}</div></>}

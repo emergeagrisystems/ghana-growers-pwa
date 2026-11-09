@@ -1,5 +1,6 @@
 import "server-only";
 
+import {orderedGallery} from "@/lib/profileGalleryOrder";
 import { logAdminActivity, type AdminActionType } from "@/lib/adminActivity";
 import {
   featuredIsCurrentlyPublic,
@@ -313,7 +314,7 @@ export async function saveAdminProfile({
 
   const loaded = await loadAdminProfile(kind, recordKey);
   if (!loaded.record) return loaded;
-  if (kind === "farmer" && (!version || loaded.record.updated_at !== version)) {
+  if (!version || loaded.record.updated_at !== version) {
     return { status: 409, error: "This profile was changed by another administrator. Reload before saving." };
   }
   if ("slug" in patch) {
@@ -329,26 +330,18 @@ export async function saveAdminProfile({
   if (kind === "farmer" && promotion.promoted.length) {
     const farmer = loaded.record as FarmerProfileRecord;
     const mainImages = promotion.promoted.filter((item) => item.target === "profile_image_url");
-    const farmImages = promotion.promoted.filter((item) => item.target === "farm_photo_urls").map((item) => item.publicUrl);
-    const produceImages = promotion.promoted.filter((item) => item.target === "produce_photo_urls").map((item) => item.publicUrl);
+    const farmImages = promotion.promoted.filter((item) => item.target === "farm_photo_urls");
+    const produceImages = promotion.promoted.filter((item) => item.target === "produce_photo_urls");
     if (mainImages.length) patch.profile_image_url = mainImages.at(-1)?.publicUrl;
-    if (farmImages.length) patch.farm_photo_urls = Array.from(new Set([
-      ...uniqueTextValues(patch.farm_photo_urls ?? farmer.farm_photo_urls),
-      ...farmImages
-    ]));
-    if (produceImages.length) patch.produce_photo_urls = Array.from(new Set([
-      ...uniqueTextValues(patch.produce_photo_urls ?? farmer.produce_photo_urls),
-      ...produceImages
-    ]));
+    if (farmImages.length) patch.farm_photo_urls = orderedGallery(uniqueTextValues(patch.farm_photo_urls ?? farmer.farm_photo_urls), farmImages);
+    if (produceImages.length) patch.produce_photo_urls = orderedGallery(uniqueTextValues(patch.produce_photo_urls ?? farmer.produce_photo_urls), produceImages);
     patch.launch_checklist = { ...farmer.launch_checklist, ...cleanChecklist(patch.launch_checklist), approvedNoPhoto: false };
   }
   const table = kind === "farmer" ? "farmers" : "suppliers";
-  const filter = kind === "farmer"
-    ? `id=eq.${encodeURIComponent(loaded.record.id)}&updated_at=eq.${encodeURIComponent(version!)}`
-    : `id=eq.${encodeURIComponent(loaded.record.id)}`;
-  const update = await updateSupabaseRecord(table, filter, patch);
+  const filter = `id=eq.${encodeURIComponent(loaded.record.id)}&updated_at=eq.${encodeURIComponent(version)}`;
+  const update = await updateSupabaseRecord(table, filter, patch).catch(() => ({status:503,error:"Update outcome unavailable.",data:undefined}));
   if (update.error) {
-    if (promotion.promoted.length) await cleanupPromotedFarmerProfileMedia(promotion.promoted, true);
+    // An uncertain acknowledgement can follow a committed write. Preserve both copies.
     if (/duplicate key|unique constraint|already exists/i.test(update.error) && "slug" in patch) {
       return {
         status: 409,
@@ -356,11 +349,11 @@ export async function saveAdminProfile({
         errors: { slug: "This public URL slug is already in use." }
       };
     }
-    return { status: update.status, error: "Profile changes could not be saved.", stagedMediaDiscarded: promotion.promoted.length > 0 };
+    return { status: update.status, error: "Save outcome could not be confirmed. Your draft is retained. Check the profile in a separate tab before retrying." };
   }
-  if (kind === "farmer" && !update.data) {
-    if (promotion.promoted.length) await cleanupPromotedFarmerProfileMedia(promotion.promoted, true);
-    return { status: 409, error: "This profile was changed by another administrator. Reload before saving.", stagedMediaDiscarded: promotion.promoted.length > 0 };
+  if (!update.data) {
+    if (promotion.promoted.length) await cleanupPromotedFarmerProfileMedia(promotion.promoted, false);
+    return { status: 409, error: "This profile was changed by another administrator. Reload before saving."  };
   }
   if (promotion.promoted.length) {
     const cleanup = await finalizeFarmerProfileStaging(loaded.record.id, promotion.promoted);
@@ -415,16 +408,19 @@ export async function transitionAdminProfile({
   kind,
   recordKey,
   transition,
+  version,
   adminEmail
 }: {
   kind: ProfileEditorKind;
   recordKey: string;
   transition: ProfileTransition;
+  version:string;
   adminEmail: string;
 }) {
   const loaded = await loadAdminProfile(kind, recordKey);
   if (!loaded.record) return loaded;
   const record = loaded.record;
+  if(record.updated_at!==version)return {status:409,error:"Profile changed. Reload before reviewing."};
   const checks = await evaluateProfileReadiness(kind, record);
 
   if (transition === "verify" && record.verification_status === "Verified") {
@@ -444,8 +440,9 @@ export async function transitionAdminProfile({
   const unchanged = Object.entries(patch).every(([key, value]) => record[key as keyof ProfileEditorRecord] === value);
   if (!unchanged) {
     const table = kind === "farmer" ? "farmers" : "suppliers";
-    const update = await updateSupabaseRecord(table, `id=eq.${encodeURIComponent(record.id)}`, patch);
+    const update = await updateSupabaseRecord(table, `id=eq.${encodeURIComponent(record.id)}&updated_at=eq.${encodeURIComponent(version)}`, patch);
     if (update.error) return { status: update.status, error: "Profile status could not be updated." };
+    if(!update.data)return {status:409,error:"Profile changed. Reload before reviewing."};
     await logAdminActivity({
       adminEmail,
       actionType: transitionAction(transition),

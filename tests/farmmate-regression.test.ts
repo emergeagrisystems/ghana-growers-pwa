@@ -1767,7 +1767,7 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes('"Contact started"'), false);
       assert.equal(adminDashboard.includes('"Waiting for first response"'), false);
       assert.equal(adminDashboard.includes('state.status !== "New"'), false);
-      assert.equal(adminDashboard.includes('detail: buyerContacted ? "Buyer contact recorded" : "Not recorded"'), true);
+      assert.equal(adminDashboard.includes('detail: buyerContacted ? "Contact action logged; reply unverified" : "No legacy contact recorded"'), true);
       assert.equal(adminDashboard.includes('detail: matchReviewed ? "Match review recorded" : "Not started"'), true);
       assert.equal(adminDashboard.includes('detail: availabilityConfirmed ? "Availability confirmed" : "Not confirmed"'), true);
       assert.equal(adminDashboard.includes('sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows)'), true);
@@ -1830,7 +1830,7 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes('selectedSourcingCaseTab === "Activity"'), true);
       assert.equal(adminDashboard.includes("Primary action"), true);
       assert.equal(adminDashboard.includes('onClick={() => setSelectedSourcingCaseTab("Matches")}'), true);
-      assert.equal(adminDashboard.includes("SLA / Response Deadline"), true);
+      assert.equal(adminDashboard.includes("Shared first-reply evidence is unavailable."), true);
       assert.equal(adminDashboard.includes("Request Source"), true);
       assert.equal(adminDashboard.includes("Buyer / Company"), true);
       assert.equal(adminDashboard.includes("Operational Status"), false);
@@ -1902,26 +1902,26 @@ const tests: TestCase[] = [
       ];
 
       for (const group of expectedGroups) {
-        assert.equal(adminDashboard.includes(`group: "${group}"`), true);
+        assert.equal(repoFile("src/lib/adminDestinations.ts").includes(`group: "${group}"`), true);
       }
 
       for (const item of expectedItems) {
-        assert.equal(adminDashboard.includes(`label: "${item}"`), true);
+        assert.equal(repoFile("src/lib/adminDestinations.ts").includes(`label: "${item}"`), true);
       }
 
       assert.equal(adminDashboard.includes("expandedNavigationGroup"), true);
       assert.equal(adminDashboard.includes("const isExpanded = expandedNavigationGroup === group.group || groupHasActiveItem;"), true);
       assert.equal(adminDashboard.includes("aria-expanded={isExpanded}"), true);
       assert.equal(adminDashboard.includes("openAdminNavigationItem(item, group.group)"), true);
-      assert.equal(adminDashboard.includes('key: "buyer-matches", id: "match-opportunities", label: "Matches"'), true);
-      assert.equal(adminDashboard.includes('group: "Buyer Requests"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('key: "buyer-matches", id: "match-opportunities", label: "Matches"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('group: "Buyer Requests"'), true);
       assert.equal(adminDashboard.includes('const groupHasActiveItem = group.items.some((item) => item.key === activeNavigationKey);'), true);
-      assert.equal(adminDashboard.includes('analyticsView: "operations"'), true);
-      assert.equal(adminDashboard.includes('analyticsView: "analytics"'), true);
-      assert.equal(adminDashboard.includes('applicationTab: "farmer"'), true);
-      assert.equal(adminDashboard.includes('applicationTab: "supplier"'), true);
-      assert.equal(adminDashboard.includes('produceRequestStatusFilter: "Pending Review"'), true);
-      assert.equal(adminDashboard.includes('sourcingQueueFilter: "All"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('analyticsView: "operations"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('analyticsView: "analytics"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('applicationTab: "farmer"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('applicationTab: "supplier"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('produceRequestStatusFilter: "Pending Review"'), true);
+      assert.equal(repoFile("src/lib/adminDestinations.ts").includes('sourcingQueueFilter: "All"'), true);
     }
   },
   {
@@ -9321,10 +9321,10 @@ const tests: TestCase[] = [
       const editor = repoFile("src/components/AdminProfileEditor.tsx");
 
       assert.equal(route.includes("version?: string"), true);
-      assert.equal(route.includes('body.kind === "farmer" && !body.version'), true);
-      assert.equal(editor.includes('version: kind === "farmer" ? baseline.updated_at : undefined'), true);
-      assert.equal(service.includes('kind === "farmer" && (!version || loaded.record.updated_at !== version)'), true);
-      assert.equal(service.includes("updated_at=eq.${encodeURIComponent(version!)}"), true);
+      assert.equal(route.includes('!body.version'), true);
+      assert.equal(editor.includes('version: baseline.updated_at'), true);
+      assert.equal(service.includes('!version || loaded.record.updated_at !== version'), true);
+      assert.equal(service.includes("updated_at=eq.${encodeURIComponent(version)}"), true);
       assert.equal(service.includes("This profile was changed by another administrator. Reload before saving."), true);
       assert.equal(service.includes('errors: { slug: "This public URL slug is already in use." }'), true);
       assert.equal(editor.includes("setFieldErrors(result?.errors ?? {})"), true);
@@ -9343,8 +9343,9 @@ const tests: TestCase[] = [
       assert.equal(media.includes("createSupabaseStorageSignedUrl"), true);
       assert.equal(media.includes("verifiedDigest !== sourceDigest"), true);
       assert.equal(mediaRoute.includes("requireAdminUser"), true);
-      assert.equal(service.includes("cleanupPromotedFarmerProfileMedia(promotion.promoted, true)"), true);
-      assert.equal(service.includes("stagedMediaDiscarded"), true);
+      assert.equal(service.includes("cleanupPromotedFarmerProfileMedia(promotion.promoted, false)"), true);
+      assert.equal(service.includes("stagedMediaDiscarded"), false);
+      assert.equal(media.includes('randomUUID().replace(/-/g,"").slice(0,20)'), true);
       assert.equal(editor.includes("stagedFarmerMedia"), true);
       assert.equal(editor.includes("Existing profile media will not be deleted."), true);
       assert.equal(editor.includes("beforeunload"), true);

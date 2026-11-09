@@ -13,9 +13,10 @@ export const metadata = {
 };
 
 export default async function AdminProfileEditorPage({
-  params
+  params, searchParams
 }: {
   params: { kind: string; recordKey: string };
+  searchParams: {tab?:string};
 }) {
   const currentAdmin = await getAdminUserFromAccessToken(cookies().get(adminAccessCookie)?.value);
   if (!currentAdmin) redirect("/admin/login");
@@ -25,7 +26,7 @@ export default async function AdminProfileEditorPage({
     <AdminProfileEditor
       kind={params.kind as ProfileEditorKind}
       recordKey={decodeURIComponent(params.recordKey)}
-      currentAdmin={currentAdmin}
+      initialPreview={searchParams.tab==="preview"} currentAdmin={currentAdmin}
     />
   );
 }

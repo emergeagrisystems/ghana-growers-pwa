@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
 import { uploadSupabaseStorageObject } from "@/lib/supabase/admin";
 
-const allowedBuckets = new Set(["farmers", "suppliers", "marketplace", "stories"]);
+const allowedBuckets = new Set(["marketplace", "stories"]);
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxSize = 5 * 1024 * 1024;
 
@@ -73,6 +73,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Image file and storage bucket are required." }, { status: 400 });
   }
 
+  if (bucket === "farmers") return NextResponse.json({error:"Use private staging in the farmer profile editor."},{status:409});
+  if (bucket === "suppliers") return NextResponse.json({error:"Supplier images must remain private until a confirmed profile save. Upload is unavailable."},{status:409});
   if (!allowedBuckets.has(bucket)) {
     return NextResponse.json({ error: "Unsupported image upload bucket." }, { status: 400 });
   }

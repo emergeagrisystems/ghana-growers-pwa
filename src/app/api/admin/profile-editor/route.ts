@@ -57,8 +57,8 @@ export async function PATCH(request: Request) {
     version?: string;
     stagedMedia?: StagedFarmerProfileMedia[];
   };
-  if (!body.kind || !kinds.has(body.kind) || !body.id || !body.changes || typeof body.changes !== "object" || (body.kind === "farmer" && !body.version)) {
-    return noStore({ error: "Profile type, record ID, changes, and the loaded farmer version are required." }, { status: 400 });
+  if (!body.kind || !kinds.has(body.kind) || !body.id || !body.changes || typeof body.changes !== "object" || !body.version) {
+    return noStore({ error: "Profile type, record ID, changes, and the loaded profile version are required." }, { status: 400 });
   }
 
   const result = await saveAdminProfile({
@@ -77,8 +77,7 @@ export async function PATCH(request: Request) {
     });
     return noStore({
       error: result.error ?? "Profile changes could not be saved.",
-      errors: "errors" in result ? result.errors : undefined,
-      stagedMediaDiscarded: "stagedMediaDiscarded" in result ? result.stagedMediaDiscarded : undefined
+      errors: "errors" in result ? result.errors : undefined
     }, { status: result.status });
   }
   return noStore(result.data);
@@ -93,6 +92,7 @@ export async function POST(request: Request) {
     kind?: ProfileEditorKind;
     id?: string;
     transition?: ProfileTransition;
+    version?:string;
   };
   if (!body.kind || !kinds.has(body.kind) || !body.id) {
     return noStore({ error: "Profile type and record ID are required." }, { status: 400 });
@@ -120,13 +120,14 @@ export async function POST(request: Request) {
     return noStore({ profileId: result.profileId, reused: result.reused === true });
   }
 
-  if (body.action !== "transition" || !body.transition || !transitions.has(body.transition)) {
+  if (body.action !== "transition" || !body.transition || !body.version || !transitions.has(body.transition)) {
     return noStore({ error: "A valid protected profile transition is required." }, { status: 400 });
   }
   const result = await transitionAdminProfile({
     kind: body.kind,
     recordKey: body.id,
     transition: body.transition,
+    version:body.version,
     adminEmail: adminUser.email
   });
   if (!("data" in result)) {

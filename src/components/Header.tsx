@@ -26,7 +26,7 @@ function PilotHeader() {
 export function Header({ showFullNavigation = true, buyerRequestsOpen }: { showFullNavigation?: boolean; buyerRequestsOpen: boolean }) {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/admin/profiles/")) {
+  if (pathname === "/admin" || pathname.startsWith("/admin/profiles/")) {
     return null;
   }
 
