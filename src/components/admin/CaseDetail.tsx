@@ -4,7 +4,7 @@ import { contactNumber,contactHref,crmPersistenceNotice,firstReplyState } from "
 import type { IntakeRow } from "@/lib/adminReadModel";
 import s from "./staff.module.css";
 import {prepareHandover} from "@/lib/adminHandover";
-import {CaseDraftEditor} from "./CaseDraftEditor";
+import {CaseActivities} from "./CaseActivities";
 
 type Contact={name:string;phone:string;whatsapp:string};
 function ContactActions({recipient,contact,reference}:{recipient:"buyer"|"seller";contact:Contact;reference:string}) {
@@ -25,19 +25,20 @@ export function CaseDetail({row,back,sharedCaseEnabled}:{sharedCaseEnabled:boole
   const history=useRef<HTMLDialogElement>(null);
   async function checkSeller(){setLoading(true);try{const r=await fetch("/api/admin/case-seller?case="+row.id,{cache:"no-store"});if(!r.ok)throw Error();setSeller(await r.json());setSellerError("")}catch{setSellerError("Could not load the linked seller. You can retry.")}finally{setLoading(false)}}
   const reply=firstReplyState(row.received,new Date(),undefined,null);
+  const buyerActions=<ContactActions recipient="buyer" contact={row} reference={row.reference}/>;
+  const sellerActions=<>{seller?<ContactActions recipient="seller" contact={seller} reference={row.reference}/>:row.sellerId?<button disabled={loading} onClick={checkSeller}>View linked seller contact</button>:<p>No seller profile is linked to this request.</p>}
+    {sellerError&&<p role="alert">{sellerError}</p>}</>;
   return <><button className={s.back} onClick={()=>{if(!(note||next||due)||window.confirm("Discard this unsaved handover draft and return to the list?"))back()}}>← Back to results</button>
     <header className={s.title}><div><small>{row.reference} · {row.status}</small><h1>{row.name||"Buyer request"}</h1></div><button onClick={()=>history.current?.showModal()}>Buyer history</button></header>
     <section className={s.panel}><h2>Buyer request</h2><dl className={s.facts}>{Object.entries({"Product":row.product,"Quantity":row.quantity,"Delivery location":row.location,"Requested delivery":row.delivery,"Buyer’s message":row.message,"Contact person":row.contactName}).map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v||"Not supplied"}</dd></div>)}</dl></section>
-    <section className={s.panel}><ContactActions recipient="buyer" contact={row} reference={row.reference}/>
-    <p>First reply · {reply==="unavailable"?"Evidence unavailable":reply}. Opening a contact action leaves the reply outstanding.</p>
-    <button disabled>Record first reply</button> <button disabled>Record buyer contact</button></section>
-    <section className={s.panel}><h2>Seller availability</h2>{seller?<ContactActions recipient="seller" contact={seller} reference={row.reference}/>:row.sellerId?<button disabled={loading} onClick={checkSeller}>View linked seller contact</button>:<p>No seller profile is linked to this request.</p>}
-    {sellerError&&<p role="alert">{sellerError}</p>}<button disabled>Record seller contact</button></section>
-    {sharedCaseEnabled ?
-      <CaseDraftEditor id={row.id} note={note} next={next} due={due} setNote={setNote} setNext={setNext} setDue={setDue}/> :
+    {sharedCaseEnabled?<CaseActivities id={row.id} received={row.received} historyDialog={history} buyerActions={buyerActions} sellerActions={sellerActions}
+      note={note} next={next} due={due} setNote={setNote} setNext={setNext} setDue={setDue}/>:<>
+    <section className={s.panel}>{buyerActions}<p>First reply · {reply==="unavailable"?"Evidence unavailable":reply}. Opening a contact action leaves the reply outstanding.</p>
+      <button disabled>Record first reply</button> <button disabled>Record buyer contact</button></section>
+    <section className={s.panel}><h2>Seller availability</h2>{sellerActions}<button disabled>Record seller contact</button></section>
     <section className={s.panel}><h2>Handover</h2><p>{crmPersistenceNotice}</p><p>Owner · Unavailable</p><button disabled>Claim case</button>
     <div className={s.fields}><label>Private note · unsaved draft<textarea maxLength={2000} value={note} onChange={e=>setNote(e.target.value)} /></label><label>Next action<input maxLength={300} value={next} onChange={e=>setNext(e.target.value)}/></label><label>Staff follow-up · GMT<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label></div><button disabled>Save handover</button>
-    {(note||next||due)&&<p role="status">{"error" in handover?handover.error+" ":""}Unsaved. Keep this page open to retain the draft.</p>}</section>}
+    {(note||next||due)&&<p role="status">{"error" in handover?handover.error+" ":""}Unsaved. Keep this page open to retain the draft.</p>}</section>
     <section className={s.panel}><h2>Case timeline</h2><p>Request received {new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Accra"}).format(new Date(row.received))} GMT.</p><p>Shared case events and outcomes are unavailable.</p></section>
-    <dialog className={s.history} ref={history} aria-label="Buyer history"><button autoFocus onClick={()=>history.current?.close()}>Close history</button><h2>Buyer history</h2><p>Confirmed links are unavailable. Similar names and numbers cannot establish buyer identity.</p><button disabled>Confirm buyer link</button> <button disabled>Unlink buyer</button></dialog></>;
+    <dialog className={s.history} ref={history} aria-label="Buyer history"><button autoFocus onClick={()=>history.current?.close()}>Close history</button><h2>Buyer history</h2><p>Confirmed links are unavailable. Similar names and numbers cannot establish buyer identity.</p><button disabled>Confirm buyer link</button> <button disabled>Unlink buyer</button></dialog></>}</>;
 }

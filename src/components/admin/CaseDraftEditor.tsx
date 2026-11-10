@@ -1,48 +1,19 @@
 "use client";
-import {useCallback,useEffect,useState} from "react";
+import type {CaseWork} from "./useCaseWork";
 import {prepareHandover} from "@/lib/adminHandover";
 import s from "./staff.module.css";
 
-type Current={version:number;owned:boolean;mine:boolean;note:string|null;next:string|null;due:string|null};
-type Intent={id:string;operation:string;version:number;kind:string;input:Record<string,unknown>};
-type Props={id:string;note:string;next:string;due:string;setNote:(s:string)=>void;setNext:(s:string)=>void;setDue:(s:string)=>void};
-export function CaseDraftEditor({id,note,next,due,setNote,setNext,setDue}:Props){
-  const [current,setCurrent]=useState<Current|null>(null),[busy,setBusy]=useState(false);
-  const [message,setMessage]=useState(""),[conflict,setConflict]=useState(false),[unknown,setUnknown]=useState<Intent|null>(null);
-  const load=useCallback(async()=>{
-    const r=await fetch("/api/admin/case-work?id="+encodeURIComponent(id),{cache:"no-store"});
-    if(!r.ok)throw Error();
-    const data=await r.json(); if(data.id!==id||!Number.isSafeInteger(data.version))throw Error();
-    return data as Current;
-  },[id]);
-  useEffect(()=>{let active=true;load().then(x=>{if(active)setCurrent(x)}).catch(()=>{if(active)setMessage("Could not load the current case.")});return()=>{active=false};
-  },[load]);
-  async function review(){
-    setBusy(true);
-    try{setCurrent(await load());setConflict(false);setMessage("Latest case loaded. Review it alongside your draft before saving.");}
-    catch{setMessage("Could not load the latest case. Your draft is retained.");}
-    finally{setBusy(false);}
-  }
+export type HandoverFields={note:string;next:string;due:string;setNote:(s:string)=>void;setNext:(s:string)=>void;setDue:(s:string)=>void};
+export function CaseDraftEditor({work,note,next,due,setNote,setNext,setDue}:HandoverFields & {work:CaseWork}){
+  const {current,busy,conflict,unknown,message,review}=work;
   async function submit(claim=false){
-    if(!current||busy||conflict)return;
     const draft=prepareHandover({note,nextAction:next,dueLocal:due});
     if(!claim&&!unknown&&("error" in draft || (next.trim()&&!draft.dueAt))){
-      setMessage("error" in draft?draft.error!:"Enter the follow-up date and time.");return;
+      work.setMessage("error" in draft?draft.error!:"Enter the follow-up date and time.");return;
     }
-    const intent=unknown??{id,operation:crypto.randomUUID(),version:current.version,kind:claim?"claim":next.trim()?"follow_up_set":"note",
-      input:claim?{}:{...(note.trim()?{note:note.trim()}:{}),...(next.trim()?{next_action:next.trim(),due_at:draft.dueAt}:{})}};
-    setBusy(true);
-    try{
-      const r=await fetch("/api/admin/case-work",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(intent)});
-      const data=await r.json();
-      if(r.status===409){setUnknown(null);setConflict(true);setMessage(data.error);return;}
-      if(!r.ok){if(r.status>=500)throw Error();setUnknown(null);setMessage(data.error||"Check the request before saving.");return;}
-      if(data.operation_id!==intent.operation)throw Error();
-      setUnknown(null);setCurrent(null);
-      if(intent.kind!=="claim"){setNote("");setNext("");setDue("");}
-      setMessage("Saved.");try{setCurrent(await load());}catch{setMessage("Saved. Reload the latest case to continue.");}
-    }catch{setUnknown(intent);setMessage("Outcome unknown. Your draft is retained. Retry this same operation.");}
-    finally{setBusy(false);}
+    const kind=claim?"claim":next.trim()?"follow_up_set":"note";
+    const input=claim?{}:{...(note.trim()?{note:note.trim()}:{}),...(next.trim()?{next_action:next.trim(),due_at:draft.dueAt}:{})};
+    if(await work.save(kind,input) && (unknown?.kind??kind)!=="claim"){setNote("");setNext("");setDue("");}
   }
   return <section className={s.panel}><h2>Handover</h2>
     {current&&<div><p>{current.mine?"Assigned to you":current.owned?"Assigned to another staff member":"Unclaimed"}</p>
