@@ -10,7 +10,7 @@ import {
 } from "@/lib/marketplace/publicListings";
 import { marketplacePriceLine, marketplaceQuantityLabel, marketplaceQuantityLine, usesCustomMarketplaceUnit } from "@/lib/marketplace/trade";
 import { cleanSupplierLocation, isPublicSupplierProfile, supplierProducts } from "@/lib/supplierDirectory";
-import { callSupabaseRpc, insertSupabaseRecord, selectSupabaseRecords, updateSupabaseRecord } from "@/lib/supabase/admin";
+import { callSupabaseRpc, insertSupabaseRecord, selectSupabaseRecords } from "@/lib/supabase/admin";
 import type { FarmerProfile, Product, SupplierProfile } from "@/types";
 
 export type LeadRequestStatus = "New" | "Contacted" | "Negotiating" | "Completed" | "Lost";
@@ -33,6 +33,7 @@ export type LeadRequestSnapshot = {
 
 export type LeadRequestRecord = {
   id: string;
+  updated_at: string;
   created_at: string;
   requester_name: string;
   phone: string;
@@ -195,7 +196,7 @@ type VerifiedMarketplaceListing = {
 type VerifiedMarketplaceListingResult = VerifiedMarketplaceListing | { error: string };
 
 const allowedSourceTypes = new Set<LeadRequestSourceType>(["Farmer", "Supplier", "Marketplace Listing", "Supplier Listing", "Buyer Request"]);
-const allowedStatuses = new Set<LeadRequestStatus>(["New", "Contacted", "Negotiating", "Completed", "Lost"]);
+export const allowedStatuses = new Set<LeadRequestStatus>(["New", "Contacted", "Negotiating", "Completed", "Lost"]);
 const leadRequestWindowSeconds = 10 * 60;
 const maxLeadRequestsPerWindow = 5;
 const dedupeWindowMinutes = 30;
@@ -936,6 +937,7 @@ export async function getRecentLeadRequests(limit = 250) {
   const safeLimit = Math.min(Math.max(limit, 1), 250);
   const selectFields = [
     "id",
+    "updated_at",
     "created_at",
     "requester_name",
     "phone",
@@ -965,34 +967,4 @@ export async function getRecentLeadRequests(limit = 250) {
     "lead_requests",
     `select=${selectFields}&order=created_at.desc&limit=${safeLimit}`
   );
-}
-
-export async function updateLeadRequestStatus({
-  id,
-  status,
-  adminEmail
-}: {
-  id: string;
-  status: LeadRequestStatus;
-  adminEmail: string;
-}) {
-  if (!allowedStatuses.has(status)) {
-    return { status: 400, error: "Choose a valid lead status." };
-  }
-
-  const update = await updateSupabaseRecord("lead_requests", `id=eq.${encodeURIComponent(id)}`, { status });
-
-  if (!update.error) {
-    const actionType = status === "Contacted" ? "Contact" : status === "Completed" ? "Complete" : status === "Lost" ? "Close" : "Edit";
-
-    await logAdminActivity({
-      adminEmail,
-      actionType,
-      entityType: "Lead Request",
-      entityId: id,
-      entityName: `lead marked ${status}`
-    });
-  }
-
-  return update;
 }

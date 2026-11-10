@@ -46,12 +46,14 @@ export type AdminActivityLog = {
 };
 
 export async function logAdminActivity({
+  eventId,
   adminEmail,
   actionType,
   entityType,
   entityId,
   entityName
 }: {
+  eventId?: string;
   adminEmail: string;
   actionType: AdminActionType;
   entityType: AdminEntityType;
@@ -62,6 +64,7 @@ export async function logAdminActivity({
 
   try {
     const result = await insertSupabaseRecord("admin_activity_log", {
+      ...(eventId ? {id:eventId} : {}),
       admin_email: adminEmail,
       action_type: actionType,
       entity_type: entityType,

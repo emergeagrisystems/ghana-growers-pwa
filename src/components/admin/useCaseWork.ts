@@ -1,5 +1,6 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
+import {useRouter} from "next/navigation";
 
 export type Snapshot={
   id:string;version:number;owned:boolean;mine:boolean;note:string|null;next:string|null;due:string|null;
@@ -9,6 +10,7 @@ export type Snapshot={
 };
 type Intent={id:string;operation:string;version:number;kind:string;input:Record<string,unknown>;priorReference?:string};
 export function useCaseWork(id:string){
+  const router=useRouter();
   const [current,setCurrent]=useState<Snapshot|null>(null),[busy,setBusy]=useState(false);
   const [message,setMessage]=useState(""),[conflict,setConflict]=useState(false),[unknown,setUnknown]=useState<Intent|null>(null);
   const pending=useRef(false);
@@ -39,6 +41,7 @@ export function useCaseWork(id:string){
       if(data.operation_id!==intent.operation)throw Error();
       setUnknown(null);setMessage("Saved.");
       try{setCurrent(await load());}catch{setCurrent(null);setMessage("Saved. Reload the latest case to continue.");}
+      if(intent.kind==="follow_up_completed"||intent.kind==="follow_up_set") router.refresh();
       return true;
     }catch{setUnknown(intent);setMessage("Outcome unknown. Your draft is retained. Retry this same operation.");return false;}
     finally{pending.current=false;setBusy(false);}

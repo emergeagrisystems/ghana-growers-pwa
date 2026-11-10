@@ -27,7 +27,7 @@ export async function POST(request:Request) {
   const b=await request.json().catch(()=>null);
   if(!b || !idPattern.test(b.id) || !idPattern.test(b.operation) || !Number.isSafeInteger(b.version) || b.version<0
     || !b.input || typeof b.input!=="object" || Array.isArray(b.input)
-    || !["claim","note","follow_up_set","buyer_contact","seller_contact","link","unlink"].includes(b.kind))return reply({error:"Invalid case command."},400);
+    || !["claim","note","follow_up_set","follow_up_completed","buyer_contact","seller_contact","link","unlink"].includes(b.kind))return reply({error:"Invalid case command."},400);
   try{
     const client=staffClient();
     await checkContactTarget(client,staff.id,b.id,b.kind,b.input,b.priorReference);

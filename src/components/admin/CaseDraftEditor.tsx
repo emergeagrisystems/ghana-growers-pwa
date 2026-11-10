@@ -18,6 +18,10 @@ export function CaseDraftEditor({work,note,next,due,setNote,setNext,setDue}:Hand
   return <section className={s.panel}><h2>Handover</h2>
     {current&&<div><p>{current.mine?"Assigned to you":current.owned?"Assigned to another staff member":"Unclaimed"}</p>
       {current.note&&<p>Latest note · {current.note}</p>}{current.next&&<p>Next action · {current.next} {current.due&&new Date(current.due).toLocaleString("en-GB",{timeZone:"Africa/Accra"})} GMT</p>}</div>}
+    {current?.next&&current.due&&<div>
+      <button disabled={busy||conflict||!!unknown||!!(note||next||due)} onClick={()=>void work.save("follow_up_completed",{})}>Complete follow-up</button>
+      {(note||next||due)&&<p>Save or clear your draft before completing the saved follow-up.</p>}
+    </div>}
     {current&&!current.owned&&<button disabled={busy||conflict||!!unknown} onClick={()=>void submit(true)}>Claim case</button>}
     <fieldset disabled={busy||!!unknown} className={s.fields}><label>Private note<textarea value={note} maxLength={2000} onChange={e=>setNote(e.target.value)}/></label>
       <label>Next action<input value={next} maxLength={300} onChange={e=>setNext(e.target.value)}/></label>

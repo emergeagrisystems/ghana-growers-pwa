@@ -1,5 +1,6 @@
 "use client";
 
+import { LeadStatusEditor, type StatusSelection } from "@/components/admin/LeadStatusEditor";
 import { adminDestinations } from "@/lib/adminDestinations";
 import { contactHref, contactNumber } from "@/lib/adminCrm";
 
@@ -212,6 +213,7 @@ type LeadRequestSnapshot = {
 type FeaturedEnquiryStatus = "New" | "Contacted" | "Approved" | "Rejected" | "Closed";
 type LeadRequestRecord = {
   id: string;
+  updated_at: string;
   created_at: string;
   requester_name: string;
   phone: string;
@@ -2657,7 +2659,7 @@ function sourcingCaseFromLead(lead: LeadRequestRecord): SourcingCaseRecord | nul
     notes: lead.message,
     status: "Approved",
     created_at: lead.created_at,
-    updated_at: lead.created_at,
+    updated_at: lead.updated_at,
     case_source: "lead_request",
     lead_request_status: lead.status,
     request_source: lead.request_source,
@@ -4002,6 +4004,7 @@ export function AdminDashboard({
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
   const [whatsappLeadLoadState, setWhatsappLeadLoadState] = useState<OptionalQueueLoadState>("idle");
+  const [statusSelection,setStatusSelection]=useState<(StatusSelection & {sourcingStatus?:SourcingCaseStatus})|null>(null);
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -4202,11 +4205,11 @@ export function AdminDashboard({
     if (!response?.ok) {
       if (response?.status === 401) {
         window.location.href = "/admin/login";
-        return;
+        return false;
       }
 
       setLeadRequestError(result?.error ?? "Lead requests are unavailable.");
-      return;
+      return false;
     }
 
     const leads = (result?.leads ?? []).map((lead) => ({
@@ -4217,6 +4220,7 @@ export function AdminDashboard({
     setLeadRequests(leads);
     setSelectedLeadId((current) => current ?? leads[0]?.id ?? null);
     setLeadRequestError("");
+    return true;
   }, []);
 
   useEffect(() => {
@@ -6435,29 +6439,21 @@ export function AdminDashboard({
     return String(count);
   }
 
-  async function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus) {
-    const response = await fetch("/api/admin/lead-requests", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: lead.id, status })
-    }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+  function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus, sourcingStatus?:SourcingCaseStatus) {
+    setStatusSelection({id:lead.id,name:"requester_name" in lead?lead.requester_name:lead.buyer_name,
+      updated_at:lead.updated_at,status:normalizeLeadStatus("requester_name" in lead?lead.status:lead.lead_request_status??"New"),
+      requested:status,sourcingStatus});
+  }
 
-    if (!response?.ok) {
-      if (response?.status === 401) {
-        window.location.href = "/admin/login";
-        return;
-      }
-
-      setLeadRequestError(result?.error ?? "Could not update this lead request.");
-      return;
+  async function statusSaved(status:LeadRequestStatus){
+    if(!statusSelection || !await loadLeadRequests())return false;
+    if(statusSelection.sourcingStatus && status===statusSelection.requested){
+      updateSourcingCaseState(statusSelection.id,current=>({...current,status:statusSelection.sourcingStatus!}));
     }
-
-    setLeadRequests((current) => current.map((item) => (item.id === lead.id ? { ...item, status } : item)));
-    setLeadRequestError("");
-    setNotice(`${"requester_name" in lead ? lead.requester_name : lead.buyer_name} lead marked ${status}.`);
+    setNotice(statusSelection.name+" lead marked "+status+".");
     void loadActivity();
     void loadAnalytics();
+    return true;
   }
 
   async function updateFeaturedEnquiryStatus(enquiry: FeaturedEnquiryRecord, status: FeaturedEnquiryStatus) {
@@ -6825,27 +6821,12 @@ export function AdminDashboard({
   }
 
   async function setSourcingCaseStatus(caseItem: SourcingCaseRecord, status: SourcingCaseStatus) {
-    updateSourcingCaseState(caseItem.id, (current) => ({ ...current, status }));
-
     if (caseItem.case_source === "lead_request") {
-      if (status === "Completed") {
-        await updateLeadRequestStatus(caseItem, "Completed");
-        return;
-      }
-
-      if (status === "Closed") {
-        await updateLeadRequestStatus(caseItem, "Lost");
-        return;
-      }
-
-      if (status === "Reviewing") {
-        await updateLeadRequestStatus(caseItem, "Contacted");
-        return;
-      }
-
-      await updateLeadRequestStatus(caseItem, "Negotiating");
+      const leadStatus = status==="Completed"?"Completed":status==="Closed"?"Lost":status==="Reviewing"?"Contacted":"Negotiating";
+      updateLeadRequestStatus(caseItem,leadStatus,status);
       return;
     }
+    updateSourcingCaseState(caseItem.id, (current) => ({ ...current, status }));
 
     if (status === "Reviewing") {
       await updateSubmissionStatus(caseItem, "Under Review", "buyer-request");
@@ -6970,6 +6951,7 @@ export function AdminDashboard({
 
   return (
     <main className="admin-dashboard min-h-screen w-full max-w-full overflow-x-hidden bg-earth-50">
+      {statusSelection&&<LeadStatusEditor key={statusSelection.id} lead={statusSelection} close={()=>setStatusSelection(null)} onSaved={statusSaved}/>}
       <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto max-w-[96rem] px-4 py-8 sm:px-6 2xl:max-w-[110rem]">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Operations</p>

@@ -10,6 +10,10 @@ const receipt={id,company_name:"Fictional Buyer",requester_name:"Fictional",stat
 const priorId="abcdef99-12aa-4000-8000-000000000002", buyer="bbbbbbbb-2222-4222-8222-000000000001";
 const farmerId="ff002211-0000-4000-8000-000000000003";
 const priorReceipt={...receipt,id:priorId,company_name:"Fictional Buyer",product_interest:"Maize",quantity_needed:"Two sacks",delivery_location:"Accra"};
+receipt.updated_at="2026-11-10T09:00:00.123456+00:00";receipt.source_type="Buyer Request";receipt.source_name="Fixture";receipt.location="Accra";
+priorReceipt.source_type="Buyer Request";priorReceipt.updated_at=t(0);
+const follow={action:null,due:null,owner:actor};
+let todayUnavailable=false,loseStatus=false;
 const farmer={id:farmerId,farm_name:"Fictional Farm",region:"Central",district:"Fixture",products:[]};
 let timeline=[],link=null,loseReply=false;
 const objects=new Map(),attempts=[],commands=[]; let profile={...initial},job,version=1,caseNote="Previous note";
@@ -35,28 +39,46 @@ const api=http.createServer(async(req,res)=>{
   }
   const chunks=[];for await(const c of req)chunks.push(c);const b=JSON.parse(Buffer.concat(chunks).toString()||"{}");
   const stale=()=>send({code:"PT409",message:"Reviewed conflict",details:null,hint:null},409);
+  if(name==="staff_today"){
+    assert.equal(b.p_actor,actor);assert.ok(Math.abs(Date.now()-Date.parse(b.p_now))<60000);
+    if(todayUnavailable)return send({message:"Unavailable"},503);
+    const due=follow.owner===actor && follow.due && follow.due.slice(0,10)<=b.p_now.slice(0,10);
+    return send({my_follow_ups:due?[{request_id:id,next_action:follow.action,due_at:follow.due,version}]:[]});
+  }
+  if(name==="admin_activity_log")return send({message:"Audit unavailable"},503);
   if(name==="staff_case_read"){
     if(b.p_request===priorId)return send({request_id:priorId,buyer_id:buyer,version:1,confirmed_history:[],timeline:[]});
     const first=timeline.find(e=>e.first_buyer_reply);
-    return send({request_id:id,version,latest_note:{text:caseNote},owner_id:actor,first_reply:first||null,timeline,
+    return send({request_id:id,version,status:receipt.status,lead_updated_at:receipt.updated_at,next_action:follow.action,due_at:follow.due,latest_note:{text:caseNote},owner_id:actor,first_reply:first||null,timeline,
       link_id:link,confirmed_history:link===priorId?[{request_id:priorId,received_at:priorReceipt.created_at,status:"New",sellers_contacted:[{seller_type:"farmer",seller_id:farmerId,contact_count:1}]}]:[]});
   }
   if(name==="staff_case_command"){
     commands.push(b);
-    if(timeline.some(e=>e.id===b.p_operation))return send({operation_id:b.p_operation,version});
+    const previous=timeline.find(e=>e.id===b.p_operation);
+    if(previous){
+      assert.deepEqual(b,commands.find(c=>c.p_operation===b.p_operation));
+      return send({operation_id:b.p_operation,event_id:previous.id,version:previous.version});
+    }
     if(version!==b.p_expected_version)return stale();
     assert.equal(b.p_actor,actor);assert.equal(b.p_request,id);
     const input=b.p_input,kind=b.p_kind;
+    if(kind==="status"){
+      if(input.lead_updated_at!==receipt.updated_at)return stale();
+      receipt.status=input.status;receipt.updated_at=new Date(Date.parse(receipt.updated_at)+1).toISOString();
+    }
+    if(kind==="follow_up_set"){follow.action=input.next_action;follow.due=input.due_at;}
+    if(kind==="follow_up_completed"){assert.ok(follow.action);follow.action=null;follow.due=null;}
     if(kind==="note")caseNote=input.note;
     if(kind==="link")link=input.buyer_id===buyer?priorId:id;
     if(kind==="unlink"){assert.equal(input.link_id,link);link=null;}
     const first=kind==="buyer_contact"&&input.reply&&!timeline.some(e=>e.first_buyer_reply);
     if(kind.endsWith("_contact")||kind==="link"||kind==="unlink")assert.equal(input.confirmed,true);
-    timeline.unshift({id:b.p_operation,actor_id:actor,kind,input,first_buyer_reply:first,channel:input.channel,occurred_at:input.occurred_at||t(1),
+    timeline.unshift({id:b.p_operation,version:version+1,actor_id:actor,kind,input,first_buyer_reply:first,channel:input.channel,occurred_at:input.occurred_at||t(1),
       farmer_id:input.seller_type==="farmer"?input.seller_id:null,supplier_id:input.seller_type==="supplier"?input.seller_id:null});
     version++;
     if(first&&loseReply){loseReply=false;return send({message:"Acknowledgement lost"},503);}
-    return send({operation_id:b.p_operation,version});
+    if(kind==="status"&&loseStatus){loseStatus=false;return send({message:"Acknowledgement lost"},503);}
+    return send({operation_id:b.p_operation,event_id:b.p_operation,version});
   }
   if(name==="staff_supplier_media_save"){
     attempts.push(b);
@@ -127,6 +149,7 @@ async function run(){
     // Intercept contact links locally. Exercise click handlers without contacting a real recipient.
     await page.evaluate(()=>document.addEventListener("click",e=>{if(e.target.closest?.('a[href^="tel:"],a[href^="https://wa.me/"]'))e.preventDefault()},true));
     await page.getByRole("link",{name:"Open WhatsApp"}).click();
+    assert.equal(await page.getByRole("link",{name:"Call buyer"}).getAttribute("href"),"tel:+233240000000");
     await page.getByRole("link",{name:"Call buyer"}).click();await button("Copy number").click();
     assert.equal(commands.length,before);
     const bad=await ctx.request.post(url+caseRoute,{data:{id,version,operation:require("node:crypto").randomUUID(),kind:"seller_contact",
@@ -162,6 +185,55 @@ async function run(){
     await page.getByRole("heading",{name:"Fictional Buyer",exact:true}).waitFor();
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     console.log("PASS local CRM at "+width+"px: channel actions, checked seller selection, multiple sellers, first reply, conflict review, exact replay, confirmed history, audited unlink and return to case.");
+  }
+  for(const width of [1440,390]){
+    await page.setViewportSize({width,height:width===390?844:900});
+    const button=name=>page.getByRole("button",{name,exact:true});
+    const goToday=()=>page.goto(url+"/admin");
+    const goCase=()=>page.goto(url+"/admin?view=buyer&record="+id);
+    const future=new Date(Date.now()+3*86400000).toISOString().slice(0,16);
+    await goCase();await page.getByLabel("Next action",{exact:true}).fill("Fixture call");
+    await page.getByLabel("Staff follow-up · GMT").fill(future);
+    assert.equal(await post("Save note or follow-up","/api/admin/case-work"),200);
+    await button("Complete follow-up").waitFor();assert.equal(follow.due.slice(0,16),future);
+    await goToday();await page.getByText("No follow-ups due today or overdue.").waitFor();
+    todayUnavailable=true;await goToday();await page.getByText("Follow-ups are unavailable.",{exact:false}).waitFor();todayUnavailable=false;
+    follow.due=new Date().toISOString().slice(0,10)+"T23:59:59.999Z";follow.owner=farmerId;
+    await goToday();await page.getByText("No follow-ups due today or overdue.").waitFor();
+    follow.owner=actor;await goToday();await page.getByText("Due today",{exact:true}).waitFor();
+    follow.due=new Date(Date.now()-86400000).toISOString();await goToday();
+    await page.getByText("Overdue",{exact:true}).waitFor();
+    await page.getByRole("link",{name:"Fictional Buyer · BR-8A203C01F4"}).click();await page.waitForURL(u=>u.searchParams.get("record")===id);
+    await button("Complete follow-up").waitFor();await page.getByLabel("Private note",{exact:true}).fill("Unsaved draft");
+    assert.ok(await button("Complete follow-up").isDisabled());await page.getByRole("textbox",{name:"Private note"}).fill("");
+    const previouslyCompleted=timeline.filter(e=>e.kind==="follow_up_completed").length;
+    version++;assert.equal(await post("Complete follow-up","/api/admin/case-work"),409);await button("Review latest case").click();
+    assert.equal(await post("Complete follow-up","/api/admin/case-work"),200);await page.getByText("Follow-up completed",{exact:true}).nth(previouslyCompleted).waitFor();
+    await page.reload();await page.getByText("Follow-up completed",{exact:true}).nth(previouslyCompleted).waitFor();assert.equal(await button("Complete follow-up").count(),0);
+    assert.ok(timeline.some(e=>e.kind==="follow_up_set"));await goToday();await page.getByText("No follow-ups due today or overdue.").waitFor();
+
+    await page.goto(url+"/admin?section=lead-queue");const dialog=page.getByRole("dialog",{name:"Change lead status"});
+    async function start(){await button("Mark Contacted").click();await dialog.waitFor();}
+    async function change(label="Save status"){
+      const done=page.waitForResponse(r=>r.url().endsWith("/api/admin/lead-requests")&&r.request().method()==="PATCH");
+      await dialog.getByRole("button",{name:label}).click();return (await done).status();
+    }
+    const original=receipt.updated_at,oldStatus=receipt.status,startCount=timeline.filter(e=>e.kind==="status").length;
+    await start();receipt.updated_at=new Date(Date.parse(original)+10).toISOString();
+    assert.equal(await change(),409);assert.equal(commands.at(-1).p_input.lead_updated_at,original);assert.equal(receipt.status,oldStatus);
+    assert.equal(await dialog.getByLabel("Selected status").inputValue(),"Contacted");
+    const calls=commands.length;await dialog.getByRole("button",{name:"Review latest lead"}).click();
+    await dialog.getByText(/Latest status loaded/).waitFor();assert.equal(commands.length,calls);
+    loseStatus=true;assert.equal(await change(),503);assert.equal(await change("Retry same status change"),200);await dialog.waitFor({state:"hidden"});
+    assert.deepEqual(commands.at(-2),commands.at(-1));assert.equal(receipt.status,"Contacted");
+    const refetched=receipt.updated_at;await start();await dialog.getByLabel("Selected status").selectOption("Negotiating");
+    version++;assert.equal(await change(),409);await dialog.getByRole("button",{name:"Review latest lead"}).click();
+    assert.equal(await change(),200);await dialog.waitFor({state:"hidden"});assert.equal(receipt.status,"Negotiating");
+    assert.equal(commands.at(-1).p_input.lead_updated_at,refetched);
+    await start();await dialog.getByLabel("Selected status").selectOption("New");assert.equal(await change(),200);await dialog.waitFor({state:"hidden"});
+    assert.equal(timeline.filter(e=>e.kind==="status").length-startCount,3);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    console.log("PASS due/future/overdue, owner isolation, unavailable, completion/conflict and status stale/refetch/exact replay at "+width+"px");
   }
  }finally{if(browser)await browser.close();app.kill();api.closeAllConnections();api.close();}
 }

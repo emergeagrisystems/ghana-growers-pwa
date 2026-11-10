@@ -1,10 +1,10 @@
-import {stageOnly} from "@/lib/staffRpc";
+import {stageOnly, staffClient, staffRpc, idPattern} from "@/lib/staffRpc";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { StaffShell } from "@/components/admin/StaffShell";
-import { Today, type Queues } from "@/components/admin/Today";
+import { Today, type Queues, type DueFollowUp } from "@/components/admin/Today";
 import { Tools } from "@/components/admin/Tools";
 import { Records, Profiles } from "@/components/admin/Records";
 import { adminAccessCookie, getAdminUserFromAccessToken } from "@/lib/adminAuth";
@@ -18,6 +18,16 @@ export const metadata = {
 };
 
 const queueIds: StaffQueue[] = ["farmer", "supplier", "listing", "buyer"];
+async function dueFollowUps(actor:string, now:string):Promise<DueFollowUp[]|null> {
+  if (!stageOnly() || !actor) return null;
+  try {
+    const data = await staffRpc(staffClient(), "staff_today", {p_actor:actor, p_now:now});
+    const rows = data?.my_follow_ups;
+    if (!Array.isArray(rows) || !rows.every(r => r && idPattern.test(r.request_id)
+      && typeof r.next_action==="string" && Number.isFinite(Date.parse(r.due_at)))) return null;
+    return rows.map(r => ({id:r.request_id, action:r.next_action, due:r.due_at}));
+  } catch { return null; }
+}
 const legacySections = [
   "analytics", "launch-checklist", "lead-queue", "featured-enquiries", "contact-enquiries",
   "farmer-import", "farmers", "buyers", "suppliers", "marketplace", "buyer-requests",
@@ -68,5 +78,7 @@ export default async function AdminPage({ searchParams }: {
   }
 
   const queues = Object.fromEntries(keys.map((id, index) => [id, results[index]])) as Queues;
-  return <StaffShell view="today"><Today queues={queues} now={new Date().toISOString()} /></StaffShell>;
+  const now = new Date().toISOString();
+  const followUps = await dueFollowUps(currentAdmin.id, now);
+  return <StaffShell view="today"><Today queues={queues} now={now} followUps={followUps} /></StaffShell>;
 }

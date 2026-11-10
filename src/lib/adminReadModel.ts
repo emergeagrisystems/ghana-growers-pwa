@@ -40,7 +40,7 @@ async function scan(table: string, select: string): Promise<ReadResult<Row>> {
 
 export async function readIntakes(queue: StaffQueue, overview=false): Promise<ReadResult<IntakeRow>> {
   const [table, fields] = columns[queue];
-  const summaryFields = queue==="buyer" ? ",product_interest" : queue==="listing" ? ",submission_reference" : ",reference:source_metadata->>application_reference";
+  const summaryFields = queue==="buyer" ? ",product_interest,company_name,requester_name" : queue==="listing" ? ",submission_reference" : ",reference:source_metadata->>application_reference";
   const result = await scan(table, overview ? "id,status,created_at"+summaryFields : fields);
   return { available: result.available, rows: result.rows.map((r):IntakeRow => {
     const id = string(r,"id");

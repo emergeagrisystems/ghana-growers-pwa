@@ -1742,9 +1742,7 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("status: defaultSourcingCaseStatus(request)"), true);
       assert.equal(adminDashboard.includes('return "Active Sourcing";'), true);
       assert.equal(adminDashboard.includes('updateLeadRequestStatus(selectedProduceRequest, "Negotiating")'), true);
-      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Negotiating")'), true);
-      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Completed")'), true);
-      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem, "Lost")'), true);
+      assert.equal(adminDashboard.includes('updateLeadRequestStatus(caseItem,leadStatus,status)'), true);
       assert.equal(adminDashboard.includes("produceRequestFilterTitle(produceRequestStatusFilter)"), true);
       assert.equal(adminDashboard.includes("Sourcing cases could not be loaded. Please refresh and try again."), true);
       assert.equal(adminDashboard.includes("Public Listing Snapshot"), true);
@@ -1754,9 +1752,9 @@ const tests: TestCase[] = [
       assert.equal(adminDashboard.includes("buyer_request_applications"), false);
       assert.equal(adminDashboard.includes("sourcing_cases"), false);
 
-      assert.equal(adminDashboard.includes('body: JSON.stringify({ id: lead.id, status })'), true);
-      assert.equal(leadAdminRoute.includes("const id = typeof body.id === \"string\" ? body.id.trim() : \"\";"), true);
-      assert.equal(leadAdminRoute.includes("updateLeadRequestStatus({ id, status: body.status, adminEmail: adminUser.email })"), true);
+      assert.equal(adminDashboard.includes('updated_at:lead.updated_at'), true);
+      assert.equal(leadAdminRoute.includes('p_expected_version:b.version,p_kind:"status"'), true);
+      assert.equal(leadAdminRoute.includes('lead_updated_at:b.lead_updated_at'), true);
     }
   },
   {
