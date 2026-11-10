@@ -19,7 +19,7 @@ const manage={farmer:"/admin?tool=network-farmer-applications",supplier:"/admin?
 function RecordRows({rows,open}:{rows:IntakeRow[];open:(r:IntakeRow)=>void}){
   return <ul className={s.rows}>{rows.map(r=><li key={r.queue+r.id}><div><small>{queueLabels[r.queue]} · {r.reference}</small><strong>{r.name||r.product||"Unnamed record"}</strong></div><span>{r.status||"Status unavailable"}</span><time>{r.received.slice(0,10)}</time><button onClick={()=>open(r)}>Open<span className="sr-only"> {r.reference}</span></button></li>)}</ul>;
 }
-export function Records({rows,unavailable,queue}:{rows:IntakeRow[];unavailable:StaffQueue[];queue?:StaffQueue}){
+export function Records({rows,unavailable,queue,sharedCaseEnabled}:{sharedCaseEnabled:boolean;rows:IntakeRow[];unavailable:StaffQueue[];queue?:StaffQueue}){
   const [q,setQ]=useState(""),[filter,setFilter]=useState(""),[status,setStatus]=useState(""),[page,setPage]=useState(0),[selected,setSelected]=useState<IntakeRow|null>(null);
   const origin=useRef({scroll:0,id:""});
   useEffect(()=>{function sync(){const id=new URL(location.href).searchParams.get("record");setSelected(rows.find(r=>r.id===id)||null);
@@ -27,7 +27,7 @@ export function Records({rows,unavailable,queue}:{rows:IntakeRow[];unavailable:S
     sync();window.addEventListener("popstate",sync);return()=>window.removeEventListener("popstate",sync)},[rows]);
   function open(r:IntakeRow){origin.current={scroll:window.scrollY,id:r.reference};const url=new URL(location.href);url.searchParams.set("record",r.id);window.history.pushState({...window.history.state,staffCase:true},"",url);setSelected(r);window.scrollTo(0,0);requestAnimationFrame(()=>document.getElementById("staff-main")?.focus())}
   function back(){if(window.history.state?.staffCase)window.history.back();else{const u=new URL(location.href);u.searchParams.delete("record");window.history.replaceState(window.history.state,"",u);setSelected(null)}}
-  if(selected?.queue==="buyer")return <CaseDetail key={selected.id} row={selected} back={back}/>;
+  if(selected?.queue==="buyer")return <CaseDetail sharedCaseEnabled={sharedCaseEnabled} key={selected.id} row={selected} back={back}/>;
   if(selected)return <><button onClick={back}>← Back to results</button><div className={s.panel}><small>{selected.reference}</small><h1>{selected.name||"Intake record"}</h1><p>{queueLabels[selected.queue]} · {selected.status} · {selected.received.slice(0,10)}</p><p>{selected.location}</p>{selected.profileId&&<Link href={"/admin/profiles/"+selected.queue+"/"+selected.profileId}>Open linked profile</Link>} <Link href={manage[selected.queue]}>Open existing review queue</Link></div></>;
   const filtered=rows.filter(r=>(!filter||r.queue===filter)&&(!status||r.status===status)&&matches(q,[r.name,r.contactName,r.reference,r.id,r.location,r.product],[r.phone,r.whatsapp])).sort((a,b)=>b.received.localeCompare(a.received));
   return <><header className={s.title}><div><small>Staff workspace</small><h1>{queue?queueLabels[queue]:"Find a record"}</h1></div>{queue&&<Link href={manage[queue]}>Existing review tools</Link>}</header><section className={s.panel}><div className={s.filters}>

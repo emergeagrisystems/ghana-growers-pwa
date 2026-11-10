@@ -1,3 +1,4 @@
+import {stageOnly} from "@/lib/staffRpc";
 import { NextResponse } from "next/server";
 import { logAdminActivity } from "@/lib/adminActivity";
 import { profileEditorPayload, saveAdminProfile, transitionAdminProfile } from "@/lib/adminProfileEditor";
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     });
     return noStore({ error: result.error ?? "Profile could not be loaded." }, { status: result.status });
   }
-  return noStore(result.data);
+  return noStore({...result.data,supplierPhotoEnabled:kind === "supplier" && stageOnly()});
 }
 
 export async function PATCH(request: Request) {

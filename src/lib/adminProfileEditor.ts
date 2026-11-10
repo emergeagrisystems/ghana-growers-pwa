@@ -292,6 +292,13 @@ async function duplicateSlugError(kind: ProfileEditorKind, recordId: string, slu
   return null;
 }
 
+export function supplierPhotoPatch(changes:Record<string,unknown>) {
+  const errors=validateChanges("supplier",changes);
+  if(Object.keys(errors).length || Object.keys(changes).some(key=>!supplierEditableFields.has(key)||key==="logo_url"||key==="profile_image_url"))
+    throw new Error("Unsupported profile fields");
+  return sanitizedChanges("supplier",changes);
+}
+
 export async function saveAdminProfile({
   kind,
   recordKey,

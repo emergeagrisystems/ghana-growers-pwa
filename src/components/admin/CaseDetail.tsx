@@ -4,6 +4,7 @@ import { contactNumber,contactHref,crmPersistenceNotice,firstReplyState } from "
 import type { IntakeRow } from "@/lib/adminReadModel";
 import s from "./staff.module.css";
 import {prepareHandover} from "@/lib/adminHandover";
+import {CaseDraftEditor} from "./CaseDraftEditor";
 
 type Contact={name:string;phone:string;whatsapp:string};
 function ContactActions({recipient,contact,reference}:{recipient:"buyer"|"seller";contact:Contact;reference:string}) {
@@ -17,7 +18,7 @@ function ContactActions({recipient,contact,reference}:{recipient:"buyer"|"seller
     <button disabled={!copy} onClick={async()=>{try{await navigator.clipboard.writeText(copy||"");setFeedback("Number copied.")}catch{setFeedback("Copy failed. Select the number above.")}}}>Copy number</button></div><small role="status">{feedback}</small></section>;
 }
 
-export function CaseDetail({row,back}:{row:IntakeRow;back:()=>void}) {
+export function CaseDetail({row,back,sharedCaseEnabled}:{sharedCaseEnabled:boolean;row:IntakeRow;back:()=>void}) {
   const [seller,setSeller]=useState<Contact|null>(null),[sellerError,setSellerError]=useState(""),[loading,setLoading]=useState(false);
   const [note,setNote]=useState(""),[next,setNext]=useState(""),[due,setDue]=useState("");
   const handover=prepareHandover({note,nextAction:next,dueLocal:due});
@@ -32,9 +33,11 @@ export function CaseDetail({row,back}:{row:IntakeRow;back:()=>void}) {
     <button disabled>Record first reply</button> <button disabled>Record buyer contact</button></section>
     <section className={s.panel}><h2>Seller availability</h2>{seller?<ContactActions recipient="seller" contact={seller} reference={row.reference}/>:row.sellerId?<button disabled={loading} onClick={checkSeller}>View linked seller contact</button>:<p>No seller profile is linked to this request.</p>}
     {sellerError&&<p role="alert">{sellerError}</p>}<button disabled>Record seller contact</button></section>
+    {sharedCaseEnabled ?
+      <CaseDraftEditor id={row.id} note={note} next={next} due={due} setNote={setNote} setNext={setNext} setDue={setDue}/> :
     <section className={s.panel}><h2>Handover</h2><p>{crmPersistenceNotice}</p><p>Owner · Unavailable</p><button disabled>Claim case</button>
     <div className={s.fields}><label>Private note · unsaved draft<textarea maxLength={2000} value={note} onChange={e=>setNote(e.target.value)} /></label><label>Next action<input maxLength={300} value={next} onChange={e=>setNext(e.target.value)}/></label><label>Staff follow-up · GMT<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label></div><button disabled>Save handover</button>
-    {(note||next||due)&&<p role="status">{"error" in handover?handover.error+" ":""}Unsaved. Keep this page open to retain the draft.</p>}</section>
+    {(note||next||due)&&<p role="status">{"error" in handover?handover.error+" ":""}Unsaved. Keep this page open to retain the draft.</p>}</section>}
     <section className={s.panel}><h2>Case timeline</h2><p>Request received {new Intl.DateTimeFormat("en-GB",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Accra"}).format(new Date(row.received))} GMT.</p><p>Shared case events and outcomes are unavailable.</p></section>
     <dialog className={s.history} ref={history} aria-label="Buyer history"><button autoFocus onClick={()=>history.current?.close()}>Close history</button><h2>Buyer history</h2><p>Confirmed links are unavailable. Similar names and numbers cannot establish buyer identity.</p><button disabled>Confirm buyer link</button> <button disabled>Unlink buyer</button></dialog></>;
 }

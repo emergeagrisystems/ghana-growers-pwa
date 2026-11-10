@@ -1,3 +1,4 @@
+import {stageOnly} from "@/lib/staffRpc";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -61,7 +62,7 @@ export default async function AdminPage({ searchParams }: {
   const results = await Promise.all(keys.map(id => readIntakes(id, isOverview)));
   if (!isOverview) {
     return <StaffShell view={view}>
-      <Records key={view} queue={queue} rows={results.flatMap(result => result.rows)}
+      <Records sharedCaseEnabled={stageOnly()} key={view} queue={queue} rows={results.flatMap(result => result.rows)}
         unavailable={keys.filter((_, index) => !results[index].available)} />
     </StaffShell>;
   }

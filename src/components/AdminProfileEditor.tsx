@@ -2,6 +2,7 @@
 
 import {
   approvedSupplierCategories,
+  isSafePublicProfileImage,
   authoritativeLifecycleSummary,
   farmerFarmTypes,
   ggStandardStatuses,
@@ -52,6 +53,7 @@ type PrivateMediaItem = {
   promotable: boolean;
 };
 type EditorPayload = {
+  supplierPhotoEnabled?:boolean;
   kind: ProfileEditorKind;
   record: ProfileEditorRecord;
   sourceHistory: null | {
@@ -356,9 +358,14 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
   const [stagedFarmerMedia, setStagedFarmerMedia] = useState<StagedFarmerMedia[]>([]);
 
   const [supplierDraft,setSupplierDraft] = useState<Record<string,string>>({});
+  const localPhoto=useRef<{file:File;field:string}|null>(null);
+  const attemptedPhoto=useRef<{operation:string;lease:string;version:string;changes:string}|null>(null);
+  const [photoConflict,setPhotoConflict]=useState(false),[photoUncertain,setPhotoUncertain]=useState(false);
+  const [photoReview,setPhotoReview]=useState<{field:string;value:string|null;version:string;changes:Record<string,unknown>}|null>(null);
   const previewUrls=useRef(new Set<string>());
   useEffect(()=>{const urls=previewUrls.current;return ()=>{urls.forEach(url=>URL.revokeObjectURL(url))}},[]);
   function clearSupplierDraft(key?:string){
+    if(!key||localPhoto.current?.field===key){localPhoto.current=null;attemptedPhoto.current=null;setPhotoConflict(false);setPhotoUncertain(false);setPhotoReview(null)}
     for(const [field,url] of Object.entries(supplierDraft))if(!key||field===key){URL.revokeObjectURL(url);previewUrls.current.delete(url)}
     setSupplierDraft(current=>Object.fromEntries(Object.entries(current).filter(([field])=>!!key&&field!==key)));
   }
@@ -422,6 +429,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
 
   async function resetChanges() {
     if (!baseline || saveState === "saving") return;
+    if (photoUncertain && !window.confirm("Discard the local photo and edits? The previous save may already have reached the server.")) return;
     if (stagedFarmerMedia.length && !window.confirm("Reset edits and remove the newly staged images? Existing profile media will not be deleted.")) return;
     const cleaned = await cleanupStagedMedia(stagedFarmerMedia);
     if (!cleaned) {
@@ -436,9 +444,50 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
     setSaveState("idle");
   }
 
+  function draftChanges() {
+    return Object.fromEntries(Object.entries(draft||{}).filter(([key,value])=>JSON.stringify(value)!==JSON.stringify((baseline as unknown as Record<string,unknown>)?.[key])));
+  }
+  async function reviewLatestPhoto(){
+    if(!localPhoto.current || !draft || !baseline || saveState==="saving")return;
+    setSaveState("saving");
+    try{
+      const r=await fetch("/api/admin/profile-editor?kind=supplier&id="+encodeURIComponent(draft.id),{cache:"no-store"});
+      const latest=await r.json() as EditorPayload;
+      if(!r.ok || latest.record?.id!==draft.id)throw Error();
+      const pending=draftChanges(), field=localPhoto.current.field as "logo_url"|"profile_image_url";
+      setPhotoReview({field,value:(latest.record as SupplierProfileRecord)[field],version:latest.record.updated_at,
+        changes:Object.fromEntries(Object.keys(pending).map(k=>[k,(latest.record as unknown as Record<string,unknown>)[k]]))});
+      setPayload(latest);setBaseline(latest.record);setDraft({...latest.record,...pending} as ProfileEditorRecord);
+      attemptedPhoto.current=null;setPhotoConflict(false);setPhotoUncertain(false);
+      setSaveError("");setSaveState("dirty");
+    }catch{setSaveError("The latest profile could not be loaded. Your photo and edits are retained.");setSaveState("error");}
+  }
+  async function saveSelectedPhoto(changes:Record<string,unknown>){
+    const selected=localPhoto.current;
+    if(!selected || !baseline || !draft || photoConflict)return;
+    const intent=attemptedPhoto.current??{operation:crypto.randomUUID(),lease:crypto.randomUUID(),version:baseline.updated_at,changes:JSON.stringify(changes)};
+    attemptedPhoto.current=intent;
+    const body=new FormData();
+    for(const [key,v] of Object.entries({...intent,id:draft.id,field:selected.field}))body.set(key,v);
+    body.set("file",selected.file);
+    setSaveState("saving");setSaveError("");
+    try{
+      const r=await fetch("/api/admin/profile-editor/supplier-photo",{method:"POST",body});
+      const result=await r.json();
+      if(!r.ok){
+        if(r.status===409){setPhotoConflict(true);setPhotoUncertain(false);setPhotoReview(null);}
+        else if(r.status>=500){setPhotoUncertain(true);}
+        else {attemptedPhoto.current=null;setPhotoUncertain(false);}
+        setSaveError(result.error||"Could not save the photo.");setSaveState("error");return;
+      }
+      if(!result.version||!result.url)throw Error();
+      clearSupplierDraft();setSaveError("");await load();setLastSaved(new Date());
+    }catch{setPhotoUncertain(true);setSaveError("The outcome is unknown. Keep the photo and retry the same save.");setSaveState("error");}
+  }
   async function saveChanges() {
     if (!draft || !baseline || !dirty || saveState === "saving") return;
-    const changes = Object.fromEntries(Object.entries(draft).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify((baseline as unknown as Record<string, unknown>)[key])));
+    const changes = draftChanges();
+    if(payload?.supplierPhotoEnabled && localPhoto.current){await saveSelectedPhoto(changes);return}
     if(Object.keys(supplierDraft).length){setSaveState("error");setSaveError("This image is only on this device. Remove its preview to save other edits.");return}
     const staged = stagedFarmerMedia.map(({path,target,previewUrl})=>{
       if(kind!=="farmer"||target==="profile_image_url")return {path,target};
@@ -564,7 +613,11 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
     }
     setSaveError("");
     if(kind==="supplier"){
+      if(payload?.supplierPhotoEnabled && localPhoto.current && localPhoto.current.field!==target){
+        setSaveError("Save or remove the first selected photo before choosing another.");return;
+      }
       clearSupplierDraft(target);
+      localPhoto.current={file,field:target};
       const url=URL.createObjectURL(file);
       previewUrls.current.add(url);
       setSupplierDraft(current=>({...current,[target]:url}));
@@ -642,7 +695,12 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
 
         {saveError ? <div className="mt-4 flex items-start gap-3 rounded-md border border-tomato/20 bg-red-50 p-4 text-sm font-bold text-tomato" role="alert"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><span>{saveError} {dirty&&<Link target="_blank" rel="noreferrer" href={"/admin/profiles/"+kind+"/"+encodeURIComponent(recordKey)} className="underline">Compare the saved profile in a new tab</Link>}</span></div> : null}
 
-        <fieldset disabled={saveState==="saving" || Boolean(uploadingTarget) || Boolean(busyAction)} className="mt-5 grid min-w-0 gap-5">
+        {photoConflict&&<button type="button" disabled={saveState==="saving"} onClick={()=>void reviewLatestPhoto()} className="admin-action-secondary">Review latest profile</button>}
+        {photoReview&&<section className="rounded-md border p-4" aria-label="Latest saved profile"><h3>Latest saved profile</h3>
+          {photoReview.value && isSafePublicProfileImage(photoReview.value)?<a href={photoReview.value} target="_blank" rel="noreferrer">View currently saved photo</a>:<p>No photo is currently saved.</p>}
+          {Object.entries(photoReview.changes).map(([key,v])=><p key={key}>{key.replaceAll("_"," ")} · {String(v??"Empty")}</p>)}
+          <p>Your selected photo and edits are retained. Review them before saving again.</p></section>}
+        <fieldset disabled={photoConflict || photoUncertain || saveState==="saving" || Boolean(uploadingTarget) || Boolean(busyAction)} className="mt-5 grid min-w-0 gap-5">
           {activeTab === "overview" && farmer ? (
             <>
               <Section title="Public Identity" description="These details may appear in the Farmer Directory after every eligibility rule is satisfied."><div className="grid gap-4 md:grid-cols-2">
@@ -706,7 +764,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
                   <PublicGalleryControl label="Produce gallery" values={farmer.produce_photo_urls} uploading={!!uploadingTarget} onUpload={file=>void uploadPublicImage(file,"produce_photo_urls")} onChange={value=>void changeGallery("produce_photo_urls",value)}/>
                 </> : null}
                 {supplier ? <>
-                  <p role="status">Selected supplier photos stay on this device. Saving them requires private media storage approval.</p>
+                  <p role="status">{payload.supplierPhotoEnabled?"Your selected photo stays on this device until you save.":"Selected supplier photos stay on this device. Saving them requires private media storage approval."}</p>
                   <PublicImageControl label="Public logo" value={supplierDraft.logo_url||supplier.logo_url} uploading={uploadingTarget === "logo_url"} onUpload={(file) => void uploadPublicImage(file, "logo_url")} onRemove={() => supplierDraft.logo_url?clearSupplierDraft("logo_url"):updateField("logo_url", null)} />
                   <PublicImageControl label="Public profile image" value={supplierDraft.profile_image_url||supplier.profile_image_url} uploading={uploadingTarget === "profile_image_url"} onUpload={(file) => void uploadPublicImage(file, "profile_image_url")} onRemove={() => supplierDraft.profile_image_url?clearSupplierDraft("profile_image_url"):updateField("profile_image_url", null)} />
                   <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/55">Supplier gallery ordering is not stored by the current production schema. No unsupported field is written.</p>
@@ -788,7 +846,7 @@ export function AdminProfileEditor({ kind, recordKey, currentAdmin, initialPrevi
             {saveState === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : saveState === "saved" ? <Check className="h-4 w-4 text-leaf-700" /> : saveState === "error" ? <AlertCircle className="h-4 w-4 text-tomato" /> : dirty ? <AlertCircle className="h-4 w-4 text-earth-700" /> : <Save className="h-4 w-4" />}
             {saveState === "saving" ? "Saving..." : saveState === "saved" ? `Saved${lastSaved ? ` at ${lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}` : saveState === "error" ? "Save failed" : dirty ? "Unsaved changes" : "No unsaved changes"}
           </div>
-          <div className="flex gap-2"><button type="button" onClick={() => void resetChanges()} disabled={!dirty || saveState === "saving"} className="admin-action-secondary flex-1 sm:flex-none"><RotateCcw className="h-4 w-4" /> Reset</button><button type="button" onClick={() => void saveChanges()} disabled={!dirty || !!uploadingTarget || saveState === "saving" || Object.keys(supplierDraft).length>0} className="admin-action-primary flex-1 sm:flex-none"><Save className="h-4 w-4" /> {saveState === "saving" ? "Saving..." : "Save Changes"}</button></div>
+          <div className="flex gap-2"><button type="button" onClick={() => void resetChanges()} disabled={!dirty || saveState === "saving"} className="admin-action-secondary flex-1 sm:flex-none"><RotateCcw className="h-4 w-4" /> Reset</button><button type="button" onClick={() => void saveChanges()} disabled={!dirty || !!uploadingTarget || saveState === "saving" || photoConflict || (!payload.supplierPhotoEnabled && Object.keys(supplierDraft).length>0)} className="admin-action-primary flex-1 sm:flex-none"><Save className="h-4 w-4" /> {saveState === "saving" ? "Saving..." : photoUncertain ? "Retry same save" : "Save Changes"}</button></div>
         </div>
       </div>
     </main>
