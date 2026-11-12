@@ -46,12 +46,18 @@ try {
   same(isolatedSupabaseUrl(),undefined);
   same(authorizeAdminIdentity({id:"fictional",email:"fixture@example.invalid"},"fixture@example.invalid"),{authorized:false,reason:"not_authorized"});
   same(authorizeAdminIdentity({id:"fictional",email:"fixture@example.invalid",app_metadata:{role:"admin"}},""),{authorized:true,source:"app_metadata"});
+  for (const metadata of [{admin:true},{roles:["admin"]},{role:"editor",admin:true},{role:"Admin"}]) {
+    same(authorizeAdminIdentity({id:"fictional",email:"fixture@example.invalid",app_metadata:metadata},"fixture@example.invalid"),{authorized:false,reason:"not_authorized"});
+  }
   process.env.VERCEL_ENV="preview";
   process.env.NEXT_PUBLIC_RC1_PREVIEW="true";
   same(isolatedSupabaseUrl(),staging);
   process.env.NEXT_PUBLIC_SUPABASE_URL=production;
   same(isolatedSupabaseUrl(),undefined);
   same(authorizeAdminIdentity({id:"fictional",email:"fixture@example.invalid"},"fixture@example.invalid"),{authorized:true,source:"email_allowlist"});
+  for (const metadata of [{admin:true},{roles:["admin"]}]) {
+    same(authorizeAdminIdentity({id:"fictional",app_metadata:metadata},""),{authorized:true,source:"app_metadata"});
+  }
 } finally {
   keys.forEach((k,i)=>{if(old[i]===undefined)delete process.env[k];else process.env[k]=old[i]});
 }

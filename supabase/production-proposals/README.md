@@ -47,12 +47,13 @@ Production-data restore or a successful restore of the historical recovery archi
 2. Recheck Production drift, exact SQL hashes, intended public intake enablement and current app rollback.
 3. Attest service credential privately, or approve replacement from authoritative Production source;
    current write-only metadata is not sufficient proof.
-4. Approve Auth Site URL `https://www.ghana-growers.com` and allowed recovery redirect
-   `https://www.ghana-growers.com/admin/reset-password`. No `/admin/login` redirect is required
-   by this flow: the application signs out locally and routes to login itself.
-5. Use the existing confirmed, unbanned founder Production trusted-admin identity verified in the private release checkpoint. No new account.
-6. Apply first exact counterpart transaction and history entry, inspect; stop on any discrepancy.
-7. Apply second exact counterpart transaction/history, verify all six wrappers/grants/RLS and media origin.
+4. Verify the existing confirmed, unbanned founder Production identity has the exact
+   `app_metadata.role = "admin"` entitlement. No new account; no legacy allowlist fallback.
+5. Apply first exact counterpart transaction and history entry, inspect; stop on any discrepancy.
+6. Apply second exact counterpart transaction/history, verify all six wrappers/grants/RLS and media origin.
+7. Apply the separately approved Auth Site URL `https://www.ghana-growers.com` and allowed
+   recovery redirect `https://www.ghana-growers.com/admin/reset-password`. No `/admin/login`
+   redirect is required: the application signs out locally and routes to login itself.
 8. Stage exact tested descendant using existing Production configuration, explicitly preserving
    `SITE_PRELAUNCH=false`, four enabled Production intakes, dedicated Production FarmMate values.
    Do not assign domains. Verify founder Auth, CRM, public privacy/pages and intake availability.
