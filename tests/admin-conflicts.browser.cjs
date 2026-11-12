@@ -97,7 +97,7 @@ const api=http.createServer(async(req,res)=>{
 async function port(server){server.listen(0,"127.0.0.1");await once(server,"listening");return server.address().port}
 async function run(){
  const dbPort=await port(api), reserve=http.createServer(),appPort=await port(reserve);await new Promise(r=>reserve.close(r));const url="http://127.0.0.1:"+appPort;
- const app=spawn(process.execPath,["--require",path.resolve("tests/staging/loopback-fetch.cjs"),"node_modules/next/dist/bin/next","start","-H","127.0.0.1","-p",String(appPort)],{env:{...process.env,GG_TEST_ORIGIN:"http://127.0.0.1:"+dbPort,NEXT_PUBLIC_SUPABASE_URL:stage,NEXT_PUBLIC_SUPABASE_ANON_KEY:"fictional-anon",SUPABASE_SERVICE_ROLE_KEY:"fictional-service",ADMIN_EMAIL_ALLOWLIST:"",SITE_PRELAUNCH:"false",VERCEL_ENV:"",NEXT_PUBLIC_RC1_PREVIEW:"false",NEXT_TELEMETRY_DISABLED:"1"},stdio:["ignore","pipe","pipe"]});
+ const app=spawn(process.execPath,["--require",path.resolve("tests/staging/loopback-fetch.cjs"),"node_modules/next/dist/bin/next","start","-H","127.0.0.1","-p",String(appPort)],{env:{...process.env,GG_TEST_ORIGIN:"http://127.0.0.1:"+dbPort,NEXT_PUBLIC_SUPABASE_URL:stage,NEXT_PUBLIC_SUPABASE_ANON_KEY:"fictional-anon",SUPABASE_SERVICE_ROLE_KEY:"fictional-service",ADMIN_EMAIL_ALLOWLIST:"",SITE_PRELAUNCH:"false",VERCEL_ENV:"preview",NEXT_PUBLIC_RC1_PREVIEW:"true",RC1_STAGING_READY:"true",VERCEL_BRANCH_URL:"ghana-growers-fixture.vercel.app",NEXT_TELEMETRY_DISABLED:"1"},stdio:["ignore","pipe","pipe"]});
  app.stdout.resume();app.stderr.on("data",data=>process.stderr.write(data));let browser;
  try{
   for(let n=0;n<65;n++){try{if((await fetch(url+"/admin",{redirect:"manual"})).status<500)break}catch{}await new Promise(r=>setTimeout(r,200))}

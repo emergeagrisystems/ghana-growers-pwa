@@ -43,6 +43,9 @@ export function authorizeAdminIdentity(
     return { authorized: true, source: "app_metadata" };
   }
 
+  // Production entitlement comes only from verified, server-managed Auth metadata.
+  if (process.env.VERCEL_ENV === "production") return { authorized: false, reason: "not_authorized" };
+
   const allowlist = adminEmailAllowlist(allowlistValue);
   const email = normalizeAdminEmail(user.email);
 

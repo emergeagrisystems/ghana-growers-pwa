@@ -1,4 +1,4 @@
-import {stageOnly, staffClient, staffRpc, idPattern} from "@/lib/staffRpc";
+import {staffCrmAvailable, staffClient, staffRpc, idPattern} from "@/lib/staffRpc";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -19,7 +19,7 @@ export const metadata = {
 
 const queueIds: StaffQueue[] = ["farmer", "supplier", "listing", "buyer"];
 async function dueFollowUps(actor:string, now:string):Promise<DueFollowUp[]|null> {
-  if (!stageOnly() || !actor) return null;
+  if (!staffCrmAvailable() || !actor) return null;
   try {
     const data = await staffRpc(staffClient(), "staff_today", {p_actor:actor, p_now:now});
     const rows = data?.my_follow_ups;
@@ -72,7 +72,7 @@ export default async function AdminPage({ searchParams }: {
   const results = await Promise.all(keys.map(id => readIntakes(id, isOverview)));
   if (!isOverview) {
     return <StaffShell view={view}>
-      <Records sharedCaseEnabled={stageOnly()} key={view} queue={queue} rows={results.flatMap(result => result.rows)}
+      <Records sharedCaseEnabled={staffCrmAvailable()} key={view} queue={queue} rows={results.flatMap(result => result.rows)}
         unavailable={keys.filter((_, index) => !results[index].available)} />
     </StaffShell>;
   }

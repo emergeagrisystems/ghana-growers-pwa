@@ -75,7 +75,7 @@ export function AdminResetPasswordForm() {
         <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Admin</p>
         <h1 className="mt-3 text-3xl font-black text-ink">Set your password</h1>
         <p className="mt-3 text-sm leading-6 text-ink/65">
-          Choose a private password for this staging administrator account. The recovery link can be used only for this reset.
+          Choose a private password for this administrator account. The recovery link can be used only for this reset.
         </p>
 
         <form className="mt-6 grid gap-4" onSubmit={submit}>

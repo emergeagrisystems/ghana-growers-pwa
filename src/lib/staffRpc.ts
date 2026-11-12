@@ -2,11 +2,10 @@ import "server-only";
 import { supplierPhotoPatch } from "@/lib/adminProfileEditor";
 import { createHash, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { isolatedSupabaseUrl, RC1_STAGING_REF } from "@/lib/supabase/isolation";
+import { staffSupabaseOrigin } from "@/lib/staffRuntime";
 
 export const idPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const origin = `https://${RC1_STAGING_REF}.supabase.co`;
-export const stageOnly = () => process.env.VERCEL_ENV !== "production" && isolatedSupabaseUrl() === origin;
+export const staffCrmAvailable = () => Boolean(staffSupabaseOrigin() && process.env.SUPABASE_SERVICE_ROLE_KEY);
 export function isSameOriginWrite(request: Request) {
   const originHeader = request.headers.get("origin");
   if (request.headers.get("sec-fetch-site") === "cross-site") return false;
@@ -21,7 +20,8 @@ export function isSameOriginWrite(request: Request) {
 }
 
 export function staffClient() {
-  if (!stageOnly() || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("Staging unavailable");
+  const origin = staffSupabaseOrigin();
+  if (!origin || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("CRM unavailable");
   return createClient(origin, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     db: { retry: false }
@@ -54,6 +54,8 @@ export function staffError(error:unknown) {
 const formats: Record<string,string> = {"image/jpeg":"jpg","image/png":"png","image/webp":"webp"};
 function digest(bytes:Buffer) { return createHash("sha256").update(bytes).digest("hex"); }
 export async function saveSupplierPhoto(actor:string, form:FormData) {
+  const origin = staffSupabaseOrigin();
+  if (!origin) throw new Error("CRM unavailable");
   const id=String(form.get("id")), field=String(form.get("field")), version=String(form.get("version"));
   const operation=String(form.get("operation")), lease=String(form.get("lease")), file=form.get("file");
   if (![id,operation,lease].every(x=>idPattern.test(x)) || !["logo_url","profile_image_url"].includes(field)

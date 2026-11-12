@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/adminAuth";
 import { caseSummary, checkContactTarget, findPrior, findSellers } from "@/lib/staffCaseContacts";
-import { idPattern, staffClient, staffError, staffRpc, stageOnly, isSameOriginWrite } from "@/lib/staffRpc";
+import { idPattern, staffClient, staffError, staffRpc, staffCrmAvailable, isSameOriginWrite } from "@/lib/staffRpc";
 export const dynamic="force-dynamic";
 const reply=(body:unknown,status=200)=>NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});
 export async function GET(request:Request) {
-  if(!stageOnly()) return reply({error:"Unavailable."},404);
+  if(!staffCrmAvailable()) return reply({error:"Unavailable."},404);
   const staff=await requireAdminUser(request);
   if(!staff?.id) return reply({error:"Staff sign-in required."},401);
   const params=new URL(request.url).searchParams,id=params.get("id")||"";
@@ -21,7 +21,7 @@ export async function GET(request:Request) {
 }
 export async function POST(request:Request) {
   if(!isSameOriginWrite(request)) return reply({error:"Staff access must use this site."},403);
-  if(!stageOnly())return reply({error:"Unavailable."},404);
+  if(!staffCrmAvailable())return reply({error:"Unavailable."},404);
   const staff=await requireAdminUser(request);
   if(!staff?.id)return reply({error:"Staff sign-in required."},401);
   const b=await request.json().catch(()=>null);

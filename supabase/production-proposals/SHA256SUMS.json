@@ -1,0 +1,6 @@
+{
+  "20261112132130_staff_crm_supplier_media_production.sql": "f99b510a96db8bdcc76f328b8e25e9eb7fd256e5d9e5c9040f38e4f355200f82",
+  "20261112132131_staff_rpc_conflict_translation_production.sql": "2b54f4e0e8606c83b51a7405f349793c3f3c89419f1550182f96987f4f6bb66f",
+  "contain_after_drain.NOT-RUN.sql": "72823ca729d83a5a39b9e1a1f09b8b656159693806183fac96680f8fc372aa41",
+  "revert_conflict_translation.NOT-RUN.sql": "bd589c83ca4479bce044ca4482093a9c2648da0d693ba3225c552d46bb707dbc"
+}

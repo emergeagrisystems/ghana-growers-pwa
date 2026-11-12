@@ -3,7 +3,7 @@ import { requireAdminUser } from "@/lib/adminAuth";
 import { getRecentLeadRequests, allowedStatuses } from "@/lib/leadRequests";
 
 import { logAdminActivity } from "@/lib/adminActivity";
-import { idPattern, isSameOriginWrite, stageOnly, staffClient, staffError, staffRpc } from "@/lib/staffRpc";
+import { idPattern, isSameOriginWrite, staffCrmAvailable, staffClient, staffError, staffRpc } from "@/lib/staffRpc";
 
 const reply=(body:unknown,status=200)=>NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});
 export const runtime = "nodejs";
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   const id=new URL(request.url).searchParams.get("id");
   if(id!==null){
-    if(!stageOnly()) return reply({error:"Shared case status is unavailable."},503);
+    if(!staffCrmAvailable()) return reply({error:"Shared case status is unavailable."},503);
     if(!idPattern.test(id)) return reply({error:"Invalid lead."},400);
     try{
       const row=await staffRpc(staffClient(),"staff_case_read",{p_actor:adminUser.id,p_request:id});
@@ -52,7 +52,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Admin access required" }, { status: 401 });
   }
 
-  if(!stageOnly()) return reply({error:"Version-checked status editing is unavailable."},503);
+  if(!staffCrmAvailable()) return reply({error:"Version-checked status editing is unavailable."},503);
   const b=await request.json().catch(()=>null);
   if(!b||!idPattern.test(b.id)||!idPattern.test(b.operation)||!allowedStatuses.has(b.status)
     ||!Number.isSafeInteger(b.version)||b.version<0||typeof b.lead_updated_at!=="string"||!Number.isFinite(Date.parse(b.lead_updated_at)))
