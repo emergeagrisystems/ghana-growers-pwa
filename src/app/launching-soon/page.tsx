@@ -1,135 +1,37 @@
-import Link from "next/link";
-import { LockKeyhole, ShoppingBasket, Sprout, Store, UsersRound } from "lucide-react";
-import { GhanaGrowersLogo } from "@/components/GhanaGrowersLogo";
-import { PrelaunchFooter, PrelaunchHeader } from "@/components/PrelaunchShell";
-import { SafeImage } from "@/components/SafeImage";
+/* eslint-disable @next/next/no-img-element */
+import { redirect } from "next/navigation";
+import { foundationFont } from "@/components/homepage-foundation/font";
+import { LaunchCountdown } from "@/components/prelaunch/LaunchCountdown";
+import { Acquisition } from "@/components/prelaunch/Acquisition";
+import { MamaGTeaser } from "@/components/prelaunch/MamaGTeaser";
+import { ComingBenefits } from "@/components/prelaunch/ComingBenefits";
+import styles from "@/components/prelaunch/Campaign.module.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Launching Soon",
-  description:
-    "Ghana Growers connects buyers, farmers and agricultural suppliers through a practical marketplace, public farmer profiles and smart farming tools.",
-  robots: {
-    index: false,
-    follow: false
-  },
-  openGraph: {
-    title: "Ghana's Agricultural Network is Growing",
-    description: "Ghana Growers is preparing its practical agricultural marketplace and support platform for public launch.",
-    images: ["/images/ghana-growers-social.png"]
-  }
+  title: "Launching 4 December at 5:00 AM Ghana time",
+  description: "Ghana Growers launches on 4 December 2026 at 05:00 GMT. Register your farm or agricultural business and tell farmers what you need.",
+  robots: { index: false, follow: false }
 };
 
-const registrationCards = [
-  {
-    title: "Join as a Farmer",
-    description: "Share your farm, products, location, and harvest information before the platform opens.",
-    href: "/join/farmer",
-    icon: Sprout
-  },
-  {
-    title: "Register as Buyer",
-    description: "Tell Ghana Growers what you buy, where you operate, and the produce you need.",
-    href: "/join/buyer",
-    icon: ShoppingBasket
-  },
-  {
-    title: "Become a Supplier",
-    description: "List farm inputs, equipment, logistics, packaging, finance, or agricultural services.",
-    href: "/become-a-supplier",
-    icon: Store
-  },
-  {
-    title: "Request Supply",
-    description: "Tell Ghana Growers what produce you need so our team can review demand before launch.",
-    href: "/submit-buyer-request",
-    icon: ShoppingBasket
-  }
-];
-
-const benefitCards = [
-  {
-    title: "What Ghana Growers is",
-    description:
-      "A practical agricultural marketplace and support platform for buyers, farmers, suppliers, and agribusiness partners.",
-    icon: UsersRound
-  }
-];
-
 export default function LaunchingSoonPage() {
-  return (
-    <div className="min-h-screen bg-earth-50">
-      <PrelaunchHeader />
-      <main>
-        <section>
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-16">
-            <div>
-              <GhanaGrowersLogo layout="stacked" className="mb-6 h-auto w-36 sm:w-40" priority />
-              <p className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-earth-700/75 shadow-sm ring-1 ring-leaf-900/10">
-                <LockKeyhole size={16} aria-hidden="true" />
-                Launching Soon
-              </p>
-              <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl lg:text-6xl">
-                Ghana&apos;s Agricultural Network is Growing
-              </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-ink/72">
-                Ghana Growers is preparing its practical agricultural marketplace and support platform for public launch.
-              </p>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-ink/62">
-                We are currently onboarding farmers, buyers, and agricultural suppliers before opening the full platform to the public.
-              </p>
-              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {registrationCards.map((card) => {
-                  const Icon = card.icon;
-                  return (
-                    <Link
-                      key={card.href}
-                      href={card.href}
-                      className="focus-ring group rounded-md border border-leaf-900/10 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
-                    >
-                      <span className="grid h-11 w-11 place-items-center rounded-md bg-leaf-600 text-white transition group-hover:bg-leaf-700">
-                        <Icon size={21} aria-hidden="true" />
-                      </span>
-                      <span className="mt-4 block text-base font-black text-ink">{card.title}</span>
-                      <span className="mt-2 block text-sm font-semibold leading-6 text-ink/58">{card.description}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="relative">
-              <div className="absolute -inset-3 rounded-md bg-leaf-600/10" aria-hidden="true" />
-              <SafeImage
-                src="/images/hero/ghana-growers-hero.jpg"
-                alt="Ghanaian agriculture network with farmers and fresh produce"
-                width={820}
-                height={620}
-                className="relative aspect-[4/3] w-full rounded-md border border-white bg-white object-cover shadow-soft"
-                priority
-                fallbackKind="default"
-                sizes="(min-width: 1024px) 48vw, 100vw"
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white/78 py-12">
-          <div className="mx-auto grid max-w-3xl gap-5 px-4 sm:px-6 lg:px-8">
-            {benefitCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <article key={card.title} className="rounded-md border border-leaf-900/10 bg-white p-5 shadow-sm">
-                  <div className="grid h-11 w-11 place-items-center rounded-md bg-leaf-50 text-leaf-700 ring-1 ring-leaf-900/10">
-                    <Icon size={21} aria-hidden="true" />
-                  </div>
-                  <h2 className="mt-4 text-xl font-black text-ink">{card.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-ink/64">{card.description}</p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      </main>
-      <PrelaunchFooter />
-    </div>
-  );
+  if (process.env.SITE_PRELAUNCH === "false") redirect("/");
+  return <div className={`${styles.campaign} ${foundationFont.className}`} data-prelaunch-campaign>
+    <section className={styles.hero} aria-labelledby="campaign-title">
+      <div><p className={styles.eyebrow}>GHANA GROWERS · LAUNCHING 4 DECEMBER</p>
+        <h1 id="campaign-title">Ghana&apos;s agricultural network is almost here.</h1>
+        <p className={styles.heroSupport}>Find farms and agri-suppliers, tell farmers what you need, and get practical farming support from Mama G — all in one place.</p>
+        <p className={styles.launchLine}><time dateTime="2026-12-04T05:00:00Z">4 December 2026 · 5:00 AM Ghana time</time></p>
+        <p className={styles.earlyLine}>The farming day starts early. So will we.</p>
+        <LaunchCountdown />
+      </div>
+      <figure className={styles.heroArt}>
+        <img src="/stage1-media/hero-clay-map-1088.webp" srcSet="/stage1-media/hero-clay-map-640.webp 640w, /stage1-media/hero-clay-map-1088.webp 1088w, /stage1-media/hero-clay-map-1600.webp 1600w"
+          sizes="(max-width: 700px) calc(100vw - 40px), (max-width: 1280px) 44vw, 550px"
+          alt="Illustration of Ghana connecting a grower, agricultural shop and basket of produce." width="1088" height="812" fetchPriority="high" />
+        <figcaption>Buy. Sell. Grow.</figcaption>
+      </figure>
+    </section>
+    <Acquisition /><MamaGTeaser /><ComingBenefits />
+  </div>;
 }

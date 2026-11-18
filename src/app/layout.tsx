@@ -6,6 +6,7 @@ import { PublicVisualScope } from "@/components/PublicVisualScope";
 import { CategoryMotionProvider } from "@/components/homepage/CategoryMotionPreference";
 import { Footer } from "@/components/Footer";
 import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
+import { PrelaunchHeader, PrelaunchFooter } from "@/components/PrelaunchShell";
 import { Header } from "@/components/Header";
 import { PwaRegister } from "@/components/PwaRegister";
 import { siteConfig } from "@/data/site";
@@ -87,10 +88,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </a>
           </div>
         ) : null}
-        <Header showFullNavigation={showPublicShell} buyerRequestsOpen={getPublicWorkflowState("lead-requests").available} />
+        {showPublicShell ? <Header showFullNavigation buyerRequestsOpen={getPublicWorkflowState("lead-requests").available} /> : <PrelaunchHeader />}
         <CategoryMotionProvider>
           <main><PublicVisualScope>{children}</PublicVisualScope></main>
-          {showPublicShell ? <Footer /> : null}
+          {showPublicShell ? <Footer /> : <PrelaunchFooter />}
         </CategoryMotionProvider>
         {showPublicShell ? <FloatingWhatsAppButton /> : null}
       </body>

@@ -658,7 +658,8 @@ const tests: TestCase[] = [
           await assertPreviewDenied(await middleware(previewRequest(path)), mode);
         }
         const gated = await middleware(previewRequest("/launching-soon"));
-        assert.equal(gated.headers.get("x-middleware-next"), "1", "denial target must not loop");
+        assert.equal(gated.headers.get("x-middleware-next"), mode === "true" ? "1" : null, "denial target must not loop");
+        if (mode === "false") assert.equal(gated.headers.get("location"), "http://localhost:3000/");
       }
     }
   },
@@ -740,11 +741,11 @@ const tests: TestCase[] = [
     run: async () => {
       for (const mode of ["true", "false"]) {
         const middleware = previewMiddleware({ SITE_PRELAUNCH: mode });
-        for (const path of ["/dev-preview", "/admin", "/admin/users", "/admin/login", "/api/admin/users", "/farmer-hub", "/farmer-hub/feedback", "/api/farmmate/ask", "/api/integrations/hq/approval-counts", "/launching-soon", "/robots.txt", "/sitemap.xml", "/_next/static/test.js", "/brand/logo.svg", "/images/test.jpg", "/icons/test.png", "/manifest.json", "/sw.js", "/favicon.ico", "/favicon.svg"]) {
+        for (const path of ["/dev-preview", "/admin", "/admin/users", "/admin/login", "/api/admin/users", "/api/integrations/hq/approval-counts", "/robots.txt", "/sitemap.xml", "/_next/static/test.js", "/brand/logo.svg", "/images/test.jpg", "/icons/test.png", "/manifest.json", "/sw.js", "/favicon.ico", "/favicon.svg"]) {
           const response = await middleware(previewRequest(path));
           assert.equal(response.headers.get("x-middleware-next"), "1", `${mode}: ${path}`);
         }
-        for (const path of ["/", "/about", "/marketplace", "/learn", "/dev-preview-lookalike", "/api/integrations/hq/other", "/api/private"]) {
+        for (const path of ["/", "/farmer-hub", "/farmer-hub/feedback", "/about", "/marketplace", "/learn", "/dev-preview-lookalike", "/api/integrations/hq/other", "/api/private"]) {
           const response = await middleware(previewRequest(path));
           assert.equal(response.headers.get("x-middleware-next"), mode === "false" ? "1" : null, path);
           assert.equal(response.headers.get("x-middleware-rewrite"), mode === "true" ? "http://localhost:3000/launching-soon" : null, path);
@@ -2329,8 +2330,8 @@ const tests: TestCase[] = [
       assert.ok(shell.includes("Farms & Suppliers"));
       assert.equal(shell.includes('"Market"'), false);
       assert.equal(shell.includes('"Learn"'), false);
-      assert.ok(prelaunch.includes("GhanaGrowersLogo"));
-      assert.ok(launchingSoon.includes('layout="stacked"'));
+      assert.ok(prelaunch.includes("GHANA GROWERS"));
+      assert.ok(launchingSoon.includes("LaunchCountdown"));
     }
   },
   {
@@ -2444,7 +2445,7 @@ const tests: TestCase[] = [
       assert.equal(implementation.includes("<EcosystemHeadline />"), true);
       assert.equal(middleware.includes('process.env.SITE_PRELAUNCH !== "false"'), true);
       assert.equal(middleware.includes("verifyPreviewAccessToken"), true);
-      assert.equal(middleware.includes('pathname.startsWith("/brand")'), true);
+      assert.equal(middleware.includes('pathname.startsWith("/brand/")'), true);
       assert.equal(middleware.includes('pathname === "/favicon.svg"'), true);
     }
   },

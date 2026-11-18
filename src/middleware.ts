@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isolatedSupabaseUrl } from "@/lib/supabase/isolation";
 import { isControlledPrelaunchRoute, isInternalPreviewRoute, isPublicFarmMatePilotRoute } from "@/lib/farmmate/pilot-access";
-import { isHqApprovalCountsPrelaunchRoute } from "@/lib/prelaunchAccess";
+import { isHqApprovalCountsPrelaunchRoute, isPrelaunchIntakeRoute, isPrelaunchLegalRoute } from "@/lib/prelaunchAccess";
 import { previewAccessCookie, verifyPreviewAccessToken } from "@/lib/previewAccess";
 
 function prelaunchEnabled() {
@@ -10,10 +10,14 @@ function prelaunchEnabled() {
 
 function isPublicAsset(pathname: string) {
   return (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/brand") ||
-    pathname.startsWith("/images") ||
-    pathname.startsWith("/icons") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/brand/") ||
+    pathname.startsWith("/images/") ||
+    pathname.startsWith("/icons/") ||
+    pathname.startsWith("/stage1-media/") ||
+    pathname.startsWith("/hm1/") ||
+    pathname.startsWith("/fonts/") ||
+    pathname.startsWith("/rc1/") ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
     pathname === "/favicon.ico" ||
@@ -29,7 +33,8 @@ function isAllowedPrelaunchRoute(pathname: string) {
   return (
     isHqApprovalCountsPrelaunchRoute(pathname) ||
     isPrelaunchSeoRoute(pathname) ||
-    isPublicFarmMatePilotRoute(pathname) ||
+    isPrelaunchIntakeRoute(pathname) ||
+    isPrelaunchLegalRoute(pathname) ||
     isControlledPrelaunchRoute(pathname) ||
     isPublicAsset(pathname)
   );
@@ -38,6 +43,7 @@ function isAllowedPrelaunchRoute(pathname: string) {
 function gatedResponse(request: NextRequest) {
   const response = NextResponse.rewrite(new URL("/launching-soon", request.url));
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
   return response;
 }
 
@@ -74,16 +80,33 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!prelaunchEnabled()) {
+    if (pathname === "/launching-soon") {
+      return NextResponse.redirect(new URL("/", request.url), {
+        status: 307, headers: { "Cache-Control": "private, no-store, max-age=0" }
+      });
+    }
     return NextResponse.next();
   }
 
-  const previewAccessGranted = await verifyPreviewAccessToken(
-    request.cookies.get(previewAccessCookie)?.value,
-    process.env.PREVIEW_ACCESS_SECRET
-  );
+  let previewAccessGranted = false;
+  try {
+    previewAccessGranted = await verifyPreviewAccessToken(
+      request.cookies.get(previewAccessCookie)?.value,
+      process.env.PREVIEW_ACCESS_SECRET
+    );
+  } catch { /* Fail closed without changing the existing authorisation mechanism. */ }
 
   if (previewAccessGranted) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    return response;
+  }
+
+  // Deny before product, provider, usage or credit handlers execute. Never API HTML.
+  if (pathname === "/api/farmmate" || (isPublicFarmMatePilotRoute(pathname) && pathname.startsWith("/api/"))) {
+    return NextResponse.json({ ok: false, code: "PRELAUNCH_UNAVAILABLE", message: "Mama G is available when Ghana Growers launches." }, {
+      status: 503, headers: { "Cache-Control": "private, no-store, max-age=0", "X-Robots-Tag": "noindex, nofollow" }
+    });
   }
 
   if (pathname === "/") {
@@ -95,7 +118,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAllowedPrelaunchRoute(pathname)) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (!isPublicAsset(pathname)) response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    return response;
   }
 
   return gatedResponse(request);

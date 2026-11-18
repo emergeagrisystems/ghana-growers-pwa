@@ -13,7 +13,9 @@
     "test:contact-enquiries-database": "node tests/contact-enquiries-database.integration.mjs",
     "test:farmer-registration": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmer-registration.test.js",
     "test:farmer-application-admin": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/farmer-application-admin.test.js",
-    "test:hq-replay-database": "node tests/hq-replay-database.integration.mjs"
+    "test:hq-replay-database": "node tests/hq-replay-database.integration.mjs",
+    "test:prelaunch": "tsc -p tsconfig.farmmate-tests.json && node .farmmate-test-dist/tests/prelaunch-campaign.test.js && node tests/prelaunch-routing.local.cjs",
+    "test:prelaunch-browser": "node tests/prelaunch.browser.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
