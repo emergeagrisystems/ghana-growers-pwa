@@ -16,9 +16,7 @@ export function PrelaunchHeader() {
 export function PrelaunchFooter() {
   return <footer className={`${styles.shell} ${styles.footer} ${foundationFont.className}`}>
     <div className={styles.footerInner}>
-      <div><p className={styles.footerBrand}>Ghana Growers</p>
-        <p className={styles.footerMeta}>Launching 4 December 2026 · 5:00 AM Ghana time</p>
-        <p className={styles.footerMeta}>&copy; {new Date().getFullYear()} Ghana Growers.</p></div>
+      <p className={styles.footerMeta}>&copy; {new Date().getFullYear()} Ghana Growers</p>
       <nav aria-label="Legal"><Link href="/privacy-policy" prefetch={false}>Privacy</Link><Link href="/terms-of-use" prefetch={false}>Terms of use</Link></nav>
     </div>
   </footer>;

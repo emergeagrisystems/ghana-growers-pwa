@@ -9,7 +9,7 @@ const flags = ['PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED', 'PUBLIC_INTAKE_SUPPL
 const pages = ['/join/farmer', '/become-a-supplier', '/submit-listing', '/submit-buyer-request'];
 const apis = ['/api/farmer-registration', '/api/supplier-registration', '/api/listing-submissions', '/api/buyer-request-submissions'];
 const evidence = { source: 'LOCAL built Next application; fictional data only; server external fetch blocked', viewports: {}, timezone: [], closedWorkflows: [], requests: [], findings: [] };
-const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-campaign-2026-11-18');
+const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-visual-correction-2026-11-18');
 fs.mkdirSync(output, { recursive: true });
 async function port() { const s=http.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p; }
 async function app(mode, off = []) {
@@ -54,10 +54,15 @@ async function measure(page) {
       const a=lum(actual),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05),large=parseFloat(s.fontSize)>=24||(parseFloat(s.fontSize)>=18.66&&Number(s.fontWeight)>=700);
       contrast.push({text:node.textContent.trim().slice(0,65),ratio:Math.round(ratio*100)/100,required:large?3:4.5});
     }
-    return {viewport:innerWidth,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,
+    const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
+    // Replaced IMG elements have UA overflow:clip; assess their aspect ratio separately.
+    const clipping=[root,...root.querySelectorAll('*')].filter(el=>el instanceof HTMLElement&&el.tagName!=='IMG'&&!el.closest('[aria-hidden=true]')&&el.getBoundingClientRect().width>1&&['hidden','clip'].includes(getComputedStyle(el).overflowY)).map(el=>({tag:el.tagName,html:el.outerHTML.slice(0,400),overflow:getComputedStyle(el).overflowY}));
+    return {viewport:innerWidth,viewportHeight:innerHeight,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,clipping,
+      primary:box('a[href="/join/farmer"]'),teaser:box('[data-mama-teaser]'),countdown:box('[data-launch-countdown]'),
+      numeralSize:parseFloat(getComputedStyle(document.querySelector('dd')).fontSize),headingSize:parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
       h1:document.querySelectorAll('h1').length,main:document.querySelectorAll('main').length,
       controlsInTeaser:root.querySelectorAll('[data-mama-teaser] input,[data-mama-teaser] button,[data-mama-teaser] a,[data-mama-teaser] [tabindex]').length,
-      images:[...root.querySelectorAll('img')].map(i=>({loaded:i.complete&&i.naturalWidth>0,alt:i.alt}))};
+      images:[...root.querySelectorAll('img')].map(i=>({loaded:i.complete&&i.naturalWidth>0,alt:i.alt,decorative:!!i.closest('[aria-hidden=true]'),ratioError:Math.abs(i.getBoundingClientRect().width/i.getBoundingClientRect().height-i.naturalWidth/i.naturalHeight)}))};
   });
 }
 (async()=>{
@@ -65,23 +70,49 @@ async function measure(page) {
   try {
     browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH});
     for(const width of [320,390,768,1440]) {
-      const ctx=await context(browser,server.origin,{viewport:{width,height:width<700?844:900},reducedMotion:'reduce'});
+      const height=width===320?568:width===390?844:900;
+      const ctx=await context(browser,server.origin,{viewport:{width,height},reducedMotion:'reduce'});
       const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
       await page.clock.setFixedTime(new Date('2026-11-18T12:00:00Z'));
       const response=await page.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});assert.equal(response.status(),200);checkBody(await response.text());
       await page.locator('[data-launch-countdown] dd').first().filter({hasText:/\d/}).waitFor();
-      const result=await measure(page);assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
+      const result=await measure(page);evidence.viewports[width]=result;
+      await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
+      assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
+      assert.deepEqual(result.clipping,[]);assert.ok(result.numeralSize>result.headingSize*1.7,'Countdown must dominate');
+      assert.ok(result.primary.bottom<=height,'Primary action visible without scrolling');
+      if(width===390||width===1440){assert.ok(result.pageHeight<=height,'Normal-height one-screen composition');assert.ok(result.teaser.bottom<=height);}
       for(const a of result.anchors){assert.ok(a.height>=44,a.text);assert.ok(a.width>=44,a.text);}
       for(const c of result.contrast)assert.ok(c.ratio>=c.required,c.text+' contrast '+c.ratio);
-      for(const img of result.images){assert.ok(img.loaded);assert.ok(img.alt);}
+      for(const img of result.images){assert.ok(img.loaded);assert.ok(img.alt||img.decorative);if(!img.decorative)assert.ok(img.ratioError<.01);}
       assert.deepEqual(errors,[]);assert.equal(await page.locator('[data-launch-countdown] [aria-live="off"]').count(),1);
+      const motion=await page.evaluate(()=>({reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,animations:document.getAnimations().length,scrollBehavior:getComputedStyle(document.documentElement).scrollBehavior}));
+      assert.equal(motion.reduced,true);assert.equal(motion.animations,0);assert.equal(motion.scrollBehavior,'auto');
       await page.keyboard.press('Tab');const focus=await page.evaluate(()=>({tag:document.activeElement.tagName,style:getComputedStyle(document.activeElement).outlineStyle,width:getComputedStyle(document.activeElement).outlineWidth}));assert.equal(focus.tag,'A');assert.notEqual(focus.style,'none');assert.ok(parseFloat(focus.width)>=3);
       await page.locator('h1').click(); // Remove keyboard focus ring for review capture, without action.
       await page.screenshot({path:path.join(output,'campaign-'+width+'.png'),fullPage:true});
+      await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:path.join(output,'initial-'+width+'.png')});
       const box=await page.locator('[data-launch-countdown]').boundingBox(),before=await page.locator('[data-launch-countdown] dd').allTextContents();
       await page.clock.setFixedTime(new Date('2026-11-18T12:00:02Z'));await page.waitForFunction(old=>[...document.querySelectorAll('[data-launch-countdown] dd')].map(e=>e.textContent).join()!==old,before.join());
       const after=await page.locator('[data-launch-countdown]').boundingBox();assert.equal(after.height,box.height);assert.equal(after.width,box.width);
-      evidence.viewports[width]={...result,errors,focus,countdownSizeStable:true};await ctx.close();
+      evidence.viewports[width]={...result,errors,focus,motion,countdownSizeStable:true};await ctx.close();
+    }
+    evidence.reflow=[];
+    for(const fixture of [{name:'text-200-percent',width:390,height:844,text:32},{name:'short-text-200-percent',width:320,height:568,text:32},{name:'desktop-400-percent-equivalent-reflow',width:360,height:225,text:16}]){
+      const ctx=await context(browser,server.origin,{viewport:{width:fixture.width,height:fixture.height}}),p=await ctx.newPage();
+      await p.clock.setFixedTime(new Date('2026-11-18T12:00:00Z'));await p.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});
+      await p.evaluate(size=>{document.documentElement.style.fontSize=size+'px'},fixture.text);
+      const result=await measure(p);assert.equal(result.scrollWidth,fixture.width,fixture.name);assert.deepEqual(result.badOverflow,[]);assert.deepEqual(result.clipping,[]);
+      const focusOrder=[];evidence.reflow.push({fixture,...result,focusOrder});
+      for(let i=0;i<7;i++){
+        await p.keyboard.press('Tab');
+        // Wait for the site's existing non-reduced smooth scrolling to settle.
+        await p.waitForFunction(()=>{const r=document.activeElement.getBoundingClientRect();return r.top>=-.5&&r.bottom<=innerHeight+.5});
+        const item=await p.evaluate(()=>{const a=document.activeElement,r=a.getBoundingClientRect(),s=getComputedStyle(a);return {href:a.getAttribute('href'),top:r.top,bottom:r.bottom,visible:r.top>=-.5&&r.bottom<=innerHeight+.5,outline:s.outlineStyle,width:parseFloat(s.outlineWidth)}});
+        assert.ok(item.href);assert.ok(item.visible,JSON.stringify({fixture,item}));assert.notEqual(item.outline,'none');assert.ok(item.width>=3);focusOrder.push(item.href);
+      }
+      assert.deepEqual(focusOrder,['/launching-soon',...pages.map((_,i)=>pages[[0,3,1,2][i]]),'/privacy-policy','/terms-of-use']);
+      await p.screenshot({path:path.join(output,fixture.name+'.png'),fullPage:true});await ctx.close();
     }
     for(const timezoneId of ['Pacific/Honolulu','Asia/Tokyo']) {
       const ctx=await context(browser,server.origin,{timezoneId}),page=await ctx.newPage();await page.clock.setFixedTime(new Date('2026-12-03T05:00:00Z'));
