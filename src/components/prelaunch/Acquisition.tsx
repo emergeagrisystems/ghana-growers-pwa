@@ -6,7 +6,7 @@ import styles from "./Campaign.module.css";
 const entries = [
   { workflow: "farmer-registration", href: "/join/farmer", title: "+ Add my farm", benefit: "Help buyers discover what you grow.", icon: Sprout },
   { workflow: "buyer-request-submissions", href: "/submit-buyer-request", title: "Pre-Order", benefit: "Wholesale buyers, tell us what you need.", icon: ShoppingBasket },
-  { workflow: "supplier-registration", href: "/become-a-supplier", title: "Register my Agro-supply Shop", benefit: "Help farmers discover your products.", icon: Store }
+  { workflow: "supplier-registration", href: "/become-a-supplier", title: "Add Supplier Shop", benefit: "Help farmers discover your products.", icon: Store }
 ] as const;
 
 export function Acquisition() {

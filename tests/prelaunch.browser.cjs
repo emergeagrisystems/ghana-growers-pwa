@@ -103,7 +103,7 @@ async function measure(page) {
       assert.equal(await page.locator('h1').innerText(),'Something fresh is growing');
       const links = page.getByRole('navigation', {name:'Join before launch'}).getByRole('link');
       assert.deepEqual(await links.evaluateAll(items => items.map(a => a.getAttribute('href'))),[pages[0],pages[3],pages[1]]);
-      assert.deepEqual(await links.locator('strong').allTextContents(),['+ Add my farm','Pre-Order','Register my Agro-supply Shop']);
+      assert.deepEqual(await links.locator('strong').allTextContents(),['+ Add my farm','Pre-Order','Add Supplier Shop']);
       assert.equal(await page.locator('a[href="/submit-listing"]').count(),0);
       assert.deepEqual(await links.locator('strong + span').allTextContents(),['Help buyers discover what you grow.','Wholesale buyers, tell us what you need.','Help farmers discover your products.']);
       await page.locator('[data-mama-teaser]').getByText('Coming soon',{exact:true}).waitFor();
