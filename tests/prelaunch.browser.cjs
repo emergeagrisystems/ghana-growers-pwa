@@ -9,7 +9,7 @@ const flags = ['PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED', 'PUBLIC_INTAKE_SUPPL
 const pages = ['/join/farmer', '/become-a-supplier', '/submit-listing', '/submit-buyer-request'];
 const apis = ['/api/farmer-registration', '/api/supplier-registration', '/api/listing-submissions', '/api/buyer-request-submissions'];
 const evidence = { source: 'LOCAL built Next application; fictional data only; server external fetch blocked', viewports: {}, timezone: [], closedWorkflows: [], requests: [], findings: [] };
-const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-countdown-correction-2026-11-19');
+const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-white-teal-review');
 fs.mkdirSync(output, { recursive: true });
 async function port() { const s=http.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p; }
 async function app(mode, off = []) {
@@ -40,6 +40,18 @@ async function context(browser, origin, options={}) {
 async function measure(page) {
   return page.evaluate(()=>{
     const root=document.querySelector('[data-prelaunch-campaign]');
+    const heading=root.querySelector('h1'), range=document.createRange();
+    range.selectNodeContents(heading.firstChild);
+    const lineRects=[...range.getClientRects(),heading.querySelector('span').getBoundingClientRect()];
+    const lines=[];
+    for(const rect of lineRects){
+      const midY=(rect.top+rect.bottom)/2;
+      let line=lines.find(row=>Math.abs(row.midY-midY)<rect.height/2);
+      if(!line){line={midY,left:rect.left,right:rect.right};lines.push(line);}
+      line.left=Math.min(line.left,rect.left);line.right=Math.max(line.right,rect.right);
+    }
+    const headingOffsets=lines.map(line=>(line.left+line.right-innerWidth)/2);
+    const whiteSurfaces=[document.documentElement,document.body,document.querySelector('header'),root,...root.querySelectorAll('nav a'),document.querySelector('footer')].map(el=>getComputedStyle(el).backgroundColor);
     const anchors=[...root.querySelectorAll('a')].map(a=>({text:a.textContent.trim(),height:a.getBoundingClientRect().height,width:a.getBoundingClientRect().width}));
     const badOverflow=[...document.querySelectorAll('body *')].filter(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.position!=='absolute'&&s.visibility!=='hidden'&&r.width>0&&(r.right>innerWidth+1||r.left < -1)}).map(el=>el.tagName+'.'+el.className);
     function rgb(value){return (value.match(/[\d.]+/g)||[]).map(Number);}
@@ -57,7 +69,7 @@ async function measure(page) {
     const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
     // Replaced IMG elements have UA overflow:clip; assess their aspect ratio separately.
     const clipping=[root,...root.querySelectorAll('*')].filter(el=>el instanceof HTMLElement&&el.tagName!=='IMG'&&!el.closest('[aria-hidden=true]')&&el.getBoundingClientRect().width>1&&['hidden','clip'].includes(getComputedStyle(el).overflowY)).map(el=>({tag:el.tagName,html:el.outerHTML.slice(0,400),overflow:getComputedStyle(el).overflowY}));
-    return {viewport:innerWidth,viewportHeight:innerHeight,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,clipping,
+    return {headingOffsets,whiteSurfaces,teaserBackground:getComputedStyle(root.querySelector('[data-mama-teaser]')).backgroundColor,viewport:innerWidth,viewportHeight:innerHeight,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,clipping,
       primary:box('a[href="/join/farmer"]'),teaser:box('[data-mama-teaser]'),countdown:box('[data-launch-countdown]'),
       numeralSize:parseFloat(getComputedStyle(document.querySelector('dd')).fontSize),headingSize:parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
       h1:document.querySelectorAll('h1').length,main:document.querySelectorAll('main').length,
@@ -77,6 +89,9 @@ async function measure(page) {
       const response=await page.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});assert.equal(response.status(),200);checkBody(await response.text());
       await page.locator('[data-launch-countdown] dd').first().filter({hasText:/\d/}).waitFor();
       const result=await measure(page);evidence.viewports[width]=result;
+      assert.ok(result.whiteSurfaces.every(color=>color==='rgb(255, 255, 255)'));
+      assert.equal(result.teaserBackground,'rgb(36, 71, 71)');
+      assert.ok(result.headingOffsets.every(offset=>Math.abs(offset)<=1.5),JSON.stringify(result.headingOffsets));
       await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
       assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
       assert.deepEqual(result.clipping,[]);
@@ -111,11 +126,12 @@ async function measure(page) {
       evidence.viewports[width]={...result,errors,focus,motion,countdownSizeStable:true};await ctx.close();
     }
     evidence.reflow=[];
-    for(const fixture of [{name:'text-200-percent',width:390,height:844,text:32},{name:'short-text-200-percent',width:320,height:568,text:32},{name:'desktop-400-percent-equivalent-reflow',width:360,height:225,text:16}]){
+    for(const fixture of [{name:'text-200-percent',width:390,height:844,text:32},{name:'short-text-200-percent',width:320,height:568,text:32},{name:'tablet-text-200-percent',width:768,height:900,text:32},{name:'desktop-text-200-percent',width:1440,height:900,text:32},{name:'desktop-400-percent-equivalent-reflow',width:360,height:225,text:16}]){
       const ctx=await context(browser,server.origin,{viewport:{width:fixture.width,height:fixture.height}}),p=await ctx.newPage();
       await p.clock.setFixedTime(new Date('2026-11-18T12:00:00Z'));await p.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});
       await p.evaluate(size=>{document.documentElement.style.fontSize=size+'px'},fixture.text);
       const result=await measure(p);assert.equal(result.scrollWidth,fixture.width,fixture.name);assert.deepEqual(result.badOverflow,[]);assert.deepEqual(result.clipping,[]);
+      assert.ok(result.headingOffsets.every(offset=>Math.abs(offset)<=1.5),JSON.stringify({fixture,lines:result.headingOffsets}));
       const focusOrder=[];evidence.reflow.push({fixture,...result,focusOrder});
       for(let i=0;i<6;i++){
         await p.keyboard.press('Tab');

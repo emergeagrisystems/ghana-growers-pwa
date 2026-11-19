@@ -17,9 +17,9 @@ export default function LaunchingSoonPage() {
   if (process.env.SITE_PRELAUNCH === "false") redirect("/");
   return <div className={`${styles.campaign} ${foundationFont.className}`} data-prelaunch-campaign>
     <div className={styles.inner}>
+      <h1 id="campaign-title">Something fresh is <span className={styles.finalWord}>growing<GrowthIllustration /></span></h1>
       <section className={styles.hero} aria-labelledby="campaign-title">
         <div className={styles.launchContent}>
-          <h1 id="campaign-title">Something fresh is <span className={styles.finalWord}>growing<GrowthIllustration /></span></h1>
           <LaunchCountdown />
           <p className={styles.launchLine}>Ghana Growers opens <time dateTime="2026-12-04T05:00:00Z">4 December 2026 · 5:00 AM Ghana time</time></p>
         </div>
