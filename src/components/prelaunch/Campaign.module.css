@@ -15,38 +15,39 @@
 .shell a:focus-visible, .campaign a:focus-visible { outline: 3px solid #91600c; outline-offset: 3px; }
 .campaign { min-height: calc(100svh - 122px); display: grid; align-content: center; padding-block: clamp(1.4rem, 4vh, 3rem) 2rem; }
 .campaign h1, .campaign h2, .campaign p { margin: 0; }
-.hero { display: grid; grid-template-columns: 1.12fr 1fr; align-items: center; gap: 1rem; }
+.inner { width: 100%; max-width: 1280px; padding-inline: 40px; }
+.hero { display: grid; grid-template-columns: minmax(0,1.75fr) minmax(0,1fr); align-items: center; gap: 64px; }
 .launchContent { min-width: 0; }
-.hero h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(3.5rem, 6.5vw, 6.4rem); line-height: .99; font-weight: 400; letter-spacing: -.061em; max-width: 9.8em; text-wrap: balance; }
-.hero h1 em { color: #55703c; font-weight: inherit; }
-.launchContent .launchLine { margin-block: 1.4rem .9rem; color: #485849; font-size: .98rem; }
-.launchLine time { font-weight: 650; }
-.plate { width: 100%; height: auto; display: block; }
-.roots, .shoot { transform-box: fill-box; }
+.hero h1 { font-size: clamp(1.75rem, 2.7vw, 2.5rem); font-weight: 550; line-height: 1.2; letter-spacing: -.035em; }
+.finalWord { white-space: nowrap; }
+.sproutIcon { display: inline-block; margin-left: .24em; vertical-align: -.12em; width: clamp(28px, 3vw, 36px); height: auto; }
+.root, .shoot { transform-box: fill-box; }
 @media (prefers-reduced-motion:no-preference) {
-  .roots { transform-origin: top center; animation: takeRoot .75s ease-out both; }
-  .shoot { transform-origin: bottom center; animation: unfold 1.65s .32s cubic-bezier(.17,.7,.24,1) both; }
+  .root { transform-origin: top; animation: growRoot .65s .35s ease-out both; }
+  .shoot { transform-origin: bottom; animation: emerge 1.25s 1s ease-out both; }
 }
-@keyframes takeRoot { from { transform: scaleY(.55); opacity: .4; } to { transform: scaleY(1); opacity: 1; } }
-@keyframes unfold { from { transform: scale(.9,.77) rotate(-1.5deg); } to { transform: scale(1) rotate(0); } }
-.countdown { position: relative; }
-.clock { display: flex; flex-wrap: wrap; margin: 0; gap: .7rem 0; }
-.clock > div { display: flex; flex-direction: column-reverse; padding-inline: 1rem; border-left: 1px solid #c7ccb8; }
-.clock > div:first-child { padding-left: 0; border: 0; }
-.clock dt { font-size: .66rem; font-weight: 700; letter-spacing: .075em; text-transform: uppercase; color: #586148; }
-.clock dd { font-size: clamp(1.45rem, 2.2vw, 2rem); line-height: 1.15; font-variant-numeric: tabular-nums; margin: 0; font-weight: 580; }
+@keyframes growRoot { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes emerge { from { transform: scale(.45,0); } to { transform: scale(1); } }
+.launchContent .launchLine { margin-top: 1rem; color: #485849; font-size: .94rem; }
+.launchLine time { font-weight: 650; }
+.countdown { position: relative; margin-top: 24px; min-height: 154px; container: launch-clock / inline-size; }
+.clock { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin: 0; font-size: clamp(4.5rem, 7.8vw, 7rem); font-variant-numeric: tabular-nums; }
+.clock > div { position: relative; display: flex; flex-direction: column-reverse; align-items: center; }
+.clock dd { margin: 0; font-size: inherit; font-weight: 650; line-height: 1; letter-spacing: -.055em; font-variant-numeric: tabular-nums; text-align: center; }
+.clock dt { color: #4d604d; font-size: .6875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-top: 12px; }
+.clock > div:not(:last-child)::after { content: ""; position: absolute; right: -15px; top: 29%; width: 6px; height: 26px; background: radial-gradient(circle at 50% 3px, #ab7628 2.5px, transparent 3px), radial-gradient(circle at 50% 23px, #ab7628 2.5px, transparent 3px); }
 .fallback { position: absolute; inset: 0; background: #faf7ee; display: flex; align-items: center; font-weight: 600; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 .opening { border-left: 3px solid #819249; padding-left: .8rem; }
 .opening p { font-weight: 700; }
-.teaser { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); align-items: center; gap: 2rem; border-radius: 1rem; background: #e5eee4; color: #244747; padding: 1.25rem clamp(1rem,3vw,2.5rem); margin-top: 1.4rem; }
+.teaser { display: grid; justify-self: end; width: 100%; max-width: 350px; gap: 1.1rem; border-radius: 1rem; background: #e5eee4; color: #244747; padding: clamp(1rem,2.1vw,1.65rem); }
 .identity img { display: block; width: 7.6rem; max-width: 100%; height: auto; }
 .identity p { font-size: .875rem; margin-top: .35rem; }
 .sampleQuestion { justify-self: end; max-width: 28rem; background: #fffaf1; display: flex; gap: .75rem; padding: .9rem 1.1rem; border-radius: 1rem 1rem 1rem .15rem; }
 .sampleQuestion svg { flex-shrink: 0; margin-top: .12rem; }
 .sampleQuestion span { display: block; font-size: .68rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
 .sampleQuestion p { margin-top: .15rem; font-size: .94rem; line-height: 1.4; }
-.acquisition { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; margin-block: 1.15rem 0; }
+.acquisition { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .8rem; margin-block: 1.65rem 0; }
 .acquisition { container: entry-cards / inline-size; }
 .card { display: grid; grid-template-columns: auto 1fr auto; align-content: start; gap: .75rem; padding: 1.25rem 1rem; border: 1px solid #d3d4c0; border-radius: .8rem; background: #fffdf7; color: #223d30; text-decoration: none; }
 .card:hover { border-color: #7d8d63; background: #f4f5e7; }
@@ -62,16 +63,27 @@
   .card { grid-template-columns: 1fr auto; }
   .cardIcon { grid-column: 1; }.card > span:nth-child(2) { grid-column: 1 / -1; }.arrow { grid-column: 2; grid-row: 1; }
 }
-@media (max-width: 620px) {
-  .inner, .headerInner, .footerInner { width: calc(100% - 2.25rem); }
+@media (max-width: 1000px) {
+  .inner { padding-inline: 32px; }
+  .hero { grid-template-columns: minmax(0,1.55fr) minmax(0,1fr); gap: 32px; }
+  .clock { gap: 16px; font-size: clamp(3.625rem,8vw,5.75rem); }
+  .clock dt { font-size: .625rem; letter-spacing: .06em; }
+  .clock > div:not(:last-child)::after { right: -11px; }
+  .countdown { min-height: 118px; }
+}
+@media (max-width: 700px) {
+  .headerInner, .footerInner { width: calc(100% - 2.25rem); }
+  .inner { padding-inline: 20px; }
   .campaign { padding-block: 1.65rem 1.35rem; }
-  .hero { grid-template-columns: minmax(0,1fr); gap: .1rem; }
-  .hero h1 { font-size: clamp(2.9rem, 12.9vw, 4.6rem); max-width: 8.4em; }
+  .hero { grid-template-columns: minmax(0,1fr); gap: 1.1rem; }
+  .hero h1 { font-size: 1.75rem; }
   .launchContent .launchLine { margin-block: .85rem; font-size: .875rem; }
   .launchLine time { display: block; }
-  .clock > div { padding-inline: .75rem; }
-  .plate { max-width: 23rem; justify-self: center; }
-  .teaser { margin-top: .1rem; grid-template-columns: minmax(0,1fr); gap: .6rem; padding: .95rem 1rem; }
+  .countdown { margin-top: 18px; min-height: 92px; }
+  .clock { gap: 12px; font-size: clamp(3.375rem,16vw,4rem); }
+  .clock dt { margin-top: 9px; letter-spacing: .04em; }
+  .clock > div:not(:last-child)::after { right: -8px; top: 25%; width: 4px; height: 18px; background: radial-gradient(circle at 50% 2px,#ab7628 1.75px,transparent 2px), radial-gradient(circle at 50% 16px,#ab7628 1.75px,transparent 2px); }
+  .teaser { max-width: none; grid-template-columns: minmax(0,1fr); gap: .6rem; padding: .95rem 1rem; }
   .identity { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .8rem; }
   .identity img { width: 5.5rem; }.identity p { margin: 0; font-size: .8rem; }
   .sampleQuestion { justify-self: stretch; padding: .65rem .8rem; }
@@ -81,6 +93,16 @@
   .cardIcon, .card > span:nth-child(2), .arrow { grid-column: auto; grid-row: auto; }
   .card strong { font-size: .95rem; }
   .brand { font-size: .8rem; }
+}
+@media (max-width: 350px) {
+  .hero h1 { font-size: 1.5rem; }
+  .clock { gap: 8px; }
+  .clock > div:not(:last-child)::after { right: -6px; }
+  .countdown { margin-top: 14px; }
+}
+@container launch-clock (max-width: 21rem) {
+  .clock { grid-template-columns: repeat(2,minmax(0,1fr)); row-gap: 14px; }
+  .clock > div:nth-child(2)::after { display: none; }
 }
 /* With enlarged text on a narrow phone, give the wording the entire row. */
 @container entry-cards (max-width: 14rem) {

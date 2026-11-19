@@ -9,7 +9,7 @@ const flags = ['PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED', 'PUBLIC_INTAKE_SUPPL
 const pages = ['/join/farmer', '/become-a-supplier', '/submit-listing', '/submit-buyer-request'];
 const apis = ['/api/farmer-registration', '/api/supplier-registration', '/api/listing-submissions', '/api/buyer-request-submissions'];
 const evidence = { source: 'LOCAL built Next application; fictional data only; server external fetch blocked', viewports: {}, timezone: [], closedWorkflows: [], requests: [], findings: [] };
-const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-growth-2026-11-19');
+const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-countdown-correction-2026-11-19');
 fs.mkdirSync(output, { recursive: true });
 async function port() { const s=http.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p; }
 async function app(mode, off = []) {
@@ -80,14 +80,20 @@ async function measure(page) {
       await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
       assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
       assert.deepEqual(result.clipping,[]);
-      assert.ok(result.headingSize > result.numeralSize, 'Headline leads the hero');
+      const reference = {320:[54,280,2],390:[62.4,350,4],768:[61.44,408.47,4],1440:[112,722.91,4]}[width];
+      assert.ok(Math.abs(result.numeralSize-reference[0])<.02, 'Digit size matches 96ccef');
+      assert.ok(Math.abs(result.countdown.width-reference[1])<.05, 'Clock width matches 96ccef');
+      assert.equal(await page.locator('dl').evaluate(clock=>getComputedStyle(clock).gridTemplateColumns.split(' ').length), reference[2]);
+      assert.ok(result.numeralSize>1.7*result.headingSize,'Countdown leads the hero');
       assert.equal(await page.locator('h1').innerText(),'Something fresh is growing');
       const links = page.getByRole('navigation', {name:'Join before launch'}).getByRole('link');
       assert.deepEqual(await links.evaluateAll(items => items.map(a => a.getAttribute('href'))),[pages[0],pages[3],pages[1]]);
       assert.deepEqual(await links.locator('strong').allTextContents(),['+ Add my farm','Pre-Order','Register my Agro-supply Shop']);
       assert.equal(await page.locator('a[href="/submit-listing"]').count(),0);
-      const art = await page.locator('[data-growth-plate]').boundingBox();
-      assert.ok(art.width > 180 && art.height > 100 && art.y + art.height <= result.teaser.top + 1);
+      assert.deepEqual(await links.locator('strong + span').allTextContents(),['Help buyers discover what you grow.','Wholesale buyers, tell us what you need.','Help farmers discover your products.']);
+      await page.locator('[data-mama-teaser]').getByText('Coming soon',{exact:true}).waitFor();
+      const art = await page.locator('h1 [data-headline-sprout]').boundingBox();
+      assert.ok(art.width >=28 && art.width<=36 && art.height===art.width);
       assert.ok(result.teaser.bottom <= result.primary.top + 1);
       for(const a of result.anchors){assert.ok(a.height>=44,a.text);assert.ok(a.width>=44,a.text);}
       for(const c of result.contrast)assert.ok(c.ratio>=c.required,c.text+' contrast '+c.ratio);
@@ -124,29 +130,29 @@ async function measure(page) {
     const motionCtx=await context(browser,server.origin,{viewport:{width:390,height:844},reducedMotion:'no-preference'});
     const motionPage=await motionCtx.newPage();
     await motionPage.goto(server.origin+'/launching-soon',{waitUntil:'domcontentloaded'});
-    const growth = motionPage.locator('[data-growth-plate]');
-    const playback = await growth.evaluate(async svg => {
+    const growth = motionPage.locator('h1 [data-headline-sprout]');
+    const playbackPromise = growth.evaluate(async svg => {
       const parts = svg.getAnimations({subtree:true});
       const samples = parts.map(animation => ({
         iterations: animation.effect.getTiming().iterations,
+        endTime: animation.effect.getComputedTiming().endTime,
         frames: animation.effect.getKeyframes().map(frame => frame.transform)
       }));
       await Promise.all(parts.map(animation => animation.finished));
       return { samples, settled: parts.every(animation => animation.playState === 'finished') };
     });
+    // Record the running browser at native phone scale, including the heading and clock.
+    const timestamps=[];
+    const start=Date.now();
+    do {
+      timestamps.push(Date.now()-start);
+      await motionPage.screenshot({clip:{x:0,y:0,width:390,height:350},path:path.join(output,'motion-'+String(timestamps.length).padStart(3,'0')+'.png')});
+      await motionPage.waitForTimeout(45);
+    } while(Date.now()-start<3300);
+    fs.writeFileSync(path.join(output,'motion-times.json'),JSON.stringify(timestamps));
+    const playback=await playbackPromise;
     assert.equal(playback.samples.length,2);assert.ok(playback.settled);
-    for(const part of playback.samples){assert.equal(part.iterations,1);assert.notEqual(part.frames[0],part.frames.at(-1));}
-    // Sample the actual CSS animation timeline for the local motion review.
-    const plateBox = await growth.boundingBox();
-    for(let frame=0;frame<=20;frame++){
-      await growth.evaluate((svg,ms)=>{
-        for(const animation of svg.getAnimations({subtree:true})){
-          animation.pause();
-          animation.currentTime=ms;
-        }
-      },frame*100);
-      await motionPage.screenshot({clip:plateBox,path:path.join(output,'growth-frame-'+String(frame).padStart(2,'0')+'.png')});
-    }
+    for(const part of playback.samples){assert.equal(part.iterations,1);assert.ok(part.endTime<=4000);assert.notEqual(part.frames[0],part.frames.at(-1));}
     evidence.botanicalMotion=playback;await motionCtx.close();
     for(const timezoneId of ['Pacific/Honolulu','Asia/Tokyo']) {
       const ctx=await context(browser,server.origin,{timezoneId}),page=await ctx.newPage();await page.clock.setFixedTime(new Date('2026-12-03T05:00:00Z'));

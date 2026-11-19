@@ -6,7 +6,7 @@ export function MamaGTeaser() {
   return <aside className={styles.teaser} aria-labelledby="teaser-title" data-mama-teaser>
     <div className={styles.identity}>
       <h2 id="teaser-title"><img src="/hm1/nov07/mama-g-light.png" width="495" height="141" alt="Mama G" /></h2>
-      <p>Farming support, coming at launch.</p>
+      <p>Coming soon</p>
     </div>
     <div className={styles.sampleQuestion}>
       <MessageCircle aria-hidden="true" size={19} />
