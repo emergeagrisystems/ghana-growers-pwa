@@ -1,28 +1,24 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { getPublicWorkflowState, type PublicSubmissionWorkflow } from "@/lib/publicSubmissionAvailability";
+import { ArrowUpRight, Sprout, Store, ShoppingBasket } from "lucide-react";
+import { getPublicWorkflowState } from "@/lib/publicSubmissionAvailability";
 import styles from "./Campaign.module.css";
 
-function IntakeLink({ workflow, href, children, treatment = "primary" }: {
-  workflow: PublicSubmissionWorkflow; href: string; children: React.ReactNode; treatment?: "primary" | "secondary" | "quiet";
-}) {
-  const open = getPublicWorkflowState(workflow).available;
-  const className = treatment === "quiet" ? styles.quietAction : treatment === "secondary" ? styles.secondaryAction : styles.action;
-  return <Link href={href} prefetch={false} className={className}>
-    <span>{children}{!open && <span className={styles.closedLabel}> · Currently closed</span>}</span>
-    {treatment === "quiet" && <ArrowUpRight size={14} aria-hidden="true" />}
-  </Link>;
-}
+const entries = [
+  { workflow: "farmer-registration", href: "/join/farmer", title: "+ Add my farm", benefit: "Help buyers find your farm at launch.", icon: Sprout },
+  { workflow: "buyer-request-submissions", href: "/submit-buyer-request", title: "Pre-Order", benefit: "Share your wholesale needs before matching begins.", icon: ShoppingBasket },
+  { workflow: "supplier-registration", href: "/become-a-supplier", title: "Register my Agro-supply Shop", benefit: "Put your shop in reach of farmers and buyers.", icon: Store }
+] as const;
 
 export function Acquisition() {
   return <nav className={styles.acquisition} aria-label="Join before launch">
-    <div className={styles.actions}>
-      <IntakeLink workflow="farmer-registration" href="/join/farmer">Get Listed Free</IntakeLink>
-      <IntakeLink workflow="buyer-request-submissions" href="/submit-buyer-request" treatment="secondary">Pre-Order</IntakeLink>
-    </div>
-    <div className={styles.quietActions}>
-      <IntakeLink workflow="supplier-registration" href="/become-a-supplier" treatment="quiet">Register Business</IntakeLink>
-      <IntakeLink workflow="listing-submissions" href="/submit-listing" treatment="quiet">List a Product</IntakeLink>
-    </div>
+    {entries.map(({ workflow, href, title, benefit, icon: Icon }) => (
+      <Link key={workflow} href={href} prefetch={false} className={styles.card}>
+        <span className={styles.cardIcon}><Icon aria-hidden="true" size={22} strokeWidth={1.6} /></span>
+        <span><strong>{title}</strong><span className={styles.benefit}>{benefit}</span>
+          {!getPublicWorkflowState(workflow).available && <span className={styles.closedLabel}>Currently closed</span>}
+        </span>
+        <ArrowUpRight size={16} aria-hidden="true" className={styles.arrow} />
+      </Link>
+    ))}
   </nav>;
 }

@@ -9,7 +9,7 @@ const flags = ['PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED', 'PUBLIC_INTAKE_SUPPL
 const pages = ['/join/farmer', '/become-a-supplier', '/submit-listing', '/submit-buyer-request'];
 const apis = ['/api/farmer-registration', '/api/supplier-registration', '/api/listing-submissions', '/api/buyer-request-submissions'];
 const evidence = { source: 'LOCAL built Next application; fictional data only; server external fetch blocked', viewports: {}, timezone: [], closedWorkflows: [], requests: [], findings: [] };
-const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-visual-correction-2026-11-18');
+const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-growth-2026-11-19');
 fs.mkdirSync(output, { recursive: true });
 async function port() { const s=http.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p; }
 async function app(mode, off = []) {
@@ -79,9 +79,16 @@ async function measure(page) {
       const result=await measure(page);evidence.viewports[width]=result;
       await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
       assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
-      assert.deepEqual(result.clipping,[]);assert.ok(result.numeralSize>result.headingSize*1.7,'Countdown must dominate');
-      assert.ok(result.primary.bottom<=height,'Primary action visible without scrolling');
-      if(width===390||width===1440){assert.ok(result.pageHeight<=height,'Normal-height one-screen composition');assert.ok(result.teaser.bottom<=height);}
+      assert.deepEqual(result.clipping,[]);
+      assert.ok(result.headingSize > result.numeralSize, 'Headline leads the hero');
+      assert.equal(await page.locator('h1').innerText(),'Something fresh is growing');
+      const links = page.getByRole('navigation', {name:'Join before launch'}).getByRole('link');
+      assert.deepEqual(await links.evaluateAll(items => items.map(a => a.getAttribute('href'))),[pages[0],pages[3],pages[1]]);
+      assert.deepEqual(await links.locator('strong').allTextContents(),['+ Add my farm','Pre-Order','Register my Agro-supply Shop']);
+      assert.equal(await page.locator('a[href="/submit-listing"]').count(),0);
+      const art = await page.locator('[data-growth-plate]').boundingBox();
+      assert.ok(art.width > 180 && art.height > 100 && art.y + art.height <= result.teaser.top + 1);
+      assert.ok(result.teaser.bottom <= result.primary.top + 1);
       for(const a of result.anchors){assert.ok(a.height>=44,a.text);assert.ok(a.width>=44,a.text);}
       for(const c of result.contrast)assert.ok(c.ratio>=c.required,c.text+' contrast '+c.ratio);
       for(const img of result.images){assert.ok(img.loaded);assert.ok(img.alt||img.decorative);if(!img.decorative)assert.ok(img.ratioError<.01);}
@@ -104,16 +111,43 @@ async function measure(page) {
       await p.evaluate(size=>{document.documentElement.style.fontSize=size+'px'},fixture.text);
       const result=await measure(p);assert.equal(result.scrollWidth,fixture.width,fixture.name);assert.deepEqual(result.badOverflow,[]);assert.deepEqual(result.clipping,[]);
       const focusOrder=[];evidence.reflow.push({fixture,...result,focusOrder});
-      for(let i=0;i<7;i++){
+      for(let i=0;i<6;i++){
         await p.keyboard.press('Tab');
         // Wait for the site's existing non-reduced smooth scrolling to settle.
         await p.waitForFunction(()=>{const r=document.activeElement.getBoundingClientRect();return r.top>=-.5&&r.bottom<=innerHeight+.5});
         const item=await p.evaluate(()=>{const a=document.activeElement,r=a.getBoundingClientRect(),s=getComputedStyle(a);return {href:a.getAttribute('href'),top:r.top,bottom:r.bottom,visible:r.top>=-.5&&r.bottom<=innerHeight+.5,outline:s.outlineStyle,width:parseFloat(s.outlineWidth)}});
         assert.ok(item.href);assert.ok(item.visible,JSON.stringify({fixture,item}));assert.notEqual(item.outline,'none');assert.ok(item.width>=3);focusOrder.push(item.href);
       }
-      assert.deepEqual(focusOrder,['/launching-soon',...pages.map((_,i)=>pages[[0,3,1,2][i]]),'/privacy-policy','/terms-of-use']);
+      assert.deepEqual(focusOrder,['/launching-soon',pages[0],pages[3],pages[1],'/privacy-policy','/terms-of-use']);
       await p.screenshot({path:path.join(output,fixture.name+'.png'),fullPage:true});await ctx.close();
     }
+    const motionCtx=await context(browser,server.origin,{viewport:{width:390,height:844},reducedMotion:'no-preference'});
+    const motionPage=await motionCtx.newPage();
+    await motionPage.goto(server.origin+'/launching-soon',{waitUntil:'domcontentloaded'});
+    const growth = motionPage.locator('[data-growth-plate]');
+    const playback = await growth.evaluate(async svg => {
+      const parts = svg.getAnimations({subtree:true});
+      const samples = parts.map(animation => ({
+        iterations: animation.effect.getTiming().iterations,
+        frames: animation.effect.getKeyframes().map(frame => frame.transform)
+      }));
+      await Promise.all(parts.map(animation => animation.finished));
+      return { samples, settled: parts.every(animation => animation.playState === 'finished') };
+    });
+    assert.equal(playback.samples.length,2);assert.ok(playback.settled);
+    for(const part of playback.samples){assert.equal(part.iterations,1);assert.notEqual(part.frames[0],part.frames.at(-1));}
+    // Sample the actual CSS animation timeline for the local motion review.
+    const plateBox = await growth.boundingBox();
+    for(let frame=0;frame<=20;frame++){
+      await growth.evaluate((svg,ms)=>{
+        for(const animation of svg.getAnimations({subtree:true})){
+          animation.pause();
+          animation.currentTime=ms;
+        }
+      },frame*100);
+      await motionPage.screenshot({clip:plateBox,path:path.join(output,'growth-frame-'+String(frame).padStart(2,'0')+'.png')});
+    }
+    evidence.botanicalMotion=playback;await motionCtx.close();
     for(const timezoneId of ['Pacific/Honolulu','Asia/Tokyo']) {
       const ctx=await context(browser,server.origin,{timezoneId}),page=await ctx.newPage();await page.clock.setFixedTime(new Date('2026-12-03T05:00:00Z'));
       await page.goto(server.origin+'/launching-soon');await page.waitForFunction(()=>document.querySelector('[data-launch-countdown] dd')?.textContent==='01');
@@ -135,7 +169,9 @@ async function measure(page) {
       const closedContext=await context(browser,server.origin),closedPage=await closedContext.newPage();
       await closedPage.goto(server.origin+'/launching-soon');
       // Count rendered links, not the duplicate HTML + RSC serialization of their text.
-      assert.equal(await closedPage.locator('[data-prelaunch-campaign] a').filter({hasText:'Currently closed'}).count(),1);
+      const closedCards=closedPage.locator('[data-prelaunch-campaign] a').filter({hasText:'Currently closed'});
+      assert.equal(await closedCards.count(),i===2 ? 0 : 1);
+      if(i!==2) assert.equal(await closedCards.getAttribute('href'),pages[i]);
       await closedContext.close();
       evidence.closedWorkflows.push({page:pages[i],api:apis[i],closed:true,otherFlags:true});await stop(server);
     }
