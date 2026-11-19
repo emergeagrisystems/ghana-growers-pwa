@@ -19,13 +19,11 @@ export default function LaunchingSoonPage() {
     <div className={styles.inner}>
       <h1 id="campaign-title">Something fresh is <span className={styles.finalWord}>growing<GrowthIllustration /></span></h1>
       <section className={styles.hero} aria-labelledby="campaign-title">
-        <div className={styles.launchContent}>
-          <LaunchCountdown />
-          <p className={styles.launchLine}>Ghana Growers opens <time dateTime="2026-12-04T05:00:00Z">4 December 2026 · 5:00 AM Ghana time</time></p>
-        </div>
-        <MamaGTeaser />
+        <LaunchCountdown />
+        <p className={styles.launchLine}><time dateTime="2026-12-04T05:00:00Z">4 DECEMBER 2026 · 05:00 GMT</time></p>
       </section>
       <Acquisition />
+      <MamaGTeaser />
     </div>
   </div>;
 }

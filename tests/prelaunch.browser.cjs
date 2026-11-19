@@ -9,7 +9,7 @@ const flags = ['PUBLIC_INTAKE_FARMER_REGISTRATION_ENABLED', 'PUBLIC_INTAKE_SUPPL
 const pages = ['/join/farmer', '/become-a-supplier', '/submit-listing', '/submit-buyer-request'];
 const apis = ['/api/farmer-registration', '/api/supplier-registration', '/api/listing-submissions', '/api/buyer-request-submissions'];
 const evidence = { source: 'LOCAL built Next application; fictional data only; server external fetch blocked', viewports: {}, timezone: [], closedWorkflows: [], requests: [], findings: [] };
-const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-white-teal-review');
+const output = path.resolve(process.env.CAMPAIGN_EVIDENCE || '../outputs/prelaunch-colour-release');
 fs.mkdirSync(output, { recursive: true });
 async function port() { const s=http.createServer();s.listen(0,'127.0.0.1');await once(s,'listening');const p=s.address().port;await new Promise(r=>s.close(r));return p; }
 async function app(mode, off = []) {
@@ -51,7 +51,7 @@ async function measure(page) {
       line.left=Math.min(line.left,rect.left);line.right=Math.max(line.right,rect.right);
     }
     const headingOffsets=lines.map(line=>(line.left+line.right-innerWidth)/2);
-    const whiteSurfaces=[document.documentElement,document.body,document.querySelector('header'),root,...root.querySelectorAll('nav a'),document.querySelector('footer')].map(el=>getComputedStyle(el).backgroundColor);
+    const campaignSurfaces=[document.documentElement,document.body,document.querySelector('header'),root,document.querySelector('footer')].map(el=>getComputedStyle(el).backgroundColor);
     const anchors=[...root.querySelectorAll('a')].map(a=>({text:a.textContent.trim(),height:a.getBoundingClientRect().height,width:a.getBoundingClientRect().width}));
     const badOverflow=[...document.querySelectorAll('body *')].filter(el=>{const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.position!=='absolute'&&s.visibility!=='hidden'&&r.width>0&&(r.right>innerWidth+1||r.left < -1)}).map(el=>el.tagName+'.'+el.className);
     function rgb(value){return (value.match(/[\d.]+/g)||[]).map(Number);}
@@ -69,7 +69,7 @@ async function measure(page) {
     const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
     // Replaced IMG elements have UA overflow:clip; assess their aspect ratio separately.
     const clipping=[root,...root.querySelectorAll('*')].filter(el=>el instanceof HTMLElement&&el.tagName!=='IMG'&&!el.closest('[aria-hidden=true]')&&el.getBoundingClientRect().width>1&&['hidden','clip'].includes(getComputedStyle(el).overflowY)).map(el=>({tag:el.tagName,html:el.outerHTML.slice(0,400),overflow:getComputedStyle(el).overflowY}));
-    return {headingOffsets,whiteSurfaces,teaserBackground:getComputedStyle(root.querySelector('[data-mama-teaser]')).backgroundColor,viewport:innerWidth,viewportHeight:innerHeight,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,clipping,
+    return {headingOffsets,campaignSurfaces,teaserBackground:getComputedStyle(root.querySelector('[data-mama-teaser]')).backgroundColor,viewport:innerWidth,viewportHeight:innerHeight,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,badOverflow,anchors,contrast,clipping,
       primary:box('a[href="/join/farmer"]'),teaser:box('[data-mama-teaser]'),countdown:box('[data-launch-countdown]'),
       numeralSize:parseFloat(getComputedStyle(document.querySelector('dd')).fontSize),headingSize:parseFloat(getComputedStyle(document.querySelector('h1')).fontSize),
       h1:document.querySelectorAll('h1').length,main:document.querySelectorAll('main').length,
@@ -89,27 +89,31 @@ async function measure(page) {
       const response=await page.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});assert.equal(response.status(),200);checkBody(await response.text());
       await page.locator('[data-launch-countdown] dd').first().filter({hasText:/\d/}).waitFor();
       const result=await measure(page);evidence.viewports[width]=result;
-      assert.ok(result.whiteSurfaces.every(color=>color==='rgb(255, 255, 255)'));
+      assert.ok(result.campaignSurfaces.every(color=>color==='rgb(241, 246, 251)'));
       assert.equal(result.teaserBackground,'rgb(36, 71, 71)');
       assert.ok(result.headingOffsets.every(offset=>Math.abs(offset)<=1.5),JSON.stringify(result.headingOffsets));
       await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
       assert.equal(result.scrollWidth,width);assert.deepEqual(result.badOverflow,[]);assert.equal(result.h1,1);assert.equal(result.main,1);assert.equal(result.controlsInTeaser,0);
       assert.deepEqual(result.clipping,[]);
-      const reference = {320:[54,280,2],390:[62.4,350,4],768:[61.44,408.47,4],1440:[112,722.91,4]}[width];
-      assert.ok(Math.abs(result.numeralSize-reference[0])<.02, 'Digit size matches 96ccef');
-      assert.ok(Math.abs(result.countdown.width-reference[1])<.05, 'Clock width matches 96ccef');
-      assert.equal(await page.locator('dl').evaluate(clock=>getComputedStyle(clock).gridTemplateColumns.split(' ').length), reference[2]);
+      const expectedDigitSize={320:54,390:62.4,768:61.44,1440:112}[width];
+      assert.ok(Math.abs(result.numeralSize-expectedDigitSize)<.02);
+      assert.deepEqual(await page.locator('dl dt span[aria-hidden]').allTextContents(), ['DAYS','HOURS','MIN','SEC']);
+      assert.deepEqual(await page.locator('dl dd').evaluateAll(items=>items.map(el=>getComputedStyle(el).color)), ['rgb(11, 59, 43)','rgb(11, 59, 43)','rgb(11, 59, 43)','rgb(184, 71, 42)']);
+      assert.ok(await page.locator('dl > div').evaluateAll(items=>items.every(el=>getComputedStyle(el,'::after').content==='none')));
       assert.ok(result.numeralSize>1.7*result.headingSize,'Countdown leads the hero');
       assert.equal(await page.locator('h1').innerText(),'Something fresh is growing');
       const links = page.getByRole('navigation', {name:'Join before launch'}).getByRole('link');
       assert.deepEqual(await links.evaluateAll(items => items.map(a => a.getAttribute('href'))),[pages[0],pages[3],pages[1]]);
       assert.deepEqual(await links.locator('strong').allTextContents(),['+ Add my farm','Pre-Order','Add Supplier Shop']);
       assert.equal(await page.locator('a[href="/submit-listing"]').count(),0);
-      assert.deepEqual(await links.locator('strong + span').allTextContents(),['Help buyers discover what you grow.','Wholesale buyers, tell us what you need.','Help farmers discover your products.']);
+      assert.deepEqual(await links.locator('strong + span').allTextContents(),['Help buyers discover what you grow.','For wholesale buyers planning ahead.','Help farmers discover your products.']);
       await page.locator('[data-mama-teaser]').getByText('Coming soon',{exact:true}).waitFor();
       const art = await page.locator('h1 [data-headline-sprout]').boundingBox();
       assert.ok(art.width >=28 && art.width<=36 && art.height===art.width);
-      assert.ok(result.teaser.bottom <= result.primary.top + 1);
+      assert.ok(result.teaser.top >= (await links.last().boundingBox()).y + (await links.last().boundingBox()).height - 1);
+      assert.deepEqual(await links.evaluateAll(items=>items.map(el=>getComputedStyle(el).backgroundColor)), ['rgb(47, 125, 79)','rgb(242, 184, 75)','rgb(184, 71, 42)']);
+      assert.equal(await page.getByText('Your farm’s next helping hand.').count(),1);
+      assert.equal(await links.locator('svg').count(),3);
       for(const a of result.anchors){assert.ok(a.height>=44,a.text);assert.ok(a.width>=44,a.text);}
       for(const c of result.contrast)assert.ok(c.ratio>=c.required,c.text+' contrast '+c.ratio);
       for(const img of result.images){assert.ok(img.loaded);assert.ok(img.alt||img.decorative);if(!img.decorative)assert.ok(img.ratioError<.01);}

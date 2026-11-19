@@ -27,7 +27,7 @@ export function LaunchCountdown() {
       <p className={remaining ? styles.srOnly : styles.fallback}>{LAUNCH_FALLBACK}</p>
       <dl className={styles.clock} aria-label="Time until Ghana Growers launches" aria-live="off" aria-hidden={!remaining || undefined}>
         {(["days", "hours", "minutes", "seconds"] as const).map(unit => <div key={unit}>
-          <dt>{unit[0].toUpperCase() + unit.slice(1)}</dt>
+          <dt><span aria-hidden="true">{{ days: "DAYS", hours: "HOURS", minutes: "MIN", seconds: "SEC" }[unit]}</span><span className={styles.srOnly}>{unit}</span></dt>
           <dd>{remaining ? String(remaining[unit]).padStart(2, "0") : "—"}</dd>
         </div>)}
       </dl>
