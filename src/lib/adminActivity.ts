@@ -46,12 +46,14 @@ export type AdminActivityLog = {
 };
 
 export async function logAdminActivity({
+  eventId,
   adminEmail,
   actionType,
   entityType,
   entityId,
   entityName
 }: {
+  eventId?: string;
   adminEmail: string;
   actionType: AdminActionType;
   entityType: AdminEntityType;
@@ -61,7 +63,8 @@ export async function logAdminActivity({
   const cleanName = entityName.trim() || "Record";
 
   try {
-    await insertSupabaseRecord("admin_activity_log", {
+    const result = await insertSupabaseRecord("admin_activity_log", {
+      ...(eventId ? {id:eventId} : {}),
       admin_email: adminEmail,
       action_type: actionType,
       entity_type: entityType,
@@ -69,7 +72,7 @@ export async function logAdminActivity({
       entity_name: cleanName
     });
 
-    return { ok: true as const };
+    return { ok: !result.error && Boolean(result.data) };
   } catch {
     // Activity logging should never block the admin action itself.
     return { ok: false as const };

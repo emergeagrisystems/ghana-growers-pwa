@@ -92,9 +92,8 @@ test("admin password recovery uses PKCE across the protected Preview boundary", 
   const resetForm = source("src/components/AdminResetPasswordForm.tsx");
   const recovery = source("src/lib/adminPasswordRecovery.ts");
 
-  assert.match(loginPage, /\/admin\/reset-password/);
-  assert.match(loginPage, /VERCEL_BRANCH_URL/);
-  assert.match(loginPage, /hostname\.endsWith\("\.vercel\.app"\)/);
+  assert.match(loginPage, /recoveryRedirectTo=\{adminRecoveryRedirect\(\)\}/);
+  // Host selection is exercised by admin-portability.test.ts, including hostile hosts.
   assert.match(loginForm, /requestAdminPasswordRecovery/);
   assert.match(recovery, /flowType: "pkce"/);
   assert.match(recovery, /resetPasswordForEmail\(email, \{ redirectTo \}\)/);

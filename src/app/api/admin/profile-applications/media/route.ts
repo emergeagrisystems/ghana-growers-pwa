@@ -23,13 +23,15 @@ export async function POST(request: Request) {
     profileId?: string;
     profileField?: "profile_image_url" | "farm_photo_urls" | "produce_photo_urls" | "logo_url";
     approved?: boolean;
+    version?: string;
   };
   if (!body.kind || !allowedKinds.has(body.kind) || !body.applicationId || !body.path) {
     return NextResponse.json({ error: "Application media details are required." }, { status: 400 });
   }
 
   if (body.action === "promote") {
-    if (!body.profileId || !body.profileField || body.approved !== true) {
+    if(body.kind==="supplier")return NextResponse.json({error:"Supplier image promotion requires a confirmed profile save and is unavailable."},{status:409});
+    if (!body.profileId || !body.profileField || !body.version || body.approved !== true) {
       return NextResponse.json({ error: "Profile, destination, and explicit image approval are required." }, { status: 400 });
     }
     const promotion = await promoteApprovedApplicationImage({
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       sourcePath: body.path,
       profileId: body.profileId,
       profileField: body.profileField,
+      version:body.version,
       approved: true
     });
     if (promotion.error) {

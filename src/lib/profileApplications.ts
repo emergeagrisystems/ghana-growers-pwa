@@ -368,6 +368,7 @@ export async function promoteApprovedApplicationImage({
   sourcePath,
   profileId,
   profileField,
+  version,
   approved
 }: {
   kind: ProfileApplicationKind;
@@ -375,6 +376,7 @@ export async function promoteApprovedApplicationImage({
   sourcePath: string;
   profileId: string;
   profileField: FarmerPublicMediaField | SupplierPublicMediaField;
+  version: string;
   approved: boolean;
 }) {
   if (!approved) return { status: 400, error: "Image approval is required." };
@@ -412,11 +414,12 @@ export async function promoteApprovedApplicationImage({
   if (!validation.ok) return { status: 400, error: "Only approved images can be promoted." };
 
   const extension = source.contentType === "image/png" ? "png" : source.contentType === "image/webp" ? "webp" : "jpg";
-  const sourceKey = createHash("sha256").update(sourcePath).digest("hex").slice(0, 16);
+  const sourceKey = crypto.randomUUID().replace(/-/g,"").slice(0,16);
   const destinationPath = `approved-applications/${applicationId}/${profileId}/${profileField}/${sourceKey}.${extension}`;
   const upload = await uploadSupabaseStorageObject({
     bucket: PROFILE_APPLICATION_MEDIA[kind].publicBucket,
     path: destinationPath,
+    overwrite: false,
     contentType: source.contentType,
     body: source.body,
     publicUrl: true
@@ -441,26 +444,31 @@ export async function promoteApprovedApplicationImage({
   const profileTable = kind === "farmer" ? "farmers" : "suppliers";
   const current = await selectSupabaseRecords<Record<string, unknown>>(
     profileTable,
-    `select=${profileField}&id=eq.${encodeURIComponent(profileId)}&limit=1`
+    `select=${profileField},updated_at&id=eq.${encodeURIComponent(profileId)}&limit=1`
   );
   if (current.error || !current.data?.[0]) {
     await deleteSupabaseStorageObject({ bucket: PROFILE_APPLICATION_MEDIA[kind].publicBucket, path: upload.path });
     return { status: current.status, error: "Profile media reference could not be loaded." };
   }
 
+  if (current.data[0].updated_at !== version) {
+    await deleteSupabaseStorageObject({bucket:PROFILE_APPLICATION_MEDIA[kind].publicBucket,path:upload.path});
+    return {status:409,error:"Profile changed. Reload before selecting the image."};
+  }
   const existingValue = current.data[0][profileField];
   const nextValue = Array.isArray(existingValue)
     ? Array.from(new Set([...existingValue.filter((value): value is string => typeof value === "string"), upload.publicUrl]))
     : upload.publicUrl;
-  const updated = await updateSupabaseRecord(profileTable, `id=eq.${encodeURIComponent(profileId)}`, {
+  const updated = await updateSupabaseRecord(profileTable, `id=eq.${encodeURIComponent(profileId)}&updated_at=eq.${encodeURIComponent(version)}`, {
     [profileField]: nextValue
   });
-  if (updated.error) {
+  if (updated.error) return { status:updated.status,error:"Save outcome unconfirmed. Check the profile before retrying." };
+  if (!updated.data) {
     const cleanup = await deleteSupabaseStorageObject({ bucket: PROFILE_APPLICATION_MEDIA[kind].publicBucket, path: upload.path });
     if (cleanup.error) {
       console.error("Profile media compensation failed", { feature: "profile_media_promotion", code: cleanup.status });
     }
-    return { status: updated.status, error: "Profile media reference could not be updated." };
+    return { status:409,error:"Profile changed. Reload before selecting the image." };
   }
 
   return { status: 200, path: upload.path, publicUrl: upload.publicUrl };

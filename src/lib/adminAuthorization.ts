@@ -39,6 +39,13 @@ export function authorizeAdminIdentity(
     return { authorized: false, reason: "not_authorized" };
   }
 
+  // Production uses the exact founder-approved trusted entitlement, never legacy fallbacks.
+  if (process.env.VERCEL_ENV === "production") {
+    return user.app_metadata?.role === "admin"
+      ? { authorized: true, source: "app_metadata" }
+      : { authorized: false, reason: "not_authorized" };
+  }
+
   if (metadataHasAdminRole(user.app_metadata)) {
     return { authorized: true, source: "app_metadata" };
   }

@@ -1,5 +1,9 @@
 "use client";
 
+import { LeadStatusEditor, type StatusSelection } from "@/components/admin/LeadStatusEditor";
+import { adminDestinations } from "@/lib/adminDestinations";
+import { contactHref, contactNumber } from "@/lib/adminCrm";
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -209,6 +213,7 @@ type LeadRequestSnapshot = {
 type FeaturedEnquiryStatus = "New" | "Contacted" | "Approved" | "Rejected" | "Closed";
 type LeadRequestRecord = {
   id: string;
+  updated_at: string;
   created_at: string;
   requester_name: string;
   phone: string;
@@ -826,75 +831,8 @@ type AdminNavigationItem = {
   sourcingQueueFilter?: SourcingQueueFilter;
 };
 
-const operationsNavigation: Array<{
-  group: string;
-  items: AdminNavigationItem[];
-}> = [
-  {
-    group: "Today",
-    items: [
-      { key: "today-operations", id: "analytics", label: "Operations Center", analyticsView: "operations" },
-      { key: "today-notifications", id: "whatsapp-leads", label: "Notifications" }
-    ]
-  },
-  {
-    group: "Buyer Requests",
-    items: [
-      { key: "buyer-review", id: "buyer-requests", label: "Review Requests", produceRequestStatusFilter: "Pending Review" },
-      { key: "buyer-matches", id: "match-opportunities", label: "Matches", sourcingQueueFilter: "All" },
-      { key: "buyer-follow-ups", id: "lead-queue", label: "Follow-ups" },
-      { key: "buyer-completed", id: "lead-queue", label: "Completed Requests" }
-    ]
-  },
-  {
-    group: "Network",
-    items: [
-      { key: "network-farmer-applications", id: "applications", label: "Farmer Applications", applicationTab: "farmer" },
-      { key: "network-imported-farmers", id: "applications", label: "Imported Farmers Pending Review", applicationTab: "farmer" },
-      { key: "network-supplier-applications", id: "applications", label: "Supplier Applications", applicationTab: "supplier" },
-      { key: "network-contact-enquiries", id: "contact-enquiries", label: "Contact & Partnership Enquiries" },
-      { key: "network-members", id: "farmers", label: "Members" },
-      { key: "network-directories", id: "suppliers", label: "Directories" }
-    ]
-  },
-  {
-    group: "Marketplace",
-    items: [
-      { key: "marketplace-listings", id: "marketplace", label: "Listings" },
-      { key: "marketplace-categories", id: "marketplace", label: "Categories" },
-      { key: "marketplace-featured-listings", id: "featured-enquiries", label: "Featured Listings" }
-    ]
-  },
-  {
-    group: "Trust & Content",
-    items: [
-      { key: "trust-verification", id: "verifications", label: "Verification" },
-      { key: "trust-gg-standard", id: "verifications", label: "GG Standard" },
-      { key: "trust-featured-members", id: "featured-enquiries", label: "Featured Members" },
-      { key: "trust-stories", id: "success-stories", label: "Stories" },
-      { key: "trust-homepage", id: "learn", label: "Homepage" },
-      { key: "trust-photography", id: "submissions", label: "Photography" },
-      { key: "trust-learning", id: "learn", label: "Learning" }
-    ]
-  },
-  {
-    group: "Reports",
-    items: [
-      { key: "reports-reports", id: "analytics", label: "Reports", analyticsView: "analytics" },
-      { key: "reports-analytics", id: "analytics", label: "Analytics", analyticsView: "analytics" },
-      { key: "reports-launch-readiness", id: "launch-checklist", label: "Launch Readiness" }
-    ]
-  },
-  {
-    group: "Settings",
-    items: [
-      { key: "settings-users", id: "launch-checklist", label: "Users" },
-      { key: "settings-roles", id: "launch-checklist", label: "Roles" },
-      { key: "settings-permissions", id: "launch-checklist", label: "Permissions" },
-      { key: "settings-integrations", id: "launch-checklist", label: "Integrations" }
-    ]
-  }
-];
+const operationsNavigation: Array<{ group: string; items: AdminNavigationItem[] }> =
+  adminDestinations.map(group => ({ group: group.group, items: [...group.items] }));
 
 function defaultNavigationItem(section: AdminSectionId) {
   return operationsNavigation.flatMap((group) => group.items).find((item) => item.id === section) ?? {
@@ -2721,7 +2659,7 @@ function sourcingCaseFromLead(lead: LeadRequestRecord): SourcingCaseRecord | nul
     notes: lead.message,
     status: "Approved",
     created_at: lead.created_at,
-    updated_at: lead.created_at,
+    updated_at: lead.updated_at,
     case_source: "lead_request",
     lead_request_status: lead.status,
     request_source: lead.request_source,
@@ -2799,39 +2737,18 @@ function dateAtStart(value?: string | null) {
   return date;
 }
 
-function addBusinessDay(value?: string | null) {
-  const date = value ? new Date(value) : new Date();
 
-  if (Number.isNaN(date.getTime())) {
-    return new Date();
-  }
-
-  date.setDate(date.getDate() + (date.getDay() === 5 ? 3 : date.getDay() === 6 ? 2 : 1));
-  return date;
-}
-
-function sourcingSla(submittedAt?: string | null) {
-  const deadline = addBusinessDay(submittedAt);
-  const now = new Date();
-  const hoursRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60));
-
-  return {
-    deadline,
-    hoursRemaining,
-    tone: hoursRemaining < 0 ? "bg-tomato/10 text-tomato" : hoursRemaining <= 6 ? "bg-earth-50 text-earth-700" : "bg-leaf-50 text-leaf-800"
-  };
-}
 
 function sourcingPriority(caseItem: SourcingCaseRecord, state: SourcingCaseState) {
   const today = dateAtStart(new Date().toISOString());
   const requestDeadline = dateAtStart(caseItem.deadline);
-  const sla = sourcingSla(caseItem.created_at);
+
 
   if (state.status === "Completed" || state.status === "Closed") {
     return { label: "Complete", tone: "bg-ink/10 text-ink/55", dot: "bg-ink/35" };
   }
 
-  if ((requestDeadline && today && requestDeadline < today) || sla.hoursRemaining < 0) {
+  if (requestDeadline && today && requestDeadline < today) {
     return { label: "Overdue", tone: "bg-tomato/10 text-tomato", dot: "bg-tomato" };
   }
 
@@ -2865,7 +2782,7 @@ function sourcingTimeline(caseItem: SourcingCaseRecord, state: SourcingCaseState
 
   return [
     { label: "Request received", detail: caseItem.created_at ? new Date(caseItem.created_at).toLocaleDateString() : "Date not captured", complete: true },
-    { label: "Buyer contacted", detail: buyerContacted ? "Buyer contact recorded" : "Not recorded", complete: buyerContacted },
+    { label: "Legacy contact activity", detail: buyerContacted ? "Contact action logged; reply unverified" : "No legacy contact recorded", complete: buyerContacted },
     { label: "Farmers/Suppliers matched", detail: matchReviewed ? "Match review recorded" : "Not started", complete: matchReviewed },
     { label: "Availability confirmed", detail: availabilityConfirmed ? "Availability confirmed" : "Not confirmed", complete: availabilityConfirmed },
     { label: "Completed", detail: completed ? "Case completed" : "Still open", complete: completed }
@@ -3509,8 +3426,7 @@ function buildAdminMatchOpportunities(analytics: AnalyticsData): AdminMatchOppor
 }
 
 function whatsappUrl(phoneNumber: string, message: string) {
-  const digits = phoneNumber.replace(/[^\d]/g, "") || WHATSAPP_NUMBER;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+  return contactHref(phoneNumber, true, "wa", message);
 }
 
 function countBy(records: AnalyticsRecord[], key: string, fallback = "Unspecified") {
@@ -4044,14 +3960,16 @@ function FarmerApplicationsWorkspace({
 export function AdminDashboard({
   currentAdmin,
   initialSection = "analytics",
+  initialTool,
   sitePrelaunchActive = false
 }: {
   currentAdmin: AdminUser;
   initialSection?: AdminSectionId;
+  initialTool?: string;
   sitePrelaunchActive?: boolean;
 }) {
-  const initialNavigationItem = defaultNavigationItem(initialSection);
-  const [activeSection, setActiveSection] = useState<AdminSectionId>(initialSection);
+  const initialNavigationItem = operationsNavigation.flatMap(group => group.items).find(item => item.key === initialTool) ?? defaultNavigationItem(initialSection);
+  const [activeSection, setActiveSection] = useState<AdminSectionId>(initialNavigationItem.id);
   const [activeNavigationKey, setActiveNavigationKey] = useState(initialNavigationItem.key);
   const [expandedNavigationGroup, setExpandedNavigationGroup] = useState(() => groupForNavigationKey(initialNavigationItem.key));
   const [analyticsView, setAnalyticsView] = useState<AdminAnalyticsView>(initialNavigationItem.analyticsView ?? "operations");
@@ -4086,10 +4004,11 @@ export function AdminDashboard({
   const [whatsappLeads, setWhatsappLeads] = useState<WhatsAppLeadRecord[]>([]);
   const [whatsappLeadError, setWhatsappLeadError] = useState("");
   const [whatsappLeadLoadState, setWhatsappLeadLoadState] = useState<OptionalQueueLoadState>("idle");
+  const [statusSelection,setStatusSelection]=useState<(StatusSelection & {sourcingStatus?:SourcingCaseStatus})|null>(null);
   const [leadRequests, setLeadRequests] = useState<LeadRequestRecord[]>([]);
   const [leadRequestError, setLeadRequestError] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [produceRequestStatusFilter, setProduceRequestStatusFilter] = useState<ProduceRequestStatusFilter>("All");
+  const [produceRequestStatusFilter, setProduceRequestStatusFilter] = useState<ProduceRequestStatusFilter>(initialNavigationItem.produceRequestStatusFilter ?? "All");
   const [featuredEnquiries, setFeaturedEnquiries] = useState<FeaturedEnquiryRecord[]>([]);
   const [featuredEnquiryError, setFeaturedEnquiryError] = useState("");
   const [featuredEnquiryLoadState, setFeaturedEnquiryLoadState] = useState<OptionalQueueLoadState>("idle");
@@ -4100,14 +4019,14 @@ export function AdminDashboard({
   const [selectedSourcingCaseId, setSelectedSourcingCaseId] = useState<string>("");
   const [selectedSourcingCaseTab, setSelectedSourcingCaseTab] = useState<SourcingCaseTab>("Overview");
   const [showSourcingCaseDetailMobile, setShowSourcingCaseDetailMobile] = useState(false);
-  const [sourcingQueueFilter, setSourcingQueueFilter] = useState<SourcingQueueFilter>("All");
+  const [sourcingQueueFilter, setSourcingQueueFilter] = useState<SourcingQueueFilter>(initialNavigationItem.sourcingQueueFilter ?? "All");
   const [sourcingCaseStates, setSourcingCaseStates] = useState<Record<string, SourcingCaseState>>({});
   const [applications, setApplications] = useState<Record<ApplicationKind, ApplicationRecord[]>>({
     farmer: [],
     buyer: [],
     supplier: []
   });
-  const [applicationTab, setApplicationTab] = useState<ApplicationKind>("farmer");
+  const [applicationTab, setApplicationTab] = useState<ApplicationKind>(initialNavigationItem.applicationTab ?? "farmer");
   const [applicationQueueStates, setApplicationQueueStates] = useState<Record<ApplicationKind, ApplicationQueueLoadState>>({
     farmer: "idle",
     buyer: "idle",
@@ -4286,11 +4205,11 @@ export function AdminDashboard({
     if (!response?.ok) {
       if (response?.status === 401) {
         window.location.href = "/admin/login";
-        return;
+        return false;
       }
 
       setLeadRequestError(result?.error ?? "Lead requests are unavailable.");
-      return;
+      return false;
     }
 
     const leads = (result?.leads ?? []).map((lead) => ({
@@ -4301,6 +4220,7 @@ export function AdminDashboard({
     setLeadRequests(leads);
     setSelectedLeadId((current) => current ?? leads[0]?.id ?? null);
     setLeadRequestError("");
+    return true;
   }, []);
 
   useEffect(() => {
@@ -6519,29 +6439,21 @@ export function AdminDashboard({
     return String(count);
   }
 
-  async function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus) {
-    const response = await fetch("/api/admin/lead-requests", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: lead.id, status })
-    }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { error?: string } | null;
+  function updateLeadRequestStatus(lead: LeadRequestRecord | SourcingCaseRecord, status: LeadRequestStatus, sourcingStatus?:SourcingCaseStatus) {
+    setStatusSelection({id:lead.id,name:"requester_name" in lead?lead.requester_name:lead.buyer_name,
+      updated_at:lead.updated_at,status:normalizeLeadStatus("requester_name" in lead?lead.status:lead.lead_request_status??"New"),
+      requested:status,sourcingStatus});
+  }
 
-    if (!response?.ok) {
-      if (response?.status === 401) {
-        window.location.href = "/admin/login";
-        return;
-      }
-
-      setLeadRequestError(result?.error ?? "Could not update this lead request.");
-      return;
+  async function statusSaved(status:LeadRequestStatus){
+    if(!statusSelection || !await loadLeadRequests())return false;
+    if(statusSelection.sourcingStatus && status===statusSelection.requested){
+      updateSourcingCaseState(statusSelection.id,current=>({...current,status:statusSelection.sourcingStatus!}));
     }
-
-    setLeadRequests((current) => current.map((item) => (item.id === lead.id ? { ...item, status } : item)));
-    setLeadRequestError("");
-    setNotice(`${"requester_name" in lead ? lead.requester_name : lead.buyer_name} lead marked ${status}.`);
+    setNotice(statusSelection.name+" lead marked "+status+".");
     void loadActivity();
     void loadAnalytics();
+    return true;
   }
 
   async function updateFeaturedEnquiryStatus(enquiry: FeaturedEnquiryRecord, status: FeaturedEnquiryStatus) {
@@ -6909,27 +6821,12 @@ export function AdminDashboard({
   }
 
   async function setSourcingCaseStatus(caseItem: SourcingCaseRecord, status: SourcingCaseStatus) {
-    updateSourcingCaseState(caseItem.id, (current) => ({ ...current, status }));
-
     if (caseItem.case_source === "lead_request") {
-      if (status === "Completed") {
-        await updateLeadRequestStatus(caseItem, "Completed");
-        return;
-      }
-
-      if (status === "Closed") {
-        await updateLeadRequestStatus(caseItem, "Lost");
-        return;
-      }
-
-      if (status === "Reviewing") {
-        await updateLeadRequestStatus(caseItem, "Contacted");
-        return;
-      }
-
-      await updateLeadRequestStatus(caseItem, "Negotiating");
+      const leadStatus = status==="Completed"?"Completed":status==="Closed"?"Lost":status==="Reviewing"?"Contacted":"Negotiating";
+      updateLeadRequestStatus(caseItem,leadStatus,status);
       return;
     }
+    updateSourcingCaseState(caseItem.id, (current) => ({ ...current, status }));
 
     if (status === "Reviewing") {
       await updateSubmissionStatus(caseItem, "Under Review", "buyer-request");
@@ -6988,31 +6885,11 @@ export function AdminDashboard({
     return true;
   }
 
-  async function contactSourcingBuyer(caseItem: SourcingCaseRecord) {
-    const recorded = await recordSourcingCaseActivity({
-      action: "Contact",
-      caseItem,
-      entityName: `Buyer contact recorded for ${caseItem.product_needed}`
-    });
-
-    if (!recorded) {
-      return;
-    }
-
-    updateSourcingCaseState(caseItem.id, (current) => ({
-      ...current,
-      owner: current.owner || currentAdmin.email
-    }));
-    setNotice(`Contact ${caseItem.buyer_name} about ${caseItem.product_needed}.`);
-    window.open(
-      whatsappUrl(caseItem.whatsapp_number || caseItem.phone_number, `Hello ${caseItem.buyer_name}, Ghana Growers is reviewing your sourcing request for ${caseItem.product_needed}.`),
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }
-
-  function assignSourcingOwner(caseId: string) {
-    updateSourcingCaseState(caseId, (current) => ({ ...current, owner: currentAdmin.email }));
+  function contactSourcingBuyer(caseItem: SourcingCaseRecord) {
+    const number = contactNumber(caseItem.whatsapp_number);
+    if (!number || !window.confirm(`Open WhatsApp for ${caseItem.buyer_name} at ${number}?`)) return;
+    const url = contactHref(number, true, "wa", `Hello ${caseItem.buyer_name}, Ghana Growers is reviewing your request for ${caseItem.product_needed}.`);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function reviewSourcingMatches(caseItem: SourcingCaseRecord, matchType: "farmer" | "supplier") {
@@ -7030,8 +6907,7 @@ export function AdminDashboard({
 
     updateSourcingCaseState(caseItem.id, (current) => ({
       ...current,
-      status: matchType === "farmer" ? "Matching Farmers" : "Matching Suppliers",
-      owner: current.owner || currentAdmin.email
+      status: matchType === "farmer" ? "Matching Farmers" : "Matching Suppliers"
     }));
     setNotice(`${label} match review recorded for ${caseItem.product_needed}.`);
   }
@@ -7075,6 +6951,7 @@ export function AdminDashboard({
 
   return (
     <main className="admin-dashboard min-h-screen w-full max-w-full overflow-x-hidden bg-earth-50">
+      {statusSelection&&<LeadStatusEditor key={statusSelection.id} lead={statusSelection} close={()=>setStatusSelection(null)} onSaved={statusSaved}/>}
       <section className="border-b border-leaf-900/10 bg-earth-50">
         <div className="mx-auto max-w-[96rem] px-4 py-8 sm:px-6 2xl:max-w-[110rem]">
           <p className="text-sm font-black uppercase tracking-wide text-earth-700">Ghana Growers Operations</p>
@@ -10201,13 +10078,9 @@ export function AdminDashboard({
                   <div className={`${showSourcingCaseDetailMobile ? "block" : "hidden lg:block"} admin-panel min-w-0 p-4 sm:p-5`}>
                     {selectedSourcingCase ? (
                       (() => {
-                        const sla = sourcingSla(selectedSourcingCase.request.created_at);
+
                         const communicationRows = sourcingCaseCommunicationRows(selectedSourcingCase.request.id, activityRows);
-                        const previousSourcingRequests = submissions.buyerRequests.filter((request) =>
-                          selectedSourcingCase.request.case_source === "buyer_request_submission" &&
-                          request.id !== selectedSourcingCase.request.id &&
-                          (request.whatsapp_number === selectedSourcingCase.request.whatsapp_number || request.phone_number === selectedSourcingCase.request.phone_number)
-                        );
+
                         const linkedSourceHref = sourcingCaseHref(selectedSourcingCase.request);
                         const linkedSourceLabel = sourcingCaseLinkedSource(selectedSourcingCase.request);
 
@@ -10257,11 +10130,8 @@ export function AdminDashboard({
                                   <p className="mt-1 break-words text-sm font-black text-ink">{selectedSourcingCase.state.owner || "Unassigned"}</p>
                                 </div>
                                 <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
-                                  <p className="text-xs font-black uppercase tracking-wide text-earth-700">SLA / Response Deadline</p>
-                                  <p className="mt-1 break-words text-sm font-semibold text-ink/65">{sla.deadline.toLocaleString()}</p>
-                                  <p className={`mt-2 break-words rounded-md px-3 py-2 text-sm font-black ${sla.tone}`}>
-                                    {sla.hoursRemaining < 0 ? `${Math.abs(sla.hoursRemaining)} hours overdue` : `${sla.hoursRemaining} hours remaining`}
-                                  </p>
+                                  <p className="font-bold">First reply</p>
+                                  <p>Shared first-reply evidence is unavailable.</p>
                                 </div>
                                 <div className="min-w-0 rounded-md bg-white p-3 ring-1 ring-leaf-900/10">
                                   <p className="text-xs font-black uppercase tracking-wide text-earth-700">Request Source</p>
@@ -10273,17 +10143,18 @@ export function AdminDashboard({
                               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                                 <button
                                   type="button"
-                                  onClick={() => assignSourcingOwner(selectedSourcingCase.request.id)}
+                                  disabled title="Shared claims are not available yet"
                                   className="admin-action-secondary"
                                 >
                                   Assign to Me
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => void contactSourcingBuyer(selectedSourcingCase.request)}
+                                  disabled={!contactNumber(selectedSourcingCase.request.whatsapp_number)}
+                                  onClick={() => contactSourcingBuyer(selectedSourcingCase.request)}
                                   className="admin-action-secondary text-center"
                                 >
-                                  Contact Buyer
+                                  Open WhatsApp
                                 </button>
                                 <button
                                   type="button"
@@ -10431,10 +10302,10 @@ export function AdminDashboard({
                                     Internal Notes
                                     <textarea
                                       value={selectedSourcingCase.state.notes}
-                                      onChange={(event) => updateSourcingCaseState(selectedSourcingCase.request.id, (current) => ({ ...current, notes: event.target.value }))}
+                                      disabled
                                       rows={4}
                                       className="resize-y rounded-md border border-leaf-900/10 px-4 py-3 text-sm font-semibold text-ink/80 outline-none focus:border-leaf-700 focus:ring-2 focus:ring-leaf-600/20"
-                                      placeholder="Record sourcing context, calls, availability, and next steps."
+                                      placeholder="Shared private notes are unavailable."
                                     />
                                   </label>
                                 </section>
@@ -10458,15 +10329,7 @@ export function AdminDashboard({
                                   <div className="rounded-md border border-leaf-900/10 bg-white p-4">
                                     <h4 className="text-sm font-black uppercase tracking-wide text-earth-700">Previous Sourcing Requests</h4>
                                     <div className="mt-4 grid gap-2">
-                                      {previousSourcingRequests.slice(0, 4).map((request) => (
-                                        <div key={request.id} className="rounded-md bg-leaf-50 p-3">
-                                          <p className="text-sm font-black text-ink">{request.product_needed}</p>
-                                          <p className="mt-1 text-xs font-semibold text-ink/55">{request.status} - {request.created_at ? new Date(request.created_at).toLocaleDateString() : "No date"}</p>
-                                        </div>
-                                      ))}
-                                      {previousSourcingRequests.length === 0 ? (
-                                        <p className="rounded-md bg-leaf-50 p-3 text-sm font-semibold text-ink/58">No previous sourcing requests from this buyer.</p>
-                                      ) : null}
+                                      <p>History requires a confirmed buyer link. Shared history is unavailable.</p>
                                     </div>
                                   </div>
                                 </section>
@@ -11472,6 +11335,7 @@ export function AdminDashboard({
                       }
 
                       if (field.type === "image") {
+                        if(field.bucket==="farmers" || field.bucket==="suppliers")return <div key={field.name} className="md:col-span-2"><strong>{field.label}</strong><p>Save the record first. Manage its photos in the protected profile editor.</p><a href="/admin?view=profiles" target="_blank" rel="noreferrer" className="underline">Open Profiles in a new tab</a></div>;
                         const preview = imagePreviews[field.name] || value;
                         const isUploading = uploadingField === field.name;
 

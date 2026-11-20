@@ -14,6 +14,7 @@ export type FarmerProfileMediaTarget = "profile_image_url" | "farm_photo_urls" |
 export type StagedFarmerProfileMedia = {
   path: string;
   target: FarmerProfileMediaTarget;
+  position?: number;
 };
 
 type PromotedFarmerProfileMedia = StagedFarmerProfileMedia & {
@@ -36,7 +37,8 @@ export function isOwnedFarmerProfileStagingPath(profileId: string, path: string)
 }
 
 export function validStagedFarmerProfileMedia(profileId: string, item: StagedFarmerProfileMedia) {
-  return allowedTargets.has(item.target) && isOwnedFarmerProfileStagingPath(profileId, item.path);
+  return !!item && typeof item.path === "string" && allowedTargets.has(item.target) && isOwnedFarmerProfileStagingPath(profileId, item.path)
+    && (item.position === undefined || (Number.isSafeInteger(item.position) && item.position >= 0));
 }
 
 export async function stageFarmerProfileImage({
@@ -58,6 +60,7 @@ export async function stageFarmerProfileImage({
     path,
     contentType: file.type,
     body: await file.arrayBuffer(),
+    overwrite: false,
     publicUrl: false
   });
   if (upload.error || !upload.path) return { status: upload.status, error: "The image could not be staged securely." };
@@ -86,6 +89,7 @@ export async function cleanupFarmerProfileStaging(profileId: string, paths: stri
 }
 
 export async function promoteStagedFarmerProfileMedia(profileId: string, items: StagedFarmerProfileMedia[]) {
+  if (!items.every(item=>validStagedFarmerProfileMedia(profileId,item))) return {status:400,error:"Invalid staged farmer media.",promoted:[] as PromotedFarmerProfileMedia[]};
   const uniqueItems = Array.from(new Map(items.map((item) => [`${item.target}:${item.path}`, item])).values());
   if (uniqueItems.some((item) => !validStagedFarmerProfileMedia(profileId, item))) {
     return { status: 400, error: "Invalid staged farmer media.", promoted: [] as PromotedFarmerProfileMedia[] };
@@ -104,13 +108,15 @@ export async function promoteStagedFarmerProfileMedia(profileId: string, items: 
       return { status: 400, error: "Only reviewed image files can be saved.", promoted: [] as PromotedFarmerProfileMedia[] };
     }
 
-    const sourceKey = createHash("sha256").update(item.path).digest("hex").slice(0, 20);
+    // Every save owns a different public copy, even when staff retry the same staged file.
+    const sourceKey = randomUUID().replace(/-/g,"").slice(0,20);
     const publicPath = `editor-uploads/${profileId}/${item.target}/${sourceKey}.${extensionForType(source.contentType)}`;
     const upload = await uploadSupabaseStorageObject({
       bucket: PROFILE_APPLICATION_MEDIA.farmer.publicBucket,
       path: publicPath,
       contentType: source.contentType,
       body: source.body,
+      overwrite: false,
       publicUrl: true
     });
     if (upload.error || !upload.publicUrl || !upload.path) {

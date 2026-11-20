@@ -45,6 +45,7 @@ export type CountResponse = {
 };
 
 type SupabaseRequestOptions = {
+  strictArray?: boolean;
   signal?: AbortSignal;
 };
 
@@ -132,6 +133,7 @@ export async function selectSupabaseRecords<T extends Record<string, unknown>>(t
     return { status: response.status, error: message || "Supabase select failed." };
   }
 
+  if (options.strictArray && !Array.isArray(result)) return {status:502,error:"Invalid record collection."};
   return { status: response.status, data: Array.isArray(result) ? result : [] };
 }
 
@@ -211,7 +213,8 @@ export async function updateSupabaseRecord<T extends Record<string, unknown>>(
     return { status: response.status, error: message || "Supabase update failed." };
   }
 
-  return { status: response.status, data: Array.isArray(result) ? result[0] : undefined };
+  if (!Array.isArray(result)) return {status:502,error:"Update outcome could not be verified."};
+  return { status: response.status, data: result[0] };
 }
 
 export async function callSupabaseRpc<T>(
@@ -258,13 +261,15 @@ export async function uploadSupabaseStorageObject({
   path,
   contentType,
   body,
-  publicUrl = true
+  publicUrl = true,
+  overwrite = true
 }: {
   bucket: string;
   path: string;
   contentType: string;
   body: ArrayBuffer;
   publicUrl?: boolean;
+  overwrite?: boolean;
 }): Promise<StorageUploadResponse> {
   const { url, serviceRoleKey } = supabaseConfig();
 
@@ -286,7 +291,7 @@ export async function uploadSupabaseStorageObject({
     headers: {
       ...supabaseServerAuthHeaders(serviceRoleKey),
       "Content-Type": contentType,
-      "x-upsert": "true"
+      "x-upsert": String(overwrite)
     },
     body
   });

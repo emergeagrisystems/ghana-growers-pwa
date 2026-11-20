@@ -11,7 +11,7 @@ export function AdminLoginForm({
 }: {
   returnTo?: string;
   passwordUpdated?: boolean;
-  recoveryRedirectTo: string;
+  recoveryRedirectTo?: string;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -49,6 +49,10 @@ export function AdminLoginForm({
   async function sendPasswordReset() {
     setError("");
     setMessage("");
+    if (!recoveryRedirectTo) {
+      setError("Password recovery is unavailable in this environment. Contact the administrator.");
+      return;
+    }
 
     if (!email.trim()) {
       setError("Enter your admin email first.");
