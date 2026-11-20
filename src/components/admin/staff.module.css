@@ -11,3 +11,10 @@
 @media(max-width:767px){.shell{display:block}.rail{display:none}.mobile{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 12px;background:white;border-bottom:1px solid var(--edge)}.work{padding:18px 14px 40px}.work h2{font-size:18px}.title{align-items:start;margin-bottom:12px}.title>a{display:none}.attention{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;padding:12px}.attention a{grid-column:2;margin:0}.panel,.tile{padding:13px}.charts,.tools,.filters{grid-template-columns:1fr}.tiles{gap:8px}.rows li{grid-template-columns:1fr auto;gap:4px 10px}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.history{width:100%}}
 
 .caseEvent{padding:9px 0;border-top:1px solid var(--edge)}.caseEvent small,.caseEvent span{display:block}.fields label.confirm{display:flex;align-items:center;gap:9px}.fields :is(input,select,textarea){min-width:0;max-width:100%}.history .actions button[type=submit],.history .actions button:not([type]){background:#252528;color:white}
+
+.replyOverview{background:white;border:1px solid var(--edge);border-radius:12px;padding:16px;margin-bottom:14px}
+.replyOverview h2{margin:0 0 10px}.replyOverview p{margin:8px 0 0;font-size:.875rem}
+.replyOverview ul{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;list-style:none;margin:0;padding:0}
+.replyOverview li a{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 10px;border:1px solid var(--edge);border-radius:8px;color:inherit;text-decoration:underline}
+.replyOverview strong{font-size:1.25rem}.replyOverview a[data-attention=true]{background:#fff4df;color:#69390c}
+@media(max-width:767px){.replyOverview ul{grid-template-columns:repeat(2,minmax(0,1fr))}}

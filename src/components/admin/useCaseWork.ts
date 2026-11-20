@@ -4,6 +4,7 @@ import {useRouter} from "next/navigation";
 
 export type Snapshot={
   id:string;version:number;owned:boolean;mine:boolean;note:string|null;next:string|null;due:string|null;
+  replyState:"historical"|"awaiting"|"reminder"|"overdue"|"unavailable";
   first:{actor:string;time:string;channel:string}|null;link:string|null;
   timeline:{id:string;kind:string;first:boolean;actor:string;time:string;channel?:string;detail?:string}[];
   history:{reference:string;received:string;status:string;product?:string;quantity?:string;location?:string;sellers:string[]}[];

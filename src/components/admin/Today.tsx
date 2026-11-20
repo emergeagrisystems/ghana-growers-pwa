@@ -1,5 +1,7 @@
+import { BuyerReplyOverview } from "./BuyerReplyOverview";
+import type { ReplyOverview } from "@/lib/buyerReplies";
 import Link from "next/link";
-import { CalendarClock, Inbox, MessageCircle } from "lucide-react";
+import { CalendarClock, Inbox } from "lucide-react";
 import { queueLabels } from "@/lib/adminQueueLabels";
 import type { IntakeRow, StaffQueue, ReadResult } from "@/lib/adminReadModel";
 import { leadReference } from "@/lib/adminCrm";
@@ -9,7 +11,7 @@ export type Queues = Record<StaffQueue,ReadResult<IntakeRow>>;
 export type DueFollowUp = {id:string;action:string;due:string};
 export function gmt(value:string){return value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"Africa/Accra"}).format(new Date(value)):"Date unavailable"}
 export function waiting(row:IntakeRow){return ["New","Pending","Pending Review","Under Review","In Review"].includes(row.status)}
-export function Today({queues,now,followUps}:{queues:Queues;now:string;followUps:DueFollowUp[]|null}) {
+export function Today({queues,now,followUps,replySummary}:{replySummary:ReplyOverview;queues:Queues;now:string;followUps:DueFollowUp[]|null}) {
   const ids=Object.keys(queues) as StaffQueue[];
   const complete=ids.every(k=>queues[k].available);
   const rows=ids.flatMap(k=>queues[k].rows);
@@ -19,7 +21,7 @@ export function Today({queues,now,followUps}:{queues:Queues;now:string;followUps
   for(const r of requests){const p=r.product.trim();if(p)products.set(p,(products.get(p)||0)+1)}
   const productCounts=Array.from(products).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,3);
   return <><header className={s.title}><div><small>Staff dashboard</small><h1>Today’s work</h1><p>{gmt(now)} · Ghana time</p></div><Link href="/admin?view=find">Find a record</Link></header>
-    <section className={s.attention}><MessageCircle size={22}/><div><h2>Buyer first replies</h2><p>Overdue replies cannot be verified yet. Open the buyer queue to check a request.</p></div><Link href="/admin?view=buyer">View requests</Link></section>
+    <BuyerReplyOverview summary={replySummary} />
     <section className={s.panel}><h2><CalendarClock size={20}/> My follow-ups</h2>
       {followUps===null?<p>Follow-ups are unavailable. Refresh to try again.</p>:
         !followUps.length?<p>No follow-ups due today or overdue.</p>:

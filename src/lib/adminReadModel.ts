@@ -1,4 +1,5 @@
 import "server-only";
+import {readBuyerPages} from "./buyerPages";
 import { selectSupabaseRecords } from "@/lib/supabase/admin";
 import { publicSupplierBadge } from "@/lib/publicDirectoryBadge";
 import { isEligiblePublicFarmer, isEligiblePublicSupplier } from "@/lib/publicProfileEligibility";
@@ -29,6 +30,11 @@ const columns = {
 async function scan(table: string, select: string): Promise<ReadResult<Row>> {
   const rows: Row[] = [];
   try {
+    if (table === "lead_requests") return await readBuyerPages<Row>(async after => {
+      const cursor = after ? "&id=gt."+after : "";
+      const page = await selectSupabaseRecords<Row>(table,`select=${select}&order=id.asc&limit=250${cursor}`,{strictArray:true});
+      return page.error ? null : page.data ?? null;
+    });
     for (let offset = 0; ; offset += 250) {
       const page = await selectSupabaseRecords<Row>(table, `select=${select}&order=id.asc&limit=250&offset=${offset}`,{strictArray:true});
       if (page.error || !page.data) return { rows: [], available: false };

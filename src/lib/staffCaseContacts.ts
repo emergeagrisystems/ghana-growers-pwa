@@ -1,4 +1,6 @@
 import "server-only";
+import { unansweredState, ghanaCalendar } from "./buyerReplies";
+import { trackingStart } from "./staffReplyTracking";
 import { leadReference } from "./adminCrm";
 import { loadAdminProfile } from "./adminProfileEditor";
 import { idPattern, staffClient, StaffRequestError, staffRpc } from "./staffRpc";
@@ -9,7 +11,7 @@ type SellerEvidence = {seller_type: SellerType; seller_id: string; contact_count
 type Prior = {request_id:string; received_at:string; status:string; sellers_contacted:SellerEvidence[]};
 type Event = {id:string; actor_id:string; kind:string; occurred_at:string; channel?:string; first_buyer_reply:boolean;
   farmer_id?:string; supplier_id?:string; input:{note?:string; reason?:string; next_action?:string}};
-type CaseData = {request_id:string; version:number; owner_id:string|null; next_action:string|null; due_at:string|null;
+type CaseData = {received_at:string;request_id:string; version:number; owner_id:string|null; next_action:string|null; due_at:string|null;
   first_reply:{actor_id:string; occurred_at:string; channel:string}|null; latest_note:{text:string}|null;
   link_id:string|null; timeline:Event[]; confirmed_history:Prior[]};
 const sellerTables = {farmer: ["farmers","farm_name"], supplier: ["suppliers","company_name"]} as const;
@@ -58,6 +60,7 @@ export async function caseSummary(client:Client,actor:string,row:CaseData) {
   }
   const who=(id:string)=>id===actor?"You":"Staff "+id.slice(0,8);
   return {id:row.request_id,version:row.version,owned:!!row.owner_id,mine:row.owner_id===actor,note:row.latest_note?.text??null,next:row.next_action,due:row.due_at,
+    replyState:row.first_reply === null ? unansweredState(row.received_at,new Date(),trackingStart(),ghanaCalendar) : "unavailable",
     first:row.first_reply?{actor:who(row.first_reply.actor_id),time:row.first_reply.occurred_at,channel:row.first_reply.channel}:null,
     link:row.link_id??null,history:history.map(h=>({reference:leadReference(h.request_id),received:h.received_at,status:h.status,
       product:details.get(h.request_id)?.product_interest,quantity:details.get(h.request_id)?.quantity_needed,location:details.get(h.request_id)?.delivery_location,

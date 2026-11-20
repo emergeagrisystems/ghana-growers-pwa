@@ -34,7 +34,11 @@ const api=http.createServer(async(req,res)=>{
       const row={...seller,name:seller.farm_name||seller.company_name};
       return send(req.headers.accept?.includes("vnd.pgrst.object")?row:[row]);
     }
-    if(name==="lead_requests")return send(u.searchParams.has("id")?[priorReceipt]:[receipt,priorReceipt]);
+    if(name==="lead_requests"){
+      const cursor=u.searchParams.get("id");
+      if(cursor?.startsWith("gt.")) return send([receipt,priorReceipt].filter(r=>r.id>cursor.slice(3)));
+      return send(cursor?[priorReceipt]:[receipt,priorReceipt]);
+    }
     return send([]);
   }
   const chunks=[];for await(const c of req)chunks.push(c);const b=JSON.parse(Buffer.concat(chunks).toString()||"{}");
@@ -43,13 +47,13 @@ const api=http.createServer(async(req,res)=>{
     assert.equal(b.p_actor,actor);assert.ok(Math.abs(Date.now()-Date.parse(b.p_now))<60000);
     if(todayUnavailable)return send({message:"Unavailable"},503);
     const due=follow.owner===actor && follow.due && follow.due.slice(0,10)<=b.p_now.slice(0,10);
-    return send({my_follow_ups:due?[{request_id:id,next_action:follow.action,due_at:follow.due,version}]:[]});
+    return send({as_of:b.p_now,unanswered_receipts:[receipt,priorReceipt].filter(r=>r.id!==id || !timeline.some(e=>e.first_buyer_reply)).map(r=>({request_id:r.id,received_at:r.created_at})),my_follow_ups:due?[{request_id:id,next_action:follow.action,due_at:follow.due,version}]:[]});
   }
   if(name==="admin_activity_log")return send({message:"Audit unavailable"},503);
   if(name==="staff_case_read"){
     if(b.p_request===priorId)return send({request_id:priorId,buyer_id:buyer,version:1,confirmed_history:[],timeline:[]});
     const first=timeline.find(e=>e.first_buyer_reply);
-    return send({request_id:id,version,status:receipt.status,lead_updated_at:receipt.updated_at,next_action:follow.action,due_at:follow.due,latest_note:{text:caseNote},owner_id:actor,first_reply:first||null,timeline,
+    return send({request_id:id,received_at:receipt.created_at,version,status:receipt.status,lead_updated_at:receipt.updated_at,next_action:follow.action,due_at:follow.due,latest_note:{text:caseNote},owner_id:actor,first_reply:first||null,timeline,
       link_id:link,confirmed_history:link===priorId?[{request_id:priorId,received_at:priorReceipt.created_at,status:"New",sellers_contacted:[{seller_type:"farmer",seller_id:farmerId,contact_count:1}]}]:[]});
   }
   if(name==="staff_case_command"){
@@ -106,6 +110,8 @@ async function run(){
   const page=await ctx.newPage();page.setDefaultTimeout(12000);
   await ctx.route("**/*",route=>{const u=new URL(route.request().url());return ["blob:","data:"].includes(u.protocol)||u.hostname==="127.0.0.1"?route.continue():route.abort()});
   const guest=await browser.newContext();
+  const privateList=await guest.request.get(url+"/admin?view=buyer&replies=overdue",{maxRedirects:0});
+  assert.ok([303,307,308].includes(privateList.status()));assert.ok(privateList.headers().location.endsWith("/admin/login"));
   assert.equal((await guest.request.post(url+"/api/admin/profile-editor/supplier-photo")).status(),401);
   assert.equal((await guest.request.post(url+"/api/admin/case-work")).status(),401);
   await guest.close();
@@ -133,6 +139,19 @@ async function run(){
   assert.equal(await note.inputValue(),"Fictional retained note");assert.equal(commands.length,1);
   assert.equal(await post("Save note or follow-up","/api/admin/case-work"),200);assert.equal(commands.length,2);assert.equal(commands[1].p_expected_version,2);
   console.log("PASS local HTTP routes and browser: stale photo and case return 409; file and note retained; review sends no write; deliberate reconciliation; lost Save acknowledgement reuses exact intent.");
+  const overview=await ctx.newPage();
+  async function checkHistoryCount(expected){
+    await overview.goto(url+"/admin");
+    const panel=overview.getByRole("region",{name:"Buyer first replies"});
+    const day=new Date().toISOString().slice(0,10);
+    if(day<"2026-11-08"||day>"2026-12-31"){
+      await panel.getByRole("link",{name:"Open buyer queue"}).waitFor();
+      assert.equal(await panel.locator("li").count(),0);
+      return;
+    }
+    await panel.getByRole("link",{name:expected+" History to review"}).waitFor();
+    await panel.getByRole("link",{name:"0 Need a first reply"}).waitFor();
+  }
   for(const width of [1440,390]){
     timeline=[];link=null;loseReply=true;
     await page.setViewportSize({width,height:width===390?844:900});await page.reload();
@@ -145,7 +164,7 @@ async function run(){
       assert.equal((await response).status(),expected);
       if(expected===200)await action.waitFor({state:"hidden"});
     }
-    await page.getByText(/First reply outstanding/).first().waitFor();
+    await page.getByText(/Historical request · First reply unverified/).first().waitFor();
     await page.getByRole("checkbox",{name:/intended buyer/}).check();
     const before=commands.length;
     // Intercept contact links locally. Exercise click handlers without contacting a real recipient.
@@ -164,12 +183,18 @@ async function run(){
       assert.ok(await button("Confirm and save").isDisabled());await action.getByLabel("I contacted the selected seller.").check();await save();
     }
     assert.deepEqual(timeline.map(e=>e.input.seller_id),[id,farmerId]);assert.ok(timeline.every(e=>e.first_buyer_reply===false));
+    const contact=await ctx.request.post(url+caseRoute,{data:{id,version,operation:require("node:crypto").randomUUID(),
+      kind:"buyer_contact",input:{confirmed:true,reply:false,channel:"phone",occurred_at:t(0)}}});
+    assert.equal(contact.status(),200);assert.equal(timeline[0].first_buyer_reply,false);
+    await checkHistoryCount(2);
+    await page.reload();await button("Record first reply").waitFor();
     await button("Record first reply").click();await action.getByLabel("I actually replied to this buyer.").check();
     version++;await save(409);await action.getByRole("button",{name:"Review latest case"}).click();
     await action.getByText("Latest saved case",{exact:true}).waitFor();assert.ok(await button("Confirm and save").isDisabled());
     await action.getByLabel("I actually replied to this buyer.").check();await save(503);
     await save(200,"Retry same save");assert.deepEqual(commands.at(-2),commands.at(-1));
     assert.equal(timeline.filter(e=>e.first_buyer_reply).length,1);assert.equal(await button("Record first reply").count(),0);
+    await checkHistoryCount(1);
     await button("Buyer history").click();await history.getByText(/No confirmed buyer history/).waitFor();
     await button("Establish buyer identity").click();await action.getByLabel(/Reason for confirming/).fill("Fictional buyer confirmed directly.");
     await action.getByLabel("I verified the buyer’s identity.").check();await save();await history.getByText(/No other requests/).waitFor();
@@ -199,7 +224,9 @@ async function run(){
     assert.equal(await post("Save note or follow-up","/api/admin/case-work"),200);
     await button("Complete follow-up").waitFor();assert.equal(follow.due.slice(0,16),future);
     await goToday();await page.getByText("No follow-ups due today or overdue.").waitFor();
-    todayUnavailable=true;await goToday();await page.getByText("Follow-ups are unavailable.",{exact:false}).waitFor();todayUnavailable=false;
+    todayUnavailable=true;await goToday();await page.getByText("Follow-ups are unavailable.",{exact:false}).waitFor();
+    const unavailable=page.getByRole("region",{name:"Buyer first replies"});
+    await unavailable.getByText(/Reply records are incomplete/).waitFor();assert.equal(await unavailable.locator("li").count(),0);todayUnavailable=false;
     follow.due=new Date().toISOString().slice(0,10)+"T23:59:59.999Z";follow.owner=farmerId;
     await goToday();await page.getByText("No follow-ups due today or overdue.").waitFor();
     follow.owner=actor;await goToday();await page.getByText("Due today",{exact:true}).waitFor();

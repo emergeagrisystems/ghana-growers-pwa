@@ -16,6 +16,13 @@ export function CaseActivities({id,received,historyDialog,buyerActions,sellerAct
   id:string;received:string;historyDialog:RefObject<HTMLDialogElement>;buyerActions:ReactNode;sellerActions:ReactNode;
 }){
   const work=useCaseWork(id), {current}=work;
+  const replyText = !current ? (work.message ? "First-reply evidence unavailable." : "Loading reply status…")
+    : current.first ? `First reply · ${current.first.actor} · ${channels[current.first.channel]} · ${date(current.first.time)}`
+    : current.replyState === "historical" ? "Historical request · First reply unverified. Review the earlier correspondence."
+    : current.replyState === "awaiting" ? "First reply outstanding. Record it after you have replied."
+    : current.replyState === "reminder" ? "First reply outstanding · Attention soon."
+    : current.replyState === "overdue" ? "First reply outstanding · Overdue."
+    : "First-reply timing unavailable. Review the case evidence.";
   const dialog=useRef<HTMLDialogElement>(null);
   const [form,setForm]=useState<Form>("first"),[channel,setChannel]=useState("whatsapp"),[time,setTime]=useState("");
   const [confirmed,setConfirmed]=useState(false),[reason,setReason]=useState(""),[buyerReply,setBuyerReply]=useState(false);
@@ -62,7 +69,7 @@ export function CaseActivities({id,received,historyDialog,buyerActions,sellerAct
   const buttons=(kind:Form)=><button type="button" disabled={!canOpen} onClick={()=>open(kind)}>{titles[kind]}</button>;
   return <>
     <section className={s.panel}>{buyerActions}
-      <p>{!current?"Loading reply status…":current.first?`First reply · ${current.first.actor} · ${channels[current.first.channel]} · ${date(current.first.time)}`:"First reply outstanding. Record it after you have replied."}</p>
+      <p>{replyText}</p>
       <div className={s.actions}>{!current?.first&&buttons("first")}{buttons("buyer")}</div></section>
     <section className={s.panel}><h2>Seller availability</h2>{sellerActions}{buttons("seller")}</section>
     {(handover.note||handover.next||handover.due)&&<p>Save or clear your handover draft before recording another action.</p>}
@@ -102,7 +109,7 @@ export function CaseActivities({id,received,historyDialog,buyerActions,sellerAct
         </fieldset>
         {work.conflict&&<><p>Review the latest case and confirm your entry again.</p><button type="button" disabled={frozen} onClick={async()=>{await work.review();setReviewed(true);setConfirmed(false);if(form==="link")setPrior(null);}}>Review latest case</button></>}
         {reviewed&&!work.conflict&&current&&<section aria-label="Latest saved case"><h3>Latest saved case</h3>
-          <p>{current.first?"First reply recorded · "+date(current.first.time):"First reply outstanding"}</p>
+          <p>{replyText}</p>
           <p>{current.link?"Buyer identity confirmed":"No confirmed buyer identity"}</p>
           {current.timeline.slice(0,3).map(e=><p key={e.id}>{events[e.kind]} · {e.actor} · {date(e.time)} {e.detail}</p>)}</section>}
         <div className={s.actions}><button disabled={work.busy||lookupBusy||work.conflict||!confirmed||!validTarget||(!contact&&!reason.trim())||(form==="first"&&!!current?.first&&!work.unknown)||(form==="unlink"&&!current?.link)}>{work.unknown?"Retry same save":"Confirm and save"}</button>
