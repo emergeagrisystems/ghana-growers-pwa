@@ -9,7 +9,8 @@
 .shell nav a { text-underline-offset: .2em; }
 
 :global(html):has(.campaign), :global(body):has(.campaign), :global(body):has(.campaign) .shell, .campaign {
-  background: #f1f6fb;
+  --campaign-background: #e7f0f8;
+  background: var(--campaign-background);
   color: #0b3b2b;
 }
 :global(body):has(.campaign) .headerInner { justify-content: center; padding-block: clamp(.75rem, 2.5vh, 1.6rem) 0; }
@@ -18,7 +19,7 @@
 :global(body):has(.campaign) .footerInner { border-top: 1px solid #cad7dc; color: #455e59; }
 .shell a:focus-visible, .campaign a:focus-visible { outline: 3px solid #093d5a; outline-offset: 3px; }
 .campaign { padding-block: clamp(.9rem, 2.8vh, 2rem) clamp(1.4rem, 4vh, 3rem); }
-.inner { width: min(92%, 74rem); }
+.inner { width: min(92%, 74rem); container: campaign-content / inline-size; }
 .campaign h1, .campaign h2, .campaign p, .clock { margin: 0; }
 .inner h1 { text-align: center; font-size: clamp(1.75rem, 4.5vw, 3.5rem); font-weight: 820; line-height: 1.1; letter-spacing: -.047em; }
 .finalWord { white-space: nowrap; }
@@ -38,7 +39,7 @@
 .clock dd { margin: 0; font-size: clamp(4.5rem, 9vw, 7rem); font-weight: 850; line-height: 1; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
 .clock > div:last-child dd { color: #b8472a; }
 .clock dt { margin-top: .65rem; font-size: .78rem; font-weight: 650; letter-spacing: .18em; }
-.fallback { position: absolute; z-index: 1; inset: 0; display: grid; place-content: center; background: #f1f6fb; font-weight: 650; }
+.fallback { position: absolute; z-index: 1; inset: 0; display: grid; place-content: center; background: var(--campaign-background); font-weight: 650; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .opening p { font-size: clamp(1.75rem,4vw,3rem); font-weight: 800; }
@@ -46,23 +47,22 @@
 .acquisitionSection { margin-top: clamp(1.5rem, 3vw, 2.4rem); }
 .acquisitionSection h2 { margin-bottom: .75rem; text-align: center; font-size: clamp(1.25rem,2vw,1.6rem); font-weight: 780; letter-spacing: -.025em; }
 .acquisition { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; }
-.card { --card-bg: #2f7d4f; --card-ink: white; background: var(--card-bg); color: var(--card-ink); border-radius: 1.25rem; padding: clamp(1rem,2vw,1.6rem); display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem; align-items: center; text-decoration: none; }
+.card { --card-bg: #2f7d4f; --card-ink: white; background: var(--card-bg); color: var(--card-ink); border-radius: .875rem; padding: 1rem 1.25rem; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem; align-items: center; text-decoration: none; }
 .card:nth-child(2) { --card-bg: #f2b84b; --card-ink: #0b3b2b; }
 .card:nth-child(3) { --card-bg: #b8472a; }
-.card strong { display: block; font-size: clamp(1.125rem,2vw,1.6rem); font-weight: 780; line-height: 1.15; letter-spacing: -.035em; }
+.card strong { display: block; font-size: 1.1875rem; font-weight: 650; line-height: 1.15; letter-spacing: -.035em; }
 .card:hover strong { text-decoration: underline; text-underline-offset: .15em; }
-.benefit, .closedLabel { display: block; font-size: .95rem; line-height: 1.3; margin-top: .45rem; }
-.arrow { width: 2.35rem; height: 2.35rem; border-radius: 50%; display: grid; place-items: center; color: var(--card-bg); background: var(--card-ink); }
-.teaser { display: flex; align-items: center; justify-content: center; width: fit-content; max-width: 100%; margin: clamp(1.25rem, 3vw, 2.25rem) auto 0; gap: 1.4rem; padding: 1.1rem 1.8rem; border-radius: 1.15rem; background: #244747; color: white; }
-.identity { flex: 0 1 10.2rem; min-width: 0; }
-.wordmark { display: block; width: 10.2rem; max-width: 100%; aspect-ratio: 495 / 141; background: linear-gradient(90deg,white 73.9%,#f2b84b 73.9%); mask: url('/hm1/nov07/mama-g-dark.png') center / contain no-repeat; }
-.teaserCopy { border-inline-start: 1px solid #769090; padding-inline-start: 1.4rem; }
-.teaserCopy p { font-size: 1.05rem; font-weight: 650; line-height: 1.25; }
-.comingBadge { display: inline-block; margin-top: .4rem; padding: .23rem .85rem; border-radius: 2rem; font-size: .8rem; font-weight: 750; color: #0b3b2b; background: #f2b84b; }
+.benefit, .closedLabel { display: block; font-size: .875rem; line-height: 1.4; font-weight: 400; margin-top: .3rem; }
+.arrow { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--card-bg); background: var(--card-ink); }
+.teaser { display: flex; align-items: center; justify-content: center; width: fit-content; max-width: 100%; margin: clamp(1.25rem, 3vw, 2.25rem) auto 0; gap: .875rem; padding: .875rem 1.25rem; border-radius: 1.15rem; background: #244747; color: white; }
+.identity { flex: none; width: 120px; }
+.wordmark { display: block; width: 100%; aspect-ratio: 495 / 141; background: linear-gradient(90deg,white 73.9%,#f2b84b 73.9%); mask: url('/hm1/nov07/mama-g-dark.png') center / contain no-repeat; }
+.teaserCopy { border-inline-start: 1px solid #769090; padding-inline-start: .875rem; }
+.teaserCopy p { font-size: .9375rem; font-weight: 575; line-height: 1.4; }
+.comingBadge { display: inline-block; margin-top: .25rem; padding: .2rem .65rem; border-radius: 2rem; font-size: .75rem; font-weight: 750; color: #0b3b2b; background: #f2b84b; }
 @media (max-width: 1000px) {
   .clock dd { font-size: clamp(3.625rem,8vw,5.75rem); }
-  .card { padding: 1rem; gap: .5rem; }
-  .arrow { width: 1.8rem; height: 1.8rem; }
+  .card { gap: .5rem; }
 }
 @media (max-width: 700px) {
   .headerInner, .footerInner { width: calc(100% - 2.25rem); }
@@ -70,12 +70,16 @@
   .clock dd { font-size: clamp(3.375rem,16vw,4rem); }
   .clock dt { font-size: .68rem; letter-spacing: .1em; }
   .acquisition { grid-template-columns: 1fr; gap: .55rem; }
-  .card { padding: .9rem 1.05rem; border-radius: .95rem; }
-  .arrow { width: 2rem; height: 2rem; }
-  .teaser { padding: .9rem 1rem; gap: .8rem; }
-  .identity { flex-basis: 5.8rem; }
-  .teaserCopy { padding-inline-start: .8rem; }
-  .teaserCopy p { font-size: .95rem; }
+  .card { padding: .875rem 1rem; }
+  .card strong { font-size: 1.125rem; }
+  .teaser { max-width: calc(100% - .75rem); padding-inline: clamp(.625rem, 3.5vw, 1.25rem); gap: .625rem; }
+  .identity { width: 88px; }
+  .teaserCopy { padding-inline-start: .625rem; }
+}
+/* Give enlarged copy its own line when the mark and text cannot fit side by side. */
+@container campaign-content (max-width: 14rem) {
+  .teaser { flex-direction: column; text-align: center; }
+  .teaserCopy { border-inline-start: 0; padding-inline-start: 0; }
 }
 @container launch-clock (max-width: 15rem) {
   .clock { grid-template-columns: repeat(2,minmax(0,1fr)); row-gap: .8rem; }

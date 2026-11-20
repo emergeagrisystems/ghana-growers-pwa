@@ -89,7 +89,7 @@ async function measure(page) {
       const response=await page.goto(server.origin+'/launching-soon',{waitUntil:'networkidle'});assert.equal(response.status(),200);checkBody(await response.text());
       await page.locator('[data-launch-countdown] dd').first().filter({hasText:/\d/}).waitFor();
       const result=await measure(page);evidence.viewports[width]=result;
-      assert.ok(result.campaignSurfaces.every(color=>color==='rgb(241, 246, 251)'));
+      assert.ok(result.campaignSurfaces.every(color=>color==='rgb(231, 240, 248)'));
       assert.equal(result.teaserBackground,'rgb(36, 71, 71)');
       assert.ok(result.headingOffsets.every(offset=>Math.abs(offset)<=1.5),JSON.stringify(result.headingOffsets));
       await page.screenshot({path:path.join(output,'candidate-'+width+'.png'),fullPage:true});
